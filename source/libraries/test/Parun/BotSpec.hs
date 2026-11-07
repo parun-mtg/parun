@@ -6,6 +6,7 @@ module Parun.BotSpec where
 
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -36,24 +37,39 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
+import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GuessAnswer as GuessAnswer
+import qualified Parun.Types.HandActionIndex as HandActionIndex
+import qualified Parun.Types.HybridPayment as HybridPayment
+import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.LearnMode as LearnMode
+import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -62,16 +78,29 @@ import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
+import qualified Parun.Types.PermissionLimit as PermissionLimit
+import qualified Parun.Types.PermissionPool as PermissionPool
+import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PhyrexianPayment as PhyrexianPayment
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReplacementEffect as ReplacementEffect
+import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SplitMix as SplitMix
+import qualified Parun.Types.StickerKind as StickerKind
+import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
@@ -338,6 +367,90 @@ spec s registry = Spec.describe s "Bot" $ do
   Spec.it s "allocates a shield every way that spends it" $ do
     let hit n = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) n False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
     Spec.assertEqWith s "shares" (drawn (Prompt.AllocateDamage decider S.alice [hit 2, hit 3] 3)) (Set.fromList [[0, 3], [1, 2], [2, 1]])
+
+  -- Each candidate the caller found legal, CR 118.13's payable routes included.
+  Spec.it s "picks any one of the offer" $ do
+    let objects = ObjectId.MkObjectId 8 NonEmpty.:| [ObjectId.MkObjectId 9]
+        players = S.alice NonEmpty.:| [S.bob]
+        printings = PrintingId.MkPrintingId 3 NonEmpty.:| [PrintingId.MkPrintingId 4]
+        names = fmap (CardName.MkCardName . Text.pack) ("Fire" NonEmpty.:| ["Ice"])
+        kinds = CounterKind.PlusOnePlusOne NonEmpty.:| [CounterKind.Shield]
+        stickers = StickerRef.MkStickerRef S.alice 0 StickerKind.Art 0 NonEmpty.:| [StickerRef.MkStickerRef S.alice 1 StickerKind.Art 2]
+        grant = CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)) (Filter.HasCardType CardType.Creature) PermissionLimit.Unlimited PermissionVerb.Play PermissionPool.EveryCard [] 0 ManaSpending.AsProduced
+        permissions = Just (ObjectId.MkObjectId 8, grant) NonEmpty.:| [Nothing]
+        every :: (Ord r) => NonEmpty.NonEmpty r -> Set.Set r
+        every = Set.fromList . NonEmpty.toList
+        green = ManaType.Colored Color.Green
+        blue = ManaType.Colored Color.Blue
+        halves = ManaSymbol.OfType (ManaType.Colored Color.Black) NonEmpty.:| [ManaSymbol.Generic 2]
+        totals = fmap (ManaCost.MkManaCost . pure . ManaSymbol.Generic) (1 NonEmpty.:| [2])
+        votes = BallotChoice.ForObject (ObjectId.MkObjectId 8) NonEmpty.:| [BallotChoice.ForPlayer S.bob]
+    Spec.assertEqWith s "hybrid halves" (drawn (Prompt.AnnounceHybridHalf decider S.alice oid (ManaSymbol.Generic 1) (green NonEmpty.:| [blue]))) (Set.fromList [green, blue])
+    Spec.assertEqWith s "hybrid payments" (drawn (Prompt.AnnounceHybridPayment decider S.alice oid green (HybridPayment.PaysTyped NonEmpty.:| [HybridPayment.PaysGeneric]))) (Set.fromList [HybridPayment.PaysTyped, HybridPayment.PaysGeneric])
+    Spec.assertEqWith s "phyrexian payments" (drawn (Prompt.AnnouncePhyrexianPayment decider S.alice oid (ManaSymbol.Phyrexian Color.Green) (PhyrexianPayment.PaysMana NonEmpty.:| [PhyrexianPayment.PaysLife]))) (Set.fromList [PhyrexianPayment.PaysMana, PhyrexianPayment.PaysLife])
+    Spec.assertEqWith s "active players" (drawn (Prompt.ChooseActivePlayer decider S.alice players)) (every players)
+    Spec.assertEqWith s "amass" (drawn (Prompt.ChooseAmass decider S.alice oid objects)) (every objects)
+    Spec.assertEqWith s "attachments" (drawn (Prompt.ChooseAttachment decider S.alice oid objects)) (every objects)
+    Spec.assertEqWith s "beholds" (drawn (Prompt.ChooseBehold decider S.alice oid objects)) (every objects)
+    Spec.assertEqWith s "blights" (drawn (Prompt.ChooseBlight decider S.alice oid objects)) (every objects)
+    Spec.assertEqWith s "bolsters" (drawn (Prompt.ChooseBolster decider S.alice oid objects)) (every objects)
+    Spec.assertEqWith s "graveyard cards" (drawn (Prompt.ChooseCardInGraveyard decider S.alice oid objects Seq.empty)) (every objects)
+    Spec.assertEqWith s "card types" (drawn (Prompt.ChooseCardType decider S.alice oid (CardType.Artifact NonEmpty.:| [CardType.Land]))) (Set.fromList [CardType.Artifact, CardType.Land])
+    Spec.assertEqWith s "coin results" (drawn (Prompt.ChooseCoinResult decider S.alice (CoinFace.Heads NonEmpty.:| [CoinFace.Tails]))) (Set.fromList [CoinFace.Heads, CoinFace.Tails])
+    Spec.assertEqWith s "conjured cards" (drawn (Prompt.ChooseConjuredCard decider S.alice names)) (every names)
+    Spec.assertEqWith s "counter kinds" (drawn (Prompt.ChooseCounterKind decider S.alice (CounterKindFor.MovedBetween oid (ObjectId.MkObjectId 9)) kinds)) (every kinds)
+    Spec.assertEqWith s "defenders" (drawn (Prompt.ChooseDefender decider S.alice players)) (every players)
+    Spec.assertEqWith s "designations" (drawn (Prompt.ChooseDesignation decider S.alice oid (Designation.AlphaSector NonEmpty.:| [Designation.BetaSector, Designation.GammaSector]))) (Set.fromList [Designation.AlphaSector, Designation.BetaSector, Designation.GammaSector])
+    Spec.assertEqWith s "dungeons" (drawn (Prompt.ChooseDungeon decider S.alice printings)) (every printings)
+    Spec.assertEqWith s "halves" (drawn (Prompt.ChooseHalf decider S.alice oid names)) (every names)
+    Spec.assertEqWith s "legends" (drawn (Prompt.ChooseLegend decider S.alice objects)) (every objects)
+    Spec.assertEqWith s "name positions" (drawn (Prompt.ChooseNamePosition decider S.alice oid (0 NonEmpty.:| [1, 2]))) (Set.fromList [0, 1, 2])
+    Spec.assertEqWith s "opponents" (drawn (Prompt.ChooseOpponent decider S.alice oid Nothing players)) (every players)
+    Spec.assertEqWith s "permissions" (drawn (Prompt.ChoosePlayPermission decider S.alice oid permissions)) (every permissions)
+    Spec.assertEqWith s "players" (drawn (Prompt.ChoosePlayer decider S.alice oid players)) (every players)
+    Spec.assertEqWith s "protectors" (drawn (Prompt.ChooseProtector decider S.alice oid players)) (every players)
+    Spec.assertEqWith s "reduced costs" (drawn (Prompt.ChooseReducedCost decider S.alice oid totals)) (every totals)
+    Spec.assertEqWith s "reduction halves" (drawn (Prompt.ChooseReductionHalf decider S.alice oid (ManaSymbol.MonocoloredHybrid (ManaType.Colored Color.Black)) halves)) (every halves)
+    Spec.assertEqWith s "ring-bearers" (drawn (Prompt.ChooseRingBearer decider S.alice objects)) (every objects)
+    Spec.assertEqWith s "rooms" (drawn (Prompt.ChooseRoom decider S.alice oid (RoomIndex.MkRoomIndex 1 NonEmpty.:| [RoomIndex.MkRoomIndex 2]))) (Set.fromList [RoomIndex.MkRoomIndex 1, RoomIndex.MkRoomIndex 2])
+    Spec.assertEqWith s "stickers" (drawn (Prompt.ChooseSticker decider S.alice oid stickers)) (every stickers)
+    Spec.assertEqWith s "votes" (drawn (Prompt.ChooseVote decider S.alice oid votes)) (every votes)
+
+  -- An index answers each of these: every position in the offer, equal
+  -- entries included.
+  Spec.it s "picks any index into the offer" $ do
+    let gained who = GameEvent.LifeGained (LifeChange.MkLifeChange who 4 True)
+        shape power = EntryOption.MkEntryOption {EntryOption.power = power, EntryOption.toughness = 3, EntryOption.keywords = Set.empty, EntryOption.subtypes = Set.empty}
+        entry source = ReplacementEntry.MkReplacementEntry (ObjectId.MkObjectId source) (ReplacementEffect.AssembleR (Filter.And []))
+    Spec.assertEqWith s "occurrences" (drawn (Prompt.ChooseDelayedTriggerEvent decider S.alice oid (gained S.alice NonEmpty.:| [gained S.bob]))) (Set.fromList [0, 1])
+    Spec.assertEqWith s "die results" (drawn (Prompt.ChooseDieResult decider S.alice Nothing (3 NonEmpty.:| [5, 5]))) (Set.fromList [0, 1, 2])
+    Spec.assertEqWith s "entry options" (drawn (Prompt.ChooseEntryOption decider S.alice oid [shape 3, shape 2])) (Set.fromList [0, 1])
+    Spec.assertEqWith s "replacements" (drawn (Prompt.ChooseReplacement decider S.alice [entry 8, entry 9, entry 10])) (Set.fromList [0, 1, 2])
+    Spec.assertEqWith s "roll modifiers" (drawn (Prompt.ChooseRollModifier decider S.alice (Just oid NonEmpty.:| [Nothing]))) (Set.fromList [0, 1])
+    Spec.assertEqWith s "sticker keepers" (drawn (Prompt.ChooseStickerKeeper decider S.alice (PrintingId.MkPrintingId 3 NonEmpty.:| [PrintingId.MkPrintingId 4]))) (Set.fromList [0, 1])
+
+  -- Each is a "may", an "up to one" or a "wish to", so declining is an
+  -- answer beside every candidate.
+  Spec.it s "picks any one of the offer or none" $ do
+    let objects = ObjectId.MkObjectId 8 NonEmpty.:| [ObjectId.MkObjectId 9]
+        orNone :: (Foldable t, Ord a) => t a -> Set.Set (Maybe a)
+        orNone items = Set.fromList (Nothing : fmap Just (Foldable.toList items))
+        casts = [(ObjectId.MkObjectId 8, CardName.MkCardName (Text.pack "Panglacial Wurm"), Facing.FaceUp)]
+        companions = OutsideCard.InPool (PrintingId.MkPrintingId 7) NonEmpty.:| [OutsideCard.InAnotherGame (ObjectId.MkObjectId 9)]
+        kinds = CounterKind.PlusOnePlusOne NonEmpty.:| [CounterKind.Shield]
+        stickers = StickerRef.MkStickerRef S.alice 0 StickerKind.Art 0 NonEmpty.:| []
+        actions = [(ObjectId.MkObjectId 7, HandActionIndex.MkHandActionIndex 0), (ObjectId.MkObjectId 7, HandActionIndex.MkHandActionIndex 1)]
+    Spec.assertEqWith s "casts" (drawn (Prompt.CastWhileSearching decider S.alice casts)) (orNone casts)
+    Spec.assertEqWith s "assistants" (drawn (Prompt.ChooseAssistant decider S.alice oid (S.bob NonEmpty.:| []))) (orNone [S.bob])
+    Spec.assertEqWith s "companions" (drawn (Prompt.ChooseCompanion decider S.alice companions)) (orNone companions)
+    Spec.assertEqWith s "encodes" (drawn (Prompt.ChooseEncode decider S.alice oid objects)) (orNone objects)
+    Spec.assertEqWith s "enlists" (drawn (Prompt.ChooseEnlist decider S.alice oid objects)) (orNone objects)
+    Spec.assertEqWith s "learns" (drawn (Prompt.ChooseLearn decider S.alice oid (LearnMode.TakeLesson NonEmpty.:| [LearnMode.DiscardAndDraw]))) (orNone [LearnMode.TakeLesson, LearnMode.DiscardAndDraw])
+    Spec.assertEqWith s "moved counters" (drawn (Prompt.ChooseMovedCounterOrNone decider S.alice oid (ObjectId.MkObjectId 9) kinds)) (orNone kinds)
+    Spec.assertEqWith s "reveals" (drawn (Prompt.ChooseRevealOnEntry decider S.alice oid objects)) (orNone objects)
+    Spec.assertEqWith s "stickers" (drawn (Prompt.ChooseStickerOrNone decider S.alice oid stickers)) (orNone stickers)
+    Spec.assertEqWith s "mulligan actions" (drawn (Prompt.MulliganAction decider S.alice actions)) (orNone actions)
+    Spec.assertEqWith s "opening hand actions" (drawn (Prompt.OpeningHandAction decider S.alice actions)) (orNone actions)
 
 -- Every answer the bot gives the prompt over many seeds.
 drawn :: (Ord r) => Prompt.Prompt r -> Set.Set r
