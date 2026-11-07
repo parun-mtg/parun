@@ -70,17 +70,22 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
+import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPayment as HybridPayment
+import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ManaCost as ManaCost
@@ -103,6 +108,8 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReplacementEffect as ReplacementEffect
+import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
@@ -1030,6 +1037,68 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "and takes the count" (fst (asking facing ["2"] gs taps)) (Right (Set.singleton g))
     Spec.assertEqWith s "a most refuses past it" (fst (asking facing ["all"] gs (Prompt.ChooseAnyNumber alice S.alice f AnyNumberOf.ToSacrifice [b, g] (Just 1) Seq.empty))) (Left (Text.pack "end of input"))
     Spec.assertEqWith s "and takes none" (fst (asking facing [""] gs (Prompt.ChooseAnyNumber alice S.alice f AnyNumberOf.ToSacrifice [b, g] (Just 1) Seq.empty))) (Right Set.empty)
+
+  Spec.it s "CR 614.1c an entry option is offered through the client by its shape, and the number picks the shape" $ do
+    let heading = Text.pack "Choose entry option for Primal Clay:"
+        shapes sc
+          | heading `elem` pending sc = Just (Text.pack "3")
+          | otherwise = castsOnce "auto" "Primal Clay" sc
+    (_, resolved, _, shown) <- castTyping shapes s registry "Primal Clay" ["Forest", "Forest", "Forest", "Forest"]
+    Spec.assertEqWith s "each shape listed" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))) (fmap Text.pack ["  1. 3/3", "  2. 2/2, flying", "  3. 1/6, defender, Wall"])
+    Spec.assertBool s resolved "resolved"
+    Spec.assertBool s (any (\l -> Text.isPrefixOf (Text.pack "  Creatures: ") l && Text.isInfixOf (Text.pack "Primal Clay 1/6") l) shown) "entered as the shape picked"
+
+  Spec.it s "a prompt answered by an index into what it lists names each entry, and the number picks its index" $ do
+    forest <- S.printingOf s registry "Forest"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (f, g1) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        (g, g2) = S.addPermanent giant S.bob g1
+        (printing, gs) = Game.Engine.intern giant g2
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        alice = Decider.MkDecider S.alice
+        upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
+        tapped = ReplacementEntry.MkReplacementEntry f (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Tapped))
+        (picked, replacement) = asking facing ["1"] gs (Prompt.ChooseReplacement alice S.alice [tapped, ReplacementEntry.MkReplacementEntry g (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Prepared))])
+        hit = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        (event, delayed) = asking facing ["2"] gs (Prompt.ChooseDelayedTriggerEvent alice S.alice f (GameEvent.DamageDealt hit NonEmpty.:| [GameEvent.DamageDealt hit {DamageEvent.amount = 3}]))
+        (modifier, modifiers) = asking facing ["2"] gs (Prompt.ChooseRollModifier alice S.alice (Just f NonEmpty.:| [Nothing]))
+        (_, keepers) = asking facing ["1"] gs (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))
+        (result, results) = asking facing ["2"] gs (Prompt.ChooseDieResult alice S.alice Nothing (4 NonEmpty.:| [2]))
+    Spec.assertEqWith s "CR 616.1 a replacement by its source and Oracle text" (upTo (Text.pack "Choose replacement") replacement) (fmap Text.pack ["Choose replacement:", "  1. Forest: Forest enters tapped.", "  2. Hill Giant: Hill Giant enters prepared."])
+    Spec.assertEqWith s "the first picked" picked (Right 0)
+    Spec.assertEqWith s "CR 603.7b an event as the log tells it" (upTo (Text.pack "Choose delayed trigger event") delayed) (fmap Text.pack ["Choose delayed trigger event for Forest:", "  1. Forest deals 2 damage to Player 2.", "  2. Forest deals 3 damage to Player 2."])
+    Spec.assertEqWith s "the second event picked" event (Right 1)
+    Spec.assertEqWith s "CR 706.2b a modifier by the object stating it" (upTo (Text.pack "Choose roll modifier") modifiers) (fmap Text.pack ["Choose roll modifier:", "  1. Forest", "  2. A rule"])
+    Spec.assertEqWith s "the second modifier picked" modifier (Right 1)
+    Spec.assertEqWith s "CR 123.5c an object by its card's name" (upTo (Text.pack "Choose sticker keeper") keepers) (fmap Text.pack ["Choose sticker keeper:", "  1. Hill Giant", "  2. Hill Giant"])
+    Spec.assertEqWith s "CR 706.4 a result as its number" (upTo (Text.pack "Choose die result") results) (fmap Text.pack ["Choose die result:", "  1. 4", "  2. 2"])
+    Spec.assertEqWith s "the second result picked" result (Right 1)
+
+  Spec.it s "a prompt answered by an entry of what it lists or none names each entry" $ do
+    forest <- S.printingOf s registry "Forest"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (f, g1) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        (g, gs) = S.addPermanent giant S.bob g1
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        alice = Decider.MkDecider S.alice
+        upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
+        (learned, learn) = asking facing ["2"] gs (Prompt.ChooseLearn alice S.alice f (LearnMode.DiscardAndDraw NonEmpty.:| [LearnMode.TakeLesson]))
+        (pile, piles) = asking facing ["2"] gs (Prompt.ChoosePile alice S.alice f (Set.singleton g NonEmpty.:| [Set.empty]) (Seq.singleton (S.bob, Set.singleton g)))
+        hillGiant = CardName.MkCardName (Text.pack "Hill Giant")
+        (cast, casts) = asking facing ["1"] gs (Prompt.CastWhileSearching alice S.alice [(g, hillGiant, Facing.FaceUp)])
+        (action, actions) = asking facing ["2"] gs (Prompt.MulliganAction alice S.alice [(f, HandActionIndex.MkHandActionIndex 0), (f, HandActionIndex.MkHandActionIndex 1)])
+        (branch, branches) = asking facing ["3"] gs (Prompt.ChooseClause alice S.alice f (ModeIndex.MkModeIndex 0) (ClauseIndex.MkClauseIndex 1 NonEmpty.:| [ClauseIndex.MkClauseIndex 2]) True (Seq.singleton (S.bob, Just (ClauseIndex.MkClauseIndex 2))))
+    Spec.assertEqWith s "CR 701.48a each branch as words, then none" (upTo (Text.pack "Choose learn") learn) (fmap Text.pack ["Choose learn for Forest:", "  1. Discard and draw", "  2. Take lesson", "  3. None"])
+    Spec.assertEqWith s "a lesson taken" learned (Right (Just LearnMode.TakeLesson))
+    Spec.assertEqWith s "the entries name the options and are not told beside them" (filter (Text.isPrefixOf (Text.pack "Entries")) learn) []
+    Spec.assertEqWith s "CR 700.3d / 101.4b each pile, an empty one as nothing, beside what earlier choosers took" (upTo (Text.pack "Earlier: ") piles) (fmap Text.pack ["Earlier: Player 2: Player 2's Hill Giant 3/3", "Choose pile for Forest:", "  1. Player 2's Hill Giant 3/3", "  2. Nothing"])
+    Spec.assertEqWith s "the empty pile picked" pile (Right Set.empty)
+    Spec.assertEqWith s "CR 608.2g a cast as an action, then none" (upTo (Text.pack "Cast while searching") casts) (fmap Text.pack ["Cast while searching:", "  1. Cast Hill Giant", "  2. None"])
+    Spec.assertEqWith s "the cast picked" cast (Right (Just (g, hillGiant, Facing.FaceUp)))
+    Spec.assertEqWith s "CR 103.5b a card's actions by its place among them" (upTo (Text.pack "Mulligan action") actions) (fmap Text.pack ["Mulligan action:", "  1. Forest (ability 1)", "  2. Forest (ability 2)", "  3. None"])
+    Spec.assertEqWith s "the second action picked" action (Right (Just (f, HandActionIndex.MkHandActionIndex 1)))
+    Spec.assertEqWith s "CR 101.4b a clause by its index beside what earlier choosers announced" (upTo (Text.pack "Earlier: ") branches) (fmap Text.pack ["Earlier: Player 2: 2", "Choose clause for Forest:", "  1. 1", "  2. 2", "  3. None"])
+    Spec.assertEqWith s "neither picked" branch (Right Nothing)
 
 -- The seat across the table.
 otherSeat :: Natural -> Natural

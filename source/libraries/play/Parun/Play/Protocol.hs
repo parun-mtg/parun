@@ -20,8 +20,10 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
+import qualified Parun.Codec.EntryOption as Codec.EntryOption
 import qualified Parun.Codec.Facing as Codec.Facing
 import qualified Parun.Codec.Filter as Codec.Filter
+import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.LibraryPosition as Codec.LibraryPosition
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
@@ -44,10 +46,12 @@ import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle as Oracle
+import qualified Parun.Oracle.Continuous as Oracle.Continuous
 import qualified Parun.Play.Render as Render
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
@@ -60,16 +64,19 @@ import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EntwineDecision as EntwineDecision
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.ForageMode as ForageMode
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LandOrNonland as LandOrNonland
@@ -83,16 +90,19 @@ import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reference as Reference
+import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Text.Read as Read
 
 -- | Answers each prompt a seat answers over the line `send` carries, asking
@@ -189,8 +199,8 @@ idOf label =
 -- tells the seat about each option.
 --
 -- Not implemented: the offer of every prompt not listed here, which sends
--- null: those answered by an index (#6589), a set or sequence (#6590), a
--- number (#6591), an amount per item (#6592), or a name or word (#6593).
+-- null: those answered by a set or sequence (#6590), a number (#6591), an
+-- amount per item (#6592), or a name or word (#6593).
 -- A random prompt no seat answers is never sent.
 offerOf :: GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf gs prompt = case prompt of
@@ -352,6 +362,33 @@ offerOf gs prompt = case prompt of
   Prompt.OfferedExtra _ _ source effect -> choosing prompt "options" (Just source) [("effect", Reply.encode (Reply.viaCodec Codec.PlayerEffect.codec) namer effect)] yesOrNo
   -- CR 706.2a: the result rerolled, and what rerolling costs where it costs.
   Prompt.RerollDie _ _ result cost -> choosing prompt "options" Nothing ([("result", natural result)] <> [("cost", payment c) | Just c <- [cost]]) yesOrNo
+  -- CR 616.1: each entry as its source and, where it renders, its Oracle text.
+  Prompt.ChooseReplacement _ _ entries -> indexing prompt Nothing [] (fmap (replacementEntry gs) entries)
+  -- CR 208.2b / 614.1c: each shape's power, toughness, keywords and subtypes.
+  Prompt.ChooseEntryOption _ _ source options -> indexing prompt (Just source) [] (fmap (Reply.encode (Reply.viaCodec Codec.EntryOption.codec) namer) options)
+  -- CR 603.7b: each event, or null for one the seat did not witness.
+  Prompt.ChooseDelayedTriggerEvent _ _ source events -> indexing prompt (Just source) [] (fmap (delayedEvent (Driver.deciderOf prompt)) (NonEmpty.toList events))
+  -- CR 706.2b: each modifier by the object stating it, null for none.
+  Prompt.ChooseRollModifier _ _ modifiers -> indexing prompt Nothing [] (fmap (\stated -> fields [("source", maybe R.Null object stated)]) (NonEmpty.toList modifiers))
+  -- CR 123.5c: each object by its card's name.
+  Prompt.ChooseStickerKeeper _ _ printings -> indexing prompt Nothing [] (fmap (R.Text . printingName gs) (NonEmpty.toList printings))
+  -- CR 706.4: each result as its number.
+  Prompt.ChooseDieResult _ _ source results -> indexing prompt source [] (fmap natural (NonEmpty.toList results))
+  -- CR 701.48a: each branch, then neither.
+  Prompt.ChooseLearn _ _ source modes -> choosing prompt "options" (Just source) [("entries", R.Array (fmap (R.Text . Text.pack . show) (NonEmpty.toList modes)))] (orNone modes)
+  -- CR 101.4b: the branches earlier choosers announced.
+  --
+  -- Not implemented: each branch's Oracle text, so a branch is named by its
+  -- index (#6606).
+  Prompt.ChooseClause _ _ source _ clauses neither earlier ->
+    choosing prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.maybeOf Reply.natural))) namer (fmap (fmap (fmap ClauseIndex.unwrap)) earlier))] (fmap Just (NonEmpty.toList clauses) <> [Nothing | neither])
+  -- CR 700.3 / 101.4b: each pile, and what earlier choosers took.
+  Prompt.ChoosePile _ _ source piles earlier -> choosing prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (NonEmpty.toList piles)
+  -- CR 103.5b / 103.6: each card's action, then none.
+  Prompt.MulliganAction _ _ actions -> choosing prompt "options" Nothing [("entries", handActions actions)] (fmap Just actions <> [Nothing])
+  Prompt.OpeningHandAction _ _ actions -> choosing prompt "options" Nothing [("entries", handActions actions)] (fmap Just actions <> [Nothing])
+  -- CR 608.2g: each castable half and facing as a Cast action, then none.
+  Prompt.CastWhileSearching _ _ casts -> choosing prompt "options" Nothing [("entries", R.Array [actionOffer gs (Action.Cast oid name facing) | (oid, name, facing) <- casts])] (fmap Just casts <> [Nothing])
   -- Exactly the count, as many as there are where fewer (CR 701.21a).
   Prompt.ChooseSacrifices _ _ source candidates count earlier -> subset (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (exactly count candidates) (fmap object candidates)
   -- CR 118.1 / 406.2.
@@ -416,6 +453,38 @@ damageEvent event = fields [("source", object (DamageEvent.source event)), ("tar
 -- ids) and @"options"@ for anything else.
 choosing :: Prompt.Prompt r -> String -> Maybe ObjectId.ObjectId -> [(String, R.Reply)] -> [r] -> R.Reply
 choosing prompt key source told = listing key source told . fmap (Reply.encode (Reply.shapeOf prompt) namer)
+
+-- | A prompt answered by an index into what it lists: its source where it
+-- has one, what else the seat is told, each index under @"options"@, and under
+-- @"entries"@ the entry each one picks, as the client names it.
+indexing :: Prompt.Prompt Natural -> Maybe ObjectId.ObjectId -> [(String, R.Reply)] -> [R.Reply] -> R.Reply
+indexing prompt source told entries = choosing prompt "options" source (told <> [("entries", R.Array entries)]) (zipWith const [0 ..] entries)
+
+-- | CR 616.1: a replacement entry as its source and, where it renders, the
+-- Oracle text of its effect, which tells apart two effects of one source.
+replacementEntry :: GameState.GameState -> ReplacementEntry.ReplacementEntry -> R.Reply
+replacementEntry gs entry =
+  let source = ReplacementEntry.source entry
+      self = Render.snapshotName (Projection.project source gs)
+      printed = PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEntry.effect entry) Set.empty Nothing
+   in fields (("source", object source) : [("text", R.Text text) | text <- take 1 (Oracle.Continuous.replacement (Oracle.contextOf self []) printed)])
+
+-- | CR 603.7b: an event the seat witnessed (Visibility.witnessed), or null.
+delayedEvent :: Maybe PlayerId.PlayerId -> GameEvent.GameEvent -> R.Reply
+delayedEvent seat event
+  | Just pid <- seat,
+    Visibility.witnessed pid (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event) == Visibility.Type.Visible =
+      Reply.encode (Reply.viaCodec Codec.GameEvent.codec) namer event
+  | otherwise = R.Null
+
+-- | Each card's hand action by the card, and by its place among the card's
+-- where the card offers more than one.
+handActions :: [(ObjectId.ObjectId, HandActionIndex.HandActionIndex)] -> R.Reply
+handActions actions =
+  R.Array
+    [ fields (("source", object oid) : [("ability", natural (HandActionIndex.unwrap i)) | length (filter ((== oid) . fst) actions) > 1])
+    | (oid, i) <- actions
+    ]
 
 -- | Each of a "may" prompt's options, then declining, spelled null.
 orNone :: NonEmpty.NonEmpty a -> [Maybe a]
