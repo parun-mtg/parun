@@ -85,6 +85,8 @@ import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPayment as HybridPayment
+import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -115,6 +117,7 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SplitMix as SplitMix
@@ -1053,6 +1056,40 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "each shape listed" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))) (fmap Text.pack ["  1. 3/3", "  2. 2/2, flying", "  3. 1/6, defender, Wall"])
     Spec.assertBool s resolved "resolved"
     Spec.assertBool s (any (\l -> Text.isPrefixOf (Text.pack "  Creatures: ") l && Text.isInfixOf (Text.pack "Primal Clay 1/6") l) shown) "entered as the shape picked"
+
+  Spec.it s "CR 702.33a a kicker is offered through the client as a count, and a count of one kicks the creature" $ do
+    let heading = Text.pack "Choose how many times to pay Kicker {2}{G} for Gnarlid Colony, from 0 to 1:"
+        kicks sc
+          | heading `elem` pending sc = Just (Text.pack "1")
+          | otherwise = castsOnce "auto" "Gnarlid Colony" sc
+    (_, resolved, tapped, shown) <- castTyping kicks s registry "Gnarlid Colony" (replicate 5 "Forest")
+    Spec.assertBool s (heading `elem` shown) "asked as a count"
+    Spec.assertBool s resolved "resolved"
+    Spec.assertEqWith s "the kicker paid" (length tapped) 5
+    Spec.assertBool s (any (\l -> Text.isPrefixOf (Text.pack "  Creatures: ") l && Text.isInfixOf (Text.pack "Gnarlid Colony 4/4") l) shown) "entered kicked"
+
+  Spec.it s "a prompt answered by a number reads one within its bounds, and a die adjustment names each die moved either way" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (f, gs) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        alice = Decider.MkDecider S.alice
+        upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
+        (assisted, assist) = asking facing ["4", "2"] gs (Prompt.ChooseAssistAmount alice S.alice f 3)
+        (energy, _) = asking facing ["0"] gs (Prompt.ChoosePaidEnergy alice S.alice f 5)
+        (chapter, chapters) = asking facing ["0", "3"] gs (Prompt.ChooseReadAheadChapter alice S.alice f 3)
+        (multikicked, _) = asking facing ["7"] gs (Prompt.ChooseKicker alice S.alice f (Keyword.Multikicker (Cost.MkCost Nothing [])) Nothing Nothing)
+        (adjusted, adjusting) = asking facing ["4"] gs (Prompt.AdjustDieRoll alice S.alice (4 NonEmpty.:| [-1]) 2 Nothing)
+        (declined, single) = asking facing ["3"] gs (Prompt.AdjustDieRoll alice S.alice (6 NonEmpty.:| []) 1 Nothing)
+    Spec.assertEqWith s "CR 702.132a an assist past the pool refused, then read" assisted (Right 2)
+    Spec.assertEqWith s "with its bounds" (filter (Text.isPrefixOf (Text.pack "Type a number")) assist) [Text.pack "Type a number from 0 to 3."]
+    Spec.assertEqWith s "CR 107.14 no energy" energy (Right 0)
+    Spec.assertEqWith s "CR 715.3b no chapter zero" (filter (Text.isPrefixOf (Text.pack "Choose the chapter")) chapters) (replicate 2 (Text.pack "Choose the chapter to read ahead to for Forest, from 1 to 3:"))
+    Spec.assertEqWith s "the final chapter" chapter (Right 3)
+    Spec.assertEqWith s "CR 702.33c any number of times" multikicked (Right (KickerDecision.MkKickerDecision 7))
+    Spec.assertEqWith s "CR 706.2b each die by its place, moved either way by the amount, then none" (upTo (Text.pack "Results: ") adjusting) (fmap Text.pack ["Results: 4, -1", "Amount: 2", "Adjust die roll:", "  1. Die 1: Increase 4 to 6", "  2. Die 1: Decrease 4 to 2", "  3. Die 2: Increase -1 to 1", "  4. Die 2: Decrease -1 to -3", "  5. None"])
+    Spec.assertEqWith s "the second die decreased" adjusted (Right (Just (1, RollAdjustment.Decrease)))
+    Spec.assertEqWith s "one die is not numbered" (upTo (Text.pack "Adjust die roll") single) (fmap Text.pack ["Adjust die roll:", "  1. Increase 6 to 7", "  2. Decrease 6 to 5", "  3. None"])
+    Spec.assertEqWith s "declined" declined (Right Nothing)
 
   Spec.it s "a prompt answered by an index into what it lists names each entry, and the number picks its index" $ do
     forest <- S.printingOf s registry "Forest"

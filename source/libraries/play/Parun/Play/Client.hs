@@ -353,6 +353,33 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
     meaning <- field "floor" offer >>= decoded Codec.NumberFloor.codec
     let note = if meaning == NumberFloor.HighBid then Text.pack ("; " <> show least <> " lets the high bid stand") else Text.empty
     pure (ranged (Text.pack "Choose a number for " <> objectName view source) least note (field "greatest" offer >>= naturalOf))
+  -- CR 601.2b: how many times the keyword's cost is paid.
+  "ChooseKicker" -> do
+    source <- field "source" offer
+    least <- field "least" offer >>= naturalOf
+    let keyword = Maybe.fromMaybe (Text.pack "its cost") (field "keyword" offer >>= decoded Codec.Keyword.codec >>= Maybe.listToMaybe . Oracle.Keyword.printed (objectName view source))
+    pure (ranged (Text.concat [Text.pack "Choose how many times to pay ", keyword, Text.pack " for ", objectName view source]) least Text.empty (field "greatest" offer >>= naturalOf))
+  -- CR 702.132a: the generic mana the assisting player pays.
+  "ChooseAssistAmount" -> amount (Text.pack "Choose how much mana to pay to assist ")
+  "ChoosePaidEnergy" -> amount (Text.pack "Choose how much energy to pay for ")
+  -- CR 715.3b.
+  "ChooseReadAheadChapter" -> amount (Text.pack "Choose the chapter to read ahead to for ")
+  -- CR 706.2b: each die moved either way by the amount, then none.
+  "AdjustDieRoll" -> do
+    options <- field "options" offer >>= arrayOf
+    results <- field "results" offer >>= arrayOf
+    moved <- field "amount" offer >>= naturalOf
+    let several = length results > 1
+        name option = case option of
+          R.Array [R.Number index, R.Text way]
+            | Just (R.Number result) <- Maybe.listToMaybe (List.genericDrop index results),
+              Just sign <- List.lookup way [(Text.pack "Increase", 1), (Text.pack "Decrease", -1)] ->
+                Text.concat [if several then Text.pack ("Die " <> show (index + 1) <> ": ") else Text.empty, way, Text.pack (" " <> show result <> " to " <> show (result + sign * toInteger moved))]
+          _ -> optionName view option
+    pure
+      ( told view Text.empty offer <> (kindHeading <> Text.pack ":" : numbered (fmap name options)),
+        fmap (pickFrom options) . one (Natural.length options)
+      )
   "ChooseOptional" -> do
     source <- field "source" offer
     pure
@@ -501,6 +528,12 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       )
   where
     offer = Question.offer question
+    -- A number from the offer's least to its greatest, for its source.
+    amount heading = do
+      source <- field "source" offer
+      least <- field "least" offer >>= naturalOf
+      greatest <- field "greatest" offer >>= naturalOf
+      pure (ranged (heading <> objectName view source) least Text.empty (Just greatest))
     -- A number from least to greatest, or from least up with no greatest.
     ranged heading least note greatest =
       let range = maybe ("at least " <> show least) (\most -> "from " <> show least <> " to " <> show most) greatest
