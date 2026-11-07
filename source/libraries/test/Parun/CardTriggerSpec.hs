@@ -2975,7 +2975,7 @@ leylinePhantomSpec s registry = Spec.describe s "Leyline Phantom" $ do
             -- CR 510.1c's division, so both are dealt damage.
             dividing :: Prompt.Prompt r -> r
             dividing p = case p of
-              Prompt.AssignCombatDamage _ _ _ thresholds n -> case Map.keys thresholds of
+              Prompt.AssignCombatDamage _ _ _ thresholds _ n -> case Map.keys thresholds of
                 k : rest -> Map.fromList ((k, n - List.genericLength rest) : fmap (\r -> (r, 1)) rest)
                 [] -> thresholds
               _ -> S.identityAnswer p

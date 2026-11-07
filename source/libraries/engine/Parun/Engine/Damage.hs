@@ -181,6 +181,25 @@ deathtouchedRecipients events =
       Recipient.ToPlayer _ -> []
       Recipient.ToPile _ -> []
 
+-- CR 702.19b-c / 702.2c: how much of each threshold these announced events
+-- already pay -- their damage to the recipient, capped at its threshold, or
+-- the whole of it where a deathtouch event names it. tiersCleared over the
+-- events plus an answer is tiersCleared over the answer plus this, so a
+-- division leaning on damage announced earlier in the step can be offered.
+-- A recipient paid nothing is absent.
+paidBy :: [DamageEvent.DamageEvent] -> Map.Map Recipient.Recipient Natural -> Map.Map Recipient.Recipient Natural
+paidBy events thresholds =
+  let totals = totalsOf events
+      lethal = deathtouchedRecipients events
+      paid r threshold
+        | Set.member r lethal = threshold
+        | otherwise = min threshold (Map.findWithDefault 0 r totals)
+   in Map.filter (> 0) (Map.mapWithKey paid thresholds)
+
+-- Each recipient's total damage across these events.
+totalsOf :: [DamageEvent.DamageEvent] -> Map.Map Recipient.Recipient Natural
+totalsOf events = Map.fromListWith (+) (fmap (\ev -> (DamageEvent.target ev, DamageEvent.amount ev)) events)
+
 -- CR 702.19b / 702.2c / 120.4a: what is lethal to this creature from this source:
 -- toughness minus marked damage, but only 1 from a source with deathtouch (0 if
 -- the creature is already at lethal: 702.19b and 120.4a take marked damage into
@@ -190,8 +209,8 @@ deathtouchedRecipients events =
 -- For a trampler, THIS attacker's own reading of the bar, which is what the
 -- division is OFFERED at. Another creature's deathtouch damage clears the same
 -- bar for everyone (CR 702.2c, in tiersCleared's `lethal`), but only once the
--- whole step has been announced, where this much is knowable when the offer is
--- made.
+-- whole step has been announced; what is announced before the offer rides
+-- beside it as paid (paidBy).
 lethalFrom :: GameState -> ObjectId -> ObjectId -> Natural
 lethalFrom gs source creature =
   let lethal = lethalRemaining gs creature
@@ -312,8 +331,8 @@ combatRecipient gs attacker target =
 -- pay any part of the same bar. Where one can, the question is asked -- and the
 -- answer may turn out to have been forced after all, which is the direction CR
 -- 510.1 itself takes by announcing the whole assignment at once.
-attackerAssignment :: GameState -> Bool -> (ObjectId, AttackTarget) -> Game Assignment
-attackerAssignment gs contested (attacker, target) = case Projection.combatDamageAmountOf attacker gs of
+attackerAssignment :: GameState -> [DamageEvent.DamageEvent] -> Bool -> (ObjectId, AttackTarget) -> Game Assignment
+attackerAssignment gs announced contested (attacker, target) = case Projection.combatDamageAmountOf attacker gs of
   Nothing -> pure (Nothing, Right [], Map.empty)
   Just p ->
     if p <= 0
@@ -391,7 +410,7 @@ attackerAssignment gs contested (attacker, target) = case Projection.combatDamag
                       -- stands unqualified.
                       Just pid -> divide pid defenderEntries
               _ -> pure (Nothing, Right allToAttacked, Map.empty)
-            divide = divideAssignment gs attacker power
+            divide = divideAssignment gs announced attacker power
             live = filter (\oid -> onBattlefield oid gs) (Set.toList recorded)
             -- The controller's "you may", asked just before the creature
             -- assigns (Siege Behemoth's ruling). An assignment it was asked
@@ -560,7 +579,7 @@ blockerAssignment gs (blocker, attackers) = case Projection.combatDamageAmountOf
                 -- assignments to clear, and gatherCombatDamage leaves it out.
                 Just pid -> do
                   chooser <- blockerChooser gs blocked pid
-                  divideAssignment gs blocker power chooser $
+                  divideAssignment gs [] blocker power chooser $
                     fmap (\attacker -> (Recipient.ToCreature attacker, 0)) blocked
 
 -- CR 510.1c-d / 702.19b: ask `chooser` to divide `source`'s `power` over
@@ -576,10 +595,14 @@ blockerAssignment gs (blocker, attackers) = case Projection.combatDamageAmountOf
 -- Shared by both assignment sides, so an attacker dividing among its blockers and
 -- a blocker dividing among the creatures it blocks cannot come to disagree about
 -- what an illegal answer does.
-divideAssignment :: GameState -> ObjectId -> Natural -> PlayerId -> [(Recipient.Recipient, Natural)] -> Game Assignment
-divideAssignment gs source power chooser entries = do
+--
+-- `announced` is what the step's other attacking creatures have announced so
+-- far, offered as the part of each threshold it pays (paidBy). A blocking
+-- creature's thresholds are all 0, so it passes none.
+divideAssignment :: GameState -> [DamageEvent.DamageEvent] -> ObjectId -> Natural -> PlayerId -> [(Recipient.Recipient, Natural)] -> Game Assignment
+divideAssignment gs announced source power chooser entries = do
   let thresholds = Map.fromList entries
-  chosen <- Game.choose (Prompt.AssignCombatDamage (Decide.deciderFor chooser gs) chooser source thresholds power)
+  chosen <- Game.choose (Prompt.AssignCombatDamage (Decide.deciderFor chooser gs) chooser source thresholds (paidBy announced thresholds) power)
   let toEvent (recipient, n) = Event.damageEvent gs DamageKind.Combat source recipient n
   pure
     ( Just chooser,
@@ -656,12 +679,17 @@ gatherCombatDamage assigns = do
       -- face up as it assigned (turnUpToAssign): what that creature now is, its
       -- banding (CR 702.22k) and its lethal damage (CR 702.19b) included, is
       -- what a later assignment sees.
-      assignOne entry = do
+      --
+      -- `others` is every other announcement standing as it is asked: an
+      -- attacking creature's division is offered with what theirs pay
+      -- (divideAssignment).
+      assignOne others entry = do
         turnUpToAssign entry
         now <- State.get
         case entry of
-          Left x -> attackerAssignment now (contestedAssignment now attackers x) x
+          Left x -> attackerAssignment now (announcedBy others) (contestedAssignment now attackers x) x
           Right y -> blockerAssignment now y
+      announcedBy others = concat [divisionEvents division | (Left _, (_, division, _)) <- others]
       choosing group (_, (chooser, _, _)) = maybe False (`elem` group) chooser
       -- CR 510.1e: the choosers whose assignment the total makes illegal --
       -- a division that is not one, or an attacking creature's that fails a
@@ -697,11 +725,18 @@ gatherCombatDamage assigns = do
          in case due of
               [] -> pure (rejected, current)
               (group, answers) : _ -> do
-                redone <- Monad.mapM (\item@(entry, _) -> if choosing group item then fmap ((,) entry) (assignOne entry) else pure item) current
+                let redo done items = case items of
+                      [] -> pure done
+                      item@(entry, _) : rest
+                        | choosing group item -> do
+                            fresh <- assignOne (done <> filter (not . choosing group) rest) entry
+                            redo (done <> [(entry, fresh)]) rest
+                        | otherwise -> redo (done <> [item]) rest
+                redone <- redo [] current
                 settle (Set.insert (group, answers) rejected) redone
   let announce (rejected, sofar) group = do
-        asked <- Monad.mapM (\entry -> fmap ((,) entry) (assignOne entry)) group
-        settle rejected (sofar <> asked)
+        asked <- Monad.foldM (\done entry -> fmap (\fresh -> done <> [(entry, fresh)]) (assignOne done entry)) sofar group
+        settle rejected asked
   (_, settled) <- Monad.foldM announce (Set.empty, []) groups
   pure
     ( settleAssignments [(divisionEvents division, thresholds) | (Left _, (_, division, thresholds)) <- settled]
@@ -811,8 +846,7 @@ settleAssignments = concatMap (fst . snd) . settledAnnouncements . fmap ((,) ())
 -- says which it is.
 settledAnnouncements :: [(a, ([DamageEvent.DamageEvent], Map.Map Recipient.Recipient Natural))] -> [(a, ([DamageEvent.DamageEvent], Map.Map Recipient.Recipient Natural))]
 settledAnnouncements announced =
-  let totalsOf events = Map.fromListWith (+) (fmap (\ev -> (DamageEvent.target ev, DamageEvent.amount ev)) events)
-      everything = concatMap (fst . snd) announced
+  let everything = concatMap (fst . snd) announced
       assigned = totalsOf everything
       -- CR 702.2c, read off the SAME round's events as the totals beside it: an
       -- announcement this round drops takes its deathtouch damage with it, so a

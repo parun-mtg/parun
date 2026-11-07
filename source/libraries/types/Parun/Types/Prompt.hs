@@ -456,10 +456,12 @@ data Prompt r where
   -- Filtered by Parun.Engine.Combat.dividePiles.
   DividePiles :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt [Set.Set ObjectId.ObjectId]
   -- | CR 510.1 / 702.19b: the assigning creature divides its power among the
-  -- recipients; the Map is recipient to lethal threshold (0 on the blocking
-  -- side, CR 510.1d). Damage.wellFormedAssignment and Damage.tiersCleared
-  -- validate.
-  AssignCombatDamage :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Map.Map Recipient.Recipient Natural.Natural -> Natural.Natural -> Prompt (Map.Map Recipient.Recipient Natural.Natural)
+  -- recipients; the first Map is recipient to lethal threshold (0 on the
+  -- blocking side, CR 510.1d), the second how much of each threshold the
+  -- step's attacking creatures announced so far already pay (CR 702.19b-c,
+  -- 702.2c; Damage.paidBy), a recipient paid nothing absent.
+  -- Damage.wellFormedAssignment and Damage.tiersCleared validate.
+  AssignCombatDamage :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Map.Map Recipient.Recipient Natural.Natural -> Map.Map Recipient.Recipient Natural.Natural -> Natural.Natural -> Prompt (Map.Map Recipient.Recipient Natural.Natural)
   -- | CR 510.1b-c: whether the creature the ObjectId names assigns all its
   -- combat damage as the option allows rather than as those rules say. Asked
   -- just before it assigns, wherever the option changes where its damage goes.

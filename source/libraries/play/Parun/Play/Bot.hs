@@ -178,11 +178,12 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   -- CR 707.5: any candidate, or the card's "may" declined.
   Prompt.ChooseCopyTarget _ _ _ candidates -> SplitMix.pick (Nothing NonEmpty.:| fmap Just candidates)
   Prompt.ChooseAnyNumber _ _ _ _ candidates most _ -> fmap Set.fromList (atMost (Maybe.fromMaybe (List.genericLength candidates) most) candidates)
-  -- CR 510.1c-e / 702.19b: every division whose gates this creature's own
-  -- damage clears. Not implemented: a division leaning on another creature's
-  -- damage in the same step, legal under CR 702.19b's third sentence (#6601).
-  Prompt.AssignCombatDamage _ _ _ thresholds power ->
-    pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (\division -> Damage.tiersCleared thresholds division Set.empty division) (divisions (Map.keys thresholds) power))
+  -- CR 510.1c-e / 702.19b-c: every division whose gates this creature's
+  -- damage clears beside what the step's attacking creatures announced so far.
+  -- Not implemented: a division leaning on damage a creature announces later
+  -- in the same group (#6637).
+  Prompt.AssignCombatDamage _ _ _ thresholds paid power ->
+    pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (\division -> Damage.tiersCleared thresholds (Map.unionWith (+) paid division) Set.empty division) (divisions (Map.keys thresholds) power))
   Prompt.Search _ _ cards most -> atMost most cards
   -- CR 601.2d / 115.7f: every division the prompt allows.
   Prompt.ChooseDivision _ _ _ dividing targets ->

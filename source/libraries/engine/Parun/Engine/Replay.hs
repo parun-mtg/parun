@@ -1103,7 +1103,7 @@ defaultAnswer p = case p of
   -- asks again. All power onto the first recipient of the first gate -- a
   -- blocker, else the attacked planeswalker or battle, else the player --
   -- totals power and clears CR 702.19b-c's gates by never spilling past one.
-  Prompt.AssignCombatDamage _ _ _ thresholds n ->
+  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
     let gate r = case r of
           Recipient.ToCreature _ -> 0 :: Int
           Recipient.ToPlaneswalker _ -> 1

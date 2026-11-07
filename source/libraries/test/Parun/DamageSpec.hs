@@ -1770,7 +1770,7 @@ assignmentLegalitySpec s =
 -- inspect a prompt it cannot otherwise observe.
 askedOf :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
 askedOf blockers p = case p of
-  Prompt.AssignCombatDamage _ asked _ _ n ->
+  Prompt.AssignCombatDamage _ asked _ _ _ n ->
     let target = case (asked == S.bob, blockers) of
           (True, first : _) -> Just first
           (False, _ : second : _) -> Just second
@@ -1782,7 +1782,7 @@ askedOf blockers p = case p of
 -- defender. A legal trample division for these boards.
 tramplingAnswer :: Prompt.Prompt r -> r
 tramplingAnswer p = case p of
-  Prompt.AssignCombatDamage _ _ _ thresholds n ->
+  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
     let blockers = Map.toList (Map.filterWithKey (\r _ -> S.isCreatureRecipient r) thresholds)
         toBlockers = Map.fromList (fmap (\(r, t) -> (r, t)) blockers)
         spent = sum (fmap snd blockers)
@@ -1845,7 +1845,7 @@ trampleSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (gs, _, _) = S.combatBoardOf [warMammoth] [piker]
           cheat p = case p of
-            Prompt.AssignCombatDamage _ _ _ thresholds n ->
+            Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
               case filter (not . S.isCreatureRecipient) (Map.keys thresholds) of
                 d : _ -> Map.singleton d n
                 [] -> Map.empty
@@ -1863,7 +1863,7 @@ trampleSpec s registry =
       ogreSentry <- S.printingOf s registry "Ogre Sentry"
       let (gs, _, _) = S.combatBoardOf [warMammoth] [ogreSentry, ogreSentry]
           dumpOne p = case p of
-            Prompt.AssignCombatDamage _ _ _ thresholds n ->
+            Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
               case filter S.isCreatureRecipient (Map.keys thresholds) of
                 r : _ -> Map.singleton r n
                 [] -> Map.empty
@@ -1903,7 +1903,7 @@ damageEventsTo oid gs =
 -- computes to 0.
 dumpOntoFirstCreature :: Prompt.Prompt r -> r
 dumpOntoFirstCreature p = case p of
-  Prompt.AssignCombatDamage _ _ _ thresholds n ->
+  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
     case filter S.isCreatureRecipient (Map.keys thresholds) of
       r : _ -> Map.singleton r n
       [] -> Map.empty

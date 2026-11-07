@@ -410,16 +410,21 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       ( [objectName view source <> wording, Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
-  -- CR 510.1c-d: one amount per recipient, in the order offered.
+  -- CR 510.1c-d: one amount per recipient, in the order offered, beside how
+  -- much of its lethal damage other creatures already assign (CR 702.19b-c).
   "AssignCombatDamage" -> do
     source <- field "source" offer
     lethal <- field "lethal" offer >>= arrayOf >>= mapM entryOf
+    paid <- field "paid" offer >>= arrayOf >>= mapM entryOf
     total <- field "total" offer >>= naturalOf
-    let needs threshold = if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty
+    let assigned recipient = case List.lookup recipient paid of
+          Just n | n > 0 -> ", " <> show n <> " already assigned"
+          _ -> ""
+        needs recipient threshold = if threshold > 0 then Text.pack (" (lethal " <> show threshold <> assigned recipient <> ")") else Text.empty
         wrong = Text.pack ("Type " <> show (length lethal) <> " amounts that add up to " <> show total <> ".")
     pure
       ( Text.concat [Text.pack "Divide ", objectName view source, Text.pack ("'s " <> show total <> " damage, one amount each, separated by spaces:")]
-          : numbered (fmap (\(recipient, threshold) -> recipientName view recipient <> needs threshold) lethal),
+          : numbered (fmap (\(recipient, threshold) -> recipientName view recipient <> needs recipient threshold) lethal),
         \typed -> case numbers typed of
           Right amounts
             | length amounts == length lethal && sum amounts == total ->

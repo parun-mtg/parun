@@ -2251,7 +2251,7 @@ controlCombatAnswer :: Prompt.Prompt r -> r
 controlCombatAnswer p = case p of
   Prompt.DeclareAttackers (Decider.MkDecider d) player attackers ->
     if d == S.alice && player == S.bob then attackers else []
-  Prompt.AssignCombatDamage _ _ _ thresholds n ->
+  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
     case Map.keys thresholds of
       r : _ -> Map.singleton r n
       [] -> Map.empty

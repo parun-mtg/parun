@@ -162,7 +162,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseExert decider _ _ -> Just (Decider.unwrap decider)
   Prompt.DeclareBlockers decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.DividePiles decider _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.AssignCombatDamage decider _ _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.AssignCombatDamage decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTargets decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AnnounceTargets decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseWordSwap decider _ _ _ _ _ -> Just (Decider.unwrap decider)
