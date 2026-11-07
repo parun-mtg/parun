@@ -111,8 +111,8 @@ play options registry (one, two) = do
           else (idOf 1, one) NonEmpty.:| [(idOf 2, two)]
       answerer n
         | Set.member n (PlayOptions.bots options) = Game.bot reference
-        | PlayOptions.json options = Game.wired exchange
-        | otherwise = Game.human terminal lookUp
+        | PlayOptions.json options = Game.wired reference exchange
+        | otherwise = Game.human reference terminal lookUp
       seats = Map.fromList [(idOf n, answerer n) | n <- [1, 2]]
       screen = Hotseat.fresh {Hotseat.autoPass = PlayOptions.autoPass options}
       hotseat = case people of

@@ -320,7 +320,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
         fmap (R.Number . toInteger . subtract 1) . one (Natural.length costs)
       )
   -- CR 201.4: any card's name, typed in full; one the rules refuse is asked
-  -- again (Parun.Play.Game.consulting).
+  -- again, saying why (Parun.Play.Game.judgingNames).
   "ChooseCardName" ->
     pure
       ( [Text.pack "Choose a card name: type the name of a card."],

@@ -39,15 +39,16 @@ import qualified Parun.Types.SplitMix as SplitMix.Type
 import qualified Parun.Types.TargetCount as TargetCount
 
 -- | Each prompt a bot game over the decks in data/decks reaches, plus
--- ChooseGuess, ChooseNumber and the prompts sharing an arm's shape, answered
+-- ChooseGuess, ChooseNumber, every prompt offering one of a list, and the
+-- prompts sharing an arm's shape, answered
 -- with one of its legal answers, each equally likely, an unbounded number
 -- capped one past its floor. Never concedes. A card name is any of `names`,
 -- the reference's (Parun.Play.Game.bot).
 --
 -- Not implemented: a random answer to every other prompt, which gets
--- 'Replay.defaultAnswer': one of a list (#6597), a fixed decision or a bounded
--- number (#6598), a group, piles or an order (#6599), and a division of
--- counters or an amount (#6600).
+-- 'Replay.defaultAnswer': a fixed decision or a bounded number (#6598), a
+-- group, piles or an order (#6599), and a division of counters or an amount
+-- (#6600).
 bot :: (Monad m) => [CardName.CardName] -> Answerer.Answerer (Asked.Asked PlayerView.PlayerView) (State.StateT SplitMix.Type.SplitMix m)
 bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ actions -> maybe (pure Action.Pass) SplitMix.pick (NonEmpty.nonEmpty actions)
@@ -162,7 +163,67 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   -- CR 201.4: any name; CR 201.4a's restriction is judged where the
   -- reference is (Parun.Interpreter.policingCardNames), which asks again.
   Prompt.ChooseCardName {} -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) names
+  -- Each offer is what the caller found legal: CR 118.13's payable routes,
+  -- every total or half CR 601.2f / 118.7e allows, every candidate.
+  Prompt.AnnounceHybridHalf _ _ _ _ offers -> SplitMix.pick offers
+  Prompt.AnnounceHybridPayment _ _ _ _ offers -> SplitMix.pick offers
+  Prompt.AnnouncePhyrexianPayment _ _ _ _ offers -> SplitMix.pick offers
+  Prompt.ChooseActivePlayer _ _ players -> SplitMix.pick players
+  Prompt.ChooseAmass _ _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseAttachment _ _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseBehold _ _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseBlight _ _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseBolster _ _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseCardInGraveyard _ _ _ candidates _ -> SplitMix.pick candidates
+  Prompt.ChooseCardType _ _ _ types -> SplitMix.pick types
+  Prompt.ChooseCoinResult _ _ faces -> SplitMix.pick faces
+  Prompt.ChooseConjuredCard _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseCounterKind _ _ _ kinds -> SplitMix.pick kinds
+  Prompt.ChooseDefender _ _ players -> SplitMix.pick players
+  Prompt.ChooseDesignation _ _ _ designations -> SplitMix.pick designations
+  Prompt.ChooseDungeon _ _ dungeons -> SplitMix.pick dungeons
+  Prompt.ChooseHalf _ _ _ halves -> SplitMix.pick halves
+  Prompt.ChooseLegend _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseNamePosition _ _ _ positions -> SplitMix.pick positions
+  Prompt.ChooseOpponent _ _ _ _ players -> SplitMix.pick players
+  Prompt.ChoosePlayPermission _ _ _ permissions -> SplitMix.pick permissions
+  Prompt.ChoosePlayer _ _ _ players -> SplitMix.pick players
+  Prompt.ChooseProtector _ _ _ players -> SplitMix.pick players
+  Prompt.ChooseReducedCost _ _ _ totals -> SplitMix.pick totals
+  Prompt.ChooseReductionHalf _ _ _ _ halves -> SplitMix.pick halves
+  Prompt.ChooseRingBearer _ _ candidates -> SplitMix.pick candidates
+  Prompt.ChooseRoom _ _ _ rooms -> SplitMix.pick rooms
+  Prompt.ChooseSticker _ _ _ stickers -> SplitMix.pick stickers
+  Prompt.ChooseVote _ _ _ choices -> SplitMix.pick choices
+  -- Any index into the offer.
+  Prompt.ChooseDelayedTriggerEvent _ _ _ events -> indexInto (Asked.prompt asked) (NonEmpty.toList events)
+  Prompt.ChooseDieResult _ _ _ results -> indexInto (Asked.prompt asked) (NonEmpty.toList results)
+  Prompt.ChooseEntryOption _ _ _ options -> indexInto (Asked.prompt asked) options
+  Prompt.ChooseReplacement _ _ entries -> indexInto (Asked.prompt asked) entries
+  Prompt.ChooseRollModifier _ _ modifiers -> indexInto (Asked.prompt asked) (NonEmpty.toList modifiers)
+  Prompt.ChooseStickerKeeper _ _ printings -> indexInto (Asked.prompt asked) (NonEmpty.toList printings)
+  -- Any of the offer, or none: each a "may", an "up to one" or a "wish to".
+  Prompt.CastWhileSearching _ _ offers -> orNone offers
+  Prompt.ChooseAssistant _ _ _ players -> orNone (NonEmpty.toList players)
+  Prompt.ChooseCompanion _ _ companions -> orNone (NonEmpty.toList companions)
+  Prompt.ChooseEncode _ _ _ candidates -> orNone (NonEmpty.toList candidates)
+  Prompt.ChooseEnlist _ _ _ candidates -> orNone (NonEmpty.toList candidates)
+  Prompt.ChooseLearn _ _ _ modes -> orNone (NonEmpty.toList modes)
+  Prompt.ChooseMovedCounterOrNone _ _ _ _ kinds -> orNone (NonEmpty.toList kinds)
+  Prompt.ChooseRevealOnEntry _ _ _ candidates -> orNone (NonEmpty.toList candidates)
+  Prompt.ChooseStickerOrNone _ _ _ stickers -> orNone (NonEmpty.toList stickers)
+  Prompt.MulliganAction _ _ actions -> orNone actions
+  Prompt.OpeningHandAction _ _ actions -> orNone actions
   prompt -> pure (Replay.defaultAnswer prompt)
+
+-- | Any index into the items, each equally likely, or the prompt's default
+-- where there is none.
+indexInto :: (Monad m) => Prompt.Prompt Natural -> [a] -> State.StateT SplitMix.Type.SplitMix m Natural
+indexInto prompt items = pickOr (Replay.defaultAnswer prompt) (zipWith const [0 ..] items)
+
+-- | Any of the items or none, each equally likely.
+orNone :: (Monad m) => [a] -> State.StateT SplitMix.Type.SplitMix m (Maybe a)
+orNone items = SplitMix.pick (Nothing NonEmpty.:| fmap Just items)
 
 -- | Any of the options, each equally likely, or the fallback where there is
 -- none.
