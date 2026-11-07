@@ -371,7 +371,7 @@ atLeast least items = do
 
 -- | A subset of the candidates whose values sum to at least the threshold,
 -- each such subset equally likely, or Nothing where none does: each candidate
--- kept as often as the subsets keeping it outnumber those left.
+-- kept with the share of the reaching subsets left that keep it.
 reaching :: (Monad m) => Integer -> [(a, Integer)] -> State.StateT SplitMix.Type.SplitMix m (Maybe [a])
 reaching threshold candidates
   | NonEmpty.head counts threshold == 0 = pure Nothing

@@ -820,7 +820,7 @@ data Prompt r where
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).
   -- Never elided, forcedness being a question about subsets. Answers as
-  -- Response.ChoseTaps. Each candidate carries its power, CollectEvidence's
+  -- Response.ChoseTaps. Each candidate carries its power, ChooseCollectEvidence\'s
   -- reason.
   ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Which permanents are tapped to pay a cost naming how many (CR 601.2f);
