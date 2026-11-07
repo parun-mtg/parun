@@ -197,33 +197,22 @@ census did not settle.
 
 
 
-- Twisted Fates: renders differently from its Oracle text
 
 - Uldaros Theorix: `_Condition:EnteringPermanentPassesFilter`; verify "up to one
   target nonland card of each card type"
 
-- Undulating Witness: `_Rule:TypeCycling`
-
-- Unflinching Hortimancer: `_Rule:Ward`
-
-- Variable Chaser: `_Action:EachPlayerMayActions`
-
-- Verdant Kraken: renders differently from its Oracle text
-
-
-- Vigorbloom Charm: `_Action:Fight`
-
-- Vigorbloom Vanguard: `_Permanents:HasACounterOfType`; shares Seed Suture
-
-- Vindictive Triumph: `_Action:If`
-
-- Vinelasher Adept: `_Rule:TypeCycling`
-
-- Violent Echoes: `_Action:If`
 
 
 
-- Vraska, Soul of Stone: `_Rule:Activated`
+
+
+
+
+
+
+
+
+
 
 - Vraska, the Cutting Glare: `_Permanents:IsPermanent`
 
