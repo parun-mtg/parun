@@ -40,6 +40,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BallotChoice as BallotChoice
+import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -48,6 +49,7 @@ import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
@@ -59,8 +61,10 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EntwineDecision as EntwineDecision
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ForageMode as ForageMode
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
@@ -69,7 +73,11 @@ import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.HybridPayment as HybridPayment
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KickerDecision as KickerDecision
+import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
@@ -77,6 +85,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
@@ -98,6 +107,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
@@ -501,6 +511,25 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "stickers" (drawn (Prompt.ChooseStickerOrNone decider S.alice oid stickers)) (orNone stickers)
     Spec.assertEqWith s "mulligan actions" (drawn (Prompt.MulliganAction decider S.alice actions)) (orNone actions)
     Spec.assertEqWith s "opening hand actions" (drawn (Prompt.OpeningHandAction decider S.alice actions)) (orNone actions)
+
+  Spec.it s "picks any of a fixed set of decisions or a number up to its bound" $ do
+    let free = Cost.MkCost {Cost.mana = Nothing, Cost.components = []}
+        ends = Set.fromList [LibraryPosition.Top, LibraryPosition.Bottom]
+        kicks limit = drawn (Prompt.ChooseKicker decider S.alice oid (Keyword.Multikicker free) Nothing limit)
+    Spec.assertEqWith s "buybacks" (drawn (Prompt.ChooseBuyback decider S.alice oid free)) (Set.fromList [BuybackDecision.Declines, BuybackDecision.BuysBack])
+    Spec.assertEqWith s "entwines" (drawn (Prompt.ChooseEntwine decider S.alice oid free)) (Set.fromList [EntwineDecision.Declines, EntwineDecision.Entwines])
+    Spec.assertEqWith s "forages" (drawn (Prompt.ChooseForage decider S.alice oid)) (Set.fromList [ForageMode.ExileCards, ForageMode.SacrificeFood])
+    Spec.assertEqWith s "mutate sides" (drawn (Prompt.ChooseMutateSide decider S.alice oid (ObjectId.MkObjectId 8))) (Set.fromList [MutateSide.Over, MutateSide.Under])
+    Spec.assertEqWith s "library ends" (drawn (Prompt.ChooseLibraryEnd decider S.alice oid 0)) ends
+    Spec.assertEqWith s "clashes" (drawn (Prompt.ChooseClash decider S.alice oid (ObjectId.MkObjectId 8) ((S.alice, ObjectId.MkObjectId 8) NonEmpty.:| []) Seq.empty)) ends
+    Spec.assertEqWith s "commanders" (drawn (Prompt.ReturnCommander decider S.alice oid)) (Set.fromList [CommandZoneDecision.Leaves, CommandZoneDecision.Returns])
+    Spec.assertEqWith s "land or nonland" (drawn (Prompt.ChooseLandOrNonland decider S.alice oid)) (Set.fromList [Nothing, Just LandOrNonland.Land, Just LandOrNonland.Nonland])
+    Spec.assertEqWith s "limited kicks" (kicks (Just 3)) (Set.fromList (fmap KickerDecision.MkKickerDecision [0 .. 3]))
+    Spec.assertEqWith s "unlimited kicks" (kicks Nothing) (Set.fromList (fmap KickerDecision.MkKickerDecision [0, 1]))
+    Spec.assertEqWith s "assist amounts" (drawn (Prompt.ChooseAssistAmount decider S.alice oid 3)) (Set.fromList [0 .. 3])
+    Spec.assertEqWith s "paid energy" (drawn (Prompt.ChoosePaidEnergy decider S.alice oid 3)) (Set.fromList [0 .. 3])
+    Spec.assertEqWith s "chapters" (drawn (Prompt.ChooseReadAheadChapter decider S.alice oid 3)) (Set.fromList [1 .. 3])
+    Spec.assertEqWith s "die adjustments" (drawn (Prompt.AdjustDieRoll decider S.alice (4 NonEmpty.:| [-1]) 1 Nothing)) (Set.fromList (Nothing : [Just (index, adjustment) | index <- [0, 1], adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]]))
 
 -- Every answer the bot gives the prompt over many seeds.
 drawn :: (Ord r) => Prompt.Prompt r -> Set.Set r
