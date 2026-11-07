@@ -41,8 +41,8 @@ before comparison:
 
 **Caveat on rule numbers.** Per CLAUDE.md's "never trust recalled Magic rules",
 every CR number below is marked *(verify)* and must be checked against
-`docs/rules.txt` before it drives code. Mechanism *names* are reliable; section
-numbers are not, until checked.
+`data/comprehensive-rules.txt` before it drives code. Mechanism *names* are
+reliable; section numbers are not, until checked.
 
 ## 2. Baseline — parun's closed-half axes today (at M4g, M4 complete)
 
@@ -340,7 +340,7 @@ Ranked by machinery risk × leverage (design.md's own ordering philosophy), for
    (`Object` = owner/no-controller, `Affected` = object-only, `Quantity` =
    Literal/ManaValue/X, `Modification` = 8 ops in layers 3/4/6/7); what remains to
    spot-check is the *CR section numbers*, all marked *(verify)* above, against
-   `docs/rules.txt`.
+   `data/comprehensive-rules.txt`.
 2. **The two that likely deserve roadmap entries now** (they are *axes*, not
    vocabulary, and everything downstream assumes them): **GAP-P** (player
    continuous effects) and **GAP-R** (replacement event coverage). Candidate: new

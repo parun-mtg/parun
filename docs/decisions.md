@@ -16,8 +16,8 @@ tell apart from the alternative; a reading only a synthetic card can observe,
 which goes in `docs/synthetic-readings.md`; and an elision, which is a known gap
 with an issue rather than a settled answer.
 
-When `docs/rules.txt` is updated, or a ruling lands on a question here,
-re-read each entry against the new text. An entry it decides is either
+When `data/comprehensive-rules.txt` is updated, or a ruling lands on a question
+here, re-read each entry against the new text. An entry it decides is either
 confirmed, and dropped from here, or contradicted, and filed as
 `rules-correctness`.
 

@@ -79,8 +79,8 @@ spec s = Spec.describe s "Parun.DeckList" $ do
   -- that the joined string is not one a lookup may ask for. A deck list writes
   -- exactly that joined string, so splitting it is the parser's job (#679).
   -- The two spellings are the printed, spaced one and Parun.Types.CardName.join's
-  -- unspaced one, which is what docs/rules.txt's examples use; both are lists a
-  -- person could hand parun.
+  -- unspaced one, which is what data/comprehensive-rules.txt's examples use;
+  -- both are lists a person could hand parun.
   Spec.it s "CR 709.4a a split card's joined name resolves, spaced or not"
     . withPool "joined"
     $ \registry -> do

@@ -30,7 +30,6 @@
           ./cabal.project
           ./CHANGELOG.md
           ./data
-          ./docs/rules.txt
           ./LICENSE.txt
           ./parun.cabal
           ./README.md

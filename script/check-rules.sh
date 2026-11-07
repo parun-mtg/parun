@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Compare the comprehensive rules Wizards publishes with docs/rules.txt and,
-# when their effective dates differ, open an issue unless an open one already
-# has the same title. Fails on a fetch or parse failure rather than passing
-# silently. Needs curl, grep, GNU date and an authenticated gh.
-# Usage:
+# Compare the comprehensive rules Wizards publishes with
+# data/comprehensive-rules.txt and, when their effective dates differ, open an
+# issue unless an open one already has the same title. Fails on a fetch or parse
+# failure rather than passing silently. Needs curl, grep, GNU date and an
+# authenticated gh. Usage:
 #   script/check-rules.sh          # open the issue when the dates differ
 #   script/check-rules.sh --dry-run
 set -euo pipefail
@@ -24,14 +24,14 @@ if [[ -z $published ]]; then
 fi
 published=$(date --utc --date "$published" +%F)
 
-ours=$(grep -m 1 -oP '^These rules are effective as of \K[A-Z][a-z]+ [0-9]{1,2}, [0-9]{4}(?=\.)' docs/rules.txt || true)
+ours=$(grep -m 1 -oP '^These rules are effective as of \K[A-Z][a-z]+ [0-9]{1,2}, [0-9]{4}(?=\.)' data/comprehensive-rules.txt || true)
 if [[ -z $ours ]]; then
-  echo "no effective date found in docs/rules.txt" >&2
+  echo "no effective date found in data/comprehensive-rules.txt" >&2
   exit 1
 fi
 ours=$(date --utc --date "$ours" +%F)
 
-echo "published: $published; docs/rules.txt: $ours"
+echo "published: $published; data/comprehensive-rules.txt: $ours"
 if [[ $published == "$ours" ]]; then
   exit 0
 fi
@@ -46,4 +46,4 @@ if gh issue list --state open --limit 1000 --json title --jq '.[].title' |
   echo "already open: $title"
   exit 0
 fi
-gh issue create --title "$title" --body "$page_url links rules effective $published; \`docs/rules.txt\` is effective $ours."
+gh issue create --title "$title" --body "$page_url links rules effective $published; \`data/comprehensive-rules.txt\` is effective $ours."

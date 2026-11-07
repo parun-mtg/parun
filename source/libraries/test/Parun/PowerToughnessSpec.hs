@@ -198,10 +198,11 @@ spec s registry = Spec.describe s "Parun.Engine.PowerToughness" $ do
     -- Bad Moon itself a black creature -- and Bad Moon's own oracle text,
     -- "Black creatures get +1/+1", carries no "other" exclusion (unlike a lord
     -- effect), so its layer 7c ModifyPowerToughness applies to ITSELF too.
-    -- Verified directly (not from recall): docs/rules.txt has no CR 613 clause
-    -- excluding a source from its own static ability. 3/3 is still nowhere
-    -- near the 5/5 a ManaValue-against-Opalescence leak would produce (4/4
-    -- base + Bad Moon's own +1/+1), so the falsifier still distinguishes.
+    -- Verified directly (not from recall): data/comprehensive-rules.txt has no
+    -- CR 613 clause excluding a source from its own static ability. 3/3 is
+    -- still nowhere near the 5/5 a ManaValue-against-Opalescence leak would
+    -- produce (4/4 base + Bad Moon's own +1/+1), so the falsifier still
+    -- distinguishes.
     opalescence <- S.printingOf s registry "Opalescence"
     badMoon <- S.printingOf s registry "Bad Moon"
     let gs0 = Setup.emptyGame S.bothPlayers
