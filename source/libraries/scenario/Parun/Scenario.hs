@@ -1037,9 +1037,9 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseActivePlayer _ _ players -> chosen `elem` players
   Prompt.Type.ChooseExilesFromGraveyard _ _ _ cards _ -> all (`elem` cards) chosen
   Prompt.Type.ChooseMaterials _ _ _ objects _ _ -> all (`elem` objects) chosen
-  Prompt.Type.ChooseCollectEvidence _ _ _ cards _ -> all (`elem` cards) chosen
+  Prompt.Type.ChooseCollectEvidence _ _ _ cards _ -> all (`elem` fmap fst cards) chosen
   Prompt.Type.ChoosePermanent _ _ _ objects _ -> chosen `elem` objects
-  Prompt.Type.ChooseTapsForTotalPower _ _ _ objects _ -> all (`elem` objects) chosen
+  Prompt.Type.ChooseTapsForTotalPower _ _ _ objects _ -> all (`elem` fmap fst objects) chosen
   Prompt.Type.ChooseTaps _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseReturns _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseExiles _ _ _ objects _ -> all (`elem` objects) chosen

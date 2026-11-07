@@ -848,7 +848,7 @@ combatReplaySpec s =
         -- between the exile and the sacrifice. What the second assertion pins is
         -- that a ChooseSacrifices entry still does not answer it.
         Spec.it s "ChooseCollectEvidence records and replays a Set ObjectId" $ do
-          let p = Prompt.ChooseCollectEvidence decider S.alice oid [oid, ObjectId.MkObjectId 8] 3
+          let p = Prompt.ChooseCollectEvidence decider S.alice oid [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3
               answer = Set.singleton (ObjectId.MkObjectId 8)
           Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
           Spec.assertEqWith
@@ -863,7 +863,7 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "every candidate"
-            (Replay.defaultAnswer (Prompt.ChooseCollectEvidence decider S.alice oid [oid, ObjectId.MkObjectId 8] 3))
+            (Replay.defaultAnswer (Prompt.ChooseCollectEvidence decider S.alice oid [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3))
             (Set.fromList [oid, ObjectId.MkObjectId 8])
         -- CR 702.167a does NOT share Response.ChoseExilesFromGraveyard with the
         -- two prompts above, unlike the pair just above each other: its pool

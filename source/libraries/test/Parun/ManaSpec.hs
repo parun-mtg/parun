@@ -2396,7 +2396,7 @@ musterDynamoSpec s registry = Spec.describe s "Synthetic Muster Dynamo" $ do
 -- the harness has no vocabulary for ChooseTapsForTotalPower.
 tapFirstElves :: Prompt.Prompt r -> r
 tapFirstElves p = case p of
-  Prompt.ChooseTapsForTotalPower _ _ _ candidates threshold -> Set.fromList (List.genericTake threshold candidates)
+  Prompt.ChooseTapsForTotalPower _ _ _ candidates threshold -> Set.fromList (fmap fst (List.genericTake threshold candidates))
   _ -> S.identityAnswer p
 
 -- Alice's Synthetic Muster Dynamo and, for each name, that many of the card.
@@ -2432,7 +2432,7 @@ cryptexSpec s registry = Spec.describe s "Cryptex" $ do
 -- has no vocabulary for ChooseCollectEvidence.
 collectOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 collectOnly oid p = case p of
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (filter (== oid) candidates)
+  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (filter (== oid) (fmap fst candidates))
   _ -> S.identityAnswer p
 
 -- Alice's Cryptex and two Islands, Bloodbraid Elf and the named card in her

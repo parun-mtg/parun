@@ -1036,12 +1036,12 @@ spec s registry = Spec.describe s "Client" $ do
         facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
         alice = Decider.MkDecider S.alice
         upTo prefix screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf prefix) screenLines)
-        crew = Prompt.ChooseTapsForTotalPower alice S.alice f [b, g] 3
+        crew = Prompt.ChooseTapsForTotalPower alice S.alice f [(b, 2), (g, 3)] 3
         (crewed, crewShown) = asking facing ["1-2"] gs crew
         taps = Prompt.ChooseTaps alice S.alice f [b, g] 1
     Spec.assertEqWith s "CR 702.122a the power told, then any number" (upTo (Text.pack "Power: ") crewShown) (fmap Text.pack ["Power: 3", "Choose taps for total power for Forest: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Your Grizzly Bears 2/2", "  2. Your Hill Giant 3/3"])
     Spec.assertEqWith s "a range picks both" crewed (Right (Set.fromList [b, g]))
-    Spec.assertEqWith s "CR 701.59a the mana value told, in words" (take 1 (upTo (Text.pack "Mana value: ") (snd (asking facing [""] gs (Prompt.ChooseCollectEvidence alice S.alice f [b, g] 4))))) [Text.pack "Mana value: 4"]
+    Spec.assertEqWith s "CR 701.59a the mana value told, in words" (take 1 (upTo (Text.pack "Mana value: ") (snd (asking facing [""] gs (Prompt.ChooseCollectEvidence alice S.alice f [(b, 2), (g, 4)] 4))))) [Text.pack "Mana value: 4"]
     Spec.assertEqWith s "an exact count refuses one too many" (fst (asking facing ["1 2"] gs taps)) (Left (Text.pack "end of input"))
     Spec.assertEqWith s "and takes the count" (fst (asking facing ["2"] gs taps)) (Right (Set.singleton g))
     Spec.assertEqWith s "a most refuses past it" (fst (asking facing ["all"] gs (Prompt.ChooseAnyNumber alice S.alice f AnyNumberOf.ToSacrifice [b, g] (Just 1) Seq.empty))) (Left (Text.pack "end of input"))

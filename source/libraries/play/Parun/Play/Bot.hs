@@ -58,9 +58,6 @@ import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 -- legal answers, each equally likely, an unbounded number capped one past its
 -- floor. Never concedes. A card name is any of `names`, the reference's
 -- (Parun.Play.Game.bot).
---
--- Not implemented: a random answer to every other prompt, which gets
--- 'Replay.defaultAnswer': a group judged by its total (#6614).
 bot :: (Monad m) => [CardName.CardName] -> Answerer.Answerer (Asked.Asked PlayerView.PlayerView) (State.StateT SplitMix.Type.SplitMix m)
 bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ actions -> maybe (pure Action.Pass) SplitMix.pick (NonEmpty.nonEmpty actions)
@@ -124,6 +121,10 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseReturns _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
   Prompt.ChooseExiles _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
   Prompt.ChooseExilesFromGraveyard _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
+  -- CR 702.122a / 701.59a: any group whose total power or mana value reaches
+  -- the threshold, judged by the values the prompt carries.
+  Prompt.ChooseTapsForTotalPower _ _ _ candidates power -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger power) candidates)
+  Prompt.ChooseCollectEvidence _ _ _ candidates total -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger total) candidates)
   -- CR 702.167a: the count exactly, or at least it where "one or more" makes
   -- it a floor.
   Prompt.ChooseMaterials _ _ _ candidates count orMore
@@ -367,6 +368,36 @@ atLeast least items = do
   let total = List.genericLength items :: Natural
   size <- weighted (fmap (\size -> (size, choose total size)) [min least total .. total])
   fmap (List.genericTake size) (SplitMix.shuffle items)
+
+-- | A subset of the candidates whose values sum to at least the threshold,
+-- each such subset equally likely, or Nothing where none does: each candidate
+-- kept as often as the subsets keeping it outnumber those left.
+reaching :: (Monad m) => Integer -> [(a, Integer)] -> State.StateT SplitMix.Type.SplitMix m (Maybe [a])
+reaching threshold candidates
+  | NonEmpty.head counts threshold == 0 = pure Nothing
+  | otherwise = fmap Just (walk threshold (zip candidates (NonEmpty.tail counts)))
+  where
+    counts = reachCounts (fmap snd candidates)
+    walk owed pending = case pending of
+      [] -> pure []
+      ((candidate, value), later) : rest -> do
+        let kept = later (owed - value)
+        draw <- SplitMix.between 0 (kept + later owed - 1)
+        if draw < kept then fmap (candidate :) (walk (owed - value) rest) else walk owed rest
+
+-- | For each suffix of the values, the whole list first and the empty one
+-- last, how many of its subsets sum to at least a total.
+reachCounts :: [Integer] -> NonEmpty.NonEmpty (Integer -> Natural)
+reachCounts values = case values of
+  [] -> pure (\total -> if total <= 0 then 1 else 0)
+  value : rest ->
+    let later@(next NonEmpty.:| _) = reachCounts rest
+        least = sum (filter (< 0) values)
+        table = Map.fromList [(total, next total + next (total - value)) | total <- [least + 1 .. sum (filter (> 0) values)]]
+        count total
+          | total <= least = 2 ^ List.length values
+          | otherwise = Map.findWithDefault 0 total table
+     in count NonEmpty.<| later
 
 -- | Any of the items in any order, each such sequence equally likely: its
 -- length drawn by how many sequences have it, then its members.
