@@ -36,6 +36,7 @@ import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
+import qualified Parun.ExileSpec as ExileSpec
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.ManaSpec as ManaSpec
 import qualified Parun.Play.Bot as Bot
@@ -110,6 +111,8 @@ import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.Pile as Pile
+import qualified Parun.Types.PileDraw as PileDraw
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
@@ -131,6 +134,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
+import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
@@ -734,6 +738,45 @@ spec s registry = Spec.describe s "Client" $ do
         twoSlots = Prompt.ChooseTargets (Decider.MkDecider S.alice) S.alice spell (Map.fromList [(slot, (1, legal)), (second, (1, legal))])
         (_, twoShown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["1", "2"] gs twoSlots
     Spec.assertEqWith s "several slots are named as words" (filter (Text.isPrefixOf (Text.pack "Choose 1 target")) twoShown) [Text.pack "Choose 1 target for Demolish (second target):", Text.pack "Choose 1 target for Demolish (target):"]
+
+  -- Played through the line protocol: the engine's offer goes out as JSON, the
+  -- pile is listed beside the face-up card, and the number typed comes back as
+  -- the offered pile, whose random draw then leaves exile.
+  Spec.it s "CR 406.4 a face-down exiled pile is offered as a target through the client, and the number picks it" $ do
+    (_, _, _, board) <- ExileSpec.pileBoardUncast s registry
+    let heading = Text.pack "Choose 1 target for Synthetic Blind Reclamation:"
+        listed at = takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) at))
+        reclaims at
+          | heading `elem` pending at = Maybe.listToMaybe [n | line <- listed (pending at), Text.isInfixOf (Text.pack "pile") line, let n = Text.takeWhile Char.isDigit (Text.strip line)]
+          | otherwise = castsOnce "auto" "Synthetic Blind Reclamation" at
+        hidden = length . ExileSpec.faceDownExiled
+        seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 40 reclaims) (const (Right Nothing)))) botOrDefault
+        run = Driver.drive [] seats 40 (pure . (< 2) . hidden) board
+        (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (SplitMix.MkSplitMix 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
+        shown = reverse (written sc)
+    Spec.assertEqWith s "one card of the pile left exile, the other still hidden there" (fmap hidden outcome) (Right 1)
+    Spec.assertEqWith s "the face-up card stayed in exile" (fmap (Set.size . GameState.exile) outcome) (Right 2)
+    -- Proxy, AFTER the behaviour: the listing.
+    Spec.assertEqWith s "listed" (fmap (Text.drop 5) (listed shown)) [Text.pack "Player 2's Riftsweeper 2/2, in exile", Text.pack "A face-down exiled pile"]
+
+  -- CR 406.4 / 115.3: a slot may draw a pile more than once, and two piles are
+  -- told apart by number since neither may be looked at.
+  Spec.it s "CR 406.4 several piles are numbered, a later draw out of one is named by its ordinal, and the number reads back as that draw" $ do
+    (_, _, spellId, board) <- ExileSpec.pileBoardUncast s registry
+    let slot = SlotName.MkSlotName (Text.pack "target")
+        pile stamp n = Recipient.ToPile PileDraw.MkPileDraw {PileDraw.pile = Pile.OfFaceDown (Timestamp.MkTimestamp stamp), PileDraw.ordinal = n}
+        legal = Set.fromList [pile 6 1, pile 6 2, pile 9 1]
+        prompt = Prompt.ChooseTargets (Decider.MkDecider S.alice) S.alice spellId (Map.singleton slot (1, legal))
+        (picked, shown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] board prompt
+    Spec.assertEqWith s "the number picks the draw shown" picked (Right (Map.singleton slot (Set.singleton (pile 6 2))))
+    Spec.assertEqWith
+      s
+      "listed"
+      (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (not . Text.isPrefixOf (Text.pack "Choose 1 target for ")) shown)))
+      [ Text.pack "  1. A face-down exiled pile (pile 1)",
+        Text.pack "  2. A face-down exiled pile, card 2 (pile 1)",
+        Text.pack "  3. A face-down exiled pile (pile 2)"
+      ]
 
   Spec.it s "CR 103.5 another seat is told who kept, who mulliganed and how many cards each mulligan bottoms" $ do
     matchup <- BotSpec.bears s registry

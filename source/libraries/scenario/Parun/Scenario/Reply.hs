@@ -33,6 +33,7 @@ import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.OptionalDecision as Codec.OptionalDecision
 import qualified Parun.Codec.OutsideCard as Codec.OutsideCard
 import qualified Parun.Codec.PaymentDecision as Codec.PaymentDecision
+import qualified Parun.Codec.PileDraw as Codec.PileDraw
 import qualified Parun.Codec.PrintingId as Codec.PrintingId
 import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
@@ -236,6 +237,7 @@ recipient =
               "Battle" -> Recipient.ToBattle <$> decode object x
               "Player" -> Recipient.ToPlayer <$> decode player x
               "Object" -> Recipient.ToObject <$> decode object x
+              "Pile" -> Recipient.ToPile <$> decode (viaCodec Codec.PileDraw.codec) x
               other -> Failed (Text.pack ("no recipient kind " <> other))
           _ -> Failed (Text.pack "expected [kind, recipient]")
     )
@@ -245,7 +247,7 @@ recipient =
         Recipient.ToBattle o -> tagged "Battle" (encode object namer o)
         Recipient.ToPlayer p -> tagged "Player" (encode player namer p)
         Recipient.ToObject o -> tagged "Object" (encode object namer o)
-        Recipient.ToPile _ -> R.Null
+        Recipient.ToPile d -> tagged "Pile" (encode (viaCodec Codec.PileDraw.codec) namer d)
     )
 
 attackTarget :: Shape AttackTarget.AttackTarget
