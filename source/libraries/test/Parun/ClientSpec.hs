@@ -45,6 +45,7 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
@@ -54,6 +55,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -106,6 +108,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
@@ -130,6 +133,7 @@ import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -415,6 +419,32 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "the second is the Forest with a counter" second (Right (Action.Play c Nothing))
     Spec.assertEqWith s "the first is the first alike" (fst (asking facing ["1"] gs playing)) (Right (Action.Play a Nothing))
     Spec.assertEqWith s "the third passes" (fst (asking facing ["3"] gs playing)) (Right Action.Pass)
+
+  Spec.it s "CR 701.40c / 116.2d / 702.170a two turn-ups, ignores or plots of one object are shown apart, and equal plots of cards shown alike merge" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (p, g1) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        (a, g2) = S.addHandCard forest S.alice g1
+        (b, gs) = S.addHandCard forest S.alice g2
+        generic n = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []
+        ban = AbilityName.MkAbilityName . Text.pack
+        offering = Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.TurnFaceUp p TurnUpProcedure.Morph, Action.TurnFaceUp p TurnUpProcedure.Manifest, Action.Ignore p (ban "creature ban"), Action.Ignore p (ban "search ban"), Action.Plot a (generic 2), Action.Plot a (generic 3), Action.Plot b (generic 2), Action.Pass]
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        (manifest, shown) = asking facing ["2"] gs offering
+    Spec.assertEqWith s "the menu" (actionMenus shown) [fmap Text.pack ["Turn face up Forest (morph)", "Turn face up Forest (manifest)", "Ignore Forest's creature ban", "Ignore Forest's search ban", "Plot Forest for {2}", "Plot Forest for {3}", "Pass"]]
+    Spec.assertEqWith s "the second turns it up by manifest" manifest (Right (Action.TurnFaceUp p TurnUpProcedure.Manifest))
+    Spec.assertEqWith s "the fourth ignores the search ban" (fst (asking facing ["4"] gs offering)) (Right (Action.Ignore p (ban "search ban")))
+    Spec.assertEqWith s "the sixth plots for {3}" (fst (asking facing ["6"] gs offering)) (Right (Action.Plot a (generic 3)))
+
+  Spec.it s "CR 601.2b / 702.152a / 101.4b two equal costs are shown apart by the keyword offering each, after what earlier payers answered" $ do
+    forest <- S.printingOf s registry "Forest"
+    let (oid, g1) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        (taken, gs) = S.addPermanent forest S.bob g1
+        cost = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
+        blitz = CandidateCost.plain (Just (Keyword.Blitz cost)) cost
+        choosing = Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, blitz] (Seq.fromList [(S.bob, PayerAnswer.Paid cost (Set.singleton taken)), (S.alice, PayerAnswer.Declined)])
+        (picked, shown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] gs choosing
+    Spec.assertEqWith s "shown" (dropWhile (not . Text.isPrefixOf (Text.pack "Player 2 paid")) shown) (fmap Text.pack ["Player 2 paid {2} with Player 2's Forest.", "Player 1 declined.", "Choose how to pay for Forest:", "  1. {2}", "  2. {2} (blitz)", "> 2"])
+    Spec.assertEqWith s "the second is blitz" picked (Right blitz)
 
   Spec.it s "a priority offering only passing and mana abilities is passed without asking for the seat the screen faces" $ do
     (forest, gs) <- withForest s registry

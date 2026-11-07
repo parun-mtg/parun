@@ -313,13 +313,17 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       ( [Text.pack "That action was reversed. Reverse the mana ability of " <> Text.intercalate (Text.pack " and ") (fmap (listedName view) sources) <> Text.pack " too?", Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
-  -- CR 601.2b / 702.51a: each candidate as Oracle text prints its cost.
+  -- CR 601.2b / 702.51a: each candidate as Oracle text prints its cost, and
+  -- the keyword that offered it (CR 702.152a); CR 101.4b: what earlier
+  -- payers answered.
   "ChooseCost" -> do
     source <- field "source" offer
     costs <- field "costs" offer >>= arrayOf
     let self = objectName view source
+        keywords = foldMap (fmap (decoded Codec.Keyword.codec)) (field "keywords" offer >>= arrayOf) <> repeat Nothing
+        offered cost keyword = candidateName self cost <> foldMap (\k -> Text.pack " (" <> Render.spaced (Text.pack (Codec.Keyword.tagOf k)) <> Text.pack ")") keyword
     pure
-      ( Text.pack "Choose how to pay for " <> self <> Text.pack ":" : numbered (fmap (candidateName self) costs),
+      ( payersTold view self offer <> (Text.pack "Choose how to pay for " <> self <> Text.pack ":" : numbered (zipWith offered costs keywords)),
         fmap (R.Number . toInteger . subtract 1) . one (Natural.length costs)
       )
   -- CR 201.4: any card's name, typed in full; one the rules refuse is asked
@@ -729,11 +733,10 @@ listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap s
     optionObject option = Monad.msum [objectOf option, field "object" option >>= objectOf, field "source" option >>= objectOf]
 
 -- | A list's options as shown, each beside its index in the list: an option
--- is dropped when an earlier one plays or casts a card in the seat's hand
--- that the view shows exactly as it shows this one's, bar its id. Other
--- actions never merge, since an offer may leave out what tells two apart
--- (#6594), and neither do cards elsewhere, which a permission may tell
--- apart.
+-- is dropped when an earlier one plays, casts or plots a card in the seat's
+-- hand that the view shows exactly as it shows this one's, bar its id, and
+-- the two offers match bar the object. Other actions never merge, and neither
+-- do cards elsewhere, which a permission may tell apart.
 distinct :: PlayerView.PlayerView -> [R.Reply] -> [(Integer, R.Reply)]
 distinct view = reverse . snd . List.foldl' keep ([], []) . zip [0 ..]
   where
@@ -743,7 +746,7 @@ distinct view = reverse . snd . List.foldl' keep ([], []) . zip [0 ..]
     held = Map.fromList [(ObjectView.object o, o) | s <- PlayerView.seats view, SeatView.player s == PlayerView.viewer view, o <- SeatView.hand s]
     key option = do
       kind <- field "action" option >>= textOf
-      Monad.guard (kind `elem` [Text.pack "Play", Text.pack "Cast"])
+      Monad.guard (kind `elem` fmap Text.pack ["Play", "Cast", "Plot"])
       o <- field "object" option >>= objectOf >>= (`Map.lookup` held)
       R.Object pairs <- Just option
       pure (filter ((/= Text.pack "object") . fst) pairs, o {ObjectView.object = ObjectId.MkObjectId 0})
@@ -887,6 +890,17 @@ payerSeat view offer = do
 candidateName :: Text.Text -> R.Reply -> Text.Text
 candidateName self candidate =
   Maybe.fromMaybe (Common.render (Codec.Reply.toValue candidate)) (decoded (Codec.Cost.codec Codec.Keyword.codec) candidate >>= Maybe.listToMaybe . Oracle.Cost.cost self (Oracle.Keyword.keywordWord self))
+
+-- | CR 101.4b: a line for each earlier payer an offer lists under
+-- @"earlier"@, saying what they paid, with what, or that they declined.
+payersTold :: PlayerView.PlayerView -> Text.Text -> R.Reply -> [Text.Text]
+payersTold view self offer = foldMap (fmap line) (field "earlier" offer >>= arrayOf)
+  where
+    line entry = case entry of
+      R.Array [player, R.Null] -> playerName player <> Text.pack " declined."
+      R.Array [player, R.Array [cost, taken]] ->
+        Text.concat [playerName player, Text.pack " paid ", candidateName self cost, foldMap (\xs -> if null xs then Text.empty else Text.pack " with " <> Text.intercalate (Text.pack ", ") (fmap (listedName view) xs)) (arrayOf taken), Text.pack "."]
+      _ -> optionName view entry
 
 -- | An order over the items shown, answered by their numbers first to last,
 -- each once, or by Enter for the order shown; sent back as a permutation of
@@ -1093,6 +1107,12 @@ actionName view action =
         "Cast" -> Text.pack "Cast " <> subject
         "Activate" -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (field "ability" action >>= naturalOf) <> subject
         "ActivateManaAbility" -> Text.pack "Activate a mana ability of " <> subject
+        -- CR 701.40c: which procedure, where two may turn one permanent up.
+        "TurnFaceUp" -> Text.pack "Turn face up " <> subject <> foldMap (\p -> Text.pack " (" <> Render.spaced p <> Text.pack ")") (field "procedure" action >>= textOf)
+        -- CR 116.2d: which of the permanent's abilities is ignored.
+        "Ignore" -> Text.pack "Ignore " <> subject <> foldMap (Text.pack "'s " <>) (field "abilityName" action >>= textOf)
+        -- CR 702.170a: which plot cost is paid.
+        "Plot" -> Text.pack "Plot " <> subject <> foldMap (\c -> Text.pack " for " <> candidateName subject c) (field "cost" action)
         kind -> Render.spaced (Text.pack kind) <> maybe Text.empty (Text.pack " " <>) object
 
 -- | An object the offer spells @"$7"@, named as the view shows it.
