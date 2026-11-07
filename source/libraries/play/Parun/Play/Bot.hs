@@ -29,6 +29,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Dividing as Dividing
+import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -37,6 +38,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SplitMix as SplitMix.Type
 import qualified Parun.Types.TargetCount as TargetCount
+import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 
 -- | Each prompt a bot game over the decks in data/decks reaches, plus
 -- ChooseGuess, ChooseNumber, every prompt offering one of a list, and the
@@ -47,7 +49,7 @@ import qualified Parun.Types.TargetCount as TargetCount
 --
 -- Not implemented: a random answer to every other prompt, which gets
 -- 'Replay.defaultAnswer': a fixed decision or a bounded number (#6598), a
--- group, piles or an order (#6599), and a division of counters or an amount
+-- group judged by its total (#6614), and a division of counters or an amount
 -- (#6600).
 bot :: (Monad m) => [CardName.CardName] -> Answerer.Answerer (Asked.Asked PlayerView.PlayerView) (State.StateT SplitMix.Type.SplitMix m)
 bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
@@ -111,6 +113,39 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseTaps _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
   Prompt.ChooseReturns _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
   Prompt.ChooseExiles _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
+  Prompt.ChooseExilesFromGraveyard _ _ _ candidates count -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
+  -- CR 702.167a: the count exactly, or at least it where "one or more" makes
+  -- it a floor.
+  Prompt.ChooseMaterials _ _ _ candidates count orMore
+    | orMore -> fmap Set.fromList (atLeast count candidates)
+    | otherwise -> fmap (Set.fromList . List.genericTake count) (SplitMix.shuffle candidates)
+  -- CR 608.2d / 701.34a: any number of the candidates, each equally likely.
+  Prompt.ChooseLoopMembers _ _ _ candidates -> fmap Set.fromList (Monad.filterM (const coin) candidates)
+  Prompt.ChooseProliferate _ _ objects players -> (,) <$> fmap Set.fromList (Monad.filterM (const coin) objects) <*> fmap Set.fromList (Monad.filterM (const coin) players)
+  -- CR 701.56a: each candidate left alone, given a time counter, or losing one.
+  Prompt.ChooseTimeTravel _ _ _ candidates ->
+    fmap (Map.fromList . Maybe.catMaybes) . Traversable.for candidates $ \candidate ->
+      fmap (fmap ((,) candidate)) (SplitMix.pick (Nothing NonEmpty.:| fmap Just [TimeTravelChoice.Add, TimeTravelChoice.Remove]))
+  -- CR 400.11c: any count in range, each card any offer; Parun.Engine.Event's
+  -- settleOutside drops a name past its copies and tops up to the floor.
+  Prompt.ChooseFromOutsideTheGame _ _ candidates least most -> do
+    count <- SplitMix.between least most
+    traverse (const (SplitMix.pick candidates)) (List.genericReplicate count ())
+  -- CR 700.3: any pile; any assignment of each creature to one of the piles,
+  -- any of them empty (CR 700.3d).
+  Prompt.ChoosePile _ _ _ piles _ -> SplitMix.pick piles
+  Prompt.DividePiles _ _ creatures count -> do
+    assigned <- traverse (\creature -> fmap (\pile -> (pile, creature)) (SplitMix.between 0 (count - 1))) (if count == 0 then [] else creatures)
+    pure (fmap (\pile -> Set.fromList [creature | (at, creature) <- assigned, at == pile]) (List.genericTake count [0 ..]))
+  -- CR 404.3: the cards from the top down in any order.
+  Prompt.ArrangeGraveyardArrivals _ _ cards -> fmap GraveyardArrangement.InOrder (order cards)
+  -- CR 702.47a/b: any of the offered cards, in any order.
+  Prompt.ChooseSplice _ _ _ offers -> arrangement (fmap fst offers)
+  -- Any group of the players, each taking any member's total;
+  -- Parun.Engine.Resolve.Arms.Zones refuses what CR 119.7-8 or 810.9f forbid.
+  Prompt.ChooseRedistribution _ _ offered -> do
+    takers <- Monad.filterM (const coin) (fmap fst offered)
+    fmap (Map.fromList . zip takers) (SplitMix.shuffle takers)
   Prompt.OfferedCast {} -> exercisesOrDeclines
   -- Each of these is a "may" or an either-or, both answers always legal.
   Prompt.ChooseCommandZoneOfferFirst {} -> exercisesOrDeclines
@@ -245,10 +280,24 @@ playsFirst = coin
 atMost :: (Monad m) => Natural -> [a] -> State.StateT SplitMix.Type.SplitMix m [a]
 atMost most items = do
   let total = List.genericLength items :: Natural
-      sizes = [0 .. min most total]
-      weights = fmap (choose total) sizes
-  draw <- SplitMix.between 0 (sum weights - 1)
-  let size = maybe 0 fst (List.find ((> draw) . snd) (zip sizes (scanl1 (+) weights)))
+  size <- weighted (fmap (\size -> (size, choose total size)) [0 .. min most total])
+  fmap (List.genericTake size) (SplitMix.shuffle items)
+
+-- | A subset of at least so many of the items, each such subset equally
+-- likely, or all of them where there are fewer: atMost's draw over the sizes
+-- from the floor up.
+atLeast :: (Monad m) => Natural -> [a] -> State.StateT SplitMix.Type.SplitMix m [a]
+atLeast least items = do
+  let total = List.genericLength items :: Natural
+  size <- weighted (fmap (\size -> (size, choose total size)) [min least total .. total])
+  fmap (List.genericTake size) (SplitMix.shuffle items)
+
+-- | Any of the items in any order, each such sequence equally likely: its
+-- length drawn by how many sequences have it, then its members.
+arrangement :: (Monad m) => [a] -> State.StateT SplitMix.Type.SplitMix m [a]
+arrangement items = do
+  let total = List.genericLength items :: Natural
+  size <- weighted (fmap (\size -> (size, product [total - size + 1 .. total])) [0 .. total])
   fmap (List.genericTake size) (SplitMix.shuffle items)
 
 -- | A partition of the items into nonempty blocks, each partition equally
@@ -259,13 +308,16 @@ partition items = case items of
   [] -> pure []
   first : rest -> do
     let others = List.genericLength rest :: Natural
-        counts = [0 .. others]
-        weights = fmap (\k -> choose others k * bell (others - k)) counts
-    draw <- SplitMix.between 0 (sum weights - 1)
-    let companions = maybe 0 fst (List.find ((> draw) . snd) (zip counts (scanl1 (+) weights)))
+    companions <- weighted (fmap (\k -> (k, choose others k * bell (others - k))) [0 .. others])
     shuffled <- SplitMix.shuffle rest
     let (block, remaining) = List.genericSplitAt companions shuffled
     fmap ((first : block) :) (partition remaining)
+
+-- | One of the values, each as likely as its weight, which are not all zero.
+weighted :: (Monad m) => [(Natural, Natural)] -> State.StateT SplitMix.Type.SplitMix m Natural
+weighted options = do
+  draw <- SplitMix.between 0 (sum (fmap snd options) - 1)
+  pure (maybe 0 fst (List.find ((> draw) . snd) (zip (fmap fst options) (scanl1 (+) (fmap snd options)))))
 
 -- | How many ways to choose k of n.
 choose :: Natural -> Natural -> Natural
