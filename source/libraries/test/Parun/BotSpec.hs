@@ -464,8 +464,8 @@ spec s registry = Spec.describe s "Bot" $ do
     let one = ObjectId.MkObjectId 8
         two = ObjectId.MkObjectId 9
         ways = [Nothing, Just TimeTravelChoice.Add, Just TimeTravelChoice.Remove]
-        outside = OutsideCard.InPool (PrintingId.MkPrintingId 7) NonEmpty.:| [OutsideCard.InPool (PrintingId.MkPrintingId 8)]
-        offers = NonEmpty.toList outside
+        outside = (OutsideCard.InPool (PrintingId.MkPrintingId 7), 1 :: Natural) NonEmpty.:| [(OutsideCard.InPool (PrintingId.MkPrintingId 8), 1)]
+        offers = fmap fst (NonEmpty.toList outside)
     Spec.assertEqWith s "time travels" (drawn (Prompt.ChooseTimeTravel decider S.alice oid [one, two])) (Set.fromList [Map.fromList (Maybe.catMaybes [fmap ((,) one) a, fmap ((,) two) b]) | a <- ways, b <- ways])
     Spec.assertEqWith s "outside" (drawn (Prompt.ChooseFromOutsideTheGame decider S.alice outside 1 2)) (Set.fromList (fmap pure offers <> [[a, b] | a <- offers, b <- offers]))
 

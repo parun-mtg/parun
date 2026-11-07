@@ -10,6 +10,7 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -31,6 +32,7 @@ import qualified Parun.Codec.ManaSymbol as Codec.ManaSymbol
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.NumberFloor as Codec.NumberFloor
+import qualified Parun.Codec.OutsideCard as Codec.OutsideCard
 import qualified Parun.Codec.PlayerEffect as Codec.PlayerEffect
 import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
@@ -43,6 +45,7 @@ import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Mana as Mana
+import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
@@ -85,20 +88,25 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.OutsideObject as OutsideObject
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -199,8 +207,8 @@ idOf label =
 -- tells the seat about each option.
 --
 -- Not implemented: the offer of every prompt not listed here, which sends
--- null: those answered by a set or sequence (#6590), a number (#6591), an
--- amount per item (#6592), or a name or word (#6593).
+-- null: those answered by a number (#6591), an amount per item (#6592), or a
+-- name or word (#6593).
 -- A random prompt no seat answers is never sent.
 offerOf :: GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf gs prompt = case prompt of
@@ -410,7 +418,54 @@ offerOf gs prompt = case prompt of
     subset (Just source) [("purpose", R.Text (Text.pack (show purpose))), ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (Just 0, most) (fmap object candidates)
   -- CR 608.2d.
   Prompt.ChooseLoopMembers _ _ source members -> subset (Just source) [] (Just 0, Nothing) (fmap (Reply.encode Reply.recipient namer) members)
+  -- CR 700.2a: the legal modes by index, as many as the selection takes, and
+  -- (CR 700.2d) whether one may be chosen again.
+  --
+  -- Not implemented: each mode's Oracle text, so a mode is named by its index
+  -- (#6618).
+  Prompt.ChooseModes _ _ source legal selection ->
+    subset (Just source) [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection] (Just (Modal.leastOf selection), Just (Modal.mostOf selection)) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
+  -- CR 702.47b: the cards in the order the answer names them, the first
+  -- happening first.
+  --
+  -- Not implemented: the splice cost each card adds (#6619).
+  Prompt.ChooseSplice _ _ source offers -> subset (Just source) [] (Just 0, Nothing) (fmap (object . fst) offers)
+  -- CR 701.23a / 701.23j: at least one place, each named.
+  Prompt.ChooseSearchZones _ _ places ->
+    subset Nothing [("names", R.Array (fmap (R.Text . placeName) (Set.toList places)))] (Just 1, Nothing) (fmap (Reply.encode Reply.searchPlace namer) (Set.toList places))
+  -- CR 701.34a: the permanents, then the players as recipients.
+  Prompt.ChooseProliferate _ _ permanents players -> subset Nothing [] (Just 0, Nothing) (fmap object permanents <> fmap (Reply.encode Reply.recipient namer . Recipient.ToPlayer) players)
+  -- CR 400.11c: each card once per copy, named.
+  Prompt.ChooseFromOutsideTheGame _ _ candidates least most ->
+    let copies = concatMap (\(card, n) -> List.genericReplicate n card) (NonEmpty.toList candidates)
+     in subset Nothing [("names", R.Array (fmap (R.Text . outsideName gs) copies))] (Just least, Just most) (fmap (Reply.encode (Reply.viaCodec Codec.OutsideCard.codec) namer) copies)
+  -- CR 702.22c: the attackers, each in at most one band.
+  Prompt.DeclareBands _ _ attackers -> listing "among" Nothing [] (fmap object attackers)
+  -- CR 701.56a: the candidates, each added to, removed from or left alone.
+  Prompt.ChooseTimeTravel _ _ source candidates -> listing "among" (Just source) [] (fmap object candidates)
+  -- CR 701.22a / 701.25a / 701.29a: the cards looked at, top first, each
+  -- named, and for a fateseal whose library they are.
+  Prompt.ChooseScry _ _ cards -> looked gs [] cards
+  Prompt.ChooseSurveil _ _ cards -> looked gs [] cards
+  Prompt.ChooseFateseal _ _ owner cards -> looked gs [("owner", Reply.encode Reply.player namer owner)] cards
   _ -> R.Null
+
+-- | A search place as the seat reads it.
+placeName :: SearchPlace.SearchPlace -> Text.Text
+placeName place = case place of
+  SearchPlace.InZone zone -> Render.zone zone
+  SearchPlace.OutsideTheGame -> Text.pack "outside the game"
+
+-- | CR 730.4a: a card outside the game by its name, and where it waits.
+outsideName :: GameState.GameState -> OutsideCard.OutsideCard -> Text.Text
+outsideName gs card = case card of
+  OutsideCard.InPool printing -> printingName gs printing <> Text.pack " (sideboard)"
+  OutsideCard.InAnotherGame oid -> foldMap (printingName gs . OutsideObject.printing) (Map.lookup oid (GameState.outsideObjects gs)) <> Text.pack " (game on hold)"
+
+-- | Cards a seat looks at and splits into two piles: what else it is told,
+-- each card under @"from"@ top first, and under @"names"@ each card's name.
+looked :: GameState.GameState -> [(String, R.Reply)] -> [ObjectId.ObjectId] -> R.Reply
+looked gs told cards = fields (told <> [("from", objects cards), ("names", R.Array (fmap (R.Text . Render.snapshotName . (`Projection.project` gs)) cards))])
 
 -- | A prompt answered by a set of what it lists: its source, what else the
 -- seat is told, the least and most it may pick where the rules bound them, and

@@ -1446,8 +1446,8 @@ conspiring taking answer asked =
           let named card = case card of
                 OutsideCard.InPool printingId -> maybe "?" (Text.unpack . CardName.unwrap . S.nameOf) (Game.cardOfPrinting printingId (Asked.game asked))
                 OutsideCard.InAnotherGame _ -> "?"
-          State.modify' (<> [Offered depth pid (fmap named (NonEmpty.toList offered)) least most])
-          pure (if taking then NonEmpty.toList offered else [])
+          State.modify' (<> [Offered depth pid (fmap (named . fst) (NonEmpty.toList offered)) least most])
+          pure (if taking then fmap fst (NonEmpty.toList offered) else [])
         Prompt.DeclareMulligan _ pid _ -> do
           State.modify' (<> [Declared depth pid])
           pure MulliganDecision.Keep

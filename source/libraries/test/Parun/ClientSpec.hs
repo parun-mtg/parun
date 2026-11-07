@@ -93,6 +93,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
@@ -100,6 +101,7 @@ import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
@@ -113,10 +115,12 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Terminal as Terminal
+import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.Undoing as Undoing
@@ -442,14 +446,16 @@ spec s registry = Spec.describe s "Client" $ do
       (filter (Text.isPrefixOf (Text.pack "Undone: ")) (takeWhile (not . menuHeading) (drop 1 (dropWhile (/= Text.pack "> stop") shown))))
       [Text.pack "Undone: Cast Grizzly Bears could not be completed (its cost was not paid), so it was reversed and its payments canceled."]
 
-  -- Ebony Charm's modes are asked as JSON (#6590), and no mode is not one.
   Spec.it s "CR 601.2e a cast whose announced modes are illegal is told undone, and why" $ do
-    (_, _, tapped, shown) <- castPaying "[]" s registry "Ebony Charm" ["Swamp"]
-    Spec.assertEqWith s "nothing stayed tapped" tapped []
+    let gs = (Setup.emptyGame S.bothPlayers) {GameState.undone = Map.singleton S.alice Undoing.IllegalProposal}
+        view = PlayerView.viewFor S.alice gs
+        mark = (PlayerView.Type.game view, PlayerView.Type.turn view, Natural.length (PlayerView.Type.witnessed view))
+        tried = Hotseat.fresh {Hotseat.facing = Just S.alice, Hotseat.attempted = Map.singleton S.alice (mark, Text.pack "Cast Ebony Charm")}
+        shown = snd (asking tried [""] gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))
     Spec.assertEqWith
       s
-      "told once, before the next menu"
-      (filter (Text.isPrefixOf (Text.pack "Undone: ")) (takeWhile (not . menuHeading) (drop 1 (dropWhile (/= Text.pack "> []") shown))))
+      "told why"
+      (filter (Text.isPrefixOf (Text.pack "Undone: ")) shown)
       [Text.pack "Undone: Cast Ebony Charm could not be completed (a choice announced for it was illegal), so it was reversed and its payments canceled."]
 
   Spec.it s "CR 508.1 / 509.1 a declaration asked again after its cost went unpaid or it broke a restriction is told undone, and why" $ do
@@ -1099,6 +1105,75 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "the second action picked" action (Right (Just (f, HandActionIndex.MkHandActionIndex 1)))
     Spec.assertEqWith s "CR 101.4b a clause by its index beside what earlier choosers announced" (upTo (Text.pack "Earlier: ") branches) (fmap Text.pack ["Earlier: Player 2: 2", "Choose clause for Forest:", "  1. 1", "  2. 2", "  3. None"])
     Spec.assertEqWith s "neither picked" branch (Right Nothing)
+
+  Spec.it s "a prompt answered by a set or a sequence lists what it chooses among, and reads the picks, bands, directions or piles typed" $ do
+    forest <- S.printingOf s registry "Forest"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (f, g1) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        (b, g2) = S.addPermanent bears S.alice g1
+        (g, g3) = S.addPermanent giant S.alice g2
+        (first, g4) = S.addLibraryCard bears S.alice g3
+        (second, g5) = S.addLibraryCard giant S.alice g4
+        (printing, gs) = Game.Engine.intern bears g5
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        alice = Decider.MkDecider S.alice
+        upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
+        mode = ModeIndex.MkModeIndex
+        free = Cost.MkCost Nothing []
+        pool = OutsideCard.InPool printing
+        refused :: String -> Prompt.Prompt r -> Bool
+        refused line prompt = either (== Text.pack "end of input") (const False) (fst (asking facing [line] gs prompt))
+        (twice, modes) = asking facing ["2 2"] gs (Prompt.ChooseModes alice S.alice f (Set.fromList [mode 0, mode 1]) (ModeSelection.ChooseExactlyWithRepeats 2))
+        (proliferated, proliferate) = asking facing ["1 2"] gs (Prompt.ChooseProliferate alice S.alice [b] [S.bob])
+        (copies, outside) = asking facing ["1-2"] gs (Prompt.ChooseFromOutsideTheGame alice S.alice ((pool, 2) NonEmpty.:| []) 1 2)
+        (banded, bands) = asking facing ["1+2"] gs (Prompt.DeclareBands alice S.alice [b, g])
+        (travelled, travel) = asking facing ["2- 1+"] gs (Prompt.ChooseTimeTravel alice S.alice f [b, g])
+        scry = Prompt.ChooseScry alice S.alice [first, second]
+        (scried, scrying) = asking facing ["2 / 1"] gs scry
+    Spec.assertEqWith s "CR 700.2d each mode by its place, one chosen again" (upTo (Text.pack "Choose modes") modes) (fmap Text.pack ["Choose modes for Forest: choose exactly 2, by number or range such as 1-3, separated by spaces; one may be chosen more than once:", "  1. Mode 1", "  2. Mode 2"])
+    Spec.assertEqWith s "the second mode twice" twice (Right (Seq.fromList [mode 1, mode 1]))
+    Spec.assertBool s (refused "1 1" (Prompt.ChooseModes alice S.alice f (Set.fromList [mode 0, mode 1, mode 2]) (ModeSelection.ChooseExactly 2))) "CR 700.2d no mode twice where the card does not say so"
+    Spec.assertEqWith s "CR 702.47b the cards in the order typed" (fst (asking facing ["2 1"] gs (Prompt.ChooseSplice alice S.alice f [(b, free), (g, free)]))) (Right [g, b])
+    Spec.assertEqWith s "CR 701.34a a permanent and a player listed together" (upTo (Text.pack "Choose proliferate") proliferate) (fmap Text.pack ["Choose proliferate: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Your Grizzly Bears 2/2", "  2. Player 2"])
+    Spec.assertEqWith s "and sent back apart" proliferated (Right (Set.singleton b, Set.singleton S.bob))
+    Spec.assertEqWith s "CR 400.11c a card listed once per copy" (drop 1 (upTo (Text.pack "Choose from outside the game") outside)) (fmap Text.pack ["  1. Grizzly Bears (sideboard)", "  2. Grizzly Bears (sideboard)"])
+    Spec.assertEqWith s "and both copies taken" copies (Right [pool, pool])
+    Spec.assertEqWith s "CR 701.23j a place by its name" (fst (asking facing ["2"] gs (Prompt.ChooseSearchZones alice S.alice (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame])))) (Right (Set.singleton SearchPlace.OutsideTheGame))
+    Spec.assertBool s (refused "" (Prompt.ChooseSearchZones alice S.alice (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame]))) "at least one place"
+    Spec.assertEqWith s "CR 702.22c the attackers listed" (drop 1 (upTo (Text.pack "Declare bands") bands)) (fmap Text.pack ["  1. Your Grizzly Bears 2/2", "  2. Your Hill Giant 3/3"])
+    Spec.assertEqWith s "and a band of both" banded (Right [Set.fromList [b, g]])
+    Spec.assertBool s (refused "1+2 2" (Prompt.DeclareBands alice S.alice [b, g])) "an attacker in one band only"
+    Spec.assertEqWith s "CR 701.56a each candidate listed" (drop 1 (upTo (Text.pack "Time travel for Forest") travel)) (fmap Text.pack ["  1. Your Grizzly Bears 2/2", "  2. Your Hill Giant 3/3"])
+    Spec.assertEqWith s "and each direction typed" travelled (Right (Map.fromList [(b, TimeTravelChoice.Add), (g, TimeTravelChoice.Remove)]))
+    Spec.assertEqWith s "CR 701.22a each card looked at by its name" (upTo (Text.pack "Scry") scrying) (fmap Text.pack ["Scry: type the numbers of the cards to keep on top, the top first, then / and the numbers of those to put on the bottom of your library, the bottommost first, or press Enter to keep them all on top in this order:", "  1. Grizzly Bears", "  2. Hill Giant"])
+    Spec.assertEqWith s "and split into the bottom and the top" scried (Right ([first], [second]))
+    Spec.assertEqWith s "Enter keeps them all on top as listed" (fst (asking facing [""] gs scry)) (Right ([], [first, second]))
+    Spec.assertBool s (refused "1" scry) "every card placed"
+    Spec.assertEqWith s "CR 701.25a the other pile is the graveyard" (take 1 (upTo (Text.pack "Surveil") (snd (asking facing [""] gs (Prompt.ChooseSurveil alice S.alice [first]))))) [Text.pack "Surveil: type the numbers of the cards to keep on top, the top first, then / and the numbers of those to put into your graveyard, the first put there first, or press Enter to keep them all on top in this order:"]
+    Spec.assertEqWith s "CR 701.29a a fateseal names whose library" (fst (asking facing ["/ 1"] gs (Prompt.ChooseFateseal alice S.alice S.bob [first]))) (Right ([first], []))
+
+  Spec.it s "CR 701.22a a scry is answered through the client, and the card put on the bottom stays there" $ do
+    gs <- started s registry
+    island <- S.printingOf s registry "Island"
+    opt <- S.printingOf s registry "Opt"
+    giant <- S.printingOf s registry "Hill Giant"
+    let g1 = snd (S.addLibraryCard giant S.alice (snd (S.addPermanent island S.alice gs)))
+        giantName = CardName.MkCardName (Text.pack "Hill Giant")
+        named g oid = fmap S.nameOf (Game.Engine.cardOf oid g)
+        board = snd (S.addHandCard opt S.alice g1)
+        heading = Text.pack "Scry: "
+        bottoming at
+          | any (Text.isPrefixOf heading) (pending at) = Just (Text.pack "/ 1")
+          | otherwise = castsOnce "auto" "Opt" at
+        resolved g = any (\oid -> fmap S.nameOf (Game.Engine.cardOf oid g) == Just (CardName.MkCardName (Text.pack "Opt"))) (Game.Engine.zoneMembers Zone.Graveyard S.alice g)
+        seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 200 bottoming) (const (Right Nothing)))) botOrDefault
+        run = Driver.drive [] seats 40 (pure . resolved) board
+        (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (SplitMix.MkSplitMix 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
+        shown = reverse (written sc)
+    Spec.assertEqWith s "the top card listed by name" (take 1 (drop 1 (dropWhile (not . Text.isPrefixOf heading) shown))) [Text.pack "  1. Hill Giant"]
+    -- CR 400.7: the card moved is a new object, so it is read by its name.
+    Spec.assertEqWith s "it is now the bottom card, and the card below it was drawn" (fmap (\after -> (fmap (named after) (Maybe.listToMaybe (reverse (Game.Engine.zoneMembers Zone.Library S.alice after))), fmap (named after) (filter (`notElem` Game.Engine.zoneMembers Zone.Hand S.alice board) (Game.Engine.zoneMembers Zone.Hand S.alice after)))) outcome) (Right (Just (Just giantName), fmap (named board) (take 1 (drop 1 (Game.Engine.zoneMembers Zone.Library S.alice board)))))
 
 -- The seat across the table.
 otherSeat :: Natural -> Natural

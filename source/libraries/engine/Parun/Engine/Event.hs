@@ -1839,7 +1839,7 @@ bringInto payload source pid = do
         | atMost == 0 = True
         | Set.null axes = atMost == sum (Map.elems available) || Map.size available == 1
         | otherwise = atMost == List.genericLength (Map.keys available)
-  chosen <- case NonEmpty.nonEmpty (Map.keys available) of
+  chosen <- case NonEmpty.nonEmpty (Map.toList available) of
     Nothing -> pure []
     Just candidates
       | atLeast == atMost && forced ->
@@ -1866,7 +1866,7 @@ pickOutside source pid revealed (OutsidePick.MkOutsidePick relation count) = do
     then pure revealed
     else do
       seat <- Players.chooseOne pid source Nothing (Players.chooserOffer pid gs relation)
-      case (seat, NonEmpty.nonEmpty (Map.keys offered)) of
+      case (seat, NonEmpty.nonEmpty (Map.toList offered)) of
         (Just who, Just candidates)
           | Map.size offered > 1 -> do
               gs1 <- State.get

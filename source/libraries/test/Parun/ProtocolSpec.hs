@@ -50,6 +50,7 @@ import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -73,11 +74,13 @@ import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
@@ -88,6 +91,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Undoing as Undoing
@@ -295,6 +299,41 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 103.5b a card's action, by its place where it has two, then none" (offered (Prompt.MulliganAction alice S.alice [(o7, hand 0), (o7, hand 1), (o9, hand 0)])) (Right ([Just (o7, hand 0), Just (o7, hand 1), Just (o9, hand 0), Nothing], entries [R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 0)], R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 1)], R.Object [(Text.pack "source", Protocol.object o9)]]))
     Spec.assertEqWith s "CR 103.6 an opening-hand action, then none" (fmap fst (offered (Prompt.OpeningHandAction alice S.alice [(o9, hand 0)]))) (Right [Just (o9, hand 0), Nothing])
     Spec.assertEqWith s "CR 608.2g a cast as its action, then none" (offered (Prompt.CastWhileSearching alice S.alice [(o9, hillGiant, Facing.FaceUp)])) (Right ([Just (o9, hillGiant, Facing.FaceUp), Nothing], entries [Protocol.actionOffer gs (Action.Cast o9 hillGiant Facing.FaceUp)]))
+
+  Spec.it s "a prompt answered by a set or a sequence offers each candidate as an element of the answer" $ do
+    giant <- S.printingOf s registry "Hill Giant"
+    let o7 = ObjectId.MkObjectId 7
+        o9 = ObjectId.MkObjectId 9
+        alice = Decider.MkDecider S.alice
+        (card, g1) = S.addPermanent giant S.bob (Setup.emptyGame S.bothPlayers)
+        (other, g2) = S.addPermanent giant S.bob g1
+        (printing, gs) = Game.intern giant g2
+        free = Cost.Type.MkCost Nothing []
+        among :: Prompt.Prompt r -> [R.Reply]
+        among prompt = Maybe.fromMaybe [] (field "among" (Protocol.offerOf gs prompt) >>= arrayOf)
+        told prompt = fmap (\key -> field key (Protocol.offerOf gs prompt))
+        mode = ModeIndex.MkModeIndex
+        modes = Prompt.ChooseModes alice S.alice o7 (Set.fromList [mode 0, mode 2]) (ModeSelection.ChooseExactlyWithRepeats 2)
+        splice = Prompt.ChooseSplice alice S.alice o7 [(o9, free), (card, free)]
+        zones = Prompt.ChooseSearchZones alice S.alice (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame])
+        pool = OutsideCard.InPool printing
+        outside = Prompt.ChooseFromOutsideTheGame alice S.alice ((pool, 2) NonEmpty.:| []) 1 2
+        bands = Prompt.DeclareBands alice S.alice [o9, card]
+        scry = Prompt.ChooseScry alice S.alice [card, other]
+    Spec.assertEqWith s "CR 700.2a the legal modes by index" (among modes) [R.Number 0, R.Number 2]
+    Spec.assertEqWith s "CR 700.2d as many as the selection takes, one chosen again" (told modes ["least", "most", "repeats"]) [Just (R.Number 2), Just (R.Number 2), Just (R.Boolean True)]
+    Spec.assertEqWith s "and a mode named twice reads back" (Protocol.decodeAnswer modes (R.Array (replicate 2 (R.Number 2)))) (Right (Seq.fromList [mode 2, mode 2]))
+    Spec.assertEqWith s "CR 702.47b the cards read back in the order named" (Protocol.decodeAnswer splice (R.Array (reverse (among splice)))) (Right [card, o9])
+    Spec.assertEqWith s "CR 701.23j at least one place, each named" (told zones ["least", "names"]) [Just (R.Number 1), Just (R.Array (fmap R.Text [Text.pack "a graveyard", Text.pack "outside the game"]))]
+    Spec.assertEqWith s "and the places read back" (Protocol.decodeAnswer zones (R.Array (among zones))) (Right (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame]))
+    Spec.assertEqWith s "CR 701.34a the permanents, then the players as recipients" (among (Prompt.ChooseProliferate alice S.alice [o9] [S.bob])) [Protocol.object o9, Reply.encode Reply.recipient Protocol.namer (Recipient.ToPlayer S.bob)]
+    Spec.assertEqWith s "CR 400.11c a card once per copy, named" (told outside ["names", "least", "most"]) [Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant (sideboard)")))), Just (R.Number 1), Just (R.Number 2)]
+    Spec.assertEqWith s "and both copies read back" (Protocol.decodeAnswer outside (R.Array (among outside))) (Right [pool, pool])
+    Spec.assertEqWith s "CR 702.22c the attackers, a band of them reading back" (Protocol.decodeAnswer bands (R.Array [R.Array (among bands)])) (Right [Set.fromList [o9, card]])
+    Spec.assertEqWith s "CR 701.56a the candidates and the source" (told (Prompt.ChooseTimeTravel alice S.alice o7 [o9]) ["source", "among"]) [Just (Protocol.object o7), Just (R.Array [Protocol.object o9])]
+    Spec.assertEqWith s "CR 701.22a the cards looked at, top first, each named" (told scry ["from", "names"]) [Just (R.Array [Protocol.object card, Protocol.object other]), Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant"))))]
+    Spec.assertEqWith s "CR 701.25a a surveil alike" (Protocol.offerOf gs (Prompt.ChooseSurveil alice S.alice [card, other])) (Protocol.offerOf gs scry)
+    Spec.assertEqWith s "CR 701.29a a fateseal names whose library" (told (Prompt.ChooseFateseal alice S.alice S.bob [card]) ["owner", "from"]) [Just (R.Text (Text.pack "1")), Just (R.Array [Protocol.object card])]
 
   Spec.it s "a hidden card reaches no line sent to the other seat" $ do
     gs <- started s registry

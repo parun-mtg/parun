@@ -238,8 +238,8 @@ extrapolating named chooser p = case p of
   Prompt.ChoosePlayer {} -> chooser
   Prompt.ChooseFromOutsideTheGame _ who candidates _ _
     | who == S.alice -> named
-    | who == S.carol -> [NonEmpty.last candidates]
-    | otherwise -> [NonEmpty.head candidates]
+    | who == S.carol -> [fst (NonEmpty.last candidates)]
+    | otherwise -> [fst (NonEmpty.head candidates)]
   _ -> exercising p
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -333,7 +333,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         -- fails if the answer is ignored and the head is taken.
         answeringLast :: Prompt.Prompt r -> r
         answeringLast p = case p of
-          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [List.last (foldr (:) [] candidates)]
+          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [List.last (fmap fst (foldr (:) [] candidates))]
           _ -> exercising p
         resolved = resolveWish answeringLast wishId gs
     -- Psychic Miasma is interned second, so it is what the prompt offers last and
@@ -503,7 +503,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           OutsideCard.InAnotherGame _ -> False
         answer :: Prompt.Prompt r -> r
         answer p = case p of
-          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [Maybe.fromMaybe (NonEmpty.head candidates) (List.find isPool (NonEmpty.toList candidates))]
+          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [Maybe.fromMaybe (fst (NonEmpty.head candidates)) (List.find isPool (fmap fst (NonEmpty.toList candidates)))]
           _ -> S.identityAnswer p
         after = snd (Engine.runGamePure answer sub (Event.bringInto (FromOutsideTheGame.MkFromOutsideTheGame 1 False OutsideDestination.Hand predicate True Set.empty Nothing) bearId S.alice))
     Spec.assertEqWith s "the pool and the main game were both on offer" (length offered) 2
@@ -560,7 +560,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         -- which is the whole of what the sorcery leg asserts.
         preferManifest :: Prompt.Prompt r -> r
         preferManifest p = case p of
-          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [Maybe.fromMaybe (NonEmpty.head candidates) (List.find (== OutsideCard.InAnotherGame manifestedId) (NonEmpty.toList candidates))]
+          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [Maybe.fromMaybe (fst (NonEmpty.head candidates)) (List.find (== OutsideCard.InAnotherGame manifestedId) (fmap fst (NonEmpty.toList candidates)))]
           _ -> S.identityAnswer p
         wishing predicate = snd (Engine.runGamePure preferManifest sub (Event.bringInto (FromOutsideTheGame.MkFromOutsideTheGame 1 False OutsideDestination.Hand predicate True Set.empty Nothing) manifestedId S.alice))
         offeredOuter predicate = Maybe.mapMaybe (\card -> case card of OutsideCard.InAnotherGame oid -> Just oid; _ -> Nothing) (Event.eligible predicate manifestedId S.alice sub)
@@ -605,7 +605,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           -- Granted's printed "may" (CR 608.2d), taken.
           Prompt.ChooseOptional {} -> OptionalDecision.Exercises
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (NonEmpty.head offered) (List.find (\card -> any (\oid -> card == OutsideCard.InAnotherGame oid) hanweir) (NonEmpty.toList offered))]
+            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find (\card -> any (\oid -> card == OutsideCard.InAnotherGame oid) hanweir) (fmap fst (NonEmpty.toList offered)))]
           _ -> S.identityAnswer p
         granting parent =
           let (faeId, sub1) = S.addHandCard fae S.alice (S.landsFor island S.alice 4 (Setup.subgameStateFrom S.alice parent))
@@ -730,7 +730,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           -- Living Wish's printed "may" (CR 608.2d), taken.
           Prompt.ChooseOptional {} -> OptionalDecision.Exercises
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (NonEmpty.head offered) (List.find (== OutsideCard.InAnotherGame township) (NonEmpty.toList offered))]
+            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find (== OutsideCard.InAnotherGame township) (fmap fst (NonEmpty.toList offered)))]
           -- CR 730.2's roll, answered so the turn count above is the one played.
           Prompt.RandomFirstPlayer _ -> S.alice
           _ -> S.castAnswer p
@@ -808,7 +808,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           -- crosses instead, so the battlefield and library assertions below both
           -- redden rather than the case passing on the wrong card.
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (NonEmpty.head offered) (List.find isPiker (NonEmpty.toList offered))]
+            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find isPiker (fmap fst (NonEmpty.toList offered)))]
           -- CR 730.2's roll, answered so the turn count above is the one played.
           Prompt.RandomFirstPlayer _ -> S.alice
           _ -> S.castAnswer p
@@ -906,7 +906,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           -- different card and every assertion below would redden rather than the
           -- case passing on the wrong one.
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (NonEmpty.head offered) (List.find (== OutsideCard.InAnotherGame songId) (NonEmpty.toList offered))]
+            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find (== OutsideCard.InAnotherGame songId) (fmap fst (NonEmpty.toList offered)))]
           -- CR 730.2's roll, answered so the turn count above is the one played.
           Prompt.RandomFirstPlayer _ -> S.alice
           _ -> S.castAnswer p
@@ -980,7 +980,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           -- that held anything else would leave Shahrazad's card in the main game
           -- rather than in her library, which the second assertion reddens on.
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (NonEmpty.head offered) (List.find isFromAnotherGame (NonEmpty.toList offered))]
+            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find isFromAnotherGame (fmap fst (NonEmpty.toList offered)))]
           -- CR 730.2's roll, answered so the turn count above is the one played.
           Prompt.RandomFirstPlayer _ -> S.alice
           _ -> S.castAnswer p
@@ -1035,7 +1035,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
                 -- Burning Wish's printed "may" (CR 608.2d), taken.
                 Prompt.ChooseOptional {} -> OptionalDecision.Exercises
                 Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-                  [Maybe.fromMaybe (NonEmpty.head offered) (List.find wanted (NonEmpty.toList offered))]
+                  [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find wanted (fmap fst (NonEmpty.toList offered)))]
                 -- CR 730.2's roll, answered so the turn count above is the one played.
                 Prompt.RandomFirstPlayer _ -> S.alice
                 _ -> S.castAnswer p
@@ -1306,8 +1306,8 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         recordOffers p = case p of
           Prompt.ChooseOptional {} -> pure OptionalDecision.Exercises
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> do
-            State.modify' (\seen -> seen || any wanted (NonEmpty.toList offered))
-            pure [Maybe.fromMaybe (NonEmpty.head offered) (List.find wanted (NonEmpty.toList offered))]
+            State.modify' (\seen -> seen || any (wanted . fst) (NonEmpty.toList offered))
+            pure [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find wanted (fmap fst (NonEmpty.toList offered)))]
           Prompt.RandomFirstPlayer _ -> pure S.alice
           -- CR 407.2 in the subgame: never ante the wish.
           Prompt.RandomObject offered -> pure (Maybe.fromMaybe (NonEmpty.head offered) (List.find (/= wishLibraryId) (NonEmpty.toList offered)))
@@ -1354,7 +1354,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         answer :: Prompt.Prompt r -> r
         answer p = case p of
           Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> [Maybe.fromMaybe (NonEmpty.head offered) (List.find wanted (NonEmpty.toList offered))]
+          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find wanted (fmap fst (NonEmpty.toList offered)))]
           Prompt.RandomFirstPlayer _ -> S.alice
           -- CR 407.2 in the subgame: never ante the wish.
           Prompt.RandomObject offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find (/= wishLibraryId) (NonEmpty.toList offered))
@@ -1404,8 +1404,8 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         recordOffers p = case p of
           Prompt.ChooseOptional {} -> pure OptionalDecision.Exercises
           Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> do
-            State.modify' (\(_, seen) -> (True, seen || any isKeeper (NonEmpty.toList offered)))
-            pure [Maybe.fromMaybe (NonEmpty.head offered) (List.find isKeeper (NonEmpty.toList offered))]
+            State.modify' (\(_, seen) -> (True, seen || any (isKeeper . fst) (NonEmpty.toList offered)))
+            pure [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find isKeeper (fmap fst (NonEmpty.toList offered)))]
           Prompt.RandomFirstPlayer _ -> pure S.alice
           _ -> pure (S.castAnswer p)
         ((_, after), (wished, offeredKeeper)) = State.runState (Engine.runGame recordOffers before Engine.priorityLoop) (False, False)
@@ -1451,7 +1451,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         advanced = S.runPure S.identityAnswer ready (Engine.runTurnBasedActions Phase.PrecombatMain)
         answeringLast :: Prompt.Prompt r -> r
         answeringLast p = case p of
-          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> [List.last (foldr (:) [] offered)]
+          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> [List.last (fmap fst (foldr (:) [] offered))]
           _ -> exercising p
         settled = S.runPure answeringLast advanced Engine.settleForPriority
         resolved = S.runPure answeringLast settled Stack.resolveTop
@@ -1627,7 +1627,7 @@ castHalf half oid = Cast.castSpell S.manaPerformer S.alice oid (CardName.MkCardN
 -- is offered, which is what makes one visible.
 researching :: [Int] -> Prompt.Prompt r -> r
 researching picks p = case p of
-  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> Maybe.mapMaybe (\i -> Maybe.listToMaybe (drop i (NonEmpty.toList offered))) picks
+  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> Maybe.mapMaybe (\i -> Maybe.listToMaybe (drop i (fmap fst (NonEmpty.toList offered)))) picks
   Prompt.Shuffle ids -> reverse ids
   _ -> S.identityAnswer p
 
@@ -1678,7 +1678,7 @@ arcaviosAnswer :: [SearchPlace.SearchPlace] -> [ObjectId.ObjectId] -> Bool -> Pr
 arcaviosAnswer places found takeOutside p = case p of
   Prompt.ChooseSearchZones {} -> Set.fromList places
   Prompt.Search {} -> found
-  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> if takeOutside then NonEmpty.toList offered else []
+  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> if takeOutside then fmap fst (NonEmpty.toList offered) else []
   Prompt.Shuffle ids -> reverse ids
   _ -> S.identityAnswer p
 

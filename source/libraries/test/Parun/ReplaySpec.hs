@@ -1425,7 +1425,7 @@ combatReplaySpec s =
         Spec.it s "ChooseFromOutsideTheGame round-trips through the transcript" $ do
           let a = OutsideCard.InPool (PrintingId.MkPrintingId 7)
               b = OutsideCard.InAnotherGame (ObjectId.MkObjectId 9)
-              p = Prompt.ChooseFromOutsideTheGame decider S.alice (a NonEmpty.:| [b]) 1 2
+              p = Prompt.ChooseFromOutsideTheGame decider S.alice ((a, 1) NonEmpty.:| [(b, 1)]) 1 2
           Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p [b])) (Just [b])
           Spec.assertEqWith s "choosing both round trips" (Replay.decode p (Replay.encode p [a, b])) (Just [a, b])
           -- Discriminating: fails if the prompt reuses Response.ChoseDungeon

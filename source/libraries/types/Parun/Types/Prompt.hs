@@ -408,11 +408,12 @@ data Prompt r where
   -- | CR 400.11c \/ 730.4: which cards a player brings in from outside the
   -- game, at least the first Natural and at most the second; an OutsideCard
   -- rather than a printing because which zone it leaves decides what triggers
-  -- (CR 730.4a). Two copies of one printing are one offer, which the answer may
-  -- name once per copy. Also a search's find outside the game (CR 701.23j),
+  -- (CR 730.4a). Two copies of one printing are one offer, beside how many
+  -- copies there are, which the answer may name once each. Also a search's find
+  -- outside the game (CR 701.23j),
   -- asked after its find in the zones, and the opponent's pick among revealed
   -- cards (Parun.Types.OutsidePick), asked of that opponent.
-  ChooseFromOutsideTheGame :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty OutsideCard.OutsideCard -> Natural.Natural -> Natural.Natural -> Prompt [OutsideCard.OutsideCard]
+  ChooseFromOutsideTheGame :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty (OutsideCard.OutsideCard, Natural.Natural) -> Natural.Natural -> Natural.Natural -> Prompt [OutsideCard.OutsideCard]
   -- | CR 309.5a \/ 701.49b: which arrow out of the current room a venturing
   -- player follows; the ObjectId is the dungeon card.
   ChooseRoom :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty RoomIndex.RoomIndex -> Prompt RoomIndex.RoomIndex
