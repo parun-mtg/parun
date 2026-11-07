@@ -1301,7 +1301,7 @@ defaultAnswer p = case p of
   -- (CR 202.3), so dragging every one in can only raise the total, and the whole
   -- graveyard is a legal answer whenever the cost is payable at all. A
   -- deterministic fallback, not a recommendation.
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList candidates
+  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   -- CR 608.2d: the head of the offer, ChooseCardInGraveyard's fallback. Every
   -- candidate was pre-filtered by the engine, so the head is a legal answer. A
   -- deterministic fallback, not a recommendation.
@@ -1312,7 +1312,7 @@ defaultAnswer p = case p of
   -- -- in which case the payment goes Unpaid, which `Cost.pay` turns into a
   -- complete no-op rather than an illegal state. A deterministic fallback, not a
   -- recommendation.
-  Prompt.ChooseTapsForTotalPower _ _ _ candidates _ -> Set.fromList candidates
+  Prompt.ChooseTapsForTotalPower _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   -- The first `count` candidates, ChooseSacrifices' fallback: the count is exact
   -- here, so the maximal subset the arm above takes would be rejected outright
   -- wherever there are more candidates than the cost wants.

@@ -268,7 +268,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 101.4b what earlier choosers picked" (field "earlier" (Protocol.offerOf gs sacrifices)) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [Protocol.object o7]]]))
     Spec.assertEqWith s "no more than there are" (bounds (Prompt.ChooseTaps alice S.alice o7 [o9] 2)) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 1)]
     Spec.assertEqWith s "CR 702.167a one or more is a least" (bounds (Prompt.ChooseMaterials alice S.alice o7 [o9, o11] 1 True)) [Just (Protocol.object o7), Just (R.Number 1), Nothing]
-    Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [o9] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
+    Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [(o9, 2)] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
     Spec.assertEqWith s "any number up to the most" (bounds (Prompt.ChooseAnyNumber alice S.alice o7 AnyNumberOf.ToExile [o9, o11] (Just 1) Seq.empty)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 1)]
     Spec.assertEqWith s "recipients read back as the answer" (fmap (Protocol.decodeAnswer loop . R.Array) (field "among" (Protocol.offerOf gs loop) >>= arrayOf)) (Just (Right (Set.fromList [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])))
 

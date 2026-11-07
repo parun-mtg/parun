@@ -6780,7 +6780,7 @@ payPayable perform paidFor slots pid oid component = case component of
     gs <- State.get
     let candidates = tapCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
-    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid candidates n)
+    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid (fmap (\c -> (c, tapPower c gs)) candidates) n)
     let totalPower = sum (fmap (`tapPower` gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && totalPower >= toInteger n
       then do
@@ -7400,7 +7400,7 @@ payPayable perform paidFor slots pid oid component = case component of
     gs <- State.get
     let candidates = evidenceCandidates slots pid oid gs
         decider = Decide.deciderFor pid gs
-    chosen <- Game.choose (Prompt.ChooseCollectEvidence decider pid oid candidates n)
+    chosen <- Game.choose (Prompt.ChooseCollectEvidence decider pid oid (fmap (\c -> (c, evidenceValue c gs)) candidates) n)
     let collected = sum (fmap (`evidenceValue` gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && collected >= toInteger n
       then do

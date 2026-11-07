@@ -790,8 +790,9 @@ data Prompt r where
   -- many. The arm above\'s payload read as a threshold, which is
   -- ChooseTapsForTotalPower\'s relation to ChooseTaps -- and NEVER elided for its
   -- reason: whether the answer is forced is a question about subsets, so eliding
-  -- it would decide for the player.
-  ChooseCollectEvidence :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- it would decide for the player. Each candidate carries its mana value, so
+  -- the answerer can judge a total without reading the board.
+  ChooseCollectEvidence :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Any number of the candidates, the empty set included, at most the Natural
   -- where there is one; the AnyNumberOf says what they are and what is done to
   -- them. Asked at one candidate, where declining is a second answer, and
@@ -819,8 +820,9 @@ data Prompt r where
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).
   -- Never elided, forcedness being a question about subsets. Answers as
-  -- Response.ChoseTaps.
-  ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- Response.ChoseTaps. Each candidate carries its power, ChooseCollectEvidence\'s
+  -- reason.
+  ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Which permanents are tapped to pay a cost naming how many (CR 601.2f);
   -- ChooseSacrifices' shape and elision. Answers as Response.ChoseTaps.
   ChooseTaps :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)

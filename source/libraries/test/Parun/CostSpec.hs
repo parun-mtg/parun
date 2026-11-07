@@ -2278,7 +2278,8 @@ collecting srcId picks victim p = case p of
         State.put (1, offers)
         pure offer
       _ -> pure Action.Type.Pass
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> do
+  Prompt.ChooseCollectEvidence _ _ _ valued _ -> do
+    let candidates = fmap fst valued
     State.modify' (\(taken, offers) -> (taken, offers <> [candidates]))
     pure (Set.fromList (filter (`List.elem` picks) candidates))
   Prompt.ChooseTargets _ _ _ sets -> pure (fmap (Set.filter (== Recipient.ToCreature victim) . snd) sets)
@@ -2444,7 +2445,7 @@ necropsyAnswer victim p =
    in case p of
         Prompt.AnnounceTargets _ _ _ asked -> fmap (\(_, legal) -> if Set.null (named legal) then 0 else 1) asked
         Prompt.ChooseTargets _ _ _ asked -> fmap (named . snd) asked
-        Prompt.ChooseCollectEvidence _ _ _ candidates owed -> if owed == 0 then Set.empty else Set.fromList candidates
+        Prompt.ChooseCollectEvidence _ _ _ candidates owed -> if owed == 0 then Set.empty else Set.fromList (fmap fst candidates)
         _ -> S.identityAnswer p
 
 -- `card` in alice's hand over `lands` Forests and a Swamp, two Acidic Soils in
@@ -2475,7 +2476,7 @@ evidenceBoard s registry card lands = do
 collectingEvidence :: Bool -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 collectingEvidence collects victim p = case p of
   Prompt.ChooseToPay {} -> if collects then PaymentDecision.Pays else PaymentDecision.Declines
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList candidates
+  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   _ -> announcing collects victim p
 
 -- collectingEvidence, recording every CR 609.7a source-choice offer in order.

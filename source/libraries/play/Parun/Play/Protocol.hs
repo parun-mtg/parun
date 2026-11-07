@@ -474,9 +474,9 @@ offerOf gs prompt = case prompt of
   -- CR 702.167a: "one or more" makes the count a least.
   Prompt.ChooseMaterials _ _ source candidates count orMore -> subset (Just source) [] (if orMore then (Just count, Nothing) else exactly count candidates) (fmap object candidates)
   -- CR 702.122a: any of them, whose total power the engine judges.
-  Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset (Just source) [("power", natural power)] (Nothing, Nothing) (fmap object candidates)
+  Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset (Just source) [("power", natural power)] (Nothing, Nothing) (fmap (object . fst) candidates)
   -- CR 701.59a: any of them, whose total mana value the engine judges.
-  Prompt.ChooseCollectEvidence _ _ source candidates total -> subset (Just source) [("manaValue", natural total)] (Nothing, Nothing) (fmap object candidates)
+  Prompt.ChooseCollectEvidence _ _ source candidates total -> subset (Just source) [("manaValue", natural total)] (Nothing, Nothing) (fmap (object . fst) candidates)
   -- CR 608.2d: up to the most where there is one; CR 101.4b: what earlier
   -- choosers picked.
   Prompt.ChooseAnyNumber _ _ source purpose candidates most earlier ->
