@@ -656,7 +656,7 @@ cardSpec s = Spec.describe s "Card" $ do
     Spec.assertEqWith s "both colours" (Projection.printedColorsOf c) (Set.fromList [Color.Green, Color.White])
     Spec.assertEqWith s "mana value 2" (Quantity.manaValueOf c) 2
     -- The two names RENDERED as one string, unspaced -- the form
-    -- docs/rules.txt's own Examples write it in ("Fire//Ice",
+    -- data/comprehensive-rules.txt's own Examples write it in ("Fire//Ice",
     -- "Assault//Battery"). What the card HAS is both names, which is a set and
     -- is asserted through the projection (Parun.CastSpec's "in hand, the
     -- combined view has both names").

@@ -1462,11 +1462,11 @@ mintOutside pid printingId gs =
 -- Alchemy's conjure keyword action: create the given card out of nothing and put
 -- it into the conjuring player's zone.
 --
--- DIGITAL-ONLY, so there is no rule to cite -- docs/rules.txt has no "conjure".
--- What the CR settles is what this is NOT: CR 111.1's token is not a card, where
--- a conjured object is one, so this interns a Printing and mints Source.OfCard
--- rather than Source.OfToken, and the result is castable and shufflable like any
--- other card.
+-- DIGITAL-ONLY, so there is no rule to cite -- data/comprehensive-rules.txt has
+-- no "conjure". What the CR settles is what this is NOT: CR 111.1's token is
+-- not a card, where a conjured object is one, so this interns a Printing and
+-- mints Source.OfCard rather than Source.OfToken, and the result is castable
+-- and shufflable like any other card.
 --
 -- Here rather than in Parun.Engine.Resolve, createEmblem's placement: the mint is
 -- what the two roads into mintCard share, and an opcode arm is not the place to

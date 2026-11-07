@@ -9,12 +9,12 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- where it goes.
 --
 -- Conjure is a DIGITAL-ONLY keyword action and is in no rule of the CR --
--- @docs\/rules.txt@ does not contain the word -- so the authority for this type
--- is the printed sentence. Three of them are printed and they ask different
--- questions: "conjure a card named Ornithopter" names a card outright,
--- "conjure a duplicate of target spell" names an OBJECT ALREADY IN THE GAME and
--- takes its card from there, and "conjure a random creature card with mana value
--- X" names neither and picks from the Oracle card reference.
+-- @data\/comprehensive-rules.txt@ does not contain the word -- so the authority
+-- for this type is the printed sentence. Three of them are printed and they ask
+-- different questions: "conjure a card named Ornithopter" names a card
+-- outright, "conjure a duplicate of target spell" names an OBJECT ALREADY IN
+-- THE GAME and takes its card from there, and "conjure a random creature card
+-- with mana value X" names neither and picks from the Oracle card reference.
 --
 -- A sum rather than optional fields on 'Parun.Types.Conjure.Conjure': no
 -- printing says two of them, and 'Parun.Types.Conjure.selection' is a question

@@ -416,7 +416,7 @@ Unchecked, and worth checking before leaning on it hard: how it represents what 
 ### 11.3 The caveats that make this safe to use
 
 - **The CR is ground truth; these are not.** §9's meta-lesson applies with full force. Argentum's `LayerSystemTest.kt` asserts a *simplified wrong* Blood Moon outcome and says so in a comment. A green test in another engine is evidence someone thought about the case, never evidence of the answer.
-- **Consult after deriving, not before.** Reading another engine's model before working the rule out from `docs/rules.txt` imports that model, and phase's and mtgish's are both parser-shaped where parun's is AST-shaped.
+- **Consult after deriving, not before.** Reading another engine's model before working the rule out from `data/comprehensive-rules.txt` imports that model, and phase's and mtgish's are both parser-shaped where parun's is AST-shaped.
 - **Facts travel; code needs the notice.** Which card exercises a rule, and how often an opcode appears, are facts. Ported code and card data carry MIT/BSD obligations, and card text is Wizards IP regardless (§7).
 - **None of it is guaranteed present.** `_scratch/` is gitignored, so every clone named here may be absent. A missing corpus makes this a skipped step, never a blocked one.
 
@@ -434,7 +434,7 @@ Unchecked, and worth checking before leaning on it hard: how it represents what 
 
 **What is worth taking.**
 
-- **XMage's test suite as a gameplay oracle.** XMage is MIT (§7), so its card-level tests can be ported with the notice, as ironsmith did. Like phase's corpus (§11.1), they are first a card-finding index; their expected outcomes are claims to check against `docs/rules.txt`, never ground truth (§11.3).
+- **XMage's test suite as a gameplay oracle.** XMage is MIT (§7), so its card-level tests can be ported with the notice, as ironsmith did. Like phase's corpus (§11.1), they are first a card-finding index; their expected outcomes are claims to check against `data/comprehensive-rules.txt`, never ground truth (§11.3).
 - **Render-and-compare as an ingestion check.** For #9, rendering a parun card back to English and diffing it against MTGJSON's oracle text would catch what a hand-written card silently dropped. It is a lint, not a correctness claim, for the reason above.
 
 **What is not.** Its architecture, which is the fusion `design.md` exists to prevent, and its code, which is AGPL.

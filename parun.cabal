@@ -14,6 +14,7 @@ license-file: LICENSE.txt
 data-dir: data
 data-files:
   cards/*.json
+  comprehensive-rules.txt
   decks/**/*.txt
   oracle-unrendered.txt
   scenarios/**/*.json
@@ -22,8 +23,6 @@ data-files:
 extra-doc-files:
   CHANGELOG.md
   README.md
-
-extra-source-files: docs/rules.txt
 
 source-repository head
   location: https://github.com/parun-mtg/parun

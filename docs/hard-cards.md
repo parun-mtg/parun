@@ -52,9 +52,9 @@ issue; an expressible card not yet in the pool is a plain card add.
 
 The comprehensive rules name some cards outright: "One card (X) ...". Each is
 machinery the rules carve out for a single printing. Find them with `grep -nE
-'(One|Two) cards? \(' docs/rules.txt`. Rules naming a card already in the table
-above (Karn Liberated, Volrath's Shapeshifter, Shahrazad, Word of Command) are
-not repeated.
+'(One|Two) cards? \(' data/comprehensive-rules.txt`. Rules naming a card already
+in the table above (Karn Liberated, Volrath's Shapeshifter, Shahrazad, Word of
+Command) are not repeated.
 
 | Rule | Card | Status |
 |---|---|---|
