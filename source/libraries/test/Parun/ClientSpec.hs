@@ -744,9 +744,9 @@ spec s registry = Spec.describe s "Client" $ do
     (_, _, _, board) <- ExileSpec.pileBoardUncast s registry
     let heading = Text.pack "Choose 1 target for Synthetic Blind Reclamation:"
         listed at = takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) at))
-        reclaims sc
-          | heading `elem` pending sc = Maybe.listToMaybe [n | line <- listed (pending sc), Text.isInfixOf (Text.pack "pile") line, let n = Text.takeWhile Char.isDigit (Text.strip line)]
-          | otherwise = castsOnce "auto" "Synthetic Blind Reclamation" sc
+        reclaims at
+          | heading `elem` pending at = Maybe.listToMaybe [n | line <- listed (pending at), Text.isInfixOf (Text.pack "pile") line, let n = Text.takeWhile Char.isDigit (Text.strip line)]
+          | otherwise = castsOnce "auto" "Synthetic Blind Reclamation" at
         hidden = length . ExileSpec.faceDownExiled
         seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 40 reclaims) (const (Right Nothing)))) botOrDefault
         run = Driver.drive [] seats 40 (pure . (< 2) . hidden) board
@@ -755,7 +755,7 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "one card of the pile left exile, the other still hidden there" (fmap hidden outcome) (Right 1)
     Spec.assertEqWith s "the face-up card stayed in exile" (fmap (Set.size . GameState.exile) outcome) (Right 2)
     -- Proxy, AFTER the behaviour: the listing.
-    Spec.assertEqWith s "listed" (fmap (Text.drop 5) (listed shown)) [Text.pack "Player 2's Riftsweeper, in exile", Text.pack "A face-down exiled pile"]
+    Spec.assertEqWith s "listed" (fmap (Text.drop 5) (listed shown)) [Text.pack "Player 2's Riftsweeper 2/2, in exile", Text.pack "A face-down exiled pile"]
 
   -- CR 406.4 / 115.3: a slot may draw a pile more than once, and two piles are
   -- told apart by number since neither may be looked at.
