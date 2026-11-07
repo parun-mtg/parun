@@ -238,7 +238,7 @@ answer terminal lookUp seat view question = case (Question.kind question, slotsO
           named = if several then foldMap (\t -> Text.pack " (" <> Render.spaced t <> Text.pack ")") (textOf slot) else Text.empty
           shown =
             Text.concat [Text.pack "Choose ", Render.count n "target", Text.pack " for ", objectName view source, named, Text.pack ":"]
-              : numbered (fmap (recipientName view) legal)
+              : numbered (fmap (targetName view legal) legal)
       picked <- ask (fmap recipientObject legal) (shown, fmap R.Array . exactly n legal)
       pure (R.Array [slot, picked])
 
@@ -1194,7 +1194,29 @@ recipientName view reply = case reply of
   R.Array [R.Text tag, R.Text x]
     | tag == Text.pack "Player" -> maybe x (Render.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
     | otherwise -> listedName view (R.Text x)
+  R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> pileName draw
   _ -> Text.pack "something"
+
+-- | CR 406.4's pile, named by its kind alone since its cards are hidden; a
+-- draw past the first out of it is named by its ordinal.
+pileName :: R.Reply -> Text.Text
+pileName draw =
+  let foretold = (field "pile" draw >>= field "type" >>= textOf) == Just (Text.pack "OfForetold")
+      nth = maybe Text.empty (\n -> if n > 1 then Text.pack (", card " <> show n) else Text.empty) (field "ordinal" draw >>= naturalOf)
+   in Text.pack (if foretold then "A foretold card" else "A face-down exiled pile") <> nth
+
+-- | A recipient as a target prompt lists it: as recipientName names it, and a
+-- pile numbered among the offer's piles where it holds several.
+targetName :: PlayerView.PlayerView -> [R.Reply] -> R.Reply -> Text.Text
+targetName view legal reply =
+  recipientName view reply <> case (pileOf reply, piles) of
+    (Just pile, _ : _ : _) -> foldMap (\i -> Text.pack (" (pile " <> show (i + 1) <> ")")) (List.elemIndex pile piles)
+    _ -> Text.empty
+  where
+    piles = ListUtils.nubOrd (Maybe.mapMaybe pileOf legal)
+    pileOf r = case r of
+      R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> field "pile" draw
+      _ -> Nothing
 
 objectOf :: R.Reply -> Maybe ObjectId.ObjectId
 objectOf reply = do
