@@ -20,7 +20,8 @@ import qualified Parun.Types.WhichCounters as WhichCounters.Type
 --
 -- Counters of any kind are accepted only at a count the payer does not settle
 -- (Tayam, Luminous Enigma; Soul Diviner): no printing removes "one or more
--- counters" of any kind ('Fields.objectWith''s check).
+-- counters" of any kind ('Fields.objectWith''s check). A ceiling (FromAmongAtMost)
+-- is refused outright: no cost removes "up to" a count.
 codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (CountersFromPermanents.CountersFromPermanents keyword)
 codec keywordCodec = Fields.objectWith check $ do
   count <- Fields.required "count" CostAmount.codec CountersFromPermanents.count
@@ -30,5 +31,6 @@ codec keywordCodec = Fields.objectWith check $ do
   pure CountersFromPermanents.MkCountersFromPermanents {CountersFromPermanents.count = count, CountersFromPermanents.kind = kind, CountersFromPermanents.whichPermanent = whichPermanent, CountersFromPermanents.spread = spread}
   where
     check removal = case (CountersFromPermanents.kind removal, CountersFromPermanents.spread removal) of
+      (_, CounterSpread.Type.FromAmongAtMost) -> Left (Text.pack "RemoveCounters: no cost removes up to a count")
       (WhichCounters.Type.OfAnyKind, CounterSpread.Type.FromAmongAtLeast) -> Left (Text.pack "RemoveCounters: counters of any kind are removed only at a fixed count")
       _ -> Right removal

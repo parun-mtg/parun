@@ -169,6 +169,8 @@ component self named c = case c of
       (CounterSpread.FromAmongAtLeast, CostAmount.Fixed 0) -> [Text.pack "any number of " <> word <> Text.pack "counters"]
       (CounterSpread.FromAmongAtLeast, CostAmount.Fixed 1) -> [Text.pack "one or more " <> word <> Text.pack "counters"]
       (CounterSpread.FromAmongAtLeast, _) -> []
+      -- Refused by Parun.Codec.CountersFromPermanents.
+      (CounterSpread.FromAmongAtMost, _) -> []
       (_, CostAmount.Fixed n) -> counted word (toInteger n)
       (_, CostAmount.Announced _) -> [Text.pack "X " <> word <> Text.pack "counters"]
     from <- case (f, spread) of

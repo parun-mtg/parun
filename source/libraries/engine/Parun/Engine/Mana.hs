@@ -738,6 +738,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
                     CounterSpread.FromAmongAtLeast -> [floor_ .. sum carriers]
                     CounterSpread.FromAmong -> [floor_]
                     CounterSpread.FromOne -> [floor_]
+                    -- Refused by Parun.Codec.CountersFromPermanents.
+                    CounterSpread.FromAmongAtMost -> []
         _ -> Nothing
       pricedRemoving option n = [shareOf priced | (offered, priced) <- manaRepricingsGiven (Map.singleton Binding.removedCounters (Binding.toAmount n)) gs pcs oid gs, offered == option]
       choosable option =
