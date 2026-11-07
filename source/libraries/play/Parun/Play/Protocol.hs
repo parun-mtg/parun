@@ -106,6 +106,7 @@ import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.TriggerEntry as TriggerEntry
@@ -207,8 +208,8 @@ idOf label =
 -- tells the seat about each option.
 --
 -- Not implemented: the offer of every prompt not listed here, which sends
--- null: those answered by a number (#6591), an amount per item (#6592), or a
--- name or word (#6593).
+-- null: those answered by an amount per item (#6592), or a name or word
+-- (#6593).
 -- A random prompt no seat answers is never sent.
 offerOf :: GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf gs prompt = case prompt of
@@ -244,6 +245,18 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseManaSpentOnX _ _ source shares -> fields [("source", object source), ("shares", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.Type.unwrap) (Foldable.toList shares)))]
   Prompt.ChooseX _ _ source variable least greatest -> fields [("source", object source), ("variable", Reply.encode (Reply.viaCodec Codec.SlotName.codec) namer variable), ("least", natural least), ("greatest", natural greatest)]
   Prompt.ChooseNumber _ _ source least meaning most -> fields ([("source", object source), ("least", natural least), ("floor", Reply.encode (Reply.viaCodec Codec.NumberFloor.codec) namer meaning)] <> [("greatest", natural greatest) | Just greatest <- [most]])
+  -- CR 601.2b / 702.33a: the keyword paid, from none to its limit where it has one.
+  Prompt.ChooseKicker _ _ source keyword _ limit -> fields ([("source", object source), ("keyword", Reply.encode (Reply.viaCodec Codec.Keyword.codec) namer keyword), ("least", natural 0)] <> [("greatest", natural most) | Just most <- [limit]])
+  -- CR 702.132a / 118.3: from none to what the assisting player's pool pays.
+  Prompt.ChooseAssistAmount _ _ source most -> fields [("source", object source), ("least", natural 0), ("greatest", natural most)]
+  -- CR 107.14 / 118.3: from none to the player's energy.
+  Prompt.ChoosePaidEnergy _ _ source most -> fields [("source", object source), ("least", natural 0), ("greatest", natural most)]
+  -- CR 715.3b: from one to the final chapter.
+  Prompt.ChooseReadAheadChapter _ _ source final -> fields [("source", object source), ("least", natural 1), ("greatest", natural final)]
+  -- CR 706.2b: the results in roll order and the amount, each die moved
+  -- either way, then none.
+  Prompt.AdjustDieRoll _ _ results amount cost ->
+    choosing prompt "options" Nothing ([("results", R.Array (fmap R.Number (NonEmpty.toList results))), ("amount", natural amount)] <> [("cost", payment c) | Just c <- [cost]]) (fmap Just [(index, adjustment) | index <- zipWith const [0 ..] (NonEmpty.toList results), adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]] <> [Nothing])
   Prompt.ChooseOptional _ _ source _ _ _ -> fields [("source", object source)]
   Prompt.ChooseGuess _ _ source proposition -> fields [("source", object source), ("proposition", Reply.encode (Reply.viaCodec (Codec.Filter.codec Codec.Keyword.codec)) namer proposition)]
   Prompt.AssignCombatDamage _ _ source lethal total ->

@@ -67,6 +67,8 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.HandActionIndex as HandActionIndex
+import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
@@ -91,6 +93,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
+import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
@@ -299,6 +302,26 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 103.5b a card's action, by its place where it has two, then none" (offered (Prompt.MulliganAction alice S.alice [(o7, hand 0), (o7, hand 1), (o9, hand 0)])) (Right ([Just (o7, hand 0), Just (o7, hand 1), Just (o9, hand 0), Nothing], entries [R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 0)], R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 1)], R.Object [(Text.pack "source", Protocol.object o9)]]))
     Spec.assertEqWith s "CR 103.6 an opening-hand action, then none" (fmap fst (offered (Prompt.OpeningHandAction alice S.alice [(o9, hand 0)]))) (Right [Just (o9, hand 0), Nothing])
     Spec.assertEqWith s "CR 608.2g a cast as its action, then none" (offered (Prompt.CastWhileSearching alice S.alice [(o9, hillGiant, Facing.FaceUp)])) (Right ([Just (o9, hillGiant, Facing.FaceUp), Nothing], entries [Protocol.actionOffer gs (Action.Cast o9 hillGiant Facing.FaceUp)]))
+
+  Spec.it s "a prompt answered by a number offers its least and greatest, and a die adjustment each die moved either way" $ do
+    let o7 = ObjectId.MkObjectId 7
+        alice = Decider.MkDecider S.alice
+        gs = Setup.emptyGame S.bothPlayers
+        bounds :: Prompt.Prompt r -> [Maybe R.Reply]
+        bounds prompt = fmap (\key -> field key (Protocol.offerOf gs prompt)) ["source", "least", "greatest"]
+        kicker = Keyword.Kicker (Cost.Type.MkCost Nothing [])
+        adjust = Prompt.AdjustDieRoll alice S.alice (4 NonEmpty.:| [-1]) 2 Nothing
+        options = maybe (Left (Text.pack "no options")) Right (field "options" (Protocol.offerOf gs adjust) >>= arrayOf) >>= traverse (Protocol.decodeAnswer adjust)
+    Spec.assertEqWith s "CR 601.2b a kicker from none to its limit" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing (Just 1))) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 702.33c and with no greatest for any number of times" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing)) [Just (Protocol.object o7), Just (R.Number 0), Nothing]
+    Spec.assertEqWith s "beside the keyword paid" (field "keyword" (Protocol.offerOf gs (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing))) (Just (Reply.encode (Reply.viaCodec Codec.Keyword.codec) Protocol.namer kicker))
+    Spec.assertEqWith s "and a count reads back as the decision" (Protocol.decodeAnswer (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing) (R.Number 3)) (Right (KickerDecision.MkKickerDecision 3))
+    Spec.assertEqWith s "CR 702.132a an assist from none to the pool's most" (bounds (Prompt.ChooseAssistAmount alice S.alice o7 3)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 3)]
+    Spec.assertEqWith s "CR 107.14 energy from none to the player's" (bounds (Prompt.ChoosePaidEnergy alice S.alice o7 5)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 5)]
+    Spec.assertEqWith s "CR 715.3b a chapter from one to the final" (bounds (Prompt.ChooseReadAheadChapter alice S.alice o7 3)) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 3)]
+    Spec.assertEqWith s "CR 706.2b each die either way, then none" options (Right ([Just (index, adjustment) | index <- [0, 1], adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]] <> [Nothing]))
+    Spec.assertEqWith s "beside the results, unclamped, and the amount" (fmap (\key -> field key (Protocol.offerOf gs adjust)) ["results", "amount", "cost"]) [Just (R.Array [R.Number 4, R.Number (-1)]), Just (R.Number 2), Nothing]
+    Spec.assertBool s (all (Scenario.withinOffer (Prompt.ChooseAssistAmount alice S.alice o7 3)) [0, 3] && not (Scenario.withinOffer (Prompt.ChooseAssistAmount alice S.alice o7 3) 4)) "the bounds are the offer's"
 
   Spec.it s "a prompt answered by a set or a sequence offers each candidate as an element of the answer" $ do
     giant <- S.printingOf s registry "Hill Giant"
