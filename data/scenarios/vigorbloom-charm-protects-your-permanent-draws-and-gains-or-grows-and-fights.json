@@ -1,0 +1,372 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "abear"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "agiant"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Vigorbloom Charm",
+            "label": "c1"
+          },
+          {
+            "card": "Vigorbloom Charm",
+            "label": "c2"
+          },
+          {
+            "card": "Vigorbloom Charm",
+            "label": "c3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "drawn"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "cbear"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.2 / 701.14a: Vigorbloom Charm gives a permanent you control hexproof and indestructible until end of turn, or draws you a card and gains you 3 life, or puts a +1/+1 counter on a creature you control that then fights a creature an opponent controls; another player's permanent is no target for the first mode, and the fight's halves keep their controllers",
+  "note": "Three seats. Each refused cast is on the same two lands as the cast after it. The grown 4/4 Hill Giant fights carol's 2/2 Bears, so the Bears die and the Giant keeps 2 damage.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$p1",
+            null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$c1",
+          "targets": [
+            "$bgiant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$p1",
+            null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$c1",
+          "targets": [
+            "$abear"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Hexproof"
+          },
+          "object": "$abear"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "object": "$abear"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Hexproof"
+          },
+          "object": "$agiant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f2",
+            "$p2",
+            null
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$c2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$f3",
+            "$p3"
+          ],
+          "modes": [
+            2
+          ],
+          "object": "$c3",
+          "targetsBySlot": {
+            "mine": [
+              "$agiant"
+            ],
+            "theirs": [
+              "$abear"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$f3",
+            "$p3"
+          ],
+          "modes": [
+            2
+          ],
+          "object": "$c3",
+          "targetsBySlot": {
+            "mine": [
+              "$bgiant"
+            ],
+            "theirs": [
+              "$cbear"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f3",
+            "$p3"
+          ],
+          "modes": [
+            2
+          ],
+          "object": "$c3",
+          "targetsBySlot": {
+            "mine": [
+              "$agiant"
+            ],
+            "theirs": [
+              "$cbear"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$agiant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$agiant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

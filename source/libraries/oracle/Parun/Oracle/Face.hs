@@ -55,8 +55,10 @@ token named card = case Card.faces card of
         colors <- case Set.toList (Face.colorIndicator face) of
           [] -> [[Text.pack "colorless"]]
           cs -> fmap (\ordered -> [Prose.listing "and" (fmap Filter.color ordered)]) (Maybe.maybeToList (colorOrder cs))
-        let types = fmap (Filter.cardType Filter.Singular) (Set.toList (TypeLine.types line))
-            front = Text.unwords ([Text.pack (show p <> "/" <> show t)] <> colors <> subtypes <> types)
+        -- In any order too: Oracle writes Verdant Kraken's "land creature
+        -- token" where the set's order is the reverse.
+        types <- List.permutations (fmap (Filter.cardType Filter.Singular) (Set.toList (TypeLine.types line)))
+        let front = Text.unwords ([Text.pack (show p <> "/" <> show t)] <> colors <> subtypes <> types)
             with = if null keywords then Text.empty else Text.pack " with " <> Prose.listing "and" keywords
         [(front <> Text.pack " token" <> with, front <> Text.pack " tokens" <> with)]
   _ -> []

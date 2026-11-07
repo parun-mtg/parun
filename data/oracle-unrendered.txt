@@ -3078,6 +3078,7 @@ twinblade-assassins
 twincast
 twinflame-tyrant
 twinned-vision
+twisted-fates
 twisted-fealty
 twisted-image
 two-headed-dragon
@@ -3099,11 +3100,13 @@ undercover-operative
 underdark-rift
 undergrowth-scavenger
 underworld-dreams
+undulating-witness
 undying-flames
 undying-malice
 unerring-sling
 unesh-criosphinx-sovereign
 unexpectedly-absent
+unflinching-hortimancer
 unleash-fury
 unlicensed-hearse
 unlucky-witness
@@ -3132,6 +3135,7 @@ valorous-stance
 vampire-nocturnus
 vanguard-seraph
 vanish-into-eternity
+variable-chaser-arc-of-fortune
 varolz-the-scar-striped
 varragoth-bloodsky-sire
 vastwood-hydra
@@ -3158,11 +3162,16 @@ veteran-ghoulcaller
 vexing-arcanix
 victimize
 victor-mancha-runaway
+vigorbloom-charm
+vigorbloom-vanguard-seed-suture
 vigorspore-wurm
 vile-entomber
 village-rites
 villainous-ogre
+vindictive-triumph
 vine-snare
+vinelasher-adept
+violent-echoes
 viral-spawning
 visions
 visions-of-beyond
@@ -3193,6 +3202,7 @@ vorel-of-the-hull-clade
 vorinclex-monstrous-raider
 vorrac-battlehorns
 vow-of-flight
+vraska-soul-of-stone
 vulshok-battlemaster
 wake-the-reflections
 wake-thrasher
