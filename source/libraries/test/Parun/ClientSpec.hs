@@ -63,6 +63,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -96,6 +97,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
@@ -121,7 +123,9 @@ import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SplitMix as SplitMix
+import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
@@ -1046,6 +1050,83 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "and takes the count" (fst (asking facing ["2"] gs taps)) (Right (Set.singleton g))
     Spec.assertEqWith s "a most refuses past it" (fst (asking facing ["all"] gs (Prompt.ChooseAnyNumber alice S.alice f AnyNumberOf.ToSacrifice [b, g] (Just 1) Seq.empty))) (Left (Text.pack "end of input"))
     Spec.assertEqWith s "and takes none" (fst (asking facing [""] gs (Prompt.ChooseAnyNumber alice S.alice f AnyNumberOf.ToSacrifice [b, g] (Just 1) Seq.empty))) (Right Set.empty)
+
+  Spec.it s "a prompt answered by an amount per item lists each item within its range, and reads one amount each, refusing a sum outside its bounds" $ do
+    forest <- S.printingOf s registry "Forest"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (f, g1) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
+        (b, g2) = S.addPermanent bears S.alice g1
+        (g, gs) = S.addPermanent giant S.alice g2
+        facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
+        alice = Decider.MkDecider S.alice
+        upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
+        answered :: String -> Prompt.Prompt r -> Either Text.Text r
+        answered line = fst . asking facing [line] gs
+        refused :: String -> Prompt.Prompt r -> Bool
+        refused line prompt = either (== Text.pack "end of input") (const False) (answered line prompt)
+        plus = CounterKind.PlusOnePlusOne
+        time = CounterKind.Time
+        kinds = Map.fromList [(plus, 2), (time, 1)] :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
+        among = Prompt.ChooseCounterRemovalAmong alice S.alice f 2 (Map.fromList [(b, 1), (g, 2)])
+        hit amount = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) amount False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        allocate = Prompt.AllocateDamage alice S.alice [hit 2, hit 3] 4
+        slot = SlotName.MkSlotName (Text.pack "target")
+        announce = Prompt.AnnounceTargets alice S.alice f (Map.singleton slot (TargetCount.MkTargetCount 1 Nothing, Set.fromList [Recipient.ToPlayer S.bob, Recipient.ToCreature b]))
+        mixed = Prompt.ChooseMixedCounterRemoval alice S.alice f CounterSpread.FromOne 2 (Map.fromList [(b, kinds), (g, Map.singleton plus 1)])
+        distributed spread = Prompt.ChooseDistributedMovedCounters alice S.alice f spread kinds (b NonEmpty.:| [g])
+        redistribution = Prompt.ChooseRedistribution alice S.alice [(S.alice, 20), (S.bob, 7)]
+        stored = StoredResult.MkStoredResult 20 7
+    Spec.assertEqWith s "CR 601.2h each permanent by what it carries, the sum told" (upTo (Text.pack "Choose counter removal among") (snd (asking facing ["1 1"] gs among))) (fmap Text.pack ["Choose counter removal among for Forest: type one amount for each, separated by spaces, adding up to exactly 2:", "  1. Your Grizzly Bears 2/2 (up to 1)", "  2. Your Hill Giant 3/3 (up to 2)"])
+    Spec.assertEqWith s "one amount each, none left out" (answered "0 2" among) (Right (Map.singleton g 2))
+    Spec.assertBool s (refused "1 2" among) "a sum past the count"
+    Spec.assertBool s (refused "2 0" among) "an amount past what a permanent carries"
+    Spec.assertEqWith s "at most the count takes none on Enter" (answered "" (Prompt.ChooseCounterRemovalUpTo alice S.alice f 2 (Map.fromList [(b, 1), (g, 2)]))) (Right Map.empty)
+    Spec.assertEqWith s "CR 615.7 each event by what it deals, the points divided whole" (drop 1 (upTo (Text.pack "Allocate damage") (snd (asking facing ["1 3"] gs allocate)))) (fmap Text.pack ["  1. Forest deals 2 damage to Player 2 (up to 2)", "  2. Forest deals 3 damage to Player 2 (up to 3)"])
+    Spec.assertEqWith s "an amount per event, kept in order" (answered "1 3" allocate) (Right [1, 3])
+    Spec.assertBool s (refused "2 3" allocate) "a sum past the points"
+    Spec.assertEqWith s "CR 601.2c a slot's count within its range" (answered "2" announce) (Right (Map.singleton slot 2))
+    Spec.assertBool s (refused "0" announce) "a count below the slot's least"
+    Spec.assertEqWith s "CR 122.1 each kind on each permanent, off one" (answered "2 0 0" mixed) (Right (Map.singleton b (Map.singleton plus 2)))
+    Spec.assertBool s (refused "1 0 1" mixed) "two permanents where the cost says one"
+    Spec.assertEqWith s "CR 122.5 each destination by kind" (answered "1 0 1 1" (distributed MoveSpread.AnyNumber)) (Right (Map.fromList [(b, Map.singleton plus 1), (g, Map.fromList [(plus, 1), (time, 1)])]))
+    Spec.assertBool s (refused "2 0 1 0" (distributed MoveSpread.AnyNumber)) "a kind past its tally"
+    Spec.assertEqWith s "CR 609.3 one kind, all of it where fewer" (answered "0 1 0 0" (distributed (MoveSpread.OneKind 2))) (Right (Map.singleton b (Map.singleton time 1)))
+    Spec.assertBool s (refused "1 1 0 0" (distributed (MoveSpread.OneKind 2))) "two kinds"
+    Spec.assertBool s (refused "1 0 0 0" (distributed (MoveSpread.OneKind 2))) "fewer than there are of the kind"
+    Spec.assertEqWith s "CR 608.2d a distribution" (answered "1 2" (Prompt.ChooseDistribution alice S.alice f 3 (b NonEmpty.:| [g]))) (Right (Map.fromList [(b, 1), (g, 2)]))
+    Spec.assertEqWith s "CR 706.8b each stored result named" (drop 1 (upTo (Text.pack "Choose stored rerolls") (snd (asking facing ["1"] gs (Prompt.ChooseStoredRerolls alice S.alice f (Map.singleton stored 2)))))) [Text.pack "  1. d20 showing 7 (up to 2)"]
+    Spec.assertEqWith s "and how many rerolled" (answered "1" (Prompt.ChooseStoredRerolls alice S.alice f (Map.singleton stored 2))) (Right (Map.singleton stored 1))
+    Spec.assertEqWith s "CR 119.7 each player by life total" (drop 1 (upTo (Text.pack "Redistribute") (snd (asking facing ["2 1"] gs redistribution)))) (fmap Text.pack ["  1. Player 1 (20 life)", "  2. Player 2 (7 life)"])
+    Spec.assertEqWith s "a swap" (answered "2 1" redistribution) (Right (Map.fromList [(S.alice, S.bob), (S.bob, S.alice)]))
+    Spec.assertEqWith s "Enter keeps every total" (answered "" redistribution) (Right Map.empty)
+    Spec.assertBool s (refused "1 1" redistribution) "a total taken twice"
+
+  Spec.it s "CR 601.2h a counter-removal cost divided among permanents is answered through the client, and the counters typed are the ones removed" $ do
+    gs <- started s registry
+    forest <- S.printingOf s registry "Forest"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    sages <- S.printingOf s registry "Novijen Sages"
+    let (_, g1) = S.addPermanent forest S.alice gs
+        (b, g2) = S.addPermanent bears S.alice g1
+        (n, g3) = S.addPermanent sages S.alice g2
+        board = S.addCounter CounterKind.PlusOnePlusOne 4 n (S.addCounter CounterKind.PlusOnePlusOne 2 b g3)
+        heading = Text.pack "Choose counter removal among for Novijen Sages: type one amount for each, separated by spaces, adding up to exactly 2:"
+        listed at = takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) (pending at)))
+        removes at
+          | heading `elem` pending at = Just (Text.unwords [if Text.isInfixOf (Text.pack "Novijen Sages") line then Text.pack "2" else Text.pack "0" | line <- listed at])
+          | any (Text.isPrefixOf (Text.pack "Paying ")) (pending at) = Just (Text.pack "auto")
+          | any menuHeading (pending at),
+            heading `notElem` written at =
+              Maybe.listToMaybe [Text.takeWhile Char.isDigit (Text.strip line) | line <- pending at, Text.isInfixOf (Text.pack ". Activate ability") line, Text.isSuffixOf (Text.pack " of Novijen Sages") line]
+          | otherwise = plays at
+        counters = S.counterOf CounterKind.PlusOnePlusOne
+        seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 200 removes) (const (Right Nothing)))) botOrDefault
+        run = Driver.drive [] seats 40 (pure . (< 4) . counters n) board
+        (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (SplitMix.MkSplitMix 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
+        shown = reverse (written sc)
+    Spec.assertEqWith s "each permanent listed by what it carries" (List.sort (fmap (Text.drop 5) (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))))) (fmap Text.pack ["Your Grizzly Bears 4/4 (2 +1/+1 counters) (up to 2)", "Your Novijen Sages 4/4 (4 +1/+1 counters) (up to 4)"])
+    Spec.assertEqWith s "both counters came off the Sages, none off the Bears" (fmap (\after -> (counters n after, counters b after)) outcome) (Right (2, 2))
 
   Spec.it s "CR 614.1c an entry option is offered through the client by its shape, and the number picks the shape" $ do
     let heading = Text.pack "Choose entry option for Primal Clay:"

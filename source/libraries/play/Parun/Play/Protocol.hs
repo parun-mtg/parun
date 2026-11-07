@@ -71,6 +71,7 @@ import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EntwineDecision as EntwineDecision
@@ -89,6 +90,7 @@ import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
@@ -109,6 +111,7 @@ import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.Visibility as Visibility.Type
@@ -133,6 +136,9 @@ over judge send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked
 
 -- | An answer the prompt offers. The engine reads one it does not with a
 -- fallback of its own, which would choose for the player.
+--
+-- Not implemented: refusing an amount-per-item answer outside the bounds its
+-- offer states (#6629).
 onOffer :: Prompt.Prompt r -> r -> Either Text.Text r
 onOffer prompt answer
   | Scenario.withinOffer prompt answer = Right answer
@@ -208,8 +214,7 @@ idOf label =
 -- tells the seat about each option.
 --
 -- Not implemented: the offer of every prompt not listed here, which sends
--- null: those answered by an amount per item (#6592), or a name or word
--- (#6593).
+-- null: those answered by a name or word (#6593).
 -- A random prompt no seat answers is never sent.
 offerOf :: GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf gs prompt = case prompt of
@@ -270,6 +275,53 @@ offerOf gs prompt = case prompt of
             Dividing.Total total -> [("total", natural total)]
             Dividing.Parts parts -> [("parts", Reply.encode (Reply.list Reply.natural) namer (NonEmpty.toList parts))]
       )
+  -- CR 615.7: each event's own amount, the points divided whole among them.
+  Prompt.AllocateDamage _ _ events share -> amounts prompt Nothing [("entries", R.Array (fmap damageEvent events))] (Just share, Just share) (fmap DamageEvent.amount events)
+  -- CR 601.2c: each slot's count up to what the board supplies, from its least
+  -- where that is above none, beside its legal recipients.
+  Prompt.AnnounceTargets _ _ source offers ->
+    amounts
+      prompt
+      (Just source)
+      ( [("recipients", Reply.encode (Reply.mapOf (Reply.viaCodec Codec.SlotName.codec) (Reply.setOf Reply.recipient)) namer (fmap snd offers))]
+          <> [("floors", Reply.encode (Reply.shapeOf prompt) namer floors) | let floors = Map.filter (> 0) (fmap (TargetCount.least . fst) offers), not (Map.null floors)]
+      )
+      (Nothing, Nothing)
+      (fmap (\(count, recipients) -> TargetCount.ceilingOn (Natural.length recipients) count) offers)
+  -- CR 118.1 / 601.2h / 608.2d: what each permanent carries, exactly the
+  -- count, at least it, or at most it.
+  Prompt.ChooseCounterRemovalAmong _ _ source n carried -> amounts prompt (Just source) [] (Just n, Just n) carried
+  Prompt.ChooseCounterRemovalAtLeast _ _ source n carried -> amounts prompt (Just source) [] (Just n, Nothing) carried
+  Prompt.ChooseCounterRemovalUpTo _ _ source n carried -> amounts prompt (Just source) [] (Nothing, Just n) carried
+  -- CR 122.1 / 601.2h: each kind each permanent carries, off one permanent
+  -- where the cost says a permanent.
+  Prompt.ChooseMixedCounterRemoval _ _ source spread n carried -> case spread of
+    CounterSpread.FromOne -> amounts prompt (Just source) [("fromOne", R.Boolean True)] (Just n, Just n) carried
+    CounterSpread.FromAmong -> amounts prompt (Just source) [] (Just n, Just n) carried
+    CounterSpread.FromAmongAtLeast -> amounts prompt (Just source) [] (Just n, Nothing) carried
+  -- CR 122.5: the object the counters move off and onto, and each kind's tally,
+  -- at least one in all where the card says one or more.
+  Prompt.ChooseMovedCounters _ _ off onto kinds -> amounts prompt Nothing [("off", object off), ("onto", object onto)] (Nothing, Nothing) kinds
+  Prompt.ChooseMovedCountersAtLeastOne _ _ off onto kinds -> amounts prompt Nothing [("off", object off), ("onto", object onto)] (Just 1, Nothing) kinds
+  -- CR 122.5: each destination may take each kind's whole tally, and under
+  -- @"counters"@ the tallies, which each kind's amounts in all stay within.
+  Prompt.ChooseDistributedMovedCounters _ _ off spread kinds destinations ->
+    let told = [("off", object off), ("counters", Reply.encode (Reply.mapOf Reply.counterKind Reply.natural) namer kinds)]
+        whole = sum kinds
+        caps = Map.fromList [(destination, kinds) | destination <- NonEmpty.toList destinations]
+     in case spread of
+          MoveSpread.AnyNumber -> amounts prompt Nothing told (Nothing, Nothing) caps
+          MoveSpread.AtLeastOne -> amounts prompt Nothing told (Just 1, Nothing) caps
+          MoveSpread.Exactly -> amounts prompt Nothing told (Just whole, Just whole) caps
+          -- CR 609.3: that many of one kind, or its whole tally where fewer.
+          MoveSpread.OneKind n -> amounts prompt Nothing (told <> [("oneKind", natural n)]) (Nothing, Just n) caps
+          MoveSpread.UpToOne -> amounts prompt Nothing told (Nothing, Just 1) caps
+  -- CR 608.2d: the whole count on any candidate, divided exactly.
+  Prompt.ChooseDistribution _ _ source n candidates -> amounts prompt (Just source) [] (Just n, Just n) (Map.fromList [(candidate, n) | candidate <- NonEmpty.toList candidates])
+  -- CR 706.8b: each stored result the object holds, by how many.
+  Prompt.ChooseStoredRerolls _ _ source stored -> amounts prompt (Just source) [] (Nothing, Nothing) stored
+  -- CR 119.7: each candidate beside its life total.
+  Prompt.ChooseRedistribution _ _ totals -> fields [("totals", R.Array [R.Array [Reply.encode Reply.player namer pid, R.Number life] | (pid, life) <- totals])]
   -- CR 603.3b / 101.4c: each entry as its source and its Oracle text.
   Prompt.OrderTriggers _ _ entries -> R.Array (fmap (triggerEntry gs) entries)
   -- CR 601.2h: each pool unit whole, as the answer names it.
@@ -485,6 +537,14 @@ looked gs told cards = fields (told <> [("from", objects cards), ("names", R.Arr
 -- under @"among"@ each candidate spelled as an element of the answer.
 subset :: Maybe ObjectId.ObjectId -> [(String, R.Reply)] -> (Maybe Natural, Maybe Natural) -> [R.Reply] -> R.Reply
 subset source told (least, most) = listing "among" source (told <> [("least", natural n) | Just n <- [least]] <> [("most", natural n) | Just n <- [most]])
+
+-- | A prompt answered by an amount per item: its source where it has one,
+-- what else the seat is told, the least and most the amounts add up to where
+-- the rules bound them, and under @"amounts"@ the answer it would be were each
+-- item to take the most it may, so a key is spelled as the answer spells it.
+amounts :: Prompt.Prompt r -> Maybe ObjectId.ObjectId -> [(String, R.Reply)] -> (Maybe Natural, Maybe Natural) -> r -> R.Reply
+amounts prompt source told (least, most) caps =
+  fields ([("source", object s) | Just s <- [source]] <> told <> [("least", natural n) | Just n <- [least]] <> [("most", natural n) | Just n <- [most]] <> [("amounts", Reply.encode (Reply.shapeOf prompt) namer caps)])
 
 -- | Exactly a count, or every candidate where there are fewer.
 exactly :: Natural -> [a] -> (Maybe Natural, Maybe Natural)

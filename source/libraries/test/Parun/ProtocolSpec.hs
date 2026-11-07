@@ -21,6 +21,7 @@ import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
+import qualified Parun.Codec.SlotName as Codec.SlotName
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
@@ -52,6 +53,8 @@ import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
@@ -77,6 +80,7 @@ import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
@@ -96,7 +100,9 @@ import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
 
@@ -357,6 +363,57 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 701.22a the cards looked at, top first, each named" (told scry ["from", "names"]) [Just (R.Array [Protocol.object card, Protocol.object other]), Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant"))))]
     Spec.assertEqWith s "CR 701.25a a surveil alike" (Protocol.offerOf gs (Prompt.ChooseSurveil alice S.alice [card, other])) (Protocol.offerOf gs scry)
     Spec.assertEqWith s "CR 701.29a a fateseal names whose library" (told (Prompt.ChooseFateseal alice S.alice S.bob [card]) ["owner", "from"]) [Just (R.Text (Text.pack "1")), Just (R.Array [Protocol.object card])]
+
+  Spec.it s "a prompt answered by an amount per item offers the answer each item taking the most it may, within the bounds on their sum" $ do
+    let o7 = ObjectId.MkObjectId 7
+        o9 = ObjectId.MkObjectId 9
+        o11 = ObjectId.MkObjectId 11
+        alice = Decider.MkDecider S.alice
+        gs = Setup.emptyGame S.bothPlayers
+        told :: Prompt.Prompt r -> [String] -> [Maybe R.Reply]
+        told prompt = fmap (\key -> field key (Protocol.offerOf gs prompt))
+        caps :: Prompt.Prompt r -> Maybe (Either Text.Text r)
+        caps prompt = fmap (Protocol.decodeAnswer prompt) (field "amounts" (Protocol.offerOf gs prompt))
+        plus = CounterKind.PlusOnePlusOne
+        carried = Map.fromList [(o9, 2), (o11, 1 :: Natural)]
+        kinds = Map.fromList [(plus, 2), (CounterKind.Time, 1)] :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
+        hit amount = DamageEvent.MkDamageEvent o7 (Recipient.ToPlayer S.bob) amount False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        allocate = Prompt.AllocateDamage alice S.alice [hit 2, hit 3] 4
+        slot = SlotName.MkSlotName (Text.pack "target")
+        recipients = Set.fromList [Recipient.ToPlayer S.bob, Recipient.ToCreature o9]
+        announce = Prompt.AnnounceTargets alice S.alice o7 (Map.singleton slot (TargetCount.MkTargetCount 1 Nothing, recipients))
+        mixed spread = Prompt.ChooseMixedCounterRemoval alice S.alice o7 spread 2 (Map.singleton o9 kinds)
+        moved = Prompt.ChooseMovedCounters alice S.alice o7 o9 kinds
+        distributed spread = Prompt.ChooseDistributedMovedCounters alice S.alice o7 spread kinds (o9 NonEmpty.:| [o11])
+        distribution = Prompt.ChooseDistribution alice S.alice o7 3 (o9 NonEmpty.:| [o11])
+        stored = Map.singleton (StoredResult.MkStoredResult 20 7) (2 :: Natural)
+        redistribution = Prompt.ChooseRedistribution alice S.alice [(S.alice, 20), (S.bob, -3)]
+        player = Reply.encode Reply.player Protocol.namer
+    Spec.assertEqWith s "CR 615.7 each event's own amount" (caps allocate) (Just (Right [2, 3]))
+    Spec.assertEqWith s "beside each event, the points divided whole" (told allocate ["entries", "least", "most"]) [Just (R.Array (fmap (Protocol.damageEvent . hit) [2, 3])), Just (R.Number 4), Just (R.Number 4)]
+    Spec.assertEqWith s "CR 601.2c any number of targets up to what the board supplies" (caps announce) (Just (Right (Map.singleton slot 2)))
+    Spec.assertEqWith s "from its least" (fmap (Protocol.decodeAnswer announce) (field "floors" (Protocol.offerOf gs announce))) (Just (Right (Map.singleton slot 1)))
+    Spec.assertEqWith s "beside its source and recipients" (told announce ["source", "recipients"]) [Just (Protocol.object o7), Just (Reply.encode (Reply.mapOf (Reply.viaCodec Codec.SlotName.codec) (Reply.setOf Reply.recipient)) Protocol.namer (Map.singleton slot recipients))]
+    Spec.assertEqWith s "no floor for up to" (told (Prompt.AnnounceTargets alice S.alice o7 (Map.singleton slot (TargetCount.upTo 2, recipients))) ["floors"]) [Nothing]
+    Spec.assertEqWith s "CR 601.2h what each permanent carries" (caps (Prompt.ChooseCounterRemovalAmong alice S.alice o7 2 carried)) (Just (Right carried))
+    Spec.assertEqWith s "exactly the count" (told (Prompt.ChooseCounterRemovalAmong alice S.alice o7 2 carried) ["source", "least", "most"]) [Just (Protocol.object o7), Just (R.Number 2), Just (R.Number 2)]
+    Spec.assertEqWith s "at least it" (told (Prompt.ChooseCounterRemovalAtLeast alice S.alice o7 1 carried) ["least", "most"]) [Just (R.Number 1), Nothing]
+    Spec.assertEqWith s "CR 608.2d at most it" (told (Prompt.ChooseCounterRemovalUpTo alice S.alice o7 2 carried) ["least", "most"]) [Nothing, Just (R.Number 2)]
+    Spec.assertEqWith s "CR 122.1 each kind each permanent carries" (caps (mixed CounterSpread.FromAmong)) (Just (Right (Map.singleton o9 kinds)))
+    Spec.assertEqWith s "off one permanent where the cost says one" (told (mixed CounterSpread.FromOne) ["fromOne", "least", "most"]) [Just (R.Boolean True), Just (R.Number 2), Just (R.Number 2)]
+    Spec.assertEqWith s "and at least the count where it says one or more" (told (mixed CounterSpread.FromAmongAtLeast) ["fromOne", "least", "most"]) [Nothing, Just (R.Number 2), Nothing]
+    Spec.assertEqWith s "CR 122.5 each kind's tally" (caps moved) (Just (Right kinds))
+    Spec.assertEqWith s "off one object and onto another, any number" (told moved ["off", "onto", "least", "most"]) [Just (Protocol.object o7), Just (Protocol.object o9), Nothing, Nothing]
+    Spec.assertEqWith s "one or more" (told (Prompt.ChooseMovedCountersAtLeastOne alice S.alice o7 o9 kinds) ["least"]) [Just (R.Number 1)]
+    Spec.assertEqWith s "each destination may take each whole tally" (caps (distributed MoveSpread.AnyNumber)) (Just (Right (Map.fromList [(o9, kinds), (o11, kinds)])))
+    Spec.assertEqWith s "beside the tallies, every counter" (told (distributed MoveSpread.Exactly) ["off", "counters", "least", "most"]) [Just (Protocol.object o7), Just (Reply.encode (Reply.mapOf Reply.counterKind Reply.natural) Protocol.namer kinds), Just (R.Number 3), Just (R.Number 3)]
+    Spec.assertEqWith s "CR 609.3 that many of one kind" (told (distributed (MoveSpread.OneKind 2)) ["oneKind", "least", "most"]) [Just (R.Number 2), Nothing, Just (R.Number 2)]
+    Spec.assertEqWith s "one or more, and up to one" (told (distributed MoveSpread.AtLeastOne) ["least"] <> told (distributed MoveSpread.UpToOne) ["most"]) [Just (R.Number 1), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 608.2d the whole count on any candidate" (caps distribution) (Just (Right (Map.fromList [(o9, 3), (o11, 3)])))
+    Spec.assertEqWith s "divided exactly" (told distribution ["source", "least", "most"]) [Just (Protocol.object o7), Just (R.Number 3), Just (R.Number 3)]
+    Spec.assertEqWith s "CR 706.8b each stored result by how many" (caps (Prompt.ChooseStoredRerolls alice S.alice o7 stored)) (Just (Right stored))
+    Spec.assertEqWith s "CR 119.7 each candidate beside its life total" (told redistribution ["totals"]) [Just (R.Array [R.Array [player S.alice, R.Number 20], R.Array [player S.bob, R.Number (-3)]])]
+    Spec.assertEqWith s "and a swap reads back" (Protocol.decodeAnswer redistribution (R.Array [R.Array [player S.alice, player S.bob], R.Array [player S.bob, player S.alice]])) (Right (Map.fromList [(S.alice, S.bob), (S.bob, S.alice)]))
 
   Spec.it s "a hidden card reaches no line sent to the other seat" $ do
     gs <- started s registry
