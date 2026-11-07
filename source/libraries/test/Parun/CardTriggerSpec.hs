@@ -3066,6 +3066,92 @@ massacreGirlSpec s registry = Spec.describe s "Massacre Girl, Most Wanted" $ do
         Spec.assertEqWith s "so no life changed" (lives settled) [Just 20, Just 20, Just 20]
       Nothing -> Spec.assertFailure s "fixture should alias the Girl"
 
+-- Vraska, the Cutting Glare's "if you control six or more lands" (CR 603.4),
+-- refused on a board paired with the one where the trigger fires, for Null
+-- Summoner's reason: a wrongly fired trigger targets, and the scenario runner
+-- fails on its target prompt. Three seats, each opponent with one creature.
+vraskaSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+vraskaSpec s registry = Spec.describe s "Vraska, the Cutting Glare" $ do
+  -- alice pays {B}{B}{G} from two Swamps and a Forest; the legs differ in
+  -- whether a third Island makes her lands six or five.
+  let vraskaBoard islands =
+        let vraska = S.aliased "vraska" (S.cardSetup "Vraska, the Cutting Glare")
+         in S.board
+              ( (S.battlefield S.alice (fmap S.permanent (["Swamp", "Swamp", "Forest"] <> replicate islands "Island")))
+                  { Seat.hand = Seq.fromList [vraska]
+                  }
+                  NonEmpty.:| [S.battlefield S.bob [S.permanent "Hill Giant"], S.battlefield S.carol [S.permanent "Grizzly Bears"]]
+              )
+              S.alice
+              S.precombatMain
+      opponentsCreatures gs =
+        S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.bob gs
+          + S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Grizzly Bears")) S.carol gs
+      arrive islands = do
+        built <- S.buildBoardOrFail s registry (vraskaBoard islands)
+        pure $ case aliasIn "vraska" built of
+          Just vraskaId ->
+            let cast = S.runPure S.identityAnswer (Staged.state built) (S.cast S.alice vraskaId)
+                resolved = S.runPure S.identityAnswer cast Stack.resolveTop
+             in Just (S.runPure S.identityAnswer resolved Engine.settleForPriority)
+          Nothing -> Nothing
+  Spec.it s "CR 603.4 with six lands, its enters trigger destroys an opponent's creature" $ do
+    arrived <- arrive 3
+    case arrived of
+      Just settled -> do
+        let after = S.runPure S.identityAnswer settled Stack.resolveTop
+        Spec.assertEqWith s "the trigger is on the stack" (length (GameState.stack settled)) 1
+        Spec.assertEqWith s "and destroyed one of the opponents' creatures" (opponentsCreatures after) 1
+      Nothing -> Spec.assertFailure s "fixture should alias Vraska"
+  Spec.it s "CR 603.4 with five lands, nothing triggers" $ do
+    arrived <- arrive 2
+    case arrived of
+      Just settled -> do
+        Spec.assertEqWith s "Vraska entered" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Vraska, the Cutting Glare")) S.alice settled) 1
+        Spec.assertEqWith s "and no trigger is on the stack" (GameState.stack settled) []
+        Spec.assertEqWith s "so the opponents keep their creatures" (opponentsCreatures settled) 2
+      Nothing -> Spec.assertFailure s "fixture should alias Vraska"
+
+-- Uldaros Theorix's "if you cast him" (CR 603.4), refused on a board paired
+-- with the one where the trigger fires, for Null Summoner's reason. A Shock in
+-- alice's graveyard is a target either leg's trigger could take.
+uldarosSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+uldarosSpec s registry = Spec.describe s "Uldaros Theorix" $ do
+  -- alice has two Swamps and four Islands, paying {3}{U}{B}{B} or {3}{B}, and
+  -- Zombify in hand; the legs differ in where Uldaros starts and which card
+  -- she casts.
+  let uldarosBoard castIt =
+        let uldaros = S.aliased "uldaros" (S.cardSetup "Uldaros Theorix")
+            zombify = S.aliased "zombify" (S.cardSetup "Zombify")
+         in S.board
+              ( (S.battlefield S.alice (fmap S.permanent ["Island", "Swamp", "Swamp", "Island", "Island", "Island"]))
+                  { Seat.hand = Seq.fromList (if castIt then [zombify, uldaros] else [zombify]),
+                    Seat.graveyard = Seq.fromList (S.cardSetup "Shock" : [uldaros | not castIt])
+                  }
+                  NonEmpty.:| [S.playerSetup S.bob, S.playerSetup S.carol]
+              )
+              S.alice
+              S.precombatMain
+      arrive spell gs =
+        let cast = S.runPure S.identityAnswer gs (S.cast S.alice spell)
+            resolved = S.runPure S.identityAnswer cast Stack.resolveTop
+         in S.runPure S.identityAnswer resolved Engine.settleForPriority
+  Spec.it s "CR 603.4 cast from hand, its enters trigger goes on the stack" $ do
+    built <- S.buildBoardOrFail s registry (uldarosBoard True)
+    case aliasIn "uldaros" built of
+      Just uldarosId -> do
+        let settled = arrive uldarosId (Staged.state built)
+        Spec.assertEqWith s "the trigger is on the stack" (length (GameState.stack settled)) 1
+      Nothing -> Spec.assertFailure s "fixture should alias Uldaros"
+  Spec.it s "CR 603.4 put onto the battlefield by Zombify, he was not cast, so nothing triggers" $ do
+    built <- S.buildBoardOrFail s registry (uldarosBoard False)
+    case aliasIn "zombify" built of
+      Just zombifyId -> do
+        let settled = arrive zombifyId (Staged.state built)
+        Spec.assertEqWith s "Zombify returned Uldaros" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Uldaros Theorix")) S.alice settled) 1
+        Spec.assertEqWith s "and no trigger is on the stack" (GameState.stack settled) []
+      Nothing -> Spec.assertFailure s "fixture should alias Zombify"
+
 -- Roiling Canopy's "a Forest you control", "five other Forests" and "you
 -- control" (CR 603.4), each refused on a board paired with the one where the
 -- trigger fires. Asked here for Null Summoner's reason: a wrongly fired trigger
@@ -3194,5 +3280,7 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   leylinePhantomSpec s registry
   nullSummonerSpec s registry
   massacreGirlSpec s registry
+  vraskaSpec s registry
+  uldarosSpec s registry
   roilingCanopySpec s registry
   tetherTechnicianSpec s registry

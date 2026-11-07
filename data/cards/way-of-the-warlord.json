@@ -1,0 +1,177 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Way of the Warlord",
+      "oracleText": "When Way of the Warlord enters, empower Jace 5. (Put five loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")\nPlaneswalkers you control have \"[−4]: This planeswalker deals 2 damage to up to one target creature or planeswalker and 2 damage to target player.\"",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Planeswalker"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "RemoveLoyaltyFromThis",
+                        "value": {
+                          "type": "Fixed",
+                          "value": 4
+                        }
+                      }
+                    ],
+                    "mana": []
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "DealDamage",
+                                "value": {
+                                  "parts": [
+                                    {
+                                      "quantity": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      },
+                                      "ref": {
+                                        "type": "InSlot",
+                                        "value": "permanent"
+                                      }
+                                    },
+                                    {
+                                      "quantity": {
+                                        "type": "Literal",
+                                        "value": 2
+                                      },
+                                      "ref": {
+                                        "type": "InSlot",
+                                        "value": "player"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "permanent": {
+                            "count": {
+                              "type": "Printed",
+                              "value": {
+                                "least": 0,
+                                "most": 1
+                              }
+                            },
+                            "filter": {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Planeswalker"
+                                }
+                              ]
+                            },
+                            "pool": {
+                              "type": "Permanents"
+                            }
+                          },
+                          "player": {
+                            "pool": {
+                              "type": "Players"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Amass",
+                        "value": {
+                          "kind": {
+                            "type": "EmpowerJace"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 5
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
