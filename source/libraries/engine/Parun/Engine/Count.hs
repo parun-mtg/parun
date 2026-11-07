@@ -227,10 +227,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
               ids = case reading of
                 BoundReading.AsBound -> bound
                 BoundReading.BeforeMove -> fmap (\oid -> Maybe.fromMaybe oid (departedAs gs oid)) bound
-              member oid
-                | findableAfterMove gs oid = True
-                | otherwise = countsWithoutCharacteristics aggregation predicate && wasDiscarded gs oid
-              kept = Maybe.mapMaybe (\oid -> if member oid then fmap ((,) (Just oid)) (keep predicate context (viewOf oid)) else Nothing) ids
+              kept = Maybe.mapMaybe (\oid -> if boundMember gs aggregation predicate oid then fmap ((,) (Just oid)) (keep predicate context (viewOf oid)) else Nothing) ids
            in aggregate quantityOf aggregation kept
         -- CR 500.12: the record of the board before this turn's untap step. Its
         -- members are objectless, as InHistory's are: some have since left.
@@ -249,6 +246,14 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
           let ids = foldMap (\pid -> Game.atPosition position (Filter.source context) zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
           aggregate quantityOf aggregation kept
+
+-- CR 400.7j / 701.9c: is this bound object one the fold asks the predicate of?
+-- One a later part of the effect can find, or a discard the predicate asks
+-- nothing of the characteristics of. Scope.OverBound's membership, shared with
+-- Filter.OwnsBoundAtLeast's bake.
+boundMember :: GameState -> Aggregation.Aggregation quantity -> Filter.Type.Filter keyword -> ObjectId -> Bool
+boundMember gs aggregation predicate oid =
+  findableAfterMove gs oid || (countsWithoutCharacteristics aggregation predicate && wasDiscarded gs oid)
 
 -- CR 400.7j / CR 400.2: may a later part of the effect that moved this object
 -- FIND it? Where it landed in a public zone, which is what Game.isHiddenZone
@@ -364,9 +369,9 @@ departedAs gs oid =
 -- leaves it, and each says there why.
 --
 -- A BOARD-SHAPED atom still baked rather than filled: bakePerspective below
--- rewrites the three that ask about a zone or a comparison, because none of them
--- is a characteristic of the candidate. This one is -- "was dealt damage this
--- turn" is asked of the candidate itself -- which is why it rides the view and
+-- rewrites the atoms that ask about a zone, a binding or a comparison, because
+-- none of them is a characteristic of the candidate. This one is -- "was dealt
+-- damage this turn" is asked of the candidate itself -- which is why it rides the view and
 -- so answers on the target path too, where nothing bakes.
 playerView :: GameState -> PlayerId -> Filter.View
 playerView gs pid =
@@ -440,6 +445,17 @@ bakePerspective viewOf context gs candidate predicate =
         -- effect is applied, which is when this fold runs.
         Filter.Type.CardsInGraveyardAtLeast n ->
           truth (toInteger (length (Game.cardsIn Zone.Graveyard candidate gs)) >= toInteger n)
+        -- CR 400.3 / 701.9a: how many of the slot's objects does THIS candidate
+        -- own? A card leaves only its owner's hand, so a discard's arrivals owned by
+        -- the candidate are the ones the candidate discarded. Baked here for
+        -- CardsInGraveyardAtLeast's reason, and gated by CR 400.7j exactly as
+        -- Scope.OverBound's members are (boundMember).
+        Filter.Type.OwnsBoundAtLeast n slot inner ->
+          let owned oid =
+                boundMember gs Aggregation.Members inner oid
+                  && maybe False (\view -> Filter.owner view == Just candidate && Filter.matches context view inner) (viewOf oid)
+              bound = Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
+           in truth (toInteger (length (Prelude.filter owned bound)) >= toInteger n)
         Filter.Type.And fs -> Filter.Type.And (fmap recur fs)
         Filter.Type.Or fs -> Filter.Type.Or (fmap recur fs)
         Filter.Type.Not f -> Filter.Type.Not (recur f)
