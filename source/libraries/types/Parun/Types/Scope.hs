@@ -43,15 +43,17 @@ data Scope
     -- fills from the board (CR 120.1).
     -- Filter.Controls (Oreskos Explorer's "players who control more
     -- lands than you"), Filter.IsControllerOfBound (Spikeshell Harrier's "each
-    -- other player") and Filter.CardsInGraveyardAtLeast (The Master of
-    -- Lake-town's "each graveyard with seven or more cards in it") are instead
+    -- other player"), Filter.CardsInGraveyardAtLeast (The Master of
+    -- Lake-town's "each graveyard with seven or more cards in it") and
+    -- Filter.OwnsBoundAtLeast (Garruk, Veiled Butcher's "each opponent who
+    -- didn't discard two nonland cards this way") are instead
     -- BAKED against the board at Parun.Engine.Count.bakePerspective, each asking
     -- something no view of a player could carry.
     --
     -- Saying "opponents" through the REFERENCE rather than through the first atom
     -- is the convention, since the reference is the only spelling the sibling arm
     -- has; a question about a candidate's own board or zone has no spelling but
-    -- one of the baked three.
+    -- one of the baked atoms.
     OverPlayers PlayerRef.PlayerRef
   | -- | CR 400.7j: the objects the named slot of the surrounding announcement is
     -- bound to, wherever they wound up -- Psychic Miasma's "if a land card is

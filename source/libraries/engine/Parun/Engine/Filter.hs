@@ -883,7 +883,7 @@ data View = MkView
 -- a player is not an object (CR 109.1) and has none of those. The player's own
 -- identity is the only thing THIS VIEW can answer, which is exactly what
 -- IsPlayer asks. The other player-shaped atoms are answered elsewhere on
--- purpose: Controls, IsControllerOfBound and CardsInGraveyardAtLeast
+-- purpose: Controls, IsControllerOfBound, CardsInGraveyardAtLeast and OwnsBoundAtLeast
 -- each ask about the board or a zone, which a function taking nothing but a
 -- PlayerId cannot see, so Parun.Engine.Count.bakePerspective bakes them against
 -- the game state before the match instead.
@@ -2256,6 +2256,9 @@ matches context view predicate = case predicate of
   -- characteristics, so a candidate that is not a player has nothing to answer
   -- with either. Parun.Engine.Count.bakePerspective answers it for a player.
   Filter.CardsInGraveyardAtLeast _ -> False
+  -- False wherever it is reached, for the atom above's reason: this module holds
+  -- no game state to ask CR 400.7j's question of the slot's objects with.
+  Filter.OwnsBoundAtLeast {} -> False
   -- CR 508.1k: a creature stays attacking until it is removed from combat or the
   -- combat phase ends, so this is a live read of the combat record, never a stamp
   -- on the object.
@@ -2705,6 +2708,7 @@ rewrite pairs predicate = case predicate of
   -- card count is a number rather than one. "Graveyard" is a zone name, which
   -- rule 612.1 does not reach either.
   Filter.CardsInGraveyardAtLeast _ -> predicate
+  Filter.OwnsBoundAtLeast n slot f -> Filter.OwnsBoundAtLeast n slot (rewrite pairs f)
   Filter.IsAttacking -> predicate
   Filter.IsAttackingPlayer _ -> predicate
   Filter.IsAttackingPlaneswalker _ -> predicate
@@ -3481,6 +3485,9 @@ bakeBound players objects controllers predicate = case predicate of
   -- Untouched: the atom names no slot at all, so CR 603.2's map has nothing to
   -- substitute into it. Baked one module out, as the atom above is.
   Filter.CardsInGraveyardAtLeast _ -> predicate
+  -- Descended into for Controls' reason; the slot holds OBJECTS, which this
+  -- map does not substitute, so it is answered one module out.
+  Filter.OwnsBoundAtLeast n slot f -> Filter.OwnsBoundAtLeast n slot (bakeBound players objects controllers f)
   Filter.IsAttacking -> predicate
   Filter.IsAttackingPlayer _ -> predicate
   Filter.IsAttackingPlaneswalker _ -> predicate
@@ -3656,6 +3663,7 @@ manaValueThresholds predicate = case predicate of
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
   -- value, so CR 601.3a's sample has nothing to learn from it.
   Filter.CardsInGraveyardAtLeast _ -> []
+  Filter.OwnsBoundAtLeast _ _ f -> manaValueThresholds f
   Filter.IsAttacking -> []
   Filter.IsAttackingPlayer _ -> []
   Filter.IsAttackingPlaneswalker _ -> []
@@ -3827,6 +3835,7 @@ statesAQuality predicate = case predicate of
   Filter.IsPlayer _ -> True
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInGraveyardAtLeast _ -> True
+  Filter.OwnsBoundAtLeast {} -> True
   Filter.IsAttacking -> True
   Filter.IsAttackingPlayer _ -> True
   Filter.IsAttackingPlaneswalker _ -> True
@@ -3992,6 +4001,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsPlayer _ -> False
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInGraveyardAtLeast _ -> False
+  Filter.OwnsBoundAtLeast _ _ f -> readsSourceValues f
   Filter.IsAttacking -> False
   Filter.IsAttackingPlayer _ -> False
   Filter.IsAttackingPlaneswalker _ -> False
@@ -4160,6 +4170,8 @@ overBoundSlotsWith f predicate = case predicate of
   -- is read exactly as one written at the top level.
   Filter.Controls n g -> fmap (Filter.Controls n) (overBoundSlotsWith f g)
   Filter.CardsInGraveyardAtLeast _ -> pure predicate
+  -- Reads the whole bound set, IsBound's arity, and descends for Controls'.
+  Filter.OwnsBoundAtLeast n slot g -> Filter.OwnsBoundAtLeast n <$> f SlotArity.Many slot <*> overBoundSlotsWith f g
   Filter.IsAttacking -> pure predicate
   Filter.IsAttackingPlayer _ -> pure predicate
   Filter.IsAttackingPlaneswalker _ -> pure predicate

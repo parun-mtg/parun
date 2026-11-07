@@ -751,6 +751,14 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.assertBool s (not (Filter.matches self aPlayer bin)) "player"
     Spec.assertBool s (not (Filter.matches self blackCreature bin)) "object"
 
+  -- CR 400.7j's question about a slot's objects, which this module holds no game
+  -- state to ask: False unbaked. The Garruk, Veiled Butcher scenarios prove the
+  -- BAKED answer.
+  Spec.it s "OwnsBoundAtLeast is False unbaked, for a player and for an object alike" $ do
+    let owns = Filter.Type.OwnsBoundAtLeast 0 (SlotName.MkSlotName (Text.pack "discarded")) (Filter.Type.And [])
+    Spec.assertBool s (not (Filter.matches self aPlayer owns)) "player"
+    Spec.assertBool s (not (Filter.matches self blackCreature owns)) "object"
+
   Spec.it s "HeldBy Controller You holds for own object" $ do
     Spec.assertBool s (Filter.matches self blackCreature (Filter.Type.HeldBy Holder.Controller PlayerRelation.You)) "you"
 

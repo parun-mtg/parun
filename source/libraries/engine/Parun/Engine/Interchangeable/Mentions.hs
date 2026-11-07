@@ -645,6 +645,7 @@ filterNames asking criterion = case criterion of
   Filter.IsControllerOfBound slot -> slotNames asking slot
   Filter.Controls _margin nested -> filterNames asking nested
   Filter.CardsInGraveyardAtLeast _n -> mempty
+  Filter.OwnsBoundAtLeast _n slot nested -> slotNames asking slot <> filterNames asking nested
   Filter.IsAttacking -> mempty
   Filter.IsAttackingPlayer _relation -> mempty
   Filter.IsAttackingPlaneswalker _relation -> mempty

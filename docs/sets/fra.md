@@ -276,8 +276,3 @@ Nothing: every card `parun translate` stopped at is in the pool.
 
 - Emrakul, the Exigent Doom: its hand ability's cost, its "until this card is
   cast from exile" and its cast permission all name the card the cost exiled.
-
-### #6556: no effect counts the opponents whose discard fell short
-
-- Garruk, Veiled Butcher: the −3 draws per opponent who didn't discard two
-  nonland cards this way; the discard binds every opponent's cards together.

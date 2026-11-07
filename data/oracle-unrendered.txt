@@ -3418,6 +3418,7 @@ garruk-unleashed
 garruks-harbinger
 garruks-uprising
 garruks-warsteed
+garruk-veiled-butcher
 ghostly-pilferer
 gnarled-sage
 goremand

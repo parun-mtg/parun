@@ -323,6 +323,8 @@ filterAtomsOf leaf predicate = case predicate of
   -- A leaf for the nullary atoms' reason, a payload over: CR 400.1's card count is
   -- a Natural, which holds no Filter for a card author to reach.
   Filter.Type.CardsInGraveyardAtLeast _ -> leaf predicate
+  -- A Filter position for Controls' reason: the nest describes what is counted.
+  Filter.Type.OwnsBoundAtLeast _ _ f -> filterAtomsOf leaf f
   Filter.Type.IsAttacking -> leaf predicate
   Filter.Type.IsAttackingPlayer _ -> leaf predicate
   Filter.Type.IsAttackingPlaneswalker _ -> leaf predicate
