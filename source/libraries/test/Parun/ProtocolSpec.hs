@@ -40,12 +40,14 @@ import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -78,6 +80,8 @@ import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -90,6 +94,7 @@ import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PayOffer as PayOffer
+import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
@@ -106,6 +111,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
@@ -153,6 +159,31 @@ spec s registry = Spec.describe s "Protocol" $ do
         offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
         activate i = R.Object [(Text.pack "action", R.Text (Text.pack "Activate")), (Text.pack "object", Protocol.object oid), (Text.pack "ability", R.Number i)]
     Spec.assertEqWith s "offer" offered (R.Array [activate 0, activate 1])
+
+  Spec.it s "CR 701.40c / 116.2d / 702.170a a turn-up, ignore or plot is offered with its procedure, ability or cost" $ do
+    let oid = ObjectId.MkObjectId 7
+        gs = Setup.emptyGame S.bothPlayers
+        cost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
+        ban = AbilityName.MkAbilityName (Text.pack "search ban")
+        offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.TurnFaceUp oid TurnUpProcedure.Manifest, Action.Ignore oid ban, Action.Plot oid cost])
+        acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", Protocol.object oid)] <> [(Text.pack key, value) | (key, value) <- extra])
+    Spec.assertEqWith s "offer" offered (R.Array [acting "TurnFaceUp" [("procedure", R.Text (Text.pack "Manifest"))], acting "Ignore" [("abilityName", R.Text (Text.pack "search ban"))], acting "Plot" [("cost", Protocol.payment cost)]])
+
+  Spec.it s "CR 601.2b / 702.152a / 101.4b a choice of cost offers each candidate's keyword, and it and an offer to pay what earlier payers answered" $ do
+    let oid = ObjectId.MkObjectId 7
+        taken = ObjectId.MkObjectId 9
+        gs = Setup.emptyGame S.bothPlayers
+        cost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
+        blitz = Keyword.Blitz cost
+        earlier = Seq.fromList [(S.bob, PayerAnswer.Paid cost (Set.singleton taken)), (S.alice, PayerAnswer.Declined)]
+        choosing = Protocol.offerOf gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, CandidateCost.plain (Just blitz) cost] earlier)
+        paying = Protocol.offerOf gs (Prompt.ChooseToPay (Decider.MkDecider S.alice) S.alice oid PayOffer.InsteadOfDraw cost earlier)
+        player p = R.Text (Text.pack (show (PlayerId.unwrap p)))
+        told = R.Array [R.Array [player S.bob, R.Array [Protocol.payment cost, R.Array [Protocol.object taken]]], R.Array [player S.alice, R.Null]]
+    Spec.assertEqWith s "the keywords" (fmap Codec.Reply.toValue (field "keywords" choosing)) (Just (Codec.encode (Common.list (Common.maybe Codec.Keyword.codec)) [Nothing, Just blitz]))
+    Spec.assertEqWith s "the costs, equal" (field "costs" choosing) (Just (R.Array [Protocol.payment cost, Protocol.payment cost]))
+    Spec.assertEqWith s "CR 101.4b earlier payers of a choice of cost" (field "earlier" choosing) (Just told)
+    Spec.assertEqWith s "CR 101.4b earlier payers of an offer to pay" (field "earlier" paying) (Just told)
 
   Spec.it s "CR 510.1 a combat damage assignment offers each recipient's lethal damage in the answer's vocabulary" $ do
     let o7 = ObjectId.MkObjectId 7

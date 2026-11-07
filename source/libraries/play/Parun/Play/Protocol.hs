@@ -39,6 +39,7 @@ import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.SlotName as Codec.SlotName
+import qualified Parun.Codec.TurnUpProcedure as Codec.TurnUpProcedure
 import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Engine.Combat as Combat
@@ -62,6 +63,7 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Scenario.Reply as Reply
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
@@ -100,6 +102,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideObject as OutsideObject
+import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.PrintingId as PrintingId
@@ -244,10 +247,16 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseExtraManaSource _ _ sources -> fields [("sources", manaSources gs sources)]
   -- CR 734.1: the sources of the one activation asked about.
   Prompt.ReverseManaAbilities _ _ sources -> fields [("sources", objects (NonEmpty.toList sources))]
-  -- CR 601.2b / 702.51a: each candidate's cost.
-  --
-  -- Not implemented: the keyword that offered each candidate (#6594).
-  Prompt.ChooseCost _ _ source candidates _ -> fields [("source", object source), ("costs", Reply.encode (Reply.list (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec))) namer (fmap CandidateCost.cost candidates))]
+  -- CR 601.2b / 702.51a: each candidate's cost and, beside it, the keyword
+  -- that offered it (CR 702.152a) or null; CR 101.4b: what earlier payers
+  -- answered.
+  Prompt.ChooseCost _ _ source candidates earlier ->
+    fields
+      [ ("source", object source),
+        ("costs", Reply.encode (Reply.list (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec))) namer (fmap CandidateCost.cost candidates)),
+        ("keywords", Reply.encode (Reply.list (Reply.maybeOf (Reply.viaCodec Codec.Keyword.codec))) namer (fmap CandidateCost.keyword candidates)),
+        ("earlier", payerAnswers earlier)
+      ]
   Prompt.PayLifeForMana _ _ life mana -> fields [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)]
   Prompt.ChooseManaYield _ _ source options -> fields [("source", object source), ("yields", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.yieldUnits) (Foldable.toList options)))]
   Prompt.ChooseManaSpentOnX _ _ source shares -> fields [("source", object source), ("shares", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.Type.unwrap) (Foldable.toList shares)))]
@@ -270,7 +279,8 @@ offerOf gs prompt = case prompt of
   Prompt.AssignCombatDamage _ _ source lethal total ->
     fields [("source", object source), ("lethal", Reply.encode (Reply.mapOf Reply.recipient Reply.natural) namer lethal), ("total", natural total)]
   Prompt.ChooseCombatDamageOption _ _ source option -> fields [("source", object source), ("option", Reply.encode (Reply.viaCodec Codec.CombatDamageOption.codec) namer option)]
-  Prompt.ChooseToPay _ _ source _ cost _ -> fields [("source", object source), ("cost", payment cost)]
+  -- CR 118.12 / 101.4b: the cost, and what earlier payers answered.
+  Prompt.ChooseToPay _ _ source _ cost earlier -> fields [("source", object source), ("cost", payment cost), ("earlier", payerAnswers earlier)]
   Prompt.ChooseDivision _ _ source dividing targets ->
     fields
       ( [("source", object source), ("targets", Reply.encode (Reply.list Reply.recipient) namer (NonEmpty.toList targets))]
@@ -583,6 +593,15 @@ yesOrNo = [OptionalDecision.Exercises, OptionalDecision.Declines]
 payment :: Cost.Type.Cost Keyword.Type.Keyword -> R.Reply
 payment = Reply.encode (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec)) namer
 
+-- | CR 101.4b: each earlier payer of one offer beside what they answered:
+-- null for declining, or the option paid and the objects it took.
+payerAnswers :: Seq.Seq (PlayerId.PlayerId, PayerAnswer.PayerAnswer) -> R.Reply
+payerAnswers = Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.maybeOf (Reply.pairOf (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec)) (Reply.setOf Reply.object))))) namer . fmap (fmap paid)
+  where
+    paid answer = case answer of
+      PayerAnswer.Declined -> Nothing
+      PayerAnswer.Paid cost taken -> Just (cost, taken)
+
 -- | A prompt's source where it has one, what else the seat is told, and
 -- under @key@ its items: the options `choosing` spells, or under @"order"@
 -- what a prompt answered by a permutation of their indices orders
@@ -659,8 +678,9 @@ triggerEntry gs entry = fields (("source", source) : [("text", R.Text text) | te
       TriggerSource.Sourceless -> (R.Null, Oracle.triggered (Oracle.contextOf Text.empty []) False ability)
 
 -- | An action as an offer names it: its constructor, the object it acts on,
--- the face or half it names, and for an Activate, the ability's place among
--- its source's (Projection.abilitiesOf, as a scenario's Activation names it).
+-- the face or half it names, for an Activate, the ability's place among its
+-- source's (Projection.abilitiesOf, as a scenario's Activation names it), and
+-- the choice a TurnFaceUp, Ignore or Plot carries.
 actionOffer :: GameState.GameState -> Action.Action -> R.Reply
 actionOffer gs action = fields (("action", R.Text (Text.pack kind)) : rest)
   where
@@ -670,12 +690,12 @@ actionOffer gs action = fields (("action", R.Text (Text.pack kind)) : rest)
       Action.Cast oid name facing -> ("Cast", on oid <> named name <> [("facing", Reply.encode (Reply.viaCodec Codec.Facing.codec) namer facing)])
       Action.Activate oid ability -> ("Activate", on oid <> [("ability", natural (Natural.length (takeWhile (/= ability) abilities))) | let abilities = Projection.abilitiesOf oid gs, ability `elem` abilities])
       Action.ActivateManaAbility oid -> ("ActivateManaAbility", on oid)
-      Action.TurnFaceUp oid _ -> ("TurnFaceUp", on oid)
+      Action.TurnFaceUp oid procedure -> ("TurnFaceUp", on oid <> [("procedure", Reply.encode (Reply.viaCodec Codec.TurnUpProcedure.codec) namer procedure)])
       Action.TurnConspiracyFaceUp oid -> ("TurnConspiracyFaceUp", on oid)
       Action.Unlock oid name -> ("Unlock", on oid <> named name)
       Action.DiscardFromHand oid -> ("DiscardFromHand", on oid)
-      Action.Ignore oid _ -> ("Ignore", on oid)
-      Action.Plot oid _ -> ("Plot", on oid)
+      Action.Ignore oid ability -> ("Ignore", on oid <> [("abilityName", R.Text (AbilityName.unwrap ability))])
+      Action.Plot oid cost -> ("Plot", on oid <> [("cost", payment cost)])
       Action.Foretell oid -> ("Foretell", on oid)
       Action.Suspend oid -> ("Suspend", on oid)
       Action.PutCompanionIntoHand -> ("PutCompanionIntoHand", [])
