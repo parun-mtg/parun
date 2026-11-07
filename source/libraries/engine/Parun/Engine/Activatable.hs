@@ -728,10 +728,11 @@ activatableGiven pools sources pid srcId ability gs =
         && not (ActivationProhibition.prohibitedGiven pcs grants (Target.activationProhibitionRows pools) AbilityKind.NonManaAbility (ActivatedAbility.cost ability) srcId gs)
         -- CR 602.5's player-axis prohibition (Sen Triplets), beside detain for
         -- its reason: rule 701.35a stamps one object and this names a player, and
-        -- neither carves a mana ability out -- so Cost.manaActivationsGiven
+        -- Sen Triplets carves no mana ability out -- so Cost.manaActivationsGiven
         -- carries this conjunct too, for the CR 605.3a windows that never reach
-        -- this function.
-        && not (PlayerEffect.prohibitsActivatingGiven (ActivatedAbility.keyword ability) srcId gs rows)
+        -- this function. Asked as NonManaAbility for the prohibition above's
+        -- reason.
+        && not (PlayerEffect.prohibitsActivatingGiven AbilityKind.NonManaAbility (ActivatedAbility.keyword ability) srcId gs rows)
         && sicknessOkGiven grants pcs pid srcId ability gs
         && riderOk pid srcId ability gs
         && loyaltyOk pid srcId ability gs

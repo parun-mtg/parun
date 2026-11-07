@@ -7,9 +7,7 @@ and running `parun deck` on it: every unresolved name is reported.
 
 ## Expressible today
 
-These need no new capability, but `parun translate` does not translate them yet.
-Each names the mtgish node the translator stops at; "verify" marks a clause the
-census did not settle.
+Nothing: every card `parun translate` stopped at is in the pool.
 
 
 
@@ -223,27 +221,15 @@ census did not settle.
 
 
 
-- Whiplash Wordsmith: `_Players:WasDealtNoncombatDamageThisTurn`; shares Vicious
-  Verse
 
-- Winter, Tormented Loner: `_Action:Reflexive_Sacrifice_WhenYouDo`
 
-- Woodwork Prodigy // Soul Tether: `_Permanents:IsntPrepared`; shares Soul
-  Tether
 
-- Wrath of the Bloodmane: `_Rule:CastEffect`
 
-- Wrecking Gecko: `_Rule:Ward`
 
-- Yoshimaru, Beloved Companion: `_Rule:ReplaceWouldPutCounters`
 
-- Yoshimaru, Scrappy Stray: `_Action:Fight`
 
-- Your Fate Ends Here: `_Permanents:ManaValueIs`
 
-- Yuriko, Blade of the Mighty: `_Condition:IsDuringCombat`
 
-- Yuriko, Hope from the Shadows: `_LayerEffect:AdjustPTX`
 
 ## Needs a capability
 

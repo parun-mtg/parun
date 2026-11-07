@@ -588,7 +588,7 @@ rewritePlayerEffect pairs effect = case effect of
   -- words either.
   PlayerEffect.CantCastSpells -> effect
   -- The designator is no word CR 612.1 swaps; the source Filter descends.
-  PlayerEffect.CantActivateAbilities designator f -> PlayerEffect.CantActivateAbilities designator (Filter.rewrite pairs f)
+  PlayerEffect.CantActivateAbilities designator f kind -> PlayerEffect.CantActivateAbilities designator (Filter.rewrite pairs f) kind
   PlayerEffect.CantCastMoreThan _ -> effect
   PlayerEffect.PlayAdditionalLands _ -> effect
   PlayerEffect.NoMaximumHandSize -> effect

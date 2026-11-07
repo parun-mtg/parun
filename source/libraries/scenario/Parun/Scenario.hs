@@ -1799,7 +1799,10 @@ resolveSlots gs key verb offered chosen =
             )
             offered
 
--- | Whether every target an entry names is among its slot's candidates.
+-- | Whether every target an entry names is among its slot's candidates. A
+-- slot the announcement does not offer, a fixed-count one, is judged by the
+-- ChooseTargets that follows (Yoshimaru, Scrappy Stray's "another target
+-- creature you control").
 offersAll :: GameState.GameState -> Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run Bool
 offersAll gs offered chosen =
   fmap and . sequence $
@@ -1807,7 +1810,7 @@ offersAll gs offered chosen =
         target <- resolveEither ref gs
         pure (any (matchesRecipient target) candidates)
     | (slot, refs) <- Map.toList chosen,
-      let candidates = maybe Set.empty snd (Map.lookup slot offered),
+      Just (_, candidates) <- [Map.lookup slot offered],
       ref <- Foldable.toList refs
     ]
 
