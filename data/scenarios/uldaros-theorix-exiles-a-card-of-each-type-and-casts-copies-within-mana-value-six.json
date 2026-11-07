@@ -49,6 +49,10 @@
           {
             "card": "Seat of the Synod",
             "label": "seat"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "orni"
           }
         ],
         "hand": [
@@ -111,7 +115,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 115.3 / 707.12 / 608.3f whole card: Uldaros Theorix, cast, exiles up to one target nonland card of each card type from alice's graveyard and lets her cast copies with total mana value 6 or less free, a permanent copy becoming a token",
-  "note": "Seat of the Synod is an artifact land, so no artifact target; bob's Divination is not in alice's graveyard; the Bolt is an instant, so no creature target; Exiled: Hill Giant (4), Shock (1) and Divination (3). The Giant's and the Shock's copies spend 5 of the 6, so Divination's copy no longer fits and is not offered: an offer would be an unscheduled prompt. The Giant's copy enters as a token; the cards stay in exile, and no card is drawn.",
+  "note": "Seat of the Synod is an artifact land, so no artifact target; bob's Divination is not in alice's graveyard; Ornithopter fills the artifact or the creature slot, not both (CR 115.3), so the engine asks again from the announcement and she leaves the artifact slot empty; the Bolt is an instant, so no creature target; Exiled: Hill Giant (4), Shock (1) and Divination (3). The Giant's and the Shock's copies spend 5 of the 6, so Divination's copy no longer fits and is not offered: an offer would be an unscheduled prompt. The Giant's copy enters as a token; the cards stay in exile, and no card is drawn.",
   "timeline": [
     {
       "do": {
@@ -165,6 +169,21 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
+          "artifact": [
+            "$orni"
+          ],
+          "creature": [
+            "$orni"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
           "creature": [
             "$bolt"
           ],
@@ -179,6 +198,7 @@
     {
       "do": {
         "ChooseTargets": {
+          "artifact": [],
           "creature": [
             "$giant"
           ],
