@@ -22,6 +22,7 @@ import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.SlotName as Codec.SlotName
+import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
@@ -88,6 +89,7 @@ import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MutateSide as MutateSide
+import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Operand as Operand
@@ -330,11 +332,15 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "a prompt answered by an index or an entry of what it lists offers each option as its answer, beside the entry it picks" $ do
     giant <- S.printingOf s registry "Hill Giant"
+    intelligence <- S.printingOf s registry "Great Intelligence's Plan"
     let o7 = ObjectId.MkObjectId 7
         o9 = ObjectId.MkObjectId 9
         alice = Decider.MkDecider S.alice
+        bobDecides = Decider.MkDecider S.bob
         (looked, g1) = S.addPermanent giant S.bob (Setup.emptyGame S.bothPlayers)
-        (printing, gs) = Game.intern giant g1
+        (printing, g2) = Game.intern giant g1
+        (plan, g3) = S.spellOnStack intelligence S.alice g2
+        gs = g3 {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))}) plan (GameState.objects g3)}
         offered :: Prompt.Prompt r -> Either Text.Text ([r], Maybe R.Reply)
         offered prompt = do
           let offer = Protocol.offerOf gs prompt
@@ -356,7 +362,9 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 123.5c a keeper by its card's name" (offered (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))) (Right ([0, 1], entries (replicate 2 (R.Text (Text.pack "Hill Giant")))))
     Spec.assertEqWith s "CR 706.4 a result as its number" (offered (Prompt.ChooseDieResult alice S.alice (Just o7) (4 NonEmpty.:| [4]))) (Right ([0, 1], entries [R.Number 4, R.Number 4]))
     Spec.assertEqWith s "CR 701.48a a branch, then neither" (offered (Prompt.ChooseLearn alice S.alice o7 (LearnMode.TakeLesson NonEmpty.:| []))) (Right ([Just LearnMode.TakeLesson, Nothing], entries [R.Text (Text.pack "TakeLesson")]))
-    Spec.assertEqWith s "CR 608.2d a clause, then neither where it is offered" (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) True Seq.empty)) (Right ([Just (clause 1), Just (clause 2), Nothing], Nothing))
+    Spec.assertEqWith s "CR 608.2d a clause, as its index where no object resolves, then neither where it is offered" (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) True Seq.empty)) (Right ([Just (clause 1), Just (clause 2), Nothing], entries [R.Number 1, R.Number 2]))
+    Spec.assertEqWith s "CR 701.55a a branch of a villainous choice as its Oracle text, and as its index where its clause does not render" (offered (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False Seq.empty)) (Right ([Just (clause 1), Just (clause 2)], entries [R.Text (Text.pack "Target opponent discards three cards."), R.Number 2]))
+    Spec.assertEqWith s "CR 101.4b and the branch an earlier chooser announced likewise" (field "earlier" (Protocol.offerOf gs (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.singleton (S.alice, Just (clause 1)))))) (Just (R.Array [R.Array [R.Text (Text.pack "0"), R.Text (Text.pack "Target opponent discards three cards.")]]))
     Spec.assertEqWith s "CR 701.55a and not where it is not" (fmap fst (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False Seq.empty))) (Right [Just (clause 1), Just (clause 2)])
     Spec.assertEqWith s "CR 101.4b the clauses earlier choosers announced" (field "earlier" (Protocol.offerOf gs (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.fromList [(S.bob, Just (clause 2)), (S.bob, Nothing)])))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Number 2], R.Array [R.Text (Text.pack "1"), R.Null]]))
     Spec.assertEqWith s "CR 700.3d a pile, an empty one included" (offered (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) Seq.empty)) (Right ([Set.singleton o9, Set.empty], Nothing))

@@ -84,6 +84,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Pool as Pool
@@ -815,6 +816,16 @@ effect context e = case e of
   -- instruction's controller sacrifices. A sweep is not spelled out here.
   Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect r@(ObjectRef.InSlot _) Sacrificer.EffectController Nothing) -> acted context (Text.pack "sacrifice ") r
   Effect.Untap r -> acted context (Text.pack "untap ") r
+  -- "That player sacrifices a creature of their choice" (CR 701.21a): a
+  -- stated number of permanents a player a slot names chooses. Free: "of their
+  -- choice" or not, Oracle wording edicts both ways. A player named otherwise
+  -- is not spelled out here.
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices who f (Quantity.Literal n) Nothing)
+    | slotted who -> do
+        p <- Filter.phrase f (Target.keyword context)
+        noun <- Cost.some n (Filter.MkNoun (Text.pack "permanent") (Just (Text.pack "permanents"))) p
+        choice <- [Text.pack " of their choice", Text.empty]
+        imperative context who (Text.pack "sacrifice " <> noun) (Text.pack "sacrifices " <> noun <> choice)
   -- "Regenerate this creature" (CR 701.19a): a shield for the rest of the
   -- turn, used up by the one destruction it replaces, on the source or on
   -- the object a slot holds.
@@ -879,6 +890,13 @@ effect context e = case e of
               _ -> Text.pack "can't be blocked" <> by <> thisTurn
         [MkPredicate (Just who) verb' [] [] Nothing False]
   _ -> []
+
+-- | Whether a reference names the players a slot holds.
+slotted :: PlayerRef.PlayerRef -> Bool
+slotted ref = case ref of
+  PlayerRef.InSlot _ -> True
+  PlayerRef.EachInSlot _ -> True
+  _ -> False
 
 -- | "[Return/Exile/Put] [objects] [to/into/on] [zone]": a zone change (CR
 -- 400.7) as Oracle text words it by where the objects go. A card returns to a

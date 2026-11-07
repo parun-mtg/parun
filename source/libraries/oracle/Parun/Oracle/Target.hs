@@ -404,6 +404,8 @@ player context ref = case ref of
     | s == youSlot -> [(MkReference (Text.pack "you") [] Filter.Singular, Second)]
     | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular, Third)]
     | otherwise -> fmap (\r -> (r, Third)) (target context s)
+  -- CR 701.55a's facing player, one at a time.
+  PlayerRef.EachInSlot s | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular, Third)]
   PlayerRef.HolderOfBound holder Hop.Itself s -> (MkReference (possessor <> Text.pack (holderWord holder)) [] Filter.Singular, Third) : thatNoun <> thatPlayer
     where
       -- "that artifact's controller" (Crumble), once the slot's announcement
