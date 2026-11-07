@@ -22,6 +22,8 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
+import qualified Parun.Codec.EntryOption as Codec.EntryOption
+import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
 import qualified Parun.Codec.ManaSymbol as Codec.ManaSymbol
@@ -43,6 +45,8 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hotseat as Hotseat
@@ -459,13 +463,15 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
                   let n = Natural.length picked
                   if n >= least && all (n <=) most then Right (R.Array picked) else Left (Text.pack ("Choose " <> bound <> "."))
               )
-  -- One of what the offer lists, sent back as the answer it already is.
+  -- One of what the offer lists, sent back as the answer it already is, and
+  -- named by its entry where the offer lists one.
   _ -> do
     (options, name) <- Monad.mplus (fmap (\o -> (o, optionName view)) (field "options" offer >>= arrayOf)) (fmap (\o -> (o, playerName)) (field "players" offer >>= arrayOf))
     let self = foldMap (objectName view) (field "source" offer)
+        entries = foldMap (fmap Just) (field "entries" offer >>= arrayOf) <> repeat Nothing
     pure
       ( told view self offer
-          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> objectName view source) (field "source" offer) <> Text.pack ":" : numbered (fmap name options)),
+          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> objectName view source) (field "source" offer) <> Text.pack ":" : numbered (zipWith (\option entry -> maybe (name option) (entryName view) entry) options entries)),
         fmap (pickFrom options) . one (Natural.length options)
       )
   where
@@ -533,10 +539,10 @@ readingByName lookUp view wanted =
     matches = any ((== Text.toCaseFold (Text.strip wanted)) . Text.toCaseFold . CardName.unwrap) . Set.toList . Render.cardNames
 
 -- | The object behind each numbered option of an offer, where it names one:
--- the offer's own list, the cards, sources or options it chooses from, or
--- what it orders or picks a set among.
+-- the offer's own list, the cards, sources, entries or options it chooses
+-- from, or what it orders or picks a set among.
 listedObjects :: PlayerView.PlayerView -> R.Reply -> [Maybe ObjectId.ObjectId]
-listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap snd . distinct view) (arrayOf offer), field "from" offer >>= arrayOf, field "sources" offer >>= arrayOf, field "options" offer >>= arrayOf, field "order" offer >>= arrayOf, field "among" offer >>= arrayOf])
+listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap snd . distinct view) (arrayOf offer), field "from" offer >>= arrayOf, field "sources" offer >>= arrayOf, field "entries" offer >>= arrayOf, field "options" offer >>= arrayOf, field "order" offer >>= arrayOf, field "among" offer >>= arrayOf])
   where
     optionObject option = Monad.msum [objectOf option, field "object" option >>= objectOf, field "source" option >>= objectOf]
 
@@ -740,9 +746,33 @@ componentName self component =
 -- | A trigger ordering's entry: its source, and its Oracle text where the
 -- offer carries it.
 triggerName :: PlayerView.PlayerView -> R.Reply -> Text.Text
-triggerName view entry =
+triggerName = sourcedName (Text.pack "'s triggered ability")
+
+-- | An entry naming its source (null for none, a rule's), and after it its
+-- Oracle text where the offer carries it, or `noun` where it does not; a
+-- hand action's place among its card's where the offer says it.
+sourcedName :: Text.Text -> PlayerView.PlayerView -> R.Reply -> Text.Text
+sourcedName noun view entry =
   let source = maybe (Text.pack "A rule") (objectName view) (Monad.mfilter (/= R.Null) (field "source" entry))
-   in maybe (source <> Text.pack "'s triggered ability") (\text -> source <> Text.pack ": " <> text) (field "text" entry >>= textOf)
+      place = foldMap (\i -> Text.pack (" (ability " <> show (i + 1) <> ")")) (field "ability" entry >>= naturalOf)
+   in maybe (source <> noun) (\text -> source <> Text.pack ": " <> text) (field "text" entry >>= textOf) <> place
+
+-- | An entry of an offer naming what each option picks
+-- (Parun.Play.Protocol.indexing): a cast as actionName names it, an entering
+-- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
+-- subtypes, an event as the log tells it, an object stating something as
+-- sourcedName names it, an unwitnessed event (null) as unseen, and anything
+-- else as an option is named.
+entryName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+entryName view entry
+  | Maybe.isJust (field "action" entry) = actionName view entry
+  | Just shape <- decoded Codec.EntryOption.codec entry =
+      Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
+  | Just event <- decoded Codec.GameEvent.codec entry =
+      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Render.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
+  | Maybe.isJust (field "source" entry) = sourcedName Text.empty view entry
+  | entry == R.Null = Text.pack "Something you did not see"
+  | otherwise = optionName view entry
 
 -- | A unit of mana in the pool: its type, and what sets it apart from others
 -- of its type (CR 106.6, 106.4, 107.4h).
@@ -850,11 +880,13 @@ listedName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 listedName view reply = maybe (Text.pack "something") (Render.choosable view) (objectOf reply)
 
 -- | An option of a listed offer: an object as listedName names it, a
--- recipient or attack target as recipientName does, declining as None, and a
--- word or number as itself.
+-- recipient or attack target as recipientName does, declining as None, an
+-- empty set (CR 700.3d's empty pile) as Nothing, and a word or number as
+-- itself.
 optionName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 optionName view reply = case reply of
   R.Null -> Text.pack "None"
+  R.Array [] -> Text.pack "Nothing"
   R.Number n -> Text.pack (show n)
   R.Text t
     | Maybe.isJust (objectOf reply) -> listedName view reply
@@ -892,7 +924,7 @@ told view self offer = case offer of
   R.Object pairs ->
     [ label key <> Text.pack ": " <> value key reply
     | (key, reply) <- pairs,
-      key `notElem` fmap Text.pack ["source", "options", "players", "among", "least", "most"],
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most"],
       reply /= R.Array []
     ]
   _ -> []

@@ -15,7 +15,9 @@ import Numeric.Natural (Natural)
 import qualified Parun.Cards as Cards
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
+import qualified Parun.Codec.EntryOption as Codec.EntryOption
 import qualified Parun.Codec.Filter as Codec.Filter
+import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
@@ -53,13 +55,21 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
+import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Game as Game.Type
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
+import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.LandOrNonland as LandOrNonland
+import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -74,6 +84,8 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReplacementEffect as ReplacementEffect
+import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SlotName as SlotName
@@ -246,6 +258,43 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [o9] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
     Spec.assertEqWith s "any number up to the most" (bounds (Prompt.ChooseAnyNumber alice S.alice o7 AnyNumberOf.ToExile [o9, o11] (Just 1) Seq.empty)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 1)]
     Spec.assertEqWith s "recipients read back as the answer" (fmap (Protocol.decodeAnswer loop . R.Array) (field "among" (Protocol.offerOf gs loop) >>= arrayOf)) (Just (Right (Set.fromList [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])))
+
+  Spec.it s "a prompt answered by an index or an entry of what it lists offers each option as its answer, beside the entry it picks" $ do
+    giant <- S.printingOf s registry "Hill Giant"
+    let o7 = ObjectId.MkObjectId 7
+        o9 = ObjectId.MkObjectId 9
+        alice = Decider.MkDecider S.alice
+        (looked, g1) = S.addPermanent giant S.bob (Setup.emptyGame S.bothPlayers)
+        (printing, gs) = Game.intern giant g1
+        offered :: Prompt.Prompt r -> Either Text.Text ([r], Maybe R.Reply)
+        offered prompt = do
+          let offer = Protocol.offerOf gs prompt
+          options <- maybe (Left (Text.pack "no options")) Right (field "options" offer >>= arrayOf)
+          answers <- traverse (Protocol.decodeAnswer prompt) options
+          if all (Scenario.withinOffer prompt) answers then Right (answers, field "entries" offer) else Left (Text.pack "an option outside the offer")
+        entries = Just . R.Array
+        tapped = ReplacementEntry.MkReplacementEntry looked (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Tapped))
+        hit = DamageEvent.MkDamageEvent o7 (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        hidden = GameEvent.Looked (Looked.MkLooked looked (Projection.project looked gs) (Set.singleton S.bob))
+        hillGiant = CardName.MkCardName (Text.pack "Hill Giant")
+        clause = ClauseIndex.MkClauseIndex
+        hand = HandActionIndex.MkHandActionIndex
+        shape = EntryOption.MkEntryOption 1 6 Set.empty Set.empty
+    Spec.assertEqWith s "CR 616.1 a replacement by its source and Oracle text" (offered (Prompt.ChooseReplacement alice S.alice [tapped, tapped])) (Right ([0, 1], entries (replicate 2 (R.Object [(Text.pack "source", Protocol.object looked), (Text.pack "text", R.Text (Text.pack "Hill Giant enters tapped."))]))))
+    Spec.assertEqWith s "CR 614.1c an entry option as its shape" (fmap (fmap (fmap (fmap (Codec.decode Codec.EntryOption.codec . Codec.Reply.toValue)) . (>>= arrayOf))) (offered (Prompt.ChooseEntryOption alice S.alice o7 [shape]))) (Right ([0], Just [Right shape]))
+    Spec.assertEqWith s "CR 603.7b an event the seat saw, and null for one it did not" (offered (Prompt.ChooseDelayedTriggerEvent alice S.alice o7 (GameEvent.DamageDealt hit NonEmpty.:| [hidden]))) (Right ([0, 1], entries [Reply.encode (Reply.viaCodec Codec.GameEvent.codec) Protocol.namer (GameEvent.DamageDealt hit), R.Null]))
+    Spec.assertEqWith s "CR 706.2b a modifier by its object, null for none" (offered (Prompt.ChooseRollModifier alice S.alice (Just o7 NonEmpty.:| [Nothing]))) (Right ([0, 1], entries [R.Object [(Text.pack "source", Protocol.object o7)], R.Object [(Text.pack "source", R.Null)]]))
+    Spec.assertEqWith s "CR 123.5c a keeper by its card's name" (offered (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))) (Right ([0, 1], entries (replicate 2 (R.Text (Text.pack "Hill Giant")))))
+    Spec.assertEqWith s "CR 706.4 a result as its number" (offered (Prompt.ChooseDieResult alice S.alice (Just o7) (4 NonEmpty.:| [4]))) (Right ([0, 1], entries [R.Number 4, R.Number 4]))
+    Spec.assertEqWith s "CR 701.48a a branch, then neither" (offered (Prompt.ChooseLearn alice S.alice o7 (LearnMode.TakeLesson NonEmpty.:| []))) (Right ([Just LearnMode.TakeLesson, Nothing], entries [R.Text (Text.pack "TakeLesson")]))
+    Spec.assertEqWith s "CR 608.2d a clause, then neither where it is offered" (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) True Seq.empty)) (Right ([Just (clause 1), Just (clause 2), Nothing], Nothing))
+    Spec.assertEqWith s "CR 701.55a and not where it is not" (fmap fst (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False Seq.empty))) (Right [Just (clause 1), Just (clause 2)])
+    Spec.assertEqWith s "CR 101.4b the clauses earlier choosers announced" (field "earlier" (Protocol.offerOf gs (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.fromList [(S.bob, Just (clause 2)), (S.bob, Nothing)])))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Number 2], R.Array [R.Text (Text.pack "1"), R.Null]]))
+    Spec.assertEqWith s "CR 700.3d a pile, an empty one included" (offered (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) Seq.empty)) (Right ([Set.singleton o9, Set.empty], Nothing))
+    Spec.assertEqWith s "CR 101.4b the piles earlier choosers took" (field "earlier" (Protocol.offerOf gs (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) (Seq.singleton (S.bob, Set.singleton o9))))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [Protocol.object o9]]]))
+    Spec.assertEqWith s "CR 103.5b a card's action, by its place where it has two, then none" (offered (Prompt.MulliganAction alice S.alice [(o7, hand 0), (o7, hand 1), (o9, hand 0)])) (Right ([Just (o7, hand 0), Just (o7, hand 1), Just (o9, hand 0), Nothing], entries [R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 0)], R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 1)], R.Object [(Text.pack "source", Protocol.object o9)]]))
+    Spec.assertEqWith s "CR 103.6 an opening-hand action, then none" (fmap fst (offered (Prompt.OpeningHandAction alice S.alice [(o9, hand 0)]))) (Right [Just (o9, hand 0), Nothing])
+    Spec.assertEqWith s "CR 608.2g a cast as its action, then none" (offered (Prompt.CastWhileSearching alice S.alice [(o9, hillGiant, Facing.FaceUp)])) (Right ([Just (o9, hillGiant, Facing.FaceUp), Nothing], entries [Protocol.actionOffer gs (Action.Cast o9 hillGiant Facing.FaceUp)]))
 
   Spec.it s "a hidden card reaches no line sent to the other seat" $ do
     gs <- started s registry
