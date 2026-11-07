@@ -2006,6 +2006,7 @@ omen-hawker
 omnath-locus-of-creation
 omnath-locus-of-mana
 omni-changeling
+omnipresence
 omniscience
 one-with-the-machine
 one-with-the-stars

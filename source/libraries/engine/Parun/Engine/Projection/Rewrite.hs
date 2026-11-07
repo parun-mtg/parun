@@ -172,6 +172,7 @@ import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.FullText as FullText
@@ -567,7 +568,7 @@ rewritePlayerEffect pairs effect = case effect of
   PlayerEffect.CantPlayLands f -> PlayerEffect.CantPlayLands (Filter.rewrite pairs f)
   PlayerEffect.CastFrom grant -> PlayerEffect.CastFrom grant {CastFromZone.matching = Filter.rewrite pairs (CastFromZone.matching grant), CastFromZone.additionalCosts = fmap (Filter.rewriteComponent pairs) (CastFromZone.additionalCosts grant)}
   PlayerEffect.PlotFrom grant -> PlayerEffect.PlotFrom grant {PlotFromZone.matching = Filter.rewrite pairs (PlotFromZone.matching grant)}
-  PlayerEffect.CastFromHandWithoutPayingManaCost f -> PlayerEffect.CastFromHandWithoutPayingManaCost (Filter.rewrite pairs f)
+  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> PlayerEffect.CastFromHandWithoutPayingManaCost grant {FreeCastFromHand.spells = Filter.rewrite pairs (FreeCastFromHand.spells grant), FreeCastFromHand.amount = fmap (rewriteQuantity pairs) (FreeCastFromHand.amount grant)}
   -- CR 702.16a's quality where the CARD states it, so a subtype word in it is a
   -- word on the card and CR 612.1 swaps it; the chosen-name sibling below is the
   -- arm CR 612.2's second sentence keeps a swap off.

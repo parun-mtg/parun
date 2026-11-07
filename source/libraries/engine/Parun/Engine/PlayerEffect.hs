@@ -88,6 +88,7 @@ import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Face as Face
 import Parun.Types.Filter (Filter)
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.GameSettings as GameSettings
@@ -1815,6 +1816,21 @@ perTargetCount targets pid source gs wanted =
   let referent r = (Recipient.objectOf r, Recipient.playerOf r)
    in Natural.length (Set.map referent (Set.filter (perTargetMatches pid source gs wanted) targets))
 
+-- CR 118.9: does a free-cast grant cover this card? Its filter is matched as
+-- matchesObjectFrom matches, with its `amount` evaluated into
+-- Filter.slotAmount for the EnclosingAmount operand: read against the row's
+-- SOURCE with targetPerspective's "you", perEachCount's posture (CR 109.5,
+-- Omnipresence's "the number of creatures you control").
+freeCastAdmits :: PlayerId -> RowSource -> FreeCastFromHand.FreeCastFromHand -> ObjectId -> GameState -> Bool
+freeCastAdmits pid source grant oid gs =
+  let framed context = case FreeCastFromHand.amount grant of
+        Nothing -> context
+        Just quantity ->
+          let against = Maybe.fromMaybe oid (RowSource.object source)
+              you = contextFor (Just (targetPerspective pid source gs)) source gs
+           in context {Filter.slotAmount = Quantity.evaluate (Projection.fullView gs) you gs against quantity}
+   in Filter.matches (framed (contextFrom source oid gs)) (Projection.viewOfObject oid gs) (FreeCastFromHand.spells grant)
+
 -- CR 601.2f: how many times a `perEach` cost change applies -- its Quantity read
 -- as the total is determined, against the row's SOURCE (CR 113.7, Animar, Soul
 -- of Elements' "for each +1/+1 counter on Animar") with `targetPerspective`'s
@@ -2710,7 +2726,7 @@ mayCastFromHandWithoutPayingManaCost :: PlayerId -> ObjectId -> GameState -> Boo
 mayCastFromHandWithoutPayingManaCost pid oid gs =
   let inTheirOwnHand = fmap Object.owner (Game.lookupObject oid gs) == Just pid
       allows (source, effect) = case effect of
-        PlayerEffect.CastFromHandWithoutPayingManaCost criterion -> matchesObjectFrom source criterion oid gs
+        PlayerEffect.CastFromHandWithoutPayingManaCost grant -> freeCastAdmits pid source grant oid gs
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False

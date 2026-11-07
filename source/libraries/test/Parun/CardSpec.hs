@@ -252,6 +252,7 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.FullText as FullText
@@ -4867,11 +4868,12 @@ triggerConditionSlots triggerCondition = case triggerCondition of
 filterSlotsReadSingly :: Filter.Type.Filter Keyword.Keyword -> [SlotName.SlotName]
 filterSlotsReadSingly = Set.toList . Filter.singularSlots
 
--- Every Count a player effect holds: a cost change's `perEach`, the one
--- Quantity a PlayerEffect carries.
+-- Every Count a player effect holds: a cost change's `perEach` and a free-cast
+-- grant's `amount`, the Quantities a PlayerEffect carries.
 playerEffectCounts :: PlayerEffect.PlayerEffect -> [Count.Type.Count Quantity.Type.Quantity]
 playerEffectCounts playerEffect = case playerEffect of
   PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier)
+  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCastFromHand.amount grant)
   _ -> []
 
 -- The Filters a DamagePattern carries -- its source half and its printed
@@ -5003,8 +5005,10 @@ playerEffectFilters playerEffect = case playerEffect of
   -- the cast-side one above is (Fblthp, Lost on the Range's "nonland cards").
   PlayerEffect.PlotFrom grant -> [PlotFromZone.matching grant]
   -- CR 118.9's standing alternative cost, narrowed by the spell's own qualities
-  -- exactly as the zone permission above is (Omniscience's is `And []`).
-  PlayerEffect.CastFromHandWithoutPayingManaCost f -> [f]
+  -- exactly as the zone permission above is (Omniscience's is `And []`). An
+  -- `amount` count's Filters are read with perEachCount's Context, so they
+  -- take the same framing.
+  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> FreeCastFromHand.spells grant : foldMap (fmap snd . quantityFilters) (FreeCastFromHand.amount grant)
   -- CR 101.2's counter prohibition narrows by counter KIND, not by a Filter over
   -- objects: the object-side half of the same printings is
   -- Parun.Types.CounterRestriction, whose affected filter this lint reaches

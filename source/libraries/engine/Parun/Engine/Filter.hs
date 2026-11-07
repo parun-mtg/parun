@@ -1147,7 +1147,9 @@ data Context = MkContext
     -- Parun.Engine.Projection.View.referenceAdmits for a conjure's reference pick
     -- (Parun.Types.FromReference's `amount`), and
     -- Parun.Engine.CombatRestriction.amountFrame for a combat restriction's
-    -- affected set (Parun.Types.AffectedUnless's). It is Nothing at every other
+    -- affected set (Parun.Types.AffectedUnless's), and
+    -- Parun.Engine.PlayerEffect.freeCastAdmits for a free-cast grant's spells
+    -- (Parun.Types.FreeCastFromHand's). It is Nothing at every other
     -- position, and Parun.FilterPositionLintSpec's lint is what keeps a card out of
     -- them.
     --

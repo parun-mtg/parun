@@ -405,6 +405,7 @@ import qualified Parun.Codec.ForEachSpec
 import qualified Parun.Codec.ForbidAttackSpec
 import qualified Parun.Codec.ForbidBeingBlockedSpec
 import qualified Parun.Codec.ForetellCostSpec
+import qualified Parun.Codec.FreeCastFromHandSpec
 import qualified Parun.Codec.FromAnywhereSpec
 import qualified Parun.Codec.FromOutsideTheGameSpec
 import qualified Parun.Codec.FromReferenceSpec
@@ -1421,6 +1422,7 @@ spec s registry corpus = do
   Parun.Codec.FightSpec.spec s
   Parun.Codec.FilterSpec.spec s
   Parun.Codec.FlipCoinSpec.spec s
+  Parun.Codec.FreeCastFromHandSpec.spec s
   Parun.Codec.FloatingCandidateSpec.spec s
   Parun.Codec.ForbidAttackSpec.spec s
   Parun.Codec.ForbidBeingBlockedSpec.spec s

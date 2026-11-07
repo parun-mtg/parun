@@ -109,6 +109,7 @@ import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EquipTarget as EquipTarget
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
@@ -645,9 +646,10 @@ amountedSlotAtoms value = case value of
         tagged names = any (\v -> case v of Value.String t -> String.unwrap t `elem` fmap Text.pack names; _ -> False) (keyed "type")
         referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference"] then keyed "value" else []))
         restrictionAtoms = sum (fmap (amountedAtoms "affected") (if tagged ["CantAttack", "CantBlock"] then keyed "value" else []))
+        freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["CastFromHandWithoutPayingManaCost"] then keyed "value" else []))
         here =
           if null (keyed "pool") || null (keyed "amount")
-            then referenceAtoms + restrictionAtoms
+            then referenceAtoms + restrictionAtoms + freeCastAtoms
             else sum (fmap (jsonAtoms enclosingAmountTag) (keyed "filter"))
      in here + sum (fmap (amountedSlotAtoms . Pair.value) pairs)
   Value.String _ -> 0
@@ -655,8 +657,9 @@ amountedSlotAtoms value = case value of
   Value.Boolean _ -> 0
   Value.Number _ -> 0
 
--- A conjure reference pick's value, or a combat restriction's
--- (Parun.Types.AffectedUnless): the atoms of its subtree at `key` where an
+-- A conjure reference pick's value, a combat restriction's
+-- (Parun.Types.AffectedUnless) or a free-cast grant's
+-- (Parun.Types.FreeCastFromHand): the atoms of its subtree at `key` where an
 -- "amount" sits beside it, and none where it does not.
 amountedAtoms :: String -> Value.Value -> Int
 amountedAtoms key value = case value of
@@ -667,13 +670,14 @@ amountedAtoms key value = case value of
   _ -> 0
 
 -- How many CR 202.3 computed-bound operands this card carries in a target slot,
--- reference pick or combat restriction that names an amount, and how many
+-- reference pick, combat restriction or free-cast grant that names an amount, and how many
 -- anywhere else. The second
 -- number is the offence; the first is what Celestine, the Living Saint
 -- legitimately has one of.
 --
 -- Parun.Engine.Target.slotContext fills Filter.Context.slotAmount off the SLOT's
--- own Quantity (Parun.Engine.CombatRestriction.amountFrame off a restriction's),
+-- own Quantity (Parun.Engine.CombatRestriction.amountFrame off a restriction's,
+-- Parun.Engine.PlayerEffect.freeCastAdmits off a free-cast grant's),
 -- so the operand in a slot that names none -- or in a Count filter, a static
 -- ability's affected set, a search filter, a cost criterion -- is a silent False
 -- rather than a rejected card. This is where that is made loud.
@@ -1954,11 +1958,16 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- player effect comparing a mana value against any other operand would leave
   -- the sample too short with nothing failing. The position lints above keep the
   -- source, bound-object and enclosing-amount operands out of a player effect;
-  -- this keeps the rest out too.
+  -- this keeps the rest out too. A printed free-cast grant's spells are exempt:
+  -- Parun.Engine.PlayerEffect's freeCastAdmits reaches neither choiceCouldEscape
+  -- nor choiceCouldApply,
+  -- and CR 107.3b fixes X at 0 under the grant, so the hand's mana value is the
+  -- spell's (Omnipresence's EnclosingAmount).
   Spec.it s "CR 601.3a no player effect compares a mana value against anything but a literal" $ do
     ps <- S.allPrintings s corpus
     let encode = Codec.encode (Filter.Codec.codec Keyword.Codec.codec)
-        inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]]
+        freeCastSpells c = [FreeCastFromHand.spells grant | PlayerEffect.CastFromHandWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)]
+        inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c]
         nonLiteral = (/= Text.pack "Literal")
         offenders = filter (anyFace ((/= 0) . inPlayerEffects nonLiteral) . Printing.card) ps
     Spec.assertEqWith s "every player effect's mana value comparison is against a literal" (fmap (S.nameOf . Printing.card) offenders) []
@@ -1974,8 +1983,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- axis is the SLOT rather than the Framing: Parun.Engine.Target.slotContext fills
   -- Filter.Context.slotAmount off the target slot's own Quantity, so an
   -- EnclosingAmount operand in a slot naming no amount -- or anywhere that is not
-  -- a target slot, a conjure's reference pick or a combat restriction's affected
-  -- set at all -- is a silent False. See enclosingAmountCounts.
+  -- a target slot, a conjure's reference pick, a combat restriction's affected
+  -- set or a free-cast grant's spells at all -- is a silent False. See enclosingAmountCounts.
   Spec.it s "CR 202.3 no card compares against an enclosing amount outside a slot that names one" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace enclosingAmountOffends . Printing.card) ps
@@ -2010,6 +2019,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     --
     -- Greater than, against the power, in a combat restriction's affected set:
     -- Ensnaring Bridge.
+    --
+    -- At most, against the mana value, in a free-cast grant's spells: Omnipresence.
     assertAuthors
       s
       registry
@@ -2043,6 +2054,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("March of Otherworldly Light", 1),
         ("March of Burgeoning Life", 1),
         ("Ensnaring Bridge", 1),
+        ("Omnipresence", 1),
         ("Isareth the Awakener", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
