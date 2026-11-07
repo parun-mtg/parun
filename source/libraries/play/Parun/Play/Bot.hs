@@ -17,6 +17,7 @@ import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Replay as Replay
+import qualified Parun.Engine.Resolve.Common as Common
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.TextWord as TextWord
@@ -38,6 +39,7 @@ import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -51,14 +53,14 @@ import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 
 -- | Each prompt a bot game over the decks in data/decks reaches, plus
 -- ChooseGuess, ChooseNumber, every prompt offering one of a list or a fixed
--- set of decisions or a number up to a bound, and the prompts sharing an
--- arm's shape, answered with one of its legal answers, each equally likely,
--- an unbounded number capped one past its floor. Never concedes. A card name is any of `names`,
--- the reference's (Parun.Play.Game.bot).
+-- set of decisions or a number up to a bound, every division of counters or
+-- an amount, and the prompts sharing an arm's shape, answered with one of its
+-- legal answers, each equally likely, an unbounded number capped one past its
+-- floor. Never concedes. A card name is any of `names`, the reference's
+-- (Parun.Play.Game.bot).
 --
 -- Not implemented: a random answer to every other prompt, which gets
--- 'Replay.defaultAnswer': a group judged by its total (#6614), and a
--- division of counters or an amount (#6600).
+-- 'Replay.defaultAnswer': a group judged by its total (#6614).
 bot :: (Monad m) => [CardName.CardName] -> Answerer.Answerer (Asked.Asked PlayerView.PlayerView) (State.StateT SplitMix.Type.SplitMix m)
 bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ actions -> maybe (pure Action.Pass) SplitMix.pick (NonEmpty.nonEmpty actions)
@@ -194,6 +196,20 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseCounterRemovalAmong _ _ _ owed offered -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Cost.dividesRemoval owed offered) (removals offered))
   Prompt.ChooseCounterRemovalAtLeast _ _ _ least offered -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Cost.dividesRemovalAtLeast least offered) (removals offered))
   Prompt.ChooseCounterRemovalUpTo _ _ _ most offered -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter ((<= most) . sum) (removals offered))
+  -- CR 122.1 / 601.2h / 608.2d: the same by permanent and kind.
+  Prompt.ChooseMixedCounterRemoval _ _ _ spread owed offered ->
+    pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Cost.dividesMixedRemoval spread owed offered) (fmap Cost.unflattenMixed (removals (Cost.flattenMixed offered))))
+  -- CR 608.2d: every division of the amount, each share at least one.
+  Prompt.ChooseDistribution _ _ _ total candidates ->
+    pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Common.distributes total candidates) (divisions (NonEmpty.toList candidates) total))
+  -- CR 122.5 / 706.8b: any count of each kind or result up to its tally, at
+  -- least one counter in all where the card says "one or more".
+  Prompt.ChooseMovedCounters _ _ _ _ offered -> upTo offered
+  Prompt.ChooseMovedCountersAtLeastOne _ _ _ _ offered -> untilSome offered (upTo offered)
+  Prompt.ChooseStoredRerolls _ _ _ stored -> upTo stored
+  -- CR 122.5: each kind's counters divided among the recipients as the
+  -- spread allows.
+  Prompt.ChooseDistributedMovedCounters _ _ _ spread offered recipients -> spreadMoved spread offered (NonEmpty.toList recipients)
   -- CR 608.2d: any branch left to choose, or neither where each branch
   -- carries its own decline.
   Prompt.ChooseClause _ _ _ _ branches neither _ -> SplitMix.pick ((if neither then (Nothing NonEmpty.<|) else id) (fmap Just branches))
@@ -300,6 +316,35 @@ pickOr fallback = maybe (pure fallback) SplitMix.pick . NonEmpty.nonEmpty
 -- to all it carries, zero shares left out.
 removals :: (Ord k) => Map.Map k Natural -> [Map.Map k Natural]
 removals offered = fmap (Map.filter (> 0) . Map.fromList) (traverse (\(key, carried) -> fmap ((,) key) [0 .. carried]) (Map.toList offered))
+
+-- | Any count of each key from none to its tally, each such answer equally
+-- likely, zero counts left out.
+upTo :: (Monad m) => Map.Map k Natural -> State.StateT SplitMix.Type.SplitMix m (Map.Map k Natural)
+upTo = fmap (Map.filter (> 0)) . traverse (SplitMix.between 0)
+
+-- | The draw again until it names something, so each nonempty answer stays
+-- equally likely; empty only when the tallies offer nothing.
+untilSome :: (Monad m) => Map.Map k Natural -> State.StateT SplitMix.Type.SplitMix m (Map.Map r v) -> State.StateT SplitMix.Type.SplitMix m (Map.Map r v)
+untilSome offered draw
+  | all (== 0) offered = pure Map.empty
+  | otherwise = do
+      answer <- draw
+      if Map.null answer then untilSome offered draw else pure answer
+
+-- | CR 122.5: a move's counters divided among the recipients, each answer the
+-- spread allows equally likely: each kind's tally up to all of it, at least
+-- one counter in all, all of it, one kind's count of it, or at most one
+-- counter in all (Parun.Types.MoveSpread).
+spreadMoved :: (Monad m, Ord k, Ord r) => MoveSpread.MoveSpread -> Map.Map k Natural -> [r] -> State.StateT SplitMix.Type.SplitMix m (Map.Map r (Map.Map k Natural))
+spreadMoved spread offered recipients = case spread of
+  MoveSpread.AnyNumber -> perKind (\held -> concatMap (divisions recipients) [0 .. held])
+  MoveSpread.AtLeastOne -> untilSome offered (perKind (\held -> concatMap (divisions recipients) [0 .. held]))
+  MoveSpread.Exactly -> perKind (divisions recipients)
+  MoveSpread.OneKind count -> pickOr Map.empty [byRecipient (Map.singleton kind division) | (kind, held) <- Map.toList offered, division <- divisions recipients (min count held)]
+  MoveSpread.UpToOne -> fmap (maybe Map.empty (\(recipient, kind) -> Map.singleton recipient (Map.singleton kind 1))) (orNone [(recipient, kind) | recipient <- recipients, (kind, held) <- Map.toList offered, held > 0])
+  where
+    perKind shares = fmap byRecipient (traverse (pickOr Map.empty . shares) offered)
+    byRecipient divided = Map.unionsWith Map.union (fmap (\(kind, division) -> fmap (Map.singleton kind) division) (Map.toList divided))
 
 -- | CR 103.1: whether the bot, picked to choose who plays first, plays first
 -- rather than draws, each equally likely.
