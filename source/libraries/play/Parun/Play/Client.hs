@@ -22,6 +22,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
+import qualified Parun.Codec.CounterKind as Codec.CounterKind
 import qualified Parun.Codec.EntryOption as Codec.EntryOption
 import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
@@ -32,6 +33,7 @@ import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.NumberFloor as Codec.NumberFloor
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
+import qualified Parun.Codec.StoredResult as Codec.StoredResult
 import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
@@ -68,6 +70,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Undoing as Undoing
 import qualified Text.Read as Read
@@ -434,6 +437,19 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
           Right amounts | fits amounts -> Right (R.Array [R.Array [recipient, R.Number (toInteger amount)] | (recipient, amount) <- zip targets amounts])
           _ -> Left wrong
       )
+  -- CR 119.7: for each player in turn, the player whose life total they take.
+  "ChooseRedistribution" -> do
+    totals <- field "totals" offer >>= arrayOf >>= mapM (\total -> case total of R.Array [player, R.Number life] -> Just (player, life); _ -> Nothing)
+    let players = fmap fst totals
+        size = Natural.length players
+    pure
+      ( Text.pack "Redistribute life totals: for each player in turn, type the number of the player whose life total they take, separated by spaces, or press Enter to keep every total:"
+          : numbered [playerName player <> Text.pack (" (" <> show life <> " life)") | (player, life) <- totals],
+        \typed -> case numbers typed of
+          Right [] -> Right (R.Array [])
+          Right picked | List.sort picked == [1 .. size] -> Right (R.Array [R.Array [player, giver] | (player, i) <- zip players picked, let giver = pickFrom players i, giver /= player])
+          _ -> Left (Text.pack ("Type each number from 1 to " <> show size <> " once, or press Enter."))
+      )
   -- CR 603.3b / 101.4c: first to last, the first named going on the stack
   -- first; Enter keeps the order shown.
   "OrderTriggers" -> do
@@ -513,6 +529,8 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   _
     | Just items <- field "order" offer >>= arrayOf ->
         pure (ordered (orderHeading (foldMap (\source -> Text.pack " for " <> objectName view source) (field "source" offer)) (orderNote (Question.kind question) offer)) (fmap (optionName view) items))
+  -- An amount per item the offer lists, each within its range.
+  _ | Just caps <- field "amounts" offer -> pure (amounted caps)
   -- A set of what the offer lists, within its least and most.
   _ | Maybe.isJust (field "among" offer) -> subset (optionName view) Text.empty R.Array
   -- One of what the offer lists, sent back as the answer it already is, and
@@ -578,6 +596,65 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
             let n = Natural.length picked
             if n >= least && all (n <=) most then Right (finish picked) else Left (Text.pack ("Choose " <> bound <> "."))
         )
+    -- One amount per item under "amounts" (Parun.Play.Protocol.amounts), in
+    -- the order listed: each at most its cap and at least its floor, adding up
+    -- within the least and most, from one permanent where "fromOne" says so,
+    -- of one kind where "oneKind" does, and each kind within its tally under
+    -- "counters". Enter is none of each. Sent back in the offer's shape, a
+    -- map leaving out each key that takes none.
+    amounted caps =
+      let leaves = amountLeaves caps
+          floors = Map.fromList (foldMap amountLeaves (field "floors" offer))
+          floorOf path = Map.findWithDefault 0 path floors
+          least = field "least" offer >>= naturalOf
+          most = field "most" offer >>= naturalOf
+          supply = foldMap (Maybe.mapMaybe entryOf) (field "counters" offer >>= arrayOf)
+          fromOne = field "fromOne" offer == Just (R.Boolean True)
+          oneKind = field "oneKind" offer >>= naturalOf
+          entries = foldMap (fmap Just) (field "entries" offer >>= arrayOf) <> repeat Nothing
+          self = foldMap (objectName view) (field "source" offer)
+          step key = case key of
+            Left i -> maybe (Text.pack ("Item " <> show (i + 1))) (optionName view) (Monad.join (Maybe.listToMaybe (List.genericDrop i entries)))
+            Right k -> amountKeyName view k
+          range (path, cap) = if floorOf path > 0 then "from " <> show (floorOf path) <> " to " <> show cap else "up to " <> show cap
+          shown (path, cap) = Text.intercalate (Text.pack ": ") (fmap step path) <> Text.pack (" (" <> range (path, cap) <> ")")
+          total = case (least, most) of
+            (Just l, Just m) | l == m -> ", adding up to exactly " <> show m
+            (Just l, Just m) -> ", adding up to from " <> show l <> " to " <> show m
+            (Just l, Nothing) -> ", adding up to at least " <> show l
+            (Nothing, Just m) -> ", adding up to at most " <> show m
+            (Nothing, Nothing) -> ""
+          rules =
+            [", all from one" | fromOne]
+              <> foldMap (\n -> [", all of one kind: " <> show n <> " of it, or all of it if fewer"]) oneKind
+              <> [", each kind in all at most what there is: " <> Text.unpack (Text.intercalate (Text.pack ", ") [Text.pack (show held <> " ") <> amountKeyName view kind | (kind, held) <- supply]) | not (null supply)]
+          taken typed = [(path, n) | ((path, _), n) <- zip leaves typed, n > 0]
+          fits typed =
+            let chosen = taken typed
+                spent = sum typed
+                kinds = ListUtils.nubOrd (Maybe.mapMaybe (lastKey . fst) chosen)
+             in length typed == length leaves
+                  && and (zipWith (\(path, cap) n -> n <= cap && n >= floorOf path) leaves typed)
+                  && all (spent >=) least
+                  && all (spent <=) most
+                  && (not fromOne || length (ListUtils.nubOrd (Maybe.mapMaybe (firstKey . fst) chosen)) <= 1)
+                  && all (\n -> case kinds of [kind] -> spent == min n (maybe 0 snd (List.find ((== kind) . fst) supply)); _ -> False) oneKind
+                  && all (\(kind, held) -> sum [n | (path, n) <- chosen, lastKey path == Just kind] <= held) supply
+          none = replicate (length leaves) (0 :: Natural)
+          enter = if fits none then ", or press Enter for none" else ""
+       in ( told view self offer
+              <> (Text.concat [kindHeading, foldMap (const (Text.pack " for " <> self)) (field "source" offer), Text.pack (": type one amount for each, separated by spaces" <> total <> concat rules <> enter <> ":")] : numbered (fmap shown leaves)),
+            \typed -> case numbers typed of
+              Right [] | fits none -> Right (fillAmounts caps none)
+              Right picked | fits picked -> Right (fillAmounts caps picked)
+              _ -> Left (Text.pack ("Type " <> show (length leaves) <> " amounts, each within its range" <> total <> concat rules <> "."))
+          )
+    firstKey path = case path of
+      Right k : _ -> Just k
+      _ -> Nothing
+    lastKey path = case reverse path of
+      Right k : _ -> Just k
+      _ -> Nothing
     -- Two ordered piles of the cards under "from": those for the top, top
     -- first, then after a slash those for the other pile, each card once;
     -- Enter keeps them all on top as listed. Sent back as (other, top).
@@ -640,9 +717,9 @@ readingByName lookUp view wanted =
 
 -- | The object behind each numbered option of an offer, where it names one:
 -- the offer's own list, the cards, sources, entries or options it chooses
--- from, or what it orders or picks a set among.
+-- from, what it orders or picks a set among, or what it asks an amount of.
 listedObjects :: PlayerView.PlayerView -> R.Reply -> [Maybe ObjectId.ObjectId]
-listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap snd . distinct view) (arrayOf offer), field "from" offer >>= arrayOf, field "sources" offer >>= arrayOf, field "entries" offer >>= arrayOf, field "options" offer >>= arrayOf, field "order" offer >>= arrayOf, field "among" offer >>= arrayOf])
+listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap snd . distinct view) (arrayOf offer), field "from" offer >>= arrayOf, field "sources" offer >>= arrayOf, field "entries" offer >>= arrayOf, field "options" offer >>= arrayOf, field "order" offer >>= arrayOf, field "among" offer >>= arrayOf, fmap (fmap (Either.fromRight R.Null . Maybe.fromMaybe (Left 0) . Maybe.listToMaybe . fst) . amountLeaves) (field "amounts" offer)])
   where
     optionObject option = Monad.msum [objectOf option, field "object" option >>= objectOf, field "source" option >>= objectOf]
 
@@ -948,6 +1025,48 @@ blocks blockers attackers typed = do
             Right (bi, ai)
       _ -> Left (Text.pack "Type each block as blocker:attacker, such as 1:2.")
 
+-- | Each amount an amount-per-item offer asks for (Parun.Play.Protocol.amounts),
+-- in order: the keys leading to it, an index for an item of a list, and the
+-- most it takes.
+amountLeaves :: R.Reply -> [([Either Natural R.Reply], Natural)]
+amountLeaves reply = case reply of
+  R.Array items
+    | all (Maybe.isJust . naturalOf) items -> [([Left i], n) | (i, Just n) <- zip [0 ..] (fmap naturalOf items)]
+    | otherwise -> [(Right key : path, n) | R.Array [key, value] <- items, (path, n) <- amountLeaves value]
+  _ -> foldMap (\n -> [([], n)]) (naturalOf reply)
+
+-- | An amount-per-item offer's shape with these amounts in amountLeaves'
+-- order, a map leaving out each key that takes none.
+fillAmounts :: R.Reply -> [Natural] -> R.Reply
+fillAmounts caps = fst . go caps
+  where
+    go reply typed = case reply of
+      R.Array items
+        | all (Maybe.isJust . naturalOf) items ->
+            let (rest, filled) = List.mapAccumL (\ns item -> swap (go item ns)) typed items
+             in (R.Array filled, rest)
+        | otherwise ->
+            let (rest, filled) = List.mapAccumL (\ns item -> swap (entry item ns)) typed items
+             in (R.Array (Maybe.catMaybes filled), rest)
+      _ -> case typed of
+        n : rest -> (R.Number (toInteger n), rest)
+        [] -> (R.Number 0, [])
+    entry item typed = case item of
+      R.Array [key, value] ->
+        let (filled, rest) = go value typed
+         in (if filled `elem` [R.Number 0, R.Array []] then Nothing else Just (R.Array [key, filled]), rest)
+      _ -> (Nothing, typed)
+    swap (a, b) = (b, a)
+
+-- | A key of an amount-per-item offer as the seat reads it: a counter's kind,
+-- a stored die result, a recipient, or as an option is named.
+amountKeyName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+amountKeyName view key
+  | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) key = Render.counterName kind <> Text.pack " counters"
+  | Just result <- decoded Codec.StoredResult.codec key = Text.pack ("d" <> show (StoredResult.sides result) <> " showing " <> show (StoredResult.value result))
+  | R.Array [R.Text _, _] <- key = recipientName view key
+  | otherwise = optionName view key
+
 numbers :: Text.Text -> Either Text.Text [Natural]
 numbers typed = maybe (Left (Text.pack "Type numbers separated by spaces.")) Right (mapM (Read.readMaybe . Text.unpack) (Text.words typed))
 
@@ -1024,7 +1143,7 @@ told view self offer = case offer of
   R.Object pairs ->
     [ label key <> Text.pack ": " <> value key reply
     | (key, reply) <- pairs,
-      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "repeats"],
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
       reply /= R.Array []
     ]
   _ -> []
