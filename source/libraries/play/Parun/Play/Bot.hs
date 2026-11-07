@@ -25,32 +25,40 @@ import qualified Parun.Play.SplitMix as SplitMix
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CoinFace as CoinFace
+import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Dividing as Dividing
+import qualified Parun.Types.EntwineDecision as EntwineDecision
+import qualified Parun.Types.ForageMode as ForageMode
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GuessAnswer as GuessAnswer
+import qualified Parun.Types.KickerDecision as KickerDecision
+import qualified Parun.Types.LandOrNonland as LandOrNonland
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.MulliganDecision as MulliganDecision
+import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SplitMix as SplitMix.Type
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 
 -- | Each prompt a bot game over the decks in data/decks reaches, plus
--- ChooseGuess, ChooseNumber, every prompt offering one of a list, and the
--- prompts sharing an arm's shape, answered
--- with one of its legal answers, each equally likely, an unbounded number
--- capped one past its floor. Never concedes. A card name is any of `names`,
+-- ChooseGuess, ChooseNumber, every prompt offering one of a list or a fixed
+-- set of decisions or a number up to a bound, and the prompts sharing an
+-- arm's shape, answered with one of its legal answers, each equally likely,
+-- an unbounded number capped one past its floor. Never concedes. A card name is any of `names`,
 -- the reference's (Parun.Play.Game.bot).
 --
 -- Not implemented: a random answer to every other prompt, which gets
--- 'Replay.defaultAnswer': a fixed decision or a bounded number (#6598), a
--- group judged by its total (#6614), and a division of counters or an amount
--- (#6600).
+-- 'Replay.defaultAnswer': a group judged by its total (#6614), and a
+-- division of counters or an amount (#6600).
 bot :: (Monad m) => [CardName.CardName] -> Answerer.Answerer (Asked.Asked PlayerView.PlayerView) (State.StateT SplitMix.Type.SplitMix m)
 bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ actions -> maybe (pure Action.Pass) SplitMix.pick (NonEmpty.nonEmpty actions)
@@ -249,6 +257,29 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseStickerOrNone _ _ _ stickers -> orNone (NonEmpty.toList stickers)
   Prompt.MulliganAction _ _ actions -> orNone actions
   Prompt.OpeningHandAction _ _ actions -> orNone actions
+  -- Each of these is a decision both of whose answers the prompt allows: an
+  -- optional cost asked only where it is payable (Parun.Engine.Cast), forage
+  -- only where both halves can be carried out.
+  Prompt.ChooseBuyback {} -> SplitMix.pick (BuybackDecision.Declines NonEmpty.:| [BuybackDecision.BuysBack])
+  Prompt.ChooseEntwine {} -> SplitMix.pick (EntwineDecision.Declines NonEmpty.:| [EntwineDecision.Entwines])
+  Prompt.ChooseForage {} -> SplitMix.pick (ForageMode.ExileCards NonEmpty.:| [ForageMode.SacrificeFood])
+  Prompt.ChooseMutateSide {} -> SplitMix.pick (MutateSide.Over NonEmpty.:| [MutateSide.Under])
+  Prompt.ChooseLibraryEnd {} -> SplitMix.pick (LibraryPosition.Top NonEmpty.:| [LibraryPosition.Bottom])
+  Prompt.ChooseClash {} -> SplitMix.pick (LibraryPosition.Top NonEmpty.:| [LibraryPosition.Bottom])
+  Prompt.ReturnCommander {} -> SplitMix.pick (CommandZoneDecision.Leaves NonEmpty.:| [CommandZoneDecision.Returns])
+  -- CR 614.1a: either kind, or the draw left standing.
+  Prompt.ChooseLandOrNonland {} -> orNone [LandOrNonland.Land, LandOrNonland.Nonland]
+  -- CR 601.2b / 702.33c: any count up to the limit, "any number of times"
+  -- capped one past declining; one more is payable wherever it is asked.
+  Prompt.ChooseKicker _ _ _ _ _ limit -> fmap KickerDecision.MkKickerDecision (SplitMix.between 0 (Maybe.fromMaybe 1 limit))
+  -- A number up to the bound, from zero (CR 118.3's payment) or the first
+  -- chapter (CR 702.155b).
+  Prompt.ChooseAssistAmount _ _ _ most -> SplitMix.between 0 most
+  Prompt.ChoosePaidEnergy _ _ _ most -> SplitMix.between 0 most
+  Prompt.ChooseReadAheadChapter _ _ _ final -> SplitMix.between 1 final
+  -- CR 706.2b: any die moved either way, or the offer declined; raised only
+  -- once its cost is payable.
+  Prompt.AdjustDieRoll _ _ results _ _ -> orNone [(index, adjustment) | index <- zipWith const [0 ..] (NonEmpty.toList results), adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]]
   prompt -> pure (Replay.defaultAnswer prompt)
 
 -- | Any index into the items, each equally likely, or the prompt's default
