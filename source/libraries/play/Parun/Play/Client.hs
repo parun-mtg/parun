@@ -278,7 +278,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
     attackers <- arrayOf offer
     pure
       ( Text.pack "Choose attackers by number or range such as 1-3, separated by spaces, all, or press Enter for none:" : numbered (fmap (listedName view) attackers),
-        fmap R.Array . some attackers
+        fmap R.Array . some False attackers
       )
   "DeclareBlockers" -> do
     blockers <- field "blockers" offer >>= arrayOf
@@ -435,34 +435,59 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
     pure
       ( Text.pack "Choose up to " <> Render.count n "card" <> Text.pack " to find, by number or range such as 1-3, separated by spaces, or press Enter for none:" : numbered names,
         \typed -> do
-          picked <- some from typed
+          picked <- some False from typed
           if Natural.length picked <= n then Right (R.Array picked) else Left (Text.pack ("Choose at most " <> show n <> "."))
       )
+  -- CR 700.2: each mode by its place in the printed list.
+  "ChooseModes" -> subset (\reply -> maybe (optionName view reply) (\i -> Text.pack ("Mode " <> show (i + 1))) (naturalOf reply)) Text.empty R.Array
+  -- CR 702.47b: the effects happen in the order the cards are typed.
+  "ChooseSplice" -> subset (optionName view) (Text.pack "; the first typed happens first") R.Array
+  -- CR 701.34a: the permanents picked, then the players.
+  "ChooseProliferate" ->
+    subset (optionName view) Text.empty (\picked -> R.Array [R.Array (filter (Maybe.isJust . objectOf) picked), R.Array [player | R.Array [R.Text tag, player] <- picked, tag == Text.pack "Player"]])
+  -- CR 702.22c: each band its attackers' numbers joined by +, each attacker in
+  -- at most one.
+  "DeclareBands" -> do
+    among <- field "among" offer >>= arrayOf
+    let size = Natural.length among
+        band word = traverse (either (const Nothing) Maybe.listToMaybe . numbers) (Text.splitOn (Text.pack "+") word)
+        fits groups = let is = concat groups in all ((>= 2) . length) groups && all (\i -> i >= 1 && i <= size) is && ListUtils.nubOrd is == is
+    pure
+      ( Text.pack "Declare bands: type each band as its attackers' numbers joined by +, such as 1+2, separated by spaces, or press Enter for none:" : numbered (fmap (listedName view) among),
+        \typed -> case traverse band (Text.words typed) of
+          Just groups | fits groups -> Right (R.Array (fmap (R.Array . fmap (pickFrom among)) groups))
+          _ -> Left (Text.pack ("Type each band as two or more numbers from 1 to " <> show size <> " joined by +, such as 1+2, each number at most once."))
+      )
+  -- CR 701.56a: each object chosen by its number, then + to put a time counter
+  -- on it or - to remove one.
+  "ChooseTimeTravel" -> do
+    among <- field "among" offer >>= arrayOf
+    let size = Natural.length among
+        entry word = do
+          (digits, sign) <- Text.unsnoc word
+          i <- either (const Nothing) Maybe.listToMaybe (numbers digits)
+          way <- lookup sign [('+', "Add"), ('-', "Remove")]
+          Monad.guard (Text.all Char.isDigit digits && i >= 1 && i <= size)
+          pure (i, way)
+    pure
+      ( Text.concat [Text.pack "Time travel for ", foldMap (objectName view) (field "source" offer), Text.pack ": type each number followed by + to put a time counter on it or - to remove one, such as 1+ 2-, separated by spaces, or press Enter for none:"] : numbered (fmap (listedName view) among),
+        \typed -> case traverse entry (Text.words typed) of
+          Just chosen | ListUtils.nubOrd (fmap fst chosen) == fmap fst chosen -> Right (R.Array [R.Array [pickFrom among i, R.Text (Text.pack way)] | (i, way) <- chosen])
+          _ -> Left (Text.pack ("Type numbers from 1 to " <> show size <> ", each once, followed by + or -, such as 1+ 2-."))
+      )
+  -- CR 701.22a: the bottom pile reads from the bottom inward.
+  "ChooseScry" -> piles (Text.pack "Scry") (Text.pack "on the bottom of your library, the bottommost first")
+  -- CR 701.25a / 404.3: the graveyard pile in the order it is put there.
+  "ChooseSurveil" -> piles (Text.pack "Surveil") (Text.pack "into your graveyard, the first put there first")
+  -- CR 701.29a: as a scry of another's library.
+  "ChooseFateseal" -> piles (Text.pack "Fateseal " <> foldMap (\owner -> playerName owner <> Text.pack "'s library") (field "owner" offer)) (Text.pack "on the bottom of that library, the bottommost first")
   -- An order over what the offer lists, sent back as a permutation of its
   -- indices.
   _
     | Just items <- field "order" offer >>= arrayOf ->
         pure (ordered (orderHeading (foldMap (\source -> Text.pack " for " <> objectName view source) (field "source" offer)) (orderNote (Question.kind question) offer)) (fmap (optionName view) items))
   -- A set of what the offer lists, within its least and most.
-  _
-    | Just among <- field "among" offer >>= arrayOf ->
-        let least = Maybe.fromMaybe 0 (field "least" offer >>= naturalOf)
-            most = field "most" offer >>= naturalOf
-            bound = case most of
-              Just m | m == least -> "exactly " <> show m
-              Just m -> "from " <> show least <> " to " <> show m
-              Nothing | least > 0 -> "at least " <> show least
-              Nothing -> "any number"
-            self = foldMap (objectName view) (field "source" offer)
-            none = if least == 0 then ", or press Enter for none" else ""
-         in pure
-              ( told view self offer
-                  <> (kindHeading <> foldMap (const (Text.pack " for " <> self)) (field "source" offer) <> Text.pack (": choose " <> bound <> ", by number or range such as 1-3, separated by spaces" <> none <> ":") : numbered (fmap (optionName view) among)),
-                \typed -> do
-                  picked <- some among typed
-                  let n = Natural.length picked
-                  if n >= least && all (n <=) most then Right (R.Array picked) else Left (Text.pack ("Choose " <> bound <> "."))
-              )
+  _ | Maybe.isJust (field "among" offer) -> subset (optionName view) Text.empty R.Array
   -- One of what the offer lists, sent back as the answer it already is, and
   -- named by its entry where the offer lists one.
   _ -> do
@@ -496,6 +521,48 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
               then Right R.Null
               else either (const (Left (Text.pack ("Type one number from 1 to " <> show (Natural.length sources)) <> others <> Text.pack "."))) (Right . pickFrom sources) (one (Natural.length sources) typed)
         )
+    -- A set of what the offer lists under "among", within its least and most,
+    -- each named as the offer names it or else by `name`, a pick repeating
+    -- where the offer allows it (CR 700.2d), and sent back as `finish` makes it.
+    subset name note finish = do
+      among <- field "among" offer >>= arrayOf
+      let least = Maybe.fromMaybe 0 (field "least" offer >>= naturalOf)
+          most = field "most" offer >>= naturalOf
+          repeats = field "repeats" offer == Just (R.Boolean True)
+          bound = case most of
+            Just m | m == least -> "exactly " <> show m
+            Just m -> "from " <> show least <> " to " <> show m
+            Nothing | least > 0 -> "at least " <> show least
+            Nothing -> "any number"
+          self = foldMap (objectName view) (field "source" offer)
+          again = if repeats then Text.pack "; one may be chosen more than once" else Text.empty
+          none = if least == 0 then ", or press Enter for none" else ""
+      pure
+        ( told view self offer
+            <> (Text.concat [kindHeading, foldMap (const (Text.pack " for " <> self)) (field "source" offer), Text.pack (": choose " <> bound <> ", by number or range such as 1-3, separated by spaces"), note, again, Text.pack (none <> ":")] : numbered (zipWith (Maybe.fromMaybe . name) among offeredNames)),
+          \typed -> do
+            picked <- some repeats among typed
+            let n = Natural.length picked
+            if n >= least && all (n <=) most then Right (finish picked) else Left (Text.pack ("Choose " <> bound <> "."))
+        )
+    -- Two ordered piles of the cards under "from": those for the top, top
+    -- first, then after a slash those for the other pile, each card once;
+    -- Enter keeps them all on top as listed. Sent back as (other, top).
+    piles heading other = do
+      from <- field "from" offer >>= arrayOf
+      let size = Natural.length from
+          pick = R.Array . fmap (pickFrom from)
+      pure
+        ( Text.concat [heading, Text.pack ": type the numbers of the cards to keep on top, the top first, then / and the numbers of those to put ", other, Text.pack ", or press Enter to keep them all on top in this order:"]
+            : numbered (zipWith (Maybe.fromMaybe . listedName view) from offeredNames),
+          \typed -> case traverse numbers (Text.splitOn (Text.pack "/") typed) of
+            _ | Text.null (Text.strip typed) -> Right (R.Array [R.Array [], R.Array from])
+            Right [top] | List.sort top == [1 .. size] -> Right (R.Array [R.Array [], pick top])
+            Right [top, rest] | List.sort (top <> rest) == [1 .. size] -> Right (R.Array [pick rest, pick top])
+            _ -> Left (Text.pack ("Type each number from 1 to " <> show size <> " once, those for the top first and a / before the rest, or press Enter."))
+        )
+    -- The names the offer lists under "names", then none.
+    offeredNames = foldMap (fmap textOf) (field "names" offer >>= arrayOf) <> repeat Nothing
     -- The prompt's kind as words, capitalized.
     kindHeading = case Text.uncons (Render.spaced (Question.kind question)) of
       Just (c, rest) -> Text.cons (Char.toUpper c) rest
@@ -811,13 +878,13 @@ one n typed = case numbers typed of
 -- | Exactly n different options, by number.
 exactly :: Natural -> [R.Reply] -> Text.Text -> Either Text.Text [R.Reply]
 exactly n options typed = do
-  picked <- some options typed
+  picked <- some False options typed
   if Natural.length picked == n then Right picked else Left (Text.pack ("Choose exactly " <> show n <> "."))
 
--- | Any number of different options, by number, by a range such as 1-3, or
--- all of them.
-some :: [R.Reply] -> Text.Text -> Either Text.Text [R.Reply]
-some options typed = do
+-- | Any number of options, by number, by a range such as 1-3, or all of them;
+-- each at most once unless `repeats`.
+some :: Bool -> [R.Reply] -> Text.Text -> Either Text.Text [R.Reply]
+some repeats options typed = do
   let size = Natural.length options
       range word = case Text.splitOn (Text.pack "-") word of
         _ | Text.toCaseFold word == Text.pack "all" -> Just [1 .. size]
@@ -830,7 +897,7 @@ some options typed = do
       digits t = if not (Text.null t) && Text.all Char.isDigit t then Read.readMaybe (Text.unpack t) else Nothing
   is <- maybe (Left (Text.pack "Type numbers or ranges such as 1-3, separated by spaces, or all.")) (Right . concat) (mapM range (Text.words typed))
   Monad.unless (all (\i -> i >= 1 && i <= size) is) (Left (Text.pack ("Each number must be from 1 to " <> show size <> ".")))
-  Monad.unless (ListUtils.nubOrd is == is) (Left (Text.pack "Choose each one at most once."))
+  Monad.unless (repeats || ListUtils.nubOrd is == is) (Left (Text.pack "Choose each one at most once."))
   pure (fmap (pickFrom options) is)
 
 -- | CR 509.1a: blocker:attacker pairs, a blocker naming each attacker it blocks.
@@ -924,7 +991,7 @@ told view self offer = case offer of
   R.Object pairs ->
     [ label key <> Text.pack ": " <> value key reply
     | (key, reply) <- pairs,
-      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most"],
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "repeats"],
       reply /= R.Array []
     ]
   _ -> []

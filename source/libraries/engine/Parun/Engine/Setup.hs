@@ -843,7 +843,7 @@ chooseConspiracies pid = do
   gs <- State.get
   let available = Map.mapKeys OutsideCard.InPool (Conspiracy.inSideboard pid gs)
       atMost = sum (Map.elems available)
-  Monad.forM_ (NonEmpty.nonEmpty (Map.keys available)) $ \candidates -> do
+  Monad.forM_ (NonEmpty.nonEmpty (Map.toList available)) $ \candidates -> do
     answer <- Game.choose (Prompt.ChooseFromOutsideTheGame (Decide.deciderFor pid gs) pid candidates 0 atMost)
     Monad.forM_ (Event.settleOutside id available 0 atMost answer) $ \card -> case card of
       OutsideCard.InPool printingId -> do

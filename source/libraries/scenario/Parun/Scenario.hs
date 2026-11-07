@@ -1070,7 +1070,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseManaYield _ _ _ options -> chosen `elem` options
   Prompt.Type.ChooseLoopMembers _ _ _ members -> all (`elem` members) chosen
   Prompt.Type.ChoosePile _ _ _ piles _ -> chosen `elem` piles
-  Prompt.Type.ChooseFromOutsideTheGame _ _ cards least most -> all (`elem` cards) chosen && least <= List.genericLength chosen && List.genericLength chosen <= most
+  Prompt.Type.ChooseFromOutsideTheGame _ _ cards least most -> all (`elem` fmap fst cards) chosen && least <= List.genericLength chosen && List.genericLength chosen <= most
   Prompt.Type.DeclareAttackers _ _ attackers -> all (`elem` attackers) chosen
   Prompt.Type.DeclareBands _ _ attackers -> all (all (`elem` attackers)) chosen
   Prompt.Type.DividePiles _ _ creatures _ -> all (all (`elem` creatures)) chosen

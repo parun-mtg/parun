@@ -1070,7 +1070,7 @@ defaultAnswer p = case p of
   -- and the fewest it lets them bring is the least eventful answer; where that
   -- asks for more copies than the distinct offers name, Event.bringInto tops the
   -- answer up.
-  Prompt.ChooseFromOutsideTheGame _ _ candidates atLeast _ -> List.genericTake atLeast (NonEmpty.toList candidates)
+  Prompt.ChooseFromOutsideTheGame _ _ candidates atLeast _ -> List.genericTake atLeast (fmap fst (NonEmpty.toList candidates))
   -- CR 309.5a: the prompt is only raised where two or more arrows leave the
   -- room, and every one of them is a room the marker may move into.
   Prompt.ChooseRoom _ _ _ candidates -> NonEmpty.head candidates

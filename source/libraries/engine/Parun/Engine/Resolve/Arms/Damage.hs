@@ -913,7 +913,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     -- match -- Invasion of Arcavios's searcher who wants her
                     -- sideboard's sorcery over her graveyard's.
                     outsideRoom = min (capHere - min capHere (List.genericLength picked)) outsideCopies
-                outsidePicked <- case NonEmpty.nonEmpty (Map.keys outsideAvailable) of
+                outsidePicked <- case NonEmpty.nonEmpty (Map.toList outsideAvailable) of
                   Just candidates
                     | outsideRoom > 0 -> do
                         outsideAnswer <- Game.choose (Prompt.ChooseFromOutsideTheGame decider searcher candidates 0 outsideRoom)
