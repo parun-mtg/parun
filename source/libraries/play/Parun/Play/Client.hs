@@ -360,10 +360,10 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
     let keyword = Maybe.fromMaybe (Text.pack "its cost") (field "keyword" offer >>= decoded Codec.Keyword.codec >>= Maybe.listToMaybe . Oracle.Keyword.printed (objectName view source))
     pure (ranged (Text.concat [Text.pack "Choose how many times to pay ", keyword, Text.pack " for ", objectName view source]) least Text.empty (field "greatest" offer >>= naturalOf))
   -- CR 702.132a: the generic mana the assisting player pays.
-  "ChooseAssistAmount" -> amount (Text.pack "Choose how much mana to pay to assist ")
-  "ChoosePaidEnergy" -> amount (Text.pack "Choose how much energy to pay for ")
+  "ChooseAssistAmount" -> bounded (Text.pack "Choose how much mana to pay to assist ")
+  "ChoosePaidEnergy" -> bounded (Text.pack "Choose how much energy to pay for ")
   -- CR 715.3b.
-  "ChooseReadAheadChapter" -> amount (Text.pack "Choose the chapter to read ahead to for ")
+  "ChooseReadAheadChapter" -> bounded (Text.pack "Choose the chapter to read ahead to for ")
   -- CR 706.2b: each die moved either way by the amount, then none.
   "AdjustDieRoll" -> do
     options <- field "options" offer >>= arrayOf
@@ -529,7 +529,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   where
     offer = Question.offer question
     -- A number from the offer's least to its greatest, for its source.
-    amount heading = do
+    bounded heading = do
       source <- field "source" offer
       least <- field "least" offer >>= naturalOf
       greatest <- field "greatest" offer >>= naturalOf
