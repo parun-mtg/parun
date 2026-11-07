@@ -57,6 +57,9 @@ data ScenarioFailure
     MkNotAPlayer Label.Label
   | -- | The reference resolved, but the prompt did not offer it.
     MkUnofferedObject When.When Text.Text Text.Text [Text.Text]
+  | -- | A target entry naming a slot its triggered ability does not have, with
+    -- the slots it does.
+    MkUnknownSlot When.When Move.Move Text.Text [Text.Text]
   | -- | A source qualifier on a prompt with no source, which nothing matches.
     MkUnexpectedQualifier When.When Text.Text Reference.Reference
   | MkNestedGamePrompt Natural Phase.Phase (Maybe Label.Label) Text.Text

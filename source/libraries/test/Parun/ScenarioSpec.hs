@@ -556,6 +556,25 @@ spec s registry = Spec.describe s "Scenario" $ do
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right final -> Spec.assertEqWith s "the Hill Giant returned" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.bob final) 0
 
+  -- Yoshimaru, Scrappy Stray's trigger has slots `mine` and `theirs`, so a
+  -- refusal naming `mien` is a typo, not a target refused already.
+  Spec.it s "a refused trigger target naming a slot the ability lacks is a script error" $ do
+    result <- runJson s registry (yoshimaruRefusing "{\"mien\":[\"Yoshimaru, Scrappy Stray\"],\"theirs\":[\"$bears\"]}" "{\"mine\":[\"$giant\"],\"theirs\":[\"$bears\"]}")
+    case result of
+      Left (ScenarioFailure.MkUnknownSlot _ _ slot slots) -> do
+        Spec.assertEqWith s "the misspelled slot" slot (Text.pack "mien")
+        Spec.assertEqWith s "the slots the ability has" slots [Text.pack "mine", Text.pack "theirs"]
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "a refusal naming a misspelled slot passed as refused already"
+
+  -- CR 603.3d: the refusal announced one target for `theirs`, and the engine
+  -- asks the announcement again, so the next entry may name none.
+  Spec.it s "a trigger target refused already re-reads the announcement from the next entry" $ do
+    result <- runJson s registry (yoshimaruRefusing "{\"mine\":[\"Yoshimaru, Scrappy Stray\"],\"theirs\":[\"$bears\"]}" "{\"mine\":[\"$giant\"],\"theirs\":[]}")
+    case result of
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right final -> Spec.assertEqWith s "the Bears fought nobody" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Grizzly Bears")) S.bob final) 1
+
   -- CR 601.2e / 734.1: a cast the engine finds illegal is reversed, so a script
   -- whose cast is taken and then rejected fails rather than passing on a game
   -- in which nothing was cast. Convoking five creatures for the Loxodon's {4}{W}
@@ -843,6 +862,28 @@ ghostlightRefusing refused =
             entry "\"do\":\"Pass\"",
             entry ("\"refuse\":{\"ChooseTargets\":" <> refused <> "}"),
             entry "\"do\":{\"ChooseTargets\":{\"target\":[\"$giant\"]}}",
+            entry "\"do\":\"Pass\""
+          ]
+        <> "]}"
+
+-- alice casts Yoshimaru, Scrappy Stray and its enters trigger refuses
+-- `refused`, then chooses `chosen`.
+yoshimaruRefusing :: String -> String -> String
+yoshimaruRefusing refused chosen =
+  let entry body = "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\"," <> body <> "}"
+      library = "\"library\":[" <> List.intercalate "," (replicate 3 "{\"card\":\"Island\"}") <> "]"
+   in "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"hand\":[{\"card\":\"Yoshimaru, Scrappy Stray\",\"label\":\"yosh\"}],\"manaPool\":\"GG\","
+        <> "\"battlefield\":[{\"card\":\"Hill Giant\",\"label\":\"giant\",\"ready\":true}],"
+        <> library
+        <> "},{\"name\":\"bob\",\"battlefield\":[{\"card\":\"Grizzly Bears\",\"label\":\"bears\",\"ready\":true}],"
+        <> library
+        <> "}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},\"timeline\":["
+        <> List.intercalate
+          ","
+          [ entry "\"do\":{\"Cast\":{\"object\":\"$yosh\"}}",
+            entry "\"do\":\"Pass\"",
+            entry ("\"refuse\":{\"ChooseTargets\":" <> refused <> "}"),
+            entry ("\"do\":{\"ChooseTargets\":" <> chosen <> "}"),
             entry "\"do\":\"Pass\""
           ]
         <> "]}"

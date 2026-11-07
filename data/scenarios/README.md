@@ -84,7 +84,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   also answers that prompt's announcement of how many, and a refused one
   naming a count outside a slot's range, a slot it omits naming 0, is refused
   already. A `do` names every slot the announcement offers, `[]` for one left empty;
-  one the engine refuses is asked again from the announcement (CR 603.3d).
+  one the engine refuses is asked again from the announcement (CR 603.3d), and
+  so is a refused one the target prompt refuses already when the next entry
+  announces other counts. Naming a slot the ability lacks fails the run.
   A cast's own `targets`
   likewise announce their count for a slot that takes a variable number. A
   spell or ability with more than one target slot names them with
