@@ -23,6 +23,8 @@ extra-doc-files:
   CHANGELOG.md
   README.md
 
+extra-source-files: docs/rules.txt
+
 source-repository head
   location: https://github.com/parun-mtg/parun
   type: git
