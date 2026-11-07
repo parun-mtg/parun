@@ -839,7 +839,7 @@ creatureBecomesBlockedByAtLeastSpec s registry =
       casting attacker blockers victim wall p = case p of
         Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, rs) -> Set.filter (== Recipient.ToCreature victim) rs) sets
         Prompt.ChooseAction {} -> S.castAnswer p
-        Prompt.AssignCombatDamage _ _ damager _ _
+        Prompt.AssignCombatDamage _ _ damager _ _ _
           | damager == attacker -> Map.singleton (Recipient.ToCreature wall) 1
         _ -> declaring attacker blockers p
       -- Scoped to rule 509.3e's CONDITION and not merely to Seifer: the card's

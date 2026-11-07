@@ -28,6 +28,7 @@ import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Subtype as Engine.Subtype
 import qualified Parun.ManaSourceSpec as ManaSourceSpec
+import qualified Parun.PlaneswalkerCombatSpec as PlaneswalkerCombatSpec
 import qualified Parun.Play.Bot as Bot
 import qualified Parun.Play.Chance as Chance
 import qualified Parun.Registry as Registry
@@ -177,7 +178,46 @@ spec s registry = Spec.describe s "Bot" $ do
           fmap
             (Map.filter (> 0) . Map.fromList . zip [first, second, player])
             [[4, 0, 0], [3, 1, 0], [2, 2, 0], [1, 3, 0], [0, 4, 0], [2, 1, 1]]
-    Spec.assertEqWith s "divisions" (drawn (Prompt.AssignCombatDamage decider S.alice oid thresholds 4)) (Set.fromList legal)
+    Spec.assertEqWith s "divisions" (drawn (Prompt.AssignCombatDamage decider S.alice oid thresholds Map.empty 4)) (Set.fromList legal)
+
+  -- CR 702.19b's third sentence: the same trampler where other creatures
+  -- already assign the first blocker its 2. Only the second blocker's 1 is
+  -- left before the player, so eleven divisions are legal where six were.
+  Spec.it s "divides combat damage leaning on what other creatures already assign" $ do
+    let first = Recipient.ToCreature (ObjectId.MkObjectId 8)
+        second = Recipient.ToCreature (ObjectId.MkObjectId 9)
+        player = Recipient.ToPlayer S.bob
+        thresholds :: Map.Map Recipient.Recipient Natural
+        thresholds = Map.fromList [(first, 2), (second, 1), (player, 0)]
+        legal :: [Map.Map Recipient.Recipient Natural]
+        legal =
+          fmap
+            (Map.filter (> 0) . Map.fromList . zip [first, second, player])
+            [[4, 0, 0], [3, 1, 0], [2, 2, 0], [1, 3, 0], [0, 4, 0], [2, 1, 1], [1, 2, 1], [0, 3, 1], [1, 1, 2], [0, 2, 2], [0, 1, 3]]
+    Spec.assertEqWith s "divisions" (drawn (Prompt.AssignCombatDamage decider S.alice oid thresholds (Map.singleton first 2) 4)) (Set.fromList legal)
+
+  -- The same through the engine: Typhoid Rats (1/1 deathtouch) or Llanowar
+  -- Elves (1/1) announce 1 onto the 1/4 Palace Guard before the bot divides
+  -- the 9/5 trampling Panglacial Wurm's damage over the Guard and bob. CR
+  -- 702.2c makes the Rats' 1 the Guard's whole bar of 4, so any of the 9 may
+  -- reach bob; the Elves' 1 leaves 3 owed. Read alone, the Wurm owes all 4.
+  Spec.it s "CR 702.19b assigns trample damage another attacker's damage made legal" $ do
+    rats <- S.printingOf s registry "Typhoid Rats"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    wurm <- S.printingOf s registry "Panglacial Wurm"
+    guard <- S.printingOf s registry "Palace Guard"
+    let board first =
+          let (gs, mine, theirs) = S.combatBoardOf [first, wurm] [guard]
+           in (gs, mine, Maybe.fromMaybe S.noSource (Maybe.listToMaybe theirs))
+        (deadly, deadlyAttackers, deadlyGuard) = board rats
+        (plain, plainAttackers, plainGuard) = board elves
+        run gs attackers seed = PlaneswalkerCombatSpec.runCombatLogging (botAssigning seed attackers) gs
+        lives gs attackers = Set.fromList (fmap (S.lifeOf S.bob . fst . run gs attackers) [1 .. 128])
+    Spec.assertEqWith s "anywhere from none to all 9 reach bob past the Rats" (lives deadly deadlyAttackers) (Set.fromList (fmap Just [11 .. 20]))
+    Spec.assertEqWith s "and at most 6 past the Elves" (lives plain plainAttackers) (Set.fromList (fmap Just [14 .. 20]))
+    -- The Wurm's offer, then the Guard's own division over the two attackers.
+    Spec.assertEqWith s "the Wurm is offered the Rats' deathtouch as the Guard's whole bar" (snd (run deadly deadlyAttackers 1)) [Map.singleton (Recipient.ToCreature deadlyGuard) 4, Map.empty]
+    Spec.assertEqWith s "and the Elves' 1 as 1 of it" (snd (run plain plainAttackers 1)) [Map.singleton (Recipient.ToCreature plainGuard) 1, Map.empty]
 
   -- CR 601.2d: 4 among three targets, each at least 1, is three ways; CR
   -- 115.7f's fixed parts 1 and 3 between two targets are two.
@@ -606,6 +646,16 @@ drawn = drawnNaming []
 -- `names`.
 drawnNaming :: (Ord r) => [CardName.CardName] -> Prompt.Prompt r -> Set.Set r
 drawnNaming names prompt = Set.fromList (fmap (State.evalState (Answerer.unwrap (Bot.bot names) (Asked.mapGames (PlayerView.viewFor S.alice) (Asked.MkAsked [] (Setup.emptyGame S.bothPlayers) prompt))) . SplitMix.MkSplitMix) [1 .. 256])
+
+-- The bot dividing every creature's combat damage from `seed`, recording what
+-- each offer says the step's other attacking creatures already pay; the
+-- Guard-style block of every attacker otherwise.
+botAssigning :: Word.Word64 -> [ObjectId.ObjectId] -> Prompt.Prompt r -> State.State [Map.Map Recipient.Recipient Natural] r
+botAssigning seed attackers p = case p of
+  Prompt.AssignCombatDamage _ _ _ _ paid _ -> do
+    State.modify' (<> [paid])
+    pure (State.evalState (Answerer.unwrap (Bot.bot []) (Asked.mapGames (PlayerView.viewFor S.alice) (Asked.MkAsked [] (Setup.emptyGame S.bothPlayers) p))) (SplitMix.MkSplitMix seed))
+  _ -> pure (PlaneswalkerCombatSpec.blockingAll attackers p)
 
 decider :: Decider.Decider
 decider = Decide.deciderFor S.alice (Setup.emptyGame S.bothPlayers)

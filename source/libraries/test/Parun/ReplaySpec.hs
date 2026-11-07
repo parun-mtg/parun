@@ -142,7 +142,7 @@ combatReplaySpec s =
       otherOid = ObjectId.MkObjectId 11
       attackPrompt = Prompt.DeclareAttackers decider S.alice [oid]
       blockPrompt = Prompt.DeclareBlockers decider S.bob [oid] [oid]
-      damagePrompt = Prompt.AssignCombatDamage decider S.alice oid (Map.singleton (Recipient.ToCreature oid) 0) 2
+      damagePrompt = Prompt.AssignCombatDamage decider S.alice oid (Map.singleton (Recipient.ToCreature oid) 0) Map.empty 2
       -- CR 118.12a: Mana Leak's {3}, the cost Prompt.ChooseToPay carries.
       genericThree = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.Type.components = []}
       -- CR 726.2's own pair, one borne and one sourceless: the crown steal hung

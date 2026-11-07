@@ -264,8 +264,8 @@ offerOf gs prompt = case prompt of
     choosing prompt "options" Nothing ([("results", R.Array (fmap R.Number (NonEmpty.toList results))), ("amount", natural amount)] <> [("cost", payment c) | Just c <- [cost]]) (fmap Just [(index, adjustment) | index <- zipWith const [0 ..] (NonEmpty.toList results), adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]] <> [Nothing])
   Prompt.ChooseOptional _ _ source _ _ _ -> fields [("source", object source)]
   Prompt.ChooseGuess _ _ source proposition -> fields [("source", object source), ("proposition", Reply.encode (Reply.viaCodec (Codec.Filter.codec Codec.Keyword.codec)) namer proposition)]
-  Prompt.AssignCombatDamage _ _ source lethal total ->
-    fields [("source", object source), ("lethal", Reply.encode (Reply.mapOf Reply.recipient Reply.natural) namer lethal), ("total", natural total)]
+  Prompt.AssignCombatDamage _ _ source lethal paid total ->
+    fields [("source", object source), ("lethal", Reply.encode (Reply.mapOf Reply.recipient Reply.natural) namer lethal), ("paid", Reply.encode (Reply.mapOf Reply.recipient Reply.natural) namer paid), ("total", natural total)]
   Prompt.ChooseCombatDamageOption _ _ source option -> fields [("source", object source), ("option", Reply.encode (Reply.viaCodec Codec.CombatDamageOption.codec) namer option)]
   Prompt.ChooseToPay _ _ source _ cost _ -> fields [("source", object source), ("cost", payment cost)]
   Prompt.ChooseDivision _ _ source dividing targets ->

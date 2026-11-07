@@ -150,12 +150,14 @@ spec s registry = Spec.describe s "Protocol" $ do
         activate i = R.Object [(Text.pack "action", R.Text (Text.pack "Activate")), (Text.pack "object", Protocol.object oid), (Text.pack "ability", R.Number i)]
     Spec.assertEqWith s "offer" offered (R.Array [activate 0, activate 1])
 
-  Spec.it s "CR 510.1 a combat damage assignment offers each recipient's lethal damage in the answer's vocabulary" $ do
+  Spec.it s "CR 510.1 a combat damage assignment offers each recipient's lethal damage and what is already paid in the answer's vocabulary" $ do
     let o7 = ObjectId.MkObjectId 7
         lethal = Map.fromList [(Recipient.ToCreature (ObjectId.MkObjectId 9), 2), (Recipient.ToCreature (ObjectId.MkObjectId 11), 3 :: Natural)]
-        prompt = Prompt.AssignCombatDamage (Decider.MkDecider S.alice) S.alice o7 lethal 5
+        paid = Map.singleton (Recipient.ToCreature (ObjectId.MkObjectId 11)) (1 :: Natural)
+        prompt = Prompt.AssignCombatDamage (Decider.MkDecider S.alice) S.alice o7 lethal paid 5
         offer = Protocol.offerOf (Setup.emptyGame S.bothPlayers) prompt
     Spec.assertEqWith s "lethal" (fmap (Protocol.decodeAnswer prompt) (field "lethal" offer)) (Just (Right lethal))
+    Spec.assertEqWith s "CR 702.19b: what other creatures already assign" (fmap (Protocol.decodeAnswer prompt) (field "paid" offer)) (Just (Right paid))
     Spec.assertEqWith s "total" (field "total" offer) (Just (R.Number 5))
     Spec.assertEqWith s "source" (field "source" offer) (Just (Protocol.object o7))
 

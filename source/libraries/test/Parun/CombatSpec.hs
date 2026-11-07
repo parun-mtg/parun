@@ -254,7 +254,7 @@ attackMultiplePlayersSpec s registry = Spec.describe s "AttackMultiplePlayers" $
         -- only creatures with a division to announce.
         let assigning :: Prompt.Prompt r -> State.State [ObjectId.ObjectId] r
             assigning p = case p of
-              Prompt.AssignCombatDamage _ _ source thresholds power -> do
+              Prompt.AssignCombatDamage _ _ source thresholds _ power -> do
                 State.modify' (<> [source])
                 pure
                   ( case Map.keys thresholds of

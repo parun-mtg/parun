@@ -148,7 +148,7 @@ combatBoard undercity mine theirs hers =
 -- assignment on the blocker.
 tramplingAtBob :: Prompt.Prompt r -> r
 tramplingAtBob p = case p of
-  Prompt.AssignCombatDamage _ _ _ thresholds n ->
+  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
     let toBlockers = Map.delete (Recipient.ToPlayer S.bob) thresholds
      in Map.insert (Recipient.ToPlayer S.bob) (n - sum (Map.elems toBlockers)) toBlockers
   Prompt.DeclareAttackers {} -> S.attackTo S.bob p

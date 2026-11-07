@@ -678,7 +678,7 @@ communalVigilSpec s registry =
 lifelinkDivision :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 lifelinkDivision attacker p = case p of
   Prompt.DeclareAttackers _ _ ids -> filter (== attacker) ids
-  Prompt.AssignCombatDamage _ _ _ thresholds _ -> Map.fromList (fmap (\r -> (r, 1)) (filter S.isCreatureRecipient (Map.keys thresholds)))
+  Prompt.AssignCombatDamage _ _ _ thresholds _ _ -> Map.fromList (fmap (\r -> (r, 1)) (filter S.isCreatureRecipient (Map.keys thresholds)))
   _ -> S.aggressiveAnswer p
 
 -- CR 702.15e against the CR 510.2 bracket: two lifelink attackers connecting in

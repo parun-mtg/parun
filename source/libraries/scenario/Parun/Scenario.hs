@@ -778,7 +778,7 @@ answerDedicated decider asked =
         -- among what it was offered deals nothing, so it fails here; a probe
         -- of that is an Answer flagged unoffered. CR 702.19b-c's trample gates
         -- are the engine's alone, judged over the whole step (CR 510.1e).
-        Prompt.Type.AssignCombatDamage who _ source thresholds _ -> do
+        Prompt.Type.AssignCombatDamage who _ source thresholds _ _ -> do
           key <- whenOf gs (Decider.unwrap who)
           let offered = Map.keysSet thresholds
           offers <- describeAll gs (Maybe.mapMaybe Recipient.objectOf (Set.toList offered))
@@ -1077,7 +1077,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.DeclareBlockers _ _ blockers attackers -> all (`elem` blockers) (Map.keys chosen) && all (all (`elem` attackers)) chosen
   Prompt.Type.ChooseTargets _ _ _ offered -> Map.isSubmapOfBy (\picked (_, legal) -> Set.isSubsetOf picked legal) chosen offered
   Prompt.Type.AnnounceTargets _ _ _ offered -> all (`Map.member` offered) (Map.keys chosen)
-  Prompt.Type.AssignCombatDamage _ _ _ offered power -> Damage.wellFormedAssignment offered power chosen
+  Prompt.Type.AssignCombatDamage _ _ _ offered _ power -> Damage.wellFormedAssignment offered power chosen
   Prompt.Type.ChooseRedistribution _ _ totals -> all (`elem` fmap fst totals) (Map.keys chosen <> Map.elems chosen)
   Prompt.Type.ChooseDistributedMovedCounters _ _ _ _ _ candidates -> all (`elem` candidates) (Map.keys chosen)
   Prompt.Type.ChooseMovedCounters _ _ _ _ available -> Map.isSubmapOfBy (<=) chosen available
