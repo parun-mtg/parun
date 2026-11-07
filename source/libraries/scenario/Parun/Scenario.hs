@@ -164,6 +164,7 @@ import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TypesAre as TypesAre
 import qualified Parun.Types.View as View
@@ -801,8 +802,14 @@ answerDedicated decider asked =
         Prompt.Type.ChooseTargets who _ asking offered -> do
           key <- whenOf gs (Decider.unwrap who)
           let named = Maybe.fromMaybe asking (Game.abilitySourceOf asking gs)
-          onEntry unscheduled key kind [] (takeForSource gs key named) $ \verb -> case verb of
-            Move.ChooseTargets chosen -> Just (resolveSlots gs key verb offered chosen)
+              select = takeForSource gs key named
+          onEntry unscheduled key kind [] select $ \verb -> case verb of
+            Move.ChooseTargets chosen -> Just $ do
+              knownSlots gs key verb asking chosen
+              refusal <- State.gets refusing
+              if refusal == Just (key, verb, kind)
+                then refuseTargets gs key verb offered chosen select
+                else resolveSlots gs key verb offered chosen
             _ -> Nothing
         -- CR 601.2c's announcement, answered from the ChooseTargets entry that
         -- will name the targets, which stays queued for that prompt.
@@ -815,8 +822,11 @@ answerDedicated decider asked =
               announce = do
                 found <- takeForSource gs key named
                 case found of
-                  Just (_, Timed.MkTimed {Timed.entry = Entry.Do verb@(Move.ChooseTargets chosen)}) -> announceSlots key verb offered chosen
+                  Just (_, Timed.MkTimed {Timed.entry = Entry.Do verb@(Move.ChooseTargets chosen)}) -> do
+                    knownSlots gs key verb asking chosen
+                    announceSlots key verb offered chosen
                   Just (index, Timed.MkTimed {Timed.entry = Entry.Refuse verb@(Move.ChooseTargets chosen)}) -> do
+                    knownSlots gs key verb asking chosen
                     everyOffered <- offersAll gs offered chosen
                     if everyOffered && countsOffered offered chosen
                       then announceCounts key verb offered chosen
@@ -1799,6 +1809,49 @@ resolveSlots gs key verb offered chosen =
             )
             offered
 
+-- | A refused ChooseTargets entry the prompt refuses already, unless the next
+-- entry names other counts than the ones announced from this one: the refusal
+-- then goes to the engine, which rejects it and asks the announcement again
+-- (CR 603.3d), so the next entry announces its own counts.
+refuseTargets :: GameState.GameState -> When.When -> Move.Move -> Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run (Maybe (Int, Timed.Timed)) -> Run (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient))
+refuseTargets gs key verb offered chosen select = do
+  before <- State.get
+  case State.runStateT (resolveSlots gs key verb offered chosen) before of
+    Right (answer, after) -> answer <$ State.put after
+    Left halt@(Failed failure)
+      | refusedAlready failure -> do
+          next <- select
+          let recounts later = Map.filter (> 0) (fmap Natural.length later) /= fmap fst offered
+              submit ref candidates = resolveRecipient gs ref candidates (fmap (either Recipient.ToPlayer Recipient.ToObject) (resolveEither ref gs))
+          case fmap (Timed.entry . snd) next of
+            Just (Entry.Do (Move.ChooseTargets later)) | recounts later -> pure ()
+            Just (Entry.Refuse (Move.ChooseTargets later)) | recounts later -> pure ()
+            _ -> State.StateT (const (Left halt))
+          Map.traverseWithKey
+            (\slot refs -> fmap Set.fromList (mapM (\ref -> submit ref (maybe Set.empty snd (Map.lookup slot offered))) (Foldable.toList refs)))
+            (Map.filter (not . Seq.null) chosen)
+    Left halt -> State.StateT (const (Left halt))
+  where
+    refusedAlready failure = case failure of
+      Failure.MkActionNotOffered {} -> True
+      Failure.MkUnofferedObject {} -> True
+      _ -> False
+
+-- | Fails the run on a target entry naming a slot its triggered ability does
+-- not have, which a refusal would otherwise pass over as refused already. A
+-- slot "of each opponent" has a copy per player (Target.announcedSlots).
+knownSlots :: GameState.GameState -> When.When -> Move.Move -> ObjectId.ObjectId -> Map.Map SlotName.SlotName a -> Run ()
+knownSlots gs key verb asking chosen = case Game.lookupObject asking gs of
+  Just obj
+    | Source.OfTrigger source <- Object.source obj,
+      Just controller <- Projection.controllerOf asking gs ->
+        let printed = Modal.allTargetSlots (TriggeredAbility.modal (TriggeredAbilitySource.ability source))
+            slots = Map.keysSet (Target.announcedSlots controller (TriggeredAbilitySource.source source) gs printed)
+         in case Set.lookupMin (Map.keysSet chosen `Set.difference` slots) of
+              Just unknown -> failWith (Failure.MkUnknownSlot key verb (SlotName.unwrap unknown) (fmap SlotName.unwrap (Set.toList slots)))
+              Nothing -> pure ()
+  _ -> pure ()
+
 -- | Whether every target an entry names is among its slot's candidates. A
 -- slot the announcement does not offer, a fixed-count one, is judged by the
 -- ChooseTargets that follows (Yoshimaru, Scrappy Stray's "another target
@@ -2074,6 +2127,8 @@ render failure = case failure of
   Failure.MkNotAPlayer label -> Label.unwrap label <> Text.pack " names no seat"
   Failure.MkUnofferedObject key kind named offers ->
     renderWhen key <> Text.pack ": the " <> kind <> Text.pack " prompt did not offer " <> named <> renderOffers offers
+  Failure.MkUnknownSlot key verb slot slots ->
+    renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " names a slot " <> slot <> Text.pack " its ability does not have; it has " <> Text.intercalate (Text.pack ", ") slots
   Failure.MkUnexpectedQualifier key kind ref ->
     renderWhen key <> Text.pack ": " <> kind <> Text.pack " has no source, so the source " <> Codec.Reference.toText ref <> Text.pack " matches nothing"
   Failure.MkNestedGamePrompt turn step decider kind ->
