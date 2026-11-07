@@ -198,8 +198,6 @@ census did not settle.
 
 
 
-- Uldaros Theorix: `_Condition:EnteringPermanentPassesFilter`; verify "up to one
-  target nonland card of each card type"
 
 
 
@@ -214,28 +212,16 @@ census did not settle.
 
 
 
-- Vraska, the Cutting Glare: `_Permanents:IsPermanent`
 
-- Warrior's Blades: `_Rule:EquipWithModifiers`; verify a reduction counting
-  counters on the target (Dwarven Mauler shows targets reach it)
 
-- Way of the Cryomancer: `_Rule:Activated`
 
-- Way of the Deathbringer: `_Rule:Activated`
 
-- Way of the Healer: `_Rule:Activated`
 
-- Way of the Mind Sculptor: `_Trigger:WhenAPlayerActivatesAnAbility`
 
-- Way of the Necromancer: `_CounterType:LoyaltyCounter`
 
-- Way of the Paradox: `_Trigger:WhenAPlayerActivatesAnAbility`
 
-- Way of the Pyromancer: `_Rule:Activated`
 
-- Way of the Warlord: `_Rule:Activated`
 
-- Way of the Wildspeaker: `_Rule:Activated`
 
 - Whiplash Wordsmith: `_Players:WasDealtNoncombatDamageThisTurn`; shares Vicious
   Verse
@@ -260,6 +246,17 @@ census did not settle.
 - Yuriko, Hope from the Shadows: `_LayerEffect:AdjustPTX`
 
 ## Needs a capability
+
+### #6611: no cost reduction counts something on the target of the ability being activated
+
+- Warrior's Blades: its equip costs {1} less per +1/+1 counter on the creature
+  it targets; `CostModifier.perEach` reads the source, `perTarget` only counts
+  targets.
+
+### #6607: no condition reads how many loyalty counters an activation's cost removed
+
+- Way of the Mind Sculptor: "if you removed two or more loyalty counters to
+  activate it" reads the paid loyalty cost, which nothing records.
 
 ### #6588: the next spell can't be made uncounterable without a flash grant
 

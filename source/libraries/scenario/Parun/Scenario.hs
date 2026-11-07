@@ -626,6 +626,8 @@ answerScheduled asked = do
       -- the one it answered, asked again. A prompt the move raises on its way
       -- there -- a payment's own choices, an Answer the timeline schedules,
       -- CR 734.1's ReverseManaAbilities -- leaves the refusal waiting.
+      -- A triggered ability's refused targets are asked again from CR 601.2c's
+      -- announcement (CR 603.3d), so AnnounceTargets re-asks a ChooseTargets.
       refusal <- State.gets refusing
       underway <- State.gets pending
       queued <- takeAnswer gs decider kind
@@ -634,7 +636,7 @@ answerScheduled asked = do
             Nothing -> Maybe.isJust queued
       case refusal of
         Just (key, verb, answered)
-          | answered /= kind || decider /= Just (When.player key) || GameState.turnNumber gs /= When.turn key || GameState.phase gs /= When.phase key ->
+          | not (asksAgain answered kind) || decider /= Just (When.player key) || GameState.turnNumber gs /= When.turn key || GameState.phase gs /= When.phase key ->
               Monad.unless raised (failWith (Failure.MkUnrefusedMove key verb (Just kind)))
         _ -> State.modify' (\rehearsal -> rehearsal {refusing = Nothing})
       waiting <- State.gets pending
@@ -672,6 +674,12 @@ answerScheduled asked = do
           State.modify' (\rehearsal -> rehearsal {pending = Nothing})
           answerTopPrompt decider asked
         Nothing -> answerTopPrompt decider asked
+
+-- | Whether a prompt of kind `kind` asks again what one of kind `answered`
+-- asked: the same prompt, or a target choice's announcement (CR 603.3d).
+asksAgain :: Text.Text -> Text.Text -> Bool
+asksAgain answered kind =
+  answered == kind || (answered == Text.pack "ChooseTargets" && kind == Text.pack "AnnounceTargets")
 
 -- | Whether a prompt is one a cast or activation asks its own decider between
 -- the ChooseAction that began it and its completion (CR 601.2b-h, CR 602.2b).
@@ -1775,7 +1783,8 @@ resolveSlots :: GameState.GameState -> When.When -> Move.Move -> Map.Map SlotNam
 resolveSlots gs key verb offered chosen =
   let refused :: Run b
       refused = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
-   in if Map.keysSet chosen /= Map.keysSet offered
+   in -- A slot the entry names empty was announced 0 (announceCounts), so is not asked.
+      if Map.keysSet (Map.filter (not . Seq.null) chosen) /= Map.keysSet offered
         then refused
         else
           Map.traverseWithKey

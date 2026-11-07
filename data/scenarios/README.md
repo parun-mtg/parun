@@ -83,7 +83,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   of the scenario's own raises (a triggered ability's), keyed the same way; it
   also answers that prompt's announcement of how many, and a refused one
   naming a count outside a slot's range, a slot it omits naming 0, is refused
-  already. A cast's own `targets`
+  already. A `do` names every slot the announcement offers, `[]` for one left empty;
+  one the engine refuses is asked again from the announcement (CR 603.3d).
+  A cast's own `targets`
   likewise announce their count for a slot that takes a variable number. A
   spell or ability with more than one target slot names them with
   `targetsBySlot`, `{ "victim": ["$bear"], "gauge": ["$wall"] }`, in place

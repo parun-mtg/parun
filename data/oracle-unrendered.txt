@@ -3552,3 +3552,12 @@ death-is-irrelevant
 the-best-of-both-worlds
 infinite-coursework
 pattern-buffer-preservation
+uldaros-theorix
+vraska-the-cutting-glare
+way-of-the-cryomancer
+way-of-the-deathbringer
+way-of-the-healer
+way-of-the-paradox
+way-of-the-pyromancer
+way-of-the-warlord
+way-of-the-wildspeaker
