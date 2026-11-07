@@ -37,6 +37,7 @@ import qualified Parun.Engine.Target as Target
 import qualified Parun.Extra.Natural as Natural
 import Parun.Types.AbilityName (AbilityName)
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
@@ -59,6 +60,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.IfTaken as IfTaken
+import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.Mode as Mode
@@ -89,6 +91,8 @@ import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.Zone as Zone
@@ -240,6 +244,24 @@ modesOf oid gs = case Game.lookupObject oid gs of
        in -- CR 702.47b: the spliced text after the spell's own, and CR 702.47c
           -- makes it the spell's text, so CR 612's changes reach it too.
           fmap (fmap rewriteMode) (Card.chosenModes chosen face <> Game.splicedModes obj gs)
+
+-- | The mode at this index of what resolves as it reads now: a spell's through
+-- 'modesOf', an ability's off its own modal (Stack.resolveOneWith's reads).
+resolvingMode :: ObjectId -> ModeIndex -> GameState -> Maybe (Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
+resolvingMode oid idx gs = case fmap Object.source (Game.lookupObject oid gs) of
+  Just (Source.OfAbility src) -> Modal.modeAtIndex idx (ActivatedAbility.modal (ActivatedAbilitySource.ability src))
+  Just (Source.OfTrigger src) -> Modal.modeAtIndex idx (TriggeredAbility.modal (TriggeredAbilitySource.ability src))
+  Just (Source.OfInherentTrigger src) -> Modal.modeAtIndex idx (TriggeredAbility.modal (InherentTriggerSource.ability src))
+  Just (Source.OfCard _) -> spell
+  Just (Source.OfSpellCopy _) -> spell
+  Just (Source.OfCardCopy _) -> spell
+  Just (Source.OfMeld _) -> Nothing
+  Just (Source.OfMerge _) -> Nothing
+  Just (Source.OfToken _) -> Nothing
+  Just (Source.OfEmblem _) -> Nothing
+  Nothing -> Nothing
+  where
+    spell = Maybe.listToMaybe [mode | (mi, mode) <- modesOf oid gs, ModeInstance.index mi == idx]
 
 -- CR 405.4: who controls a SPELL on the stack -- both CR 608.2b's legality
 -- perspective and the effects' execution, which must name the same player. The

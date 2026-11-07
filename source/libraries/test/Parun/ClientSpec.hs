@@ -1213,6 +1213,23 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertBool s resolved "resolved"
     Spec.assertBool s (any (\l -> Text.isPrefixOf (Text.pack "  Creatures: ") l && Text.isInfixOf (Text.pack "Primal Clay 1/6") l) shown) "entered as the shape picked"
 
+  Spec.it s "CR 701.55a a villainous choice is offered through the client by each branch's Oracle text, and the number picks the branch" $ do
+    gs <- started s registry
+    emperor <- S.printingOf s registry "The Dalek Emperor"
+    let (_, board) = S.addPermanent emperor S.alice gs
+        heading = Text.pack "Choose clause for The Dalek Emperor's ability:"
+        faces at
+          | heading `elem` pending at = Just (Text.pack "2")
+          | otherwise = plays at
+        person = Game.human (S.fixtureRegistry []) (screen 300 faces) (const (Right Nothing))
+        seats = Driver.bySeat (Map.fromList [(S.alice, person), (S.bob, person)]) botOrDefault
+        tokens = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Dalek Token")) S.alice
+        run = Driver.drive [] seats 80 (pure . (> 0) . tokens) board
+        (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (SplitMix.MkSplitMix 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
+        shown = reverse (written sc)
+    Spec.assertEqWith s "each branch listed by its Oracle text" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))) (fmap Text.pack ["  1. That player sacrifices a creature of their choice.", "  2. Create a 3/3 black Dalek artifact creature token with menace."])
+    Spec.assertEqWith s "the token made" (fmap tokens outcome) (Right 1)
+
   Spec.it s "CR 702.33a a kicker is offered through the client as a count, and a count of one kicks the creature" $ do
     let heading = Text.pack "Choose how many times to pay Kicker {2}{G} for Gnarlid Colony, from 0 to 1:"
         kicks sc

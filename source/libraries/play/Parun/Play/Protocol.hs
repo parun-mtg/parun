@@ -42,6 +42,7 @@ import qualified Parun.Codec.SlotName as Codec.SlotName
 import qualified Parun.Codec.TurnUpProcedure as Codec.TurnUpProcedure
 import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
+import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Driver as Driver
@@ -52,6 +53,7 @@ import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Resolve as Resolve
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
@@ -59,6 +61,8 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Continuous as Oracle.Continuous
+import qualified Parun.Oracle.Effect as Oracle.Effect
+import qualified Parun.Oracle.Target as Oracle.Target
 import qualified Parun.Play.Render as Render
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
@@ -72,6 +76,7 @@ import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
@@ -94,6 +99,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganOffer as MulliganOffer
@@ -463,12 +469,11 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseDieResult _ _ source results -> indexing prompt source [] (fmap natural (NonEmpty.toList results))
   -- CR 701.48a: each branch, then neither.
   Prompt.ChooseLearn _ _ source modes -> choosing prompt "options" (Just source) [("entries", R.Array (fmap (R.Text . Text.pack . show) (NonEmpty.toList modes)))] (orNone modes)
-  -- CR 101.4b: the branches earlier choosers announced.
-  --
-  -- Not implemented: each branch's Oracle text, so a branch is named by its
-  -- index (#6606).
-  Prompt.ChooseClause _ _ source _ clauses neither earlier ->
-    choosing prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.maybeOf Reply.natural))) namer (fmap (fmap (fmap ClauseIndex.unwrap)) earlier))] (fmap Just (NonEmpty.toList clauses) <> [Nothing | neither])
+  -- CR 608.2d / 701.55a: each branch by its Oracle text, then neither where it
+  -- is offered; CR 101.4b: the branches earlier choosers announced, likewise.
+  Prompt.ChooseClause _ _ source idx clauses neither earlier ->
+    let branch = branchEntry gs source idx
+     in choosing prompt "options" (Just source) [("earlier", R.Array [R.Array [Reply.encode Reply.player namer pid, maybe R.Null branch announced] | (pid, announced) <- Foldable.toList earlier]), ("entries", R.Array (fmap branch (NonEmpty.toList clauses)))] (fmap Just (NonEmpty.toList clauses) <> [Nothing | neither])
   -- CR 700.3 / 101.4b: each pile, and what earlier choosers took.
   Prompt.ChoosePile _ _ source piles earlier -> choosing prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (NonEmpty.toList piles)
   -- CR 103.5b / 103.6: each card's action, then none.
@@ -641,6 +646,20 @@ replacementEntry gs entry =
       self = Render.snapshotName (Projection.project source gs)
       printed = PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEntry.effect entry) Set.empty Nothing
    in fields (("source", object source) : [("text", R.Text text) | text <- take 1 (Oracle.Continuous.replacement (Oracle.contextOf self []) printed)])
+
+-- | CR 608.2d: a branch as the Oracle text of its clause, its riders aside,
+-- in the resolving object's mode as it reads now (Resolve.resolvingMode), or
+-- as its index where the clause does not render. CR 701.55a's facing player
+-- is "that player", as The Dalek Emperor prints it.
+branchEntry :: GameState.GameState -> ObjectId.ObjectId -> ModeIndex.ModeIndex -> ClauseIndex.ClauseIndex -> R.Reply
+branchEntry gs source idx branch = maybe (natural (ClauseIndex.unwrap branch)) R.Text (Maybe.listToMaybe texts)
+  where
+    self = Render.snapshotName (Projection.project source gs)
+    texts = do
+      mode <- Foldable.toList (Resolve.resolvingMode source idx gs)
+      limb <- Foldable.toList (Seq.lookup (Natural.toIntSaturating (ClauseIndex.unwrap branch)) (Mode.clauses mode))
+      let context = (Oracle.contextOf self []) {Oracle.Target.slots = Mode.targetSlots mode, Oracle.Target.bound = Map.singleton Binding.facingPlayers (Text.pack "that player")}
+      fmap fst (Oracle.Effect.clause context limb {Clause.orElse = Nothing})
 
 -- | CR 603.7b: an event the seat witnessed (Visibility.witnessed), or null.
 delayedEvent :: Maybe PlayerId.PlayerId -> GameEvent.GameEvent -> R.Reply
