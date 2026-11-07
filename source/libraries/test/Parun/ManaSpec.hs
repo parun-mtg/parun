@@ -2796,8 +2796,7 @@ plainSourcesSpec s registry = Spec.describe s "plain sources" $ do
 -- pays and claims dropped. Each case pins it beside the walk's answer: where
 -- the ceiling says no the walk must too. Transmogrant Altar eats a {B} for its
 -- {C}{C}{C}, Treasonous Ogre pays life and Springleaf Drum taps a creature, all
--- of which the ceiling overlooks; Doubling Cube's mana grows with the pool, so
--- a board holding it has no ceiling.
+-- of which the ceiling overlooks.
 manaCeilingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 manaCeilingSpec s registry = Spec.describe s "mana ceiling" $ do
   Spec.it s "#6552 CR 118.3 a cost the ceiling refuses the walk refuses too" $ do
@@ -2848,6 +2847,24 @@ manaCeilingSpec s registry = Spec.describe s "mana ceiling" $ do
     Spec.assertEqWith s "fifteen generic, fourteen of them life" (ask [ManaSymbol.Generic 15]) (True, True)
     Spec.assertEqWith s "one blue" (ask [blue]) (True, True)
     Spec.assertEqWith s "but not two" (ask [blue, blue]) (False, False)
+  -- Two Mountains and Wizard's Rockets, whose {X} eats what its X mana of any
+  -- colors makes.
+  Spec.it s "#6577 CR 601.2b a route announcing an X converts mana, adding none" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    rockets <- S.printingOf s registry "Wizard's Rockets"
+    let gs = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) (Setup.emptyGame S.bothPlayers) [rockets, mountain, mountain]
+        sources = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) (Projection.projectAll gs) S.alice gs
+        ask = askCeiling gs
+        red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+        black = ManaSymbol.OfType (ManaType.Colored Color.Black)
+        colorless = ManaSymbol.OfType ManaType.Colorless
+    Spec.assertBool s (Maybe.isJust (Mana.sourceCeiling sources)) "the Rockets leave the board a ceiling"
+    Spec.assertEqWith s "two black, both Mountains paying the X" (ask [black, black]) (True, True)
+    Spec.assertEqWith s "a black beside a red" (ask [black, red]) (True, True)
+    Spec.assertEqWith s "but not three black" (ask [black, black, black]) (False, False)
+    Spec.assertEqWith s "nor a colorless" (ask [colorless]) (False, False)
+    Spec.assertEqWith s "no generic cost the ceiling refuses is one the walk pays" [n | n <- [0 .. 6], ask [ManaSymbol.Generic n] == (False, True)] []
+    Spec.assertEqWith s "a third generic is refused" (ask [ManaSymbol.Generic 3]) (False, False)
 
 -- Mana.ceilingAdmits beside the walk it stands in front of, for alice paying
 -- a cost of these symbols on this board.
