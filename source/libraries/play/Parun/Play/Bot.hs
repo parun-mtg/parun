@@ -130,7 +130,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   -- settleOutside drops a name past its copies and tops up to the floor.
   Prompt.ChooseFromOutsideTheGame _ _ candidates least most -> do
     count <- SplitMix.between least most
-    traverse (const (SplitMix.pick candidates)) (List.genericReplicate count ())
+    traverse (const (fmap fst (SplitMix.pick candidates))) (List.genericReplicate count ())
   -- CR 700.3: any pile; any assignment of each creature to one of the piles,
   -- any of them empty (CR 700.3d).
   Prompt.ChoosePile _ _ _ piles _ -> SplitMix.pick piles
