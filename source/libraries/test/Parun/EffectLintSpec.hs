@@ -1212,7 +1212,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.CantBecomeMonarch -> False
-  PlayerEffect.LegendRuleDoesntApply -> False
+  PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.AdditionalTriggers _ -> False
@@ -1297,7 +1297,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.CantBecomeMonarch -> False
-  PlayerEffect.LegendRuleDoesntApply -> False
+  PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.AdditionalTriggers _ -> False

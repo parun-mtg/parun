@@ -58,6 +58,7 @@ import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -380,12 +381,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.CantBecomeMonarch
       " {\"type\":\"CantBecomeMonarch\"} "
   -- CR 704.5j / Hall of Echoes.
-  Spec.it s "LegendRuleDoesntApply" $
+  Spec.it s "StateBasedActionDoesntApply" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      PlayerEffect.LegendRuleDoesntApply
-      " {\"type\":\"LegendRuleDoesntApply\"} "
+      (PlayerEffect.StateBasedActionDoesntApply StateBasedAction.LegendRule)
+      " {\"type\":\"StateBasedActionDoesntApply\",\"value\":\"LegendRule\"} "
   -- CR 701.32 / All in Good Time.
   Spec.it s "CantSetSchemesInMotion" $
     Common.assertCodec

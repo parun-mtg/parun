@@ -140,6 +140,7 @@ import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TapForMana as TapForMana
@@ -661,7 +662,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -855,7 +856,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -948,7 +949,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1060,7 +1061,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1106,7 +1107,7 @@ prohibitsBecomingMonarch :: PlayerId -> GameState -> Bool
 prohibitsBecomingMonarch pid gs =
   let prohibits effect = case effect of
         PlayerEffect.CantBecomeMonarch -> True
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1173,13 +1174,14 @@ prohibitsBecomingMonarch pid gs =
         PlayerEffect.Shows _ -> False
    in any (prohibits . snd) (applying pid gs)
 
--- CR 704.5j: does the legend rule not apply to the permanents `pid` controls
--- (Hall of Echoes)? A DISJUNCTION: one applicable row exempts them.
-legendRuleDoesntApplyTo :: PlayerId -> GameState -> Bool
-legendRuleDoesntApplyTo pid gs =
+-- CR 704.5i / 704.5j: does the state-based action not apply to the permanents
+-- `pid` controls (Sanctum Lurker, Hall of Echoes)? A DISJUNCTION: one applicable
+-- row exempts them.
+stateBasedActionDoesntApplyTo :: StateBasedAction.StateBasedAction -> PlayerId -> GameState -> Bool
+stateBasedActionDoesntApplyTo action pid gs =
   let exempts effect = case effect of
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> True
+        PlayerEffect.StateBasedActionDoesntApply exempted -> exempted == action
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1250,7 +1252,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.YouChoose _ -> False
         PlayerEffect.ExilesFoundWhileSearching -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -1319,7 +1321,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.YouChoose _ -> Nothing
         PlayerEffect.ExilesFoundWhileSearching -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantAttackWithCreatures -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
         PlayerEffect.CantActivateAbilities {} -> Nothing
@@ -1397,7 +1399,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.YouChoose _ -> False
         PlayerEffect.ExilesFoundWhileSearching -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -1455,7 +1457,7 @@ prohibitsAttackingWithCreatures pid gs =
   let prohibits effect = case effect of
         PlayerEffect.CantAttackWithCreatures -> True
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -2165,7 +2167,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.CantBecomeMonarch -> Nothing
-  PlayerEffect.LegendRuleDoesntApply -> Nothing
+  PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
   PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -2425,7 +2427,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.CantBecomeMonarch -> Nothing
-  PlayerEffect.LegendRuleDoesntApply -> Nothing
+  PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
   PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -2776,7 +2778,7 @@ mayCastFromHandWithoutPayingManaCost pid oid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -2857,7 +2859,7 @@ playLandPiles pid gs =
         PlayerEffect.CantSearchLibraries _ -> []
         PlayerEffect.HasProtectionFrom _ -> []
         PlayerEffect.CantBecomeMonarch -> []
-        PlayerEffect.LegendRuleDoesntApply -> []
+        PlayerEffect.StateBasedActionDoesntApply _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
         PlayerEffect.EntriesTrigger _ -> []
         PlayerEffect.AdditionalTriggers _ -> []
@@ -2974,7 +2976,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3086,7 +3088,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3182,7 +3184,7 @@ protectionCarriers gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3271,7 +3273,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3352,7 +3354,7 @@ votesAllowed pid gs =
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3419,7 +3421,7 @@ offeredExtras pid gs =
         PlayerEffect.DamageCantBeRedirected {} -> False
         PlayerEffect.CantSearchLibraries {} -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3487,7 +3489,7 @@ cascadeActions pid gs =
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3554,7 +3556,7 @@ drawReveals pid nth gs =
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3620,7 +3622,7 @@ shownGrants pid gs =
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3721,7 +3723,7 @@ maximumHandSize pid gs =
         PlayerEffect.CantSearchLibraries _ -> current
         PlayerEffect.HasProtectionFrom _ -> current
         PlayerEffect.CantBecomeMonarch -> current
-        PlayerEffect.LegendRuleDoesntApply -> current
+        PlayerEffect.StateBasedActionDoesntApply _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
         PlayerEffect.EntriesTrigger _ -> current
         PlayerEffect.AdditionalTriggers _ -> current
@@ -3807,7 +3809,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3885,7 +3887,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3967,7 +3969,7 @@ prohibitsGainingLife pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4045,7 +4047,7 @@ prohibitsLosingLife pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4122,7 +4124,7 @@ precludes outcome pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4197,7 +4199,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4332,7 +4334,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4396,7 +4398,7 @@ targetingRestrictions =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4478,7 +4480,7 @@ hexproofExemptions =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4572,7 +4574,7 @@ unpreventable gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4656,7 +4658,7 @@ unredirectable gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4769,7 +4771,7 @@ statedFlips pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4849,7 +4851,7 @@ rollModifiers pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4965,7 +4967,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.DamageCantBeRedirected _ -> pure effect
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.CantBecomeMonarch -> pure effect
-  PlayerEffect.LegendRuleDoesntApply -> pure effect
+  PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
   PlayerEffect.AdditionalTriggers _ -> pure effect
@@ -5047,7 +5049,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.DamageCantBeRedirected pattern_ -> fmap PlayerEffect.DamageCantBeRedirected (f pattern_)
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.CantBecomeMonarch -> pure effect
-  PlayerEffect.LegendRuleDoesntApply -> pure effect
+  PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
   PlayerEffect.AdditionalTriggers _ -> pure effect

@@ -727,6 +727,7 @@ import qualified Parun.Codec.SpendManaAsThoughSpec
 import qualified Parun.Codec.SpendTriggerSpec
 import qualified Parun.Codec.SpliceSpec
 import qualified Parun.Codec.StackObjectKindSpec
+import qualified Parun.Codec.StateBasedActionSpec
 import qualified Parun.Codec.StatedFlipSpec
 import qualified Parun.Codec.StaticAbilitySpec
 import qualified Parun.Codec.StatusSpec
@@ -1756,6 +1757,7 @@ spec s registry corpus = do
   Parun.Codec.SpendTriggerSpec.spec s
   Parun.Codec.SpliceSpec.spec s
   Parun.Codec.StackObjectKindSpec.spec s
+  Parun.Codec.StateBasedActionSpec.spec s
   Parun.Codec.StatedFlipSpec.spec s
   Parun.Codec.StaticAbilitySpec.spec s
   Parun.Codec.StatusSpec.spec s

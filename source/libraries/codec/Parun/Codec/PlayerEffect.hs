@@ -29,6 +29,7 @@ import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.Codec.PlotFromZone as PlotFromZone
 import qualified Parun.Codec.Shows as Shows
 import qualified Parun.Codec.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Codec.StateBasedAction as StateBasedAction
 import qualified Parun.Codec.StatedFlip as StatedFlip
 import qualified Parun.Codec.TapForMana as TapForMana
 import qualified Parun.Codec.TargetRestriction as TargetRestriction
@@ -93,7 +94,7 @@ codec =
           Arm.payload "CantSearchLibraries" CantSearchLibraries.codec PlayerEffect.CantSearchLibraries (\x -> case x of PlayerEffect.CantSearchLibraries y -> Just y; _ -> Nothing),
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
           Arm.nullary "CantBecomeMonarch" PlayerEffect.CantBecomeMonarch,
-          Arm.nullary "LegendRuleDoesntApply" PlayerEffect.LegendRuleDoesntApply,
+          Arm.payload "StateBasedActionDoesntApply" StateBasedAction.codec PlayerEffect.StateBasedActionDoesntApply (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y -> Just y; _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
           Arm.payload "AdditionalTriggers" filterCodec PlayerEffect.AdditionalTriggers (\x -> case x of PlayerEffect.AdditionalTriggers y -> Just y; _ -> Nothing),
@@ -152,7 +153,7 @@ tagOf x = case x of
   PlayerEffect.CantSearchLibraries {} -> "CantSearchLibraries"
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"
   PlayerEffect.CantBecomeMonarch {} -> "CantBecomeMonarch"
-  PlayerEffect.LegendRuleDoesntApply {} -> "LegendRuleDoesntApply"
+  PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
   PlayerEffect.EntriesTrigger {} -> "EntriesTrigger"
   PlayerEffect.AdditionalTriggers {} -> "AdditionalTriggers"
