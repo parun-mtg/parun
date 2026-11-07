@@ -85,7 +85,7 @@ loyaltyAmountOf component = case component of
   CostComponent.ChooseOpponent _ -> Nothing
   CostComponent.Waterbend _ -> Nothing
   CostComponent.WaterbendInstead _ -> Nothing
-  CostComponent.ExileThisFromGraveyard -> Nothing
+  CostComponent.ExileThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   CostComponent.ExileCardsFromGraveyard {} -> Nothing
   CostComponent.ExileMaterials {} -> Nothing

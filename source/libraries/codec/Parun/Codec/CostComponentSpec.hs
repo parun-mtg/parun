@@ -34,6 +34,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.WhichCounters as WhichCounters
+import qualified Parun.Types.Zone as Zone
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation
 -- anywhere in the pool.
@@ -244,12 +245,12 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       " {\"type\":\"FlipCoin\"} "
   -- CR 406.2's halves: the two that name the object the cost is on, one per
   -- zone, and the one that names a count and a criterion.
-  Spec.it s "ExileThisFromGraveyard" $
+  Spec.it s "ExileThisFrom" $
     Common.assertCodec
       s
       codec
-      CostComponent.ExileThisFromGraveyard
-      " {\"type\":\"ExileThisFromGraveyard\"} "
+      (CostComponent.ExileThisFrom Zone.Graveyard)
+      " {\"type\":\"ExileThisFrom\",\"value\":\"Graveyard\"} "
   Spec.it s "ExileThis" $
     Common.assertCodec
       s

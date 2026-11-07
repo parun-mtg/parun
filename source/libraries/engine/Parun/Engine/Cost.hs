@@ -1824,7 +1824,7 @@ traverseAmount f component = case component of
   -- CR 702.174a's cost names no X.
   CostComponent.ChooseOpponent _ -> pure component
   CostComponent.WaterbendInstead _ -> pure component
-  CostComponent.ExileThisFromGraveyard -> pure component
+  CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.ExileCardsFromGraveyard {} -> pure component
   CostComponent.ExileMaterials {} -> pure component
@@ -1975,7 +1975,7 @@ componentDemandGrowsWith slot component = case component of
   -- `manaHasVariable` answers for.
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
@@ -2296,7 +2296,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.TapPermanents {} -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
@@ -2897,7 +2897,7 @@ claimOfGiven board slots pid oid component gs =
         -- A pool of at most ONE, CR 404.2's order having picked it.
         CostComponent.ExileTopFromGraveyard criterion ->
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (Maybe.maybeToList (topExileCandidate slots pid oid criterion gs))) 1
-        CostComponent.ExileThisFromGraveyard -> claim (ClaimAxis.Removal Zone.Graveyard) itself 1
+        CostComponent.ExileThisFrom zone -> claim (ClaimAxis.Removal zone) itself 1
         -- CR 701.17a spends cards out of the paying player's own library, so the pool
         -- is that library and the count is how many the mill takes -- the ZONE keying a
         -- Removal soundly for the header's reason. What it buys is two mills of one
@@ -3392,7 +3392,7 @@ uncountedCeiling pid oid claims gs component = case component of
   -- UNDERSTATEMENT and the header's safe direction.
   CostComponent.ExileMaterials {} -> Just 1
   CostComponent.ExileTopFromGraveyard _ -> Nothing
-  CostComponent.ExileThisFromGraveyard -> Nothing
+  CostComponent.ExileThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   -- Counted by `objectCeiling` too, the library being this claim's pool.
   CostComponent.MillCards _ -> Nothing
@@ -3791,7 +3791,7 @@ targetComputed component = case component of
   CostComponent.Blight _ -> False
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard _ -> False
   CostComponent.ExileMaterials _ -> False
@@ -3847,7 +3847,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.ChooseOpponent _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
-  CostComponent.ExileThisFromGraveyard -> 0
+  CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
@@ -3898,7 +3898,7 @@ energyOwedByComponent component = case component of
   CostComponent.ChooseOpponent _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
-  CostComponent.ExileThisFromGraveyard -> 0
+  CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
@@ -3955,7 +3955,7 @@ countersOwedByComponent component = case component of
   CostComponent.ChooseOpponent _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
-  CostComponent.ExileThisFromGraveyard -> []
+  CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.ExileCardsFromGraveyard {} -> []
   CostComponent.ExileMaterials {} -> []
@@ -4127,13 +4127,14 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.DiscardThis _ -> case Game.lookupObject oid gs of
     Nothing -> False
     Just obj -> Object.zone obj == Zone.Hand && Object.owner obj == pid
-  -- CR 118.3: payable only while the card is in the paying player's graveyard,
-  -- DiscardThis' shape. This is CR 113.6m's whole enforcement for the COST, so
-  -- the zone gate Activate applies to the OFFER is not the only thing between a
-  -- Loxodon Surveyor on the battlefield and a free draw.
-  CostComponent.ExileThisFromGraveyard -> case Game.lookupObject oid gs of
+  -- CR 118.3: payable only while the card is in the paying player's own
+  -- graveyard or hand, the zone the component names -- DiscardThis' shape. This
+  -- is CR 113.6m's whole enforcement for the COST, so the zone gate Activate
+  -- applies to the OFFER is not the only thing between a Loxodon Surveyor on the
+  -- battlefield and a free draw.
+  CostComponent.ExileThisFrom zone -> case Game.lookupObject oid gs of
     Nothing -> False
-    Just obj -> Object.zone obj == Zone.Graveyard && Object.owner obj == pid
+    Just obj -> Object.zone obj == zone && Object.owner obj == pid
   -- CR 118.3: payable only if this player's own graveyard holds at least that
   -- many matching cards. Headless Skaab with an empty graveyard is never OFFERED
   -- rather than merely unpaid, which is what puts the additional cost INSIDE the
@@ -4486,7 +4487,7 @@ criteriaOf component = case component of
   -- no word of a card's is in it, so CR 612.2 has nothing to swap.
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
-  CostComponent.ExileThisFromGraveyard -> []
+  CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
@@ -5176,9 +5177,8 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
 --
 -- The bound slots ride out unread. A component of a combat toll binds what
 -- payComponent binds it (Sacrifice, TapPermanents, TapForTotalPower, ExileThis
--- and ExileThisFromGraveyard each reserve a name), and
--- there is no resolving ability holding a binding environment to write them
--- into -- CR 508.1j and CR 509.1f name a payment and no effect, where CR
+-- and ExileThisFrom each reserve a name), and there is no resolving ability
+-- holding a binding environment to write them into -- CR 508.1j and CR 509.1f name a payment and no effect, where CR
 -- 601.2f's components are paid for a spell that goes on to resolve.
 --
 -- The ORDER ACROSS TAGS is the payer's, which is what "in any order" says about
@@ -5518,7 +5518,7 @@ paidInSecondPass component = case component of
   CostComponent.ReturnThis -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
@@ -5584,7 +5584,7 @@ mergeBound bound outcome = case outcome of
 bindsNothing :: Payment.Payment
 bindsNothing = Payment.Paid Map.empty
 
--- The payment an ExileThis or ExileThisFromGraveyard component makes: CR 601.2h
+-- The payment an ExileThis or ExileThisFrom component makes: CR 601.2h
 -- pays it, and Binding.exiledCard names what CR 400.7 put into exile.
 --
 -- An empty arrival binds NOTHING rather than an empty set, a replacement effect
@@ -5656,7 +5656,7 @@ orderSensitive component = case component of
   -- TRUE, unlike Behold above: the exile takes the object out of a pool another
   -- part could draw on.
   CostComponent.BeholdAndExile _ -> True
-  CostComponent.ExileThisFromGraveyard -> True
+  CostComponent.ExileThisFrom _ -> True
   CostComponent.ExileThis -> True
   CostComponent.TapThis -> True
   CostComponent.UntapThis -> True
@@ -7302,8 +7302,8 @@ payPayable perform paidFor slots pid oid component = case component of
     State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Waterbend pid)))
     pure bindsNothing
   -- CR 406.2's move, through the Event.changeZone funnel, so the card gets a CR
-  -- 400.7 incarnation and anything watching a graveyard-to-exile move sees it.
-  -- No prompt: the cost names this card.
+  -- 400.7 incarnation and anything watching a graveyard- or hand-to-exile move
+  -- sees it. No prompt: the cost names this card.
   --
   -- The card is in EXILE by the time the ability resolves, which is what makes CR
   -- 113.7a load-bearing here -- Loxodon Surveyor's draw resolves off a source
@@ -7311,7 +7311,7 @@ payPayable perform paidFor slots pid oid component = case component of
   --
   -- Binds Binding.exiledCard off what ARRIVED, ExileThis' binding below and for
   -- its reason.
-  CostComponent.ExileThisFromGraveyard -> do
+  CostComponent.ExileThisFrom _ -> do
     arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Exile
     pure (bindExiled arrived)
   -- CR 406.2's move off the BATTLEFIELD, through the same funnel and with no

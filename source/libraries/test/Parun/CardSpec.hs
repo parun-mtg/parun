@@ -4066,10 +4066,10 @@ costComponentFilters component = case component of
   CostComponent.Blight _ -> []
   CostComponent.Forage -> []
   CostComponent.FlipCoin -> []
-  CostComponent.ExileThisFromGraveyard -> []
+  CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   -- CR 701.17a takes the cards off the top, so this component carries no Filter
-  -- to narrow -- ExileThisFromGraveyard's answer above and for its reason.
+  -- to narrow -- ExileThisFrom's answer above and for its reason.
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
   -- CR 702.174a names an opponent rather than an object, so this component

@@ -4761,7 +4761,7 @@ recordingOrders p = case p of
 -- Brittle Effigy {1} Artifact: "{4}, {T}, Exile this artifact: Exile target
 -- creature." The gate card for CostComponent's ExileThis -- CR 406.2 charged
 -- against the permanent the cost is ON, off the BATTLEFIELD, where
--- ExileThisFromGraveyard names a graveyard and so cannot stand in for it.
+-- ExileThisFrom names a graveyard or a hand and so cannot stand in for it.
 --
 -- alice controls the Effigy, settled and untapped, and exactly four untapped
 -- Plains -- the minimum that pays {4}, so the mana window has nothing to decide

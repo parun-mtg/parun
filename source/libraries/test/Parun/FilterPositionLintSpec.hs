@@ -95,6 +95,7 @@ import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersTrigger as EntersTrigger
@@ -3037,6 +3038,23 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs crowned) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted reference is seen" (atoms planted) 1
+  -- CR 400.7's baked half of DurationEvent.BoundCardCast: the object a cost
+  -- exiled, written by Parun.Engine.Expiry.arm and round-tripped by a total
+  -- codec, so nothing but this keeps card JSON from naming it. The unbaked slot
+  -- is card data (Emrakul, the Exigent Doom) and is not swept.
+  Spec.it s "CR 611.2a no card writes a CardCast duration" $ do
+    ps <- S.allPrintings s corpus
+    let atoms c = jsonAtoms (Text.pack "CardCast") (Codec.encode (Face.Codec.codec Card.codec) c)
+        offenders = filter (anyFace ((/= 0) . atoms) . Printing.card) ps
+    Spec.assertEqWith s "the baked event is the engine's alone" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous, for the sibling sweeps' reason.
+    piker <- S.printingOf s registry "Goblin Piker"
+    let planted =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.UntilEvent (DurationEvent.CardCast (ObjectId.MkObjectId 1))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You))))
+            }
+    Spec.assertEqWith s "a planted event is seen" (atoms planted) 1
   -- The sweep above passes VACUOUSLY for every card but Aura Graft, and Aura
   -- Graft only exercises the ACCEPTING direction, so the rejecting direction is
   -- proven here instead -- hand-built, never a card file, because a card that

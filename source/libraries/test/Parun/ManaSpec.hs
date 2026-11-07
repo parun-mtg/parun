@@ -2950,7 +2950,7 @@ takesAltarOnce altarId birdsId p = case p of
 -- sorcery." CR 601.2f's list of what a cost may include ends in "and so on" and
 -- never names returning, so this is a cost by CR 118.1's general reading -- "an
 -- action or payment necessary to take another action" -- exactly as
--- CostComponent.ExileThisFromGraveyard is.
+-- CostComponent.ExileThisFrom is.
 --
 -- The board is one Ignus and one Mountain and nothing else. The Mountain is the
 -- only source of the ability's own {R}, so the mana window has exactly one
