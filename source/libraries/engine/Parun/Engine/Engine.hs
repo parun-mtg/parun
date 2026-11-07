@@ -718,8 +718,9 @@ placePendingTriggers boards = do
   -- events that fired them, reading the same classifier.
   --
   -- Only `pending` is filtered. CR 605.1b's conditions are all EVENT conditions
-  -- (ManaAbility.triggersFromMana), so no state trigger, no delayed entry and
-  -- neither inherent gather above can produce one.
+  -- (ManaAbility.triggersFromMana), so no state trigger and neither inherent
+  -- gather above can produce one. A delayed entry can (Molten Tide), and
+  -- applyManaTriggers has applied it too.
   --
   -- CR 605.5a: the EVENT that fired it decides too, so a trigger watching mana
   -- added by an ability that resolved (Caged Sun off Crumbling Vestige) is no

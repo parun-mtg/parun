@@ -21,6 +21,7 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
+import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword.Engine
@@ -66,6 +67,7 @@ import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExiledPile as ExiledPile
@@ -823,7 +825,8 @@ watchOf gs =
 -- `watch` is `watchOf gs`: its sample is the CR 603.10 board every event is
 -- filed with, and its standing sources are the scan's, both `gs`'s own, the
 -- copy differing from it only in its log. The scan offers only the watch's
--- holders: what it leaves out triggers no mana ability.
+-- holders: what it leaves out triggers no mana ability. The CR 603.7 store,
+-- which no object holds, is read whole.
 triggeredYields :: Watch -> PlayerId -> Map.Map SlotName.SlotName (Set.Set PlayerId) -> ObjectId -> ManaOption -> Mana -> GameState -> [Mana]
 triggeredYields watch pid chosen oid option share gs =
   let made = yieldUnits option
@@ -842,7 +845,16 @@ triggeredYields watch pid chosen oid option share gs =
       events = tapped <> added <> [resolved]
       board = List.foldl' (flip (Event.recordEventOver (watchSample watch))) gs events
       recorded = Foldable.toList (Seq.drop (Seq.length (GameState.events board) - length events) (GameState.events board))
-      fired = filter (\pending -> ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy pending)) (PendingTrigger.ability pending)) (Event.reactionTriggersGiven (Just (watchHolders watch)) (watchStanding watch) recorded board)
+      (occurrences, pend) = Trigger.delayedMatches recorded board
+      -- CR 603.7's store, under applyManaTriggers' gate. A one-shot entry fires
+      -- once, on the occurrence delayedPending takes when nothing is asked.
+      delayed =
+        [ pend entry logged
+        | entry <- Foldable.toList (GameState.delayedTriggers board),
+          ManaAbility.mayBeTriggeredManaAbility (DelayedTrigger.ability entry),
+          logged <- (if Expiry.firesOnce board (DelayedTrigger.source entry) (DelayedTrigger.expiry entry) then take 1 else id) (occurrences entry)
+        ]
+      fired = filter (\pending -> ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy pending)) (PendingTrigger.ability pending)) (Event.reactionTriggersGiven (Just (watchHolders watch)) (watchStanding watch) recorded board <> filter (Trigger.interveningHolds board) delayed)
    in fmap (Mana.MkMana . concat) (traverse (triggerAdds pid board) fired)
 
 -- What one fired triggered mana ability adds to `pid`'s pool, a list entry per
