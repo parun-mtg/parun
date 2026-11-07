@@ -1736,6 +1736,7 @@ lyra-archangel-of-dawn
 lyra-tolarian-archangel
 lys-alana-dignitary
 ma-chao-western-warrior
+mabel-bitter-recluse
 mabel-valley-hero
 maddening-imp
 maelstrom-pulse

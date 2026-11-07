@@ -547,28 +547,30 @@ removeCountersAmong resolving source controller legal (RemoveCountersAmong.MkRem
         RemovalCount.All -> pure offered
       Monad.forM_ (Map.toList (Map.filter (> 0) division)) (\(permanent, taken) -> Event.removeCounters permanent kind taken)
       pure (sum division)
-    -- CR 122.1: with no kind named, the division is by kind as well
-    -- (Eventide's Shadow), through the cost side's mixed prompt at a floor of
-    -- zero, and "all" (Suncleanser) takes every kind with nothing to divide.
-    -- Only those two reach here: Parun.Codec.RemoveCountersAmong rejects any
-    -- kind at a stated count, which no printing writes.
-    WhichCounters.OfAnyKind -> case count of
-      RemovalCount.AnyNumber -> do
-        let offered = Common.removableAmong gs which permanents
-        division <- case Cost.onlyMixedDivision CounterSpread.FromAmongAtLeast 0 offered of
-          Just only -> pure only
-          Nothing -> do
-            answer <- Game.choose (Prompt.ChooseMixedCounterRemoval decider controller source CounterSpread.FromAmongAtLeast 0 offered)
-            pure (if Cost.dividesMixedRemoval CounterSpread.FromAmongAtLeast 0 offered answer then answer else Map.empty)
-        let flat = Cost.flattenMixed division
-        Monad.forM_ (Map.toList flat) (\((permanent, kind), taken) -> Event.removeCounters permanent kind taken)
-        pure (sum flat)
-      RemovalCount.All -> do
-        let every = Common.removableAmong gs which permanents
-        Monad.forM_ (Map.toList every) (\(permanent, kinds) -> Monad.forM_ (Map.toList kinds) (uncurry (Event.removeCounters permanent)))
-        pure (sum (fmap sum every))
-      RemovalCount.Exactly _ -> pure 0
-      RemovalCount.UpTo _ -> pure 0
+    -- CR 122.1: with no kind named, the division is by kind as well, through
+    -- the cost side's mixed prompt: at a floor of zero for "any number"
+    -- (Eventide's Shadow), under a ceiling for "up to" (Mabel, Bitter
+    -- Recluse), and "all" (Suncleanser) takes every kind with nothing to
+    -- divide. Parun.Codec.RemoveCountersAmong rejects any kind at an exact
+    -- count, which no printing writes.
+    WhichCounters.OfAnyKind -> do
+      let offered = Common.removableAmong gs which permanents
+          divideMixed spread owed = do
+            division <- case Cost.onlyMixedDivision spread owed offered of
+              Just only -> pure only
+              Nothing -> do
+                answer <- Game.choose (Prompt.ChooseMixedCounterRemoval decider controller source spread owed offered)
+                pure (if Cost.dividesMixedRemoval spread owed offered answer then answer else Map.empty)
+            let flat = Cost.flattenMixed division
+            Monad.forM_ (Map.toList flat) (\((permanent, kind), taken) -> Event.removeCounters permanent kind taken)
+            pure (sum flat)
+      case count of
+        RemovalCount.AnyNumber -> divideMixed CounterSpread.FromAmongAtLeast 0
+        RemovalCount.UpTo quantity -> divideMixed CounterSpread.FromAmongAtMost (asked quantity)
+        RemovalCount.All -> do
+          Monad.forM_ (Map.toList offered) (\(permanent, kinds) -> Monad.forM_ (Map.toList kinds) (uncurry (Event.removeCounters permanent)))
+          pure (sum (fmap sum offered))
+        RemovalCount.Exactly _ -> pure 0
   -- Bound even where nothing came off, Effect.RemoveCounters' posture.
   Monad.forM_ mTally $ \tally -> State.modify' (Common.bindAmountSlot resolving source tally removed)
 

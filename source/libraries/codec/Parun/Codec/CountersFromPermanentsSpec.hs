@@ -58,4 +58,9 @@ spec s = Spec.describe s "Parun.Codec.CountersFromPermanents" $ do
       s
       (Either.isLeft (Codec.decode codec =<< Common.parse (Text.pack "{\"count\":{\"type\":\"Fixed\",\"value\":1},\"kind\":{\"type\":\"OfAnyKind\"},\"whichPermanent\":{\"type\":\"IsSource\"},\"spread\":\"FromAmongAtLeast\"}")))
       "expected a decode failure"
+  Spec.it s "rejects a ceiling" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode codec =<< Common.parse (Text.pack "{\"count\":{\"type\":\"Fixed\",\"value\":3},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Stun\"}},\"whichPermanent\":{\"type\":\"IsSource\"},\"spread\":\"FromAmongAtMost\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

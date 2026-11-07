@@ -2713,11 +2713,16 @@ unflattenMixed flat = Map.fromListWith Map.union [(candidate, Map.singleton kind
 -- The division of a mixed removal the rules leave no choice in, where there is
 -- one: every counter offered where they number exactly `owed`, or `owed` of the
 -- one kind on the one permanent offered (under a spread FromOne, the one
--- permanent alone). Parun.Engine.Replay's default answer is `fillMixedInOrder`.
+-- permanent alone); under a ceiling (FromAmongAtMost), nothing where nothing is
+-- offered or the ceiling is zero. Parun.Engine.Replay's default answer is
+-- `fillMixedInOrder`.
 onlyMixedDivision :: CounterSpread.CounterSpread -> Natural -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Maybe (Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural))
 onlyMixedDivision spread owed offered = case spread of
   CounterSpread.FromAmongAtLeast
     | sum flat == owed -> Just offered
+    | otherwise -> Nothing
+  CounterSpread.FromAmongAtMost
+    | owed == 0 || Map.null flat -> Just Map.empty
     | otherwise -> Nothing
   CounterSpread.FromAmong -> exact
   CounterSpread.FromOne -> exact
@@ -2729,7 +2734,8 @@ onlyMixedDivision spread owed offered = case spread of
       | otherwise = Nothing
 
 -- `fillInOrder` for a division by permanent and kind; under a spread FromOne,
--- off the first permanent offered alone.
+-- off the first permanent offered alone, and under a ceiling, nothing, the
+-- answer Prompt.ChooseCounterRemovalUpTo defaults to.
 fillMixedInOrder :: CounterSpread.CounterSpread -> Natural -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural)
 fillMixedInOrder spread owed offered = unflattenMixed (fillInOrder owed (flattenMixed from))
   where
@@ -2737,16 +2743,19 @@ fillMixedInOrder spread owed offered = unflattenMixed (fillInOrder owed (flatten
       CounterSpread.FromOne -> Map.take 1 offered
       CounterSpread.FromAmong -> offered
       CounterSpread.FromAmongAtLeast -> offered
+      CounterSpread.FromAmongAtMost -> Map.empty
 
 -- Is this division by permanent and kind one the offer allows? Every pair it
 -- names offered and carrying what it takes, the whole `owed` exactly (at least
--- `owed`, under FromAmongAtLeast), and under FromOne off a single permanent.
+-- `owed` under FromAmongAtLeast, at most under FromAmongAtMost), and under
+-- FromOne off a single permanent.
 dividesMixedRemoval :: CounterSpread.CounterSpread -> Natural -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Bool
 dividesMixedRemoval spread owed offered division =
   withinOffer (flattenMixed offered) flat && case spread of
     CounterSpread.FromOne -> sum flat == owed && Set.size (Set.map fst (Map.keysSet flat)) <= 1
     CounterSpread.FromAmong -> sum flat == owed
     CounterSpread.FromAmongAtLeast -> sum flat >= owed
+    CounterSpread.FromAmongAtMost -> sum flat <= owed
   where
     flat = flattenMixed division
 
@@ -4222,6 +4231,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
     CounterSpread.FromOne -> not (null (counterRemovalCandidates slots pid oid n which criterion gs))
     CounterSpread.FromAmong -> sum (spreadRemovalCandidates slots pid oid which criterion gs) >= n
     CounterSpread.FromAmongAtLeast -> sum (spreadRemovalCandidates slots pid oid which criterion gs) >= n
+    -- Refused by Parun.Codec.CountersFromPermanents: no cost removes up to a
+    -- count.
+    CounterSpread.FromAmongAtMost -> False
   -- CR 701.63a puts the counters on "that permanent", and Yisan, the Wanderer
   -- Bard on itself, so what can make this unpayable is the permanent no longer
   -- being there, or CR 118.3 with CR 101.2: an effect saying counters of that
@@ -7145,6 +7157,7 @@ payPayable perform paidFor slots pid oid component = case component of
               CounterSpread.FromOne -> Map.filter (\kinds -> sum kinds >= n) (mixedRemovalCandidates slots pid oid which criterion gs)
               CounterSpread.FromAmong -> mixedRemovalCandidates slots pid oid which criterion gs
               CounterSpread.FromAmongAtLeast -> mixedRemovalCandidates slots pid oid which criterion gs
+              CounterSpread.FromAmongAtMost -> mixedRemovalCandidates slots pid oid which criterion gs
         division <- case onlyMixedDivision spread n offered of
           Just only -> pure only
           Nothing -> Game.choose (Prompt.ChooseMixedCounterRemoval decider pid oid spread n offered)
@@ -7195,6 +7208,9 @@ payPayable perform paidFor slots pid oid component = case component of
             if dividesRemovalAtLeast n offered division
               then removeDivision division
               else pure Payment.Unpaid
+          -- Refused by Parun.Codec.CountersFromPermanents, as canPayComponent
+          -- refuses it.
+          CounterSpread.FromAmongAtMost -> pure Payment.Unpaid
   -- CR 122.6's placement, through the Event.putCounters funnel -- the same call
   -- AddLoyaltyToThis above makes, and for its reason. CR 118.12's endure, paid
   -- as the spell or ability RESOLVES, is a cost all the same; see

@@ -312,6 +312,7 @@ offerOf gs prompt = case prompt of
     CounterSpread.FromOne -> amounts prompt (Just source) [("fromOne", R.Boolean True)] (Just n, Just n) carried
     CounterSpread.FromAmong -> amounts prompt (Just source) [] (Just n, Just n) carried
     CounterSpread.FromAmongAtLeast -> amounts prompt (Just source) [] (Just n, Nothing) carried
+    CounterSpread.FromAmongAtMost -> amounts prompt (Just source) [] (Nothing, Just n) carried
   -- CR 122.5: the object the counters move off and onto, and each kind's tally,
   -- at least one in all where the card says one or more.
   Prompt.ChooseMovedCounters _ _ off onto kinds -> amounts prompt Nothing [("off", object off), ("onto", object onto)] (Nothing, Nothing) kinds
