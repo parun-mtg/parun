@@ -44,9 +44,10 @@ import qualified Parun.Types.Terminal as Terminal
 -- | The generator over the client's monad.
 type Play m = State.StateT SplitMix.SplitMix (Client.Client m)
 
--- | A person at the terminal, reading cards' printed text from the card data.
-human :: (Monad m) => Terminal.Terminal m -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
-human terminal lookUp = Protocol.over (Trans.lift . Client.respond terminal lookUp) Chance.chance
+-- | A person at the terminal, reading cards' printed text from the card data
+-- and told why the reference `registry` refuses a name (judgingNames).
+human :: (Monad m) => Registry.Registry m -> Terminal.Terminal m -> (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
+human registry terminal lookUp = Protocol.over (judgingNames registry) (Trans.lift . Client.respond terminal lookUp) Chance.chance
 
 -- | The random bot, answering each prompt from its seat's view of the game
 -- (Driver.seated) and naming a card from the reference's names
@@ -60,8 +61,8 @@ bot registry = Answerer.MkAnswerer $ \asked -> do
 
 -- | A program speaking the protocol: each request line out, its reply line
 -- back, Nothing at the end of input.
-wired :: (Monad m) => (Text.Text -> m (Maybe Text.Text)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
-wired exchange = Protocol.over (\line -> Trans.lift (Client.lift2 (exchange line) >>= maybe (Client.stop (Text.pack "end of input")) pure)) Chance.chance
+wired :: (Monad m) => Registry.Registry m -> (Text.Text -> m (Maybe Text.Text)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
+wired registry exchange = Protocol.over (judgingNames registry) (\line -> Trans.lift (Client.lift2 (exchange line) >>= maybe (Client.stop (Text.pack "end of input")) pure)) Chance.chance
 
 -- | A plain two-player game over the card reference `registry`
 -- ('consulting'), from setup to its result; the head of the matchup plays
@@ -79,9 +80,10 @@ run registry observers seats finish hotseat generator orders matchup =
 
 -- | Each seat, then chance, over the card reference `registry`: a name a seat
 -- chooses is asked again until CR 201.4 allows it
--- (Interpreter.policingCardNames), and CR 108.1's questions about the
--- reference are answered from it (Interpreter.lookingUpCards). ClientSpec's
--- Null Chamber case is the proof.
+-- (Interpreter.policingCardNames; human and wired seats are told why,
+-- judgingNames), and CR 108.1's questions about the reference are answered
+-- from it (Interpreter.lookingUpCards). ClientSpec's Null Chamber case is the
+-- proof.
 consulting :: (Monad m) => Registry.Registry m -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
 consulting registry seats =
   Driver.bySeat
@@ -91,6 +93,20 @@ consulting registry seats =
 -- | A seat whose card names CR 201.4 refuses are asked again.
 policed :: (Monad m) => Registry.Registry m -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m) -> Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)
 policed registry (Answerer.MkAnswerer seat) = Answerer.MkAnswerer (Interpreter.policingCardNames (reference registry) halted seat)
+
+-- | A chosen name the reference `registry` refuses, with why: CR 201.4's
+-- name of no card, or CR 201.4a's card without the characteristics asked for.
+-- Every other answer stands. ClientSpec's Null Chamber refusal is the proof.
+judgingNames :: (Monad m) => Registry.Registry m -> Asked.Asked GameState.GameState r -> r -> Play m (Either Text.Text r)
+judgingNames registry asked answer = case Asked.prompt asked of
+  Prompt.ChooseCardName _ chooser _ restriction _ -> do
+    found <- Interpreter.fetched halted (Interpreter.chosenFace (reference registry) answer)
+    pure $ case found of
+      Nothing -> Left (CardName.unwrap answer <> Text.pack " is not the name of a card")
+      Just _
+        | Interpreter.admitsName (Asked.game asked) chooser restriction found -> Right answer
+        | otherwise -> Left (CardName.unwrap answer <> Text.pack " is not a card name this choice allows")
+  _ -> pure (Right answer)
 
 -- | The registry, its lookups made from inside a game.
 reference :: (Monad m) => Registry.Registry m -> Registry.Registry (Play m)

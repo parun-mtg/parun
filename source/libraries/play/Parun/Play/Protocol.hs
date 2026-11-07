@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- | The line protocol: each prompt a seat answers goes out as one JSON line
 -- (a 'Request.Request') and its answer comes back as one, read through
@@ -95,16 +96,19 @@ import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Text.Read as Read
 
 -- | Answers each prompt a seat answers over the line `send` carries, asking
--- again with the problem until the reply reads and is on offer; every other
--- prompt goes to `fallback`.
-over :: (Monad m) => (Text.Text -> m Text.Text) -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> Answerer.Answerer (Asked.Asked GameState.GameState) m
-over send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked of
+-- again with the problem until the reply reads, is on offer and `judge` lets
+-- it stand; every other prompt goes to `fallback`. `judge` is what the host
+-- refuses that the engine cannot, with why (Parun.Play.Game.judgingNames).
+over :: (Monad m) => (forall r. Asked.Asked GameState.GameState r -> r -> m (Either Text.Text r)) -> (Text.Text -> m Text.Text) -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> Answerer.Answerer (Asked.Asked GameState.GameState) m
+over judge send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked of
   Nothing -> Answerer.unwrap fallback asked
   Just request ->
     let go pending = do
           line <- send (render pending)
-          either (\problem -> go pending {Request.problem = Just problem}) pure $
-            Common.parse line >>= Codec.Reply.fromValue >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
+          judged <-
+            either (pure . Left) (judge asked) $
+              Common.parse line >>= Codec.Reply.fromValue >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
+          either (\problem -> go pending {Request.problem = Just problem}) pure judged
         named = maybe (const (Text.pack "a creature")) Render.named (Request.view request)
      in go request
 

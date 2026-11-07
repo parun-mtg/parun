@@ -53,7 +53,7 @@ spec s registry = Spec.describe s "Record" $ do
 
   Spec.it s "a game cut short replays to where it stopped" $ do
     matchup <- BotSpec.bears s registry
-    let seats = Map.fromList [(S.alice, Game.human (lifted (ClientSpec.screen 40 ClientSpec.plays)) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
+    let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (lifted (ClientSpec.screen 40 ClientSpec.plays)) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
         (outcome, (timeline, cut)) = watched 1 seats Map.empty matchup
     replayed <- Scenario.run registry (saved matchup timeline)
     Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "end of input"))

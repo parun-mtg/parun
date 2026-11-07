@@ -249,7 +249,7 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "a hidden card reaches no line sent to the other seat" $ do
     gs <- started s registry
-    let logged = State.execState (Driver.drive [observer] (Protocol.over (exchanging client) chance) 10000 (pure . (>= 5) . GameState.turnNumber) gs) []
+    let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging client) chance) 10000 (pure . (>= 5) . GameState.turnNumber) gs) []
         sent = linesWithState logged
         to pid = [(at, line) | (at, line) <- sent, fmap (Question.seat . Request.question) (requestOf line) == Just pid]
         leaks (at, line) =
@@ -265,7 +265,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertBool s (Maybe.isNothing (Protocol.questionOf S.threePlayerGame (Prompt.RollDie 6))) "die"
   Spec.it s "a reply that cannot be read is asked again with the problem" $ do
     gs <- started s registry
-    let garbled = State.execState (Driver.drive [observer] (Protocol.over (exchanging once) chance) 10000 (pure . (>= 3) . GameState.turnNumber) gs) []
+    let garbled = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging once) chance) 10000 (pure . (>= 3) . GameState.turnNumber) gs) []
         problems = fmap (fmap Request.problem . requestOf . snd) (linesWithState garbled)
     case problems of
       first : second : _ -> do
@@ -275,7 +275,7 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "an answer naming what the prompt does not offer is asked again" $ do
     gs <- started s registry
-    let strayed = State.execState (Driver.drive [observer] (Protocol.over (exchanging stray) chance) 10000 (pure . (>= 3) . GameState.turnNumber) gs) []
+    let strayed = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stray) chance) 10000 (pure . (>= 3) . GameState.turnNumber) gs) []
         discards = [Request.problem request | Just request <- fmap (requestOf . snd) (linesWithState strayed), Question.kind (Request.question request) == Text.pack "ChooseDiscard"]
     case discards of
       first : second : _ -> do
@@ -290,7 +290,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     let (_, g1) = S.addPermanent forest S.alice gs
         (_, g2) = S.addPermanent forest S.alice g1
         board = snd (S.addHandCard bears S.alice g2)
-        logged = State.execState (Driver.drive [observer] (Protocol.over (exchanging stopsOnce) chance) 10000 (pure . (>= 4) . GameState.turnNumber) board) []
+        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stopsOnce) chance) 10000 (pure . (>= 4) . GameState.turnNumber) board) []
         sent = fmap snd (linesWithState logged)
         afterStop = drop 1 (dropWhile (not . List.isInfixOf "\"kind\":\"ChooseManaSource\"") sent)
         undone = [PlayerView.undone view | Just request <- fmap requestOf afterStop, Question.seat (Request.question request) == S.alice, Question.kind (Request.question request) == Text.pack "ChooseAction", Just view <- [Request.view request]]
@@ -360,7 +360,7 @@ overTheLine replies gs game =
         [] -> error ("no reply left for " <> Text.unpack line)
       fallback :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State ([String], [R.Reply]))
       fallback = Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt)
-      (ran, (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over send fallback)) gs game) ([], replies)
+      (ran, (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over trusting send fallback)) gs game) ([], replies)
    in (ran, sent)
 
 -- The problem each line of this kind was sent with.
@@ -376,6 +376,10 @@ observer =
     { Observer.before = \asked -> State.modify' (<> [Left (Asked.game asked)]),
       Observer.after = \_ _ -> pure ()
     }
+
+-- No answer the host refuses: every one stands.
+trusting :: (Applicative m) => Asked.Asked GameState.GameState r -> r -> m (Either Text.Text r)
+trusting _ = pure . Right
 
 -- Sends a line to a client that answers from that line alone.
 exchanging :: (Text.Text -> State.State Log Text.Text) -> Text.Text -> State.State Log Text.Text
