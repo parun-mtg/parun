@@ -4,12 +4,14 @@
 -- generator, and a seat answered at random among what its prompts offer.
 module Parun.BotSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -62,6 +64,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.HybridPayment as HybridPayment
@@ -104,6 +107,7 @@ import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.WordFamily as WordFamily
@@ -431,6 +435,52 @@ spec s registry = Spec.describe s "Bot" $ do
 
   -- Each is a "may", an "up to one" or a "wish to", so declining is an
   -- answer beside every candidate.
+  -- CR 406.2 / 702.167a / 608.2d / 701.34a: exactly two of three, at least
+  -- two, or any number; proliferate over objects and players.
+  Spec.it s "chooses any group the count allows" $ do
+    let cards = fmap ObjectId.MkObjectId [8, 9, 10]
+        groups p = Set.fromList (fmap Set.fromList (filter (p . length) (List.subsequences cards)))
+        recipients = [Recipient.ToCreature (ObjectId.MkObjectId 8), Recipient.ToPlayer S.bob]
+        objects = take 2 cards
+    Spec.assertEqWith s "exiles" (drawn (Prompt.ChooseExilesFromGraveyard decider S.alice oid cards 2)) (groups (== 2))
+    Spec.assertEqWith s "materials" (drawn (Prompt.ChooseMaterials decider S.alice oid cards 2 False)) (groups (== 2))
+    Spec.assertEqWith s "one or more materials" (drawn (Prompt.ChooseMaterials decider S.alice oid cards 2 True)) (groups (>= 2))
+    Spec.assertEqWith s "loop members" (drawn (Prompt.ChooseLoopMembers decider S.alice oid recipients)) (Set.fromList (fmap Set.fromList (List.subsequences recipients)))
+    Spec.assertEqWith s "proliferates" (drawn (Prompt.ChooseProliferate decider S.alice objects [S.alice, S.bob])) (Set.fromList [(Set.fromList os, Set.fromList ps) | os <- List.subsequences objects, ps <- List.subsequences [S.alice, S.bob]])
+
+  -- CR 701.56a: each of two objects left alone, given a counter or losing one;
+  -- CR 400.11c: one or two cards from two offers, either named twice.
+  Spec.it s "time travels any way and brings in any cards from outside" $ do
+    let one = ObjectId.MkObjectId 8
+        two = ObjectId.MkObjectId 9
+        ways = [Nothing, Just TimeTravelChoice.Add, Just TimeTravelChoice.Remove]
+        outside = OutsideCard.InPool (PrintingId.MkPrintingId 7) NonEmpty.:| [OutsideCard.InPool (PrintingId.MkPrintingId 8)]
+        offers = NonEmpty.toList outside
+    Spec.assertEqWith s "time travels" (drawn (Prompt.ChooseTimeTravel decider S.alice oid [one, two])) (Set.fromList [Map.fromList (Maybe.catMaybes [fmap ((,) one) a, fmap ((,) two) b]) | a <- ways, b <- ways])
+    Spec.assertEqWith s "outside" (drawn (Prompt.ChooseFromOutsideTheGame decider S.alice outside 1 2)) (Set.fromList (fmap pure offers <> [[a, b] | a <- offers, b <- offers]))
+
+  -- CR 700.3: Fact or Fiction's either pile; Camouflage's three creatures in
+  -- two piles, either possibly empty (CR 700.3d).
+  Spec.it s "takes any pile and divides into piles every way" $ do
+    let first = Set.fromList (fmap ObjectId.MkObjectId [8, 9])
+        second = Set.singleton (ObjectId.MkObjectId 10)
+        creatures = fmap ObjectId.MkObjectId [8, 9, 10]
+        divided = [[Set.fromList [c | (c, at) <- zip creatures ats, at == pile] | pile <- [0, 1 :: Int]] | ats <- Monad.replicateM 3 [0, 1]]
+    Spec.assertEqWith s "piles" (drawn (Prompt.ChoosePile decider S.alice oid (first NonEmpty.:| [second]) Seq.empty)) (Set.fromList [first, second])
+    Spec.assertEqWith s "divisions" (drawn (Prompt.DividePiles decider S.alice creatures 2)) (Set.fromList divided)
+
+  -- CR 404.3: three cards in any order; CR 702.47a/b: any of two splice
+  -- offers in any order; Reverse the Sands' any permutation of any group.
+  Spec.it s "arranges, splices and redistributes in any order" $ do
+    let cards = fmap ObjectId.MkObjectId [8, 9, 10]
+        one = ObjectId.MkObjectId 8
+        two = ObjectId.MkObjectId 9
+        free = Cost.MkCost {Cost.mana = Nothing, Cost.components = []}
+        swaps = [Map.empty, Map.singleton S.alice S.alice, Map.singleton S.bob S.bob, Map.fromList [(S.alice, S.alice), (S.bob, S.bob)], Map.fromList [(S.alice, S.bob), (S.bob, S.alice)]]
+    Spec.assertEqWith s "arrivals" (drawn (Prompt.ArrangeGraveyardArrivals decider S.alice cards)) (Set.fromList (fmap GraveyardArrangement.InOrder (List.permutations [0, 1, 2])))
+    Spec.assertEqWith s "splices" (drawn (Prompt.ChooseSplice decider S.alice oid [(one, free), (two, free)])) (Set.fromList [[], [one], [two], [one, two], [two, one]])
+    Spec.assertEqWith s "redistributions" (drawn (Prompt.ChooseRedistribution decider S.alice [(S.alice, 20), (S.bob, 10)])) (Set.fromList swaps)
+
   Spec.it s "picks any one of the offer or none" $ do
     let objects = ObjectId.MkObjectId 8 NonEmpty.:| [ObjectId.MkObjectId 9]
         orNone :: (Foldable t, Ord a) => t a -> Set.Set (Maybe a)
