@@ -54,6 +54,7 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
+import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
@@ -85,6 +86,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectId as ObjectId
@@ -114,6 +116,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
+import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
@@ -264,6 +267,58 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "among" (drawn (Prompt.ChooseCounterRemovalAmong decider S.alice oid 2 bearers)) (totalling (== 2))
     Spec.assertEqWith s "at least" (drawn (Prompt.ChooseCounterRemovalAtLeast decider S.alice oid 1 bearers)) (totalling (>= 1))
     Spec.assertEqWith s "up to" (drawn (Prompt.ChooseCounterRemovalUpTo decider S.alice oid 2 bearers)) (totalling (<= 2))
+
+  -- CR 122.1 / 601.2h: two counters off creatures carrying a +1/+1 and a
+  -- shield counter and a +1/+1 counter is three ways, at least two four, and
+  -- two off one creature one.
+  Spec.it s "removes counters by permanent and kind any way the spread allows" $ do
+    let one = ObjectId.MkObjectId 8
+        two = ObjectId.MkObjectId 9
+        bearers :: Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural)
+        bearers = Map.fromList [(one, Map.fromList [(CounterKind.PlusOnePlusOne, 1), (CounterKind.Shield, 1)]), (two, Map.singleton CounterKind.PlusOnePlusOne 1)]
+        every :: [(Natural, Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural))]
+        every = [(a + b + c, Map.filter (not . Map.null) (Map.fromList [(one, Map.filter (> 0) (Map.fromList [(CounterKind.PlusOnePlusOne, a), (CounterKind.Shield, b)])), (two, Map.filter (> 0) (Map.singleton CounterKind.PlusOnePlusOne c))])) | a <- [0, 1], b <- [0, 1], c <- [0, 1 :: Natural]]
+        totalling p = Set.fromList [division | (total, division) <- every, p total]
+    Spec.assertEqWith s "among" (drawn (Prompt.ChooseMixedCounterRemoval decider S.alice oid CounterSpread.FromAmong 2 bearers)) (totalling (== 2))
+    Spec.assertEqWith s "at least" (drawn (Prompt.ChooseMixedCounterRemoval decider S.alice oid CounterSpread.FromAmongAtLeast 2 bearers)) (totalling (>= 2))
+    Spec.assertEqWith s "from one" (drawn (Prompt.ChooseMixedCounterRemoval decider S.alice oid CounterSpread.FromOne 2 bearers)) (Set.singleton (Map.singleton one (Map.fromList [(CounterKind.PlusOnePlusOne, 1), (CounterKind.Shield, 1)])))
+
+  -- CR 608.2d: three among two candidates, each named at least one.
+  Spec.it s "distributes an amount every way that names each candidate at least once" $ do
+    let one = ObjectId.MkObjectId 8
+        two = ObjectId.MkObjectId 9
+    Spec.assertEqWith s "distributions" (drawn (Prompt.ChooseDistribution decider S.alice oid 3 (one NonEmpty.:| [two]))) (Set.fromList [Map.singleton one 3, Map.singleton two 3, Map.fromList [(one, 1), (two, 2)], Map.fromList [(one, 2), (two, 1)]])
+
+  -- CR 122.5 / 706.8b: two +1/+1 counters and a shield counter, moved any
+  -- number or one or more; two stored results, rerolled any number.
+  Spec.it s "moves or rerolls any number up to each tally" $ do
+    let to = ObjectId.MkObjectId 9
+        offered :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
+        offered = Map.fromList [(CounterKind.PlusOnePlusOne, 2), (CounterKind.Shield, 1)]
+        every :: [Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural]
+        every = [Map.filter (> 0) (Map.fromList [(CounterKind.PlusOnePlusOne, a), (CounterKind.Shield, b)]) | a <- [0 .. 2], b <- [0, 1 :: Natural]]
+        result = StoredResult.MkStoredResult {StoredResult.sides = 6, StoredResult.value = 5}
+    Spec.assertEqWith s "any number" (drawn (Prompt.ChooseMovedCounters decider S.alice oid to offered)) (Set.fromList every)
+    Spec.assertEqWith s "one or more" (drawn (Prompt.ChooseMovedCountersAtLeastOne decider S.alice oid to offered)) (Set.fromList (filter (not . Map.null) every))
+    Spec.assertEqWith s "rerolls" (drawn (Prompt.ChooseStoredRerolls decider S.alice oid (Map.singleton result 2))) (Set.fromList [Map.empty, Map.singleton result 1, Map.singleton result 2])
+
+  -- CR 122.5: two +1/+1 counters and a shield counter onto two recipients,
+  -- eighteen ways in all, every one each spread allows.
+  Spec.it s "moves counters onto several recipients any way the spread allows" $ do
+    let one = ObjectId.MkObjectId 8
+        two = ObjectId.MkObjectId 9
+        offered :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
+        offered = Map.fromList [(CounterKind.PlusOnePlusOne, 2), (CounterKind.Shield, 1)]
+        onto at plus shield = (at, Map.filter (> 0) (Map.fromList [(CounterKind.PlusOnePlusOne, plus), (CounterKind.Shield, shield)]))
+        every :: [((Natural, Natural), Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural))]
+        every = [((pa + pb, sa + sb), Map.filter (not . Map.null) (Map.fromList [onto one pa sa, onto two pb sb])) | pa <- [0 .. 2], pb <- [0 .. 2 - pa], sa <- [0, 1], sb <- [0 .. 1 - sa :: Natural]]
+        moving p = Set.fromList [answer | (totals, answer) <- every, p totals]
+        spread kind = drawn (Prompt.ChooseDistributedMovedCounters decider S.alice oid kind offered (one NonEmpty.:| [two]))
+    Spec.assertEqWith s "any number" (spread MoveSpread.AnyNumber) (moving (const True))
+    Spec.assertEqWith s "one or more" (spread MoveSpread.AtLeastOne) (moving (/= (0, 0)))
+    Spec.assertEqWith s "exactly" (spread MoveSpread.Exactly) (moving (== (2, 1)))
+    Spec.assertEqWith s "one kind" (spread (MoveSpread.OneKind 2)) (moving (`elem` [(2, 0), (0, 1)]))
+    Spec.assertEqWith s "up to one" (spread MoveSpread.UpToOne) (moving (\(plus, shield) -> plus + shield <= 1))
 
   Spec.it s "guesses either way" $ do
     Spec.assertEqWith s "guesses" (drawn (Prompt.ChooseGuess decider S.alice oid (Filter.And []))) (Set.fromList [GuessAnswer.Holds, GuessAnswer.DoesNotHold])
