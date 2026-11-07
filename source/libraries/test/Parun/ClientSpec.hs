@@ -1122,7 +1122,8 @@ spec s registry = Spec.describe s "Client" $ do
         mode = ModeIndex.MkModeIndex
         free = Cost.MkCost Nothing []
         pool = OutsideCard.InPool printing
-        refused typed prompt = fst (asking facing [typed] gs prompt) == Left (Text.pack "end of input")
+        refused :: String -> Prompt.Prompt r -> Bool
+        refused line prompt = either (== Text.pack "end of input") (const False) (fst (asking facing [line] gs prompt))
         (twice, modes) = asking facing ["2 2"] gs (Prompt.ChooseModes alice S.alice f (Set.fromList [mode 0, mode 1]) (ModeSelection.ChooseExactlyWithRepeats 2))
         (proliferated, proliferate) = asking facing ["1 2"] gs (Prompt.ChooseProliferate alice S.alice [b] [S.bob])
         (copies, outside) = asking facing ["1-2"] gs (Prompt.ChooseFromOutsideTheGame alice S.alice ((pool, 2) NonEmpty.:| []) 1 2)
@@ -1157,7 +1158,9 @@ spec s registry = Spec.describe s "Client" $ do
     island <- S.printingOf s registry "Island"
     opt <- S.printingOf s registry "Opt"
     giant <- S.printingOf s registry "Hill Giant"
-    let (scried, g1) = S.addLibraryCard giant S.alice (snd (S.addPermanent island S.alice gs))
+    let g1 = snd (S.addLibraryCard giant S.alice (snd (S.addPermanent island S.alice gs)))
+        giantName = CardName.MkCardName (Text.pack "Hill Giant")
+        named g oid = fmap S.nameOf (Game.Engine.cardOf oid g)
         board = snd (S.addHandCard opt S.alice g1)
         heading = Text.pack "Scry: "
         bottoming at
@@ -1169,7 +1172,8 @@ spec s registry = Spec.describe s "Client" $ do
         (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (SplitMix.MkSplitMix 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
         shown = reverse (written sc)
     Spec.assertEqWith s "the top card listed by name" (take 1 (drop 1 (dropWhile (not . Text.isPrefixOf heading) shown))) [Text.pack "  1. Hill Giant"]
-    Spec.assertEqWith s "it is now the bottom card, and not the one drawn" (fmap (\after -> (Map.lookup S.alice (GameState.library after) >>= \library -> Seq.lookup (Seq.length library - 1) library, scried `elem` Game.Engine.zoneMembers Zone.Hand S.alice after)) outcome) (Right (Just scried, False))
+    -- CR 400.7: the card moved is a new object, so it is read by its name.
+    Spec.assertEqWith s "it is now the bottom card, and the card below it was drawn" (fmap (\after -> (fmap (named after) (Maybe.listToMaybe (reverse (Game.Engine.zoneMembers Zone.Library S.alice after))), fmap (named after) (filter (`notElem` Game.Engine.zoneMembers Zone.Hand S.alice board) (Game.Engine.zoneMembers Zone.Hand S.alice after)))) outcome) (Right (Just (Just giantName), fmap (named board) (take 1 (drop 1 (Game.Engine.zoneMembers Zone.Library S.alice board)))))
 
 -- The seat across the table.
 otherSeat :: Natural -> Natural
