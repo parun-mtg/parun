@@ -2,6 +2,8 @@ module Parun.Codec.DurationEvent where
 
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Types.DurationEvent as DurationEvent
@@ -14,7 +16,9 @@ codec =
       Arm.payload "SpellCast" (Filter.codec Keyword.codec) DurationEvent.SpellCast (\x -> case x of DurationEvent.SpellCast y -> Just y; _ -> Nothing),
       Arm.nullary "Planeswalked" DurationEvent.Planeswalked,
       Arm.nullary "SourceExiledCard" DurationEvent.SourceExiledCard,
-      Arm.nullary "SourceLeftBattlefield" DurationEvent.SourceLeftBattlefield
+      Arm.nullary "SourceLeftBattlefield" DurationEvent.SourceLeftBattlefield,
+      Arm.payload "BoundCardCast" SlotName.codec DurationEvent.BoundCardCast (\x -> case x of DurationEvent.BoundCardCast y -> Just y; _ -> Nothing),
+      Arm.payload "CardCast" ObjectId.codec DurationEvent.CardCast (\x -> case x of DurationEvent.CardCast y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: DurationEvent.DurationEvent -> String
@@ -24,3 +28,5 @@ tagOf x = case x of
   DurationEvent.Planeswalked {} -> "Planeswalked"
   DurationEvent.SourceExiledCard {} -> "SourceExiledCard"
   DurationEvent.SourceLeftBattlefield {} -> "SourceLeftBattlefield"
+  DurationEvent.BoundCardCast {} -> "BoundCardCast"
+  DurationEvent.CardCast {} -> "CardCast"

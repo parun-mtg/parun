@@ -1190,7 +1190,7 @@ costComponentNames asking onKeyword x = case x of
   CostComponent.Blight amount -> costAmountNames asking amount
   CostComponent.Forage -> mempty
   CostComponent.FlipCoin -> mempty
-  CostComponent.ExileThisFromGraveyard -> mempty
+  CostComponent.ExileThisFrom _ -> mempty
   CostComponent.ExileThis -> mempty
   CostComponent.ExileCardsFromGraveyard exileCardsFromGraveyard -> exileCardsFromGraveyardNames asking exileCardsFromGraveyard
   CostComponent.ExileMaterials exileMaterials -> exileMaterialsNames asking exileMaterials
@@ -1482,6 +1482,8 @@ durationEventNames asking x = case x of
   DurationEvent.Planeswalked -> mempty
   DurationEvent.SourceExiledCard -> mempty
   DurationEvent.SourceLeftBattlefield -> mempty
+  DurationEvent.BoundCardCast slot -> slotNames asking slot
+  DurationEvent.CardCast objectId -> names asking (== objectId)
 
 eachCardFromAmongNames :: (Monoid r) => Asking r -> EachCardFromAmong.EachCardFromAmong -> r
 eachCardFromAmongNames asking x = case x of

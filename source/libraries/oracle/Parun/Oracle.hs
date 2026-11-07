@@ -50,6 +50,7 @@ import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TypeLine as TypeLine
+import qualified Parun.Types.Zone as Zone
 
 -- | The card's rules text in its current Oracle wording, or 'Nothing' for a
 -- card some part of which is not rendered yet: each face's ('renderFace'),
@@ -220,7 +221,7 @@ activated context a
       word <-
         Text.empty
           : [ Text.pack "Renew \8212 "
-            | elem CostComponent.ExileThisFromGraveyard components,
+            | elem (CostComponent.ExileThisFrom Zone.Graveyard) components,
               elem ActivationRestriction.SorcerySpeed (ActivatedAbility.restrictions a)
             ]
       [word <> cost <> Text.pack ": " <> effect <> rider]

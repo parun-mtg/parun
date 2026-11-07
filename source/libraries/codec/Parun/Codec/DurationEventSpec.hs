@@ -1,11 +1,14 @@
 module Parun.Codec.DurationEventSpec where
 
+import qualified Data.Text as Text
 import qualified Parun.Codec.DurationEvent as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.DurationEvent" $ do
@@ -44,4 +47,19 @@ spec s = Spec.describe s "Parun.Codec.DurationEvent" $ do
       Codec.codec
       DurationEvent.SourceLeftBattlefield
       " {\"type\":\"SourceLeftBattlefield\"} "
+  -- CR 601.2i / 400.7 (Emrakul, the Exigent Doom's "until this card is cast
+  -- from exile").
+  Spec.it s "BoundCardCast carries its slot" $
+    Common.assertCodec
+      s
+      Codec.codec
+      (DurationEvent.BoundCardCast (SlotName.MkSlotName (Text.pack "thatExiledCard")))
+      " {\"type\":\"BoundCardCast\",\"value\":\"thatExiledCard\"} "
+  -- The same, baked: runtime-only, stored in a GameState.
+  Spec.it s "CardCast carries its object" $
+    Common.assertCodec
+      s
+      Codec.codec
+      (DurationEvent.CardCast (ObjectId.MkObjectId 7))
+      " {\"type\":\"CardCast\",\"value\":7} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Codec.codec

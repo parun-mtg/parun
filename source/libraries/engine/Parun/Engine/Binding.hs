@@ -522,7 +522,7 @@ exiledPermanent = SlotName.MkSlotName (Text.pack "thatExiledPermanent")
 -- so every read is CURRENT information (CR 608.2h's first clause) and
 -- Parun.Engine.Resolve.Slots.effectViewOf needs no arm.
 --
--- Bound by Parun.Engine.Cost.payComponent's ExileThis and ExileThisFromGraveyard
+-- Bound by Parun.Engine.Cost.payComponent's ExileThis and ExileThisFrom
 -- arms alike, the two components that exile the object the cost is on, and left
 -- UNBOUND where nothing arrived in exile -- a replacement effect may have sent
 -- the object elsewhere, and a slot naming the object that did not arrive would

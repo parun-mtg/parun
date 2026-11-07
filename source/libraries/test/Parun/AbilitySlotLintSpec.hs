@@ -436,7 +436,7 @@ tapsForTotalPowerAsCost =
 
 -- Does this cost EXILE the object it is on? sacrificesAsCost's shape, and the
 -- same reason: CR 601.2h's payment binds Binding.exiledCard (Cost.payComponent's
--- ExileThis and ExileThisFromGraveyard arms, folded on by Activate), so CR
+-- ExileThis and ExileThisFrom arms, folded on by Activate), so CR
 -- 702.167a's "Return this card to the battlefield" is an ordinary slot read.
 --
 -- Both components, one question: they differ in the zone the object leaves (CR
@@ -450,7 +450,7 @@ exilesSelfAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 exilesSelfAsCost =
   let isExile component = case component of
         CostComponent.ExileThis -> True
-        CostComponent.ExileThisFromGraveyard -> True
+        CostComponent.ExileThisFrom _ -> True
         _ -> False
    in any isExile . Cost.Type.components
 

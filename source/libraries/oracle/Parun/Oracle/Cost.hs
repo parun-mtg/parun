@@ -31,6 +31,7 @@ import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.WhichCounters as WhichCounters
+import qualified Parun.Types.Zone as Zone
 
 -- | A mana symbol in braces (CR 107.4).
 symbol :: ManaSymbol.ManaSymbol -> Text.Text
@@ -98,7 +99,7 @@ namesSelf c = case c of
   CostComponent.SacrificeThis -> True
   CostComponent.ReturnThis -> True
   CostComponent.ExileThis -> True
-  CostComponent.ExileThisFromGraveyard -> True
+  CostComponent.ExileThisFrom _ -> True
   CostComponent.RemoveCountersFromThis _ -> True
   CostComponent.RemoveCounters r -> case CountersFromPermanents.whichPermanent r of
     Filter.Type.IsSource -> True
@@ -141,7 +142,10 @@ component self named c = case c of
   CostComponent.ReturnThis -> [Text.pack "Return " <> self <> Text.pack " to its owner's hand"]
   CostComponent.ExileThis -> [Text.pack "Exile " <> self]
   CostComponent.FlipCoin -> [Text.pack "Flip a coin"]
-  CostComponent.ExileThisFromGraveyard -> [Text.pack "Exile " <> self <> Text.pack " from your graveyard"]
+  CostComponent.ExileThisFrom zone -> case zone of
+    Zone.Graveyard -> [Text.pack "Exile " <> self <> Text.pack " from your graveyard"]
+    Zone.Hand -> [Text.pack "Exile " <> self <> Text.pack " from your hand"]
+    _ -> []
   CostComponent.PayEnergy (CostAmount.Fixed n) | n > 0 -> [Text.pack "Pay " <> foldMap (const energy) [1 .. n]]
   CostComponent.PayEnergy (CostAmount.Announced _) -> [Text.pack "Pay X " <> energy]
   CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) f sharing) | not sharing || n > 1 -> do

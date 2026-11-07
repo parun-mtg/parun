@@ -1677,7 +1677,7 @@ graveyardTokenCopy exceptions cost =
               CreateCopy.linked = False
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFromGraveyard]},
+        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton copied),
           ActivatedAbility.maximumX = [],
@@ -1721,7 +1721,7 @@ scavenge cost =
               Nothing
           )
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFromGraveyard]},
+        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton scavengeTarget slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -1827,7 +1827,7 @@ encore cost =
               ArmDelayedTrigger.ability = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFromGraveyard]},
+        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [loop, hasted, armed]),
           ActivatedAbility.maximumX = [],

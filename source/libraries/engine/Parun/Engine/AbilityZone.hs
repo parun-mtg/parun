@@ -120,7 +120,7 @@ zoneOfComponent component = case component of
   -- reinforce abilities into the projection for every zone -- this is what keeps
   -- a Rustic Clachan on the battlefield from offering its reinforce ability.
   CostComponent.DiscardThis _ -> Just Zone.Hand
-  CostComponent.ExileThisFromGraveyard -> Just Zone.Graveyard
+  CostComponent.ExileThisFrom zone -> Just zone
   CostComponent.TapThis -> Nothing
   CostComponent.UntapThis -> Nothing
   -- CR 113.6m again, and Nothing for SacrificeThis' reason above: it moves the

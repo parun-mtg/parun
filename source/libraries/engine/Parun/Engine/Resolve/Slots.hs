@@ -1728,6 +1728,9 @@ durationSlots duration = case duration of
   Duration.UntilEvent DurationEvent.SourceExiledCard -> Map.empty
   Duration.UntilEvent DurationEvent.SourceLeftBattlefield -> Map.empty
   Duration.UntilEvent (DurationEvent.SpellCast criterion) -> filterSlotsOf criterion
+  -- CR 601.2i / 400.7: the card the slot bound, baked the same way.
+  Duration.UntilEvent (DurationEvent.BoundCardCast slot) -> oneSlot slot
+  Duration.UntilEvent (DurationEvent.CardCast _) -> Map.empty
 
 -- Both sides of a comparison are a Quantity, and either may read a slot.
 conditionSlots :: Condition.Type.Condition -> Map.Map SlotName SlotArity

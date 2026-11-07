@@ -869,6 +869,7 @@ emergent-growth
 emperor-crocodile
 emporium-thopterist
 empty-city-ruse
+emrakul-the-exigent-doom
 enchantment-alteration
 encouraging-aviator-jump
 encrust

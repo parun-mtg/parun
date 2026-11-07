@@ -17,6 +17,7 @@ import qualified Parun.Codec.Rounding as Rounding
 import qualified Parun.Codec.Sacrifice as Sacrifice
 import qualified Parun.Codec.TapForTotalPower as TapForTotalPower
 import qualified Parun.Codec.TapPermanents as TapPermanents
+import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -68,7 +69,7 @@ codec keywordCodec =
       Arm.payload "Blight" CostAmount.codec CostComponent.Blight (\x -> case x of CostComponent.Blight y -> Just y; _ -> Nothing),
       Arm.nullary "Forage" CostComponent.Forage,
       Arm.nullary "FlipCoin" CostComponent.FlipCoin,
-      Arm.nullary "ExileThisFromGraveyard" CostComponent.ExileThisFromGraveyard,
+      Arm.payload "ExileThisFrom" Zone.codec CostComponent.ExileThisFrom (\x -> case x of CostComponent.ExileThisFrom y -> Just y; _ -> Nothing),
       Arm.nullary "ExileThis" CostComponent.ExileThis,
       Arm.payload "ExileCardsFromGraveyard" (ExileCardsFromGraveyard.codec keywordCodec) CostComponent.ExileCardsFromGraveyard (\x -> case x of CostComponent.ExileCardsFromGraveyard y -> Just y; _ -> Nothing),
       Arm.payload "ExileMaterials" (ExileMaterials.codec keywordCodec) CostComponent.ExileMaterials (\x -> case x of CostComponent.ExileMaterials y -> Just y; _ -> Nothing),
@@ -111,7 +112,7 @@ tagOf x = case x of
   CostComponent.Blight {} -> "Blight"
   CostComponent.Forage {} -> "Forage"
   CostComponent.FlipCoin {} -> "FlipCoin"
-  CostComponent.ExileThisFromGraveyard {} -> "ExileThisFromGraveyard"
+  CostComponent.ExileThisFrom {} -> "ExileThisFrom"
   CostComponent.ExileThis {} -> "ExileThis"
   CostComponent.ExileCardsFromGraveyard {} -> "ExileCardsFromGraveyard"
   CostComponent.ExileMaterials {} -> "ExileMaterials"

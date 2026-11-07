@@ -2373,6 +2373,8 @@ rewriteDuration pairs duration = case duration of
   Duration.UntilEvent DurationEvent.Planeswalked -> duration
   Duration.UntilEvent DurationEvent.SourceExiledCard -> duration
   Duration.UntilEvent DurationEvent.SourceLeftBattlefield -> duration
+  Duration.UntilEvent (DurationEvent.BoundCardCast _) -> duration
+  Duration.UntilEvent (DurationEvent.CardCast _) -> duration
   Duration.UntilEvent (DurationEvent.SpellCast criterion) -> Duration.UntilEvent (DurationEvent.SpellCast (Filter.rewrite pairs criterion))
 
 -- CR 612.1 through the counters a CR 122.5 move carries: the count, and the
