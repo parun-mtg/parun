@@ -30,6 +30,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Engine.Subtype as Engine.Subtype
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Protocol as Protocol
@@ -46,6 +47,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
@@ -103,7 +105,9 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
+import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Undoing as Undoing
+import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -178,6 +182,25 @@ spec s registry = Spec.describe s "Protocol" $ do
         decodedCost offer = fmap (\c -> Common.parse (Common.render (Codec.Reply.toValue c)) >>= Codec.decode (Codec.Cost.codec Codec.Keyword.codec)) (field "cost" offer)
     Spec.assertEqWith s "cost" (fmap decodedCost offers) (fmap (Just . Right) costs)
     Spec.assertEqWith s "source" (fmap (field "source") offers) (fmap (const (Just (Protocol.object oid))) costs)
+
+  Spec.it s "CR 201.4 a prompt answered by a name or a word offers what bounds the answer" $ do
+    let o7 = ObjectId.MkObjectId 7
+        alice = Decider.MkDecider S.alice
+        gs = Setup.emptyGame S.bothPlayers
+        options prompt = maybe (Left (Text.pack "no options")) Right (field "options" (Protocol.offerOf gs prompt) >>= arrayOf) >>= traverse (Protocol.decodeAnswer prompt)
+        restriction = Filter.Type.Not (Filter.Type.HasCardType CardType.Land)
+        naming = Protocol.offerOf gs (Prompt.ChooseCardName alice S.alice o7 restriction (Seq.singleton (S.bob, CardName.MkCardName (Text.pack "Hill Giant"))))
+        basic = Prompt.ChooseBasicLandType alice S.alice o7
+        creature = Prompt.ChooseCreatureType alice S.alice o7
+        families = Set.fromList [WordFamily.BasicLandType, WordFamily.Color]
+        forbidden = Set.singleton (TextWord.ColorWord Color.Black)
+        swap = Protocol.offerOf gs (Prompt.ChooseWordSwap alice S.alice o7 (SlotName.MkSlotName (Text.pack "target")) families forbidden)
+    Spec.assertEqWith s "CR 201.4a a name's restriction, beside its source" (field "source" naming, fmap Codec.Reply.toValue (field "filter" naming)) (Just (Protocol.object o7), Just (Codec.encode (Codec.Filter.codec Codec.Keyword.codec) restriction))
+    Spec.assertEqWith s "CR 101.4b the names earlier choosers chose" (field "earlier" naming) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Text (Text.pack "Hill Giant")]]))
+    Spec.assertEqWith s "CR 305.6 the basic land types" (options basic) (Right [Subtype.Forest, Subtype.Island, Subtype.Mountain, Subtype.Plains, Subtype.Swamp])
+    Spec.assertEqWith s "CR 205.3m every creature type" (fmap Set.fromList (options creature)) (Right Engine.Subtype.everyCreatureType)
+    Spec.assertBool s (either (const False) (all (Scenario.withinOffer creature)) (options creature)) "every creature type within the offer"
+    Spec.assertEqWith s "CR 612.2 a swap's families and forbidden words, beside its source and slot" (fmap (\key -> field key swap) ["source", "slot", "families", "forbidden"]) [Just (Protocol.object o7), Just (R.Text (Text.pack "target")), Just (R.Array [R.Text (Text.pack "BasicLandType"), R.Text (Text.pack "Color")]), Just (Reply.encode (Reply.list Reply.textWord) Protocol.namer [TextWord.ColorWord Color.Black])]
 
   Spec.it s "CR 404.3 a graveyard batch offers its cards top first, and an arrangement reads back" $ do
     let o5 = ObjectId.MkObjectId 5

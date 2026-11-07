@@ -18,6 +18,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Codec.CardName as Codec.CardName
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
@@ -38,6 +39,7 @@ import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.SlotName as Codec.SlotName
+import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
@@ -49,6 +51,7 @@ import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.PlayerView as PlayerView
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
@@ -213,9 +216,9 @@ idOf label =
 -- | What a prompt offers, in its answer's vocabulary, with what the game
 -- tells the seat about each option.
 --
--- Not implemented: the offer of every prompt not listed here, which sends
--- null: those answered by a name or word (#6593).
--- A random prompt no seat answers is never sent.
+-- Every prompt not listed here sends null: Concede, which the client answers
+-- from its seat's standing choice, and the random prompts no seat answers,
+-- which are never sent.
 offerOf :: GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf gs prompt = case prompt of
   Prompt.ChooseAction _ _ offered -> R.Array (fmap (actionOffer gs) offered)
@@ -513,6 +516,28 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseScry _ _ cards -> looked gs [] cards
   Prompt.ChooseSurveil _ _ cards -> looked gs [] cards
   Prompt.ChooseFateseal _ _ owner cards -> looked gs [("owner", Reply.encode Reply.player namer owner)] cards
+  -- CR 201.4 / 201.4a / 101.4b: no list, as the card reference is not one the
+  -- engine holds; the restriction and the names earlier choosers chose.
+  Prompt.ChooseCardName _ _ source restriction earlier ->
+    fields
+      [ ("source", object source),
+        ("filter", Reply.encode (Reply.viaCodec (Codec.Filter.codec Codec.Keyword.codec)) namer restriction),
+        ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.viaCodec Codec.CardName.codec))) namer earlier)
+      ]
+  -- CR 305.6: the five basic land types.
+  Prompt.ChooseBasicLandType _ _ source -> choosing prompt "options" (Just source) [] (filter Subtype.isBasicLandType [minBound ..])
+  -- CR 205.3m: every creature type.
+  Prompt.ChooseCreatureType _ _ source -> choosing prompt "options" (Just source) [] (Set.toList Subtype.everyCreatureType)
+  -- CR 612.2: the families the swap is drawn from and the words the new one
+  -- may not be; not the pairs, which number in the tens of thousands for
+  -- creature types.
+  Prompt.ChooseWordSwap _ _ source slot families forbidden ->
+    fields
+      [ ("source", object source),
+        ("slot", Reply.encode (Reply.viaCodec Codec.SlotName.codec) namer slot),
+        ("families", Reply.encode (Reply.setOf (Reply.viaCodec Codec.WordFamily.codec)) namer families),
+        ("forbidden", Reply.encode (Reply.setOf Reply.textWord) namer forbidden)
+      ]
   _ -> R.Null
 
 -- | A search place as the seat reads it.
