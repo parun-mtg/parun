@@ -2707,31 +2707,41 @@ data Ceiling = MkCeiling
     ceilingDoubling :: Map.Map ManaType [Supply],
     -- CR 116.2c's life for mana, one supply per mana it may add, each as often
     -- as the walk likes.
-    ceilingLifeForMana :: [Supply]
+    ceilingLifeForMana :: [Supply],
+    -- What a group announcing an X (Wizard's Rockets) makes of each mana its
+    -- {X} eats: one supply per unit its yield at X = 1 holds.
+    ceilingConverters :: [Supply]
   }
 
 -- What one group of a source's routes (groupsOf) could add to a board at most,
 -- as its yields' units, each a supply admitting no payment: the PROFILE
 -- ceilingGroups sums `times` over, beside what its CR 701.10f doubling makes of
--- each type. Nothing for a group announcing an X, whose yield the walk
--- measures against the cost (payableResolutionsGiven's `xCeiling`).
-ceilingProfile :: [SpendManaAsThough.SpendManaAsThough] -> (GroupKey, [([ManaUnit], Activations.Activations, Maybe Natural)]) -> Maybe ([[Supply]], Natural, Map.Map ManaType [Supply])
-ceilingProfile clauses ((activations, _, doubling, announcing), entries)
-  | announcing = Nothing
-  | otherwise = Just (ListUtils.nubOrd [List.sort (fmap supply units) | (units, _, _) <- entries, not (null units)], Activations.times activations, fmap (fmap supply) doubling)
-  where
-    supply unit = rewriteSupply clauses (supplyOf (const Set.empty) unit)
+-- each type. A group announcing an X is ceilingConverters', not this.
+ceilingProfile :: [SpendManaAsThough.SpendManaAsThough] -> (GroupKey, [([ManaUnit], Activations.Activations, Maybe Natural)]) -> ([[Supply]], Natural, Map.Map ManaType [Supply])
+ceilingProfile clauses ((activations, _, doubling, _), entries) =
+  (ListUtils.nubOrd [List.sort (fmap (ceilingSupply clauses) units) | (units, _, _) <- entries, not (null units)], Activations.times activations, fmap (fmap (ceilingSupply clauses)) doubling)
+
+-- One unit as the ceiling counts it: a supply admitting no payment.
+ceilingSupply :: [SpendManaAsThough.SpendManaAsThough] -> ManaUnit -> Supply
+ceilingSupply clauses unit = rewriteSupply clauses (supplyOf (const Set.empty) unit)
 
 -- The board's Ceiling, from every group of every source and CR 116.2c's life
--- for mana. Nothing where some group announces an X.
-ceilingOf :: [SpendManaAsThough.SpendManaAsThough] -> [(ObjectId, Natural, ManaType)] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> Maybe Ceiling
-ceilingOf clauses lifeForMana supplies = do
-  profiles <- traverse (ceilingProfile clauses) (concatMap groupsOf supplies)
+-- for mana. `atOne` is each source announcing an X measured at X = 1
+-- (manaSuppliesGiven 1). Nothing where a route there that can be activated
+-- adds more than the one mana its {X} eats, the yield of X mana ceilingAdmits
+-- assumes.
+ceilingOf :: [SpendManaAsThough.SpendManaAsThough] -> [(ObjectId, Natural, ManaType)] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> Maybe Ceiling
+ceilingOf clauses lifeForMana supplies atOne = do
+  let announces (_, _, _, announcing) = announcing
+      profiles = fmap (ceilingProfile clauses) (concatMap (filter (not . announces . fst) . groupsOf) supplies)
+      converting = [unitsOf (yieldMana yield) | (activations, yield, _, _) <- concat atOne, yieldX yield == Just 1, Activations.times activations > 0]
+  Monad.guard (all ((<= 1) . length) converting)
   pure
     MkCeiling
       { ceilingGroups = Map.fromListWith (+) [(yields, times) | (yields, times, _) <- profiles],
         ceilingDoubling = Map.unionsWith (<>) [doubling | (_, times, doubling) <- profiles, times > 0],
-        ceilingLifeForMana = ListUtils.nubOrd [rewriteSupply clauses (supplyOf (const Set.empty) (lifeForManaUnit manaType)) | (_, _, manaType) <- lifeForMana]
+        ceilingLifeForMana = ListUtils.nubOrd [ceilingSupply clauses (lifeForManaUnit manaType) | (_, _, manaType) <- lifeForMana],
+        ceilingConverters = ListUtils.nubOrd (fmap (ceilingSupply clauses) (concat converting))
       }
 
 -- A NECESSARY condition for payableResolutionsGiven, asked before it because
@@ -2746,9 +2756,15 @@ ceilingOf clauses lifeForMana supplies = do
 -- Mana that grows with the cost is held to its TYPES alone, unbounded in
 -- number: CR 116.2c's life for mana, and a CR 701.10f doubling of every type
 -- the pool, a group or another doubling could hold. A demand set one of those
--- serves is met. True, deciding nothing, where the board holds a group
--- announcing an X. Parun.ManaSpec's "mana ceiling" group pins this to the
--- walk's answer.
+-- serves is met.
+--
+-- A group announcing an X (CR 601.2b by way of CR 602.2b) adds X mana for
+-- the {X} it eats, so it converts mana and never adds any: a demand set its
+-- yield serves is held to every unit the pool and the groups could make, and
+-- met outright beside mana that grows. The yield of X mana is the one printed
+-- shape, payableResolutionsGiven's `xCeiling` assumption too; ceilingOf
+-- decides nothing past it. Parun.ManaSpec's "mana ceiling" group pins this to
+-- the walk's answer.
 ceilingAdmits :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> PlayerId -> ManaCost -> GameState -> Bool
 ceilingAdmits subject spending swept pid cost gs = case sourceCeiling swept of
   Nothing -> True
@@ -2763,7 +2779,7 @@ ceilingAdmits subject spending swept pid cost gs = case sourceCeiling swept of
     -- What the doublings make of every type the pool, a group, life for mana
     -- or another doubling could hold.
     doubledFrom ceiling_ =
-      let bounded = pooled <> ceilingLifeForMana ceiling_ <> [supply | (yields, times) <- Map.toList (ceilingGroups ceiling_), times > 0, supply <- concat yields]
+      let bounded = pooled <> ceilingLifeForMana ceiling_ <> ceilingConverters ceiling_ <> [supply | (yields, times) <- Map.toList (ceilingGroups ceiling_), times > 0, supply <- concat yields]
           close made =
             let grown = Set.union made (Set.unions [supplyMade supply | (manaType, supplies) <- Map.toList (ceilingDoubling ceiling_), Set.member manaType made, supply <- supplies])
              in if grown == made then made else close grown
@@ -2776,8 +2792,16 @@ ceilingAdmits subject spending swept pid cost gs = case sourceCeiling swept of
           couldServe subset =
             Natural.length (filter (servesAny subset) pooled)
               + sum [times * List.foldl' max 0 (fmap (Natural.length . filter (servesAny subset)) yields) | (yields, times) <- Map.toList (ceilingGroups ceiling_)]
+          -- Every unit made, whatever it serves: what a conversion could turn
+          -- into the demands at hand.
+          made = couldServe (Set.singleton anyTypeDemand)
+          converted subset = any (servesAny subset) (ceilingConverters ceiling_)
           demandedIn subset = Natural.length (filter (`elem` subset) wanted_)
-       in all (\subset -> any (servesAny subset) unbounded || demandedIn subset <= couldServe subset) (List.subsequences (Set.toList (Set.fromList wanted_)))
+          met subset
+            | any (servesAny subset) unbounded = True
+            | converted subset = not (null unbounded) || demandedIn subset <= made
+            | otherwise = demandedIn subset <= couldServe subset
+       in all met (List.subsequences (Set.toList (Set.fromList wanted_)))
 
 -- CR 118.3 asked of the board activating no mana ability: the claims, CR
 -- 107.14's energy and CR 119.4's life the rest of the cost spends, held by
@@ -3359,7 +3383,7 @@ supplySourcesGiven capacity grants pcs pid gs =
           sourceClauses = clauses,
           sourcePlain = plain,
           sourcePlainTotal = Map.fromListWith (+) (concat (Map.elems plain)),
-          sourceCeiling = ceilingOf clauses lifeForMana supplies,
+          sourceCeiling = ceilingOf clauses lifeForMana supplies [manaSuppliesGiven 1 capacity watch rewritesOf pcs pid (borrowed oid) oid gs | (oid, routes) <- zip ids supplies, any (\(_, yield, _, _) -> Maybe.isJust (yieldX yield)) routes],
           sourceLifeForMana = lifeForMana,
           sourceLifePayable = Event.lifePayable pid gs
         }
