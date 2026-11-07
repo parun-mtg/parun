@@ -24,6 +24,7 @@ import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.InZone as InZone
@@ -536,15 +537,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFromHandWithoutPayingManaCost (Filter.And []))
-      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"type\":\"And\",\"value\":[]}} "
+      (PlayerEffect.CastFromHandWithoutPayingManaCost (FreeCastFromHand.MkFreeCastFromHand (Filter.And []) Nothing))
+      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"And\",\"value\":[]}}} "
   -- The same grant narrowed, which is the axis a second printing would use.
   Spec.it s "CastFromHandWithoutPayingManaCost, a filter that names qualities" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFromHandWithoutPayingManaCost (Filter.HasCardType CardType.Creature))
-      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+      (PlayerEffect.CastFromHandWithoutPayingManaCost (FreeCastFromHand.MkFreeCastFromHand (Filter.HasCardType CardType.Creature) Nothing))
+      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Solemnity's first sentence, which names no kind, so the key is null -- the
   -- wire form data/cards/solemnity.json writes.
   Spec.it s "CantGetCounters, no kind named" $

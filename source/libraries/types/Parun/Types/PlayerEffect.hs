@@ -13,6 +13,7 @@ import qualified Parun.Types.DrawReveal as DrawReveal
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.InZone as InZone
@@ -231,9 +232,7 @@ data PlayerEffect
     PlotFrom PlotFromZone.PlotFromZone
   | -- | CR 118.9 / Omniscience: this player may cast a matching spell from their
     -- hand without paying its mana cost.
-    --
-    -- The filter reads the card's CR 613.1 view in the hand, as CastFrom's does.
-    CastFromHandWithoutPayingManaCost (Filter.Filter Keyword.Keyword)
+    CastFromHandWithoutPayingManaCost FreeCastFromHand.FreeCastFromHand
   | -- | CR 101.2 / 122.1 / Solemnity, Melira Sylvok Outcast: this player can't get
     -- counters -- of the kind the Maybe names, or of every kind where it is Nothing.
     CantGetCounters (Maybe PlayerCounterKind.PlayerCounterKind)

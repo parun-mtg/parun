@@ -262,6 +262,7 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
@@ -2581,7 +2582,7 @@ playerEffectNames asking x = case x of
   PlayerEffect.CastFrom castFromZone -> castFromZoneNames asking castFromZone
   PlayerEffect.PlayLandsFrom inZone -> inZoneNames asking inZone
   PlayerEffect.PlotFrom plotFromZone -> plotFromZoneNames asking plotFromZone
-  PlayerEffect.CastFromHandWithoutPayingManaCost filter_ -> filterNames asking filter_
+  PlayerEffect.CastFromHandWithoutPayingManaCost freeCastFromHand -> freeCastFromHandNames asking freeCastFromHand
   PlayerEffect.CantGetCounters _playerCounterKind -> mempty
   PlayerEffect.StateCoinFlip statedFlip -> statedFlipNames asking statedFlip
   PlayerEffect.ModifyDieRoll modifiedRoll -> modifiedRollNames asking modifiedRoll
@@ -2635,6 +2636,10 @@ playerStaticAbilityNames asking x = case x of
 playsLandNames :: (Monoid r) => Asking r -> PlaysLand.PlaysLand -> r
 playsLandNames asking x = case x of
   PlaysLand.MkPlaysLand _player _from filter_ -> filterNames asking filter_
+
+freeCastFromHandNames :: (Monoid r) => Asking r -> FreeCastFromHand.FreeCastFromHand -> r
+freeCastFromHandNames asking x = case x of
+  FreeCastFromHand.MkFreeCastFromHand spells amount -> filterNames asking spells <> foldMap (quantityNames asking) amount
 
 plotFromZoneNames :: (Monoid r) => Asking r -> PlotFromZone.PlotFromZone -> r
 plotFromZoneNames asking x = case x of
