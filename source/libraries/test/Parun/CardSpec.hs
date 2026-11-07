@@ -4902,7 +4902,7 @@ playerEffectFilters playerEffect = case playerEffect of
         CostChange.Reduce _ -> []
   PlayerEffect.AlternativeActivationCost _ -> []
   PlayerEffect.CantCastSpells -> []
-  PlayerEffect.CantActivateAbilities _ f -> [f]
+  PlayerEffect.CantActivateAbilities _ f _ -> [f]
   PlayerEffect.CantCastMoreThan _ -> []
   -- CR 305.2 carries a bare count of extra land plays, not a Filter: it names
   -- how many lands, never which spells.

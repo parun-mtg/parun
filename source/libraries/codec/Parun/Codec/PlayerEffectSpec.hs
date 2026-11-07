@@ -5,6 +5,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.PlayerEffect as PlayerEffect
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.Audience as Audience
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CardName as CardName
@@ -459,14 +460,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []))
+      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []) Nothing)
       " {\"type\":\"CantActivateAbilities\",\"value\":{}} "
   -- CR 702.193a / Kang the Conqueror's "power-up abilities can't be activated".
   Spec.it s "CantActivateAbilities naming a keyword" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities (Just (KeywordDesignator.OfKeyword Keyword.PowerUp)) (Filter.And []))
+      (PlayerEffect.CantActivateAbilities (Just (KeywordDesignator.OfKeyword Keyword.PowerUp)) (Filter.And []) Nothing)
       " {\"type\":\"CantActivateAbilities\",\"value\":{\"designator\":{\"type\":\"OfKeyword\",\"value\":{\"type\":\"PowerUp\"}}}} "
   -- CR 602.5 / Grand Abolisher's "abilities of artifacts, creatures, or
   -- enchantments", which names the sources.
@@ -474,8 +475,16 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.HasCardType CardType.Artifact))
+      (PlayerEffect.CantActivateAbilities Nothing (Filter.HasCardType CardType.Artifact) Nothing)
       " {\"type\":\"CantActivateAbilities\",\"value\":{\"sources\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
+  -- CR 605.1a / Yuriko, Blade of the Mighty's "abilities that aren't mana
+  -- abilities", which names the kind.
+  Spec.it s "CantActivateAbilities naming the kind" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []) (Just AbilityKind.NonManaAbility))
+      " {\"type\":\"CantActivateAbilities\",\"value\":{\"kind\":\"NonManaAbility\"}} "
   -- CR 305.1 / City in a Bottle's land half, whose Filter names the land
   -- (Damping Engine's writes the empty And instead).
   Spec.it s "CantPlayLands" $

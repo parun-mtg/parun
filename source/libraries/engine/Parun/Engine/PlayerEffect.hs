@@ -752,17 +752,23 @@ prohibitsCasting pid oid variable gs =
 -- shows it (Grand Abolisher's "abilities of artifacts, creatures, or
 -- enchantments", whose ruling of 2011-09-22 leaves a cycling card in hand
 -- alone -- the card's Filter names the battlefield).
-prohibitsActivatingGiven :: Maybe Keyword -> ObjectId -> GameState -> [(RowSource, PlayerEffect)] -> Bool
-prohibitsActivatingGiven stamp srcId gs effects =
+--
+-- The caller says which CR 605.1a kind the ability is, as
+-- ActivationProhibition.prohibitedGiven is told: a row naming a kind refuses
+-- only that kind, Yuriko, Blade of the Mighty's "abilities that aren't mana
+-- abilities".
+prohibitsActivatingGiven :: AbilityKind.AbilityKind -> Maybe Keyword -> ObjectId -> GameState -> [(RowSource, PlayerEffect)] -> Bool
+prohibitsActivatingGiven kind stamp srcId gs effects =
   let bars (row, effect) = case effect of
-        PlayerEffect.CantActivateAbilities designator sources ->
+        PlayerEffect.CantActivateAbilities designator sources barred ->
           maybe True (\d -> any (Keyword.designates d) stamp) designator
+            && all (== kind) barred
             && matchesObjectFrom row sources srcId gs
         _ -> False
    in any bars effects
 
-prohibitsActivating :: Maybe Keyword -> ObjectId -> PlayerId -> GameState -> Bool
-prohibitsActivating stamp srcId pid gs = prohibitsActivatingGiven stamp srcId gs (applying pid gs)
+prohibitsActivating :: AbilityKind.AbilityKind -> Maybe Keyword -> ObjectId -> PlayerId -> GameState -> Bool
+prohibitsActivating kind stamp srcId pid gs = prohibitsActivatingGiven kind stamp srcId gs (applying pid gs)
 
 -- CR 305.1: does any effect prohibit `pid` from PLAYING this land?
 -- The play-side twin of prohibitsCasting above, and a separate question rather

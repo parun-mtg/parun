@@ -1,6 +1,7 @@
 module Parun.Types.PlayerEffect where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -61,8 +62,11 @@ data PlayerEffect
     -- under that rule-702 keyword (Parun.Types.ActivatedAbility.keyword), Kang the
     -- Conqueror's "power-up abilities can't be activated". The Filter names
     -- the abilities' SOURCES, Grand Abolisher's "abilities of artifacts,
-    -- creatures, or enchantments"; the empty And is every source.
-    CantActivateAbilities (Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)) (Filter.Filter Keyword.Keyword)
+    -- creatures, or enchantments"; the empty And is every source. The CR
+    -- 605.1a kind narrows it as Parun.Types.ActivationProhibition's does:
+    -- Nothing is both, and Yuriko, Blade of the Mighty's "abilities that
+    -- aren't mana abilities" names NonManaAbility.
+    CantActivateAbilities (Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)) (Filter.Filter Keyword.Keyword) (Maybe AbilityKind.AbilityKind)
   | -- | CR 601.3 / Rule of Law: this player can't cast more than this many spells
     -- each turn.
     CantCastMoreThan Natural.Natural

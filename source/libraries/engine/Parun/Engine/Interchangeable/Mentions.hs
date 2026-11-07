@@ -2530,7 +2530,7 @@ costSubjectNames asking x = case x of
 playerEffectNames :: (Monoid r) => Asking r -> PlayerEffect.PlayerEffect -> r
 playerEffectNames asking x = case x of
   PlayerEffect.CantCastSpells -> mempty
-  PlayerEffect.CantActivateAbilities keywordDesignator filter_ -> foldMap (keywordDesignatorNames asking) keywordDesignator <> filterNames asking filter_
+  PlayerEffect.CantActivateAbilities keywordDesignator filter_ _kind -> foldMap (keywordDesignatorNames asking) keywordDesignator <> filterNames asking filter_
   PlayerEffect.CantCastMoreThan _natural -> history asking HistoryRead.Casts
   PlayerEffect.ModifyCost costModifier -> costModifierNames asking costModifier
   PlayerEffect.AlternativeActivationCost alternativeActivationCost -> alternativeActivationCostNames asking alternativeActivationCost
