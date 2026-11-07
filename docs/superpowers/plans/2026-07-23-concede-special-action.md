@@ -21,11 +21,11 @@
 - **No boolean blindness** — a sum type, never a `Bool`.
 - **Derive at least `Eq` and `Show`.**
 - Constructors are **non-punning** with a `Mk` prefix only for single-constructor types. `Concession = Concedes | Continues` is a multi-constructor sum and takes no prefix, exactly like `Departure = Lost | Conceded | Drew`.
-- **Every rules claim checked against `docs/rules.txt`**, with the CR number in the comment. Never recall a rule.
+- **Every rules claim checked against `data/comprehensive-rules.txt`**, with the CR number in the comment. Never recall a rule.
 - After every task: `hooky fix`, then `git add`, then `hooky run` must pass. `hooky` acts on **staged** files only.
 - `cabal-gild` regenerates `other-modules` / `exposed-modules` from the `-- cabal-gild: discover` directives. Adding a module requires running it (via `hooky fix`, or directly as `cabal-gild --io parun.cabal` if `hooky` skips).
 
-**Rule texts you will need (already verified against `docs/rules.txt` — do not re-derive, but do cite):**
+**Rule texts you will need (already verified against `data/comprehensive-rules.txt` — do not re-derive, but do cite):**
 
 - **CR 104.3a** — "A player can concede the game at any time. A player who concedes leaves the game immediately. That player loses the game."
 - **CR 104.3b** — "If a player's life total is 0 or less, that player loses the game the next time a player would receive priority. (This is a state-based action…)"

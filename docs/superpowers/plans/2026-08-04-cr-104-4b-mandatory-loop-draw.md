@@ -16,12 +16,12 @@
 - **One build at a time.** `jobs: $ncpus` already saturates the machine. Never run two builds or a build and a test concurrently.
 - **Run the suite as** `cabal test --test-options '--timeout 1s --hide-successes'`. Never pipe its output — that stalls a ~30s suite for minutes.
 - **`hooky fix` then `hooky run`, on staged files only.** `git add` first; `hooky fix` reformats, so `git add` again before `hooky run`.
-- **Never trust recalled Magic rules.** Every CR claim is checked against `docs/rules.txt`, grepped by rule number, and the rule number goes in the code comment.
+- **Never trust recalled Magic rules.** Every CR claim is checked against `data/comprehensive-rules.txt`, grepped by rule number, and the rule number goes in the code comment.
 - **Constructors take a `Mk` prefix.** Language extensions come from the allowlist in `.hlint.yaml`. No `fromIntegral`/`toEnum` — convert through `Parun.Extra.*`.
 - **The rules core must never case on an effect's identity.** Nothing in this plan does; keep it that way.
 - **Do not edit this plan** to make a check pass. If it looks wrong, stop and say so.
 
-The two CR texts this plan rests on, verbatim from `docs/rules.txt`:
+The two CR texts this plan rests on, verbatim from `data/comprehensive-rules.txt`:
 
 > 104.3a A player can concede the game at any time. A player who concedes leaves the game immediately. That player loses the game.
 
@@ -592,7 +592,7 @@ Expected: warning-free build, suite green, count 8 higher than the branch point.
 
 - [ ] **Step 4: Self-review the branch**
 
-Per `CLAUDE.md`, before opening the PR: re-check every CR citation added or touched against `docs/rules.txt` (104.3a, 104.4b, 110.5b, 400.7e, 603.6a, 605.1a, 613.7a, 613.7d, 704.5g, 729.2), and re-read every comment the change touched for prose the rewrite made wrong. Scale the effort to the diff — the comment rewrites in Task 4 and the `choose` doc comment are where defects hide here. Fix findings on the branch.
+Per `CLAUDE.md`, before opening the PR: re-check every CR citation added or touched against `data/comprehensive-rules.txt` (104.3a, 104.4b, 110.5b, 400.7e, 603.6a, 605.1a, 613.7a, 613.7d, 704.5g, 729.2), and re-read every comment the change touched for prose the rewrite made wrong. Scale the effort to the diff — the comment rewrites in Task 4 and the `choose` doc comment are where defects hide here. Fix findings on the branch.
 
 - [ ] **Step 5: Commit and open the PR**
 

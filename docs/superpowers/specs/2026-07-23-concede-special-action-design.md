@@ -2,7 +2,7 @@
 
 **Issue:** #133. **Status:** implemented 2026-07-23.
 
-Every CR number below was checked against `docs/rules.txt` while writing this
+Every CR number below was checked against `data/comprehensive-rules.txt` while writing this
 document, not recalled.
 
 ## 0. Why this is hard

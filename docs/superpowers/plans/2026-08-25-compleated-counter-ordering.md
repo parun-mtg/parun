@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Ground truth is `docs/rules.txt`, grepped by rule number. Never a rule number quoted in this plan or in the issue -- re-check every citation.
+- Ground truth is `data/comprehensive-rules.txt`, grepped by rule number. Never a rule number quoted in this plan or in the issue -- re-check every citation.
 - The rules core must never case on an effect's IDENTITY. Keywords are the stated exception (CLAUDE.md), so a `Keyword.Compleated` arm is legitimate; a `case effect of DealDamage{}` is not.
 - Constructors take a `Mk` prefix and never pun the type name. One type per module under `Parun.Types.<TypeName>`.
 - Language extensions come from `.hlint.yaml`'s allowlist.
@@ -582,7 +582,7 @@ Say in the PR body which issues this unblocked, if any.
 
 - [ ] **Step 6: Self-review, then commit**
 
-Re-check every CR citation added by this branch against `docs/rules.txt` -- 306.5b, 614.1c, 614.5, 614.12, 614.16, 616.1a-g, 616.2, 702.150a, 122.6, 122.6a, 714.3c. Re-read every comment the branch touched. Both reliably catch real defects.
+Re-check every CR citation added by this branch against `data/comprehensive-rules.txt` -- 306.5b, 614.1c, 614.5, 614.12, 614.16, 616.1a-g, 616.2, 702.150a, 122.6, 122.6a, 714.3c. Re-read every comment the branch touched. Both reliably catch real defects.
 
 ```bash
 git add -A

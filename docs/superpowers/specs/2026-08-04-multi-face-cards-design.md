@@ -108,7 +108,7 @@ and fall back to `combined` when the object names none.
 ### 4.1 The combined name is the face names joined by `//`
 
 The comprehensive rules never state this, but they do it: every Example in
-`docs/rules.txt` that names a split card writes the halves joined **without
+`data/comprehensive-rules.txt` that names a split card writes the halves joined **without
 spaces** — `Fire//Ice` at lines 3882 and 5747, `Assault//Battery` at 5746. That
 is four occurrences across three Examples, and one of the three sits under a
 flashback rule rather than under CR 709 at all; CR 709.4a itself carries no

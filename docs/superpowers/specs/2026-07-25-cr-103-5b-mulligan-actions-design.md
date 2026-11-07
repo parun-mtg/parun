@@ -4,7 +4,7 @@
 impact mulligans"). This is a **phase-sized** spec: one new `Effect` opcode, one
 new `Card` field, one new prompt channel, a performer parameter threaded through
 four setup entry points, and one new card. Every rules claim is checked against
-`docs/rules.txt` and cited by number. The next step is a `writing-plans` plan
+`data/comprehensive-rules.txt` and cited by number. The next step is a `writing-plans` plan
 derived from this spec.*
 
 ## 0. Why this exists
@@ -385,7 +385,7 @@ no shim.
 3. `Parun.MulliganSpec`'s new cases pass; the existing mulligan, setup, restart
    and subgame suites still pass.
 4. Every rules claim cites CR 103.5b (or the specific sub-rule) and was checked
-   against `docs/rules.txt`.
+   against `data/comprehensive-rules.txt`.
 5. Serum Powder loads from `data/cards` and round-trips through the codec.
 6. Issue #182 closed; `docs/progress.md` gains an entry; §9's issues filed with
    `(#N)` citations at their code sites.

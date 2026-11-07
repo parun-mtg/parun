@@ -29,7 +29,7 @@ does not model.
 
 ## CR ground truth
 
-Every rule below was read from `docs/rules.txt` at the line given.
+Every rule below was read from `data/comprehensive-rules.txt` at the line given.
 
 | Rule | Line | What it fixes here |
 |---|---|---|

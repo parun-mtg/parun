@@ -40,7 +40,7 @@ continuous effect.
 
 ## Global constraints
 
-- CR is ground truth: `docs/rules.txt`, grepped by number. 729.1a, 729.1b, 729.4,
+- CR is ground truth: `data/comprehensive-rules.txt`, grepped by number. 729.1a, 729.1b, 729.4,
   729.4a, 729.5, 400.11, 400.11b, 400.11c, 603.10a, 608.2h.
 - The rules core must never case on an effect's IDENTITY. Nothing in this plan
   adds such a case; the wish reaches `Parun.Engine.OutsideTheGame` through the
@@ -465,7 +465,7 @@ only after. Read both out of `GameState.events`.
       in the PR body.
 
 - [ ] **Step 6: self-review the branch.** Re-check every CR citation against
-      `docs/rules.txt`; re-read every comment the change touched; grep every
+      `data/comprehensive-rules.txt`; re-read every comment the change touched; grep every
       construction site of `GameState` for the two new fields (CLAUDE.md's
       new-field trap, PRs #2009 and #2021); check `Parun.Engine.Event`'s
       `eventBindings` fallthrough and `Parun.Engine.Filter`'s `boundSlots` for arms

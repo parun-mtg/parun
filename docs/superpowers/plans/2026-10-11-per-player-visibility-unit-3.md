@@ -41,7 +41,7 @@
 - **Card text:** verify the Oracle text of every card you touch with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` before writing its JSON. Re-run ingest's oracle check (CLAUDE.md: `jq -f script/ingest/candidates.jq` over `AtomicCards.json`, then `parun ingest`) if `_scratch/AtomicCards.json` exists. It is a skipped step otherwise.
 - **Git hygiene:** never stash. Stage, run `hooky fix`, then `git add` again.
 - **Commits:** a subject line, at most two sentences of why, and the trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01N6oeJknHeSC1oKJ3H5pihY`. Say "related to #3237". Never put close, fix or resolve next to an issue number in a commit.
-- **CR text:** read it from `docs/rules.txt` by number. Checked 2026-10-11: 400.2, 401.2, 401.5, 401.6, 601.2i, 723.4.
+- **CR text:** read it from `data/comprehensive-rules.txt` by number. Checked 2026-10-11: 400.2, 401.2, 401.5, 401.6, 601.2i, 723.4.
 
 ## Divergences from the spec
 
@@ -214,7 +214,7 @@ Above the library arm, add this elision paragraph: "Not implemented: CR 401.5's 
   - Replace `#N` in `Visibility.hs` with the new issue's number.
 
 - [ ] **Step 3: Self-review.**
-  - Re-check every CR citation against `docs/rules.txt`.
+  - Re-check every CR citation against `data/comprehensive-rules.txt`.
   - Re-read every touched comment.
   - Grep `PlayerEffect.` `_` arms and record each.
   - Confirm every new codec has a round-trip case.

@@ -24,7 +24,7 @@
 - Every proving check gets a mutation: `script/with-build-lock.sh script/mutate.sh FILE @SCRIPT PATTERN`, the sed script in a scratchpad file. Name the assertion that reddened. Never edit a file while a mutation runs on it.
 - Never stash. Stage, `hooky fix`, `git add` again.
 - Commits: a subject line, at most two sentences of why, then the trailer lines `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01N6oeJknHeSC1oKJ3H5pihY`. A commit says "related to #1412"; never close, fix or resolve next to any issue number in a commit.
-- CR text from `docs/rules.txt` by number. Checked 2026-10-11: 400.2, 401.2, 406.3, 701.20a, 701.20e, 701.31b, 708.5, 723.4.
+- CR text from `data/comprehensive-rules.txt` by number. Checked 2026-10-11: 400.2, 401.2, 406.3, 701.20a, 701.20e, 701.31b, 708.5, 723.4.
 
 ## Divergences from the spec
 
@@ -344,7 +344,7 @@ Run the DELETE only where `gh api repos/parun-mtg/parun/issues/<N>/dependencies/
   - Every other hit is about answerers or private looks, and stays.
   Fix `MulliganOffer.hs`'s "An answerer sees only this payload, never the GameState", which has been false since `Asked` carried the state. Grep `PlayerView` too; `docs/design.md` stays as it is.
 
-- [ ] **Step 5: Self-review.** Re-check every CR citation the diff adds against `docs/rules.txt`. Re-read every comment the diff touches. Re-derive the four callers of `Exile.mayLookAt`/`mayChoose` (`Target.hs` ×2, `Cast.hs` ×2) and record why each keeps its read (see Divergences). Grep `View.OwnershipChanges` to confirm `renderView` is the only arm site. Grep every `{ GameState.` construction to confirm no field was added (none should be).
+- [ ] **Step 5: Self-review.** Re-check every CR citation the diff adds against `data/comprehensive-rules.txt`. Re-read every comment the diff touches. Re-derive the four callers of `Exile.mayLookAt`/`mayChoose` (`Target.hs` ×2, `Cast.hs` ×2) and record why each keeps its read (see Divergences). Grep `View.OwnershipChanges` to confirm `renderView` is the only arm site. Grep every `{ GameState.` construction to confirm no field was added (none should be).
 
 - [ ] **Step 6: Full suite, `hooky fix`, commit, push, open the PR.** Body, one line each:
   - What changed and why: unit 1 of the visibility spec, a pure `sees` relation plus a `Seers` scenario view. `Closes #U`. Commits the spec and this plan.

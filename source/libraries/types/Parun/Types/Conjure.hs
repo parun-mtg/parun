@@ -9,12 +9,12 @@ import qualified Parun.Types.SlotName as SlotName
 -- | Alchemy\'s conjure keyword action: create a card that was in nobody\'s deck
 -- and put it into a zone.
 --
--- Digital-only, so there is no rule to cite: @docs\/rules.txt@ contains no
--- "conjure", and the authority is Arena\'s own text -- "conjure a card named
--- Ornithopter into your hand". What the CR does settle is what the result is
--- NOT: it is no token (CR 111.1's are created by an effect and are not cards),
--- so the conjured object is an ordinary card, castable and shufflable, and
--- 'Parun.Types.Source.OfCard' is what backs it.
+-- Digital-only, so there is no rule to cite: @data\/comprehensive-rules.txt@
+-- contains no "conjure", and the authority is Arena\'s own text -- "conjure a
+-- card named Ornithopter into your hand". What the CR does settle is what the
+-- result is NOT: it is no token (CR 111.1's are created by an effect and are
+-- not cards), so the conjured object is an ordinary card, castable and
+-- shufflable, and 'Parun.Types.Source.OfCard' is what backs it.
 --
 -- A card the sentence NAMES is carried INLINE, 'Parun.Types.Meld.Meld''s reason
 -- spelled out there: no @Parun.Engine@ module imports @Parun.Registry@ and

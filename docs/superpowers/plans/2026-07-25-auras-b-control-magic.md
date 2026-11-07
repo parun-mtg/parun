@@ -18,7 +18,7 @@
 - **`Parun.Projection` is the ONLY module permitted to case on `Modification`.** `Parun.Departure` asks its questions through `Projection.givesControlTo` precisely so the case stays there. Keep it that way.
 - **The two invariants outrank this plan:** the engine never cases on a card's *identity* (only classifications), and never makes a player's choice.
 - **TDD non-negotiable:** write each failing test, run it, watch it fail, then implement. Tick each `- [ ]` as you finish it.
-- **Every rules claim cites the CR** and was checked against `docs/rules.txt`. Never write an expiry into a code comment — file an issue and cite `(#N)`.
+- **Every rules claim cites the CR** and was checked against `data/comprehensive-rules.txt`. Never write an expiry into a code comment — file an issue and cite `(#N)`.
 - **Commit style:** commit directly to `main`, one small complete commit per task, with the two `CLAUDE.md` trailers.
 - **After each task:** `git add <explicit paths>`, `hooky fix`, `git add <explicit paths>`, `hooky run`. Stage explicit paths rather than `-A`: concurrent sessions share this checkout.
 

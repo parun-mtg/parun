@@ -14,7 +14,7 @@ one generic evaluator, and retires the `TargetSpec` family (#40), merges
 `CountSpec` (#39): those add a second concept — a scope, an aggregation, and a
 comparison to a threshold — that is deferred to a later phase. See §7.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 105.2, 105.2c, 109.2, 109.5, 110.1, 110.4, 112.1, 115.1a, 115.4, 205.3,
 205.4, 205.4c, 208.1, 601.2c, 608.2b, 611.2c, 613.1b, 700.2c, 701.23a. Any number added later
 and marked **(verify)** must be checked before it drives code (CLAUDE.md: never

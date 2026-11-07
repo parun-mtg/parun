@@ -42,7 +42,7 @@
 - **Oracle text.** Verify it with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'`. Checked 2026-10-11, Truth or Consequences: {2}{U}{R} Sorcery, "Secret council — Each player secretly votes for truth or consequences, then those votes are revealed. You draw cards equal to the number of truth votes. Then choose an opponent at random. Truth or Consequences deals 3 damage to that player for each consequences vote."
 - **Never stash.** Stage, run `hooky fix`, then `git add` again.
 - **Commits.** A subject line, at most two sentences of why, and the trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01N6oeJknHeSC1oKJ3H5pihY`. Write "related to #4452". Never put close, fix or resolve next to an issue number in a commit.
-- **CR text.** Read it from `docs/rules.txt` by number. Checked 2026-10-11: 207.2c (secret council is an ability word), 701.38a, 701.38b, 701.38d, 723.4.
+- **CR text.** Read it from `data/comprehensive-rules.txt` by number. Checked 2026-10-11: 207.2c (secret council is an ability word), 701.38a, 701.38b, 701.38d, 723.4.
 
 ## Divergences from the spec
 
@@ -159,7 +159,7 @@
   - Comment on #3717 (dated 2026-10-11): a secret vote's log and reveal now exist, so Mob Verdict needs only player votes, plus `"secret": true`.
 
 - [ ] **Step 3: Self-review.**
-  - Check the CR citations against `docs/rules.txt`.
+  - Check the CR citations against `data/comprehensive-rules.txt`.
   - Re-read every touched comment.
   - Grep the `GameEvent.Voted` and `VotesRevealed` arms against `Looked`'s.
   - Check the `MkVote` and `{ Vote.` sites.

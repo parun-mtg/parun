@@ -261,7 +261,7 @@ those six should be in the same commit.
 **The comment sweep (R6) is the one place a mechanical pass can silently lose
 information.** A misattached `-- |` documents the wrong declaration and reads as
 correct. Every converted comment needs a human-checked attachment, and comments
-carrying CR citations need those citations re-checked against `docs/rules.txt`
+carrying CR citations need those citations re-checked against `data/comprehensive-rules.txt`
 per `CLAUDE.md` — the rename is a good moment to catch a stale one, and a bad
 moment to propagate one.
 

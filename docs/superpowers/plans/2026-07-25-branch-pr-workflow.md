@@ -83,7 +83,7 @@ Each PR must be independently mergeable and leave main green.
 ## Rules basis
 
 <!--
-The CR citations behind this change, each checked against docs/rules.txt.
+The CR citations behind this change, each checked against data/comprehensive-rules.txt.
 Never recalled from memory — recalled rules go stale, and have been wrong before.
 Delete this section if the change touches no rules.
 -->
@@ -372,7 +372,7 @@ Run:
 ```bash
 ls docs/superpowers/specs/2026-07-25-branch-pr-workflow-design.md
 ls .github/pull_request_template.md
-ls docs/design.md docs/progress.md docs/rules.txt docs/prior-art-lessons.md
+ls docs/design.md docs/progress.md data/comprehensive-rules.txt docs/prior-art-lessons.md
 ```
 Expected: all six paths exist.
 

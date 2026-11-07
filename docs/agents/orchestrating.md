@@ -244,10 +244,10 @@ than duplicating them.
 > Implement #ISSUE and add the SETNAME card or cards it names; it came out of
 > the census (`docs/sets/<set>.md`), and the PR closes it. Re-derive the
 > issue's card facts, wire shapes and claim about what the DSL lacks against
-> the tree, `docs/rules.txt` and Scryfall. Prefer a parameter on an existing
-> type. Every capability needs a gameplay-level scenario on the real card. Do
-> NOT edit `docs/sets/<set>.md`. Fold small follow-ups in; file only what is
-> too big, naming its card.
+> the tree, `data/comprehensive-rules.txt` and Scryfall. Prefer a parameter on
+> an existing type. Every capability needs a gameplay-level scenario on the real
+> card. Do NOT edit `docs/sets/<set>.md`. Fold small follow-ups in; file only
+> what is too big, naming its card.
 
 **Capability batch** is the capability unit over several issues: it names
 each (#A, #B, ...) with its card and the one-line census claim to verify
@@ -266,12 +266,12 @@ entries were still open.
 > diff BASESHA HEADSHA`, BASESHA being `origin/main`'s merge base. It
 > implements #ISSUE, adds CARDS, and is PR #P, whose body states the design.
 > Find rules-correctness defects: a legal board on which the change plays
-> differently from `docs/rules.txt` or the cards' rulings (Scryfall
-> `named?fuzzy=`, then each `rulings_uri`). The riskiest part is SHAREDGATE,
-> which every RESOLUTION/SEARCH/COMBAT passes through. Check: BOARDS (that
-> unaffected games are unchanged; two such effects at once; control or zone
-> changes mid-effect; multiplayer). Enumerate with jq the pool cards that
-> reach the changed reader and say whether any now reads differently. Also
-> check `CLAUDE.md` item 4's sites for the new constructors and fields, and
-> whether the tests prove what they claim. Keep scratch in `SCRATCH`. Report
-> findings only, most severe first.
+> differently from `data/comprehensive-rules.txt` or the cards' rulings
+> (Scryfall `named?fuzzy=`, then each `rulings_uri`). The riskiest part is
+> SHAREDGATE, which every RESOLUTION/SEARCH/COMBAT passes through. Check: BOARDS
+> (that unaffected games are unchanged; two such effects at once; control or
+> zone changes mid-effect; multiplayer). Enumerate with jq the pool cards that
+> reach the changed reader and say whether any now reads differently. Also check
+> `CLAUDE.md` item 4's sites for the new constructors and fields, and whether
+> the tests prove what they claim. Keep scratch in `SCRATCH`. Report findings
+> only, most severe first.

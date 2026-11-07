@@ -4,7 +4,7 @@
 applies-to dependency ordering is not implemented"). **No new type, no new
 opcode, no new field, and no new card**: one rewrite of
 `Projection.projectWith`'s within-layer step. Every rules claim is checked
-against `docs/rules.txt` and cited by number.*
+against `data/comprehensive-rules.txt` and cited by number.*
 
 ## 0. Why this exists
 

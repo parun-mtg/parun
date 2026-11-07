@@ -8,7 +8,7 @@ and argued the shortcut sound because every layer-5 effect in the vocabulary was
 falsifies that argument (CR 105.3), and moves devoid to where CR 613.3 puts it.
 Gate: **Painter's Servant** naming blue against **Slaughter Drone**.*
 
-*CR citations below **were checked against `docs/rules.txt` on 2026-08-03**:
+*CR citations below **were checked against `data/comprehensive-rules.txt` on 2026-08-03**:
 105.1, 105.3, 109.5, 202.2, 204.2, 604.3, 604.3a, 613.1e, 613.3, 613.6, 613.7a,
 613.7b, 613.7d, 613.8a, 614.1c, 702.114a, 707.5. Card text was verified against
 Scryfall on 2026-08-03.*

@@ -279,7 +279,7 @@ identity.
 
 ### Rulings discipline (design.md §4)
 
-Every CR number in this spec is to be re-checked against `docs/rules.txt` before
+Every CR number in this spec is to be re-checked against `data/comprehensive-rules.txt` before
 it drives code, and cited in the code comment. Card text is from Scryfall
 (2026-07-23), never recalled (`card-data-source`).
 
@@ -397,4 +397,4 @@ marked damage. Longtusk Cub can gain energy on connecting and spend it to grow
 itself, with the ability unpayable below cost. `Player` carries a counter map;
 `PlayerCounterKind` is distinct from `CounterKind`; the poison-at-ten SBA lives
 beside life ≤ 0. The build is warning-clean, `hooky run` passes, and every rules
-claim is checked against `docs/rules.txt` with the CR number cited in-code.
+claim is checked against `data/comprehensive-rules.txt` with the CR number cited in-code.

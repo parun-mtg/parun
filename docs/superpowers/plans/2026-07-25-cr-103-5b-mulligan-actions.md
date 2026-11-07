@@ -16,7 +16,7 @@
 - **One type per module** under `Parun.Type.<Name>`; qualified imports aliased to the last component; no explicit export lists; a module never imports its parents.
 - **The two invariants outrank this plan:** the engine never cases on a card's identity (only classifications), and never makes a player's choice. `Parun.Mulligan` may *mention* `Effect` but must never `case` on one — the only module that may is `Parun.Resolve`.
 - **TDD non-negotiable:** write each failing test, run it, watch it fail, then implement. Tick each `- [ ]` as you finish it.
-- **Every rules claim cites CR 103.5b** (or the specific sub-rule) and was checked against `docs/rules.txt`. Never write an expiry (milestone name) into a code comment — file an issue and cite `(#N)`.
+- **Every rules claim cites CR 103.5b** (or the specific sub-rule) and was checked against `data/comprehensive-rules.txt`. Never write an expiry (milestone name) into a code comment — file an issue and cite `(#N)`.
 - **Commit style:** commit directly to `main`, one small complete commit per task. End commit messages with the two trailers from `CLAUDE.md` (Co-Authored-By + Claude-Session).
 - **After each task:** `git add -A`, `hooky fix`, `git add -A`, `hooky run` (both act on **staged** files only).
 

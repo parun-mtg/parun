@@ -92,7 +92,7 @@ Three phases, one rules section each. Each is **one routine/axis + the real card
 that falsifies its naive implementation** (the M2/M3/M4 discipline). Gate cards
 are **candidates** — each phase's own spec re-derives its exact gate from real
 cards and `rules.txt` when written. **Every CR number below was verified against
-`docs/rules.txt` at this design pass** (the 723/727/729 numbering matches
+`data/comprehensive-rules.txt` at this design pass** (the 723/727/729 numbering matches
 design.md §3 and the rules.txt section headers); phase specs re-verify before the
 number drives code (CLAUDE.md: never trust recalled Magic rules).
 

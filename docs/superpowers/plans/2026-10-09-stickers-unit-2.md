@@ -22,7 +22,7 @@
 - The rules core never cases on an effect's identity. `Effect.PutSticker` is cased only in `Parun.Engine.Resolve*` and the exhaustive classification tables. The core cases on `StickerKind` (CR 123.1), never on a sheet or a sticker's text; the letter, vowel and word reads are open-half `Quantity`/`Filter` arms.
 - One type per `Parun.Types.<TypeName>` module, type and instances only. Constructors take `Mk`. A haddock is one line plus its CR citation, except an elision paragraph or a note naming the proving test.
 - An elision gets an issue and a code-site comment saying only what is not implemented, ending `(#N)`. `#N1`–`#N6` are placeholders Task 8 replaces.
-- Read CR text from `docs/rules.txt` by rule number. Re-verify Oracle with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` (URL-encode the name; one request at a time) before writing a card; the texts below are Scryfall's of 2026-10-09.
+- Read CR text from `data/comprehensive-rules.txt` by rule number. Re-verify Oracle with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` (URL-encode the name; one request at a time) before writing a card; the texts below are Scryfall's of 2026-10-09.
 - Stage, `hooky fix`, stage again. A new module: stage `parun.cabal`, run `cabal-gild parun.cabal`. Card JSON: `script/format-json.sh fix FILE`. A card file is named by `Parun.Slug.fromText` of its name: a run of underscores becomes one `_` (`Wizards of the _____` → `wizards-of-the-_.json`); CardSpec's slug lint names the expected file if one is wrong.
 - Never stash; copy aside and move back. Never `git checkout <file>` to revert.
 - Extensions only from `.hlint.yaml`. `case` over `maybe`, `let` over `where`, no backticks in new code.
@@ -1273,7 +1273,7 @@ N6, title "A Good Day to Pie can't return itself when you put a name sticker on 
   - `grep -rn '872' source docs data --include='*.hs' --include='*.md' --include='*.json'`: unit 1's meld, merge and restamp elisions and `Keyword.hs`' sticker kicker only.
   - `grep -rn -i 'name sticker\|sticker' source --include='*.hs'` and read every comment this unit touched; `grep -rn 'Spy Kit' source --include='*.hs'` for prose that says Spy Kit is layer 3's only name writer (`PC.names`' haddock, `AddNamesMatching`'s) and fix it.
   - Counting absolutes: `grep -rn 'HasSticker\|PlacesSticker\|PutSticker' source --include='*.hs'` comments naming their producers ("the one producer", Pyrodancer alone) are now falsified; fix them, including `Resolve.Effect`'s "the one producer's own filter".
-  - CR citations: for each rule in `git diff origin/main -U0 | grep -o 'CR [0-9][0-9.a-z/-]*' | sort -u`, read it in `docs/rules.txt`.
+  - CR citations: for each rule in `git diff origin/main -U0 | grep -o 'CR [0-9][0-9.a-z/-]*' | sort -u`, read it in `data/comprehensive-rules.txt`.
 - [ ] **Step 3: Self-review.** `git fetch`, `git merge origin/main` (once, now), the full suite, then re-run m2a, m3b, m4a, m5d, m5f, m6b. Re-read every comment the diff touched against the one-line haddock rule. Read `gh api repos/parun-mtg/parun/issues/872/dependencies/blocking` and name what this unblocked.
 - [ ] **Step 4: Open the PR.** `gh pr create --draft --title "Stickers unit 2: name stickers" --body-file $SCRATCH/pr.md`, the body:
 

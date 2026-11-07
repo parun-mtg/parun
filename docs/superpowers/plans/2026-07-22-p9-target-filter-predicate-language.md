@@ -59,7 +59,7 @@ these:
 - **Build must be warning-clean** under `-Weverything` minus the `parun.cabal`
   allow-list; `+pedantic` makes any warning a `-Werror` failure. Suites break
   separately from the library, so always build `all`.
-- **Every rules claim checked against `docs/rules.txt`**, with the CR number cited
+- **Every rules claim checked against `data/comprehensive-rules.txt`**, with the CR number cited
   in the code comment. Never trust recalled Magic rules. The CR numbers this spec
   already verified (2026-07-22): 105.2, 105.2c, 109.2, 109.5, 110.1, 110.4, 112.1,
   115.1a, 115.4, 205.3, 205.4, 205.4c, 208.1, 601.2c, 608.2b, 611.2c, 613.1b,

@@ -9,7 +9,7 @@ per the umbrella's own §7 and P3a's §8 hand-off, which already assigned 7d to
 P3b's neighbourhood. Gate: **Tarmogoyf**. This spec is implementable; a
 `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 107.3, 107.3a, 115.1a, 205.3k, 208.1, 208.2, 208.2a, 208.2b, 208.3,
 208.4a, 208.4b, 208.5, 604.3, 604.3a, 608.2h, 611.2, 611.2a, 611.2c, 611.2d,
 613.1g, 613.2, 613.2c, 613.3, 613.4, 613.4a, 613.4b, 613.4c, 613.4d, 613.6,

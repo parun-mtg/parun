@@ -27,7 +27,7 @@ Read it before Task 1; it carries the CR argument each task implements.
 - **Branch:** `393-finish-cr-500-8-extra-phases`. Never commit to `main`.
 - **One build at a time.** `jobs: $ncpus` already saturates the machine. Never
   run two `cabal` invocations concurrently.
-- **Every rules claim is checked against `docs/rules.txt`**, by rule number,
+- **Every rules claim is checked against `data/comprehensive-rules.txt`**, by rule number,
   never from memory. Cite the rule number in the code comment.
 - **Cards are verified live against Scryfall**, never from the dumps in
   `_scratch/` and never from memory.
@@ -1028,7 +1028,7 @@ Record the before → after count for the PR body. Before this branch: run
 git diff main --unified=0 | grep -oE "CR [0-9]+\.[0-9]+[a-z]?" | sort -u
 ```
 
-Grep each one out of `docs/rules.txt` and confirm it says what the comment claims.
+Grep each one out of `data/comprehensive-rules.txt` and confirm it says what the comment claims.
 This reliably catches real defects here. Fix silently — only the end state matters.
 
 - [ ] **Step 4: Re-read every comment the branch touched**

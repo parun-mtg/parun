@@ -3,7 +3,7 @@
 *Design pass 2026-07-24. Closes GitHub issue #141 ("Mulligans (CR 103.4) are not
 implemented"). This is a **phase-sized** spec: one new logic module, two new
 prompt channels, and a restructure of the two setup entry points that draw
-opening hands. Every rules claim is checked against `docs/rules.txt` and cited by
+opening hands. Every rules claim is checked against `data/comprehensive-rules.txt` and cited by
 number. The next step is a `writing-plans` plan derived from this spec.*
 
 ## 0. Why this exists
@@ -326,7 +326,7 @@ into a compile error, so none can be silently missed.
 2. `hooky fix` applied, `hooky run` passes; HLint clean.
 3. `Parun.MulliganSpec` passes; the CR 727.3 / 729.3 short-deck tests still pass.
 4. Every rules claim cites CR 103.5 (or the specific sub-rule) and was checked
-   against `docs/rules.txt`.
+   against `data/comprehensive-rules.txt`.
 5. Issues filed for the CR 103.5c, 103.6, and 103.2a/b deferrals; `(#N)` citations
    at the code sites.
 6. Issue #141 closed; `progress.md` gains a completion entry; the `Setup.hs`

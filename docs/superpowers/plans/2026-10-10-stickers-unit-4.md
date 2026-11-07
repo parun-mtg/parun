@@ -43,7 +43,7 @@
 - **Types and haddocks.** One type per `Parun.Types.<TypeName>` module, holding the type and its instances only. Constructors take `Mk`. A haddock is one line plus its CR citation, except an elision paragraph or a note naming the proving test.
 - **Elisions.** Each gets an issue, and a code-site comment saying only what is not implemented, ending `(#N)`. `#N1`–`#N2` are placeholders that Task 7 replaces.
 - **Sources.**
-  - Read CR text from `docs/rules.txt` by rule number.
+  - Read CR text from `data/comprehensive-rules.txt` by rule number.
   - Before writing a card, re-verify its Oracle text with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'`, URL-encoded, one request at a time. The texts below are Scryfall's of 2026-10-10.
 - **Committing.**
   - Stage, run `hooky fix`, then stage again.
@@ -395,7 +395,7 @@ These are the five input classes most likely to bite. Each has a test in its own
   - Run `grep -rn '872' source docs data --include='*.hs' --include='*.md' --include='*.json'`. Every elision citing #872 must be gone; only the spec, plans and historical references remain. #872 closes with this PR (CLAUDE.md: grep the bare number).
   - Run `grep -rn -i 'sticker\|kicker\|kicked' source --include='*.hs'` and read every comment this unit touched. The rule-statements now false include "the one producer", "Kicker is the only…", and `WasKicked`'s "family" wording.
   - Check the record-update sites for `Object.stickers` (`{ Object.stickers =`, `o {Object.stickers`). For each, confirm it is intended. `happenedBetween`: a placement inside the cast hook is not an instruction, so there is no copy-across. Say so.
-  - CR citations: read each `CR` the diff cites in `docs/rules.txt`.
+  - CR citations: read each `CR` the diff cites in `data/comprehensive-rules.txt`.
 - [ ] **Step 3: Self-review.** Run `git fetch` and `git merge origin/main` (once, now), then the full suite, and re-run m3a, m3b, m3c, m4a, m5a and m6a. Re-read every touched comment against the one-line haddock rule. Read `gh api repos/parun-mtg/parun/issues/872/dependencies/blocking` and name in the PR body what this unblocks.
 - [ ] **Step 4: Open the PR.** Run `gh pr create --draft --title "Stickers unit 4: generic producers, sticker kicker, meld and merge" --body-file $SCRATCH/pr.md`:
 

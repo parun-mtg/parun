@@ -9,7 +9,7 @@ this opens Cluster 2, **the event substrate generalized**. P4 is a substrate and
 its readers. Gates: **Barbarian Outcast**, **Tidal Wave**, **Khabál Ghoul**,
 **Sarcomancy**. This spec is implementable; a `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 101.4, 111.3, 117.5, 400.7, 400.7e, 513.1, 513.1a, 514.1, 603.2, 603.2b,
 603.2c, 603.2d, 603.2f, 603.2g, 603.2h, 603.3, 603.3a, 603.3b, 603.3c, 603.3d,
 603.4, 603.6a, 603.6c, 603.7, 603.7a, 603.7b, 603.7c, 603.7d, 603.7e, 603.7f,

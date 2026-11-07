@@ -20,7 +20,7 @@ Copied from the spec (`docs/superpowers/specs/2026-07-19-m4e-counter-spell-desig
 - **No new `Prompt`/`Response` type.** Cancel targets through the existing `ChooseTargets`; countering is unprompted. `DecisionLog` replays deterministically.
 - **Cancel is covered by deterministic blue fixtures only — no random-game deck** (the M3d/M3f/M3g posture; do NOT add Cancel to `blueDeck`/any matchup). But Cancel **must** be added to `Cards.allPrintings` (the hygiene registry) so the honesty round-trip covers it.
 - **No partial functions** (no `head`/`error`/non-exhaustive matches). `Text` not `String`. Constructors are `MkX`, non-punning. Qualified imports aliased to last component.
-- **Every rules claim cites its CR number in a code comment**, checked against `docs/rules.txt` — never recalled.
+- **Every rules claim cites its CR number in a code comment**, checked against `data/comprehensive-rules.txt` — never recalled.
 - **TDD:** write each failing test, run it to watch it fail, implement minimally, run to green, commit. After `hooky`: `git add -A`, `hooky fix`, `git add -A`, `hooky run`.
 
 ---

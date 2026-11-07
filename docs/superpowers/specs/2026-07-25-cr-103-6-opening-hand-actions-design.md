@@ -4,7 +4,7 @@
 actions (Leyline, Gemstone Caverns)"). This is a **phase-sized** spec: one new
 `Card` field, one new prompt channel, one new `ControllerRelation` constructor,
 one new window in the opening-hand pipeline, and one new card. **No new
-opcode.** Every rules claim is checked against `docs/rules.txt` and cited by
+opcode.** Every rules claim is checked against `data/comprehensive-rules.txt` and cited by
 number; the gate card's text is checked against Scryfall. The next step is a
 `writing-plans` plan derived from this spec.*
 
@@ -369,7 +369,7 @@ round-trips.
 3. The new `MulliganSpec` and replacement cases pass; the whole existing suite
    still passes.
 4. Every rules claim cites CR 103.6 (or the specific sub-rule) and was checked
-   against `docs/rules.txt`; Leyline's text was checked against Scryfall.
+   against `data/comprehensive-rules.txt`; Leyline's text was checked against Scryfall.
 5. Issue #149 closed; `docs/progress.md` gains an entry; §9's issues filed with
    `(#N)` citations at their code sites.
 

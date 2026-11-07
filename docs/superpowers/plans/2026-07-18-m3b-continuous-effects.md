@@ -15,7 +15,7 @@
 - **Qualified imports aliased to the last component**; `Parun.Type.Card` takes alias `Card.Type` when it shares a module with `Parun.Card` (alias `Card`). Import operators unqualified. `A.B.C` must not import `A.B` or `A`.
 - **No partial functions** (`Set.lookupMin`, `Maybe.maybeToList`, not `head`/`elemAt`). **No list comprehensions** — use `map`/`filter`/`concatMap`. `Mk` constructor prefixes; non-punning constructor names. `Text`, not `String`. Arbitrary-precision numbers.
 - **No boolean blindness**; derive at least `Eq` and `Show` (add `Ord` only where a value is sorted or keys a `Map`/`Set`).
-- **Every rules claim cites its CR number** in a comment, checked against `docs/rules.txt` (never memory).
+- **Every rules claim cites its CR number** in a comment, checked against `data/comprehensive-rules.txt` (never memory).
 - **Warning-clean build:** `cabal build all --enable-tests --enable-benchmarks` (the `pedantic` flag makes warnings fatal). When you move or delete a definition, remove now-unused imports in the same edit. A definitive check needs `cabal clean` first (incremental builds hide warnings in unchanged modules).
 - **The two invariants outrank this plan:** the rules core (`Combat`, `Damage`, `Sba`, `Engine`, `Cast`, `Target`) never cases on a `Modification` or an `Effect` — only `Parun.Projection` cases on `Modification`, only `Parun.Resolve` on `Effect`. The engine never makes a player's choice. If a step looks wrong, **stop and say so** — do not weaken a test to make a check pass.
 - **TDD:** write each failing test, **run it and watch it fail**, then implement. Narrow with `cabal test --test-options='-p "<pattern>"'` while iterating; the full `cabal test` must pass before every commit.

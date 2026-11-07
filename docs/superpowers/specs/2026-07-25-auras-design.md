@@ -4,7 +4,7 @@
 milestone: no `docs/design.md` §3 entry, one `docs/progress.md` entry on
 completion. Two phases, each its own `writing-plans` plan and its own session per
 `docs/workflow.md`. Closes #33, #62 and #114. Every rules claim is checked against
-`docs/rules.txt` and cited by number; both gate cards' text is checked against
+`data/comprehensive-rules.txt` and cited by number; both gate cards' text is checked against
 Scryfall.*
 
 ## 0. Why this exists

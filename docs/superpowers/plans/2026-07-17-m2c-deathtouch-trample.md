@@ -18,7 +18,7 @@ Read the spec before starting. The invariants it turns on:
 2. **The closed half asks `Game.keywordsOf`/`hasKeyword`, never `Card.keywords`.** The 704.5h source-has-deathtouch read and the trample threshold both consult the projection.
 3. **Damage flows through one helper.** `applyCombatDamage` is the sole place damage is marked and the sole place events are emitted. Do not mark damage anywhere else.
 4. **The trample threshold is not a floor.** CR 702.19b lets a blocker be under-assigned; the threshold gates the *defender* only. Implement the implication, not `every blocker ≥ lethal`.
-5. **Every rules claim is checked against `docs/rules.txt`.** Load-bearing: CR 510.1, 510.2, 702.2, 702.19, 704.5f/g/h. Cite the number in the code.
+5. **Every rules claim is checked against `data/comprehensive-rules.txt`.** Load-bearing: CR 510.1, 510.2, 702.2, 702.19, 704.5f/g/h. Cite the number in the code.
 
 ## Global Constraints
 

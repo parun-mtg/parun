@@ -35,7 +35,7 @@
 - **Oracle text.** Verify it with `curl -s 'https://api.scryfall.com/cards/named?exact=Mob%20Verdict'`. Ruling: "Each player must vote for another player. They can't abstain."
 - **Never stash.** Stage, run `hooky fix`, then `git add` again.
 - **Commits.** A subject line, at most two sentences of why, and the trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01N6oeJknHeSC1oKJ3H5pihY`. Write "related to #3717". Never put close, fix or resolve next to an issue number in a commit.
-- **CR text.** Read it from `docs/rules.txt` by number: 701.38a, 701.38b, 701.38d, 120.3, 120.4.
+- **CR text.** Read it from `data/comprehensive-rules.txt` by number: 701.38a, 701.38b, 701.38d, 120.3, 120.4.
 
 ## Decisions
 
@@ -153,7 +153,7 @@
     - the capabilities it lacks: an "enters or attacks" trigger (check whether one exists before claiming), a draw for each player by `VotesReceived` (now possible), and "each player who received no votes may put a permanent card from their hand onto the battlefield" (a per-player optional gated on a zero tally).
 
 - [ ] **Step 4: Self-review.**
-  - Re-check every CR citation against `docs/rules.txt`.
+  - Re-check every CR citation against `data/comprehensive-rules.txt`.
   - Re-read every touched comment.
   - Grep every new constructor's sibling sites and record each one.
   - Confirm every new codec has a round-trip case.

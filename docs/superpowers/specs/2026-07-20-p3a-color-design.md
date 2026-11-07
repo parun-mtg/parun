@@ -9,7 +9,7 @@ every other phase is one axis plus the card that falsifies its naive
 implementation, and P3 was two. Gate: **Doom Blade** against a colour that moves.
 This spec is implementable; a `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 105.2, 105.2c, 105.3, 111.3, 202.2, 202.2b–f, 204.1, 204.2, 604.3,
 604.3a, 608.2b, 613.1e, 613.2c, 613.3, 613.8a, 702.36b, 702.114a. Numbers marked
 **(verify)** were not, and must be checked before they drive code (CLAUDE.md:

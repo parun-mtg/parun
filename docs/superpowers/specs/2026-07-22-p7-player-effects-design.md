@@ -7,7 +7,7 @@ the largest new axis in M4.5. Gates: **Rule of Law**, **Thalia, Guardian of
 Thraben**, **Sapphire Medallion**, **Silence** and **Reliquary Tower**. This
 spec is implementable; a `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 101.2, 103.5, 109.5, 118.7, 118.7a, 118.7b, 118.7c, 118.7d, 118.7e,
 118.7f, 118.7g, 118.9d, 402.1, 402.2, 601.2b, 601.2e, 601.2f, 601.2g, 601.2h,
 601.3, 601.3a, 604.1, 604.2, 604.3, 611.1, 611.2c, 611.2d, 611.3, 613.1, 613.7,

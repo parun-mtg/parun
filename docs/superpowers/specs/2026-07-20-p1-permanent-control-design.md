@@ -4,7 +4,7 @@
 (`docs/superpowers/specs/2026-07-20-m4.5-closed-half-gaps-design.md`), closing
 **GAP-L2** — permanent control. Gate: **Act of Treason**. This spec is
 implementable; a `writing-plans` plan follows it. All CR numbers are marked
-**(verify)** and must be checked against `docs/rules.txt` before they drive code
+**(verify)** and must be checked against `data/comprehensive-rules.txt` before they drive code
 (CLAUDE.md: never trust recalled Magic rules).*
 
 ## 0. Why this phase, and what it proves

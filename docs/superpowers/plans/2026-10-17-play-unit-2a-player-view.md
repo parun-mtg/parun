@@ -190,7 +190,7 @@ All three derive `Eq, Show`. Each codec is a `Fields.object` with every key
 
 - [ ] Commit this plan. Merge `origin/main` once, then run `hooky fix`.
 - [ ] Self-review:
-  - re-check every CR citation against `docs/rules.txt`;
+  - re-check every CR citation against `data/comprehensive-rules.txt`;
   - grep `ProjectedCharacteristics` builders. This unit adds none, so CLAUDE.md
     item 4's "fill every builder" does not apply. Say so.
 - [ ] Open the PR with a body that has, a line each:

@@ -18,7 +18,7 @@
 - **`hooky` acts on staged files.** `git add`, then `hooky fix`, then `git add` again, then `hooky run`.
 - **`cabal-gild parun.cabal` must be run directly** whenever a module is added or deleted; `hooky fix` only covers staged files and will not regenerate `exposed-modules` for a file it has not seen.
 - **Scope is `source/libraries/types/` and `source/libraries/codec/` only.** The engine's 37 modules are out. Other files change only where they must to compile.
-- **Never trust recalled Magic rules.** Any CR citation a comment carries must be re-checked against `docs/rules.txt` when that comment is touched.
+- **Never trust recalled Magic rules.** Any CR citation a comment carries must be re-checked against `data/comprehensive-rules.txt` when that comment is touched.
 - **Never edit this plan, weaken an assertion, or delete a test to make a check pass.** If the plan looks wrong, stop and say so.
 - Build must be warning-free under `-Weverything` (see `parun.cabal`'s `common warnings`).
 
@@ -277,7 +277,7 @@ new `EntryRidersSpec` both cover it.
 
 ### Per-module procedure
 
-1. Add `unwrap` to the type if it is a newtype lacking one (R3), and convert its decl-attached comments to haddock (R6). Re-check any CR citation in a touched comment against `docs/rules.txt`.
+1. Add `unwrap` to the type if it is a newtype lacking one (R3), and convert its decl-attached comments to haddock (R6). Re-check any CR citation in a touched comment against `data/comprehensive-rules.txt`.
 2. Rewrite the codec module per R1–R5. Add to `Common` any helper the module needs that is not there yet, under its name from the map above.
 3. Write `Parun.Codec.XSpec` — one `assertJsonCodec` case per constructor of the type. **Derive every JSON literal by reading the encoder you just wrote, never by recalling a tag name.**
 4. Delete the cases this module supersedes from `source/test-suite/Parun/CodecSpec.hs`. Bespoke shape assertions there (the elision tests built on `payloadHead` / `payloadLength`) move into the new `XSpec` — they are not dropped.
@@ -977,7 +977,7 @@ is the codec's base module.
 - [ ] **Step 2: Self-review the branch**
 
 Per `CLAUDE.md`: re-check every CR citation the diff touched against
-`docs/rules.txt`, and re-read every comment the rewrite touched for prose the
+`data/comprehensive-rules.txt`, and re-read every comment the rewrite touched for prose the
 rename made wrong. Fix findings on the branch. The comment sweep (R6) is where
 this pays — a misattached `-- |` reads as correct.
 

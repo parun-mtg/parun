@@ -32,11 +32,11 @@ Read `docs/` by section, on demand, never a whole doc "for context".
 
 - What's next? `gh issue list`
 - Architecture rationale: `docs/design.md`
-- Rules ground truth: `docs/rules.txt`, grepped by rule number --- never
-  memory, and never a rule number quoted in an issue or a brief. A CR update
-  adds every new entry of a closed list (card types, supertypes, a subtype
-  family) to its enum in the same PR, card or no card: a flat list is data,
-  not a capability. `Parun.SubtypeSpec` fails until it does.
+- Rules ground truth: `data/comprehensive-rules.txt`, grepped by rule number ---
+  never memory, and never a rule number quoted in an issue or a brief. A CR
+  update adds every new entry of a closed list (card types, supertypes, a
+  subtype family) to its enum in the same PR, card or no card: a flat list is
+  data, not a capability. `Parun.SubtypeSpec` fails until it does.
 - Readings the rules don't force: `docs/decisions.md`, checked before deciding
   one and on every CR update
 - Readings only a synthetic card can observe: `docs/synthetic-readings.md`,
@@ -90,8 +90,8 @@ to agents as written. What it doesn't say:
   `origin/main` under the same name pushes plainly; never force-push it.
 
 - Self-review the branch before opening the PR and fix the findings there. At
-  minimum re-check every CR citation against `docs/rules.txt` and re-read
-  every comment the change touched.
+  minimum re-check every CR citation against `data/comprehensive-rules.txt` and
+  re-read every comment the change touched.
 
 - The PR body carries the case for merging, a line each:
   - what changed and why, with `Closes #N` as bare text (backticks break the
@@ -174,7 +174,7 @@ to agents as written. What it doesn't say:
   skipped step, not a blocker) holds
   prior art --- `phase`, `mtgish`, `argentum-engine`; see
   `docs/agents/set-by-set.md`, "Prior art". Consult it AFTER deriving the rule
-  from `docs/rules.txt`; the CR wins every disagreement.
+  from `data/comprehensive-rules.txt`; the CR wins every disagreement.
 
 - A card whose whole text is keywords is ingested, never hand-written: `jq -f
   script/ingest/candidates.jq` over MTGJSON's `AtomicCards.json`, then `parun

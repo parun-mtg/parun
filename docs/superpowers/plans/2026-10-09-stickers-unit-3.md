@@ -22,7 +22,7 @@
 - The rules core never cases on an effect's identity. The core cases on `StickerKind` (CR 123.1) and on CR 113.3's ability kind, never on a sheet or what a sticker grants: `stickerGrants` hands every keyword and ability over unread. `Effect.PutSticker` is cased only in `Parun.Engine.Resolve*` and the exhaustive classification tables.
 - One type per `Parun.Types.<TypeName>` module, type and instances only. Constructors take `Mk`. A haddock is one line plus its CR citation, except an elision paragraph or a note naming the proving test.
 - An elision gets an issue and a code-site comment saying only what is not implemented, ending `(#N)`. `#N1`–`#N3` are placeholders Task 8 replaces.
-- Read CR text from `docs/rules.txt` by rule number. Re-verify Oracle with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` (URL-encoded, one request at a time) before writing a card or sheet; the texts below are Scryfall's of 2026-10-09.
+- Read CR text from `data/comprehensive-rules.txt` by rule number. Re-verify Oracle with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` (URL-encoded, one request at a time) before writing a card or sheet; the texts below are Scryfall's of 2026-10-09.
 - Stage, `hooky fix`, stage again. Card and sheet JSON: `script/format-json.sh fix FILE`. A card file is named by `Parun.Slug.fromText` of its name; CardSpec's slug lint names the expected file if one is wrong.
 - Never stash; copy aside and move back. Never `git checkout <file>` to revert.
 - Extensions only from `.hlint.yaml`. `case` over `maybe`, `let` over `where`, no backticks in new code.
@@ -1103,7 +1103,7 @@ N3, title "Clandestine Chameleon can't have the abilities of stickers on other p
   - `grep -rn '872' source docs data --include='*.hs' --include='*.md' --include='*.json'`: unit 1's meld, merge and restamp elisions and `Keyword.hs`' sticker kicker only.
   - `grep -rn -i 'sticker\|ticket' source --include='*.hs'` and read every comment this unit touched; counting absolutes ("the one producer", "art stickers carry no data", "Game.stickerWords answers Nothing for every other kind") are now false: fix them.
   - `grep -rn '{ *PutSticker\.\|PutSticker\.[a-z]* = ' source --include='*.hs'` for a record update that keeps an old `ticketCap` or `free`; `Rewrite.rewriteEffect` is the one rebuilding it.
-  - CR citations: for each rule in `git diff origin/main -U0 | grep -o 'CR [0-9][0-9.a-z/-]*' | sort -u`, read it in `docs/rules.txt`.
+  - CR citations: for each rule in `git diff origin/main -U0 | grep -o 'CR [0-9][0-9.a-z/-]*' | sort -u`, read it in `data/comprehensive-rules.txt`.
 - [ ] **Step 3: Self-review.** `git fetch`, `git merge origin/main` (once, now), the full suite, then re-run m2b, m3a, m4a, m5a, m6, m7a. Re-read every comment the diff touched against the one-line haddock rule. Read `gh api repos/parun-mtg/parun/issues/872/dependencies/blocking` and name what this unblocked.
 - [ ] **Step 4: Open the PR.** `gh pr create --draft --title "Stickers unit 3: ability and P/T stickers, ticket costs" --body-file $SCRATCH/pr.md`, the body:
 

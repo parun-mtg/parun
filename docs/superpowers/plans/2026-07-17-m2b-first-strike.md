@@ -17,7 +17,7 @@ Read the spec before starting. The invariants it turns on:
 1. **Casing on a `Keyword` is NOT a violation of the closed/open invariant.** Rule 702 is the rulebook; a keyword is a numbered rule, not an effect. See M2a spec §1 and the note atop `Parun.Type.Keyword` before "fixing" a `case keyword of` into a classification.
 2. **The closed half asks `Game.keywordsOf`, never `Card.keywords`.** Layer 6 grants abilities at M3; the wave and splice decisions read the projection **live, at the step boundary**, never precomputed at combat start.
 3. **The two combat damage steps are two steps.** The second is a spliced step, so it gets its own CR 510.3 priority window and its own SBA check for free from the step machinery. Do not deal both waves inside one handler.
-4. **Every rules claim is checked against `docs/rules.txt`.** The load-bearing rules are CR 506.1, 508.8, 500.8, 500.9, 500.11, 510.1–510.5, 702.4, 702.7. Cite the number in the code.
+4. **Every rules claim is checked against `data/comprehensive-rules.txt`.** The load-bearing rules are CR 506.1, 508.8, 500.8, 500.9, 500.11, 510.1–510.5, 702.4, 702.7. Cite the number in the code.
 
 ## Global Constraints
 

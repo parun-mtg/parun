@@ -22,7 +22,7 @@ Copied from the spec and `CLAUDE.md`; every task implicitly includes these:
 - **No boolean blindness**; **derive at least `Eq` and `Show`**.
 - **Warning-clean** under `-Weverything` minus the allow-list; the `pedantic` flag makes any warning a build failure. Build `all`: `cabal build all --enable-tests --enable-benchmarks`. When in doubt, `cabal clean` first — incremental builds hide warnings.
 - **The two invariants:** the rules core never `case`s on an effect's *identity*; `Parun.Projection` is the **sole** `case`-on-`Modification` home (as `Parun.Resolve` is for `Effect`). The engine makes no player choices.
-- **Every rules claim cited** against `docs/rules.txt` in a code comment. Never trust recalled Magic rules.
+- **Every rules claim cited** against `data/comprehensive-rules.txt` in a code comment. Never trust recalled Magic rules.
 - **After each task:** `cabal build all --enable-tests --enable-benchmarks` warning-free, `cabal test`, `git add -A` (stage explicit paths under a shared worktree) then `hooky fix` && `hooky run`, HLint clean. Commit directly to `main`, one small complete commit per task.
 
 **Commit message footer** (every commit):

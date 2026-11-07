@@ -17,7 +17,7 @@
 - **One type per module** under `Parun.Type.<Name>`; qualified imports aliased to the last component; no explicit export lists; a module never imports its parents.
 - **The two invariants outrank this plan:** the engine never cases on a card's *identity* (only classifications), and never makes a player's choice. `Card.isAura` is a **subtype** read off the type line — the same closed-half classification as the `Card.isPermanent` beside it (CR 205.3h), and not a violation. See spec §3.4.
 - **TDD non-negotiable:** write each failing test, run it, watch it fail, then implement. Tick each `- [ ]` as you finish it.
-- **Every rules claim cites the CR** and was checked against `docs/rules.txt`. Never write an expiry into a code comment — file an issue and cite `(#N)`.
+- **Every rules claim cites the CR** and was checked against `data/comprehensive-rules.txt`. Never write an expiry into a code comment — file an issue and cite `(#N)`.
 - **Commit style:** commit directly to `main`, one small complete commit per task, with the two `CLAUDE.md` trailers.
 - **After each task:** `git add <explicit paths>`, `hooky fix`, `git add <explicit paths>`, `hooky run`. Stage explicit paths rather than `-A`: concurrent sessions share this checkout.
 

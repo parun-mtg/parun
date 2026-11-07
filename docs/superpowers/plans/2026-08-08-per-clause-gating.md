@@ -21,7 +21,7 @@ Design doc: `docs/superpowers/specs/2026-08-08-per-clause-gating-design.md`.
 - **One type per module under `Parun.Types.<TypeName>`**, holding the type and its instances only.
 - **Sublibrary layering:** `types` → `codec` → `engine`. A `Parun.Types.*` module holds no cross-type logic.
 - **No API stability obligations.** Rename and reshape freely; never add compat shims or deprecation re-exports.
-- **Every CR citation in a comment must be checked against `docs/rules.txt`**, never memory.
+- **Every CR citation in a comment must be checked against `data/comprehensive-rules.txt`**, never memory.
 - **Concurrent sessions may share this checkout.** Stage explicit paths; never `git add -A`.
 
 ---
@@ -894,7 +894,7 @@ git commit -m "Shed Weakness: a may that covers one clause, not the ability (#33
 
 - [ ] **Step 1: Re-check every CR citation you wrote**
 
-Grep the branch diff for `CR ` and check each against `docs/rules.txt` by number. This step has repeatedly caught real defects in this repository; do not skip it because the citations were copied from the spec.
+Grep the branch diff for `CR ` and check each against `data/comprehensive-rules.txt` by number. This step has repeatedly caught real defects in this repository; do not skip it because the citations were copied from the spec.
 
 ```bash
 git diff origin/main -- source data | grep -oE 'CR [0-9]+\.[0-9]+[a-z]*' | sort -u

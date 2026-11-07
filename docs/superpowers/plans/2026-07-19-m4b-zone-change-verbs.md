@@ -17,7 +17,7 @@ Copied verbatim from the spec (`docs/superpowers/specs/2026-07-19-m4b-zone-chang
 - **`Keyword.Indestructible` is CR 702.12, a citation** — casing on it (read through `Projection.hasKeyword`/`PC.keywords`, never `Card.keywords`) is legitimate, the M2a rule.
 - **Every card is a `data/cards/<slug>.json` file** rendered by the codec; the committed file must equal `Json.render (Codec.printingToJson p) <> "\n"` (the `CardsSpec` P3 byte-stability check). Never hand-edit `Cards.allPrintings` field ordering carelessly — the honesty round-trip (`CodecSpec` P1/P2) iterates it.
 - **No language extensions** beyond those already present; **no partial functions** (`head`/`error`/`undefined`/non-exhaustive matches); **`Text` not `String`**; **arbitrary-precision `Natural`/`Integer`**; **`Mk`-prefixed non-punning constructors**; **qualified imports aliased to the last component**; **no explicit export lists**; **derive `Eq`/`Show`** (and `Ord` where the type is a map key).
-- **Every rules claim is checked against `docs/rules.txt`** and cited by number in a code comment.
+- **Every rules claim is checked against `data/comprehensive-rules.txt`** and cited by number in a code comment.
 - **TDD is mandatory:** write each failing test and run it to watch it fail (a compile failure on a not-yet-added constructor counts as red) before implementing. Tick each `- [ ]` as you finish it.
 - **After each task:** `cabal build all --enable-tests --enable-benchmarks` warning-clean, `cabal test`, then `git add -A && hooky fix && git add -A && hooky run` before committing.
 

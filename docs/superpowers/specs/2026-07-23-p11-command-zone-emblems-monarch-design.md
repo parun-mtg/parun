@@ -332,7 +332,7 @@ because CR 725.3 makes it a single game-wide designation, not a per-player count
 Palace Jailer's printed text is re-read from Scryfall at implementation time; the
 monarch reminder text and both "when this creature enters" clauses are transcribed
 verbatim into the card JSON, and every CR number in this spec (114, 400.1, 408,
-725) is re-checked against `docs/rules.txt` before it drives code.
+725) is re-checked against `data/comprehensive-rules.txt` before it drives code.
 
 ### Palace Jailer — `data/cards/palace-jailer.json`
 

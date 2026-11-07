@@ -6,7 +6,7 @@
 system as the architecture's canary, and layer 1 is the one blank layer left after
 P1 landed control). Gate: **Clone**. This spec is implementable; a `writing-plans`
 plan follows it. All CR numbers are marked **(verify)** and must be checked against
-`docs/rules.txt` before they drive code (CLAUDE.md: never trust recalled Magic
+`data/comprehensive-rules.txt` before they drive code (CLAUDE.md: never trust recalled Magic
 rules).*
 
 ## 0. Why this phase, and what it proves

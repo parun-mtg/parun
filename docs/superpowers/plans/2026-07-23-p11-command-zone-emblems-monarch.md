@@ -21,7 +21,7 @@
 - **`Text` not `String`; arbitrary-precision numbers** (`Integer`, `Natural`).
 - **No boolean blindness** — `MonarchTarget` is a two-constructor sum, not a `Bool`.
 - **Two invariants outrank everything:** the rules core never cases on an effect's *identity* (only classifications); the engine never makes a player's choice. The only new casing homes are the sanctioned interpreters: `Parun.Resolve` (effects), `Parun.Codec` (the JSON boundary), `Parun.Event`/`Parun.Monarch` (triggers), `Parun.Projection` (modifications/layers). Palace Jailer's exile target is a real CR 115 choice; becoming the monarch, the end-step draw, and the steal are automatic/mandatory — no elision is introduced.
-- **Every CR claim re-checked against `docs/rules.txt` and cited in-code.** Card text is from Scryfall (2026-07-23), never recalled. Palace Jailer is `{2}{W}{W}`, Creature — Human Soldier, **2/2** (the recalled "1/1 for {3}{W}" is wrong — re-read the printed text at implementation time).
+- **Every CR claim re-checked against `data/comprehensive-rules.txt` and cited in-code.** Card text is from Scryfall (2026-07-23), never recalled. Palace Jailer is `{2}{W}{W}`, Creature — Human Soldier, **2/2** (the recalled "1/1 for {3}{W}" is wrong — re-read the printed text at implementation time).
 - **TDD, non-negotiable:** write each failing test, run it, watch it fail, then implement. One small complete commit per task on `main`. Commit trailer per CLAUDE.md.
 - **`hooky` before done:** `git add -A`; `hooky fix`; `git add -A`; `hooky run` passes. Apply HLint suggestions or justify.
 
@@ -1269,7 +1269,7 @@ EOF
 
 ## Exit criterion (spec §10)
 
-(a) `Zone.Command` exists with an emblem resident whose **static ability functions from the command zone** (the projection gather pass), proven by the synthetic-source test surviving a battlefield wipe and being controller-scoped. (b) The **monarch** exists as a `GameState` designation with its two **sourceless** inherent triggers and Palace Jailer as the real gate — the crown transfers on combat damage to the damager's controller, the monarch draws on their own end step, and the exile returns exactly when an opponent takes the crown. Build warning-clean, `hooky run` passes, every rules claim cited against `docs/rules.txt`. **M4.5 is complete.**
+(a) `Zone.Command` exists with an emblem resident whose **static ability functions from the command zone** (the projection gather pass), proven by the synthetic-source test surviving a battlefield wipe and being controller-scoped. (b) The **monarch** exists as a `GameState` designation with its two **sourceless** inherent triggers and Palace Jailer as the real gate — the crown transfers on combat damage to the damager's controller, the monarch draws on their own end step, and the exile returns exactly when an opponent takes the crown. Build warning-clean, `hooky run` passes, every rules claim cited against `data/comprehensive-rules.txt`. **M4.5 is complete.**
 
 ## Progress check
 

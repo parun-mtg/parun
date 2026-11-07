@@ -40,7 +40,7 @@
 - **Card text:** verify Oracle text with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` before relying on a card.
 - **Never stash.** Stage, run `hooky fix`, then `git add` again.
 - **Commits:** a subject line, at most two sentences of why, and the trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01N6oeJknHeSC1oKJ3H5pihY`. Write "related to #4391"; never put close, fix or resolve next to an issue number in a commit.
-- **CR text:** read it from `docs/rules.txt` by number. Checked 2026-10-11: 121.9, 701.20a, 701.20e, 701.22a, 701.23a, 701.25a, 701.25b, 701.29a, 723.4, 723.5.
+- **CR text:** read it from `data/comprehensive-rules.txt` by number. Checked 2026-10-11: 121.9, 701.20a, 701.20e, 701.22a, 701.23a, 701.25a, 701.25b, 701.29a, 723.4, 723.5.
 
 ## Divergences from the spec
 
@@ -186,7 +186,7 @@
   - Name the issue in the PR's deferred line.
 
 - [ ] **Step 4: Self-review.**
-  - Re-check every CR citation against `docs/rules.txt`.
+  - Re-check every CR citation against `data/comprehensive-rules.txt`.
   - Re-read every touched comment.
   - Grep `GameEvent.Looked` arms against `GameEvent.Revealed`'s, and record each site where `Looked` deliberately differs.
   - Grep `LookAt` construction and update sites.

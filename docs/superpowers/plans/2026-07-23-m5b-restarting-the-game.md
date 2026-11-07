@@ -17,7 +17,7 @@ Every task's requirements implicitly include this section. Values copied verbati
 - **Qualified imports, aliased to the last component** (`Parun.Setup` → `Setup`, `Data.List` → `List`); operators unqualified. One import group, no first/third-party split. A module never imports its parents; `A.B.C` never imports `A.B` or `A`.
 - **No partial functions, written or used.** No `head`, `undefined`, `error`, `!!`, or non-exhaustive matches. Use `Data.Maybe.listToMaybe` instead of `head`. `Map.filter`/`Map.keys`/`map`, never a list comprehension (**CLAUDE.md: "No list comprehensions"**).
 - **`newtype`/record conventions.** Build records with `do` + record syntax or record-update syntax, not `<$>`/`<*>`. `case` over point-free; `let` over `where`.
-- **Cite the CR number in every rules-bearing comment.** Every CR claim below was checked against `docs/rules.txt` at this planning pass (CR 727 at lines 6246–6265; CR 103 "Starting the Game" at lines 258–322; CR 103.5 opening hands at 296; CR 103.8a starting player skips first draw at 318). Never trust recalled Magic rules; re-verify before the number drives code.
+- **Cite the CR number in every rules-bearing comment.** Every CR claim below was checked against `data/comprehensive-rules.txt` at this planning pass (CR 727 at lines 6246–6265; CR 103 "Starting the Game" at lines 258–322; CR 103.5 opening hands at 296; CR 103.8a starting player skips first draw at 318). Never trust recalled Magic rules; re-verify before the number drives code.
 - **The two invariants outrank this plan.** (1) The rules core reads a *classification*, never an effect's identity — restart is a routine keyed off a generic `RestartGame` opcode; `Parun.Resolve` never grows a `case … Karn`. (2) The engine makes no choices — the starting player is fixed by rule (CR 727.1a: the controller), not prompted; shuffles remain `Prompt.Shuffle`. Nothing is elided.
 - **One small complete commit per task, on `main`.** Never push. Commit message trailer: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 - **`hooky` before done.** `git add -A` → `hooky fix` → `git add -A` → `hooky run` (acts on staged files only).
@@ -845,7 +845,7 @@ Expected: **all pass**, including the Task 1–5 additions. Do not proceed if an
 Confirm by inspection (note anything material in the commit body):
 - **Invariant 1:** `Parun.Resolve` still cases only on the `RestartGame` *classification*; there is no `case … Karn` or card-identity match. `restartGame`/`startGameFromCards` read `Source.OfCard` (a classification), never a card name.
 - **Invariant 2:** no choice was elided — the starting player is fixed by CR 727.1a (the controller), not prompted; shuffles remain `Prompt.Shuffle`. The two deferrals carry expiry-tagged issues (Task 6) cited inline.
-- **Rules re-check** against `docs/rules.txt`: CR 727.1 (6248), 727.1a (6250), 727.2 (6252), 727.3 (6255), 727.4 (6257), 727.5/727.5a (6259/6261), 727.6 (6263); CR 103.5 opening hands (296). Delegate this citation pass to a cheap model if using subagents (Haiku, per `docs/workflow.md`).
+- **Rules re-check** against `data/comprehensive-rules.txt`: CR 727.1 (6248), 727.1a (6250), 727.2 (6252), 727.3 (6255), 727.4 (6257), 727.5/727.5a (6259/6261), 727.6 (6263); CR 103.5 opening hands (296). Delegate this citation pass to a cheap model if using subagents (Haiku, per `docs/workflow.md`).
 
 - [x] **Step 4: Append the M5b completion entry to `docs/progress.md`**
 

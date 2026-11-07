@@ -1344,7 +1344,7 @@ its own gate card and spec, landed as it completes. Umbrella:
   re-introduced by a task's brief after an earlier task had already fixed it
   in code, so the brief's own text regressed a correction the implementation
   already carried. Three separate implementers, across three separate tasks,
-  refused a brief-specified citation on the strength of `docs/rules.txt` and
+  refused a brief-specified citation on the strength of `data/comprehensive-rules.txt` and
   were right every time — CLAUDE.md's "never trust recalled Magic rules"
   applies as much to a task brief's citations as to memory. **Tracking:**
   `48b17cb`/issue #1 (the M3f replacement seam — both GAP-R, the event-coverage

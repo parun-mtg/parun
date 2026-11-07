@@ -24,7 +24,7 @@
 - Every proving check gets a mutation: `script/with-build-lock.sh script/mutate.sh FILE @SCRIPT PATTERN`, with the sed script in a scratchpad file, keeping every import and binding used (`-Werror`). Name the assertion that reddened. Never edit a file while a mutation runs on it.
 - Never stash. Stage, `hooky fix`, `git add` again.
 - Commits are a subject line and at most two sentences of why, with the trailers `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01N6oeJknHeSC1oKJ3H5pihY`. A commit says "related to #1408"; never close, fix or resolve next to an issue number in a commit.
-- CR text comes from `docs/rules.txt`, by number. Checked 2026-10-11: 103.6b, 400.7, 602.2a, 603.10a, 701.20a, 702.49b, 702.57b, 702.94b.
+- CR text comes from `data/comprehensive-rules.txt`, by number. Checked 2026-10-11: 103.6b, 400.7, 602.2a, 603.10a, 701.20a, 702.49b, 702.57b, 702.94b.
 
 ## Divergences from the spec
 
@@ -260,7 +260,7 @@ The `_` arm in `begun` is over `GameEvent`, which is legitimate here: only `Step
   - Name it in the PR's deferred line.
 
 - [ ] **Step 4: Self-review.**
-  - Re-check every CR citation the diff adds against `docs/rules.txt`.
+  - Re-check every CR citation the diff adds against `data/comprehensive-rules.txt`.
   - Re-read every comment the diff touches.
   - Grep the construction and record-update sites of `Object` (`MkObject`, `{ Object.`) and record which were checked.
   - Grep `RevealWindow.` for every constructor's arms.

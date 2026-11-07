@@ -21,7 +21,7 @@
 - The rules core never cases on an effect's identity. `Effect.PutSticker` is cased only in `Parun.Engine.Resolve*` and the exhaustive classification tables. The core cases on `StickerKind` (CR 123.1's classification), never on a sheet or a sticker's text.
 - One type per `Parun.Types.<TypeName>` module, type and instances only. Constructors take `Mk`. A haddock is one line plus its CR citation, except an elision paragraph or a note naming the proving test.
 - An elision gets an issue and a code-site comment saying only what is not implemented, ending `(#N)`. Unit-4 work (meld, merge, sticker kicker) cites `(#872)`, which stays open.
-- Read CR text from `docs/rules.txt` by rule number. Re-verify Oracle with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` before writing a card.
+- Read CR text from `data/comprehensive-rules.txt` by rule number. Re-verify Oracle with `curl -s 'https://api.scryfall.com/cards/named?exact=<Name>'` before writing a card.
 - Stage, `hooky fix`, stage again. A new module: stage `parun.cabal`, run `cabal-gild parun.cabal`. Card and sheet JSON: `script/format-json.sh fix FILE`.
 - Never stash; copy aside and move back. Never `git checkout <file>` to revert.
 - Extensions only from `.hlint.yaml`. `case` over `maybe`, `let` over `where`, no backticks in new code.
@@ -1986,7 +1986,7 @@ Synthetic Sticker Swap {1} Artifact: "{1}, {T}: Move a sticker from a permanent 
   - `grep -rn '872' source docs data --include='*.hs' --include='*.md' --include='*.json'`. Expected: `Keyword.hs`'s sticker-kicker elision, and this unit's meld/merge/restamp elisions; the `Player.outsideTheGame` one is gone.
   - Capability-widening sweep (`docs/agents/implementing.md`): `grep -rn -i 'sticker\|ticket' source --include='*.hs'` and read every comment; `grep -rn 'Energy, Poison\|player counters are' source --include='*.hs'` for prose listing the player counter kinds.
   - Counting absolutes: `grep -rn 'ChosenPermanent' source --include='*.hs'` comments that count its producers (Wormfang Crab, Mirkwood Trapper) are now falsified by Pyrodancer; fix them. Same for `GainPlayerCounters` producer counts.
-  - CR citations: for each rule in `git diff origin/main -U0 | grep -o 'CR [0-9][0-9.a-z/-]*' | sort -u`, read it in `docs/rules.txt`.
+  - CR citations: for each rule in `git diff origin/main -U0 | grep -o 'CR [0-9][0-9.a-z/-]*' | sort -u`, read it in `data/comprehensive-rules.txt`.
 - [ ] **Step 2: Self-review.** `git fetch`, `git merge origin/main`, run the full suite, re-run m4, m5a, m5c, m6, m7b, m7d, m8a. Re-read every comment the diff touched against the one-line haddock rule. Read `gh api repos/parun-mtg/parun/issues/872/dependencies/blocking` and name what this unblocked.
 - [ ] **Step 3: Open the PR.** `gh pr create --draft --title "Stickers unit 1: tickets, sheets and art stickers" --body-file $SCRATCH/pr.md`, the body:
 

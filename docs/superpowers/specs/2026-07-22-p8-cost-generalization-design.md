@@ -6,7 +6,7 @@ the *payment* half of **GAP-Co** — the half P7 explicitly left open. Gates:
 **Greed**, **Village Rites** and **Fireblast**. This spec is implementable; a
 `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 115.1, 118.1, 118.3, 118.3a, 118.3b, 118.3c, 118.5, 118.5a, 118.6,
 118.6a, 118.7, 118.7a, 118.8, 118.8a, 118.8b, 118.8c, 118.9, 118.9a, 118.9b,
 118.9c, 118.9d, 118.10, 118.12, 118.13, 118.13a, 119.4, 119.4b, 202.1, 302.6,

@@ -16,7 +16,7 @@ Every task's requirements implicitly include this section. Values copied verbati
 - **No new language extensions.** Haskell 2010. `GameSpec.hs` and `ResolveSpec.hs` already carry `{-# LANGUAGE GADTs #-}` (needed for pattern-matching the `Prompt` GADT). Do not add others.
 - **Qualified imports, aliased to the last component** (`Parun.Decide` → `Decide`); operators unqualified. One import group.
 - **No partial functions.** No `head`, `undefined`, `error`, or non-exhaustive matches. Answerers over the `Prompt` GADT that delegate to another answerer for the unhandled constructors use a `_ -> otherAnswer p` catch-all — this is total.
-- **Cite the CR number in every rules-bearing comment.** Every CR claim was checked against `docs/rules.txt` (lines 6157–6188 for CR 723; 104.3a at line 340; 405.6g at line 2062). Never trust recalled Magic rules.
+- **Cite the CR number in every rules-bearing comment.** Every CR claim was checked against `data/comprehensive-rules.txt` (lines 6157–6188 for CR 723; 104.3a at line 340; 405.6g at line 2062). Never trust recalled Magic rules.
 - **The two invariants outrank this plan.** (1) The rules core reads a *classification*, never an effect's identity — 723 stays a `Decider` swap at `Decide.deciderFor`; the engine never cases on "is this Mindslaver." (Test answerers *may* inspect actions/effects — the invariant governs the engine core, not test code.) (2) The engine makes no choices — every controlled choice is a prompt routed to the controller's `Decider`; nothing is elided.
 - **One small complete commit per task, on `main`.** Never push. Commit message trailer: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 - **`hooky` before done.** `git add -A` → `hooky fix` → `git add -A` → `hooky run` (acts on staged files only).
@@ -547,7 +547,7 @@ Expected: **all pass**, including the four new cases (Tasks 1–4). Do not proce
 Confirm by inspection (record findings in the commit body if anything is notable):
 - The engine core still never cases on Mindslaver's identity — 723 remains a `Decider` swap at `Decide.deciderFor`; the only new identity-casing is in **test** answerers (`isActivateAction` matches the `Activate` shape, not Mindslaver), which the invariant permits.
 - No prompt was elided: every controlled choice flowed through `ChooseAction`/`ChooseTargets`/`DeclareAttackers` to the controller's `Decider`.
-- Re-verify the CR numbers cited in the new comments/tests against `docs/rules.txt` (723.1 line 6159, 723.1a 6161, 723.3 6167, 723.5 6172, 723.5a 6176, 723.6 6182; 104.3a line 340). Delegate this to a cheap model if using subagents (Haiku, per `docs/workflow.md`).
+- Re-verify the CR numbers cited in the new comments/tests against `data/comprehensive-rules.txt` (723.1 line 6159, 723.1a 6161, 723.3 6167, 723.5 6172, 723.5a 6176, 723.6 6182; 104.3a line 340). Delegate this to a cheap model if using subagents (Haiku, per `docs/workflow.md`).
 
 - [x] **Step 4: Append the M5a completion entry to `docs/progress.md`**
 

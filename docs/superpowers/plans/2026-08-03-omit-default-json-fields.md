@@ -33,7 +33,7 @@
 - Stay on branch `2026-08-03-test-cleanup`. Never commit to `main`.
 - No unchecked numeric conversions: `fromIntegral`, `fromInteger`, `realToFrac`, `toEnum` are banned by `.hlint.yaml`. Convert through `Parun.Extra.Int`/`Integer`/`Natural`.
 - Constructors take a `Mk` prefix. Imports are qualified, aliased to the module's last component.
-- Every rules claim is checked against `docs/rules.txt` by rule number, never from memory.
+- Every rules claim is checked against `data/comprehensive-rules.txt` by rule number, never from memory.
 - The rules core must not case on an effect's identity. This plan touches only `Parun.Codec.*`, `source/executable/Main.hs`, and `data/cards/`; it never touches `Parun.Engine` or `Parun.Types`.
 
 ---
@@ -1315,7 +1315,7 @@ Expected: warning-free build; suite PASS; hooky clean; the corpus diff showing r
 
 - [ ] **Step 6: Self-review the branch before opening the PR**
 
-Per CONTRIBUTING: re-check every CR citation added by this branch against `docs/rules.txt` by number (CR 700.2 in `Modal`, CR 603.5 in `Mode`, CR 701.5 in `Card`), and re-read every comment the change touched for prose the rewrite made wrong. `Card.toJson`'s three deleted block comments are the known instance; look for others in the modules from Tasks 6-9. Fix findings on the branch.
+Per CONTRIBUTING: re-check every CR citation added by this branch against `data/comprehensive-rules.txt` by number (CR 700.2 in `Modal`, CR 603.5 in `Mode`, CR 701.5 in `Card`), and re-read every comment the change touched for prose the rewrite made wrong. `Card.toJson`'s three deleted block comments are the known instance; look for others in the modules from Tasks 6-9. Fix findings on the branch.
 
 - [ ] **Step 7: Open the PR**
 

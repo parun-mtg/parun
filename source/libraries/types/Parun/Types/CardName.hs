@@ -16,8 +16,8 @@ newtype CardName = MkCardName
 
 -- A RENDERING of several names as one string, and never a name an object has --
 -- CR 709.4a's plural axis is Parun.Types.ProjectedCharacteristics.names, which
--- every rules question about a name goes through. docs/rules.txt's own
--- Examples write a split card's name joined by "//", unspaced -- "Fire//Ice"
+-- every rules question about a name goes through. data/comprehensive-rules.txt's
+-- own Examples write a split card's name joined by "//", unspaced -- "Fire//Ice"
 -- (lines 3890, 5765) and "Assault//Battery" (line 5764). CR 709.4a itself
 -- gives no example.
 --

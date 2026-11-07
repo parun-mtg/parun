@@ -12,7 +12,7 @@
 
 - **Warning-clean build (`+pedantic` = `-Werror`).** `cabal build all --enable-tests --enable-benchmarks` must pass with zero warnings. Incremental builds hide warnings from unchanged modules; when in doubt `cabal clean` first. Remove now-unused imports after each reshape.
 - **Two invariants outrank everything.** The rules core never cases on a card's identity, only classifications; the engine never makes a player's choice — elide a prompt only when forced (one legal mode / non-modal), and CR 603.3c *removes* rather than silently defaulting when no mode is legal.
-- **Every rules claim carries its CR number** in a code comment, checked against `docs/rules.txt` (never recalled).
+- **Every rules claim carries its CR number** in a code comment, checked against `data/comprehensive-rules.txt` (never recalled).
 - **Code conventions:** no language extensions unless forced; no explicit export lists; one type per module under `Parun.Type.<Name>`; qualified imports aliased to the last component, operators unqualified; no partial functions; `newtype` + `Mk`-prefixed non-punning constructors; `case` over point-free; `Text` not `String`; `Seq`/`Set` over lists for new collection fields; derive `Eq`+`Show`.
 - **`hooky fix` then `hooky run` on staged files** before each commit (`git add -A` first, then `hooky fix`, then `git add -A` again, then `hooky run`).
 - **Commit directly to `main`**, one small complete commit per task. End commit messages with the `Co-Authored-By`/`Claude-Session` trailers already configured for this repo.

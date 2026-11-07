@@ -21,7 +21,7 @@ Copied from the spec (`docs/superpowers/specs/2026-07-19-m4a-numeric-tower-bindi
 - **Arbitrary-precision numbers** — `Natural` for X, `Integer` for `Quantity.evaluate`'s result. Never fixed-width.
 - **The two invariants outrank this plan:** the engine never cases on a card's *identity* (only classifications), and never makes a player's choice (elide only indistinguishable options, with a named expiry). `Parun.Resolve` is the sole `case effect of` / `case quantity of` home.
 - **TDD is not optional** — write each failing test, run it, watch it fail, then implement. For the Phase 1 refactor the regression net is the *existing* suite: it must be green before and after.
-- **Every rules claim checked against `docs/rules.txt`** with the CR number in the code comment. Card text is Scryfall-verified (Blaze: `{X}{R}`, Sorcery, "Blaze deals X damage to any target." — fetched 2026-07-19).
+- **Every rules claim checked against `data/comprehensive-rules.txt`** with the CR number in the code comment. Card text is Scryfall-verified (Blaze: `{X}{R}`, Sorcery, "Blaze deals X damage to any target." — fetched 2026-07-19).
 - **After each change:** `cabal build all` warning-free; `git add -A` then `hooky fix`, `git add -A` again, then `hooky run` passes; HLint applied. Each task is one small complete commit on `main`.
 
 ## File Structure

@@ -6,9 +6,10 @@ import qualified Parun.Types.LibraryDepth as LibraryDepth
 -- | Where an Alchemy conjure puts the card it creates.
 --
 -- Conjure is a DIGITAL-ONLY keyword action and is in no rule of the CR --
--- @docs\/rules.txt@ does not contain the word -- so the authority for this type
--- is the printed sentence rather than a rule number: every card that conjures
--- says where the card goes, and this is that half of the sentence.
+-- @data\/comprehensive-rules.txt@ does not contain the word -- so the authority
+-- for this type is the printed sentence rather than a rule number: every card
+-- that conjures says where the card goes, and this is that half of the
+-- sentence.
 --
 -- Not a 'Parun.Types.Zone.Zone', for 'Parun.Types.SearchDestination''s reason:
 -- most zones a Zone can name have no conjuring card behind them, and an

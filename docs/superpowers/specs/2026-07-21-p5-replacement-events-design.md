@@ -8,7 +8,7 @@ Cluster 2, following P4's event substrate. Gates: **Hardened Scales +
 Corpsejack Menace**, **Doubling Season + Dragon Fodder**, **Clone + Primal
 Plasma**. This spec is implementable; a `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 101.4, 117.5, 122.6, 122.6a, 201.5, 201.5c, 208.2b, 400.7, 608.2h, 613.1a,
 614.1, 614.1a, 614.1b, 614.1c, 614.1d, 614.3, 614.4, 614.5, 614.6, 614.7,
 614.7a, 614.8, 614.10, 614.11, 614.12, 614.12a, 614.12b, 614.13, 614.13a,

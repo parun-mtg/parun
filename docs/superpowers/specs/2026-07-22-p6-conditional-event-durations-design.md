@@ -7,7 +7,7 @@ monadic replacement path. Gates: **Master Thief** (CR 611.2b's own worked
 example) and **Hag of Inner Weakness**. This spec is implementable; a
 `writing-plans` plan follows it.*
 
-*CR citations below **were checked against `docs/rules.txt` during this design
+*CR citations below **were checked against `data/comprehensive-rules.txt` during this design
 pass**: 109.5, 115.1a, 302.6, 400.7, 500.12, 502.4, 514.2, 603.2b, 603.3a,
 603.6a, 608.2b, 611.2a, 611.2b, 611.2c, 613.1b, 704.3, 704.5f, 704.5g. Any number added
 later and marked **(verify)** must be checked before it drives code (CLAUDE.md:

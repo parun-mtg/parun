@@ -21,7 +21,7 @@
 - **`Text` not `String`; arbitrary-precision numbers** (`Integer`, `Natural`).
 - **No boolean blindness** — but note `DamageEvent.dealtByInfect :: Bool` deliberately mirrors the existing `dealtByDeathtouch :: Bool` deal-time bit; that is the established pattern, not a new violation.
 - **Two invariants outrank everything:** the rules core never cases on an effect's *identity* (only classifications — a keyword or counter kind is a citation, casing on it is fine); the engine never makes a player's choice. The only new casing homes are the sanctioned interpreters: `Parun.Resolve` (effects), `Parun.Cost` (costs), `Parun.Event` (triggers), `Parun.Codec` (the JSON boundary).
-- **Every CR claim re-checked against `docs/rules.txt` and cited in-code.** Card text is from Scryfall (2026-07-23), never recalled.
+- **Every CR claim re-checked against `data/comprehensive-rules.txt` and cited in-code.** Card text is from Scryfall (2026-07-23), never recalled.
 - **TDD, non-negotiable:** write each failing test, run it, watch it fail, then implement. One small complete commit per task on `main`. Commit message trailer per CLAUDE.md.
 - **`hooky` before done:** `git add -A`; `hooky fix`; `git add -A`; `hooky run` passes. Apply HLint suggestions or justify.
 
@@ -1114,7 +1114,7 @@ EOF
 
 ## Exit criterion (spec §10)
 
-Glistener Elf can be cast, attack, and (a) poison a player to a loss at ten and (b) shrink and kill a blocker with −1/−1 counters — all with no life loss and no marked damage. Longtusk Cub gains energy on connecting and spends it to grow itself, unpayable below cost. `Player` carries a counter map; `PlayerCounterKind` is distinct from `CounterKind`; the poison-at-ten SBA lives beside life ≤ 0. Build warning-clean, `hooky run` passes, every rules claim cited against `docs/rules.txt`.
+Glistener Elf can be cast, attack, and (a) poison a player to a loss at ten and (b) shrink and kill a blocker with −1/−1 counters — all with no life loss and no marked damage. Longtusk Cub gains energy on connecting and spends it to grow itself, unpayable below cost. `Player` carries a counter map; `PlayerCounterKind` is distinct from `CounterKind`; the poison-at-ten SBA lives beside life ≤ 0. Build warning-clean, `hooky run` passes, every rules claim cited against `data/comprehensive-rules.txt`.
 
 ## Progress check
 

@@ -24,7 +24,7 @@ Every task's requirements implicitly include all of these. They come from `CLAUD
 - **`Text` not `String`.** Arbitrary-precision numbers (`Integer`, `Natural`).
 - **No boolean blindness** — a custom sum type beats a bare `Bool`.
 - **Derive at least `Eq` and `Show`.** Types that ride a `Set`/`Map` key, a `Binding`, or `ProjectedCharacteristics` also derive `Ord`.
-- **Every rules claim is checked against `docs/rules.txt`** and the rule number is cited in the code comment. Never trust recalled Magic rules.
+- **Every rules claim is checked against `data/comprehensive-rules.txt`** and the rule number is cited in the code comment. Never trust recalled Magic rules.
 - **Build must be warning-clean.** `cabal build all --enable-tests --enable-benchmarks` with `flags: +pedantic` (which is `-Werror`). Incremental builds hide warnings from unchanged modules; `cabal clean` first when a definitive check is needed.
 - **Before every commit:** `git add <the paths this task names>`, then `hooky fix`, then `git add` again, then `hooky run`. `hooky` acts on **staged** files only; if you skip the `git add`, it reports "hooks skipped" and checks nothing.
 - **TDD is not optional.** Write the failing test and actually run it to watch it fail before implementing.

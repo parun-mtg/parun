@@ -21,7 +21,7 @@
 - **Run every tool through direnv:** `direnv exec . cabal build all`, `direnv exec . cabal test`, `direnv exec . hooky fix`.
 - **`hooky` acts on staged files.** `git add`, then `hooky fix`, then `git add` again, then `hooky run`.
 - **`cabal-gild parun.cabal` must be run directly** whenever a module is added or deleted. This plan adds **no** module, so it should not be needed.
-- **Never trust recalled Magic rules.** Every CR citation this plan writes into a comment was checked against `docs/rules.txt` on 2026-08-03: 105.1, 205.1b, 205.3i, 303.4a, 303.4c, 303.4d, 305.6, 305.7, 400.7, 604.3, 608.2d, 612.1, 613.1c, 613.1d, 613.7a, 613.7d, 614.1c, 614.12, 614.12a, 702.5a, 704.5m, 707.5. Any *other* citation you touch must be re-checked before you leave it there.
+- **Never trust recalled Magic rules.** Every CR citation this plan writes into a comment was checked against `data/comprehensive-rules.txt` on 2026-08-03: 105.1, 205.1b, 205.3i, 303.4a, 303.4c, 303.4d, 305.6, 305.7, 400.7, 604.3, 608.2d, 612.1, 613.1c, 613.1d, 613.7a, 613.7d, 614.1c, 614.12, 614.12a, 702.5a, 704.5m, 707.5. Any *other* citation you touch must be re-checked before you leave it there.
 - **The rules core must not case on an effect's identity.** `Parun.Engine.Projection` is the one module allowed to case on `Modification`. Do not add a `case` on `Modification` anywhere else.
 - **Fix a stale comment in the commit that falsifies it, never in a closing sweep.** A sweep is how several of PR #626's seventeen findings survived to review. Each task below names the prose it breaks.
 - **Never edit this plan, weaken an assertion, or delete a test to make a check pass.** If the plan looks wrong, stop and say so.
@@ -921,7 +921,7 @@ git commit -m "Strip a chosen-subtype land's static abilities too (CR 305.7)"
 - [ ] **Step 1: Self-review the branch**
 
 1. **Re-check every CR citation this branch added or touched against
-   `docs/rules.txt`**: 105.1, 205.1b, 205.3i, 303.4a, 303.4c, 303.4d, 305.6,
+   `data/comprehensive-rules.txt`**: 105.1, 205.1b, 205.3i, 303.4a, 303.4c, 303.4d, 305.6,
    305.7, 400.7, 604.3, 608.2d, 612.1, 613.1c, 613.1d, 613.7a, 613.7d, 614.1c,
    614.12, 614.12a, 702.5a, 704.5m, 707.5. Do not trust this plan's rendering.
 2. **Re-read every comment the branch touched.** Each task named the prose it

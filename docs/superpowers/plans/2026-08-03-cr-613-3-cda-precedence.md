@@ -19,7 +19,7 @@
 - **Run every tool through direnv:** `direnv exec . cabal build all`, `direnv exec . cabal test`, `direnv exec . hooky fix`.
 - **`hooky` acts on staged files.** `git add`, then `hooky fix`, then `git add` again, then `hooky run`.
 - **`cabal-gild parun.cabal` must be run directly** whenever a module is added or deleted; `hooky fix` only covers staged files.
-- **Never trust recalled Magic rules.** Every CR citation this plan writes into a comment was checked against `docs/rules.txt` on 2026-08-03. Any *other* citation you touch must be re-checked before you leave it there.
+- **Never trust recalled Magic rules.** Every CR citation this plan writes into a comment was checked against `data/comprehensive-rules.txt` on 2026-08-03. Any *other* citation you touch must be re-checked before you leave it there.
 - **The rules core must not case on an effect's identity.** `Parun.Engine.Projection` is the one module allowed to case on `Modification` (see `Types/Modification.hs`'s header). Do not add a `case` on `Modification` anywhere else.
 - **Never edit this plan, weaken an assertion, or delete a test to make a check pass.** If the plan looks wrong, stop and say so.
 - **`git add` explicit paths, never `git add -A`.** Other sessions may share this checkout.
@@ -1209,7 +1209,7 @@ Expected after the substitution: no matches.
 Per `CLAUDE.md`, and scaled to a diff this size:
 
 1. **Re-check every CR citation this branch added or touched against
-   `docs/rules.txt`.** The ones this plan wrote: 105.1, 105.3, 109.5, 202.2,
+   `data/comprehensive-rules.txt`.** The ones this plan wrote: 105.1, 105.3, 109.5, 202.2,
    204.2, 604.3, 604.3a, 613.1e, 613.3, 613.7a, 613.7d, 614.1c, 702.114a, 160's
    neighbours. Do not trust this plan's rendering of them.
 2. **Re-read every comment the branch touched** for prose the rewrite made wrong.

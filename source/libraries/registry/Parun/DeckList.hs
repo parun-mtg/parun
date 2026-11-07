@@ -146,7 +146,8 @@ entryOf text =
 --
 -- Splitting on "//" and trimming reconciles the two spellings in the tree at
 -- once: the printed, spaced "Wax // Wane" and Parun.Types.CardName.join's
--- unspaced "Wax//Wane", which is what docs/rules.txt's own examples use.
+-- unspaced "Wax//Wane", which is what data/comprehensive-rules.txt's own
+-- examples use.
 resolve :: (Monad m) => Registry.Registry m -> Natural.Natural -> CardName.CardName -> m (Either InvalidCorpus.InvalidCorpus (Either Problem Card.Card))
 resolve registry number name = do
   looked <- mapM (Registry.fetchCard registry) (halvesOf name)
@@ -180,6 +181,6 @@ render deck =
 -- A card's name as a deck list writes it: its face names joined by a SPACED
 -- "//", which is how every printing and every export spells a split card's name
 -- (#679). Parun.Types.CardName.join writes the same names unspaced, which is
--- docs/rules.txt's spelling; `halvesOf` accepts either.
+-- data/comprehensive-rules.txt's spelling; `halvesOf` accepts either.
 written :: Card.Card -> Text.Text
 written = Text.intercalate (Text.pack " // ") . NonEmpty.toList . fmap (CardName.unwrap . Face.name) . Card.faces
