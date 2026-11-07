@@ -107,6 +107,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Emerge as Emerge
@@ -6502,8 +6503,27 @@ applyManaTriggers perform events = do
   Monad.mapM_ (State.modify' . Event.recordEvent) events
   gs <- State.get
   let recorded = Foldable.toList (Seq.drop (Seq.length (GameState.events gs) - length events) (GameState.events gs))
-      fired = filter (\p -> ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p)) (Event.reactionTriggers recorded gs)
-  Monad.mapM_ (ManaAbilityPerformer.triggered perform) fired
+      isMana p = ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p)
+      watches = ManaAbility.mayBeTriggeredManaAbility . DelayedTrigger.ability
+      store = GameState.delayedTriggers gs
+  -- CR 605.1b holds of a delayed ability too (Molten Tide), so CR 603.7's store
+  -- is scanned here, only its entries that could be mana abilities, and a
+  -- one-shot entry is spent here rather than by the CR 117.5 gather.
+  (delayed, kept) <- Trigger.delayedPending recorded gs {GameState.delayedTriggers = Seq.filter watches store}
+  State.modify' (\g -> g {GameState.delayedTriggers = keepSurvivors watches kept store})
+  Monad.mapM_ (ManaAbilityPerformer.triggered perform) (filter isMana (Event.reactionTriggers recorded gs <> delayed))
+
+-- The store with its `watched` entries cut down to `kept`, an in-order
+-- subsequence of them, every other entry where it stood: the arming order is
+-- what later passes read (delayedPending).
+keepSurvivors :: (DelayedTrigger.DelayedTrigger -> Bool) -> Seq.Seq DelayedTrigger.DelayedTrigger -> Seq.Seq DelayedTrigger.DelayedTrigger -> Seq.Seq DelayedTrigger.DelayedTrigger
+keepSurvivors watched kept store = case Seq.viewl store of
+  Seq.EmptyL -> Seq.empty
+  entry Seq.:< rest
+    | not (watched entry) -> entry Seq.<| keepSurvivors watched kept rest
+    | otherwise -> case Seq.viewl kept of
+        survivor Seq.:< later | survivor == entry -> entry Seq.<| keepSurvivors watched later rest
+        _ -> keepSurvivors watched kept rest
 
 -- CR 602.2b sends an activation cost through CR 601.2b-i, so a mana ability pays
 -- its whole cost. All or nothing, `pay`'s posture and for CR 601.2h's reason,

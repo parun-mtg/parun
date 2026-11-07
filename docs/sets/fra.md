@@ -256,12 +256,6 @@ Nothing: every card `parun translate` stopped at is in the pool.
   graveyards for having 0 loyalty" has no effect to express it; CR 704.5i
   buries every planeswalker at 0 loyalty.
 
-### #6572: a delayed triggered ability can't be a mana ability
-
-- Pyre Rhymer // Molten Tide: Molten Tide's "until end of turn, whenever you
-  tap a Mountain for mana, add an additional {R}" is a delayed trigger the
-  mana-ability path never scans (CR 605.1b).
-
 ### #6568: a free-cast permission can't bound mana value by a count
 
 - Omnipresence: its free casts take spells with mana value at most the number

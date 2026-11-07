@@ -2230,6 +2230,7 @@ purelace
 purging-scythe
 pursued-whale
 pyramids
+pyre-rhymer-molten-tide
 pyroblast
 pyromancers-gauntlet
 pyromancers-goggles
