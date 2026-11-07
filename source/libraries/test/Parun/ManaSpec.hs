@@ -2419,20 +2419,21 @@ cryptexSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 cryptexSpec s registry = Spec.describe s "Cryptex" $ do
   Spec.it s "CR 118.3 Cryptex cannot collect the creature card Headless Skaab exiles" $ do
     (short, shortSkaab, _) <- cryptexBoard s registry "Lightning Bolt"
-    (enough, skaab, soil) <- cryptexBoard s registry "Acidic Soil"
+    (enough, skaab, _) <- cryptexBoard s registry "Acidic Soil"
     let offered oid gs = any (S.isCastOf oid) (Action.legalActions S.alice gs)
-        resolved = S.runPure (collectOnly soil) (S.runPure (collectOnly soil) enough (S.cast S.alice skaab)) Stack.resolveTop
+        resolved = S.runPure collectWorthThree (S.runPure collectWorthThree enough (S.cast S.alice skaab)) Stack.resolveTop
         countOf = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Headless Skaab")) S.alice
     Spec.assertBool s (not (offered shortSkaab short)) "beside the Bolt the Elf pays one cost or the other, so the Skaab is not offered"
     Spec.assertBool s (offered skaab enough) "beside the Soil the Cryptex collects it, so the Skaab is"
     Spec.assertEqWith s "CR 605.3a and the Skaab resolved off the Cryptex's mana" (countOf resolved) 1
 
--- That one card, wherever collect evidence asks: the default answer takes
--- every candidate, the Elf the Skaab needs included. Test-local: the harness
--- has no vocabulary for ChooseCollectEvidence.
-collectOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-collectOnly oid p = case p of
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (filter (== oid) (fmap fst candidates))
+-- The cards the prompt says have mana value 3, wherever collect evidence
+-- asks: the Soil, where the default answer takes every candidate, the Elf the
+-- Skaab needs included. Test-local: the harness has no vocabulary for
+-- ChooseCollectEvidence.
+collectWorthThree :: Prompt.Prompt r -> r
+collectWorthThree p = case p of
+  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList [candidate | (candidate, value) <- candidates, value == 3]
   _ -> S.identityAnswer p
 
 -- Alice's Cryptex and two Islands, Bloodbraid Elf and the named card in her
