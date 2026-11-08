@@ -28,6 +28,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.Violation as Violation
 import qualified System.Directory as Directory
@@ -105,8 +106,21 @@ withSheets s registry family main sheets = do
   deck <- deckOf s registry main []
   pure (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing) deck {Deck.stickerSheets = Seq.fromList sheets})
 
+-- The violations a deck bringing these supplementary decks and this vanguard
+-- raises under a rule family with no pool, in a game with these settings.
+withSideDecks :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> GameSettings.GameSettings -> Deck.Deck -> [(SideDeck.SideDeck, [(String, Natural.Natural)])] -> Maybe String -> IO [Violation.Violation]
+withSideDecks s registry family settings deck piles vanguard = do
+  let section entries = fmap (Map.fromListWith (+)) (traverse (\(name, count) -> fmap (\p -> (p, count)) (S.printingOf s registry name)) entries)
+  held <- traverse (traverse section) piles
+  brought <- traverse (S.printingOf s registry) vanguard
+  pure (Legality.check noTable settings (Format.MkFormat family Nothing) deck {Deck.sideDecks = Map.fromList held, Deck.vanguard = brought})
+
+-- Ten planes of different names.
+tenPlanes :: [(String, Natural.Natural)]
+tenPlanes = fmap (\name -> (name, 1)) ["Academy at Tolaria West", "Agyrem", "Akoum", "Astral Arena", "Celestine Reef", "Eloren Wilds", "Fields of Summer", "Naya", "Orzhova", "Panopticon"]
+
 copies :: String -> Natural.Natural -> Violation.Violation
-copies name count = Violation.TooManyCopies (CardName.MkCardName (Text.pack name)) count 4
+copies name count = Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack name)) count 4
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
 spec s registry = Spec.describe s "Parun.Legality" $ do
@@ -129,7 +143,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 100.2a: a constructed deck of 59 cards is too small" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 4), ("Mountain", 55)] []
-    Spec.assertEqWith s "violations" found [Violation.TooFewCards 59 60]
+    Spec.assertEqWith s "violations" found [Violation.TooFewCards Nothing 59 60]
 
   Spec.it s "CR 100.4a: the four-card limit counts the sideboard too" $ do
     found <- violations s registry RuleFamily.Constructed [("Lightning Bolt", 3), ("Mountain", 57)] [("Lightning Bolt", 2)]
@@ -141,7 +155,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 100.2a / 100.4a: a deck breaking four rules reports all four" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 5), ("Lightning Bolt", 3), ("Mountain", 50)] [("Lightning Bolt", 2), ("Mountain", 14)]
-    Spec.assertEqWith s "violations" found [Violation.TooFewCards 58 60, copies "Grizzly Bears" 5, copies "Lightning Bolt" 5, Violation.SideboardTooLarge 16 15]
+    Spec.assertEqWith s "violations" found [Violation.TooFewCards Nothing 58 60, copies "Grizzly Bears" 5, copies "Lightning Bolt" 5, Violation.SideboardTooLarge 16 15]
 
   Spec.it s "CR 100.2a / 205.4c: basic land cards are exempt by supertype, snow basics included" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 4), ("Mountain", 28), ("Snow-Covered Mountain", 28)] []
@@ -153,7 +167,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 100.2b: a limited deck of 39 cards is too small" $ do
     found <- violations s registry RuleFamily.Limited [("Grizzly Bears", 5), ("Mountain", 34)] []
-    Spec.assertEqWith s "violations" found [Violation.TooFewCards 39 40]
+    Spec.assertEqWith s "violations" found [Violation.TooFewCards Nothing 39 40]
 
   Spec.it s "CR 100.2a: a deck can have up to nine cards named Nazgul" $ do
     found <- violations s registry RuleFamily.Constructed [("Nazgûl", 9), ("Mountain", 51)] []
@@ -161,11 +175,11 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 100.2a: ten cards named Nazgul are one too many" $ do
     found <- violations s registry RuleFamily.Constructed [("Nazgûl", 10), ("Mountain", 50)] []
-    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
 
   Spec.it s "CR 100.4a: a card's own limit counts the sideboard too" $ do
     found <- violations s registry RuleFamily.Constructed [("Nazgûl", 9), ("Mountain", 51)] [("Nazgûl", 1)]
-    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
 
   Spec.it s "CR 100.2a: a deck can have any number of cards named Relentless Rats" $ do
     found <- violations s registry RuleFamily.Constructed [("Relentless Rats", 40), ("Mountain", 20)] [("Relentless Rats", 15)]
@@ -177,7 +191,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     nine <- violations s registry RuleFamily.Limited [("Nazgûl", 9), ("Mountain", 31)] [("Nazgûl", 3)]
     Spec.assertEqWith s "nine" nine []
     ten <- violations s registry RuleFamily.Limited [("Nazgûl", 10), ("Mountain", 30)] []
-    Spec.assertEqWith s "ten" ten [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+    Spec.assertEqWith s "ten" ten [Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
 
   -- Proficient Pyrodancer's player brings sheets for its stickers.
   Spec.it s "CR 123.2a: a constructed player bringing sticker sheets brings ten, each unique" $ do
@@ -196,6 +210,77 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     ten <- withSheets s registry RuleFamily.Constructed main sheets
     Spec.assertEqWith s "ten unique" ten []
     Spec.assertEqWith s "explained" (fmap Legality.explain (two <> repeated)) (fmap Text.pack ["2 sticker sheets, fewer than 10", "2 copies of the sticker sheet " <> Text.unpack firstName <> ", more than 1"])
+
+  Spec.it s "CR 901.3: a planar deck holds ten planes or phenomena, all names different" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    let planar cards = withSideDecks s registry RuleFamily.Constructed GameSettings.plain deck [(SideDeck.Planar, cards)] Nothing
+        reef = nameOf "Celestine Reef"
+    nine <- planar (drop 1 tenPlanes)
+    Spec.assertEqWith s "nine" nine [Violation.TooFewCards (Just SideDeck.Planar) 9 10]
+    ten <- planar tenPlanes
+    Spec.assertEqWith s "ten" ten []
+    twoReefs <- planar (("Celestine Reef", 1) : tenPlanes)
+    Spec.assertEqWith s "two Celestine Reef" twoReefs [Violation.TooManyCopies (Just SideDeck.Planar) reef 2 1]
+    phenomena <- planar (tenPlanes <> [("Fixed Point in Time", 1), ("Mutual Epiphany", 1)])
+    Spec.assertEqWith s "two phenomena" phenomena []
+    three <- planar (tenPlanes <> [("Fixed Point in Time", 2), ("Mutual Epiphany", 1)])
+    Spec.assertEqWith s "three phenomena" three [Violation.TooManyCopies (Just SideDeck.Planar) (nameOf "Fixed Point in Time") 2 1, Violation.TooManyPhenomena 3 2]
+    Spec.assertEqWith s "explained" (fmap Legality.explain (nine <> twoReefs <> three)) (fmap Text.pack ["9 cards in the planar deck, fewer than 10", "2 copies of Celestine Reef in the planar deck, more than 1", "2 copies of Fixed Point in Time in the planar deck, more than 1", "3 phenomena in the planar deck, more than 2"])
+
+  -- CR 901.15a's communal deck is every seat's cards together (#6705).
+  Spec.it s "CR 901.15a: a share of a communal planar deck is not sized alone" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    found <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain {GameSettings.singlePlanarDeck = True} deck [(SideDeck.Planar, [("Celestine Reef", 1), ("All in Good Time", 1)])] Nothing
+    Spec.assertEqWith s "only the scheme refused" found [Violation.MisplacedCard SideDeck.Planar (nameOf "All in Good Time")]
+
+  Spec.it s "CR 904.3: a scheme deck holds twenty schemes, at most two of a name" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    found <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain deck [(SideDeck.Scheme, [("All in Good Time", 3)])] Nothing
+    Spec.assertEqWith s "three All in Good Time" found [Violation.TooFewCards (Just SideDeck.Scheme) 3 20, Violation.TooManyCopies (Just SideDeck.Scheme) (nameOf "All in Good Time") 3 2]
+
+  Spec.it s "CR 904.13d: a Commander archenemy scheme deck holds ten, all names different" $ do
+    deck <- ledBy s registry ["Krenko, Mob Boss"] [("Mountain", 99)] []
+    found <- withSideDecks s registry RuleFamily.Commander GameSettings.plain deck [(SideDeck.Scheme, [("All in Good Time", 2)])] Nothing
+    Spec.assertEqWith s "two All in Good Time" found [Violation.TooFewCards (Just SideDeck.Scheme) 2 10, Violation.TooManyCopies (Just SideDeck.Scheme) (nameOf "All in Good Time") 2 1]
+
+  Spec.it s "CR 718.2a: a constructed Attraction deck holds ten, all names different" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    found <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain deck [(SideDeck.Attraction, [("Bumper Cars", 2)])] Nothing
+    Spec.assertEqWith s "two Bumper Cars" found [Violation.TooFewCards (Just SideDeck.Attraction) 2 10, Violation.TooManyCopies (Just SideDeck.Attraction) (nameOf "Bumper Cars") 2 1]
+
+  Spec.it s "CR 718.2b: a limited Attraction deck holds three, duplicates allowed" $ do
+    deck <- deckOf s registry [("Mountain", 40)] []
+    let attractions count = withSideDecks s registry RuleFamily.Limited GameSettings.plain deck [(SideDeck.Attraction, [("Bumper Cars", count)])] Nothing
+    three <- attractions 3
+    Spec.assertEqWith s "three Bumper Cars" three []
+    two <- attractions 2
+    Spec.assertEqWith s "two Bumper Cars" two [Violation.TooFewCards (Just SideDeck.Attraction) 2 3]
+
+  -- The Unstable FAQ's rulings of 2018-01-19 (Applied Aeronautics).
+  Spec.it s "Unstable FAQ: a constructed Contraption deck holds fifteen, a limited one any number" $ do
+    constructed <- deckOf s registry [("Mountain", 60)] []
+    two <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain constructed [(SideDeck.Contraption, [("Arms Depot", 2)])] Nothing
+    Spec.assertEqWith s "constructed" two [Violation.TooFewCards (Just SideDeck.Contraption) 2 15, Violation.TooManyCopies (Just SideDeck.Contraption) (nameOf "Arms Depot") 2 1]
+    limited <- deckOf s registry [("Mountain", 40)] []
+    some <- withSideDecks s registry RuleFamily.Limited GameSettings.plain limited [(SideDeck.Contraption, [("Arms Depot", 2)])] Nothing
+    Spec.assertEqWith s "limited" some []
+
+  -- A vanguard card in a supplementary deck would be a second one in the
+  -- command zone, which Parun.Engine.Vanguard.vanguardOf would break a tie on.
+  Spec.it s "CR 902.3: Barrin as a vanguard with Selenia in a scheme deck is refused" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    found <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain deck [(SideDeck.Scheme, [("Selenia", 1)])] (Just "Barrin")
+    Spec.assertEqWith s "Selenia misplaced" found [Violation.MisplacedCard SideDeck.Scheme (nameOf "Selenia"), Violation.TooFewCards (Just SideDeck.Scheme) 1 20]
+    alone <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain deck [] (Just "Barrin")
+    Spec.assertEqWith s "Barrin alone" alone []
+    bears <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain deck [] (Just "Grizzly Bears")
+    Spec.assertEqWith s "Grizzly Bears" bears [Violation.NotVanguardCard (nameOf "Grizzly Bears")]
+    Spec.assertEqWith s "explained" (fmap Legality.explain (found <> bears)) (fmap Text.pack ["Selenia does not belong in the scheme deck", "1 cards in the scheme deck, fewer than 20", "Grizzly Bears is not a vanguard card"])
+
+  Spec.it s "CR 902.1: a deck list naming Barrin and Selenia as vanguards is refused" $ do
+    listed <- DeckList.parse registry (Text.pack "60 Mountain\nVanguard\n1 Barrin\n1 Selenia\n") >>= either (S.brokenCorpus s) pure
+    (_, reported) <- Legality.report (Just (Text.pack "constructed")) listed
+    Spec.assertEqWith s "the second refused" reported [DeckList.explain (DeckList.VanguardRepeated 4 (nameOf "Selenia"))]
 
   Spec.it s "CR 123.2a: a Commander player bringing sticker sheets is in constructed play too" $ do
     sheets <- committedSheets s
@@ -240,7 +325,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     one <- violationsNamed s registry "vintage" [("Black Lotus", 1), ("Mountain", 59)] []
     Spec.assertEqWith s "one" one []
     two <- violationsNamed s registry "vintage" [("Black Lotus", 1), ("Mountain", 59)] [("Black Lotus", 1)]
-    Spec.assertEqWith s "two" two [Violation.TooManyCopies (nameOf "Black Lotus") 2 1]
+    Spec.assertEqWith s "two" two [Violation.TooManyCopies Nothing (nameOf "Black Lotus") 2 1]
 
   Spec.it s "legacy bans Black Lotus" $ do
     found <- violationsNamed s registry "legacy" [("Black Lotus", 1), ("Mountain", 59)] []
@@ -321,15 +406,15 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 903.5b: two Lightning Bolt in a Commander deck are one too many" $ do
     found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 2), ("Mountain", 97)] []
-    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (nameOf "Lightning Bolt") 2 1]
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies Nothing (nameOf "Lightning Bolt") 2 1]
 
   Spec.it s "CR 903.5b: a second Krenko beside the commander is one too many" $ do
     found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Krenko, Mob Boss", 1), ("Mountain", 98)] []
-    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (nameOf "Krenko, Mob Boss") 2 1]
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies Nothing (nameOf "Krenko, Mob Boss") 2 1]
 
   Spec.it s "CR 903.5a: a Commander deck is exactly 100 cards, its commander included" $ do
     small <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 97)] []
-    Spec.assertEqWith s "99" small [Violation.TooFewCards 99 100]
+    Spec.assertEqWith s "99" small [Violation.TooFewCards Nothing 99 100]
     large <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 99)] []
     Spec.assertEqWith s "101" large [Violation.TooManyCards 101 100]
 
@@ -339,7 +424,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     other <- ledViolationsNamed s registry "commander" ["Cho-Manno, Revolutionary"] [("Plains", 100)] []
     Spec.assertEqWith s "Cho-Manno leading 101" other [Violation.TooManyCards 101 100]
     small <- ledViolationsNamed s registry "commander" ["Whtz, the Bibliophile"] [("Plains", 98)] []
-    Spec.assertEqWith s "Whtz leading 99" small [Violation.TooFewCards 99 100]
+    Spec.assertEqWith s "Whtz leading 99" small [Violation.TooFewCards Nothing 99 100]
 
   Spec.it s "CR 903.5e: Seluma, Light of Aysen admits Angel and basic land cards of any colour identity" $ do
     seluma <- ledViolationsNamed s registry "commander" ["Seluma, Light of Aysen"] [("Illusory Angel", 1), ("Island", 1), ("Plains", 97)] []
@@ -369,7 +454,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 903.5: a Commander deck breaking four rules reports all four" $ do
     found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 2), ("Brainstorm", 1), ("Mountain", 95)] [("Lightning Bolt", 1)]
-    Spec.assertEqWith s "violations" found [Violation.TooFewCards 99 100, Violation.TooManyCopies (nameOf "Lightning Bolt") 2 1, Violation.SideboardTooLarge 1 0, Violation.OutsideColorIdentity (nameOf "Brainstorm")]
+    Spec.assertEqWith s "violations" found [Violation.TooFewCards Nothing 99 100, Violation.TooManyCopies Nothing (nameOf "Lightning Bolt") 2 1, Violation.SideboardTooLarge 1 0, Violation.OutsideColorIdentity (nameOf "Brainstorm")]
 
   Spec.it s "CR 903.12d: a Brawl deck is exactly 60 cards" $ do
     legal <- ledViolationsNamed s registry "brawl" ["Krenko, Mob Boss"] [("Mountain", 59)] []

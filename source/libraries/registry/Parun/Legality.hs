@@ -26,6 +26,7 @@ import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Filter as Filter
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Int as Int
@@ -49,6 +50,7 @@ import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -73,16 +75,16 @@ rules table settings format =
       -- deckLimit says otherwise (CR 101.1). The format, and not the game's
       -- settings, says which of CR 903.3 and CR 903.12c judges the commander.
       commander brawl size =
-        [atLeast size withCommander, commanderAtMost size, copiesAtMost restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
+        [atLeast Nothing size withCommander, commanderAtMost size, copiesAtMost Nothing restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
           <> foldMap (pure . inPool) standing
-          <> [anteCards settings, conspiracies, stickerSheets, circledColors]
+          <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary (Format.rules format) settings, vanguardCard]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast 60 Deck.cards, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors]
+        RuleFamily.Constructed -> [atLeast Nothing 60 Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast 40 Deck.cards, copiesAtMost restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors]
+        RuleFamily.Limited -> [atLeast Nothing 40 Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
         -- CR 903.5.
         RuleFamily.Commander -> commander False 100
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
@@ -96,11 +98,11 @@ bothSections = Map.unionWith (+) <$> Deck.cards <*> Deck.sideboard
 
 -- CR 100.2a / 100.2b: a minimum deck size, counting the cards `counted`
 -- picks: the deck and not the sideboard (CR 100.4), and its commanders where
--- CR 903.5a counts them.
-atLeast :: Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
-atLeast least counted deck =
+-- CR 903.5a counts them, or the supplementary deck `pile` names.
+atLeast :: Maybe SideDeck.SideDeck -> Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
+atLeast pile least counted deck =
   let size = sum (counted deck)
-   in [Violation.TooFewCards size least | size < least]
+   in [Violation.TooFewCards pile size least | size < least]
 
 -- CR 903.5a / 903.12d: a maximum deck size, counting as `atLeast` does.
 atMost :: Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
@@ -117,6 +119,41 @@ commanderAtMost most deck
   | any (Set.member CommanderDeckRule.NoMaximumDeckSize . Face.commanderDeckRules . Card.frontFace . Printing.card) (Deck.commander deck) = []
   | otherwise = atMost most withCommander deck
 
+-- CR 100.2d: each supplementary deck brought holds only its kind of card, as
+-- many as its rule asks, of as few names. A Commander or Brawl deck is built
+-- ahead of time, so in constructed play (CR 100.2a); and a Brawl game is a
+-- Commander game (CR 903.12a), so CR 904.13a's option covers it.
+supplementary :: RuleFamily.RuleFamily -> GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]
+supplementary family settings deck = foldMap judge (Map.toList (Map.filter (not . Map.null) (Deck.sideDecks deck)))
+  where
+    limited = family == RuleFamily.Limited
+    commanderGame = family == RuleFamily.Commander || family == RuleFamily.Brawl
+    judge (pile, held) =
+      let sized least limit = atLeast (Just pile) least (const held) deck <> copiesAtMost (Just pile) (const False) limit (const held) deck
+          typed cardType card = Set.member cardType (TypeLine.types (Face.typeLine (Card.combined card)))
+          (belongs, rule) = case pile of
+            -- CR 718.2b / 718.2a.
+            SideDeck.Attraction -> (\card -> Game.sideDeckBackOf card == Just SideDeck.Attraction, if limited then sized 3 Nothing else sized 10 (Just 1))
+            -- The Unstable FAQ's rulings of 2018-01-19 (Applied Aeronautics):
+            -- in limited play any number, duplicates allowed; in constructed
+            -- at least fifteen, no two of a name.
+            SideDeck.Contraption -> (\card -> Game.sideDeckBackOf card == Just SideDeck.Contraption, if limited then [] else sized 15 (Just 1))
+            -- CR 901.3. Under CR 901.15a's communal deck every seat's cards
+            -- are one deck, so one seat's share is not sized alone.
+            --
+            -- Not implemented: CR 901.15a's communal deck construction (#6705).
+            SideDeck.Planar ->
+              let phenomena = sum (Map.filterWithKey (\printing _ -> typed CardType.Phenomenon (Printing.card printing)) held)
+               in (\card -> typed CardType.Plane card || typed CardType.Phenomenon card, if GameSettings.singlePlanarDeck settings then [] else sized 10 (Just 1) <> [Violation.TooManyPhenomena phenomena 2 | phenomena > 2])
+            -- CR 904.13d / 904.3.
+            SideDeck.Scheme -> (typed CardType.Scheme, if commanderGame then sized 10 (Just 1) else sized 20 (Just 2))
+       in [Violation.MisplacedCard pile (Face.name (Card.combined card)) | card <- Set.toList (Set.fromList (fmap Printing.card (Map.keys held))), not (belongs card)] <> rule
+
+-- CR 902.3: the vanguard a deck brings is a vanguard card. Deck.vanguard holds
+-- one, which is CR 902.1's limit.
+vanguardCard :: Deck.Deck -> [Violation.Violation]
+vanguardCard deck = [Violation.NotVanguardCard (Face.name face) | printing <- Maybe.maybeToList (Deck.vanguard deck), let face = Card.combined (Printing.card printing), not (Set.member CardType.Vanguard (TypeLine.types (Face.typeLine face)))]
+
 -- CR 903.5a: the deck with its commanders, which it counts among its cards.
 withCommander :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
 withCommander deck = Map.unionWith (+) (Deck.cards deck) (Map.fromSet (const 1) (Deck.commander deck))
@@ -124,13 +161,14 @@ withCommander deck = Map.unionWith (+) (Deck.cards deck) (Map.fromSet (const 1) 
 -- CR 100.2a / 100.4a: at most so many cards of one English name, among the
 -- cards `counted` picks: one for a card the pool restricts, else the card's
 -- own deckLimit where it prints one, else the format's limit, and none for a
--- basic land card. Names are compared as Parun.Engine.Card.combined has them;
+-- basic land card; `pile` names the supplementary deck counted, if one is.
+-- Names are compared as Parun.Engine.Card.combined has them;
 -- no card in the pool has an interchangeable name (CR 201.3b), so equal names
 -- are the whole of it.
-copiesAtMost :: (Card.Type.Card -> Bool) -> Maybe Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
-copiesAtMost restricted limit counted deck =
+copiesAtMost :: Maybe SideDeck.SideDeck -> (Card.Type.Card -> Bool) -> Maybe Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
+copiesAtMost pile restricted limit counted deck =
   let tallies = Map.fromListWith (\(_, new) (card, old) -> (card, old + new)) [(Face.name (Card.combined card), (card, count)) | (printing, count) <- Map.toList (counted deck), let card = Printing.card printing, not (basicLand card)]
-   in [Violation.TooManyCopies written count most | (written, (card, count)) <- Map.toList tallies, Just most <- [limitOf card], count > most]
+   in [Violation.TooManyCopies pile written count most | (written, (card, count)) <- Map.toList tallies, Just most <- [limitOf card], count > most]
   where
     limitOf card
       | restricted card = Just 1
@@ -286,9 +324,9 @@ report asked listed = do
 -- | A violation as a line a person can read.
 explain :: Violation.Violation -> Text.Text
 explain violation = Text.pack $ case violation of
-  Violation.TooFewCards size least -> show size <> " cards in the deck, fewer than " <> show least
+  Violation.TooFewCards pile size least -> show size <> " cards in " <> pileName pile <> ", fewer than " <> show least
   Violation.TooManyCards size most -> show size <> " cards in the deck, more than " <> show most
-  Violation.TooManyCopies written count limit -> show count <> " copies of " <> spelled written <> ", more than " <> show limit
+  Violation.TooManyCopies pile written count limit -> show count <> " copies of " <> spelled written <> foldMap (\kind -> " in " <> pileName (Just kind)) pile <> ", more than " <> show limit
   Violation.SideboardTooLarge size most -> show size <> " cards in the sideboard, more than " <> show most
   Violation.BannedCard written -> spelled written <> " is banned"
   Violation.NotLegalCard written -> spelled written <> " is not legal"
@@ -301,8 +339,17 @@ explain violation = Text.pack $ case violation of
   Violation.OutsideColorIdentity written -> spelled written <> " is outside the commander's colour identity"
   Violation.TooFewStickerSheets size least -> show size <> " sticker sheets, fewer than " <> show least
   Violation.DuplicateStickerSheet name count -> show count <> " copies of the sticker sheet " <> Text.unpack name <> ", more than 1"
+  Violation.TooManyPhenomena count most -> show count <> " phenomena in the planar deck, more than " <> show most
+  Violation.MisplacedCard pile written -> spelled written <> " does not belong in " <> pileName (Just pile)
+  Violation.NotVanguardCard written -> spelled written <> " is not a vanguard card"
   where
     spelled = Text.unpack . CardName.unwrap
+    pileName pile = case pile of
+      Nothing -> "the deck"
+      Just SideDeck.Attraction -> "the Attraction deck"
+      Just SideDeck.Contraption -> "the Contraption deck"
+      Just SideDeck.Planar -> "the planar deck"
+      Just SideDeck.Scheme -> "the scheme deck"
 
 -- | The check of the shipped format a name means, against the shipped table:
 -- "constructed" and "limited" for the rules alone, "vintage" and the like with
