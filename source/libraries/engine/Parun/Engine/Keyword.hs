@@ -26,6 +26,7 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
@@ -1676,7 +1677,7 @@ graveyardTokenCopy exceptions cost =
               CreateCopy.linked = False
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFromGraveyard]},
+        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton copied),
           ActivatedAbility.maximumX = [],
@@ -1720,7 +1721,7 @@ scavenge cost =
               Nothing
           )
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFromGraveyard]},
+        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton scavengeTarget slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -1826,7 +1827,7 @@ encore cost =
               ArmDelayedTrigger.ability = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFromGraveyard]},
+        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [loop, hasted, armed]),
           ActivatedAbility.maximumX = [],
@@ -5621,7 +5622,7 @@ countsActivations = any counted . restrictionsOf
       ActivationRestriction.DuringCombatBefore _ -> False
       ActivationRestriction.BeforeStep _ -> False
       ActivationRestriction.OnlyIf _ -> False
-      ActivationRestriction.DuringDieRoll -> False
+      ActivationRestriction.DuringThrow -> False
       ActivationRestriction.SpendOnly _ -> False
       ActivationRestriction.InstantSpeed -> False
 
@@ -6798,7 +6799,7 @@ melee =
 -- nothing of its own.
 rampage :: Natural -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 rampage n =
-  let bonus = Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes n (Quantity.BlockersBeyond 1)))
+  let bonus = Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal (toInteger n)) (Quantity.BlockersBeyond 1)))
       effect =
         Effect.ModifyTarget
           ( ModifyTarget.MkModifyTarget
@@ -6870,7 +6871,7 @@ exalted =
             ( AttackTrigger.Attacker
                 AttackerTrigger.defaultValue
                   { AttackerTrigger.creature = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You],
-                    AttackerTrigger.company = AttackCompany.Alone
+                    AttackerTrigger.company = AttackCompany.Alone AloneAmong.EveryAttacker
                   }
             )
         )
@@ -7568,6 +7569,7 @@ spiritToken =
               Face.canBeYourCommander = False,
               Face.claimsStartingPlayer = False,
               Face.anteOnly = False,
+              Face.deckLimit = Nothing,
               Face.keywords = Map.singleton Keyword.Flying 1,
               Face.colorIndicator = Set.fromList [Color.White, Color.Black],
               Face.characteristicPT = Nothing,
@@ -7802,6 +7804,7 @@ servoToken =
               Face.canBeYourCommander = False,
               Face.claimsStartingPlayer = False,
               Face.anteOnly = False,
+              Face.deckLimit = Nothing,
               Face.keywords = Map.empty,
               Face.colorIndicator = Set.empty,
               Face.characteristicPT = Nothing,
@@ -7992,6 +7995,7 @@ tokenCard name typeLine colors stats abilities =
               Face.canBeYourCommander = False,
               Face.claimsStartingPlayer = False,
               Face.anteOnly = False,
+              Face.deckLimit = Nothing,
               Face.keywords = Map.empty,
               Face.colorIndicator = colors,
               Face.characteristicPT = Nothing,

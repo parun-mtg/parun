@@ -99,7 +99,7 @@
           "is": [
             "Pass",
             "Cast $jugg",
-            "PayLifeForMana 1 Colorless"
+            "PayLifeForMana"
           ]
         }
       }

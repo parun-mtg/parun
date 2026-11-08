@@ -32,7 +32,7 @@ codec =
       Arm.payload "OnlyIf" Condition.codec ActivationRestriction.OnlyIf (\x -> case x of ActivationRestriction.OnlyIf y -> Just y; _ -> Nothing),
       Arm.nullary "OnlyOnce" ActivationRestriction.OnlyOnce,
       Arm.payload "TimesEachTurn" Common.natural ActivationRestriction.TimesEachTurn (\x -> case x of ActivationRestriction.TimesEachTurn y -> Just y; _ -> Nothing),
-      Arm.nullary "DuringDieRoll" ActivationRestriction.DuringDieRoll,
+      Arm.nullary "DuringThrow" ActivationRestriction.DuringThrow,
       Arm.nullary "InstantSpeed" ActivationRestriction.InstantSpeed,
       Arm.payload "SpendOnly" ManaSpecification.codec ActivationRestriction.SpendOnly (\x -> case x of ActivationRestriction.SpendOnly y -> Just y; _ -> Nothing)
     ]
@@ -49,6 +49,6 @@ tagOf x = case x of
   ActivationRestriction.OnlyIf {} -> "OnlyIf"
   ActivationRestriction.OnlyOnce {} -> "OnlyOnce"
   ActivationRestriction.TimesEachTurn {} -> "TimesEachTurn"
-  ActivationRestriction.DuringDieRoll {} -> "DuringDieRoll"
+  ActivationRestriction.DuringThrow {} -> "DuringThrow"
   ActivationRestriction.InstantSpeed {} -> "InstantSpeed"
   ActivationRestriction.SpendOnly {} -> "SpendOnly"

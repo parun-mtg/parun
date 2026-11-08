@@ -128,6 +128,7 @@ tap oid gs =
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Crew" $ do
   printedPowerSpec s registry
+  carriedPowerSpec s registry
   crewCostSpec s registry
   crewedVehicleSpec s registry
   crewedByRiderSpec s registry
@@ -201,6 +202,26 @@ crewCostSpec s registry = Spec.describe s "CrewCost" $ do
         (_, gs2) = S.addPermanent hillGiant S.carol gs1
         gs = gs2 {GameState.priority = Just S.alice}
     Spec.assertBool s (not (crewable vehicleId gs)) "bob's 4 and carol's 3 are not alice's to tap"
+
+-- CR 702.122a: the prompt carries each candidate's power, so an answer picking
+-- the candidates of power 3 or more taps the two Giants (4 and 3, reaching
+-- crew 6) and leaves Grizzly Bears (2) untapped.
+carriedPowerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+carriedPowerSpec s registry = Spec.it s "CR 702.122a the crew prompt carries each candidate's power" $ do
+  dreadnought <- S.printingOf s registry "Consulate Dreadnought"
+  hillGiant <- S.printingOf s registry "Hill Giant"
+  blindSpot <- S.printingOf s registry "Blind-Spot Giant"
+  bears <- S.printingOf s registry "Grizzly Bears"
+  let (vehicleId, crewIds, gs) = board dreadnought [blindSpot, hillGiant, bears]
+      crewed = crewWith strongest vehicleId gs
+  Spec.assertBool s (isCreature vehicleId crewed) "crewed by the two Giants"
+  Spec.assertEqWith s "the Giants tapped, the Bears not" (fmap (`Game.isTapped` crewed) crewIds) [True, True, False]
+
+-- The crew candidates the prompt says have power 3 or more.
+strongest :: Prompt.Prompt r -> r
+strongest p = case p of
+  Prompt.ChooseTapsForTotalPower _ _ _ candidates _ -> Set.fromList [candidate | (candidate, power) <- candidates, power >= 3]
+  _ -> S.identityAnswer p
 
 -- CR 702.122a's effect, and what CR 301.7b and CR 302.6 then say about the
 -- permanent it lands on.

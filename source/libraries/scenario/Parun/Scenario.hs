@@ -40,7 +40,6 @@ import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Driver as Driver
-import qualified Parun.Engine.EndEffect as EndEffect
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event.Trigger as Event.Trigger
 import qualified Parun.Engine.Game as Game
@@ -65,6 +64,7 @@ import qualified Parun.Interpreter as Interpreter
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Registry as Registry
+import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Prompt as Prompt
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.Action as Action
@@ -164,6 +164,7 @@ import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TypesAre as TypesAre
 import qualified Parun.Types.View as View
@@ -261,7 +262,7 @@ enter :: (Monad m) => Registry.Registry m -> NonEmpty.NonEmpty Entrant.Entrant -
 enter registry entrants = do
   let seated = NonEmpty.zip entrants (fmap PlayerId.MkPlayerId (0 NonEmpty.:| [1 ..]))
       ids = Map.fromList (fmap (Bifunctor.first Entrant.name) (NonEmpty.toList seated))
-  decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap DeckList.explain) ((,) pid))) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
+  decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap DeckList.explain) ((,) pid) . DeckList.sound)) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
   pure $ case List.find ((> 1) . length) (List.group (List.sort (fmap Entrant.name (NonEmpty.toList entrants)))) of
     Just (label : _) -> Left (Failure.MkDuplicateLabel label)
     _ -> do
@@ -626,6 +627,8 @@ answerScheduled asked = do
       -- the one it answered, asked again. A prompt the move raises on its way
       -- there -- a payment's own choices, an Answer the timeline schedules,
       -- CR 734.1's ReverseManaAbilities -- leaves the refusal waiting.
+      -- A triggered ability's refused targets are asked again from CR 601.2c's
+      -- announcement (CR 603.3d), so AnnounceTargets re-asks a ChooseTargets.
       refusal <- State.gets refusing
       underway <- State.gets pending
       queued <- takeAnswer gs decider kind
@@ -634,7 +637,7 @@ answerScheduled asked = do
             Nothing -> Maybe.isJust queued
       case refusal of
         Just (key, verb, answered)
-          | answered /= kind || decider /= Just (When.player key) || GameState.turnNumber gs /= When.turn key || GameState.phase gs /= When.phase key ->
+          | not (asksAgain answered kind) || decider /= Just (When.player key) || GameState.turnNumber gs /= When.turn key || GameState.phase gs /= When.phase key ->
               Monad.unless raised (failWith (Failure.MkUnrefusedMove key verb (Just kind)))
         _ -> State.modify' (\rehearsal -> rehearsal {refusing = Nothing})
       waiting <- State.gets pending
@@ -672,6 +675,12 @@ answerScheduled asked = do
           State.modify' (\rehearsal -> rehearsal {pending = Nothing})
           answerTopPrompt decider asked
         Nothing -> answerTopPrompt decider asked
+
+-- | Whether a prompt of kind `kind` asks again what one of kind `answered`
+-- asked: the same prompt, or a target choice's announcement (CR 603.3d).
+asksAgain :: Text.Text -> Text.Text -> Bool
+asksAgain answered kind =
+  answered == kind || (answered == Text.pack "ChooseTargets" && kind == Text.pack "AnnounceTargets")
 
 -- | Whether a prompt is one a cast or activation asks its own decider between
 -- the ChooseAction that began it and its completion (CR 601.2b-h, CR 602.2b).
@@ -770,7 +779,7 @@ answerDedicated decider asked =
         -- among what it was offered deals nothing, so it fails here; a probe
         -- of that is an Answer flagged unoffered. CR 702.19b-c's trample gates
         -- are the engine's alone, judged over the whole step (CR 510.1e).
-        Prompt.Type.AssignCombatDamage who _ source thresholds _ -> do
+        Prompt.Type.AssignCombatDamage who _ source thresholds _ _ -> do
           key <- whenOf gs (Decider.unwrap who)
           let offered = Map.keysSet thresholds
           offers <- describeAll gs (Maybe.mapMaybe Recipient.objectOf (Set.toList offered))
@@ -793,24 +802,34 @@ answerDedicated decider asked =
         Prompt.Type.ChooseTargets who _ asking offered -> do
           key <- whenOf gs (Decider.unwrap who)
           let named = Maybe.fromMaybe asking (Game.abilitySourceOf asking gs)
-          onEntry unscheduled key kind [] (takeForSource gs key named) $ \verb -> case verb of
-            Move.ChooseTargets chosen -> Just (resolveSlots gs key verb offered chosen)
+              select = takeForSource gs key named
+          onEntry unscheduled key kind [] select $ \verb -> case verb of
+            Move.ChooseTargets chosen -> Just $ do
+              knownSlots gs key verb asking chosen
+              refusal <- State.gets refusing
+              if refusal == Just (key, verb, kind)
+                then refuseTargets gs key verb offered chosen select
+                else resolveSlots gs key verb offered chosen
             _ -> Nothing
         -- CR 601.2c's announcement, answered from the ChooseTargets entry that
         -- will name the targets, which stays queued for that prompt.
         Prompt.Type.AnnounceTargets who _ asking offered -> do
           key <- whenOf gs (Decider.unwrap who)
           let named = Maybe.fromMaybe asking (Game.abilitySourceOf asking gs)
-              -- A refused entry naming a target no slot offers is refused
+              -- A refused entry naming a target no slot offers, or a count
+              -- outside a slot's range (a slot it omits naming 0), is refused
               -- already, so the announcement reads the entry after it.
               announce = do
                 found <- takeForSource gs key named
                 case found of
-                  Just (_, Timed.MkTimed {Timed.entry = Entry.Do verb@(Move.ChooseTargets chosen)}) -> announceSlots key verb offered chosen
+                  Just (_, Timed.MkTimed {Timed.entry = Entry.Do verb@(Move.ChooseTargets chosen)}) -> do
+                    knownSlots gs key verb asking chosen
+                    announceSlots key verb offered chosen
                   Just (index, Timed.MkTimed {Timed.entry = Entry.Refuse verb@(Move.ChooseTargets chosen)}) -> do
+                    knownSlots gs key verb asking chosen
                     everyOffered <- offersAll gs offered chosen
-                    if everyOffered
-                      then announceSlots key verb offered chosen
+                    if everyOffered && countsOffered offered chosen
+                      then announceCounts key verb offered chosen
                       else popAt key index >> announce
                   Just (_, timed) -> failWith (Failure.MkUnexpectedPrompt key (Timed.entry timed) kind [])
                   Nothing -> unscheduled []
@@ -1006,6 +1025,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseSticker _ _ _ offered -> chosen `elem` offered
   Prompt.Type.ChooseStickerOrNone _ _ _ offered -> all (`elem` offered) chosen
   Prompt.Type.ChooseNamePosition _ _ _ positions -> chosen `elem` positions
+  Prompt.Type.ChooseTurnMarker _ _ markers -> chosen `elem` markers
   Prompt.Type.ChooseCompanion _ _ companions -> all (`elem` companions) chosen
   Prompt.Type.ChooseRoom _ _ _ rooms -> chosen `elem` rooms
   Prompt.Type.ChooseHalf _ _ _ names -> chosen `elem` names
@@ -1027,9 +1047,9 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseActivePlayer _ _ players -> chosen `elem` players
   Prompt.Type.ChooseExilesFromGraveyard _ _ _ cards _ -> all (`elem` cards) chosen
   Prompt.Type.ChooseMaterials _ _ _ objects _ _ -> all (`elem` objects) chosen
-  Prompt.Type.ChooseCollectEvidence _ _ _ cards _ -> all (`elem` cards) chosen
+  Prompt.Type.ChooseCollectEvidence _ _ _ cards _ -> all (`elem` fmap fst cards) chosen
   Prompt.Type.ChoosePermanent _ _ _ objects _ -> chosen `elem` objects
-  Prompt.Type.ChooseTapsForTotalPower _ _ _ objects _ -> all (`elem` objects) chosen
+  Prompt.Type.ChooseTapsForTotalPower _ _ _ objects _ -> all (`elem` fmap fst objects) chosen
   Prompt.Type.ChooseTaps _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseReturns _ _ _ objects _ -> all (`elem` objects) chosen
   Prompt.Type.ChooseExiles _ _ _ objects _ -> all (`elem` objects) chosen
@@ -1060,14 +1080,14 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseManaYield _ _ _ options -> chosen `elem` options
   Prompt.Type.ChooseLoopMembers _ _ _ members -> all (`elem` members) chosen
   Prompt.Type.ChoosePile _ _ _ piles _ -> chosen `elem` piles
-  Prompt.Type.ChooseFromOutsideTheGame _ _ cards least most -> all (`elem` cards) chosen && least <= List.genericLength chosen && List.genericLength chosen <= most
+  Prompt.Type.ChooseFromOutsideTheGame _ _ cards least most -> all (`elem` fmap fst cards) chosen && least <= List.genericLength chosen && List.genericLength chosen <= most
   Prompt.Type.DeclareAttackers _ _ attackers -> all (`elem` attackers) chosen
   Prompt.Type.DeclareBands _ _ attackers -> all (all (`elem` attackers)) chosen
   Prompt.Type.DividePiles _ _ creatures _ -> all (all (`elem` creatures)) chosen
   Prompt.Type.DeclareBlockers _ _ blockers attackers -> all (`elem` blockers) (Map.keys chosen) && all (all (`elem` attackers)) chosen
   Prompt.Type.ChooseTargets _ _ _ offered -> Map.isSubmapOfBy (\picked (_, legal) -> Set.isSubsetOf picked legal) chosen offered
   Prompt.Type.AnnounceTargets _ _ _ offered -> all (`Map.member` offered) (Map.keys chosen)
-  Prompt.Type.AssignCombatDamage _ _ _ offered power -> Damage.wellFormedAssignment offered power chosen
+  Prompt.Type.AssignCombatDamage _ _ _ offered _ power -> Damage.wellFormedAssignment offered power chosen
   Prompt.Type.ChooseRedistribution _ _ totals -> all (`elem` fmap fst totals) (Map.keys chosen <> Map.elems chosen)
   Prompt.Type.ChooseDistributedMovedCounters _ _ _ _ _ candidates -> all (`elem` candidates) (Map.keys chosen)
   Prompt.Type.ChooseMovedCounters _ _ _ _ available -> Map.isSubmapOfBy (<=) chosen available
@@ -1126,7 +1146,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.OfferedCast {} -> True
   Prompt.Type.OfferedMiracleReveal {} -> True
   Prompt.Type.OfferedExtra {} -> True
-  Prompt.Type.RerollDie {} -> True
+  Prompt.Type.Rethrow {} -> True
   Prompt.Type.ReverseManaAbilities {} -> True
   Prompt.Type.PayLifeForMana {} -> True
   Prompt.Type.ReturnCommander {} -> True
@@ -1193,7 +1213,7 @@ answerActionPrompt gs pid actions prompt = do
         pure Action.Pass
       (Nothing, Entry.Do (Move.Answer _)) -> answerGeneric gs key (Text.pack "ChooseAction") index timed prompt
       (Nothing, Entry.Do verb) -> do
-        offered <- mapM (describeAction gs) actions
+        offered <- actionLines gs actions
         matching <- actionsMatching gs verb actions
         chosen <- case matching of
           [] -> failWith (Failure.MkActionNotOffered key verb offered)
@@ -1205,7 +1225,7 @@ answerActionPrompt gs pid actions prompt = do
       -- A refused move the engine does not offer is refused already; one it
       -- does offer is taken, and must be reversed (CR 734.1).
       (Nothing, Entry.Refuse verb) -> do
-        offered <- mapM (describeAction gs) actions
+        offered <- actionLines gs actions
         matching <- actionsMatching gs verb actions
         popAt key index
         case matching of
@@ -1303,7 +1323,7 @@ actionsMatching gs verb actions = case verb of
     oid <- resolveObject (Activation.object activation) gs
     let selected = fmap (\index -> List.genericDrop index (Projection.abilitiesOf oid gs)) (Activation.ability activation)
     pure (filter (matchesActivation oid selected) actions)
-  Move.Take taking -> fmap (fmap fst . filter ((== Taking.action taking) . snd) . zip actions) (mapM (describeAction gs) actions)
+  Move.Take taking -> fmap (fmap fst . filter ((== Taking.action taking) . snd) . zip actions) (actionLines gs actions)
   _ -> pure []
 
 matchesActivation :: ObjectId.ObjectId -> Maybe [ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> Action.Action -> Bool
@@ -1472,13 +1492,19 @@ onEntry unscheduled key kind offers select match = do
 
 -- Checks -----------------------------------------------------------------------
 
--- | Fails the run unless the check holds on this state.
+-- | Fails the run unless the check holds on this state, naming the entries
+-- still queued for an earlier step: the run stops here, so they never ran.
 expect :: Maybe When.When -> GameState.GameState -> Check.Check -> Run ()
 expect key gs check = do
   observed <- observe gs check
   case observed of
     Nothing -> pure ()
-    Just actual -> failWith (Failure.MkCheckFailed key check actual)
+    Just actual -> do
+      remaining <- State.gets queues
+      let step moment = (When.turn moment, When.phase moment)
+          earlier moment = any (\now -> step moment < step now) key
+          skipped = foldMap snd (filter (earlier . fst) (Map.toAscList remaining))
+      failWith (Failure.MkCheckFailed key check actual skipped)
 
 -- | Nothing when the check holds, else what was there instead.
 observe :: GameState.GameState -> Check.Check -> Run (Maybe Text.Text)
@@ -1657,11 +1683,12 @@ namedObjects name gs =
    in filter matches (Map.keys (GameState.objects gs))
 
 labelOf :: PlayerId.PlayerId -> Run Label.Label
-labelOf pid = do
-  seats <- State.gets (Staged.seats . staged)
-  pure $ case List.find ((== pid) . snd) (Map.toList seats) of
-    Just (label, _) -> label
-    Nothing -> Label.MkLabel (Text.pack ("player " <> show (PlayerId.unwrap pid)))
+labelOf pid = State.gets (flip seatLabel pid . Staged.seats . staged)
+
+seatLabel :: Map.Map Label.Label PlayerId.PlayerId -> PlayerId.PlayerId -> Label.Label
+seatLabel seats pid = case List.find ((== pid) . snd) (Map.toList seats) of
+  Just (label, _) -> label
+  Nothing -> Label.MkLabel (Text.pack ("player " <> show (PlayerId.unwrap pid)))
 
 resolvePlayer :: Label.Label -> Run PlayerId.PlayerId
 resolvePlayer label = do
@@ -1767,7 +1794,8 @@ resolveSlots :: GameState.GameState -> When.When -> Move.Move -> Map.Map SlotNam
 resolveSlots gs key verb offered chosen =
   let refused :: Run b
       refused = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
-   in if Map.keysSet chosen /= Map.keysSet offered
+   in -- A slot the entry names empty was announced 0 (announceCounts), so is not asked.
+      if Map.keysSet (Map.filter (not . Seq.null) chosen) /= Map.keysSet offered
         then refused
         else
           Map.traverseWithKey
@@ -1782,7 +1810,53 @@ resolveSlots gs key verb offered chosen =
             )
             offered
 
--- | Whether every target an entry names is among its slot's candidates.
+-- | A refused ChooseTargets entry the prompt refuses already, unless the next
+-- entry names other counts than the ones announced from this one: the refusal
+-- then goes to the engine, which rejects it and asks the announcement again
+-- (CR 603.3d), so the next entry announces its own counts.
+refuseTargets :: GameState.GameState -> When.When -> Move.Move -> Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run (Maybe (Int, Timed.Timed)) -> Run (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient))
+refuseTargets gs key verb offered chosen select = do
+  before <- State.get
+  case State.runStateT (resolveSlots gs key verb offered chosen) before of
+    Right (answer, after) -> answer <$ State.put after
+    Left halt@(Failed failure)
+      | refusedAlready failure -> do
+          next <- select
+          let recounts later = Map.filter (> 0) (fmap Natural.length later) /= fmap fst offered
+              submit ref candidates = resolveRecipient gs ref candidates (fmap (either Recipient.ToPlayer Recipient.ToObject) (resolveEither ref gs))
+          case fmap (Timed.entry . snd) next of
+            Just (Entry.Do (Move.ChooseTargets later)) | recounts later -> pure ()
+            Just (Entry.Refuse (Move.ChooseTargets later)) | recounts later -> pure ()
+            _ -> State.StateT (const (Left halt))
+          Map.traverseWithKey
+            (\slot refs -> fmap Set.fromList (mapM (\ref -> submit ref (maybe Set.empty snd (Map.lookup slot offered))) (Foldable.toList refs)))
+            (Map.filter (not . Seq.null) chosen)
+    Left halt -> State.StateT (const (Left halt))
+  where
+    refusedAlready failure = case failure of
+      Failure.MkActionNotOffered {} -> True
+      Failure.MkUnofferedObject {} -> True
+      _ -> False
+
+-- | Fails the run on a target entry naming a slot its triggered ability does
+-- not have, which a refusal would otherwise pass over as refused already. A
+-- slot "of each opponent" has a copy per player (Target.announcedSlots).
+knownSlots :: GameState.GameState -> When.When -> Move.Move -> ObjectId.ObjectId -> Map.Map SlotName.SlotName a -> Run ()
+knownSlots gs key verb asking chosen = case Game.lookupObject asking gs of
+  Just obj
+    | Source.OfTrigger source <- Object.source obj,
+      Just controller <- Projection.controllerOf asking gs ->
+        let printed = Modal.allTargetSlots (TriggeredAbility.modal (TriggeredAbilitySource.ability source))
+            slots = Map.keysSet (Target.announcedSlots controller (TriggeredAbilitySource.source source) gs printed)
+         in case Set.lookupMin (Map.keysSet chosen `Set.difference` slots) of
+              Just unknown -> failWith (Failure.MkUnknownSlot key verb (SlotName.unwrap unknown) (fmap SlotName.unwrap (Set.toList slots)))
+              Nothing -> pure ()
+  _ -> pure ()
+
+-- | Whether every target an entry names is among its slot's candidates. A
+-- slot the announcement does not offer, a fixed-count one, is judged by the
+-- ChooseTargets that follows (Yoshimaru, Scrappy Stray's "another target
+-- creature you control").
 offersAll :: GameState.GameState -> Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run Bool
 offersAll gs offered chosen =
   fmap and . sequence $
@@ -1790,27 +1864,41 @@ offersAll gs offered chosen =
         target <- resolveEither ref gs
         pure (any (matchesRecipient target) candidates)
     | (slot, refs) <- Map.toList chosen,
-      let candidates = maybe Set.empty snd (Map.lookup slot offered),
+      Just (_, candidates) <- [Map.lookup slot offered],
       ref <- Foldable.toList refs
     ]
 
 -- | How many targets each offered slot's entry names, within CR 601.2c's range.
 announceSlots :: When.When -> Move.Move -> Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run (Map.Map SlotName.SlotName Natural)
-announceSlots key verb offered chosen =
-  let refused :: Run b
-      refused = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
-   in -- A superset: a fixed-count slot beside the announced ones is named by the
-      -- entry but announced by nobody (Capricious Efreet's "target ... you
-      -- control"); the ChooseTargets that follows holds the entry to every key.
-      if not (Map.keysSet offered `Set.isSubsetOf` Map.keysSet chosen)
-        then refused
-        else
-          Map.traverseWithKey
-            ( \slot (range, candidates) ->
-                let n = Natural.length (Map.findWithDefault Seq.empty slot chosen)
-                 in if TargetCount.least range <= n && n <= TargetCount.ceilingOn (Natural.length candidates) range then pure n else refused
-            )
-            offered
+announceSlots key verb offered chosen
+  -- A superset: a fixed-count slot beside the announced ones is named by the
+  -- entry but announced by nobody (Capricious Efreet's "target ... you
+  -- control"); the ChooseTargets that follows holds the entry to every key.
+  | Map.keysSet offered `Set.isSubsetOf` Map.keysSet chosen = announceCounts key verb offered chosen
+  | otherwise = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
+
+-- | The counts an entry names, a slot it omits naming 0, failing unless each
+-- is within its slot's range.
+announceCounts :: When.When -> Move.Move -> Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Run (Map.Map SlotName.SlotName Natural)
+announceCounts key verb offered chosen
+  | countsOffered offered chosen = pure (Map.mapWithKey (\slot _ -> namedIn chosen slot) offered)
+  | otherwise = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
+
+-- | Whether an entry names, for every offered slot, a count within its range;
+-- a slot it omits names 0 targets.
+countsOffered :: Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Bool
+countsOffered offered chosen =
+  and
+    ( Map.mapWithKey
+        ( \slot (range, candidates) ->
+            let n = namedIn chosen slot
+             in TargetCount.least range <= n && n <= TargetCount.ceilingOn (Natural.length candidates) range
+        )
+        offered
+    )
+
+namedIn :: Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> SlotName.SlotName -> Natural
+namedIn chosen slot = Natural.length (Map.findWithDefault Seq.empty slot chosen)
 
 -- | Whether a recipient is the player or object a reference resolved to.
 matchesRecipient :: Either PlayerId.PlayerId ObjectId.ObjectId -> Recipient.Recipient -> Bool
@@ -1857,24 +1945,44 @@ resolveDamage gs key kind offered (ref, amount) = do
 describeObject :: GameState.GameState -> ObjectId.ObjectId -> Run Text.Text
 describeObject gs oid = do
   labels <- State.gets (Staged.objects . staged)
-  let describeSource source = case List.find ((== source) . snd) (Map.toAscList labels) of
-        Just (label, _) -> Codec.Reference.toText (Reference.Labelled label)
-        Nothing -> case Game.cardOfWithLastKnown source gs of
-          Just card -> CardName.unwrap (Face.name (NonEmpty.head (Card.faces card)))
-          Nothing -> Text.pack ("object " <> show (ObjectId.unwrap source))
-  pure $ case List.find ((== oid) . snd) (Map.toAscList labels) of
-    Just (label, _) -> Codec.Reference.toText (Reference.Labelled label)
-    Nothing -> case Game.cardOf oid gs of
-      Nothing -> case fmap Object.source (Game.lookupObject oid gs) of
-        Just (Source.OfTrigger trigger) -> Text.pack "trigger of " <> describeSource (TriggeredAbilitySource.source trigger)
-        Just (Source.OfAbility ability) -> Text.pack "ability of " <> describeSource (ActivatedAbilitySource.source ability)
-        _ -> case [label | (label, card) <- Map.toAscList labels, elem oid (castsOf card gs)] of
-          label : _ -> Codec.Reference.toText (Reference.SpellOf (Reference.Labelled label))
-          [] -> Text.pack ("object " <> show (ObjectId.unwrap oid))
-      Just card ->
-        let name = Face.name (NonEmpty.head (Card.faces card))
-            occurrence = Natural.length (takeWhile (/= oid) (namedObjects name gs)) + 1
-         in Codec.Reference.toText (Reference.Printed name occurrence)
+  pure (Codec.Reference.toText (referenceTo labels gs oid))
+
+-- | An object as a scenario names it: by its label, its card's name and
+-- occurrence, or the spell or ability a labelled card became or made; one
+-- none of those reach as @object@ and its id, which no reference reads back.
+referenceTo :: Map.Map Label.Label ObjectId.ObjectId -> GameState.GameState -> ObjectId.ObjectId -> Reference.Reference
+referenceTo labels gs oid = case List.find ((== oid) . snd) (Map.toAscList labels) of
+  Just (label, _) -> Reference.Labelled label
+  Nothing -> case Game.cardOf oid gs of
+    Nothing -> case fmap Object.source (Game.lookupObject oid gs) of
+      Just (Source.OfTrigger trigger) -> Reference.TriggerOf (sourceOf (TriggeredAbilitySource.source trigger))
+      Just (Source.OfAbility ability) -> Reference.AbilityOf (sourceOf (ActivatedAbilitySource.source ability))
+      _ -> case [label | (label, card) <- Map.toAscList labels, elem oid (castsOf card gs)] of
+        label : _ -> Reference.SpellOf (Reference.Labelled label)
+        [] -> unreached oid
+    Just card ->
+      let name = Face.name (NonEmpty.head (Card.faces card))
+       in Reference.Printed name (Natural.length (takeWhile (/= oid) (namedObjects name gs)) + 1)
+  where
+    sourceOf source = case List.find ((== source) . snd) (Map.toAscList labels) of
+      Just (label, _) -> Reference.Labelled label
+      Nothing -> case Game.cardOfWithLastKnown source gs of
+        Just card -> Reference.Printed (Face.name (NonEmpty.head (Card.faces card))) 1
+        Nothing -> unreached source
+    unreached o = Reference.Printed (CardName.MkCardName (Text.pack ("object " <> show (ObjectId.unwrap o)))) 1
+
+-- | Each action's line among `actions`, in their order, as a scenario's Take
+-- and Offered view name it (Parun.Scenario.Offer).
+actionLines :: GameState.GameState -> [Action.Action] -> Run [Text.Text]
+actionLines gs actions = do
+  labels <- State.gets (Staged.objects . staged)
+  seats <- State.gets (Staged.seats . staged)
+  let namer =
+        Reply.MkNamer
+          { Reply.nameObject = referenceTo labels gs,
+            Reply.namePlayer = seatLabel seats
+          }
+  pure (Offer.linesOf (fmap (Offer.offer namer gs) actions))
 
 renderView :: GameState.GameState -> ViewIs.ViewIs -> Run ReplyType.Reply
 renderView gs viewIs =
@@ -1882,14 +1990,14 @@ renderView gs viewIs =
       texts = fmap (ReplyType.Array . fmap ReplyType.Text)
       named :: Run Label.Label -> Run ReplyType.Reply
       named = fmap (ReplyType.Text . Label.unwrap)
-      needPlayer = maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs a player"))) resolvePlayer (ViewIs.player viewIs)
-      needObject = maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs an object"))) (`resolveObject` gs) (ViewIs.object viewIs)
+      needPlayer = maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs a player") Seq.empty)) resolvePlayer (ViewIs.player viewIs)
+      needObject = maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs an object") Seq.empty)) (`resolveObject` gs) (ViewIs.object viewIs)
    in case ViewIs.view viewIs of
         View.Stack -> texts (describeAll gs (GameState.stack gs))
         View.Step -> pure (ReplyType.Text (Text.pack (Codec.Phase.flatName (GameState.phase gs))))
         View.Offered -> do
           pid <- needPlayer
-          texts (mapM (describeAction gs) (ActionEngine.legalActions pid gs))
+          texts (actionLines gs (ActionEngine.legalActions pid gs))
         View.AttachedTo -> do
           oid <- needObject
           case Game.lookupObject oid gs >>= Object.attachedTo of
@@ -1911,7 +2019,7 @@ renderView gs viewIs =
         View.Priority -> maybe (pure ReplyType.Null) (named . labelOf) (GameState.priority gs)
         View.Zone -> do
           pid <- needPlayer
-          zone <- maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs a zone"))) pure (ViewIs.zone viewIs)
+          zone <- maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs a zone") Seq.empty)) pure (ViewIs.zone viewIs)
           texts (describeAll gs (Game.zoneMembers zone pid gs))
         View.Colors -> do
           oid <- needObject
@@ -1991,30 +2099,6 @@ describeTarget gs target = case target of
   AttackTarget.OfPlaneswalker oid -> describeObject gs oid
   AttackTarget.OfBattle oid -> describeObject gs oid
 
-describeAction :: GameState.GameState -> Action.Action -> Run Text.Text
-describeAction gs action = case action of
-  Action.Pass -> pure (Text.pack "Pass")
-  Action.Cast oid _ _ -> fmap (Text.pack "Cast " <>) (describeObject gs oid)
-  Action.Play oid _ -> fmap (Text.pack "PlayLand " <>) (describeObject gs oid)
-  Action.Activate oid _ -> fmap (Text.pack "Activate " <>) (describeObject gs oid)
-  Action.ActivateManaAbility oid -> fmap (Text.pack "ActivateManaAbility " <>) (describeObject gs oid)
-  Action.TurnFaceUp oid procedure -> fmap (\named -> Text.pack "TurnFaceUp " <> named <> Text.pack (" " <> show procedure)) (describeObject gs oid)
-  Action.Unlock oid half -> fmap (\named -> Text.pack "Unlock " <> named <> Text.pack " " <> CardName.unwrap half) (describeObject gs oid)
-  Action.DiscardFromHand oid -> fmap (Text.pack "DiscardFromHand " <>) (describeObject gs oid)
-  Action.TurnConspiracyFaceUp oid -> fmap (Text.pack "TurnConspiracyFaceUp " <>) (describeObject gs oid)
-  Action.Ignore oid _ -> fmap (Text.pack "Ignore " <>) (describeObject gs oid)
-  Action.Plot oid _ -> fmap (Text.pack "Plot " <>) (describeObject gs oid)
-  Action.Foretell oid -> fmap (Text.pack "Foretell " <>) (describeObject gs oid)
-  Action.Suspend oid -> fmap (Text.pack "Suspend " <>) (describeObject gs oid)
-  Action.MakeLaterPayment source _ -> fmap (Text.pack "MakeLaterPayment " <>) (describeObject gs source)
-  -- The second of one source's offers to a seat reads "EndEffect $asp #2".
-  Action.EndEffect source resolution ->
-    let nth = case EndEffect.offerIndex source resolution gs of
-          0 -> Text.empty
-          index -> Text.pack (" #" <> show (index + 1))
-     in fmap (\name -> Text.pack "EndEffect " <> name <> nth) (describeObject gs source)
-  _ -> pure (Text.pack (show action))
-
 -- | One line per failure, naming entries in the JSON a scenario writes them in.
 render :: Failure.ScenarioFailure -> Text.Text
 render failure = case failure of
@@ -2040,6 +2124,8 @@ render failure = case failure of
   Failure.MkNotAPlayer label -> Label.unwrap label <> Text.pack " names no seat"
   Failure.MkUnofferedObject key kind named offers ->
     renderWhen key <> Text.pack ": the " <> kind <> Text.pack " prompt did not offer " <> named <> renderOffers offers
+  Failure.MkUnknownSlot key verb slot slots ->
+    renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " names a slot " <> slot <> Text.pack " its ability does not have; it has " <> Text.intercalate (Text.pack ", ") slots
   Failure.MkUnexpectedQualifier key kind ref ->
     renderWhen key <> Text.pack ": " <> kind <> Text.pack " has no source, so the source " <> Codec.Reference.toText ref <> Text.pack " matches nothing"
   Failure.MkNestedGamePrompt turn step decider kind ->
@@ -2070,12 +2156,13 @@ render failure = case failure of
     renderTimeds timed <> Text.pack " never came; the game stopped at " <> renderLocation turn step Nothing
   Failure.MkUnrunChecks turn step timed ->
     renderTimeds timed <> Text.pack " never ran; the game stopped at " <> renderLocation turn step Nothing
-  Failure.MkCheckFailed key check observed ->
+  Failure.MkCheckFailed key check observed skipped ->
     maybe (Text.pack "at the end") renderWhen key
       <> Text.pack ": "
       <> Common.render (Codec.encode Codec.Check.codec check)
       <> Text.pack " failed; it was "
       <> observed
+      <> (if Seq.null skipped then Text.empty else Text.pack "; before it, " <> renderTimeds skipped <> Text.pack " never ran")
 
 renderDiscrepancy :: Discrepancy.Discrepancy -> Text.Text
 renderDiscrepancy discrepancy = case discrepancy of

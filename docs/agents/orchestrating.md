@@ -242,12 +242,12 @@ capability needs a gameplay-level scenario on the real card".
 > CARDS, and its body states the design (`gh api
 > repos/parun-mtg/parun/pulls/P --jq .body`). Find rules-correctness
 > defects: a legal board on which the change plays differently from
-> `docs/rules.txt` or the cards' rulings (Scryfall `named?fuzzy=`, then each
-> `rulings_uri`). The riskiest part is SHAREDGATE, which every
-> RESOLUTION/SEARCH/COMBAT passes through. Check: BOARDS (that unaffected
-> games are unchanged; two such effects at once; control or zone changes
-> mid-effect; multiplayer). Enumerate with jq the pool cards that reach the
-> changed reader and say whether any now reads differently. Also check
-> `CLAUDE.md` item 4's sites for the new constructors and fields, and
+> `data/comprehensive-rules.txt` or the cards' rulings (Scryfall
+> `named?fuzzy=`, then each `rulings_uri`). The riskiest part is SHAREDGATE,
+> which every RESOLUTION/SEARCH/COMBAT passes through. Check: BOARDS (that
+> unaffected games are unchanged; two such effects at once; control or zone
+> changes mid-effect; multiplayer). Enumerate with jq the pool cards that
+> reach the changed reader and say whether any now reads differently. Also
+> check `CLAUDE.md` item 4's sites for the new constructors and fields, and
 > whether the tests prove what they claim. Report findings only, most severe
 > first.

@@ -37,6 +37,7 @@ import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActingPermanent as ActingPermanent
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.AttachDirection as AttachDirection
 import qualified Parun.Types.AttachmentEnd as AttachmentEnd
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
@@ -2307,9 +2308,10 @@ everyTriggerCondition =
     TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.EachOccurrence),
     TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage (ActingPermanent.Matching (Filter.Type.And [])) Nothing Nothing) Batching.OneOrMore),
     TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing) Batching.OneOrMore),
-    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You Nothing Nothing) False),
-    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Noncombat) Nothing) False),
-    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Combat) Nothing) True),
+    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You Nothing Nothing) False Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
+    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Noncombat) Nothing) False Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
+    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Combat) Nothing) True Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
+    TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.Opponent (Just DamageKind.Combat) Nothing) False Batching.OneOrMore (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))),
     TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer (Filter.Type.And []) PlayerRelation.AnyPlayer False),
     TriggerCondition.CreatureDealtCombatDamageToMonarch,
     TriggerCondition.CreaturesDealtCombatDamageToInitiative,
@@ -2332,7 +2334,8 @@ everyTriggerCondition =
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.target = AttackerTarget.Defending PlayerRelation.You}),
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.target = AttackerTarget.Permanent (Filter.Type.And [])}),
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.target = AttackerTarget.PlayerWithMostLife}),
-    TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.company = AttackCompany.Alone}),
+    TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.company = AttackCompany.Alone AloneAmong.EveryAttacker}),
+    TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.company = AttackCompany.Alone AloneAmong.AttackersOfItsPlayer}),
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.company = AttackCompany.WithAnother (Filter.Type.And [])}),
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.frequency = TriggerFrequency.FirstTimeEachTurn}),
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.while = Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))}),

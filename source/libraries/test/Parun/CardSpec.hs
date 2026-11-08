@@ -252,6 +252,7 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.FullText as FullText
@@ -329,6 +330,7 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -489,6 +491,7 @@ vanillaFace name typeLine =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.staticAbilities = [],
@@ -656,7 +659,7 @@ cardSpec s = Spec.describe s "Card" $ do
     Spec.assertEqWith s "both colours" (Projection.printedColorsOf c) (Set.fromList [Color.Green, Color.White])
     Spec.assertEqWith s "mana value 2" (Quantity.manaValueOf c) 2
     -- The two names RENDERED as one string, unspaced -- the form
-    -- docs/rules.txt's own Examples write it in ("Fire//Ice",
+    -- data/comprehensive-rules.txt's own Examples write it in ("Fire//Ice",
     -- "Assault//Battery"). What the card HAS is both names, which is a set and
     -- is asserted through the projection (Parun.CastSpec's "in hand, the
     -- combined view has both names").
@@ -946,7 +949,7 @@ restrictionConditions restriction = case restriction of
   ActivationRestriction.OnlyIf condition -> [condition]
   ActivationRestriction.OnlyOnce -> []
   ActivationRestriction.TimesEachTurn _ -> []
-  ActivationRestriction.DuringDieRoll -> []
+  ActivationRestriction.DuringThrow -> []
   ActivationRestriction.InstantSpeed -> []
   ActivationRestriction.SpendOnly _ -> []
 
@@ -1288,7 +1291,7 @@ ownCounts effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> foldMap quantityCounts quantity
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -1854,7 +1857,7 @@ effectNestedEffects effect = case effect of
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -2421,7 +2424,7 @@ effectReplacements effect = case effect of
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -2890,6 +2893,7 @@ reservedSlots =
       Binding.collectedEvidence,
       Binding.waterbendCost,
       Binding.removedCounters,
+      Binding.loyaltyRemoved,
       Binding.crewedVehicle,
       Binding.crewers,
       Binding.manaSource,
@@ -3000,7 +3004,7 @@ effectMintedFaces effect = case effect of
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -3320,6 +3324,8 @@ namedTokens =
       CardName.MkCardName (Text.pack "Koma's Coil"),
       -- Goblin Kaboomist's "a colorless artifact token named Land Mine".
       CardName.MkCardName (Text.pack "Land Mine"),
+      -- Kwia Vigorbloom's "a colorless artifact token named Lotus".
+      CardName.MkCardName (Text.pack "Lotus"),
       CardName.MkCardName (Text.pack "Nalaar Aetherjet"),
       -- Yotia Declares War's "a 0/2 colorless Thopter artifact creature token
       -- with flying named Ornithopter".
@@ -4064,10 +4070,10 @@ costComponentFilters component = case component of
   CostComponent.Blight _ -> []
   CostComponent.Forage -> []
   CostComponent.FlipCoin -> []
-  CostComponent.ExileThisFromGraveyard -> []
+  CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   -- CR 701.17a takes the cards off the top, so this component carries no Filter
-  -- to narrow -- ExileThisFromGraveyard's answer above and for its reason.
+  -- to narrow -- ExileThisFrom's answer above and for its reason.
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
   -- CR 702.174a names an opponent rather than an object, so this component
@@ -4865,11 +4871,13 @@ triggerConditionSlots triggerCondition = case triggerCondition of
 filterSlotsReadSingly :: Filter.Type.Filter Keyword.Keyword -> [SlotName.SlotName]
 filterSlotsReadSingly = Set.toList . Filter.singularSlots
 
--- Every Count a player effect holds: a cost change's `perEach`, the one
--- Quantity a PlayerEffect carries.
+-- Every Count a player effect holds: a cost change's `perEach` and per-target
+-- `each`, and a free-cast grant's `amount`, the Quantities a PlayerEffect
+-- carries.
 playerEffectCounts :: PlayerEffect.PlayerEffect -> [Count.Type.Count Quantity.Type.Quantity]
 playerEffectCounts playerEffect = case playerEffect of
-  PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier)
+  PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier) <> foldMap quantityCounts (PerTarget.each =<< CostModifier.perTarget modifier)
+  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCastFromHand.amount grant)
   _ -> []
 
 -- The Filters a DamagePattern carries -- its source half and its printed
@@ -4890,17 +4898,18 @@ playerEffectFilters playerEffect = case playerEffect of
   -- apply. An addition's components carry one each ("sacrifice a SWAMP"), held
   -- to a printed component's standard through costComponentFilters. The
   -- subject's criteria are not returned: neither a rule-702 designator nor CR
-  -- 605.1a's or 606.2's classification is a Filter. A `perEach` count's
-  -- Filters are read with the same Context, so they take the same framing.
+  -- 605.1a's or 606.2's classification is a Filter. A `perEach` or per-target
+  -- count's Filters are read with the same Context, so they take the same
+  -- framing.
   PlayerEffect.ModifyCost (CostModifier.MkCostModifier _ f targets perTarget perEach _ change) ->
     f
-      : Maybe.maybeToList targets <> Maybe.maybeToList perTarget <> foldMap (fmap snd . quantityFilters) perEach <> case change of
+      : Maybe.maybeToList targets <> foldMap (pure . PerTarget.matching) perTarget <> foldMap (fmap snd . quantityFilters) (Maybe.maybeToList (PerTarget.each =<< perTarget) <> Maybe.maybeToList perEach) <> case change of
         CostChange.Add addition -> concatMap costComponentFilters (CostAddition.components addition)
         CostChange.Increase _ -> []
         CostChange.Reduce _ -> []
   PlayerEffect.AlternativeActivationCost _ -> []
   PlayerEffect.CantCastSpells -> []
-  PlayerEffect.CantActivateAbilities _ f -> [f]
+  PlayerEffect.CantActivateAbilities _ f _ -> [f]
   PlayerEffect.CantCastMoreThan _ -> []
   -- CR 305.2 carries a bare count of extra land plays, not a Filter: it names
   -- how many lands, never which spells.
@@ -4926,6 +4935,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 601.3b's "a spell with certain qualities", which is a Filter over the
   -- spell exactly as a cost modifier's is (Vedalken Orrery's is `And []`).
   PlayerEffect.CastAsThoughItHadFlash f -> [f]
+  PlayerEffect.NextSpell f -> [f]
   -- CR 601.1a / 601.3b's play-scoped sibling, the same shape (Scout's Warning's
   -- is HasCardType Creature).
   PlayerEffect.MayPlayAsThoughItHadFlash f -> [f]
@@ -4965,7 +4975,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 726 names no quality either: the designation has no parts (Jared
   -- Carthalion, True Heir).
   PlayerEffect.CantBecomeMonarch -> []
-  PlayerEffect.LegendRuleDoesntApply -> []
+  PlayerEffect.StateBasedActionDoesntApply _ -> []
   PlayerEffect.CantSetSchemesInMotion -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e]
   PlayerEffect.AdditionalTriggers bearers -> [bearers]
@@ -5001,8 +5011,10 @@ playerEffectFilters playerEffect = case playerEffect of
   -- the cast-side one above is (Fblthp, Lost on the Range's "nonland cards").
   PlayerEffect.PlotFrom grant -> [PlotFromZone.matching grant]
   -- CR 118.9's standing alternative cost, narrowed by the spell's own qualities
-  -- exactly as the zone permission above is (Omniscience's is `And []`).
-  PlayerEffect.CastFromHandWithoutPayingManaCost f -> [f]
+  -- exactly as the zone permission above is (Omniscience's is `And []`). An
+  -- `amount` count's Filters are read with perEachCount's Context, so they
+  -- take the same framing.
+  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> FreeCastFromHand.spells grant : foldMap (fmap snd . quantityFilters) (FreeCastFromHand.amount grant)
   -- CR 101.2's counter prohibition narrows by counter KIND, not by a Filter over
   -- objects: the object-side half of the same printings is
   -- Parun.Types.CounterRestriction, whose affected filter this lint reaches
@@ -5079,6 +5091,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.ChooseCardNames f -> unframed [f]
   EntryRewrite.ChooseCardName f -> unframed [f]
   EntryRewrite.OrTapped (EntryPrice.Reveal f) -> unframed [f]
+  EntryRewrite.OrTapped (EntryPrice.Behold f) -> unframed [f]
   -- CR 614.1c's as-enters exile carries a criterion over a CARD IN A GRAVEYARD
   -- (Living Lore's "an instant or sorcery card"), the reveal's axis one zone over
   -- and unframed with it.
@@ -5481,6 +5494,9 @@ blockPermissionFilters permission =
 --     adds, matched by Parun.Engine.Mana.admitsUnder, which fills the source's
 --     CR 607.2d choices off the mana unit (Pillar of Origins, Throne of
 --     Eldraine).
+--   * SpentOnFramed -- a CR 106.6 rider's condition or a spend trigger's
+--     spells, matched by Parun.Engine.ManaRider.spentOnMatches, which fills the
+--     payer's commanders' creature types (CR 903.3e, Path of Ancestry).
 --   * TriggerConditionFramed -- a triggered ability's own CR 603.2 trigger
 --     condition, matched by Parun.Engine.Event.Match against the bearer through
 --     Parun.Engine.SourceContext, which fills the bearer's CR 607.2d choices
@@ -5668,6 +5684,9 @@ data Framing
     ActivationCostFramed
   | -- | CR 106.6's restriction on added mana. See the overview above.
     ManaRestrictionFramed
+  | -- | What mana was spent on, for a rider or a spend trigger. See the overview
+    -- above.
+    SpentOnFramed
   | -- | A triggered ability's own trigger condition. See the overview above.
     TriggerConditionFramed
   | -- | A resolution's stored CR 611.2c combat restriction class. See the
@@ -5756,6 +5775,9 @@ sweptForSingularSlots framing = case framing of
   AffectedSetFramed -> True
   ActivationCostFramed -> True
   ManaRestrictionFramed -> True
+  -- SWEPT, as it was while Unframed: the split is about CR 903.3e's
+  -- commanders, not about slots.
+  SpentOnFramed -> True
   TriggerConditionFramed -> True
   -- SWEPT, as it was while Unframed: the split is about CR 110.2's bake.
   StoredClassFramed -> True
@@ -5876,6 +5898,7 @@ manaProductionFilters production = case production of
   ManaProduction.CouldProduce could -> [CouldProduce.among could]
   ManaProduction.Pooled _ -> []
   ManaProduction.ProducedByTapped -> []
+  ManaProduction.InCommanderIdentity -> []
 
 -- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.6's
 -- restriction, rider and spend trigger.
@@ -5883,8 +5906,8 @@ manaAdditionFilters :: ManaAddition.ManaAddition -> [(Framing, Filter.Type.Filte
 manaAdditionFilters addition =
   unframed (manaProductionFilters (ManaAddition.production addition))
     <> fmap ((,) ManaRestrictionFramed) (concatMap restrictionFilters (Maybe.maybeToList (ManaAddition.restriction addition)))
-    <> unframed (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
-    <> unframed (fmap WhenSpent.casts (Maybe.maybeToList (ManaAddition.whenSpent addition)))
+    <> fmap ((,) SpentOnFramed) (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
+    <> fmap ((,) SpentOnFramed . WhenSpent.casts) (Maybe.maybeToList (ManaAddition.whenSpent addition))
 
 -- Every Filter one effect carries, paired with its Framing. Two arms answer
 -- AttachDestination -- Effect.AttachTarget's destination and
@@ -5931,7 +5954,7 @@ effectFilters effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ _ _ _ _ _ _) -> searchFramed (f : Foldable.toList descriptions)
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   -- CR 201.4a's restriction, and the WISH's frame: what judges it is
   -- Parun.Interpreter.legalCardName, on the far side of
@@ -7312,6 +7335,19 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 flagged = any Face.anteOnly faces
              in if prints == flagged then Nothing else Just (path <> ": prints the ante reminder " <> show prints <> " but anteOnly is " <> show flagged)
     Spec.assertEqWith s "every ante card is flagged, and only those" (Maybe.mapMaybe offends corpus) []
+  -- CR 100.2a: a card carries a deck limit exactly when it prints "A deck can
+  -- have"; Parun.Legality reads the field and never the text.
+  Spec.it s "CR 100.2a a card carries a deck limit exactly when it prints one" $ do
+    Spec.assertBool s (not (null corpus)) "the corpus is not empty"
+    let line = Text.pack "A deck can have"
+        offends (path, result) = case result of
+          Left reason -> Just (path <> ": " <> Text.unpack reason)
+          Right card ->
+            let faces = Foldable.toList (Card.Type.faces card)
+                prints = any (maybe False (Text.isInfixOf line) . Face.oracleText) faces
+                carries = any (Maybe.isJust . Face.deckLimit) faces
+             in if prints == carries then Nothing else Just (path <> ": prints a deck limit " <> show prints <> " but carries one " <> show carries)
+    Spec.assertEqWith s "every card printing a deck limit carries one, and only those" (Maybe.mapMaybe offends corpus) []
   -- CR 407.3: only an ante card adds a card to the ante or changes a card's
   -- owner, and CR 407.4 makes Effect.Ante the only road into the ante: a
   -- MoveToZone into the ante has no player to check ownership against.
@@ -7651,21 +7687,21 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
       (any (any variableCounters . suspendsOf) ps)
       "the pool has a suspend whose N is CR 107.3d's chosen X"
     Spec.assertEqWith s "and every suspend cost agrees with its own N" (fmap (S.nameOf . Printing.card) offenders) []
-  -- Parun.Engine.Resolve.Arms.Damage's die-roll window resolves a DuringDieRoll
-  -- ability at once and asks for it with Prompt.RerollDie, so it announces no
-  -- mode, target or X and does nothing but reroll.
-  Spec.it s "every ability activated inside a die roll is one untargeted reroll" $ do
+  -- Parun.Engine.Resolve.Effect's die-roll and coin-flip windows resolve a
+  -- DuringThrow ability at once and ask for it with Prompt.Rethrow, so it
+  -- announces no mode, target or X and does nothing but throw again.
+  Spec.it s "every ability activated inside a die roll or coin flip is one untargeted rethrow" $ do
     ps <- S.allPrintings s corpus
     let abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (Face.activatedAbilities (S.combinedFace p))
-        windowed = concatMap (filter (elem ActivationRestriction.DuringDieRoll . ActivatedAbility.restrictions . snd) . abilitiesOf) ps
+        windowed = concatMap (filter (elem ActivationRestriction.DuringThrow . ActivatedAbility.restrictions . snd) . abilitiesOf) ps
         offends (_, ab) =
           let modal = ActivatedAbility.modal ab
            in length (Modal.modes modal) /= 1
                 || not (all (null . Mode.targetSlots) (Modal.modes modal))
                 || declaresVariable (ActivatedAbility.cost ab)
-                || Modal.allEffects modal /= [Effect.Reroll]
+                || Modal.allEffects modal /= [Effect.Rethrow]
     Spec.assertBool s (not (null windowed)) "the pool has such an ability"
-    Spec.assertEqWith s "an untargeted reroll alone" (fmap fst (filter offends windowed)) []
+    Spec.assertEqWith s "an untargeted rethrow alone" (fmap fst (filter offends windowed)) []
   Spec.it s "CR 602.2b every activated ability that reads X declares {X} in its own cost" $ do
     ps <- S.allPrintings s corpus
     let abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (Face.activatedAbilities (S.combinedFace p))

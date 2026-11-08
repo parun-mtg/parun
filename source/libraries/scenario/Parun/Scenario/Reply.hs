@@ -33,6 +33,7 @@ import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.OptionalDecision as Codec.OptionalDecision
 import qualified Parun.Codec.OutsideCard as Codec.OutsideCard
 import qualified Parun.Codec.PaymentDecision as Codec.PaymentDecision
+import qualified Parun.Codec.PileDraw as Codec.PileDraw
 import qualified Parun.Codec.PrintingId as Codec.PrintingId
 import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
@@ -236,6 +237,7 @@ recipient =
               "Battle" -> Recipient.ToBattle <$> decode object x
               "Player" -> Recipient.ToPlayer <$> decode player x
               "Object" -> Recipient.ToObject <$> decode object x
+              "Pile" -> Recipient.ToPile <$> decode (viaCodec Codec.PileDraw.codec) x
               other -> Failed (Text.pack ("no recipient kind " <> other))
           _ -> Failed (Text.pack "expected [kind, recipient]")
     )
@@ -245,7 +247,7 @@ recipient =
         Recipient.ToBattle o -> tagged "Battle" (encode object namer o)
         Recipient.ToPlayer p -> tagged "Player" (encode player namer p)
         Recipient.ToObject o -> tagged "Object" (encode object namer o)
-        Recipient.ToPile _ -> R.Null
+        Recipient.ToPile d -> tagged "Pile" (encode (viaCodec Codec.PileDraw.codec) namer d)
     )
 
 attackTarget :: Shape AttackTarget.AttackTarget
@@ -320,6 +322,7 @@ shapeOf :: Prompt.Prompt r -> Shape r
 shapeOf prompt = case prompt of
   Prompt.ChooseAction _ _ offered -> indexed offered
   Prompt.Concede {} -> named [Concession.Concedes, Concession.Continues]
+  Prompt.ChooseTurnMarker {} -> natural
   Prompt.Shuffle {} -> list object
   Prompt.RandomFirstPlayer {} -> player
   Prompt.RandomObject {} -> object
@@ -333,7 +336,7 @@ shapeOf prompt = case prompt of
   Prompt.ReferenceCards {} -> list (viaCodec Codec.CardName.codec)
   Prompt.ReferenceNames {} -> list (viaCodec Codec.CardName.codec)
   Prompt.ChooseDieResult {} -> natural
-  Prompt.RerollDie {} -> viaCodec Codec.OptionalDecision.codec
+  Prompt.Rethrow {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.AdjustDieRoll {} -> maybeOf (pairOf natural (named [RollAdjustment.Increase, RollAdjustment.Decrease]))
   Prompt.ChooseRollModifier {} -> natural
   Prompt.CallCoin {} -> viaCodec Codec.CoinFace.codec

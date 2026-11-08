@@ -1,11 +1,12 @@
 -- | CR 903, the Commander variant, as far as a commander in the command zone
--- reaches it: CR 903.3's designation, CR 903.6's starting zone, CR 903.8's cost
--- increase, CR 903.9's return to the command zone (rule 903.9a's state-based
--- action from a graveyard or exile, rule 903.9b's replacement from a hand or
--- library), and CR 903.10a's twenty-one-damage loss.
+-- reaches it: CR 903.3's designation, CR 903.4's colour identity, CR 903.6's
+-- starting zone, CR 903.8's cost increase, CR 903.9's return to the command
+-- zone (rule 903.9a's state-based action from a graveyard or exile, rule
+-- 903.9b's replacement from a hand or library), and CR 903.10a's
+-- twenty-one-damage loss.
 --
 -- A FORMAT and not a card, which is what makes this module the right home for
--- all five. No card's printed text says "cast this from the command zone" or
+-- all six. No card's printed text says "cast this from the command zone" or
 -- "this costs {2} more" -- rule 903 says both, of whatever card the player
 -- designated. So none of this is a Parun.Types.CastingPermission, a
 -- Parun.Types.PlayerEffect or a printed replacement: those are things a CARD
@@ -20,10 +21,9 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * CR 903.4's colour identity and CR 903.5's singleton deck construction
---     (#4458) -- both are deck-legality rules, and parun validates no deck.
---   * CR 903.12b, CR 903.12d and CR 903.12e's Brawl deck construction, and CR
---     903.13's Commander Draft -- deck-building rules, like rule 903.5's (#4458).
+--   * CR 903.13's Commander Draft deck construction (#6670). Commander's and
+--     Brawl's are Parun.Legality's, which reads `designations` and
+--     `colorIdentity`.
 module Parun.Engine.Commander where
 
 import qualified Control.Monad as Monad
@@ -37,10 +37,14 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
+import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Subtype as Subtype.Engine
+import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Deck as Deck
@@ -103,10 +107,10 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- is absolute, so a Background that also said it could be your commander (CR
 -- 903.3a) would still be refused.
 --
--- Empty is also what an ILLEGAL pair gets, which is the closest parun can come to
--- rejecting the deck: nothing validates a deck (#4458) and Parun.Engine.Setup has
--- no channel to refuse one, so a pair rule 702.124 does not allow designates
--- neither card and starts no commander in the command zone.
+-- Empty is also what an ILLEGAL pair gets: Parun.Legality's Commander rule
+-- family refuses such a deck, but Parun.Engine.Setup has no channel to refuse
+-- one, so a pair rule 702.124 does not allow designates neither card and starts
+-- no commander in the command zone.
 --
 -- Rule 702.124m's requirement is one-sided where rule 702.124k's is not. Rule
 -- 702.124k forbids a Background named alone; rule 702.124m says nothing of the
@@ -145,9 +149,9 @@ designations settings deck =
 -- says it can be your commander.
 --
 -- Brawl adds a planeswalker card to those three, which is the whole of CR
--- 903.12c's difference from rule 903.3 and the reason this takes the settings. Parun
--- validates no deck (#4458), so a card this refuses is designated as nothing and
--- starts nowhere, which is `designations`' posture for every illegal deck.
+-- 903.12c's difference from rule 903.3 and the reason this takes the settings. A
+-- card this refuses is designated as nothing and starts nowhere, which is
+-- `designations`' posture for every illegal deck.
 --
 -- Clauses (b) and (c) are REGRESSION FENCES and not proved: no legendary Vehicle
 -- and no legendary Spacecraft is in the corpus (Dawnsire, Sunstar Dreadnought and
@@ -411,6 +415,47 @@ commandZoneComponent oid gs = do
   obj <- Game.lookupObject oid gs
   Monad.guard (not (Seq.null (Game.componentsOf (Object.source obj))))
   fmap fst (commanderCardOf oid gs)
+
+-- | CR 903.3e: the objects that are this player's commanders, in every zone of
+-- the game, by `commanderCardOf`'s reading: a commander card, or the melded or
+-- merged permanent one is part of. Several for a partner pair (CR 702.124c).
+commandersOf :: PlayerId -> GameState -> [ObjectId]
+commandersOf pid gs =
+  let mine identity = maybe False (Set.member identity . Player.commander) (Map.lookup pid (GameState.players gs))
+   in [ oid
+      | oid <- Map.keys (GameState.objects gs),
+        Maybe.isJust (Game.zoneOf oid gs),
+        Just (_, identity) <- [commanderCardOf oid gs],
+        mine identity
+      ]
+
+-- | CR 903.4 / 702.124c: the combined colour identity of this player's
+-- commanders, or Nothing without one, which CR 903.4f leaves undefined.
+--
+-- Read off each designated card's printing, so a colour an effect gave the
+-- commander is not in it (CR 903.4a).
+commanderColorIdentity :: PlayerId -> GameState -> Maybe (Set.Set Color.Color)
+commanderColorIdentity pid gs = case Maybe.mapMaybe (\oid -> commanderCardOf oid gs) (commandersOf pid gs) of
+  [] -> Nothing
+  cards -> Just (foldMap (maybe Set.empty colorIdentity . (`Game.printingOf` gs) . fst) cards)
+
+-- | CR 903.4: a card's colour identity, the colours of the mana symbols in its
+-- mana cost and rules text and of its colour indicator, over every face (CR
+-- 903.4d, 903.4e). Rules text is Face.oracleText less its reminder text (CR
+-- 903.4c).
+--
+-- Not implemented: a colour a characteristic-defining ability defines (#6671),
+-- the colour CR 903.4b chooses before the game (#6225), and colours circled at
+-- deck building (#884).
+colorIdentity :: Printing.Printing -> Set.Set Color.Color
+colorIdentity printing = foldMap ofFace (Card.Type.faces (Printing.card printing))
+  where
+    ofFace face =
+      Face.colorIndicator face
+        <> symbolColors (foldMap ManaCost.unwrap (Face.manaCost face))
+        <> symbolColors (foldMap ManaSymbolText.rulesTextSymbols (Face.oracleText face))
+    symbolColors :: [ManaSymbol.ManaSymbol] -> Set.Set Color.Color
+    symbolColors = Set.fromList . concatMap Quantity.symbolColors
 
 -- | CR 903.10a / CR 704.6c: "a player who's been dealt 21 or more combat damage
 -- by the same commander over the course of the game loses the game". The

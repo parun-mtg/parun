@@ -51,6 +51,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
+import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -67,6 +68,7 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
@@ -92,9 +94,11 @@ import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
+import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -2392,7 +2396,7 @@ musterDynamoSpec s registry = Spec.describe s "Synthetic Muster Dynamo" $ do
 -- the harness has no vocabulary for ChooseTapsForTotalPower.
 tapFirstElves :: Prompt.Prompt r -> r
 tapFirstElves p = case p of
-  Prompt.ChooseTapsForTotalPower _ _ _ candidates threshold -> Set.fromList (List.genericTake threshold candidates)
+  Prompt.ChooseTapsForTotalPower _ _ _ candidates threshold -> Set.fromList (fmap fst (List.genericTake threshold candidates))
   _ -> S.identityAnswer p
 
 -- Alice's Synthetic Muster Dynamo and, for each name, that many of the card.
@@ -2415,20 +2419,21 @@ cryptexSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 cryptexSpec s registry = Spec.describe s "Cryptex" $ do
   Spec.it s "CR 118.3 Cryptex cannot collect the creature card Headless Skaab exiles" $ do
     (short, shortSkaab, _) <- cryptexBoard s registry "Lightning Bolt"
-    (enough, skaab, soil) <- cryptexBoard s registry "Acidic Soil"
+    (enough, skaab, _) <- cryptexBoard s registry "Acidic Soil"
     let offered oid gs = any (S.isCastOf oid) (Action.legalActions S.alice gs)
-        resolved = S.runPure (collectOnly soil) (S.runPure (collectOnly soil) enough (S.cast S.alice skaab)) Stack.resolveTop
+        resolved = S.runPure collectWorthThree (S.runPure collectWorthThree enough (S.cast S.alice skaab)) Stack.resolveTop
         countOf = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Headless Skaab")) S.alice
     Spec.assertBool s (not (offered shortSkaab short)) "beside the Bolt the Elf pays one cost or the other, so the Skaab is not offered"
     Spec.assertBool s (offered skaab enough) "beside the Soil the Cryptex collects it, so the Skaab is"
     Spec.assertEqWith s "CR 605.3a and the Skaab resolved off the Cryptex's mana" (countOf resolved) 1
 
--- That one card, wherever collect evidence asks: the default answer takes
--- every candidate, the Elf the Skaab needs included. Test-local: the harness
--- has no vocabulary for ChooseCollectEvidence.
-collectOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-collectOnly oid p = case p of
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (filter (== oid) candidates)
+-- The cards the prompt says have mana value 3, wherever collect evidence
+-- asks: the Soil, where the default answer takes every candidate, the Elf the
+-- Skaab needs included. Test-local: the harness has no vocabulary for
+-- ChooseCollectEvidence.
+collectWorthThree :: Prompt.Prompt r -> r
+collectWorthThree p = case p of
+  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList [candidate | (candidate, value) <- candidates, value == 3]
   _ -> S.identityAnswer p
 
 -- Alice's Cryptex and two Islands, Bloodbraid Elf and the named card in her
@@ -2739,6 +2744,140 @@ demandsNoManaSpec s registry = Spec.describe s "a cost demanding no mana" $ do
     Spec.assertEqWith s "CR 118.3 one Elf taps once" (ask 0 0 [tapping] []) (True, True)
     Spec.assertEqWith s "CR 118.3 but not twice" (ask 0 0 [tapping, tapping] []) (False, False)
 
+-- Mana.canPayCommittingGiven asks Mana.plainPayable before the walk: the pool
+-- and the plain sources alone, every other group taken no times. Each case
+-- pins the shortcut beside the walk's answer: where the shortcut says yes the
+-- walk must too, and where it says no the walk still answers, out of
+-- Springleaf Drum's tap of a creature or Treasonous Ogre's life.
+plainSourcesSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+plainSourcesSpec s registry = Spec.describe s "plain sources" $ do
+  Spec.it s "CR 118.3 the plain sources alone answer no more than the walk" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    forest <- S.printingOf s registry "Forest"
+    birds <- S.printingOf s registry "Birds of Paradise"
+    solRing <- S.printingOf s registry "Sol Ring"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    drum <- S.printingOf s registry "Springleaf Drum"
+    ogre <- S.printingOf s registry "Treasonous Ogre"
+    let g0 = Setup.emptyGame S.bothPlayers
+        (mountainId, g1) = S.addPermanent mountain S.alice g0
+        (forestId, g2) = S.addPermanent forest S.alice g1
+        (birdsId, g3) = S.addPermanent birds S.alice g2
+        (solRingId, g4) = S.addPermanent solRing S.alice g3
+        (elfId, g5) = S.addPermanent elves S.alice g4
+        (drumId, g6) = S.addPermanent drum S.alice g5
+        (ogreId, gs) = S.addPermanent ogre S.alice g6
+        pcs = Projection.projectAll gs
+        sources = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) pcs S.alice gs
+        tapping oid = Claim.Type.MkClaim {Claim.Type.axis = ClaimAxis.Tapping, Claim.Type.pool = Set.singleton oid, Claim.Type.count = 1, Claim.Type.threshold = Nothing}
+        ask life energy claims symbols =
+          let cost = ManaCost.MkManaCost symbols
+           in ( Mana.plainPayable PaymentSubject.ForNeither ManaSpending.AsProduced sources S.alice life energy claims cost gs,
+                not (null (Mana.payableResolutionsGiven PaymentSubject.ForNeither ManaSpending.AsProduced sources pcs S.alice life energy claims cost gs))
+              )
+        red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+        green = ManaSymbol.OfType (ManaType.Colored Color.Green)
+        black = ManaSymbol.OfType (ManaType.Colored Color.Black)
+    Spec.assertEqWith s "lands, mana creatures and Sol Ring are plain; the Drum and the Ogre are not" (Map.keysSet (Mana.sourcePlain sources)) (Set.fromList [mountainId, forestId, birdsId, solRingId, elfId])
+    Spec.assertBool s (all (`elem` Mana.sourceIds sources) [drumId, ogreId]) "the Drum and the Ogre are still sources for the walk"
+    Spec.assertEqWith s "a red pays" (ask 0 0 [] [red]) (True, True)
+    Spec.assertEqWith s "the Birds make the black beside the Forest's green" (ask 0 0 [] [green, black]) (True, True)
+    Spec.assertEqWith s "a second black takes the Drum, which is the walk's" (ask 0 0 [] [black, black]) (False, True)
+    Spec.assertEqWith s "Sol Ring's two count toward six" (ask 0 0 [] [ManaSymbol.Generic 6]) (True, True)
+    Spec.assertEqWith s "a seventh takes the Ogre's life, which is the walk's" (ask 0 0 [] [ManaSymbol.Generic 7]) (False, True)
+    Spec.assertEqWith s "CR 118.3 the cost tapping the Mountain leaves the Birds' red" (ask 0 0 [tapping mountainId] [red]) (True, True)
+    Spec.assertEqWith s "CR 118.3 tapping the Birds too leaves the Ogre's red to the walk" (ask 0 0 [tapping mountainId, tapping birdsId] [red]) (False, True)
+    Spec.assertEqWith s "CR 118.3 a claim no assignment meets pays nothing" (ask 0 0 [tapping mountainId, tapping mountainId] [red]) (False, False)
+    Spec.assertEqWith s "CR 119.4 twenty life committed still pays" (ask 20 0 [] [red]) (True, True)
+    Spec.assertEqWith s "CR 119.4 but not twenty-one" (ask 21 0 [] [red]) (False, False)
+    Spec.assertEqWith s "CR 107.14 no energy pays none" (ask 0 1 [] [red]) (False, False)
+
+-- Mana.canPayCommittingGiven asks Mana.ceilingAdmits before the walk: Hall's
+-- condition against the pool and every group at its ceiling, what each eats,
+-- pays and claims dropped. Each case pins it beside the walk's answer: where
+-- the ceiling says no the walk must too. Transmogrant Altar eats a {B} for its
+-- {C}{C}{C}, Treasonous Ogre pays life and Springleaf Drum taps a creature, all
+-- of which the ceiling overlooks.
+manaCeilingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+manaCeilingSpec s registry = Spec.describe s "mana ceiling" $ do
+  Spec.it s "#6552 CR 118.3 a cost the ceiling refuses the walk refuses too" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    birds <- S.printingOf s registry "Birds of Paradise"
+    drum <- S.printingOf s registry "Springleaf Drum"
+    ogre <- S.printingOf s registry "Treasonous Ogre"
+    altar <- S.printingOf s registry "Transmogrant Altar"
+    piker <- S.printingOf s registry "Goblin Piker"
+    cube <- S.printingOf s registry "Doubling Cube"
+    let place printings gs = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) gs printings
+        board extra = place ([mountain, birds, drum, ogre, altar, piker] <> extra) (Setup.emptyGame S.bothPlayers)
+        sweep gs = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) (Projection.projectAll gs) S.alice gs
+        gs0 = board []
+        ask = askCeiling gs0
+        blue = ManaSymbol.OfType (ManaType.Colored Color.Blue)
+        colorless = ManaSymbol.OfType ManaType.Colorless
+        generics = fmap (\n -> (n, ask [ManaSymbol.Generic n])) [0 .. 20]
+    Spec.assertBool s (Maybe.isJust (Mana.sourceCeiling (sweep gs0))) "the board has a ceiling"
+    Spec.assertEqWith s "the Birds and the Drum make two blue" (ask [blue, blue]) (True, True)
+    Spec.assertEqWith s "but not three" (ask [blue, blue, blue]) (False, False)
+    Spec.assertEqWith s "the Altar's three colorless take its {B}, which the walk finds" (ask [colorless, colorless, colorless]) (True, True)
+    Spec.assertEqWith s "and no source makes a fourth" (ask [colorless, colorless, colorless, colorless]) (False, False)
+    Spec.assertEqWith s "no generic cost the ceiling refuses is one the walk pays" [n | (n, (False, True)) <- generics] []
+    Spec.assertBool s (any (\(_, answer) -> answer == (False, False)) generics) "the ceiling refuses some generic cost"
+    Spec.assertBool s (any (\(_, answer) -> answer == (True, False)) generics) "and leaves to the walk one only what it drops refuses"
+    Spec.assertBool s (Maybe.isJust (Mana.sourceCeiling (sweep (board [cube])))) "Doubling Cube leaves the board a ceiling"
+  -- Seven Mountains make seven red, or four doubled to eight under Doubling
+  -- Cube's {3}: the doubling exceeds every group's ceiling, and still makes
+  -- only red.
+  Spec.it s "#6563 CR 701.10f a doubling bounds the types of mana, not the amount" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    cube <- S.printingOf s registry "Doubling Cube"
+    let gs = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) (Setup.emptyGame S.bothPlayers) (cube : replicate 7 mountain)
+        ask = askCeiling gs
+        red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+        blue = ManaSymbol.OfType (ManaType.Colored Color.Blue)
+    Spec.assertEqWith s "eight red, which the doubling alone reaches" (ask (replicate 8 red)) (True, True)
+    Spec.assertEqWith s "but no blue" (ask [blue]) (False, False)
+    Spec.assertEqWith s "no generic cost the ceiling refuses is one the walk pays" [n | n <- [0 .. 12], ask [ManaSymbol.Generic n] == (False, True)] []
+  -- One Island and Channel's colorless at 20 life.
+  Spec.it s "#6563 CR 116.2c life for mana bounds the types of mana, not the amount" $ do
+    island <- S.printingOf s registry "Island"
+    let (_, g1) = S.addPermanent island S.alice (Setup.emptyGame S.bothPlayers)
+        gs = S.addPlayerEffect Expiry.AtCleanup (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (PlayerEffect.MayPayLifeForMana 1 ManaType.Colorless) S.alice g1
+        ask = askCeiling gs
+        blue = ManaSymbol.OfType (ManaType.Colored Color.Blue)
+    Spec.assertEqWith s "fifteen generic, fourteen of them life" (ask [ManaSymbol.Generic 15]) (True, True)
+    Spec.assertEqWith s "one blue" (ask [blue]) (True, True)
+    Spec.assertEqWith s "but not two" (ask [blue, blue]) (False, False)
+  -- Two Mountains and Wizard's Rockets, whose {X} eats what its X mana of any
+  -- colors makes.
+  Spec.it s "#6577 CR 601.2b a route announcing an X converts mana, adding none" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    rockets <- S.printingOf s registry "Wizard's Rockets"
+    let gs = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) (Setup.emptyGame S.bothPlayers) [rockets, mountain, mountain]
+        sources = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) (Projection.projectAll gs) S.alice gs
+        ask = askCeiling gs
+        red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+        black = ManaSymbol.OfType (ManaType.Colored Color.Black)
+        colorless = ManaSymbol.OfType ManaType.Colorless
+    Spec.assertBool s (Maybe.isJust (Mana.sourceCeiling sources)) "the Rockets leave the board a ceiling"
+    Spec.assertEqWith s "two black, both Mountains paying the X" (ask [black, black]) (True, True)
+    Spec.assertEqWith s "a black beside a red" (ask [black, red]) (True, True)
+    Spec.assertEqWith s "but not three black" (ask [black, black, black]) (False, False)
+    Spec.assertEqWith s "nor a colorless" (ask [colorless]) (False, False)
+    Spec.assertEqWith s "no generic cost the ceiling refuses is one the walk pays" [n | n <- [0 .. 6], ask [ManaSymbol.Generic n] == (False, True)] []
+    Spec.assertEqWith s "a third generic is refused" (ask [ManaSymbol.Generic 3]) (False, False)
+
+-- Mana.ceilingAdmits beside the walk it stands in front of, for alice paying
+-- a cost of these symbols on this board.
+askCeiling :: GameState.GameState -> [ManaSymbol.ManaSymbol] -> (Bool, Bool)
+askCeiling gs symbols =
+  let pcs = Projection.projectAll gs
+      sources = Mana.supplySourcesGiven Cost.manaActivations (Projection.controlGrants gs) pcs S.alice gs
+      cost = ManaCost.MkManaCost symbols
+   in ( Mana.ceilingAdmits PaymentSubject.ForNeither ManaSpending.AsProduced sources S.alice cost gs,
+        not (null (Mana.payableResolutionsGiven PaymentSubject.ForNeither ManaSpending.AsProduced sources pcs S.alice 0 0 [] cost gs))
+      )
+
 -- alice, active, in her precombat main phase: one Transmogrant Altar, one Goblin
 -- Piker for the sacrifice to take, and optionally a Swamp to pay the {B} and a
 -- pair of spells in her hand. Returns the Altar and whichever spells were dealt.
@@ -2812,7 +2951,7 @@ takesAltarOnce altarId birdsId p = case p of
 -- sorcery." CR 601.2f's list of what a cost may include ends in "and so on" and
 -- never names returning, so this is a cost by CR 118.1's general reading -- "an
 -- action or payment necessary to take another action" -- exactly as
--- CostComponent.ExileThisFromGraveyard is.
+-- CostComponent.ExileThisFrom is.
 --
 -- The board is one Ignus and one Mountain and nothing else. The Mountain is the
 -- only source of the ability's own {R}, so the mana window has exactly one
@@ -3992,6 +4131,8 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   transmograntAltarSpec s registry
   pluralBoardSpec s registry
   demandsNoManaSpec s registry
+  plainSourcesSpec s registry
+  manaCeilingSpec s registry
   claimMatchingSpec s
   grinningIgnusSpec s registry
   mysticGateSpec s registry

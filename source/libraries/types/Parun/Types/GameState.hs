@@ -70,6 +70,7 @@ import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -657,12 +658,13 @@ data GameState = MkGameState
     -- | CR 500.7: the ExtraTurn.createdAt of the extra turn under way; Nothing
     -- on an ordinary turn.
     extraTurnUnderWay :: Maybe Timestamp.Timestamp,
-    -- | CR 706.2: the sides of the die whose modification step is open, while
-    -- Parun.Engine.Resolve.Effect.throwDice asks about it; Nothing otherwise.
-    rollingDie :: Maybe Natural.Natural,
-    -- | CR 706.2b: whether an ability activated inside that step asked for the
-    -- die to be rerolled (Goblin Bookie).
-    rerollRequested :: Bool,
+    -- | CR 706.2 / 705.1: what the die whose modification step is open, or the
+    -- coin just flipped, came up, while Parun.Engine.Resolve.Effect offers to
+    -- throw it again; Nothing otherwise.
+    throwing :: Maybe ThrowResult.ThrowResult,
+    -- | CR 706.2b: whether an ability activated inside that window asked for
+    -- the die to be rerolled or the coin reflipped (Goblin Bookie).
+    rethrowRequested :: Bool,
     -- | CR 734.1: why each player's cast, activation or combat declaration
     -- was last reversed, since that player last chose an action at priority
     -- (Parun.Engine.Engine.priorityLoop) or made a declaration

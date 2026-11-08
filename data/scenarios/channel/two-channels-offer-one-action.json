@@ -160,7 +160,7 @@
       "player": "alice",
       "do": {
         "Take": {
-          "action": "PayLifeForMana 1 Colorless"
+          "action": "PayLifeForMana"
         }
       }
     },
@@ -209,7 +209,7 @@
           "is": [
             "Pass",
             "Cast $sword",
-            "PayLifeForMana 1 Colorless"
+            "PayLifeForMana"
           ]
         }
       }

@@ -16,7 +16,10 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Codec.Legality as Legality.Codec
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Json.Value as Value
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle.Face as Oracle.Face
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
@@ -27,9 +30,9 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layout as Layout
+import qualified Parun.Types.Legality as Legality
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
@@ -136,13 +139,28 @@ texts value = do
       text <- Common.field "text" fields >>= Common.asText
       pure (card, name, text)
 
+-- | A card as MTGJSON names it: its faces' names joined with " // ", a meld
+-- card's own face alone.
+cardKey :: Card.Card -> Text.Text
+cardKey = Text.intercalate (Text.pack " // ") . fmap (CardName.unwrap . Face.name) . NonEmpty.toList . Card.faces
+
+-- | Each card's legalities from the reduction's @legalities@, keyed by
+-- 'cardKey', then by pool.
+legalities :: Value.Value -> Either Text.Text (Map.Map Text.Text (Map.Map Text.Text Legality.Legality))
+legalities value = fmap Map.fromList (Common.asArray value >>= traverse entry)
+  where
+    entry v = do
+      fields <- Common.asObject v
+      card <- Common.field "card" fields >>= Common.asText
+      pools <- Common.field "legalities" fields >>= Codec.decode (Common.textMap id Right Legality.Codec.codec)
+      pure (card, pools)
+
 -- | The card with each face's Oracle text set from 'texts', where it has one.
 stamp :: (Map.Map (Text.Text, Text.Text) Text.Text, Map.Map Text.Text Text.Text) -> Card.Card -> Card.Card
 stamp (exact, byFace) card =
   card {Card.faces = fmap (\face -> maybe face (\text -> face {Face.oracleText = Just text}) (lookupFace (CardName.unwrap (Face.name face)))) (Card.faces card)}
   where
-    cardName = Text.intercalate (Text.pack " // ") (fmap (CardName.unwrap . Face.name) (NonEmpty.toList (Card.faces card)))
-    lookupFace name = Map.lookup (cardName, name) exact Applicative.<|> Map.lookup name byFace
+    lookupFace name = Map.lookup (cardKey card, name) exact Applicative.<|> Map.lookup name byFace
 
 -- | A line of normalised Oracle text as the keyword it names: a bare one, or
 -- one whose payload is a number, a mana cost (CR 107.4) or both, read by
@@ -187,7 +205,7 @@ enumWord kind word =
 -- | A color indicator's letter (CR 204, CR 105.1).
 colour :: Text.Text -> Either Text.Text Color.Color
 colour t = case Text.unpack t of
-  [c] | Just (ManaType.Colored x) <- manaType c -> Right x
+  [c] | Just (ManaType.Colored x) <- ManaSymbolText.manaType c -> Right x
   _ -> Left (Text.pack "color indicator: " <> t)
 
 -- | A printed power or toughness that is a plain number. Anything else
@@ -208,23 +226,4 @@ manaCost t = case Text.uncons t of
   where
     symbols = filter (not . Text.null) . fmap (Text.dropWhile (== '{')) . Text.splitOn (Text.pack "}")
     bad s = Left (Text.pack "mana symbol: {" <> s <> Text.pack "}")
-    symbol s = case Text.unpack s of
-      "X" -> Right ManaSymbol.Variable
-      "S" -> Right ManaSymbol.Snow
-      [c] | Just m <- manaType c -> Right (ManaSymbol.OfType m)
-      [c, '/', 'P'] | Just (ManaType.Colored x) <- manaType c -> Right (ManaSymbol.Phyrexian x)
-      ['2', '/', c] | Just m <- manaType c -> Right (ManaSymbol.MonocoloredHybrid m)
-      [a, '/', b] | Just l <- manaType a, Just r <- manaType b -> Right (ManaSymbol.Hybrid Hybrid.MkHybrid {Hybrid.left = l, Hybrid.right = r})
-      digits | all Char.isDigit digits, Just n <- Read.readMaybe digits -> Right (ManaSymbol.Generic n)
-      _ -> bad s
-
--- | A mana symbol's letter as the type of mana it stands for (CR 107.4).
-manaType :: Char -> Maybe ManaType.ManaType
-manaType c = case c of
-  'W' -> Just (ManaType.Colored Color.White)
-  'U' -> Just (ManaType.Colored Color.Blue)
-  'B' -> Just (ManaType.Colored Color.Black)
-  'R' -> Just (ManaType.Colored Color.Red)
-  'G' -> Just (ManaType.Colored Color.Green)
-  'C' -> Just ManaType.Colorless
-  _ -> Nothing
+    symbol s = maybe (bad s) Right (ManaSymbolText.symbol s)

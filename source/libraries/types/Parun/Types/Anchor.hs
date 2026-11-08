@@ -13,4 +13,6 @@ data Anchor nested
     Source
   | -- | CR 109.2: any one permanent this filter admits, read against the outer match's context.
     AnyPermanent nested
+  | -- | CR 903.3e: the commanders of the player the match is made for, at their current characteristics in any zone.
+    YourCommander
   deriving (Eq, Ord, Show)

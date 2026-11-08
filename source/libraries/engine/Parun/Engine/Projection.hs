@@ -23,6 +23,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
@@ -1328,6 +1329,18 @@ framedBySlots gs recipients context =
           -- Resolve.Slots.battlefieldMatching's reading.
           Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (GameState.enteringBeside gs))))
         }
+
+-- CR 903.3e: `context` with the creature types of the perspective player's
+-- commanders, each read through its projection wherever it is, the command zone
+-- and the stack included (Parun.Engine.Commander.commandersOf).
+framedByCommanders :: GameState -> Filter.Context -> Filter.Context
+framedByCommanders gs context =
+  context
+    { Filter.commanderCreatureTypes =
+        foldMap
+          (\pid -> foldMap (Set.filter Subtype.isCreatureType . Filter.subtypes . (`viewOfObject` gs)) (Commander.commandersOf pid gs))
+          (Filter.perspective context)
+    }
 
 -- Filter.contextFor with a recipient map framed in through framedBySlots, for
 -- a caller that holds the map rather than a binding environment: a cost's
@@ -3993,6 +4006,9 @@ filterReads f = case f of
   -- Reads a ZONE's size, which is no object's characteristic (CR 109.3) and no
   -- Modification writes; every zone change happens between projections.
   Filter.Type.CardsInGraveyardAtLeast _ -> Set.empty
+  -- Over-declared for Controls' reason: each bound object's owner plus whatever
+  -- the nest reads of it.
+  Filter.Type.OwnsBoundAtLeast _ _ g -> holderReads Holder.Owner <> filterReads g
   Filter.Type.IsAttacking -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same map: what a creature
   -- is attacking is no characteristic of it (CR 109.3).
@@ -4324,6 +4340,8 @@ filterReadsPeers f = case f of
   Filter.Type.IsPlayer _ -> False
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInGraveyardAtLeast _ -> False
+  -- DESCENT for Controls' reason.
+  Filter.Type.OwnsBoundAtLeast _ _ g -> filterReadsPeers g
   Filter.Type.IsAttacking -> False
   Filter.Type.IsAttackingPlayer _ -> False
   Filter.Type.DeclaredAttackedThisCombat -> False

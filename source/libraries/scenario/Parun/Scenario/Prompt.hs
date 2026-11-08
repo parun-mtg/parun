@@ -15,6 +15,7 @@ kindOf :: Prompt.Prompt r -> Text.Text
 kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseAction {} -> "ChooseAction"
   Prompt.Concede {} -> "Concede"
+  Prompt.ChooseTurnMarker {} -> "ChooseTurnMarker"
   Prompt.Shuffle {} -> "Shuffle"
   Prompt.RandomFirstPlayer {} -> "RandomFirstPlayer"
   Prompt.RandomObject {} -> "RandomObject"
@@ -36,7 +37,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseSurveil {} -> "ChooseSurveil"
   Prompt.ChooseFateseal {} -> "ChooseFateseal"
   Prompt.ChooseExplore {} -> "ChooseExplore"
-  Prompt.RerollDie {} -> "RerollDie"
+  Prompt.Rethrow {} -> "Rethrow"
   Prompt.AdjustDieRoll {} -> "AdjustDieRoll"
   Prompt.ChooseRollModifier {} -> "ChooseRollModifier"
   Prompt.ChooseDefender {} -> "ChooseDefender"

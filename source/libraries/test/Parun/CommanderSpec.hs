@@ -82,6 +82,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
@@ -107,6 +108,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
@@ -191,6 +193,24 @@ spec s registry = Spec.describe s "Parun.Engine.Commander" $ do
   restartSpec s registry
   ninjutsuSpec s registry
   departureSpec s registry
+  colorIdentitySpec s registry
+
+-- CR 903.4: a card's colour identity, read off its printing.
+colorIdentitySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+colorIdentitySpec s registry = Spec.describe s "Color identity" $ do
+  Spec.it s "CR 903.4 the colours of the mana symbols in a card's mana cost and rules text" $ do
+    garland <- S.printingOf s registry "Garland, Royal Kidnapper"
+    hama <- S.printingOf s registry "Hama, the Bloodbender"
+    codie <- S.printingOf s registry "Codie, Ravenous Codex"
+    Spec.assertEqWith s "Garland's {2}{U}{B}" (Commander.colorIdentity garland) (Set.fromList [Color.Blue, Color.Black])
+    Spec.assertEqWith s "Hama's hybrid {U/B}" (Commander.colorIdentity hama) (Set.fromList [Color.Blue, Color.Black])
+    Spec.assertEqWith s "Codie's {3} and its ability's {W}{U}{B}{R}{G}" (Commander.colorIdentity codie) (Set.fromList [minBound .. maxBound])
+  Spec.it s "CR 903.4c reminder text is ignored" $ do
+    screecher <- S.printingOf s registry "Basilica Screecher"
+    Spec.assertEqWith s "extort's {W/B} is reminder text" (Commander.colorIdentity screecher) (Set.singleton Color.Black)
+  Spec.it s "CR 903.4d the back face is included" $ do
+    ranger <- S.printingOf s registry "Daybreak Ranger"
+    Spec.assertEqWith s "Nightfall Predator's red colour indicator" (Commander.colorIdentity ranger) (Set.fromList [Color.Red, Color.Green])
 
 designationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 designationSpec s registry = Spec.describe s "Designation" $ do
@@ -206,6 +226,13 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     Spec.assertEqWith s "alice is designated it" (fmap (commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just [shimatsu])
     Spec.assertEqWith s "and it is her commander" (fmap (\oid -> Commander.isCommander oid gs) (inCommandZone gs)) [True]
     Spec.assertEqWith s "having cast it no times yet" (commanderCastsOf gs) []
+  -- #4118: a deck list's Commander section is Deck.commander.
+  Spec.it s "CR 903.6 a deck list's Commander section starts Krenko in the command zone" $ do
+    krenko <- S.printingOf s registry "Krenko, Mob Boss"
+    listed <- DeckList.parse registry (Text.pack "4 Mountain\n\nCommander\n1 Krenko, Mob Boss\n") >>= either (S.brokenCorpus s) pure
+    let gs = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice (DeckList.deck listed))
+    Spec.assertEqWith s "Krenko is in the command zone" (fmap (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (inCommandZone gs)) [Just (S.printingName krenko)]
+    Spec.assertEqWith s "and is not among the library's four" (length (Game.zoneMembers Zone.Library S.alice gs)) 4
   -- CR 903.3: the designation is "an attribute of the card itself", so a second
   -- Cid, Timeless Artificer in the deck -- which its own text allows -- is no
   -- commander. Each Cid is put onto the battlefield and destroyed in turn, and
@@ -561,8 +588,8 @@ partnerSpec s registry = Spec.describe s "Partner" $ do
     Spec.assertEqWith s "she is designated both" (fmap (List.sort . commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just (List.sort [rograkh, akiri]))
   -- The negative, on the same fixture with ONE printing swapped: Shimatsu has no
   -- partner, so CR 702.124h admits neither designation and the deck starts no
-  -- commander at all. Parun has no channel to refuse a deck (#4458), and this is
-  -- what it does instead.
+  -- commander at all. Parun.Legality refuses the deck; a game started with it
+  -- anyway does this.
   Spec.it s "CR 702.124h a second commander without partner is refused" $ do
     mountain <- S.printingOf s registry "Mountain"
     plains <- S.printingOf s registry "Plains"

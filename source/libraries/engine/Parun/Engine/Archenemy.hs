@@ -8,8 +8,7 @@
 -- brought a scheme deck is an archenemy (isArchenemy). CR 904.12b's Supervillain
 -- Rumble, where every player is one, is that same reading.
 --
--- Not implemented: CR 904.13d's scheme deck construction, deck legality being
--- unchecked (#4458).
+-- Not implemented: CR 904.13d's scheme deck construction (#6398).
 module Parun.Engine.Archenemy where
 
 import qualified Control.Monad as Monad

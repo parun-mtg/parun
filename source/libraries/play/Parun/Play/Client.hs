@@ -21,25 +21,34 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
+import qualified Parun.Codec.CostComponent as Codec.CostComponent
+import qualified Parun.Codec.CounterKind as Codec.CounterKind
+import qualified Parun.Codec.EntryOption as Codec.EntryOption
+import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.ManaCost as Codec.ManaCost
+import qualified Parun.Codec.ManaSymbol as Codec.ManaSymbol
 import qualified Parun.Codec.ManaType as Codec.ManaType
 import qualified Parun.Codec.ManaUnit as Codec.ManaUnit
 import qualified Parun.Codec.NumberFloor as Codec.NumberFloor
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
+import qualified Parun.Codec.StoredResult as Codec.StoredResult
+import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Engine.PlayerView as PlayerView.Engine
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
-import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
+import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hotseat as Hotseat
@@ -61,6 +70,7 @@ import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Undoing as Undoing
 import qualified Text.Read as Read
@@ -113,8 +123,8 @@ attempt :: (Monad m) => PlayerId.PlayerId -> PlayerView.PlayerView -> Question.Q
 attempt seat view question reply = case reply of
   R.Number i
     | Question.kind question == Text.pack "ChooseAction",
-      Just option <- arrayOf (Question.offer question) >>= Maybe.listToMaybe . List.genericDrop i,
-      Just kind <- field "action" option >>= textOf,
+      Just option <- Protocol.arrayOf (Question.offer question) >>= Maybe.listToMaybe . List.genericDrop i,
+      Just kind <- Protocol.field "action" option >>= textOf,
       kind `elem` [Text.pack "Cast", Text.pack "Activate"] ->
         let mark = (PlayerView.game view, PlayerView.turn view, Natural.length (PlayerView.witnessed view))
          in State.modify' (\h -> h {Hotseat.attempted = Map.insert seat (mark, actionName view option) (Hotseat.attempted h)})
@@ -228,7 +238,7 @@ answer terminal lookUp seat view question = case (Question.kind question, slotsO
           named = if several then foldMap (\t -> Text.pack " (" <> Render.spaced t <> Text.pack ")") (textOf slot) else Text.empty
           shown =
             Text.concat [Text.pack "Choose ", Render.count n "target", Text.pack " for ", objectName view source, named, Text.pack ":"]
-              : numbered (fmap (recipientName view) legal)
+              : numbered (fmap (targetName view legal) legal)
       picked <- ask (fmap recipientObject legal) (shown, fmap R.Array . exactly n legal)
       pure (R.Array [slot, picked])
 
@@ -236,8 +246,8 @@ answer terminal lookUp seat view question = case (Question.kind question, slotsO
 choice :: PlayerView.PlayerView -> Question.Question -> ([Text.Text], Text.Text -> Either Text.Text R.Reply)
 choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind question) of
   "ChooseAction" -> do
-    shown <- fmap (distinct view) (arrayOf offer)
-    let pass = List.find ((== Just (Text.pack "Pass")) . (field "action" Monad.>=> textOf) . snd) shown
+    shown <- fmap (distinct view) (Protocol.arrayOf offer)
+    let pass = List.find ((== Just (Text.pack "Pass")) . (Protocol.field "action" Monad.>=> textOf) . snd) shown
     pure
       ( Text.pack (if Maybe.isJust pass then "Choose an action, or press Enter to pass:" else "Choose an action:") : numbered (fmap (actionName view . snd) shown),
         \typed -> case pass of
@@ -245,7 +255,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
           _ -> fmap (\i -> R.Number (maybe 0 fst (Maybe.listToMaybe (List.genericDrop (i - 1) shown)))) (one (Natural.length shown) typed)
       )
   "DeclareMulligan" -> do
-    bottom <- field "bottom" offer >>= naturalOf
+    bottom <- Protocol.field "bottom" offer >>= Protocol.naturalOf
     pure
       ( [ Text.pack "Keep this hand, or mulligan? A mulligan puts " <> Render.count bottom "card" <> Text.pack " on the bottom.",
           Text.pack "  1. Keep",
@@ -256,7 +266,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   "Bottom" -> pickCount "to put on the bottom of your library"
   -- CR 404.3: every card of the batch, top first; Enter keeps the order shown.
   "ArrangeGraveyardArrivals" -> do
-    from <- field "from" offer >>= arrayOf
+    from <- Protocol.field "from" offer >>= Protocol.arrayOf
     let size = Natural.length from
         wrong = Text.pack ("Type each number from 1 to " <> show size <> " once, or press Enter.")
     pure
@@ -268,14 +278,14 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       )
   "ChooseDiscard" -> pickCount "to discard"
   "DeclareAttackers" -> do
-    attackers <- arrayOf offer
+    attackers <- Protocol.arrayOf offer
     pure
       ( Text.pack "Choose attackers by number or range such as 1-3, separated by spaces, all, or press Enter for none:" : numbered (fmap (listedName view) attackers),
-        fmap R.Array . some attackers
+        fmap R.Array . some False attackers
       )
   "DeclareBlockers" -> do
-    blockers <- field "blockers" offer >>= arrayOf
-    attackers <- field "attackers" offer >>= arrayOf
+    blockers <- Protocol.field "blockers" offer >>= Protocol.arrayOf
+    attackers <- Protocol.field "attackers" offer >>= Protocol.arrayOf
     pure
       ( [Text.pack "Attacking:"]
           <> numbered (fmap (listedName view) attackers)
@@ -285,12 +295,12 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
         blocks blockers attackers
       )
   "ChooseManaSource" -> do
-    cost <- field "cost" offer >>= decoded Codec.ManaCost.codec
+    cost <- Protocol.field "cost" offer >>= decoded Codec.ManaCost.codec
     let pool = foldMap (fmap ManaUnit.manaType . Mana.unwrap . SeatView.manaPool) (payerSeat view offer)
         held = foldMap (\t -> Text.pack "{" <> Render.manaType t <> Text.pack "}") pool
         left = foldMap (\(colored, rest) -> Text.pack ", leaving " <> Render.manaCost (ManaCost.MkManaCost ([ManaSymbol.Generic rest | rest > 0] <> fmap ManaSymbol.OfType colored))) (owing view offer)
         progress = if null pool then Text.empty else Text.pack " with " <> held <> Text.pack " in the pool" <> left
-        substitutes = foldMap (Foldable.foldMap (Maybe.maybeToList . Maybe.listToMaybe . Oracle.Keyword.keywordWord Text.empty)) (field "substitutes" offer >>= decoded (Common.list Codec.Keyword.codec))
+        substitutes = foldMap (Foldable.foldMap (Maybe.maybeToList . Maybe.listToMaybe . Oracle.Keyword.keywordWord Text.empty)) (Protocol.field "substitutes" offer >>= decoded (Common.list Codec.Keyword.codec))
         -- CR 601.2g-h: the substitution is asked once the mana window closes.
         later = if null substitutes then Text.empty else Text.pack ". After the mana, " <> Text.intercalate (Text.pack " or ") substitutes <> Text.pack " can pay part of it"
     sourcePick (Text.pack "Paying " <> Render.manaCost cost <> progress <> later <> Text.pack ". Choose a source to pay with, stop to stop paying, or auto (or press Enter) to pay the rest:") (Text.pack "stop") (Text.pack ", stop, or auto")
@@ -298,80 +308,123 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   "ChooseExtraManaSource" -> sourcePick (Text.pack "The cost is covered. Choose another source to activate, or press Enter to pay now:") Text.empty (Text.pack ", or press Enter to pay now")
   -- CR 734.1: whether the mana abilities of one activation are reversed too.
   "ReverseManaAbilities" -> do
-    sources <- field "sources" offer >>= arrayOf
+    sources <- Protocol.field "sources" offer >>= Protocol.arrayOf
     pure
       ( [Text.pack "That action was reversed. Reverse the mana ability of " <> Text.intercalate (Text.pack " and ") (fmap (listedName view) sources) <> Text.pack " too?", Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
-  -- CR 601.2b / 702.51a: each candidate as Oracle text prints its cost.
+  -- CR 601.2b / 702.51a: each candidate as Oracle text prints its cost, and
+  -- the keyword that offered it (CR 702.152a); CR 101.4b: what earlier
+  -- payers answered.
   "ChooseCost" -> do
-    source <- field "source" offer
-    costs <- field "costs" offer >>= arrayOf
+    source <- Protocol.field "source" offer
+    costs <- Protocol.field "costs" offer >>= Protocol.arrayOf
     let self = objectName view source
+        keywords = foldMap (fmap (decoded Codec.Keyword.codec)) (Protocol.field "keywords" offer >>= Protocol.arrayOf) <> repeat Nothing
+        offered cost keyword = candidateName self cost <> foldMap (\k -> Text.pack " (" <> Render.spaced (Text.pack (Codec.Keyword.tagOf k)) <> Text.pack ")") keyword
     pure
-      ( Text.pack "Choose how to pay for " <> self <> Text.pack ":" : numbered (fmap (candidateName self) costs),
+      ( payersTold view self offer <> (Text.pack "Choose how to pay for " <> self <> Text.pack ":" : numbered (zipWith offered costs keywords)),
         fmap (R.Number . toInteger . subtract 1) . one (Natural.length costs)
       )
+  -- CR 201.4: any card's name, typed in full; one the rules refuse is asked
+  -- again, saying why (Parun.Play.Game.judgingNames).
+  "ChooseCardName" ->
+    pure
+      ( [Text.pack "Choose a card name: type the name of a card."],
+        \typed -> if Text.null typed then Left (Text.pack "Type the name of a card.") else Right (R.Text typed)
+      )
   "ChooseManaYield" -> do
-    source <- field "source" offer
-    yields <- field "yields" offer >>= decoded (Common.list (Common.list Codec.ManaType.codec))
+    source <- Protocol.field "source" offer
+    yields <- Protocol.field "yields" offer >>= decoded (Common.list (Common.list Codec.ManaType.codec))
     pure
       ( Text.pack "Choose the mana " <> objectName view source <> Text.pack " makes:" : numbered (fmap (foldMap Render.manaType) yields),
         fmap (R.Number . toInteger . subtract 1) . one (Natural.length yields)
       )
   "ChooseManaSpentOnX" -> do
-    source <- field "source" offer
-    shares <- field "shares" offer >>= decoded (Common.list (Common.list Codec.ManaType.codec))
+    source <- Protocol.field "source" offer
+    shares <- Protocol.field "shares" offer >>= decoded (Common.list (Common.list Codec.ManaType.codec))
     pure
       ( Text.pack "Choose the mana you spent on X for " <> objectName view source <> Text.pack ":" : numbered (fmap (foldMap Render.manaType) shares),
         fmap (R.Number . toInteger . subtract 1) . one (Natural.length shares)
       )
   "ChooseX" -> do
-    source <- field "source" offer
-    variable <- field "variable" offer >>= textOf
-    least <- field "least" offer >>= naturalOf
-    greatest <- field "greatest" offer >>= naturalOf
+    source <- Protocol.field "source" offer
+    variable <- Protocol.field "variable" offer >>= textOf
+    least <- Protocol.field "least" offer >>= Protocol.naturalOf
+    greatest <- Protocol.field "greatest" offer >>= Protocol.naturalOf
     pure (ranged (Text.concat [Text.pack "Choose ", variable, Text.pack " for ", objectName view source]) least Text.empty (Just greatest))
   -- CR 608.2d: a bid's least is the high bid, which answering declines to top.
   "ChooseNumber" -> do
-    source <- field "source" offer
-    least <- field "least" offer >>= naturalOf
-    meaning <- field "floor" offer >>= decoded Codec.NumberFloor.codec
+    source <- Protocol.field "source" offer
+    least <- Protocol.field "least" offer >>= Protocol.naturalOf
+    meaning <- Protocol.field "floor" offer >>= decoded Codec.NumberFloor.codec
     let note = if meaning == NumberFloor.HighBid then Text.pack ("; " <> show least <> " lets the high bid stand") else Text.empty
-    pure (ranged (Text.pack "Choose a number for " <> objectName view source) least note (field "greatest" offer >>= naturalOf))
+    pure (ranged (Text.pack "Choose a number for " <> objectName view source) least note (Protocol.field "greatest" offer >>= Protocol.naturalOf))
+  -- CR 601.2b: how many times the keyword's cost is paid.
+  "ChooseKicker" -> do
+    source <- Protocol.field "source" offer
+    least <- Protocol.field "least" offer >>= Protocol.naturalOf
+    let keyword = Maybe.fromMaybe (Text.pack "its cost") (Protocol.field "keyword" offer >>= decoded Codec.Keyword.codec >>= Maybe.listToMaybe . Oracle.Keyword.printed (objectName view source))
+    pure (ranged (Text.concat [Text.pack "Choose how many times to pay ", keyword, Text.pack " for ", objectName view source]) least Text.empty (Protocol.field "greatest" offer >>= Protocol.naturalOf))
+  -- CR 702.132a: the generic mana the assisting player pays.
+  "ChooseAssistAmount" -> bounded (Text.pack "Choose how much mana to pay to assist ")
+  "ChoosePaidEnergy" -> bounded (Text.pack "Choose how much energy to pay for ")
+  -- CR 715.3b.
+  "ChooseReadAheadChapter" -> bounded (Text.pack "Choose the chapter to read ahead to for ")
+  -- CR 706.2b: each die moved either way by the amount, then none.
+  "AdjustDieRoll" -> do
+    options <- Protocol.field "options" offer >>= Protocol.arrayOf
+    results <- Protocol.field "results" offer >>= Protocol.arrayOf
+    moved <- Protocol.field "amount" offer >>= Protocol.naturalOf
+    let several = length results > 1
+        name option = case option of
+          R.Array [R.Number index, R.Text way]
+            | Just (R.Number result) <- Maybe.listToMaybe (List.genericDrop index results),
+              Just sign <- List.lookup way [(Text.pack "Increase", 1), (Text.pack "Decrease", -1)] ->
+                Text.concat [if several then Text.pack ("Die " <> show (index + 1) <> ": ") else Text.empty, way, Text.pack (" " <> show result <> " to " <> show (result + sign * toInteger moved))]
+          _ -> optionName view option
+    pure
+      ( told view Text.empty offer <> (kindHeading <> Text.pack ":" : numbered (fmap name options)),
+        fmap (pickFrom options) . one (Natural.length options)
+      )
   "ChooseOptional" -> do
-    source <- field "source" offer
+    source <- Protocol.field "source" offer
     pure
       ( [objectName view source <> Text.pack ": use its optional effect?", Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
   -- CR 116.2c / 605.3a: Channel's life for mana, inside a payment.
   "PayLifeForMana" -> do
-    life <- field "life" offer >>= naturalOf
-    mana <- field "mana" offer >>= decoded Codec.ManaType.codec
+    life <- Protocol.field "life" offer >>= Protocol.naturalOf
+    mana <- Protocol.field "mana" offer >>= decoded Codec.ManaType.codec
     pure
       ( [Text.pack ("Pay " <> show life <> " life to add ") <> Render.manaType mana <> Text.pack "?", Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
   -- CR 510.1b-c: whether the creature assigns its damage as its option allows.
   "ChooseCombatDamageOption" -> do
-    source <- field "source" offer
-    option <- field "option" offer >>= decoded Codec.CombatDamageOption.codec
+    source <- Protocol.field "source" offer
+    option <- Protocol.field "option" offer >>= decoded Codec.CombatDamageOption.codec
     let wording = if option == CombatDamageOption.AsThoughUnblocked then Text.pack ": assign its combat damage as though it weren't blocked?" else Text.pack ": assign its combat damage to a creature the defending player controls?"
     pure
       ( [objectName view source <> wording, Text.pack "  1. Yes", Text.pack "  2. No"],
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
-  -- CR 510.1c-d: one amount per recipient, in the order offered.
+  -- CR 510.1c-d: one amount per recipient, in the order offered, beside how
+  -- much of its lethal damage other creatures already assign (CR 702.19b-c).
   "AssignCombatDamage" -> do
-    source <- field "source" offer
-    lethal <- field "lethal" offer >>= arrayOf >>= mapM entryOf
-    total <- field "total" offer >>= naturalOf
-    let needs threshold = if threshold > 0 then Text.pack (" (lethal " <> show threshold <> ")") else Text.empty
+    source <- Protocol.field "source" offer
+    lethal <- Protocol.field "lethal" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf
+    paid <- Protocol.field "paid" offer >>= Protocol.arrayOf >>= mapM Protocol.entryOf
+    total <- Protocol.field "total" offer >>= Protocol.naturalOf
+    let assigned recipient = case List.lookup recipient paid of
+          Just n | n > 0 -> ", " <> show n <> " already assigned"
+          _ -> ""
+        needs recipient threshold = if threshold > 0 then Text.pack (" (lethal " <> show threshold <> assigned recipient <> ")") else Text.empty
         wrong = Text.pack ("Type " <> show (length lethal) <> " amounts that add up to " <> show total <> ".")
     pure
       ( Text.concat [Text.pack "Divide ", objectName view source, Text.pack ("'s " <> show total <> " damage, one amount each, separated by spaces:")]
-          : numbered (fmap (\(recipient, threshold) -> recipientName view recipient <> needs threshold) lethal),
+          : numbered (fmap (\(recipient, threshold) -> recipientName view recipient <> needs recipient threshold) lethal),
         \typed -> case numbers typed of
           Right amounts
             | length amounts == length lethal && sum amounts == total ->
@@ -380,10 +433,10 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       )
   -- CR 601.2d / 115.7f: one amount per target, in the order offered.
   "ChooseDivision" -> do
-    source <- field "source" offer
-    targets <- field "targets" offer >>= arrayOf
-    let fixed = field "parts" offer >>= arrayOf >>= mapM naturalOf
-    total <- maybe (field "total" offer >>= naturalOf) (Just . sum) fixed
+    source <- Protocol.field "source" offer
+    targets <- Protocol.field "targets" offer >>= Protocol.arrayOf
+    let fixed = Protocol.field "parts" offer >>= Protocol.arrayOf >>= mapM Protocol.naturalOf
+    total <- maybe (Protocol.field "total" offer >>= Protocol.naturalOf) (Just . sum) fixed
     let wrong = Text.pack ("Type " <> show (length targets) <> " amounts of at least 1 that add up to " <> show total <> maybe "" (\parts -> ", using exactly " <> unwords (fmap show parts)) fixed <> ".")
         fits amounts = length amounts == length targets && all (>= 1) amounts && sum amounts == total && all ((== List.sort amounts) . List.sort) fixed
     pure
@@ -393,22 +446,33 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
           Right amounts | fits amounts -> Right (R.Array [R.Array [recipient, R.Number (toInteger amount)] | (recipient, amount) <- zip targets amounts])
           _ -> Left wrong
       )
+  -- CR 119.7: for each player in turn, the player whose life total they take.
+  "ChooseRedistribution" -> do
+    totals <- Protocol.field "totals" offer >>= Protocol.arrayOf >>= mapM (\total -> case total of R.Array [player, R.Number life] -> Just (player, life); _ -> Nothing)
+    let players = fmap fst totals
+        size = Natural.length players
+    pure
+      ( Text.pack "Redistribute life totals: for each player in turn, type the number of the player whose life total they take, separated by spaces, or press Enter to keep every total:"
+          : numbered [playerName player <> Text.pack (" (" <> show life <> " life)") | (player, life) <- totals],
+        \typed -> case numbers typed of
+          Right [] -> Right (R.Array [])
+          Right picked | List.sort picked == [1 .. size] -> Right (R.Array [R.Array [player, giver] | (player, i) <- zip players picked, let giver = pickFrom players i, giver /= player])
+          _ -> Left (Text.pack ("Type each number from 1 to " <> show size <> " once, or press Enter."))
+      )
   -- CR 603.3b / 101.4c: first to last, the first named going on the stack
   -- first; Enter keeps the order shown.
   "OrderTriggers" -> do
-    entries <- arrayOf offer
-    let size = Natural.length entries
-        wrong = Text.pack ("Type each number from 1 to " <> show size <> " once, or press Enter.")
-    pure
-      ( Text.pack "Order your triggered abilities: type their numbers first to last, separated by spaces, or press Enter to keep this order. On the stack, the last resolves first:" : numbered (fmap (triggerName view) entries),
-        \typed -> case numbers typed of
-          Right [] -> Right (R.Array (fmap (R.Number . toInteger) [0 .. size - 1]))
-          Right picked | List.sort picked == [1 .. size] -> Right (R.Array (fmap (R.Number . toInteger . subtract 1) picked))
-          _ -> Left wrong
-      )
+    entries <- Protocol.arrayOf offer
+    pure (ordered (Text.pack "Order your triggered abilities: type their numbers first to last, separated by spaces, or press Enter to keep this order. On the stack, the last resolves first:") (fmap (triggerName view) entries))
+  -- CR 601.2h: each component as Oracle text prints it, the first paid first.
+  "OrderCostComponents" -> do
+    source <- Protocol.field "source" offer
+    components <- Protocol.field "order" offer >>= Protocol.arrayOf
+    let self = objectName view source
+    pure (ordered (orderHeading (Text.pack " for " <> self) (Text.pack "the first is paid first")) (fmap (componentName self) components))
   -- CR 601.2h: the pool's unit that pays the next symbol, sent back whole.
   "ChooseManaToSpend" -> do
-    units <- arrayOf offer
+    units <- Protocol.arrayOf offer
     shown <- mapM (decoded Codec.ManaUnit.codec) units
     pure
       ( Text.pack "Choose the mana to spend:" : numbered (fmap unitName shown),
@@ -416,19 +480,93 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
       )
   -- CR 701.23b: up to the count, which may be none.
   "Search" -> do
-    from <- field "from" offer >>= arrayOf
-    names <- field "names" offer >>= arrayOf >>= mapM textOf
-    wanted <- field "count" offer >>= naturalOf
+    from <- Protocol.field "from" offer >>= Protocol.arrayOf
+    names <- Protocol.field "names" offer >>= Protocol.arrayOf >>= mapM textOf
+    wanted <- Protocol.field "count" offer >>= Protocol.naturalOf
     let n = min wanted (Natural.length from)
     pure
       ( Text.pack "Choose up to " <> Render.count n "card" <> Text.pack " to find, by number or range such as 1-3, separated by spaces, or press Enter for none:" : numbered names,
         \typed -> do
-          picked <- some from typed
+          picked <- some False from typed
           if Natural.length picked <= n then Right (R.Array picked) else Left (Text.pack ("Choose at most " <> show n <> "."))
       )
-  _ -> Nothing
+  -- CR 700.2: each mode as the offer names it, or else by its place in the
+  -- printed list.
+  "ChooseModes" -> subset (\reply -> maybe (optionName view reply) (\i -> Text.pack ("Mode " <> show (i + 1))) (Protocol.naturalOf reply)) Text.empty R.Array
+  -- CR 702.47b: each card beside the splice cost it adds, the effects
+  -- happening in the order the cards are typed.
+  "ChooseSplice" -> do
+    among <- Protocol.field "among" offer >>= Protocol.arrayOf
+    let costs = Maybe.fromMaybe [] (Protocol.field "costs" offer >>= Protocol.arrayOf)
+        spliced card = optionName view card <> foldMap (\cost -> Text.pack " (splice for " <> candidateName (objectName view card) cost <> Text.pack ")") (lookup card (zip among costs))
+    subset spliced (Text.pack "; the first typed happens first") R.Array
+  -- CR 701.34a: the permanents picked, then the players.
+  "ChooseProliferate" ->
+    subset (optionName view) Text.empty (\picked -> R.Array [R.Array (filter (Maybe.isJust . objectOf) picked), R.Array [player | R.Array [R.Text tag, player] <- picked, tag == Text.pack "Player"]])
+  -- CR 702.22c: each band its attackers' numbers joined by +, each attacker in
+  -- at most one.
+  "DeclareBands" -> do
+    among <- Protocol.field "among" offer >>= Protocol.arrayOf
+    let size = Natural.length among
+        band word = traverse (either (const Nothing) Maybe.listToMaybe . numbers) (Text.splitOn (Text.pack "+") word)
+        fits groups = let is = concat groups in all ((>= 2) . length) groups && all (\i -> i >= 1 && i <= size) is && ListUtils.nubOrd is == is
+    pure
+      ( Text.pack "Declare bands: type each band as its attackers' numbers joined by +, such as 1+2, separated by spaces, or press Enter for none:" : numbered (fmap (listedName view) among),
+        \typed -> case traverse band (Text.words typed) of
+          Just groups | fits groups -> Right (R.Array (fmap (R.Array . fmap (pickFrom among)) groups))
+          _ -> Left (Text.pack ("Type each band as two or more numbers from 1 to " <> show size <> " joined by +, such as 1+2, each number at most once."))
+      )
+  -- CR 701.56a: each object chosen by its number, then + to put a time counter
+  -- on it or - to remove one.
+  "ChooseTimeTravel" -> do
+    among <- Protocol.field "among" offer >>= Protocol.arrayOf
+    let size = Natural.length among
+        entry word = do
+          (digits, sign) <- Text.unsnoc word
+          i <- either (const Nothing) Maybe.listToMaybe (numbers digits)
+          way <- lookup sign [('+', "Add"), ('-', "Remove")]
+          Monad.guard (Text.all Char.isDigit digits && i >= 1 && i <= size)
+          pure (i, way)
+    pure
+      ( Text.concat [Text.pack "Time travel for ", foldMap (objectName view) (Protocol.field "source" offer), Text.pack ": type each number followed by + to put a time counter on it or - to remove one, such as 1+ 2-, separated by spaces, or press Enter for none:"] : numbered (fmap (listedName view) among),
+        \typed -> case traverse entry (Text.words typed) of
+          Just chosen | ListUtils.nubOrd (fmap fst chosen) == fmap fst chosen -> Right (R.Array [R.Array [pickFrom among i, R.Text (Text.pack way)] | (i, way) <- chosen])
+          _ -> Left (Text.pack ("Type numbers from 1 to " <> show size <> ", each once, followed by + or -, such as 1+ 2-."))
+      )
+  -- CR 701.22a: the bottom pile reads from the bottom inward.
+  "ChooseScry" -> piles (Text.pack "Scry") (Text.pack "on the bottom of your library, the bottommost first")
+  -- CR 701.25a / 404.3: the graveyard pile in the order it is put there.
+  "ChooseSurveil" -> piles (Text.pack "Surveil") (Text.pack "into your graveyard, the first put there first")
+  -- CR 701.29a: as a scry of another's library.
+  "ChooseFateseal" -> piles (Text.pack "Fateseal " <> foldMap (\owner -> playerName owner <> Text.pack "'s library") (Protocol.field "owner" offer)) (Text.pack "on the bottom of that library, the bottommost first")
+  -- An order over what the offer lists, sent back as a permutation of its
+  -- indices.
+  _
+    | Just items <- Protocol.field "order" offer >>= Protocol.arrayOf ->
+        pure (ordered (orderHeading (foldMap (\source -> Text.pack " for " <> objectName view source) (Protocol.field "source" offer)) (orderNote (Question.kind question) offer)) (fmap (optionName view) items))
+  -- An amount per item the offer lists, each within its range.
+  _ | Just caps <- Protocol.field "amounts" offer -> pure (amounted caps)
+  -- A set of what the offer lists, within its least and most.
+  _ | Maybe.isJust (Protocol.field "among" offer) -> subset (optionName view) Text.empty R.Array
+  -- One of what the offer lists, sent back as the answer it already is, and
+  -- named by its entry where the offer lists one.
+  _ -> do
+    (options, name) <- Monad.mplus (fmap (\o -> (o, optionName view)) (Protocol.field "options" offer >>= Protocol.arrayOf)) (fmap (\o -> (o, playerName)) (Protocol.field "players" offer >>= Protocol.arrayOf))
+    let self = foldMap (objectName view) (Protocol.field "source" offer)
+        entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
+    pure
+      ( told view self offer
+          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> objectName view source) (Protocol.field "source" offer) <> Text.pack ":" : numbered (zipWith (\option entry -> maybe (name option) (entryName view) entry) options entries)),
+        fmap (pickFrom options) . one (Natural.length options)
+      )
   where
     offer = Question.offer question
+    -- A number from the offer's least to its greatest, for its source.
+    bounded heading = do
+      source <- Protocol.field "source" offer
+      least <- Protocol.field "least" offer >>= Protocol.naturalOf
+      greatest <- Protocol.field "greatest" offer >>= Protocol.naturalOf
+      pure (ranged (heading <> objectName view source) least Text.empty (Just greatest))
     -- A number from least to greatest, or from least up with no greatest.
     ranged heading least note greatest =
       let range = maybe ("at least " <> show least) (\most -> "from " <> show least <> " to " <> show most) greatest
@@ -439,7 +577,7 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
           )
     -- A source by number, or the line `none` for no source.
     sourcePick heading none others = do
-      offered <- field "sources" offer >>= arrayOf >>= mapM manaSource
+      offered <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM manaSource
       let sources = fmap fst offered
           makes yields = if null yields then Text.empty else Text.pack " (makes " <> Text.intercalate (Text.pack " or ") (fmap (foldMap Render.manaType) yields) <> Text.pack ")"
       pure
@@ -449,9 +587,96 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
               then Right R.Null
               else either (const (Left (Text.pack ("Type one number from 1 to " <> show (Natural.length sources)) <> others <> Text.pack "."))) (Right . pickFrom sources) (one (Natural.length sources) typed)
         )
+    -- A set of what the offer lists under "among", within its least and most,
+    -- each named as the offer names it or else by `name`, a pick repeating
+    -- where the offer allows it (CR 700.2d), and sent back as `finish` makes it.
+    subset name note finish = do
+      among <- Protocol.field "among" offer >>= Protocol.arrayOf
+      let least = Maybe.fromMaybe 0 (Protocol.field "least" offer >>= Protocol.naturalOf)
+          most = Protocol.field "most" offer >>= Protocol.naturalOf
+          repeats = Protocol.field "repeats" offer == Just (R.Boolean True)
+          bound = case most of
+            Just m | m == least -> "exactly " <> show m
+            Just m -> "from " <> show least <> " to " <> show m
+            Nothing | least > 0 -> "at least " <> show least
+            Nothing -> "any number"
+          self = foldMap (objectName view) (Protocol.field "source" offer)
+          again = if repeats then Text.pack "; one may be chosen more than once" else Text.empty
+          none = if least == 0 then ", or press Enter for none" else ""
+      pure
+        ( told view self offer
+            <> (Text.concat [kindHeading, foldMap (const (Text.pack " for " <> self)) (Protocol.field "source" offer), Text.pack (": choose " <> bound <> ", by number or range such as 1-3, separated by spaces"), note, again, Text.pack (none <> ":")] : numbered (zipWith (Maybe.fromMaybe . name) among offeredNames)),
+          \typed -> do
+            picked <- some repeats among typed
+            let n = Natural.length picked
+            if n >= least && all (n <=) most then Right (finish picked) else Left (Text.pack ("Choose " <> bound <> "."))
+        )
+    -- One amount per item under "amounts" (Parun.Play.Protocol.amounts), in
+    -- the order listed, within the offer's bounds (Parun.Play.Protocol.amountsFit).
+    -- Enter is none of each. Sent back in the offer's shape, a
+    -- map leaving out each key that takes none.
+    amounted caps =
+      let leaves = Protocol.amountLeaves caps
+          floors = Map.fromList (foldMap Protocol.amountLeaves (Protocol.field "floors" offer))
+          floorOf path = Map.findWithDefault 0 path floors
+          least = Protocol.field "least" offer >>= Protocol.naturalOf
+          most = Protocol.field "most" offer >>= Protocol.naturalOf
+          supply = foldMap (Maybe.mapMaybe Protocol.entryOf) (Protocol.field "counters" offer >>= Protocol.arrayOf)
+          fromOne = Protocol.field "fromOne" offer == Just (R.Boolean True)
+          oneKind = Protocol.field "oneKind" offer >>= Protocol.naturalOf
+          entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
+          self = foldMap (objectName view) (Protocol.field "source" offer)
+          step key = case key of
+            Left i -> maybe (Text.pack ("Item " <> show (i + 1))) (optionName view) (Monad.join (Maybe.listToMaybe (List.genericDrop i entries)))
+            Right k -> amountKeyName view k
+          range (path, cap) = if floorOf path > 0 then "from " <> show (floorOf path) <> " to " <> show cap else "up to " <> show cap
+          shown (path, cap) = Text.intercalate (Text.pack ": ") (fmap step path) <> Text.pack (" (" <> range (path, cap) <> ")")
+          total = case (least, most) of
+            (Just l, Just m) | l == m -> ", adding up to exactly " <> show m
+            (Just l, Just m) -> ", adding up to from " <> show l <> " to " <> show m
+            (Just l, Nothing) -> ", adding up to at least " <> show l
+            (Nothing, Just m) -> ", adding up to at most " <> show m
+            (Nothing, Nothing) -> ""
+          rules =
+            [", all from one" | fromOne]
+              <> foldMap (\n -> [", all of one kind: " <> show n <> " of it, or all of it if fewer"]) oneKind
+              <> [", each kind in all at most what there is: " <> Text.unpack (Text.intercalate (Text.pack ", ") [Text.pack (show held <> " ") <> amountKeyName view kind | (kind, held) <- supply]) | not (null supply)]
+          fits = Protocol.amountsFit offer
+          none = replicate (length leaves) (0 :: Natural)
+          enter = if fits none then ", or press Enter for none" else ""
+       in ( told view self offer
+              <> (Text.concat [kindHeading, foldMap (const (Text.pack " for " <> self)) (Protocol.field "source" offer), Text.pack (": type one amount for each, separated by spaces" <> total <> concat rules <> enter <> ":")] : numbered (fmap shown leaves)),
+            \typed -> case numbers typed of
+              Right [] | fits none -> Right (fillAmounts caps none)
+              Right picked | fits picked -> Right (fillAmounts caps picked)
+              _ -> Left (Text.pack ("Type " <> show (length leaves) <> " amounts, each within its range" <> total <> concat rules <> "."))
+          )
+    -- Two ordered piles of the cards under "from": those for the top, top
+    -- first, then after a slash those for the other pile, each card once;
+    -- Enter keeps them all on top as listed. Sent back as (other, top).
+    piles heading other = do
+      from <- Protocol.field "from" offer >>= Protocol.arrayOf
+      let size = Natural.length from
+          pick = R.Array . fmap (pickFrom from)
+      pure
+        ( Text.concat [heading, Text.pack ": type the numbers of the cards to keep on top, the top first, then / and the numbers of those to put ", other, Text.pack ", or press Enter to keep them all on top in this order:"]
+            : numbered (zipWith (Maybe.fromMaybe . listedName view) from offeredNames),
+          \typed -> case traverse numbers (Text.splitOn (Text.pack "/") typed) of
+            _ | Text.null (Text.strip typed) -> Right (R.Array [R.Array [], R.Array from])
+            Right [top] | List.sort top == [1 .. size] -> Right (R.Array [R.Array [], pick top])
+            Right [top, rest] | List.sort (top <> rest) == [1 .. size] -> Right (R.Array [pick rest, pick top])
+            _ -> Left (Text.pack ("Type each number from 1 to " <> show size <> " once, those for the top first and a / before the rest, or press Enter."))
+        )
+    -- The names the offer lists under "names", then none.
+    offeredNames = foldMap (fmap textOf) (Protocol.field "names" offer >>= Protocol.arrayOf) <> repeat Nothing
+    -- The prompt's kind as words, capitalized.
+    kindHeading = case Text.uncons (Render.spaced (Question.kind question)) of
+      Just (c, rest) -> Text.cons (Char.toUpper c) rest
+      Nothing -> Text.empty
+    orderHeading for note = Text.concat [kindHeading, for, Text.pack ": type their numbers first to last, separated by spaces, or press Enter to keep this order; ", note, Text.pack ":"]
     pickCount purpose = do
-      from <- field "from" offer >>= arrayOf
-      wanted <- field "count" offer >>= naturalOf
+      from <- Protocol.field "from" offer >>= Protocol.arrayOf
+      wanted <- Protocol.field "count" offer >>= Protocol.naturalOf
       let n = min wanted (Natural.length from)
       pure
         ( Text.pack "Choose " <> Render.count n "card" <> Text.pack (" " <> purpose <> ", by number or range such as 1-3, separated by spaces:") : numbered (fmap (listedName view) from),
@@ -487,18 +712,18 @@ readingByName lookUp view wanted =
     matches = any ((== Text.toCaseFold (Text.strip wanted)) . Text.toCaseFold . CardName.unwrap) . Set.toList . Render.cardNames
 
 -- | The object behind each numbered option of an offer, where it names one:
--- the offer's own list, or the cards or sources it chooses from.
+-- the offer's own list, the cards, sources, entries or options it chooses
+-- from, what it orders or picks a set among, or what it asks an amount of.
 listedObjects :: PlayerView.PlayerView -> R.Reply -> [Maybe ObjectId.ObjectId]
-listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap snd . distinct view) (arrayOf offer), field "from" offer >>= arrayOf, field "sources" offer >>= arrayOf])
+listedObjects view offer = foldMap (fmap optionObject) (Monad.msum [fmap (fmap snd . distinct view) (Protocol.arrayOf offer), Protocol.field "from" offer >>= Protocol.arrayOf, Protocol.field "sources" offer >>= Protocol.arrayOf, Protocol.field "entries" offer >>= Protocol.arrayOf, Protocol.field "options" offer >>= Protocol.arrayOf, Protocol.field "order" offer >>= Protocol.arrayOf, Protocol.field "among" offer >>= Protocol.arrayOf, fmap (fmap (Either.fromRight R.Null . Maybe.fromMaybe (Left 0) . Maybe.listToMaybe . fst) . Protocol.amountLeaves) (Protocol.field "amounts" offer)])
   where
-    optionObject option = Monad.msum [objectOf option, field "object" option >>= objectOf, field "source" option >>= objectOf]
+    optionObject option = Monad.msum [objectOf option, Protocol.field "object" option >>= objectOf, Protocol.field "source" option >>= objectOf]
 
 -- | A list's options as shown, each beside its index in the list: an option
--- is dropped when an earlier one plays or casts a card in the seat's hand
--- that the view shows exactly as it shows this one's, bar its id. Other
--- actions never merge, since an offer may leave out what tells two apart
--- (#5225), and neither do cards elsewhere, which a permission may tell
--- apart.
+-- is dropped when an earlier one plays, casts or plots a card in the seat's
+-- hand that the view shows exactly as it shows this one's, bar its id, and
+-- the two offers match bar the object. Other actions never merge, and neither
+-- do cards elsewhere, which a permission may tell apart.
 distinct :: PlayerView.PlayerView -> [R.Reply] -> [(Integer, R.Reply)]
 distinct view = reverse . snd . List.foldl' keep ([], []) . zip [0 ..]
   where
@@ -507,9 +732,9 @@ distinct view = reverse . snd . List.foldl' keep ([], []) . zip [0 ..]
       k -> (maybe keys (: keys) k, (i, option) : kept)
     held = Map.fromList [(ObjectView.object o, o) | s <- PlayerView.seats view, SeatView.player s == PlayerView.viewer view, o <- SeatView.hand s]
     key option = do
-      kind <- field "action" option >>= textOf
-      Monad.guard (kind `elem` [Text.pack "Play", Text.pack "Cast"])
-      o <- field "object" option >>= objectOf >>= (`Map.lookup` held)
+      kind <- Protocol.field "action" option >>= textOf
+      Monad.guard (kind `elem` fmap Text.pack ["PlayLand", "Cast", "Plot"])
+      o <- Protocol.field "object" option >>= objectOf >>= (`Map.lookup` held)
       R.Object pairs <- Just option
       pure (filter ((/= Text.pack "object") . fst) pairs, o {ObjectView.object = ObjectId.MkObjectId 0})
 
@@ -568,7 +793,7 @@ unasked view request = do
     -- CR 605.3b: the mana the source was tapped for.
     "ChooseManaYield"
       | Just wanted <- paying,
-        Just yields <- field "yields" offer >>= decoded (Common.list (Common.list Codec.ManaType.codec)),
+        Just yields <- Protocol.field "yields" offer >>= decoded (Common.list (Common.list Codec.ManaType.codec)),
         (i, yield) : _ <- filter (\(_, yield) -> Set.null wanted || not (Set.disjoint wanted (Set.fromList yield))) (zip [0 :: Integer ..] yields) ->
           pure ([Text.pack "Auto takes " <> foldMap Render.manaType yield <> Text.pack "."], Just (R.Number i))
     -- CR 116.2c: auto taps sources; it never spends the seat's life.
@@ -593,7 +818,7 @@ stopPaying seat = State.modify' (\h -> h {Hotseat.paying = Map.delete seat (Hots
 -- mana ability (CR 605.3a), which the text client does not ask about.
 onlyPass :: R.Reply -> Maybe Integer
 onlyPass offer = do
-  kinds <- arrayOf offer >>= mapM (field "action" Monad.>=> textOf)
+  kinds <- Protocol.arrayOf offer >>= mapM (Protocol.field "action" Monad.>=> textOf)
   Monad.guard (all (`elem` [Text.pack "Pass", Text.pack "ActivateManaAbility"]) kinds)
   fmap toInteger (List.elemIndex (Text.pack "Pass") kinds)
 
@@ -607,7 +832,7 @@ onlyPass offer = do
 autoSource :: PlayerView.PlayerView -> R.Reply -> Maybe (R.Reply, Set.Set ManaType.ManaType)
 autoSource view offer = do
   (colored, generic) <- owing view offer
-  sources <- field "sources" offer >>= arrayOf >>= mapM manaSource
+  sources <- Protocol.field "sources" offer >>= Protocol.arrayOf >>= mapM manaSource
   let wanted = Set.fromList colored
       makes (_, yields) = Set.fromList (concat yields)
       fewest by = Maybe.listToMaybe . List.sortOn by
@@ -626,7 +851,7 @@ autoSource view offer = do
 -- generic or one type of mana.
 owing :: PlayerView.PlayerView -> R.Reply -> Maybe ([ManaType.ManaType], Natural)
 owing view offer = do
-  cost <- field "cost" offer >>= decoded Codec.ManaCost.codec
+  cost <- Protocol.field "cost" offer >>= decoded Codec.ManaCost.codec
   owed <- mapM owedOf (ManaCost.unwrap cost)
   let pool = foldMap (fmap ManaUnit.manaType . Mana.unwrap . SeatView.manaPool) (payerSeat view offer)
       (colored, unspent) = List.foldl' spendOne ([], pool) (Either.rights owed)
@@ -644,7 +869,7 @@ owing view offer = do
 -- | The seat of a payment offer's payer.
 payerSeat :: PlayerView.PlayerView -> R.Reply -> Maybe SeatView.SeatView
 payerSeat view offer = do
-  payer <- field "payer" offer >>= textOf >>= Read.readMaybe . Text.unpack
+  payer <- Protocol.field "payer" offer >>= textOf >>= Read.readMaybe . Text.unpack
   List.find ((== PlayerId.MkPlayerId payer) . SeatView.player) (PlayerView.seats view)
 
 -- | A ChooseCost candidate's cost as Oracle text prints it (Oracle.Cost.cost),
@@ -653,12 +878,84 @@ candidateName :: Text.Text -> R.Reply -> Text.Text
 candidateName self candidate =
   Maybe.fromMaybe (Common.render (Codec.Reply.toValue candidate)) (decoded (Codec.Cost.codec Codec.Keyword.codec) candidate >>= Maybe.listToMaybe . Oracle.Cost.cost self (Oracle.Keyword.keywordWord self))
 
+-- | CR 101.4b: a line for each earlier payer an offer lists under
+-- @"earlier"@, saying what they paid, with what, or that they declined.
+payersTold :: PlayerView.PlayerView -> Text.Text -> R.Reply -> [Text.Text]
+payersTold view self offer = foldMap (fmap line) (Protocol.field "earlier" offer >>= Protocol.arrayOf)
+  where
+    line entry = case entry of
+      R.Array [player, R.Null] -> playerName player <> Text.pack " declined."
+      R.Array [player, R.Array [cost, taken]] ->
+        Text.concat [playerName player, Text.pack " paid ", candidateName self cost, foldMap (\xs -> if null xs then Text.empty else Text.pack " with " <> Text.intercalate (Text.pack ", ") (fmap (listedName view) xs)) (Protocol.arrayOf taken), Text.pack "."]
+      _ -> optionName view entry
+
+-- | An order over the items shown, answered by their numbers first to last,
+-- each once, or by Enter for the order shown; sent back as a permutation of
+-- their indices (Parun.Engine.Game.permute).
+ordered :: Text.Text -> [Text.Text] -> ([Text.Text], Text.Text -> Either Text.Text R.Reply)
+ordered heading names =
+  ( heading : numbered names,
+    \typed -> case numbers typed of
+      Right [] -> Right (R.Array (fmap (R.Number . toInteger) [0 .. size - 1]))
+      Right picked | List.sort picked == [1 .. size] -> Right (R.Array (fmap (R.Number . toInteger . subtract 1) picked))
+      _ -> Left (Text.pack ("Type each number from 1 to " <> show size <> " once, or press Enter."))
+  )
+  where
+    size = Natural.length names
+
+-- | What the first item of an order is, by the prompt's kind and what its
+-- offer tells.
+orderNote :: Text.Text -> R.Reply -> Text.Text
+orderNote kind offer = case Text.unpack kind of
+  -- CR 401.4: from the top inward.
+  "ArrangeLibraryCards" -> Text.pack "the first goes on top"
+  "ArrangeLibraryArrivals" -> case Protocol.field "end" offer of
+    Just (R.Text end) | end == Text.pack "Top" -> Text.pack "the first goes on top"
+    _ -> Text.pack "the first goes on the bottom"
+  -- CR 613.7m.
+  "OrderTimestamps" -> Text.pack "the first gets the earliest timestamp"
+  "OrderManaActivations" -> Text.pack "the first is activated first"
+  "OrderCombatTolls" -> Text.pack "the first is paid first"
+  -- CR 713.8a.
+  "OrderComponentCards" -> Text.pack "the first goes into " <> maybe (Text.pack "the zone") Render.zone (Protocol.field "zone" offer >>= decoded Codec.Zone.codec) <> Text.pack " first"
+  _ -> Text.pack "the first goes first"
+
+-- | A cost component as Oracle text prints it (Oracle.Cost.component), or the
+-- offer itself where it does not print.
+componentName :: Text.Text -> R.Reply -> Text.Text
+componentName self component =
+  Maybe.fromMaybe (Common.render (Codec.Reply.toValue component)) (decoded (Codec.CostComponent.codec Codec.Keyword.codec) component >>= Maybe.listToMaybe . Oracle.Cost.component self (Oracle.Keyword.keywordWord self))
+
 -- | A trigger ordering's entry: its source, and its Oracle text where the
 -- offer carries it.
 triggerName :: PlayerView.PlayerView -> R.Reply -> Text.Text
-triggerName view entry =
-  let source = maybe (Text.pack "A rule") (objectName view) (Monad.mfilter (/= R.Null) (field "source" entry))
-   in maybe (source <> Text.pack "'s triggered ability") (\text -> source <> Text.pack ": " <> text) (field "text" entry >>= textOf)
+triggerName = sourcedName (Text.pack "'s triggered ability")
+
+-- | An entry naming its source (null for none, a rule's), and after it its
+-- Oracle text where the offer carries it, or `noun` where it does not; a
+-- hand action's place among its card's where the offer says it.
+sourcedName :: Text.Text -> PlayerView.PlayerView -> R.Reply -> Text.Text
+sourcedName noun view entry =
+  let source = maybe (Text.pack "A rule") (objectName view) (Monad.mfilter (/= R.Null) (Protocol.field "source" entry))
+      place = foldMap (\i -> Text.pack (" (ability " <> show (i + 1) <> ")")) (Protocol.field "ability" entry >>= Protocol.naturalOf)
+   in maybe (source <> noun) (\text -> source <> Text.pack ": " <> text) (Protocol.field "text" entry >>= textOf) <> place
+
+-- | An entry of an offer naming what each option picks
+-- (Parun.Play.Protocol.indexing): a cast as actionName names it, an entering
+-- shape (Parun.Types.EntryOption) by its power and toughness, keywords and
+-- subtypes, an event as the log tells it, an object stating something as
+-- sourcedName names it, an unwitnessed event (null) as unseen, and anything
+-- else as an option is named.
+entryName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+entryName view entry
+  | Maybe.isJust (Protocol.field "action" entry) = actionName view entry
+  | Just shape <- decoded Codec.EntryOption.codec entry =
+      Text.intercalate (Text.pack ", ") (Text.pack (show (EntryOption.power shape) <> "/" <> show (EntryOption.toughness shape)) : concatMap (take 1 . Oracle.Keyword.keywordWord Text.empty) (Set.toList (EntryOption.keywords shape)) <> fmap (Text.pack . show) (Set.toList (EntryOption.subtypes shape)))
+  | Just event <- decoded Codec.GameEvent.codec entry =
+      Maybe.fromMaybe (Common.render (Codec.Reply.toValue entry)) (Render.event view (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) event))
+  | Maybe.isJust (Protocol.field "source" entry) = sourcedName Text.empty view entry
+  | entry == R.Null = Text.pack "Something you did not see"
+  | otherwise = optionName view entry
 
 -- | A unit of mana in the pool: its type, and what sets it apart from others
 -- of its type (CR 106.6, 106.4, 107.4h).
@@ -677,8 +974,8 @@ unitName unit =
 -- | A mana source as an offer names it, beside the mana types of each yield.
 manaSource :: R.Reply -> Maybe (R.Reply, [[ManaType.ManaType]])
 manaSource reply = do
-  source <- field "source" reply
-  makes <- field "makes" reply >>= decoded (Common.list (Common.list Codec.ManaType.codec))
+  source <- Protocol.field "source" reply
+  makes <- Protocol.field "makes" reply >>= decoded (Common.list (Common.list Codec.ManaType.codec))
   pure (source, makes)
 
 -- | An optional prompt's answer, a bare tag (Parun.JsonCodec.Arm.enum).
@@ -697,13 +994,13 @@ one n typed = case numbers typed of
 -- | Exactly n different options, by number.
 exactly :: Natural -> [R.Reply] -> Text.Text -> Either Text.Text [R.Reply]
 exactly n options typed = do
-  picked <- some options typed
+  picked <- some False options typed
   if Natural.length picked == n then Right picked else Left (Text.pack ("Choose exactly " <> show n <> "."))
 
--- | Any number of different options, by number, by a range such as 1-3, or
--- all of them.
-some :: [R.Reply] -> Text.Text -> Either Text.Text [R.Reply]
-some options typed = do
+-- | Any number of options, by number, by a range such as 1-3, or all of them;
+-- each at most once unless `repeats`.
+some :: Bool -> [R.Reply] -> Text.Text -> Either Text.Text [R.Reply]
+some repeats options typed = do
   let size = Natural.length options
       range word = case Text.splitOn (Text.pack "-") word of
         _ | Text.toCaseFold word == Text.pack "all" -> Just [1 .. size]
@@ -716,7 +1013,7 @@ some options typed = do
       digits t = if not (Text.null t) && Text.all Char.isDigit t then Read.readMaybe (Text.unpack t) else Nothing
   is <- maybe (Left (Text.pack "Type numbers or ranges such as 1-3, separated by spaces, or all.")) (Right . concat) (mapM range (Text.words typed))
   Monad.unless (all (\i -> i >= 1 && i <= size) is) (Left (Text.pack ("Each number must be from 1 to " <> show size <> ".")))
-  Monad.unless (ListUtils.nubOrd is == is) (Left (Text.pack "Choose each one at most once."))
+  Monad.unless (repeats || ListUtils.nubOrd is == is) (Left (Text.pack "Choose each one at most once."))
   pure (fmap (pickFrom options) is)
 
 -- | CR 509.1a: blocker:attacker pairs, a blocker naming each attacker it blocks.
@@ -734,6 +1031,38 @@ blocks blockers attackers typed = do
             Right (bi, ai)
       _ -> Left (Text.pack "Type each block as blocker:attacker, such as 1:2.")
 
+-- | An amount-per-item offer's shape with these amounts in amountLeaves'
+-- order, a map leaving out each key that takes none.
+fillAmounts :: R.Reply -> [Natural] -> R.Reply
+fillAmounts caps = fst . go caps
+  where
+    go reply typed = case reply of
+      R.Array items
+        | all (Maybe.isJust . Protocol.naturalOf) items ->
+            let (rest, filled) = List.mapAccumL (\ns item -> swap (go item ns)) typed items
+             in (R.Array filled, rest)
+        | otherwise ->
+            let (rest, filled) = List.mapAccumL (\ns item -> swap (entry item ns)) typed items
+             in (R.Array (Maybe.catMaybes filled), rest)
+      _ -> case typed of
+        n : rest -> (R.Number (toInteger n), rest)
+        [] -> (R.Number 0, [])
+    entry item typed = case item of
+      R.Array [key, value] ->
+        let (filled, rest) = go value typed
+         in (if filled `elem` [R.Number 0, R.Array []] then Nothing else Just (R.Array [key, filled]), rest)
+      _ -> (Nothing, typed)
+    swap (a, b) = (b, a)
+
+-- | A key of an amount-per-item offer as the seat reads it: a counter's kind,
+-- a stored die result, a recipient, or as an option is named.
+amountKeyName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+amountKeyName view key
+  | Just kind <- decoded (Codec.CounterKind.codec Codec.Keyword.codec) key = Render.counterName kind <> Text.pack " counters"
+  | Just result <- decoded Codec.StoredResult.codec key = Text.pack ("d" <> show (StoredResult.sides result) <> " showing " <> show (StoredResult.value result))
+  | R.Array [R.Text _, _] <- key = recipientName view key
+  | otherwise = optionName view key
+
 numbers :: Text.Text -> Either Text.Text [Natural]
 numbers typed = maybe (Left (Text.pack "Type numbers separated by spaces.")) Right (mapM (Read.readMaybe . Text.unpack) (Text.words typed))
 
@@ -746,15 +1075,21 @@ numbered = zipWith (\i t -> Text.pack ("  " <> show i <> ". ") <> t) [1 :: Natur
 -- | An action as the offer names it.
 actionName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 actionName view action =
-  let object = fmap (objectName view) (field "object" action)
-      name = field "name" action >>= textOf
+  let object = fmap (objectName view) (Protocol.field "object" action)
+      name = Protocol.field "name" action >>= textOf
       subject = Maybe.fromMaybe Text.empty (Monad.mplus name object)
-   in case maybe "" Text.unpack (field "action" action >>= textOf) of
+   in case maybe "" Text.unpack (Protocol.field "action" action >>= textOf) of
         "Pass" -> Text.pack "Pass"
-        "Play" -> Text.pack "Play " <> subject
+        "PlayLand" -> Text.pack "Play " <> subject
         "Cast" -> Text.pack "Cast " <> subject
-        "Activate" -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (field "ability" action >>= naturalOf) <> subject
+        "Activate" -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (Protocol.field "ability" action >>= Protocol.naturalOf) <> subject
         "ActivateManaAbility" -> Text.pack "Activate a mana ability of " <> subject
+        -- CR 701.40c: which procedure, where two may turn one permanent up.
+        "TurnFaceUp" -> Text.pack "Turn face up " <> subject <> foldMap (\p -> Text.pack " (" <> Render.spaced p <> Text.pack ")") (Protocol.field "procedure" action >>= textOf)
+        -- CR 116.2d: which of the permanent's abilities is ignored.
+        "Ignore" -> Text.pack "Ignore " <> subject <> foldMap (Text.pack "'s " <>) (Protocol.field "abilityName" action >>= textOf)
+        -- CR 702.170a: which plot cost is paid.
+        "Plot" -> Text.pack "Plot " <> subject <> foldMap (\c -> Text.pack " for " <> candidateName subject c) (Protocol.field "cost" action)
         kind -> Render.spaced (Text.pack kind) <> maybe Text.empty (Text.pack " " <>) object
 
 -- | An object the offer spells @"$7"@, named as the view shows it.
@@ -765,12 +1100,105 @@ objectName view reply = maybe (Text.pack "something") (Render.named view) (objec
 listedName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 listedName view reply = maybe (Text.pack "something") (Render.choosable view) (objectOf reply)
 
+-- | An option of a listed offer: an object as listedName names it, a
+-- recipient or attack target as recipientName does, declining as None, an
+-- empty set (CR 700.3d's empty pile) as Nothing, and a word or number as
+-- itself.
+optionName :: PlayerView.PlayerView -> R.Reply -> Text.Text
+optionName view reply = case reply of
+  R.Null -> Text.pack "None"
+  R.Array [] -> Text.pack "Nothing"
+  R.Number n -> Text.pack (show n)
+  R.Text t
+    | Maybe.isJust (objectOf reply) -> listedName view reply
+    | otherwise -> tagName t
+  R.Array [R.Text tag, _] | tag `elem` fmap Text.pack ["Player", "Planeswalker", "Battle"] -> recipientName view reply
+  R.Array xs -> Text.intercalate (Text.pack ", ") (fmap (optionName view) xs)
+  -- A damage event (Parun.Play.Protocol.damageEvent).
+  R.Object _
+    | Just source <- Protocol.field "source" reply,
+      Just target <- Protocol.field "target" reply,
+      Just amount <- Protocol.field "amount" reply >>= Protocol.naturalOf ->
+        Text.concat [objectName view source, Text.pack (" deals " <> show amount <> " damage to "), recipientName view target]
+  _ -> Common.render (Codec.Reply.toValue reply)
+
+-- | A word an offer spells an option with: a yes or no as one
+-- (Parun.Types.OptionalDecision), a tag joining words (BuysBack) as words, and
+-- anything else, a card's name say, as itself.
+tagName :: Text.Text -> Text.Text
+tagName t
+  | t == Text.pack "Exercises" = Text.pack "Yes"
+  | t == Text.pack "Declines" = Text.pack "No"
+  | Text.all (\c -> Char.isAsciiUpper c || Char.isAsciiLower c) t,
+    Text.any Char.isAsciiUpper (Text.drop 1 t) =
+      case Text.uncons (Render.spaced t) of
+        Just (c, rest) -> Text.cons (Char.toUpper c) rest
+        Nothing -> t
+  | otherwise = t
+
+-- | What a listed offer tells the seat beside its options, a line each, in
+-- the order the offer gives: a cost or mana as Oracle text prints it, a list of who
+-- did what as each beside its player, and anything else as an option is named.
+-- An empty list says nothing.
+told :: PlayerView.PlayerView -> Text.Text -> R.Reply -> [Text.Text]
+told view self offer = case offer of
+  R.Object pairs ->
+    [ label key <> Text.pack ": " <> value key reply
+    | (key, reply) <- pairs,
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "costs", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
+      reply /= R.Array []
+    ]
+  _ -> []
+  where
+    label key = case Text.uncons (Render.spaced key) of
+      Just (c, rest) -> Text.cons (Char.toUpper c) rest
+      Nothing -> key
+    value key reply
+      | key == Text.pack "cost" = candidateName self reply
+      | key == Text.pack "symbol", Just symbol <- decoded Codec.ManaSymbol.codec reply = Render.manaCost (ManaCost.MkManaCost [symbol])
+      | key == Text.pack "mana", Just mana <- decoded Codec.ManaType.codec reply = Render.manaType mana
+      | Just pairs <- Protocol.arrayOf reply,
+        Just named <- mapM byPlayer pairs =
+          Text.intercalate (Text.pack "; ") named
+      | otherwise = optionName view reply
+    byPlayer pair = case pair of
+      R.Array [player@(R.Text _), what] | Maybe.isNothing (objectOf player) -> Just (playerName player <> Text.pack ": " <> optionName view what)
+      _ -> Nothing
+
+-- | A seat a listed offer names by its bare id, or declining as None.
+playerName :: R.Reply -> Text.Text
+playerName reply = case reply of
+  R.Text x -> maybe x (Render.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
+  _ -> Text.pack "None"
+
 recipientName :: PlayerView.PlayerView -> R.Reply -> Text.Text
 recipientName view reply = case reply of
   R.Array [R.Text tag, R.Text x]
     | tag == Text.pack "Player" -> maybe x (Render.player . PlayerId.MkPlayerId) (Read.readMaybe (Text.unpack x))
     | otherwise -> listedName view (R.Text x)
+  R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> pileName draw
   _ -> Text.pack "something"
+
+-- | CR 406.4's pile, named by its kind alone since its cards are hidden; a
+-- draw past the first out of it is named by its ordinal.
+pileName :: R.Reply -> Text.Text
+pileName draw =
+  let foretold = (Protocol.field "pile" draw >>= Protocol.field "type" >>= textOf) == Just (Text.pack "OfForetold")
+      nth = maybe Text.empty (\n -> if n > 1 then Text.pack (", card " <> show n) else Text.empty) (Protocol.field "ordinal" draw >>= Protocol.naturalOf)
+   in Text.pack (if foretold then "A foretold card" else "A face-down exiled pile") <> nth
+
+-- | A recipient as a target prompt lists it: as recipientName names it, and a
+-- pile numbered among the offer's piles where it holds several.
+targetName :: PlayerView.PlayerView -> [R.Reply] -> R.Reply -> Text.Text
+targetName view legal reply =
+  recipientName view reply <> case (pileOf reply, piles) of
+    (Just pile, _ : _ : _) -> foldMap (\i -> Text.pack (" (pile " <> show (i + 1) <> ")")) (List.elemIndex pile piles)
+    _ -> Text.empty
+  where
+    piles = ListUtils.nubOrd (Maybe.mapMaybe pileOf legal)
+    pileOf r = case r of
+      R.Array [R.Text tag, draw] | tag == Text.pack "Pile" -> Protocol.field "pile" draw
+      _ -> Nothing
 
 objectOf :: R.Reply -> Maybe ObjectId.ObjectId
 objectOf reply = do
@@ -783,37 +1211,16 @@ objectOf reply = do
 slotsOf :: Question.Question -> Maybe (R.Reply, [(R.Reply, Natural, [R.Reply])])
 slotsOf question = do
   let offer = Question.offer question
-  source <- field "source" offer
-  slots <- field "slots" offer >>= arrayOf
+  source <- Protocol.field "source" offer
+  slots <- Protocol.field "slots" offer >>= Protocol.arrayOf
   parsed <- Monad.forM slots $ \slot -> case slot of
-    R.Array [name, R.Array [wanted, R.Array legal]] -> fmap (\n -> (name, n, legal)) (naturalOf wanted)
+    R.Array [name, R.Array [wanted, R.Array legal]] -> fmap (\n -> (name, n, legal)) (Protocol.naturalOf wanted)
     _ -> Nothing
   pure (source, parsed)
-
-field :: String -> R.Reply -> Maybe R.Reply
-field key reply = case reply of
-  R.Object pairs -> List.lookup (Text.pack key) pairs
-  _ -> Nothing
-
-arrayOf :: R.Reply -> Maybe [R.Reply]
-arrayOf reply = case reply of
-  R.Array xs -> Just xs
-  _ -> Nothing
-
--- | A map's entry, as the line protocol writes one.
-entryOf :: R.Reply -> Maybe (R.Reply, Natural)
-entryOf reply = case reply of
-  R.Array [key, value] -> fmap ((,) key) (naturalOf value)
-  _ -> Nothing
 
 textOf :: R.Reply -> Maybe Text.Text
 textOf reply = case reply of
   R.Text t -> Just t
-  _ -> Nothing
-
-naturalOf :: R.Reply -> Maybe Natural
-naturalOf reply = case reply of
-  R.Number n -> Integer.toNatural n
   _ -> Nothing
 
 -- | No seat may read another's screen, so a change of seat clears it and

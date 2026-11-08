@@ -18,6 +18,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Ingest as Ingest
 import qualified Parun.Json.Pair as Pair
@@ -1326,7 +1327,7 @@ playerEffects context who n = case Node.tag n of
       c <- quantity context counted
       case (factor, c) of
         (1, Quantity.Count _) -> Right c
-        (_, Quantity.Count _) | factor > 1 -> Right (Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes factor c)))
+        (_, Quantity.Count _) | factor > 1 -> Right (Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal (toInteger factor)) c)))
         _ -> Node.untranslated n
     discard q = pure [Effect.Discard (Discard.Counted CountedDiscard.MkCountedDiscard {CountedDiscard.player = who, CountedDiscard.quantity = q, CountedDiscard.discarded = Nothing})]
 
@@ -1409,7 +1410,7 @@ productions context n = case Node.tag n of
       Just i | (option : _) <- drop i options -> Node.node option >>= productions context
       _ -> Node.untranslated n
   "AnyManaColor" -> Right [ManaProduction.AnyColor ColorSpread.OneColor]
-  'M' : 'a' : 'n' : 'a' : 'P' : 'r' : 'o' : 'd' : 'u' : 'c' : 'e' : [c] | Just t <- Ingest.manaType c -> Right [ManaProduction.OfType t]
+  'M' : 'a' : 'n' : 'a' : 'P' : 'r' : 'o' : 'd' : 'u' : 'c' : 'e' : [c] | Just t <- ManaSymbolText.manaType c -> Right [ManaProduction.OfType t]
   _ -> Node.untranslated n
 
 -- | How long a created effect lasts (CR 611.2a).

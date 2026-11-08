@@ -120,6 +120,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity.Type
@@ -520,7 +521,9 @@ fixtureRegistry :: (Applicative m) => [Card.Type.Card] -> Registry.Registry m
 fixtureRegistry reference =
   Registry.MkRegistry
     { Registry.fetchCard = \name -> pure (Right (List.find ((== name) . nameOf) reference)),
-      Registry.cards = pure (Right reference)
+      Registry.cards = pure (Right reference),
+      Registry.printings = PrintingTable.empty,
+      Registry.stickerSheets = Map.empty
     }
 
 -- The answer to a broken corpus where a case has no Spec to fail through: a

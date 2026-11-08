@@ -77,7 +77,8 @@
           "cost": {
             "components": [
               {
-                "type": "ExileThisFromGraveyard"
+                "type": "ExileThisFrom",
+                "value": "Graveyard"
               }
             ],
             "mana": [

@@ -218,6 +218,7 @@ import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -3428,7 +3429,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
   Effect.ExileHandThenDraw {} -> False
   Effect.NoteManaSpent {} -> False
   Effect.Proliferate {} -> False
-  Effect.Reroll -> False
+  Effect.Rethrow -> False
   Effect.RerollStoredResults _ -> False
   Effect.ChooseCardName {} -> False
   Effect.ChooseQuality _ -> False
@@ -3845,15 +3846,15 @@ recordRoll controller throwers results = do
   Foldable.for_ (zip throwers results) $ \(thrower, result) ->
     State.modify' (Event.recordEvent (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = thrower, DieResult.result = result}))
 
--- | The stamp on GameState that ActivationRestriction.DuringDieRoll reads and
--- Effect.Reroll asks against, open for `act` and restored on the way out so a
+-- | The stamp on GameState that ActivationRestriction.DuringThrow reads and
+-- Effect.Rethrow asks against, open for `act` and restored on the way out so a
 -- roll nested inside the window's own resolution cannot leave it open.
-withRollingDie :: Natural -> Game a -> Game a
-withRollingDie sides act = do
+withThrowing :: ThrowResult.ThrowResult -> Game a -> Game a
+withThrowing landed act = do
   previous <- State.get
-  State.modify' (\g -> g {GameState.rollingDie = Just sides, GameState.rerollRequested = False})
+  State.modify' (\g -> g {GameState.throwing = Just landed, GameState.rethrowRequested = False})
   result <- act
-  State.modify' (\g -> g {GameState.rollingDie = GameState.rollingDie previous, GameState.rerollRequested = GameState.rerollRequested previous})
+  State.modify' (\g -> g {GameState.throwing = GameState.throwing previous, GameState.rethrowRequested = GameState.rethrowRequested previous})
   pure result
 
 -- CR 123.6e's "that sticker": bind the placed sticker under @slot@, on

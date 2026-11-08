@@ -20,6 +20,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.BlockRequirement as BlockRequirement
@@ -537,6 +538,19 @@ spec s registry = Spec.describe s "Sticker" $ do
         (gs, asked) = startedWith ((S.alice, withSheetsDeck (take 3 sheets) plain) NonEmpty.:| [(S.bob, plain)])
     Spec.assertEqWith s "CR 123.2b all three are chosen" (chosenOf S.alice gs) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "and nothing was drawn at random" asked []
+  -- A text deck brings its sheets in its Stickers section (#6667), in the order
+  -- written, whose positions CR 103.2d's draw picks among.
+  Spec.it s "CR 103.2d/123.2 a deck list's Stickers section brings its sheets to the game" $ do
+    let names = ["Night Brushwagg Ringmaster", "Slimy Burrito Illusion", "Contortionist Otter Storm", "Ancestral Hot Dog Minotaur"]
+        text = unlines ["10 Mountain", "", "Stickers", "1 Night Brushwagg Ringmaster", "1 Slimy Burrito Illusion", "1 contortionist-otter-storm", "1 Ancestral Hot Dog Minotaur"]
+    listed <- DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure
+    deck <- either (Spec.assertFailure s . show . fmap DeckList.explain) pure (DeckList.sound listed)
+    mountain <- S.printingOf s registry "Mountain"
+    let (gs, asked) = startedWith ((S.alice, deck) NonEmpty.:| [(S.bob, Deck.fromCards (Map.singleton mountain 10))])
+        brought = foldMap (fmap StickerSheet.name . Foldable.toList . Player.stickerSheets) (Map.lookup S.alice (GameState.players gs))
+    Spec.assertEqWith s "alice brings the four sheets, in the order written" brought (fmap Text.pack names)
+    Spec.assertEqWith s "CR 103.2d three of the four are chosen" (chosenOf S.alice gs) (Set.fromList [1, 2, 3])
+    Spec.assertEqWith s "each drawn from those not yet drawn" asked [[0, 1, 2, 3], [0, 1, 2], [0, 1]]
   -- Review Focus 3. One board, two bob spells: a Bolt kills the Piker (public
   -- to public) and an Unsummon bounces it (public to hidden).
   Spec.it s "CR 123.5/613.7k an art sticker stays through a death, restamped, and comes off in a bounce" $ do

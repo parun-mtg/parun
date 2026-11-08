@@ -1,0 +1,110 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Path of Ancestry",
+            "label": "path",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          }
+        ],
+        "command": [
+          {
+            "card": "Krenko, Mob Boss",
+            "commander": true,
+            "label": "krenko"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Craw Wurm"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.3e Path of Ancestry's mana spent on casting the commander itself scries 1",
+  "note": "Krenko, Mob Boss cast from the command zone shares its own creature types as a spell on the stack.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$path",
+            "$m1",
+            "$m2",
+            "$m3"
+          ],
+          "object": "$krenko"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "Hill Giant"
+            ],
+            []
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Craw Wurm",
+            "Hill Giant"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

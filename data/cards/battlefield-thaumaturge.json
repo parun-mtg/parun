@@ -46,17 +46,19 @@
                 ]
               },
               "perTarget": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HasCardType",
-                    "value": "Creature"
-                  },
-                  {
-                    "type": "IsInZone",
-                    "value": "Battlefield"
-                  }
-                ]
+                "matching": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    }
+                  ]
+                }
               },
               "subject": {
                 "type": "Spells"

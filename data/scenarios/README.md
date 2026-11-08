@@ -81,21 +81,33 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   ending it. `ChooseTargets` names each slot's
   targets, `{ "target": ["$moon"] }`, for a target prompt no cast or activation
   of the scenario's own raises (a triggered ability's), keyed the same way; it
-  also answers that prompt's announcement of how many. A cast's own `targets`
+  also answers that prompt's announcement of how many, and a refused one
+  naming a count outside a slot's range, a slot it omits naming 0, is refused
+  already. A `do` names every slot the announcement offers, `[]` for one left empty;
+  one the engine refuses is asked again from the announcement (CR 603.3d), and
+  so is a refused one the target prompt refuses already when the next entry
+  announces other counts. Naming a slot the ability lacks fails the run.
+  A cast's own `targets`
   likewise announce their count for a slot that takes a variable number. A
   spell or ability with more than one target slot names them with
   `targetsBySlot`, `{ "victim": ["$bear"], "gauge": ["$wall"] }`, in place
   of `targets`. A `Cast` of a card offering both a face-up and a face-down
   cast (CR 702.37c) says which with `"faceDown": false` or `true`, and a
   `Cast` of a split card names the half it casts (CR 709.3), `"face": "Consume"`.
+  A cast's `yields` answers each `ChooseManaYield` its `mana` raises, in
+  order, by the units the yield adds, restriction and tags included.
   A cast's `cost` picks a candidate cost by its mana (CR 601.2b); where two
   share it, `costOffer` names what offered the one wanted, `{ "type":
   "ByKeyword", "value": { "type": "OfFamily", "value": "Blitz" } }`
   or `{ "type": "ByNoKeyword" }`.
   `Take` takes any other action offered at priority (CR 116.2, 605.3a), named
   as the `Offered` view renders it, with a cast's choices such as `mana`:
-  `{ "action": "TurnFaceUp $piker Manifest", "mana": ["$mountain"] }`.
-  A second CR 116.2c offer from one source to one seat renders as `EndEffect $asp #2`.
+  `{ "action": "TurnFaceUp $piker", "mana": ["$mountain"] }`.
+  That line is the line protocol's offer (`Parun.Scenario.Offer`): its
+  `action` and `object`, then each further field's value only where another
+  offer of the same action, agreeing on the fields before it, differs there,
+  so two CR 116.2c offers from one source to one seat are `EndEffect $asp 1`
+  and `EndEffect $asp 2`, and a morph's casts `Cast $ainok` and `Cast $ainok Morphed`.
   A paid later offer (CR 116.2c, Guardian Angel) is `MakeLaterPayment spell of $angel`.
   `OrderTriggers` lists one player's simultaneous triggers by source, `null`
   for a sourceless one such as the monarch's draw, in the order they go on the

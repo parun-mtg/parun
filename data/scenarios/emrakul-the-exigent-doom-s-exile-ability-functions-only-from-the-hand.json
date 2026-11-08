@@ -1,0 +1,59 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Emrakul, the Exigent Doom",
+            "label": "emrakul"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Emrakul, the Exigent Doom",
+            "label": "buried"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Emrakul, the Exigent Doom's exile ability functions only from the hand",
+  "note": "Its cost exiles the card from its owner's hand, so CR 113.6m confines the ability there: the Emrakul on the battlefield and the one in the graveyard offer nothing, with three untapped Plains to pay {3}.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $p2",
+            "ActivateManaAbility $p3"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

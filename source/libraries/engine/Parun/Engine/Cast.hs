@@ -127,6 +127,7 @@ import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.VariableChoice as VariableChoice
@@ -2225,18 +2226,24 @@ castProposals among pid gs =
 -- castableSpells pays nothing per such card (#6472).
 --
 -- Each of permitsCastFromGraveyard's permissions needs something the card or
--- the board lacks. The card prints no keyword, static ability or casting
--- permission on any face and carries no copy stamp (CR 707.2) and no
--- Object.playPermission. The board's effects, every gate open, change only
--- power and toughness (CR 613.4), so none grants it a keyword, an ability or a
--- permission, under any proposal of a card adding no effect of its own; and no
+-- the board lacks. The card prints no static ability or casting permission on
+-- any face, no keyword whose CR 702 permission reaches a graveyard
+-- (Keyword.castingPermissionsOf, and CR 702.146a's disturb) under that face's
+-- types, and carries no copy stamp (CR 707.2) and no Object.playPermission.
+-- The board's effects, every gate open, change only power and toughness (CR
+-- 613.4), so none grants it a keyword, an ability or a permission or changes
+-- its types, under any proposal of a card adding no effect of its own; and no
 -- CastFrom row exists at all. False wherever any of that fails, leaving the
--- card to `castable`.
+-- card to `castable`. Parun.CastSpec's "#6552 a buried Serra Angel is ruled
+-- out unprojected" proves the keyword half.
 unpermittedInGraveyard :: GameState -> ObjectId -> Bool
 unpermittedInGraveyard gs =
   let ptOnly g = let l = Projection.layer (Projection.gModification g) in l >= Layer.CharacteristicPT && l <= Layer.SwitchPT
       quiet = all ptOnly (Projection.gatherUngated gs) && not (PlayerEffect.anyCastFromRow gs)
-      printsNothing face = Set.null (Face.keywordSet face) && null (Face.staticAbilities face) && null (Face.castingPermissions face)
+      keywordsPermitNothing face =
+        let keywords = Face.keywordSet face
+         in null (Keyword.castingPermissionsOf (TypeLine.types (Face.typeLine face)) keywords) && null (Keyword.disturbCosts keywords)
+      printsNothing face = keywordsPermitNothing face && null (Face.staticAbilities face) && null (Face.castingPermissions face)
    in \oid -> case (Game.lookupObject oid gs, Game.cardOf oid gs) of
         (Just obj, Just card) ->
           Object.zone obj == Zone.Graveyard
@@ -3102,6 +3109,8 @@ followIntoSpell permission old new gs = case permission of
 -- row then follows the spell onto the permanent it becomes
 -- (Parun.Engine.Event.reenter). data/scenarios/cast-permission's Savage
 -- Summoning scenarios prove both riders.
+-- Theorist's Proxy spends PlayerEffect.NextSpell instead, a marker with no
+-- effect of its own; its cast-permission scenario proves the binding.
 --
 -- The cast road only: a land play spends a grant (spentByLandPlay) but is no
 -- spell for "that spell" to name.
@@ -4183,7 +4192,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           State.modify' (\g -> let pc = Projection.project sid g in Event.recordEvent (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast pid sid pc castFrom (Object.castUsing =<< Game.lookupObject sid g) (Projection.lapsedGrantsOf (Projection.fullView g) pc sid g))) g)
                           -- CR 611.2a: the durations this cast ends (Soul
                           -- Sculptor's), off the spell as it became cast.
-                          State.modify' (Expiry.sweep (Expiry.Cast sid))
+                          State.modify' (Expiry.sweep (Expiry.Cast oid sid))
                           -- CR 601.2a / 400.7h: the card was played, under the
                           -- id it had before the move and the spell's.
                           State.modify' (\g -> g {GameState.cardsPlayed = Map.insert sid pid (Map.insert oid pid (GameState.cardsPlayed g))})

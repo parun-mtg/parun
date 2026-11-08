@@ -107,6 +107,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Emerge as Emerge
@@ -1824,7 +1825,7 @@ traverseAmount f component = case component of
   -- CR 702.174a's cost names no X.
   CostComponent.ChooseOpponent _ -> pure component
   CostComponent.WaterbendInstead _ -> pure component
-  CostComponent.ExileThisFromGraveyard -> pure component
+  CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.ExileCardsFromGraveyard {} -> pure component
   CostComponent.ExileMaterials {} -> pure component
@@ -1975,7 +1976,7 @@ componentDemandGrowsWith slot component = case component of
   -- `manaHasVariable` answers for.
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
@@ -2296,7 +2297,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.TapPermanents {} -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
@@ -2713,11 +2714,16 @@ unflattenMixed flat = Map.fromListWith Map.union [(candidate, Map.singleton kind
 -- The division of a mixed removal the rules leave no choice in, where there is
 -- one: every counter offered where they number exactly `owed`, or `owed` of the
 -- one kind on the one permanent offered (under a spread FromOne, the one
--- permanent alone). Parun.Engine.Replay's default answer is `fillMixedInOrder`.
+-- permanent alone); under a ceiling (FromAmongAtMost), nothing where nothing is
+-- offered or the ceiling is zero. Parun.Engine.Replay's default answer is
+-- `fillMixedInOrder`.
 onlyMixedDivision :: CounterSpread.CounterSpread -> Natural -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Maybe (Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural))
 onlyMixedDivision spread owed offered = case spread of
   CounterSpread.FromAmongAtLeast
     | sum flat == owed -> Just offered
+    | otherwise -> Nothing
+  CounterSpread.FromAmongAtMost
+    | owed == 0 || Map.null flat -> Just Map.empty
     | otherwise -> Nothing
   CounterSpread.FromAmong -> exact
   CounterSpread.FromOne -> exact
@@ -2729,7 +2735,8 @@ onlyMixedDivision spread owed offered = case spread of
       | otherwise = Nothing
 
 -- `fillInOrder` for a division by permanent and kind; under a spread FromOne,
--- off the first permanent offered alone.
+-- off the first permanent offered alone, and under a ceiling, nothing, the
+-- answer Prompt.ChooseCounterRemovalUpTo defaults to.
 fillMixedInOrder :: CounterSpread.CounterSpread -> Natural -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural)
 fillMixedInOrder spread owed offered = unflattenMixed (fillInOrder owed (flattenMixed from))
   where
@@ -2737,16 +2744,19 @@ fillMixedInOrder spread owed offered = unflattenMixed (fillInOrder owed (flatten
       CounterSpread.FromOne -> Map.take 1 offered
       CounterSpread.FromAmong -> offered
       CounterSpread.FromAmongAtLeast -> offered
+      CounterSpread.FromAmongAtMost -> Map.empty
 
 -- Is this division by permanent and kind one the offer allows? Every pair it
 -- names offered and carrying what it takes, the whole `owed` exactly (at least
--- `owed`, under FromAmongAtLeast), and under FromOne off a single permanent.
+-- `owed` under FromAmongAtLeast, at most under FromAmongAtMost), and under
+-- FromOne off a single permanent.
 dividesMixedRemoval :: CounterSpread.CounterSpread -> Natural -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Map.Map ObjectId (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural) -> Bool
 dividesMixedRemoval spread owed offered division =
   withinOffer (flattenMixed offered) flat && case spread of
     CounterSpread.FromOne -> sum flat == owed && Set.size (Set.map fst (Map.keysSet flat)) <= 1
     CounterSpread.FromAmong -> sum flat == owed
     CounterSpread.FromAmongAtLeast -> sum flat >= owed
+    CounterSpread.FromAmongAtMost -> sum flat <= owed
   where
     flat = flattenMixed division
 
@@ -2897,7 +2907,7 @@ claimOfGiven board slots pid oid component gs =
         -- A pool of at most ONE, CR 404.2's order having picked it.
         CostComponent.ExileTopFromGraveyard criterion ->
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (Maybe.maybeToList (topExileCandidate slots pid oid criterion gs))) 1
-        CostComponent.ExileThisFromGraveyard -> claim (ClaimAxis.Removal Zone.Graveyard) itself 1
+        CostComponent.ExileThisFrom zone -> claim (ClaimAxis.Removal zone) itself 1
         -- CR 701.17a spends cards out of the paying player's own library, so the pool
         -- is that library and the count is how many the mill takes -- the ZONE keying a
         -- Removal soundly for the header's reason. What it buys is two mills of one
@@ -3203,8 +3213,10 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
         -- 702.61b does, so both of CR 605.3a's windows owe it. The stamp is what
         -- a row naming a keyword (Kang the Conqueror's power-up) compares; no
         -- mana ability in data/cards/ is under power-up, so on this road that
-        -- is a regression fence rather than a proof.
-        && not (PlayerEffect.prohibitsActivatingGiven (ActivatedAbility.keyword =<< ability) oid gs effects)
+        -- is a regression fence rather than a proof. Asked as ManaAbility, so a
+        -- row naming NonManaAbility (Yuriko, Blade of the Mighty) is no answer
+        -- here.
+        && not (PlayerEffect.prohibitsActivatingGiven AbilityKind.ManaAbility (ActivatedAbility.keyword =<< ability) oid gs effects)
         -- CR 602.5's printed "activate only ..." rider, which CR 605.1's own sentence
         -- keeps on a mana ability -- a timing restriction does not stop an ability
         -- being one. Here for sickness's and detain's reason, and it is the reason
@@ -3390,7 +3402,7 @@ uncountedCeiling pid oid claims gs component = case component of
   -- UNDERSTATEMENT and the header's safe direction.
   CostComponent.ExileMaterials {} -> Just 1
   CostComponent.ExileTopFromGraveyard _ -> Nothing
-  CostComponent.ExileThisFromGraveyard -> Nothing
+  CostComponent.ExileThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   -- Counted by `objectCeiling` too, the library being this claim's pool.
   CostComponent.MillCards _ -> Nothing
@@ -3789,7 +3801,7 @@ targetComputed component = case component of
   CostComponent.Blight _ -> False
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard _ -> False
   CostComponent.ExileMaterials _ -> False
@@ -3845,7 +3857,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.ChooseOpponent _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
-  CostComponent.ExileThisFromGraveyard -> 0
+  CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
@@ -3896,7 +3908,7 @@ energyOwedByComponent component = case component of
   CostComponent.ChooseOpponent _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
-  CostComponent.ExileThisFromGraveyard -> 0
+  CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
@@ -3953,7 +3965,7 @@ countersOwedByComponent component = case component of
   CostComponent.ChooseOpponent _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
-  CostComponent.ExileThisFromGraveyard -> []
+  CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.ExileCardsFromGraveyard {} -> []
   CostComponent.ExileMaterials {} -> []
@@ -4125,13 +4137,14 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.DiscardThis _ -> case Game.lookupObject oid gs of
     Nothing -> False
     Just obj -> Object.zone obj == Zone.Hand && Object.owner obj == pid
-  -- CR 118.3: payable only while the card is in the paying player's graveyard,
-  -- DiscardThis' shape. This is CR 113.6m's whole enforcement for the COST, so
-  -- the zone gate Activate applies to the OFFER is not the only thing between a
-  -- Loxodon Surveyor on the battlefield and a free draw.
-  CostComponent.ExileThisFromGraveyard -> case Game.lookupObject oid gs of
+  -- CR 118.3: payable only while the card is in the paying player's own
+  -- graveyard or hand, the zone the component names -- DiscardThis' shape. This
+  -- is CR 113.6m's whole enforcement for the COST, so the zone gate Activate
+  -- applies to the OFFER is not the only thing between a Loxodon Surveyor on the
+  -- battlefield and a free draw.
+  CostComponent.ExileThisFrom zone -> case Game.lookupObject oid gs of
     Nothing -> False
-    Just obj -> Object.zone obj == Zone.Graveyard && Object.owner obj == pid
+    Just obj -> Object.zone obj == zone && Object.owner obj == pid
   -- CR 118.3: payable only if this player's own graveyard holds at least that
   -- many matching cards. Headless Skaab with an empty graveyard is never OFFERED
   -- rather than merely unpaid, which is what puts the additional cost INSIDE the
@@ -4219,6 +4232,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
     CounterSpread.FromOne -> not (null (counterRemovalCandidates slots pid oid n which criterion gs))
     CounterSpread.FromAmong -> sum (spreadRemovalCandidates slots pid oid which criterion gs) >= n
     CounterSpread.FromAmongAtLeast -> sum (spreadRemovalCandidates slots pid oid which criterion gs) >= n
+    -- Refused by Parun.Codec.CountersFromPermanents: no cost removes up to a
+    -- count.
+    CounterSpread.FromAmongAtMost -> False
   -- CR 701.63a puts the counters on "that permanent", and Yisan, the Wanderer
   -- Bard on itself, so what can make this unpayable is the permanent no longer
   -- being there, or CR 118.3 with CR 101.2: an effect saying counters of that
@@ -4392,7 +4408,7 @@ aimingSignature pid oid gs cost
           routes r = case Recipient.objectOf r of
             Nothing -> []
             Just o -> [(activations {Activations.claims = []}, fmap (selfless o) (relevant supply), mana, cost') | (source, supply@(_, mana, cost', activations)) <- supplies, source == o, not (null (relevant supply))]
-       in Just (\r -> (fmap (toInteger . fromEnum) (PlayerEffect.targetQuestions pid gs r) <> self r <> claimed r <> evidence r <> pooled r, routes r))
+       in Just (\r -> (PlayerEffect.targetQuestions pid gs r <> self r <> claimed r <> evidence r <> pooled r, routes r))
   where
     criteria = concatMap criteriaOf (Cost.components cost)
 
@@ -4484,7 +4500,7 @@ criteriaOf component = case component of
   -- no word of a card's is in it, so CR 612.2 has nothing to swap.
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
-  CostComponent.ExileThisFromGraveyard -> []
+  CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
   CostComponent.RevealTopOfLibrary _ -> []
@@ -5174,9 +5190,8 @@ paySubstitutingReadingThen refuses slots perform began earlier moment subject an
 --
 -- The bound slots ride out unread. A component of a combat toll binds what
 -- payComponent binds it (Sacrifice, TapPermanents, TapForTotalPower, ExileThis
--- and ExileThisFromGraveyard each reserve a name), and
--- there is no resolving ability holding a binding environment to write them
--- into -- CR 508.1j and CR 509.1f name a payment and no effect, where CR
+-- and ExileThisFrom each reserve a name), and there is no resolving ability
+-- holding a binding environment to write them into -- CR 508.1j and CR 509.1f name a payment and no effect, where CR
 -- 601.2f's components are paid for a spell that goes on to resolve.
 --
 -- The ORDER ACROSS TAGS is the payer's, which is what "in any order" says about
@@ -5516,7 +5531,7 @@ paidInSecondPass component = case component of
   CostComponent.ReturnThis -> False
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
-  CostComponent.ExileThisFromGraveyard -> False
+  CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
@@ -5582,7 +5597,7 @@ mergeBound bound outcome = case outcome of
 bindsNothing :: Payment.Payment
 bindsNothing = Payment.Paid Map.empty
 
--- The payment an ExileThis or ExileThisFromGraveyard component makes: CR 601.2h
+-- The payment an ExileThis or ExileThisFrom component makes: CR 601.2h
 -- pays it, and Binding.exiledCard names what CR 400.7 put into exile.
 --
 -- An empty arrival binds NOTHING rather than an empty set, a replacement effect
@@ -5654,7 +5669,7 @@ orderSensitive component = case component of
   -- TRUE, unlike Behold above: the exile takes the object out of a pool another
   -- part could draw on.
   CostComponent.BeholdAndExile _ -> True
-  CostComponent.ExileThisFromGraveyard -> True
+  CostComponent.ExileThisFrom _ -> True
   CostComponent.ExileThis -> True
   CostComponent.TapThis -> True
   CostComponent.UntapThis -> True
@@ -6488,8 +6503,27 @@ applyManaTriggers perform events = do
   Monad.mapM_ (State.modify' . Event.recordEvent) events
   gs <- State.get
   let recorded = Foldable.toList (Seq.drop (Seq.length (GameState.events gs) - length events) (GameState.events gs))
-      fired = filter (\p -> ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p)) (Event.reactionTriggers recorded gs)
-  Monad.mapM_ (ManaAbilityPerformer.triggered perform) fired
+      isMana p = ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p)
+      watches = ManaAbility.mayBeTriggeredManaAbility . DelayedTrigger.ability
+      store = GameState.delayedTriggers gs
+  -- CR 605.1b holds of a delayed ability too (Molten Tide), so CR 603.7's store
+  -- is scanned here, only its entries that could be mana abilities, and a
+  -- one-shot entry is spent here rather than by the CR 117.5 gather.
+  (delayed, kept) <- Trigger.delayedPending recorded gs {GameState.delayedTriggers = Seq.filter watches store}
+  State.modify' (\g -> g {GameState.delayedTriggers = keepSurvivors watches kept store})
+  Monad.mapM_ (ManaAbilityPerformer.triggered perform) (filter isMana (Event.reactionTriggers recorded gs <> delayed))
+
+-- The store with its `watched` entries cut down to `kept`, an in-order
+-- subsequence of them, every other entry where it stood: the arming order is
+-- what later passes read (delayedPending).
+keepSurvivors :: (DelayedTrigger.DelayedTrigger -> Bool) -> Seq.Seq DelayedTrigger.DelayedTrigger -> Seq.Seq DelayedTrigger.DelayedTrigger -> Seq.Seq DelayedTrigger.DelayedTrigger
+keepSurvivors watched kept store = case Seq.viewl store of
+  Seq.EmptyL -> Seq.empty
+  entry Seq.:< rest
+    | not (watched entry) -> entry Seq.<| keepSurvivors watched kept rest
+    | otherwise -> case Seq.viewl kept of
+        survivor Seq.:< later | survivor == entry -> entry Seq.<| keepSurvivors watched later rest
+        _ -> keepSurvivors watched kept rest
 
 -- CR 602.2b sends an activation cost through CR 601.2b-i, so a mana ability pays
 -- its whole cost. All or nothing, `pay`'s posture and for CR 601.2h's reason,
@@ -6778,7 +6812,7 @@ payPayable perform paidFor slots pid oid component = case component of
     gs <- State.get
     let candidates = tapCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
-    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid candidates n)
+    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid (fmap (\c -> (c, tapPower c gs)) candidates) n)
     let totalPower = sum (fmap (`tapPower` gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && totalPower >= toInteger n
       then do
@@ -7088,9 +7122,13 @@ payPayable perform paidFor slots pid oid component = case component of
   -- apply itself: CR 606.6 has already refused an activation the permanent
   -- cannot pay for, so a saturating removal is unreachable through this door
   -- anyway.
+  --
+  -- Binds HOW MANY it removed under Binding.loyaltyRemoved: after
+  -- combineLoyalty this is CR 606.5's one combined cost, so the amount is what
+  -- was paid, an announced X and Carth the Lion's [+1] included.
   CostComponent.RemoveLoyaltyFromThis amount -> paidAnnounced amount $ \n -> do
     Event.removeCounters oid CounterKind.Loyalty n
-    pure bindsNothing
+    pure (Payment.Paid (Map.singleton Binding.loyaltyRemoved (Binding.toAmount n)))
   -- CR 118.1's removal as a cost, through Event.removeCounters -- CR 122's
   -- removal funnel, RemoveLoyaltyFromThis' road above and for its reason: what
   -- the funnel adds is the GameEvent.CountersRemoved record a counter-watching
@@ -7143,6 +7181,7 @@ payPayable perform paidFor slots pid oid component = case component of
               CounterSpread.FromOne -> Map.filter (\kinds -> sum kinds >= n) (mixedRemovalCandidates slots pid oid which criterion gs)
               CounterSpread.FromAmong -> mixedRemovalCandidates slots pid oid which criterion gs
               CounterSpread.FromAmongAtLeast -> mixedRemovalCandidates slots pid oid which criterion gs
+              CounterSpread.FromAmongAtMost -> mixedRemovalCandidates slots pid oid which criterion gs
         division <- case onlyMixedDivision spread n offered of
           Just only -> pure only
           Nothing -> Game.choose (Prompt.ChooseMixedCounterRemoval decider pid oid spread n offered)
@@ -7193,6 +7232,9 @@ payPayable perform paidFor slots pid oid component = case component of
             if dividesRemovalAtLeast n offered division
               then removeDivision division
               else pure Payment.Unpaid
+          -- Refused by Parun.Codec.CountersFromPermanents, as canPayComponent
+          -- refuses it.
+          CounterSpread.FromAmongAtMost -> pure Payment.Unpaid
   -- CR 122.6's placement, through the Event.putCounters funnel -- the same call
   -- AddLoyaltyToThis above makes, and for its reason. CR 118.12's endure, paid
   -- as the spell or ability RESOLVES, is a cost all the same; see
@@ -7249,7 +7291,7 @@ payPayable perform paidFor slots pid oid component = case component of
   -- is the proof.
   CostComponent.FlipCoin -> do
     statements <- Coin.statementsFor (Just pid)
-    _ <- Event.flipWinLoseCoin (Just (ManaAbilityPerformer.throwForCoin perform)) pid statements
+    _ <- Event.flipWinLoseCoin (Just (ManaAbilityPerformer.throwForCoin perform)) (ManaAbilityPerformer.reflipWindow perform) pid statements
     pure bindsNothing
   -- CR 702.174a's first ability, paid by naming the opponent the gift is
   -- promised to, through Prompt.ChooseOpponent carrying the promise it records,
@@ -7300,8 +7342,8 @@ payPayable perform paidFor slots pid oid component = case component of
     State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Waterbend pid)))
     pure bindsNothing
   -- CR 406.2's move, through the Event.changeZone funnel, so the card gets a CR
-  -- 400.7 incarnation and anything watching a graveyard-to-exile move sees it.
-  -- No prompt: the cost names this card.
+  -- 400.7 incarnation and anything watching a graveyard- or hand-to-exile move
+  -- sees it. No prompt: the cost names this card.
   --
   -- The card is in EXILE by the time the ability resolves, which is what makes CR
   -- 113.7a load-bearing here -- Loxodon Surveyor's draw resolves off a source
@@ -7309,7 +7351,7 @@ payPayable perform paidFor slots pid oid component = case component of
   --
   -- Binds Binding.exiledCard off what ARRIVED, ExileThis' binding below and for
   -- its reason.
-  CostComponent.ExileThisFromGraveyard -> do
+  CostComponent.ExileThisFrom _ -> do
     arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) oid Zone.Exile
     pure (bindExiled arrived)
   -- CR 406.2's move off the BATTLEFIELD, through the same funnel and with no
@@ -7398,7 +7440,7 @@ payPayable perform paidFor slots pid oid component = case component of
     gs <- State.get
     let candidates = evidenceCandidates slots pid oid gs
         decider = Decide.deciderFor pid gs
-    chosen <- Game.choose (Prompt.ChooseCollectEvidence decider pid oid candidates n)
+    chosen <- Game.choose (Prompt.ChooseCollectEvidence decider pid oid (fmap (\c -> (c, evidenceValue c gs)) candidates) n)
     let collected = sum (fmap (`evidenceValue` gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && collected >= toInteger n
       then do

@@ -57,7 +57,6 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
-import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
@@ -88,6 +87,7 @@ import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Face as Face
 import Parun.Types.Filter (Filter)
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.GameSettings as GameSettings
@@ -113,6 +113,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
 import qualified Parun.Types.PaymentSubject as PaymentSubject
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -139,6 +140,7 @@ import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TapForMana as TapForMana
@@ -650,6 +652,7 @@ prohibitsCasting pid oid variable gs =
         -- 601.3 is about beginning to cast one: an uncounterable spell is not a
         -- spell anyone is more or less allowed to cast.
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         -- CR 615.12 edits what CR 615.1's shields do to a damage event, and CR
@@ -660,7 +663,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -752,17 +755,23 @@ prohibitsCasting pid oid variable gs =
 -- shows it (Grand Abolisher's "abilities of artifacts, creatures, or
 -- enchantments", whose ruling of 2011-09-22 leaves a cycling card in hand
 -- alone -- the card's Filter names the battlefield).
-prohibitsActivatingGiven :: Maybe Keyword -> ObjectId -> GameState -> [(RowSource, PlayerEffect)] -> Bool
-prohibitsActivatingGiven stamp srcId gs effects =
+--
+-- The caller says which CR 605.1a kind the ability is, as
+-- ActivationProhibition.prohibitedGiven is told: a row naming a kind refuses
+-- only that kind, Yuriko, Blade of the Mighty's "abilities that aren't mana
+-- abilities".
+prohibitsActivatingGiven :: AbilityKind.AbilityKind -> Maybe Keyword -> ObjectId -> GameState -> [(RowSource, PlayerEffect)] -> Bool
+prohibitsActivatingGiven kind stamp srcId gs effects =
   let bars (row, effect) = case effect of
-        PlayerEffect.CantActivateAbilities designator sources ->
+        PlayerEffect.CantActivateAbilities designator sources barred ->
           maybe True (\d -> any (Keyword.designates d) stamp) designator
+            && all (== kind) barred
             && matchesObjectFrom row sources srcId gs
         _ -> False
    in any bars effects
 
-prohibitsActivating :: Maybe Keyword -> ObjectId -> PlayerId -> GameState -> Bool
-prohibitsActivating stamp srcId pid gs = prohibitsActivatingGiven stamp srcId gs (applying pid gs)
+prohibitsActivating :: AbilityKind.AbilityKind -> Maybe Keyword -> ObjectId -> PlayerId -> GameState -> Bool
+prohibitsActivating kind stamp srcId pid gs = prohibitsActivatingGiven kind stamp srcId gs (applying pid gs)
 
 -- CR 305.1: does any effect prohibit `pid` from PLAYING this land?
 -- The play-side twin of prohibitsCasting above, and a separate question rather
@@ -841,6 +850,7 @@ prohibitsPlayingLand pid oid gs =
         -- CR 305.1 again: a land is never put on the stack, so nothing about
         -- countering reaches a land play.
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -848,7 +858,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -936,12 +946,13 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1048,12 +1059,13 @@ prohibitsCounters pid kind gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1099,7 +1111,7 @@ prohibitsBecomingMonarch :: PlayerId -> GameState -> Bool
 prohibitsBecomingMonarch pid gs =
   let prohibits effect = case effect of
         PlayerEffect.CantBecomeMonarch -> True
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1140,6 +1152,7 @@ prohibitsBecomingMonarch pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1166,13 +1179,14 @@ prohibitsBecomingMonarch pid gs =
         PlayerEffect.Shows _ -> False
    in any (prohibits . snd) (applying pid gs)
 
--- CR 704.5j: does the legend rule not apply to the permanents `pid` controls
--- (Hall of Echoes)? A DISJUNCTION: one applicable row exempts them.
-legendRuleDoesntApplyTo :: PlayerId -> GameState -> Bool
-legendRuleDoesntApplyTo pid gs =
+-- CR 704.5i / 704.5j: does the state-based action not apply to the permanents
+-- `pid` controls (Sanctum Lurker, Hall of Echoes)? A DISJUNCTION: one applicable
+-- row exempts them.
+stateBasedActionDoesntApplyTo :: StateBasedAction.StateBasedAction -> PlayerId -> GameState -> Bool
+stateBasedActionDoesntApplyTo action pid gs =
   let exempts effect = case effect of
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> True
+        PlayerEffect.StateBasedActionDoesntApply exempted -> exempted == action
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1202,6 +1216,7 @@ legendRuleDoesntApplyTo pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1243,7 +1258,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.YouChoose _ -> False
         PlayerEffect.ExilesFoundWhileSearching -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -1266,6 +1281,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1312,7 +1328,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.YouChoose _ -> Nothing
         PlayerEffect.ExilesFoundWhileSearching -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantAttackWithCreatures -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
         PlayerEffect.CantActivateAbilities {} -> Nothing
@@ -1335,6 +1351,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -1390,7 +1407,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.YouChoose _ -> False
         PlayerEffect.ExilesFoundWhileSearching -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -1413,6 +1430,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1448,7 +1466,7 @@ prohibitsAttackingWithCreatures pid gs =
   let prohibits effect = case effect of
         PlayerEffect.CantAttackWithCreatures -> True
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -1477,6 +1495,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1744,7 +1763,8 @@ spellCostAdjustments targets pid oid gs =
 -- modifiers make, every one of them already known to reach the payment. `aims`
 -- answers `whichTargets` -- SOME announced target matches, once however many do
 -- (Kopala, Warden of Waves' ruling) -- `counted` answers `perTarget`, the
--- distinct announced targets matching, which repeats the change, and `each`
+-- distinct announced targets matching, each weighed by its own count
+-- (perTargetTimes), which repeats the change, and `each`
 -- answers `perEach` (perEachCount), which repeats it again.
 --
 -- A repeated increase or reduction is its amount REPEATED rather than multiplied, as
@@ -1756,7 +1776,7 @@ spellCostAdjustments targets pid oid gs =
 -- Additions are CONCATENATED rather than resolved between, because two effects
 -- each adding a cost both add it, and each keeps its SCALE for
 -- Parun.Engine.Cost.plusComponents to cash against the cost being adjusted.
-modifierAdjustments :: [(RowSource, CostModifier.CostModifier)] -> (RowSource -> Filter Keyword -> Bool) -> (RowSource -> Filter Keyword -> Natural) -> (RowSource -> Quantity.Type.Quantity -> Natural) -> CostAdjustments
+modifierAdjustments :: [(RowSource, CostModifier.CostModifier)] -> (RowSource -> Filter Keyword -> Bool) -> (RowSource -> PerTarget.PerTarget -> Natural) -> (RowSource -> Quantity.Type.Quantity -> Natural) -> CostAdjustments
 modifierAdjustments rows aims counted each =
   let applying' =
         [ (source, modifier, maybe 1 (counted source) (CostModifier.perTarget modifier) * maybe 1 (each source) (CostModifier.perEach modifier))
@@ -1804,10 +1824,38 @@ spellCostReadsTargets pid oid gs =
 -- Filter.View's `targetCount`, which counts instances, is not this. Merging by
 -- referent is a fence: the announcement's union already merges a recipient named
 -- twice, and no test names one object under two of CR 115.4's tags.
-perTargetCount :: Set.Set Recipient.Recipient -> PlayerId -> RowSource -> GameState -> Filter Keyword -> Natural
-perTargetCount targets pid source gs wanted =
+perTargetCount :: Set.Set Recipient.Recipient -> PlayerId -> RowSource -> GameState -> PerTarget.PerTarget -> Natural
+perTargetCount targets pid source gs perTarget =
   let referent r = (Recipient.objectOf r, Recipient.playerOf r)
-   in Natural.length (Set.map referent (Set.filter (perTargetMatches pid source gs wanted) targets))
+      matching = Set.map referent (Set.filter (perTargetMatches pid source gs (PerTarget.matching perTarget)) targets)
+   in sum (fmap (perTargetTimes pid source gs perTarget . fst) (Set.toList matching))
+
+-- CR 601.2f: how many times ONE matching target repeats a per-target change --
+-- once, or its `each` read against that target with perEachCount's context
+-- (Warrior's Blades' "for each +1/+1 counter on the creature it targets"). A
+-- player target has no object to read, so a count gives it no times: a fence,
+-- since no `each` in data/cards/ admits a player.
+perTargetTimes :: PlayerId -> RowSource -> GameState -> PerTarget.PerTarget -> Maybe ObjectId -> Natural
+perTargetTimes pid source gs perTarget target = case PerTarget.each perTarget of
+  Nothing -> 1
+  Just quantity ->
+    let context = contextFor (Just (targetPerspective pid source gs)) source gs
+     in maybe 0 Integer.toNaturalSaturating (target >>= \oid -> Quantity.evaluate (Projection.fullView gs) context gs oid quantity)
+
+-- CR 118.9: does a free-cast grant cover this card? Its filter is matched as
+-- matchesObjectFrom matches, with its `amount` evaluated into
+-- Filter.slotAmount for the EnclosingAmount operand: read against the row's
+-- SOURCE with targetPerspective's "you", perEachCount's posture (CR 109.5,
+-- Omnipresence's "the number of creatures you control").
+freeCastAdmits :: PlayerId -> RowSource -> FreeCastFromHand.FreeCastFromHand -> ObjectId -> GameState -> Bool
+freeCastAdmits pid source grant oid gs =
+  let framed context = case FreeCastFromHand.amount grant of
+        Nothing -> context
+        Just quantity ->
+          let against = Maybe.fromMaybe oid (RowSource.object source)
+              you = contextFor (Just (targetPerspective pid source gs)) source gs
+           in context {Filter.slotAmount = Quantity.evaluate (Projection.fullView gs) you gs against quantity}
+   in Filter.matches (framed (contextFrom source oid gs)) (Projection.viewOfObject oid gs) (FreeCastFromHand.spells grant)
 
 -- CR 601.2f: how many times a `perEach` cost change applies -- its Quantity read
 -- as the total is determined, against the row's SOURCE (CR 113.7, Animar, Soul
@@ -1848,20 +1896,22 @@ targetPerspective :: PlayerId -> RowSource -> GameState -> PlayerId
 targetPerspective pid source gs = Maybe.fromMaybe pid (RowSource.object source >>= \oid -> Projection.controllerOf oid gs)
 
 -- Every question a cost change in force for `pid` asks of ONE target, answered:
--- its `whichTargets` and its `perTarget` (modifierAdjustments' `aims` and
--- `counted`). These are the only
+-- its `whichTargets` as 0 or 1 and its `perTarget` as the times the target
+-- repeats the change, -1 where it does not match (modifierAdjustments' `aims`
+-- and `counted`). These are the only
 -- reads the gathered adjustments make of CR 601.2c's targets, so two targets
 -- answering alike are interchangeable to them (Parun.Engine.Cost.aimingSignature).
 -- Asked of every such change in force rather than only those reaching the cost
 -- at hand: an extra question only splits targets further, which stays exact.
-targetQuestions :: PlayerId -> GameState -> Recipient.Recipient -> [Bool]
+targetQuestions :: PlayerId -> GameState -> Recipient.Recipient -> [Integer]
 targetQuestions pid gs r =
   let ask (source, effect) = case effect of
         PlayerEffect.ModifyCost modifier ->
           let matches wanted = case CostModifier.subject modifier of
                 CostSubject.Spells -> perTargetMatches pid source gs wanted r
                 CostSubject.Activations _ -> maybe False (\oid -> matchesObjectFor (targetPerspective pid source gs) source wanted oid gs) (Recipient.objectOf r)
-           in fmap matches (Maybe.catMaybes [CostModifier.whichTargets modifier, CostModifier.perTarget modifier])
+              weighed perTarget = if matches (PerTarget.matching perTarget) then toInteger (perTargetTimes pid source gs perTarget (Recipient.objectOf r)) else -1
+           in fmap (toInteger . fromEnum . matches) (Maybe.maybeToList (CostModifier.whichTargets modifier)) <> fmap weighed (Maybe.maybeToList (CostModifier.perTarget modifier))
         _ -> []
    in concatMap ask (applying pid gs)
 
@@ -1986,7 +2036,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
         modifierAdjustments
           [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- effects, reaches source modifier]
           (\source wanted -> not (null (matchingTargets source wanted)))
-          (\source wanted -> Natural.length (matchingTargets source wanted))
+          (\source perTarget -> sum (fmap (perTargetTimes pid source gs perTarget . Just) (matchingTargets source (PerTarget.matching perTarget))))
           (perEachCount pid srcId gs)
       -- CR 702.193a/b: power-up's own reduction by "this permanent's mana cost",
       -- the rule's and not an effect's, so it is asked of the ability's stamp
@@ -2136,6 +2186,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.SpendManaAsThough _ -> Nothing
   PlayerEffect.CantBeTargetedBy {} -> Nothing
   PlayerEffect.CantBeCountered _ -> Nothing
+  PlayerEffect.NextSpell _ -> Nothing
   PlayerEffect.RestrictTargeting _ -> Nothing
   PlayerEffect.TargetPastHexproof _ -> Nothing
   PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -2143,7 +2194,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.CantBecomeMonarch -> Nothing
-  PlayerEffect.LegendRuleDoesntApply -> Nothing
+  PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
   PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -2396,6 +2447,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.SpendManaAsThough _ -> Nothing
   PlayerEffect.CantBeTargetedBy {} -> Nothing
   PlayerEffect.CantBeCountered _ -> Nothing
+  PlayerEffect.NextSpell _ -> Nothing
   PlayerEffect.RestrictTargeting _ -> Nothing
   PlayerEffect.TargetPastHexproof _ -> Nothing
   PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -2403,7 +2455,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.CantBecomeMonarch -> Nothing
-  PlayerEffect.LegendRuleDoesntApply -> Nothing
+  PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
   PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -2704,7 +2756,7 @@ mayCastFromHandWithoutPayingManaCost :: PlayerId -> ObjectId -> GameState -> Boo
 mayCastFromHandWithoutPayingManaCost pid oid gs =
   let inTheirOwnHand = fmap Object.owner (Game.lookupObject oid gs) == Just pid
       allows (source, effect) = case effect of
-        PlayerEffect.CastFromHandWithoutPayingManaCost criterion -> matchesObjectFrom source criterion oid gs
+        PlayerEffect.CastFromHandWithoutPayingManaCost grant -> freeCastAdmits pid source grant oid gs
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -2747,6 +2799,7 @@ mayCastFromHandWithoutPayingManaCost pid oid gs =
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -2754,7 +2807,7 @@ mayCastFromHandWithoutPayingManaCost pid oid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -2828,6 +2881,7 @@ playLandPiles pid gs =
         PlayerEffect.SpendManaAsThough _ -> []
         PlayerEffect.CantBeTargetedBy {} -> []
         PlayerEffect.CantBeCountered _ -> []
+        PlayerEffect.NextSpell _ -> []
         PlayerEffect.RestrictTargeting _ -> []
         PlayerEffect.TargetPastHexproof _ -> []
         PlayerEffect.DamageCantBePrevented _ -> []
@@ -2835,7 +2889,7 @@ playLandPiles pid gs =
         PlayerEffect.CantSearchLibraries _ -> []
         PlayerEffect.HasProtectionFrom _ -> []
         PlayerEffect.CantBecomeMonarch -> []
-        PlayerEffect.LegendRuleDoesntApply -> []
+        PlayerEffect.StateBasedActionDoesntApply _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
         PlayerEffect.EntriesTrigger _ -> []
         PlayerEffect.AdditionalTriggers _ -> []
@@ -2945,6 +2999,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         -- says the same about CR 113.6g, and a Cancel at a spell Spider-Punk
         -- protects still targets it legally and still resolves.
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -2952,7 +3007,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3059,12 +3114,13 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3155,12 +3211,13 @@ protectionCarriers gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3242,6 +3299,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -3249,7 +3307,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3324,13 +3382,14 @@ votesAllowed pid gs =
         PlayerEffect.LoyaltyGrant {} -> Nothing
         PlayerEffect.MayTapForMana {} -> Nothing
         PlayerEffect.CantBeCountered {} -> Nothing
+        PlayerEffect.NextSpell {} -> Nothing
         PlayerEffect.RestrictTargeting {} -> Nothing
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3391,13 +3450,14 @@ offeredExtras pid gs =
         PlayerEffect.LoyaltyGrant {} -> False
         PlayerEffect.MayTapForMana {} -> False
         PlayerEffect.CantBeCountered {} -> False
+        PlayerEffect.NextSpell {} -> False
         PlayerEffect.RestrictTargeting {} -> False
         PlayerEffect.TargetPastHexproof {} -> False
         PlayerEffect.DamageCantBePrevented {} -> False
         PlayerEffect.DamageCantBeRedirected {} -> False
         PlayerEffect.CantSearchLibraries {} -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3459,13 +3519,14 @@ cascadeActions pid gs =
         PlayerEffect.LoyaltyGrant {} -> Nothing
         PlayerEffect.MayTapForMana {} -> Nothing
         PlayerEffect.CantBeCountered {} -> Nothing
+        PlayerEffect.NextSpell {} -> Nothing
         PlayerEffect.RestrictTargeting {} -> Nothing
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3526,13 +3587,14 @@ drawReveals pid nth gs =
         PlayerEffect.LoyaltyGrant {} -> Nothing
         PlayerEffect.MayTapForMana {} -> Nothing
         PlayerEffect.CantBeCountered {} -> Nothing
+        PlayerEffect.NextSpell {} -> Nothing
         PlayerEffect.RestrictTargeting {} -> Nothing
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3592,13 +3654,14 @@ shownGrants pid gs =
         PlayerEffect.LoyaltyGrant {} -> Nothing
         PlayerEffect.MayTapForMana {} -> Nothing
         PlayerEffect.CantBeCountered {} -> Nothing
+        PlayerEffect.NextSpell {} -> Nothing
         PlayerEffect.RestrictTargeting {} -> Nothing
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3692,6 +3755,7 @@ maximumHandSize pid gs =
         PlayerEffect.LoyaltyGrant _ -> current
         PlayerEffect.MayTapForMana _ -> current
         PlayerEffect.CantBeCountered _ -> current
+        PlayerEffect.NextSpell _ -> current
         PlayerEffect.RestrictTargeting _ -> current
         PlayerEffect.TargetPastHexproof _ -> current
         PlayerEffect.DamageCantBePrevented _ -> current
@@ -3699,7 +3763,7 @@ maximumHandSize pid gs =
         PlayerEffect.CantSearchLibraries _ -> current
         PlayerEffect.HasProtectionFrom _ -> current
         PlayerEffect.CantBecomeMonarch -> current
-        PlayerEffect.LegendRuleDoesntApply -> current
+        PlayerEffect.StateBasedActionDoesntApply _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
         PlayerEffect.EntriesTrigger _ -> current
         PlayerEffect.AdditionalTriggers _ -> current
@@ -3778,6 +3842,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -3785,7 +3850,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -3856,6 +3921,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -3863,7 +3929,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -3938,6 +4004,7 @@ prohibitsGainingLife pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -3945,7 +4012,7 @@ prohibitsGainingLife pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4016,6 +4083,7 @@ prohibitsLosingLife pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -4023,7 +4091,7 @@ prohibitsLosingLife pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4093,6 +4161,7 @@ precludes outcome pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
+        PlayerEffect.NextSpell _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -4100,7 +4169,7 @@ precludes outcome pid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4168,6 +4237,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -4175,7 +4245,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4299,6 +4369,8 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
+        -- Theorist's Proxy's marker: it binds the spell this reads, and stops nothing.
+        PlayerEffect.NextSpell _ -> False
         -- Autumn's Veil's OTHER clause, which CR 115 reads at targeting.
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
@@ -4310,7 +4382,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.LegendRuleDoesntApply -> False
+        PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
         PlayerEffect.AdditionalTriggers _ -> False
@@ -4374,7 +4446,7 @@ targetingRestrictions =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4402,6 +4474,7 @@ targetingRestrictions =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
    in Maybe.mapMaybe restriction
 
 -- CR 115 / 101.2: may a spell or ability of `kind`, whose projection is
@@ -4456,7 +4529,7 @@ hexproofExemptions =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4484,6 +4557,7 @@ hexproofExemptions =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
    in Maybe.mapMaybe exemption
 
 -- CR 702.11e: may `you` target `candidate` as though it didn't have hexproof?
@@ -4550,7 +4624,7 @@ unpreventable gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4578,6 +4652,7 @@ unpreventable gs =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
@@ -4634,7 +4709,7 @@ unredirectable gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4662,6 +4737,7 @@ unredirectable gs =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
@@ -4740,6 +4816,7 @@ statedFlips pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -4747,7 +4824,7 @@ statedFlips pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4820,6 +4897,7 @@ rollModifiers pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -4827,7 +4905,7 @@ rollModifiers pid gs =
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantBecomeMonarch -> Nothing
-        PlayerEffect.LegendRuleDoesntApply -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -4868,9 +4946,10 @@ spentByCast = spentGrants castUse
 
 -- CR 611.2a: the criterion naming the spells whose CAST uses up a one-shot row
 -- on this effect's axis, or Nothing where no cast does: castFlashGrant's axis,
--- and CR 601.2f's spell-cost modifier (Hardened Berserker's "the next spell you
+-- CR 601.2f's spell-cost modifier (Hardened Berserker's "the next spell you
 -- cast this turn costs {1} less"), spent by the next spell its own Filter names
--- whatever that spell's cost leaves it to take off. The fallthrough is to
+-- whatever that spell's cost leaves it to take off, and PlayerEffect.NextSpell,
+-- which is nothing but this axis. The fallthrough is to
 -- castFlashGrant, whose own is exhaustive. Parun.EffectLintSpec reads it too: a
 -- card may write Duration.UntilUsed on a player effect only on an axis this
 -- answers for.
@@ -4883,6 +4962,7 @@ castUse effect = case effect of
   -- its target criteria never reached. No card in `data/cards/` writes one.
   PlayerEffect.ModifyCost modifier
     | CostModifier.subject modifier == CostSubject.Spells && Maybe.isNothing (CostModifier.whichTargets modifier) && Maybe.isNothing (CostModifier.perTarget modifier) -> Just (CostModifier.matching modifier)
+  PlayerEffect.NextSpell criterion -> Just criterion
   _ -> castFlashGrant effect
 
 -- CR 611.2a / 601.1a's other half: the rows `pid` would spend by playing `oid`
@@ -4917,7 +4997,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
   PlayerEffect.CantActivateAbilities {} -> pure effect
   PlayerEffect.CantCastMoreThan _ -> pure effect
-  -- Not implemented: the references inside a `perEach` count (#5153).
+  -- Not implemented: the references inside a `perEach` or per-target count (#5153).
   PlayerEffect.ModifyCost {} -> pure effect
   PlayerEffect.AlternativeActivationCost _ -> pure effect
   PlayerEffect.PlayAdditionalLands _ -> pure effect
@@ -4937,13 +5017,14 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.LoyaltyGrant _ -> pure effect
   PlayerEffect.MayTapForMana _ -> pure effect
   PlayerEffect.CantBeCountered _ -> pure effect
+  PlayerEffect.NextSpell _ -> pure effect
   PlayerEffect.RestrictTargeting _ -> pure effect
   PlayerEffect.TargetPastHexproof _ -> pure effect
   PlayerEffect.DamageCantBePrevented _ -> pure effect
   PlayerEffect.DamageCantBeRedirected _ -> pure effect
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.CantBecomeMonarch -> pure effect
-  PlayerEffect.LegendRuleDoesntApply -> pure effect
+  PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
   PlayerEffect.AdditionalTriggers _ -> pure effect
@@ -5019,13 +5100,14 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.LoyaltyGrant _ -> pure effect
   PlayerEffect.MayTapForMana _ -> pure effect
   PlayerEffect.CantBeCountered _ -> pure effect
+  PlayerEffect.NextSpell _ -> pure effect
   PlayerEffect.RestrictTargeting _ -> pure effect
   PlayerEffect.TargetPastHexproof _ -> pure effect
   PlayerEffect.DamageCantBePrevented pattern_ -> fmap PlayerEffect.DamageCantBePrevented (f pattern_)
   PlayerEffect.DamageCantBeRedirected pattern_ -> fmap PlayerEffect.DamageCantBeRedirected (f pattern_)
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.CantBecomeMonarch -> pure effect
-  PlayerEffect.LegendRuleDoesntApply -> pure effect
+  PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
   PlayerEffect.AdditionalTriggers _ -> pure effect

@@ -83,6 +83,9 @@
           }
         }
       ],
+      "deckLimit": {
+        "type": "AnyNumber"
+      },
       "manaCost": [
         {
           "type": "OfType",

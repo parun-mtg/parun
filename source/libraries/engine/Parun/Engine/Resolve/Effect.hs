@@ -57,6 +57,7 @@ import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
 import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.ClauseIndex as ClauseIndex
+import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.Cost as Cost.Type
@@ -119,6 +120,7 @@ import qualified Parun.Types.RollAdjustment as RollAdjustment
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.Zone as Zone
@@ -547,9 +549,9 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.ChoosePermanents payload -> Damage.choosePermanents resolving source controller legal payload
   Effect.ChooseGroup payload -> Damage.chooseGroup resolving source controller legal payload
   Effect.RollDie payload -> Damage.rollDieArm throwDice runSubgame resolving source controller legal payload
-  Effect.Reroll -> Damage.reroll
+  Effect.Rethrow -> Damage.rethrow
   Effect.RerollStoredResults payload -> Damage.rerollStoredResults throwDice runSubgame resolving source controller legal payload
-  Effect.FlipCoin payload -> Damage.flipCoinArm throwForCoin runSubgame resolving source controller legal payload
+  Effect.FlipCoin payload -> Damage.flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller legal payload
   Effect.Guess payload -> Zones.guess resolving source controller legal chosen payload
   Effect.ControlPlayerNextTurn payload -> Damage.controlPlayerNextTurn controller legal payload
   Effect.ControlPlayerThisResolution payload -> Damage.controlPlayerThisResolution controller legal payload
@@ -899,7 +901,7 @@ rollToVisit runSubgame pid = do
 -- -- nothing where it was neither.
 throwDice :: Game Result -> PlayerId -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])
 throwDice runSubgame controller sides named perDie = do
-  settled <- Event.proposeDiceRoll controller sides named
+  settled <- Event.proposeDiceRoll (reflipWindow runSubgame) controller sides named
   case settled of
     Left results -> pure (results, fmap (const controller) results, [])
     Right roll -> do
@@ -945,7 +947,7 @@ throwSettled runSubgame roll perDie = do
       -- the natural result: a rerolled 3 that comes up 3 again is a 3 the
       -- Clam sees, and rule 706.2 puts no limit on how many times a roll is
       -- modified. Terminating because every round costs some player a
-      -- Prompt.RerollDie they may decline.
+      -- Prompt.Rethrow they may decline.
       --
       -- The offers are re-read each round for the same reason, rather than
       -- captured before the first die.
@@ -966,7 +968,7 @@ throwSettled runSubgame roll perDie = do
       rerollingWith byNumber thrower natural = do
         gs <- State.get
         modifiers <- Dice.modifiersFor controller
-        activations <- duringRoll (State.gets windowCandidates)
+        activations <- duringRoll natural (State.gets windowCandidates)
         let gated (_, offer) = byNumber || Maybe.isNothing (ModifiedRoll.natural offer)
             static = fmap (\(payer, stated, offer) -> (payer, stated, Left offer)) (distinct Set.empty (fmap (offerOf gs) (filter gated (Dice.rerollOffers sides natural modifiers))))
         offering (static <> activations) thrower natural
@@ -993,14 +995,14 @@ throwSettled runSubgame roll perDie = do
       -- modifier's own "may" (CR 706.2a). A declined offer leaves the rest to
       -- be re-checked against the board as it then stands.
       offering offers thrower natural = do
-        standing <- duringRoll (State.gets (\gs -> filter (live gs) offers))
+        standing <- duringRoll natural (State.gets (\gs -> filter (live gs) offers))
         picked <- Dice.pickModifier controller standing
         case picked of
           Nothing -> pure (thrower, natural)
           Just ((payer, stated, kind), rest) -> do
             gs <- State.get
             let mCost = either ModifiedRoll.cost (Just . ActivatedAbility.cost . snd) kind
-            answer <- Game.choose (Prompt.RerollDie (Decide.deciderFor payer gs) payer natural mCost)
+            answer <- Game.choose (Prompt.Rethrow (Decide.deciderFor payer gs) payer (ThrowResult.DieCameUp natural) mCost)
             case (answer, kind) of
               (OptionalDecision.Declines, _) -> offering rest thrower natural
               (OptionalDecision.Exercises, Left _) -> do
@@ -1014,10 +1016,10 @@ throwSettled runSubgame roll perDie = do
                   -- that player rolled".
                   else rethrow controller
               (OptionalDecision.Exercises, Right (oid, ability)) -> do
-                requested <- duringRoll $ do
+                requested <- duringRoll natural $ do
                   activated <- activateWhileRolling runSubgame payer oid ability
                   after <- State.get
-                  pure (activated && GameState.rerollRequested after)
+                  pure (activated && GameState.rethrowRequested after)
                 if requested
                   then rethrow payer
                   else offering rest thrower natural
@@ -1044,7 +1046,7 @@ throwSettled runSubgame roll perDie = do
       -- docs/decisions.md, "Whether a reroll reaches a die before the lowest roll is
       -- ignored".
       rethrow by = do
-        settled <- Event.proposeDiceRoll by sides 1
+        settled <- Event.proposeDiceRoll (reflipWindow runSubgame) by sides 1
         case settled of
           Left results -> rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results))
           Right again -> do
@@ -1151,26 +1153,8 @@ throwSettled runSubgame roll perDie = do
       -- to the die reads no slot. Proved by Parun.DiceSpec's "CR 701.67a a
       -- modifier's waterbend cost is weighed" case.
       payForModifier payer oid cost = Maybe.isJust . fst <$> payGateCost runSubgame Map.empty payer oid cost
-      -- "Activate only any time it makes sense" reaches a die being rolled: Pippa,
-      -- Duchess of Dice's rulings of 2020-02-29, on the same words ("any die roll,
-      -- not just yours"; "the result still counts"). No priority falls inside a
-      -- roll (CR 117.1, 117.3b), so each ability ActivationRestriction.DuringDieRoll
-      -- marks is offered through the gate a priority activation takes (CR 602.5a;
-      -- Activatable.activatable) and resolves at once, as the ruling needs it to
-      -- reach the die. CR 706.2b's pick is the roller's, `offering`'s; the order
-      -- below is only where that pick starts. Parun.CardSpec keeps such an ability
-      -- to an untargeted Effect.Reroll, which is what lets Prompt.RerollDie ask for it.
-      --
-      -- In APNAP order, and within a player in object order, behind the static
-      -- offers: the order the roller's pick starts from.
-      windowCandidates opened =
-        [ (pid, Just oid, Right (oid, ability))
-        | pid <- Game.apnapOrder opened,
-          oid <- Activatable.activationSources pid opened,
-          ability <- Activatable.abilitiesFor oid opened,
-          elem ActivationRestriction.Type.DuringDieRoll (ActivatedAbility.restrictions ability)
-        ]
-      duringRoll = Common.withRollingDie sides
+      duringRoll natural = Common.withThrowing (ThrowResult.DieCameUp natural)
+      windowCandidates = fmap (\(pid, oid, ability) -> (pid, Just oid, Right (oid, ability))) . windowAbilities
       rollOne by modifierOf = do
         rolled <- Game.ask (Prompt.RollDie sides)
         (thrower, natural) <- rerolling by (faceOf rolled)
@@ -1242,6 +1226,7 @@ performManaAbility runSubgame =
       ManaAbilityPerformer.triggered = performTriggeredManaAbility runSubgame,
       ManaAbilityPerformer.payGate = performManaPayGate runSubgame,
       ManaAbilityPerformer.throwForCoin = throwForCoin runSubgame,
+      ManaAbilityPerformer.reflipWindow = reflipWindow runSubgame,
       ManaAbilityPerformer.settle = runReplacementEffects runSubgame
     }
 
@@ -1362,8 +1347,57 @@ runCarrying runSubgame holder controller fixed =
         pure (Map.union (Map.restrictKeys (Binding.targetsOf (holderBindings after)) defined) bound)
    in Monad.foldM run
 
--- Activate an ability inside throwDice's window and resolve it at once,
--- answering whether it was paid for. The payment is Parun.Engine.Activate's
+-- "Activate only any time it makes sense" reaches a die being rolled: Pippa,
+-- Duchess of Dice's rulings of 2020-02-29, on the same words ("any die roll,
+-- not just yours"; "the result still counts"), and a coin just flipped the same
+-- way. No priority falls inside a roll or a flip (CR 117.1, 117.3b), so each
+-- ability ActivationRestriction.DuringThrow marks is offered through the gate a
+-- priority activation takes (CR 602.5a; Activatable.activatable) and resolves at
+-- once, as the ruling needs it to reach the die. CR 706.2b's pick is the
+-- roller's, throwSettled's `offering` and reflipWindow's; the order below is
+-- only where that pick starts. Parun.CardSpec keeps such an ability to an
+-- untargeted Effect.Rethrow, which is what lets Prompt.Rethrow ask for it.
+--
+-- In APNAP order, and within a player in object order, behind the static
+-- offers: the order the roller's pick starts from.
+windowAbilities :: GameState.GameState -> [(PlayerId, ObjectId, ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
+windowAbilities opened =
+  [ (pid, oid, ability)
+  | pid <- Game.apnapOrder opened,
+    oid <- Activatable.activationSources pid opened,
+    ability <- Activatable.abilitiesFor oid opened,
+    elem ActivationRestriction.Type.DuringThrow (ActivatedAbility.restrictions ability)
+  ]
+
+-- | CR 705.1's coin, just flipped and not yet read: the window Goblin Bookie's
+-- "reflip any coin" is activated in, answering whether the coin is to be
+-- flipped again (Parun.Engine.Event.settleCoins does it). The flipper's pick
+-- among the standing activations, throwSettled's `offering` without its static
+-- offers, since no printing offers a reflip but this window's.
+reflipWindow :: Game Result -> PlayerId -> CoinFace.CoinFace -> Game Bool
+reflipWindow runSubgame flipper face = do
+  let landed = ThrowResult.CoinCameUp face
+      offering offers = do
+        standing <- Common.withThrowing landed (State.gets (\gs -> filter (\(payer, _, (oid, ability)) -> Activatable.activatable payer oid ability gs) offers))
+        picked <- Dice.pickModifier flipper standing
+        case picked of
+          Nothing -> pure False
+          Just ((payer, _, (oid, ability)), rest) -> do
+            gs <- State.get
+            answer <- Game.choose (Prompt.Rethrow (Decide.deciderFor payer gs) payer landed (Just (ActivatedAbility.cost ability)))
+            case answer of
+              OptionalDecision.Declines -> offering rest
+              OptionalDecision.Exercises -> do
+                requested <- Common.withThrowing landed $ do
+                  activated <- activateWhileRolling runSubgame payer oid ability
+                  after <- State.get
+                  pure (activated && GameState.rethrowRequested after)
+                if requested then pure True else offering rest
+  offers <- State.gets (fmap (\(pid, oid, ability) -> (pid, Just oid, (oid, ability))) . windowAbilities)
+  offering offers
+
+-- Activate an ability inside throwDice's or reflipWindow's window and resolve
+-- it at once, answering whether it was paid for. The payment is Parun.Engine.Activate's
 -- activateAbility without the stack object: CR 602.2b's cost, with CR 601.2f's
 -- adjustments, charged against the activator's own mana window. Parun.CardSpec
 -- keeps these abilities to one untargeted mode and no X, so there is no mode,

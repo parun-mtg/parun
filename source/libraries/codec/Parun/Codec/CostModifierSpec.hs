@@ -16,6 +16,7 @@ import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -40,12 +41,12 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
           (CostSubject.Activations (ActivationCriteria.MkActivationCriteria Nothing (Just AbilityKind.NonManaAbility) Nothing Nothing))
           (Filter.HasCardType CardType.Creature)
           (Just Filter.IsSource)
-          (Just (Filter.HasCardType CardType.Creature))
+          (Just (PerTarget.MkPerTarget (Filter.HasCardType CardType.Creature) Nothing))
           (Just (Quantity.CommanderCasts (PlayerRef.Relative PlayerRelation.You)))
           (Just (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
           (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 1 False))
       )
-      " {\"subject\":{\"type\":\"Activations\",\"value\":{\"whichKind\":\"NonManaAbility\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whichTargets\":{\"type\":\"IsSource\"},\"perTarget\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"perEach\":{\"type\":\"CommanderCasts\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"onlyFirst\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}],\"atLeast\":1}}} "
+      " {\"subject\":{\"type\":\"Activations\",\"value\":{\"whichKind\":\"NonManaAbility\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whichTargets\":{\"type\":\"IsSource\"},\"perTarget\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"perEach\":{\"type\":\"CommanderCasts\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"onlyFirst\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}],\"atLeast\":1}}} "
   -- Shadow in the Warp's first creature spell.
   Spec.it s "a spell reduction for the first each turn" $
     Common.assertCodec

@@ -102,7 +102,7 @@ encode p answer = case p of
   Prompt.ReferenceCards {} -> Response.ReferenceCardNames answer
   Prompt.ReferenceNames _ -> Response.ReferenceCardNames answer
   Prompt.ChooseDieResult {} -> Response.ChoseDieResult answer
-  Prompt.RerollDie {} -> Response.ChoseReroll answer
+  Prompt.Rethrow {} -> Response.ChoseRethrow answer
   Prompt.AdjustDieRoll {} -> Response.ChoseRollAdjustment answer
   Prompt.ChooseRollModifier {} -> Response.ChoseRollModifier answer
   Prompt.FlipCoin -> Response.FlippedCoin answer
@@ -110,6 +110,7 @@ encode p answer = case p of
   Prompt.ChooseCoinResult {} -> Response.ChoseCoinResult answer
   Prompt.ChooseAction {} -> Response.ChoseAction answer
   Prompt.Concede _ -> Response.Conceded answer
+  Prompt.ChooseTurnMarker {} -> Response.ChoseTurnMarker answer
   Prompt.ChooseDiscard {} -> Response.ChoseDiscard answer
   Prompt.ChooseScry {} -> Response.ChoseScry answer
   Prompt.ChooseSurveil {} -> Response.ChoseSurveil answer
@@ -315,8 +316,8 @@ decode p response = case p of
   Prompt.ChooseDieResult {} -> case response of
     Response.ChoseDieResult n -> Just n
     _ -> Nothing
-  Prompt.RerollDie {} -> case response of
-    Response.ChoseReroll d -> Just d
+  Prompt.Rethrow {} -> case response of
+    Response.ChoseRethrow d -> Just d
     _ -> Nothing
   Prompt.AdjustDieRoll {} -> case response of
     Response.ChoseRollAdjustment d -> Just d
@@ -338,6 +339,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.Concede _ -> case response of
     Response.Conceded concession -> Just concession
+    _ -> Nothing
+  Prompt.ChooseTurnMarker {} -> case response of
+    Response.ChoseTurnMarker marker -> Just marker
     _ -> Nothing
   Prompt.ChooseDiscard {} -> case response of
     Response.ChoseDiscard ids -> Just ids
@@ -866,7 +870,7 @@ defaultAnswer p = case p of
   -- CR 706.2a's "may": declining leaves the natural result standing, which is
   -- the answer that throws no further die -- Prompt.ChooseExplore's posture
   -- below and for its reason.
-  Prompt.RerollDie {} -> OptionalDecision.Declines
+  Prompt.Rethrow {} -> OptionalDecision.Declines
   -- The same "may", and the same answer: declining leaves the result standing.
   Prompt.AdjustDieRoll {} -> Nothing
   -- CR 706.2b: every candidate is one the roller may apply; the first.
@@ -895,6 +899,8 @@ defaultAnswer p = case p of
   -- win to the other player, so a transcript whose Concede answer is lost
   -- replays to the OTHER winner. That is why 'replay' reports the desync.
   Prompt.Concede _ -> Concession.Continues
+  -- CR 807.5b: the stack the scheduler reached, offered first.
+  Prompt.ChooseTurnMarker _ _ markers -> NonEmpty.head markers
   Prompt.ChooseDiscard _ _ ids n -> List.genericTake n ids
   -- CR 701.22a: "any number" includes none, so leaving every looked-at card on
   -- top in the order it was already in is legal -- and it is the one answer that
@@ -1064,7 +1070,7 @@ defaultAnswer p = case p of
   -- and the fewest it lets them bring is the least eventful answer; where that
   -- asks for more copies than the distinct offers name, Event.bringInto tops the
   -- answer up.
-  Prompt.ChooseFromOutsideTheGame _ _ candidates atLeast _ -> List.genericTake atLeast (NonEmpty.toList candidates)
+  Prompt.ChooseFromOutsideTheGame _ _ candidates atLeast _ -> List.genericTake atLeast (fmap fst (NonEmpty.toList candidates))
   -- CR 309.5a: the prompt is only raised where two or more arrows leave the
   -- room, and every one of them is a room the marker may move into.
   Prompt.ChooseRoom _ _ _ candidates -> NonEmpty.head candidates
@@ -1097,7 +1103,7 @@ defaultAnswer p = case p of
   -- asks again. All power onto the first recipient of the first gate -- a
   -- blocker, else the attacked planeswalker or battle, else the player --
   -- totals power and clears CR 702.19b-c's gates by never spilling past one.
-  Prompt.AssignCombatDamage _ _ _ thresholds n ->
+  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
     let gate r = case r of
           Recipient.ToCreature _ -> 0 :: Int
           Recipient.ToPlaneswalker _ -> 1
@@ -1295,7 +1301,7 @@ defaultAnswer p = case p of
   -- (CR 202.3), so dragging every one in can only raise the total, and the whole
   -- graveyard is a legal answer whenever the cost is payable at all. A
   -- deterministic fallback, not a recommendation.
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList candidates
+  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   -- CR 608.2d: the head of the offer, ChooseCardInGraveyard's fallback. Every
   -- candidate was pre-filtered by the engine, so the head is a legal answer. A
   -- deterministic fallback, not a recommendation.
@@ -1306,7 +1312,7 @@ defaultAnswer p = case p of
   -- -- in which case the payment goes Unpaid, which `Cost.pay` turns into a
   -- complete no-op rather than an illegal state. A deterministic fallback, not a
   -- recommendation.
-  Prompt.ChooseTapsForTotalPower _ _ _ candidates _ -> Set.fromList candidates
+  Prompt.ChooseTapsForTotalPower _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   -- The first `count` candidates, ChooseSacrifices' fallback: the count is exact
   -- here, so the maximal subset the arm above takes would be rejected outright
   -- wherever there are more candidates than the cost wants.

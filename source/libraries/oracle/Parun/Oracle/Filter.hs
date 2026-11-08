@@ -65,6 +65,9 @@ data Joining
     -- "two artifacts and/or creatures" (Adaptive Gemguard), where one object
     -- may be both.
     Inclusive
+  | -- | "each creature and planeswalker your opponents control" (Fulminous
+    -- Forte): singular nouns joined with "and", qualified in the plural.
+    Conjoined
   deriving (Eq, Show)
 
 -- | 'phrase', joining a disjunction's nouns as given.
@@ -180,17 +183,13 @@ cardTypeOf f = case f of
   Filter.HasCardType t -> Just t
   _ -> Nothing
 
--- | A disjunction of every permanent type as CR 110.4a names it, "permanent",
--- and of every one but one as "nonland permanent".
+-- | A disjunction of every permanent type as CR 110.4a names it,
+-- "permanent". All but land is not "nonland permanent": it admits an
+-- artifact land, so "nonland" conjoins @Not (HasCardType Land)@.
 permanentCard :: Set.Set CardType.CardType -> Maybe Phrase
-permanentCard ts =
-  let permanents = Set.fromList [CardType.Artifact, CardType.Battle, CardType.Creature, CardType.Enchantment, CardType.Land, CardType.Planeswalker]
-      thing = noun (Text.pack "permanent") (Just (Text.pack "permanents"))
-   in case Set.toList (Set.difference permanents ts) of
-        _ | not (Set.isSubsetOf ts permanents) -> Nothing
-        [] -> Just thing
-        [t] -> Just (merge (adjective (Text.pack "non" <> cardType Singular t)) thing)
-        _ -> Nothing
+permanentCard ts
+  | ts == Set.fromList [CardType.Artifact, CardType.Battle, CardType.Creature, CardType.Enchantment, CardType.Land, CardType.Planeswalker] = Just (noun (Text.pack "permanent") (Just (Text.pack "permanents")))
+  | otherwise = Nothing
 
 -- | Disjoined phrases: adjectives alone join into one ("attacking or
 -- blocking"), colours "and/or" in the plural, since one object may have both
@@ -198,7 +197,7 @@ permanentCard ts =
 -- into one noun ("artifact or enchantment"), whose plural Oracle text writes
 -- with "and" ("all creatures and lands", Devastation) where the nouns are
 -- bare, and not at all otherwise; 'Inclusive' joins both numbers with
--- "and/or".
+-- "and/or", 'Conjoined' with "and".
 disjunction :: Joining -> [Phrase] -> [Phrase]
 disjunction joining ps
   | length ps < 2 = []
@@ -215,6 +214,7 @@ disjunction joining ps
       let (one', many') = case joining of
             Plain -> ("or", "and")
             Inclusive -> ("and/or", "and/or")
+            Conjoined -> ("and", "and")
       singulars <- traverse (describe Singular (MkNoun Text.empty Nothing)) ps
       let bare p = null (adjectives p) && null (qualifiers p)
           plurals = traverse (Maybe.listToMaybe . describe Plural (MkNoun Text.empty Nothing)) ps

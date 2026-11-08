@@ -307,7 +307,7 @@ ownQuantities effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> Maybe.maybeToList quantity
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -1212,7 +1212,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.CantBecomeMonarch -> False
-  PlayerEffect.LegendRuleDoesntApply -> False
+  PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.AdditionalTriggers _ -> False
@@ -1246,6 +1246,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.LoyaltyGrant _ -> False
   PlayerEffect.MayTapForMana _ -> False
   PlayerEffect.CantBeCountered _ -> False
+  PlayerEffect.NextSpell _ -> False
   PlayerEffect.RestrictTargeting _ -> False
   PlayerEffect.TargetPastHexproof _ -> False
   PlayerEffect.CantCastMatching _ -> False
@@ -1297,7 +1298,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.CantBecomeMonarch -> False
-  PlayerEffect.LegendRuleDoesntApply -> False
+  PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
   PlayerEffect.AdditionalTriggers _ -> False
@@ -1327,6 +1328,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.LoyaltyGrant _ -> False
   PlayerEffect.MayTapForMana _ -> False
   PlayerEffect.CantBeCountered _ -> False
+  PlayerEffect.NextSpell _ -> False
   PlayerEffect.RestrictTargeting _ -> False
   PlayerEffect.TargetPastHexproof _ -> False
   PlayerEffect.CantCastMatching _ -> False
@@ -1548,7 +1550,7 @@ effectObjectRefs effect =
         Effect.Search {} -> []
         Effect.ExileAllGraveyards -> []
         Effect.Proliferate -> []
-        Effect.Reroll -> []
+        Effect.Rethrow -> []
         Effect.RerollStoredResults _ -> []
         Effect.ChooseCardName {} -> []
         Effect.ChooseQuality _ -> []

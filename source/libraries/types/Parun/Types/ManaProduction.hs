@@ -66,4 +66,8 @@ data ManaProduction
   | -- | CR 106.12a: a type the permanent this ability saw tapped for mana
     -- produced (Binding.manaSource), Mana Flare's "any type that land produced".
     ProducedByTapped
+  | -- | CR 903.4 / 702.124c: one mana of a colour in the producing player's
+    -- commanders' combined colour identity (Command Tower); none without a
+    -- commander (CR 903.4f).
+    InCommanderIdentity
   deriving (Eq, Ord, Show)

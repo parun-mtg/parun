@@ -172,6 +172,7 @@ import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.FullText as FullText
@@ -220,6 +221,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -546,10 +548,11 @@ rewritePlayerEffect pairs effect = case effect of
           CostChange.Add (CostAddition.MkCostAddition components scale) -> CostChange.Add (CostAddition.MkCostAddition (fmap (Filter.rewriteComponent pairs) components) (rewriteCostScale pairs scale))
           CostChange.Increase _ -> change
           CostChange.Reduce _ -> change
-     in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (Filter.rewrite pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
+     in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (rewritePerTarget pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
   -- No filter to rewrite: a rule-702 designator is not a word CR 612.1 swaps.
   PlayerEffect.AlternativeActivationCost _ -> effect
   PlayerEffect.CastAsThoughItHadFlash f -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f)
+  PlayerEffect.NextSpell f -> PlayerEffect.NextSpell (Filter.rewrite pairs f)
   PlayerEffect.MayPlayAsThoughItHadFlash f -> PlayerEffect.MayPlayAsThoughItHadFlash (Filter.rewrite pairs f)
   -- A rule-702 designator is no word CR 612.1 swaps; the two grants' Filters
   -- name the permanent, so they descend as CastAsThoughItHadFlash's does.
@@ -567,7 +570,7 @@ rewritePlayerEffect pairs effect = case effect of
   PlayerEffect.CantPlayLands f -> PlayerEffect.CantPlayLands (Filter.rewrite pairs f)
   PlayerEffect.CastFrom grant -> PlayerEffect.CastFrom grant {CastFromZone.matching = Filter.rewrite pairs (CastFromZone.matching grant), CastFromZone.additionalCosts = fmap (Filter.rewriteComponent pairs) (CastFromZone.additionalCosts grant)}
   PlayerEffect.PlotFrom grant -> PlayerEffect.PlotFrom grant {PlotFromZone.matching = Filter.rewrite pairs (PlotFromZone.matching grant)}
-  PlayerEffect.CastFromHandWithoutPayingManaCost f -> PlayerEffect.CastFromHandWithoutPayingManaCost (Filter.rewrite pairs f)
+  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> PlayerEffect.CastFromHandWithoutPayingManaCost grant {FreeCastFromHand.spells = Filter.rewrite pairs (FreeCastFromHand.spells grant), FreeCastFromHand.amount = fmap (rewriteQuantity pairs) (FreeCastFromHand.amount grant)}
   -- CR 702.16a's quality where the CARD states it, so a subtype word in it is a
   -- word on the card and CR 612.1 swaps it; the chosen-name sibling below is the
   -- arm CR 612.2's second sentence keeps a swap off.
@@ -588,7 +591,7 @@ rewritePlayerEffect pairs effect = case effect of
   -- words either.
   PlayerEffect.CantCastSpells -> effect
   -- The designator is no word CR 612.1 swaps; the source Filter descends.
-  PlayerEffect.CantActivateAbilities designator f -> PlayerEffect.CantActivateAbilities designator (Filter.rewrite pairs f)
+  PlayerEffect.CantActivateAbilities designator f kind -> PlayerEffect.CantActivateAbilities designator (Filter.rewrite pairs f) kind
   PlayerEffect.CantCastMoreThan _ -> effect
   PlayerEffect.PlayAdditionalLands _ -> effect
   PlayerEffect.NoMaximumHandSize -> effect
@@ -601,7 +604,7 @@ rewritePlayerEffect pairs effect = case effect of
   PlayerEffect.CantBeTargetedBy scope quality -> PlayerEffect.CantBeTargetedBy scope (fmap (Filter.rewrite pairs) quality)
   PlayerEffect.CantSearchLibraries _ -> effect
   PlayerEffect.CantBecomeMonarch -> effect
-  PlayerEffect.LegendRuleDoesntApply -> effect
+  PlayerEffect.StateBasedActionDoesntApply _ -> effect
   PlayerEffect.CantSetSchemesInMotion -> effect
   PlayerEffect.EntriesTrigger e -> PlayerEffect.EntriesTrigger e {EntriesTrigger.entrants = Filter.rewrite pairs (EntriesTrigger.entrants e)}
   PlayerEffect.AdditionalTriggers bearers -> PlayerEffect.AdditionalTriggers (Filter.rewrite pairs bearers)
@@ -654,6 +657,7 @@ rewriteManaProduction pairs production = case production of
   ManaProduction.CouldProduce could -> ManaProduction.CouldProduce could {CouldProduce.among = Filter.rewrite pairs (CouldProduce.among could)}
   ManaProduction.Pooled _ -> production
   ManaProduction.ProducedByTapped -> production
+  ManaProduction.InCommanderIdentity -> production
 
 -- CR 612's word swap over an effect's AST. Cases on an effect's
 -- STRUCTURE -- does this arm carry a word a swap could reach -- never on which
@@ -697,7 +701,7 @@ rewriteEffect pairs effect = case effect of
   Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination subject slot handSlot differentIn exactly andOr) -> Effect.Search (Search.MkSearch searcher owner zones outside (fmap (rewriteQuantity pairs) quantity) (Filter.rewrite pairs filter_) (fmap (Filter.rewrite pairs) descriptions) upTo destination subject slot handSlot differentIn exactly andOr)
   Effect.ExileAllGraveyards -> effect
   Effect.Proliferate -> effect
-  Effect.Reroll -> effect
+  Effect.Rethrow -> effect
   Effect.RerollStoredResults _ -> effect
   -- CR 612.1: rule 201.4a's restriction is printed card text, so a text-changer
   -- rewrites it exactly as it rewrites a search's filter above.
@@ -2010,6 +2014,7 @@ rewriteEntryRewrite pairs rewrite = case rewrite of
   -- so CR 400.7a carries no text change onto it before it enters.
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> rewrite
   EntryRewrite.OrTapped (EntryPrice.Reveal f) -> EntryRewrite.OrTapped (EntryPrice.Reveal (Filter.rewrite pairs f))
+  EntryRewrite.OrTapped (EntryPrice.Behold f) -> EntryRewrite.OrTapped (EntryPrice.Behold (Filter.rewrite pairs f))
   EntryRewrite.EntersTransformed -> rewrite
   -- CR 614.1c's "as this enters, [do something]", the payload shared with an
   -- ability's clauses.
@@ -2264,7 +2269,7 @@ rewriteAttackTrigger pairs trigger = case trigger of
           )
           ( case company of
               AttackCompany.AnyCompany -> company
-              AttackCompany.Alone -> company
+              AttackCompany.Alone {} -> company
               AttackCompany.WithAnother f -> AttackCompany.WithAnother (Filter.rewrite pairs f)
           )
           frequency
@@ -2325,7 +2330,7 @@ rewriteRestriction pairs restriction = case restriction of
   ActivationRestriction.BeforeStep _ -> restriction
   ActivationRestriction.OnlyOnce -> restriction
   ActivationRestriction.TimesEachTurn _ -> restriction
-  ActivationRestriction.DuringDieRoll -> restriction
+  ActivationRestriction.DuringThrow -> restriction
   ActivationRestriction.InstantSpeed -> restriction
   ActivationRestriction.SpendOnly specified -> ActivationRestriction.SpendOnly (rewriteManaSpecification pairs specified)
 
@@ -2372,6 +2377,8 @@ rewriteDuration pairs duration = case duration of
   Duration.UntilEvent DurationEvent.Planeswalked -> duration
   Duration.UntilEvent DurationEvent.SourceExiledCard -> duration
   Duration.UntilEvent DurationEvent.SourceLeftBattlefield -> duration
+  Duration.UntilEvent (DurationEvent.BoundCardCast _) -> duration
+  Duration.UntilEvent (DurationEvent.CardCast _) -> duration
   Duration.UntilEvent (DurationEvent.SpellCast criterion) -> Duration.UntilEvent (DurationEvent.SpellCast (Filter.rewrite pairs criterion))
 
 -- CR 612.1 through the counters a CR 122.5 move carries: the count, and the
@@ -2412,6 +2419,11 @@ rewritePlacement pairs placement = case placement of
   LibraryPlacement.ArrangedBy _ -> placement
   LibraryPlacement.Beneath quantity -> LibraryPlacement.Beneath (rewriteQuantity pairs quantity)
   LibraryPlacement.BeneathOrBottom quantity -> LibraryPlacement.BeneathOrBottom (rewriteQuantity pairs quantity)
+
+-- A per-target cost change's filter and count, each descended as
+-- rewriteEffect descends its own (CR 612.1).
+rewritePerTarget :: [(TextWord.TextWord, TextWord.TextWord)] -> PerTarget.PerTarget -> PerTarget.PerTarget
+rewritePerTarget pairs (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTarget (Filter.rewrite pairs matching) (fmap (rewriteQuantity pairs) each)
 
 rewriteQuantity :: [(TextWord.TextWord, TextWord.TextWord)] -> Quantity.Type.Quantity -> Quantity.Type.Quantity
 rewriteQuantity pairs quantity = case quantity of

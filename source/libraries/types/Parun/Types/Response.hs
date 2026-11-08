@@ -166,7 +166,7 @@ data Response
     ChoseExplore OptionalDecision.OptionalDecision
   | -- | CR 706.2b: whether the seat CR 109.5's "you" names on the modifier took
     -- a reroll it offered (Clam-I-Am, Wall of Fortune).
-    ChoseReroll OptionalDecision.OptionalDecision
+    ChoseRethrow OptionalDecision.OptionalDecision
   | -- | CR 706.2b: the die an increase-or-decrease modifier was taken on and
     -- its direction, or Nothing for declining it (Night Shift of the Living
     -- Dead).
@@ -625,6 +625,9 @@ data Response
     -- replaying a transcript against the wrong one would reorder a payment
     -- instead of the two cards.
     OrderedComponentCards [Natural.Natural]
+  | -- | CR 807.5b: the turn marker whose stack a player with priority for
+    -- several chose to act on.
+    ChoseTurnMarker Natural.Natural
   | -- | CR 123.5c: the index of the object the owner chose to keep the stickers.
     ChoseStickerKeeper Natural.Natural
   | -- | CR 608.2f: the relative order a resolving spell's controller chose for the

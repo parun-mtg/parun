@@ -75,7 +75,7 @@
           "player": "alice",
           "is": [
             "Pass",
-            "TurnFaceUp $gift Morph"
+            "TurnFaceUp $gift"
           ]
         }
       }
@@ -86,7 +86,7 @@
       "player": "alice",
       "do": {
         "Take": {
-          "action": "TurnFaceUp $gift Morph"
+          "action": "TurnFaceUp $gift"
         }
       }
     },

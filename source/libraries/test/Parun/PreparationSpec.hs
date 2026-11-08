@@ -281,7 +281,7 @@ spec s registry = Spec.describe s "Preparation" $ do
     holders <- mapM (S.cardOf s registry) ["Blossom-Blessed Angel", "Emergency Phytomedic"]
     Spec.assertBool s (all (Maybe.isJust . Card.faceNamed seedSuture) holders) "both pool cards hold Seed Suture"
     listed <- DeckList.parse registry (Text.pack "1 Seed Suture\n")
-    Spec.assertEqWith s "CR 723.4: a deck list naming it finds no card" (fmap (either Just (const Nothing)) listed) (Right (Just [DeckList.NoSuchCard 1 seedSuture]))
+    Spec.assertEqWith s "CR 723.4: a deck list naming it finds no card" (fmap (either Just (const Nothing) . DeckList.sound) listed) (Right (Just [DeckList.NoSuchCard 1 seedSuture]))
     chosen <- Interpreter.chosenFace registry seedSuture
     Spec.assertEqWith s "CR 723.5: the name answers to a Seed Suture face" (fmap (fmap Face.name) chosen) (Right (Just seedSuture))
   where

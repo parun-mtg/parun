@@ -41,6 +41,7 @@ import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CrewRestriction as CrewRestriction
+import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.DungeonRoom as DungeonRoom
 import qualified Parun.Types.Effect as Effect
@@ -145,6 +146,10 @@ data Face card = MkFace
     -- claimsStartingPlayer's reason: its reader (Parun.Engine.Ante.barred) runs
     -- on a card outside the game, where no object exists.
     anteOnly :: Bool,
+    -- | CR 100.2a: how many cards of this name a deck may hold, where the card
+    -- prints "A deck can have ...", or Nothing. A printed field for anteOnly's
+    -- reason: its reader (Parun.Legality) checks a deck before any game.
+    deckLimit :: Maybe DeckLimit.DeckLimit,
     -- | CR 702, counted. A card can print the same keyword twice -- Apex
     -- Devastator's "Cascade, cascade, cascade, cascade" -- and CR 702.85c makes
     -- each instance trigger separately, so the count is printed text rather than

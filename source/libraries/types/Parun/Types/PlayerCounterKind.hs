@@ -29,13 +29,13 @@ data PlayerCounterKind
     -- exactly as it reads Poison for CR 704.5c.
     Rad
   | -- | CR 122.1's bare first sentence and nothing else. The word "experience"
-    -- does not appear in docs/rules.txt, and that ABSENCE is the citation: every
-    -- other player counter is named by a rule that attaches behaviour to it, so
-    -- since nothing in the rules reads an experience counter the closed half must
-    -- not either. A pure vocabulary constructor, only ever counted by a card's
-    -- own text -- Meren of Clan Nel Toth hands one out and Ezuri, Claw of
-    -- Progress counts them, both through the same Effect and Quantity arms every
-    -- other kind uses.
+    -- does not appear in data/comprehensive-rules.txt, and that ABSENCE is the
+    -- citation: every other player counter is named by a rule that attaches
+    -- behaviour to it, so since nothing in the rules reads an experience
+    -- counter the closed half must not either. A pure vocabulary constructor,
+    -- only ever counted by a card's own text -- Meren of Clan Nel Toth hands
+    -- one out and Ezuri, Claw of Progress counts them, both through the same
+    -- Effect and Quantity arms every other kind uses.
     --
     -- After the rule-numbered kinds, having no rule number to sort by.
     Experience

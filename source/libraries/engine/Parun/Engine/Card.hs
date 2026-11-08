@@ -127,6 +127,7 @@ faceDownFace listed =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.fromSet (const 1) (FaceDownCharacteristics.keywords listed),
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,
@@ -449,10 +450,11 @@ merge2 l r =
    in l
         { -- CR 709.4a gives the card BOTH names and no joined one, and a single
           -- CardName cannot carry that: this field is a RENDERING of the two, in
-          -- the form docs/rules.txt's own Examples write, unspaced -- "Fire//Ice"
-          -- (lines 3890, 5765) and "Assault//Battery" (line 5764). What the object
-          -- has for rules purposes is combinedNames above, which every name
-          -- question goes through (Parun.Engine.Projection.hasName).
+          -- the form data/comprehensive-rules.txt's own Examples write,
+          -- unspaced -- "Fire//Ice" (lines 3890, 5765) and "Assault//Battery"
+          -- (line 5764). What the object has for rules purposes is
+          -- combinedNames above, which every name question goes through
+          -- (Parun.Engine.Projection.hasName).
           Face.name = CardName.join (Face.name l NonEmpty.:| [Face.name r]),
           -- CR 709.4b: "the combined mana costs of its two halves", from which
           -- colours and mana value fall out with no further arm.

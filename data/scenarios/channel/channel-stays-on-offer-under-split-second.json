@@ -140,7 +140,7 @@
           "player": "alice",
           "is": [
             "Pass",
-            "PayLifeForMana 1 Colorless"
+            "PayLifeForMana"
           ]
         }
       }
@@ -151,7 +151,7 @@
       "player": "alice",
       "do": {
         "Take": {
-          "action": "PayLifeForMana 1 Colorless"
+          "action": "PayLifeForMana"
         }
       }
     },

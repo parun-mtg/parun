@@ -345,7 +345,7 @@ assignmentLog ::
   Prompt.Prompt r ->
   State.State [Map.Map Recipient.Recipient Natural] r
 assignmentLog answer p = case p of
-  Prompt.AssignCombatDamage _ _ _ thresholds _ -> do
+  Prompt.AssignCombatDamage _ _ _ thresholds _ _ -> do
     State.modify' (\seen -> seen <> [thresholds])
     pure answer
   _ -> pure (attackThePlaneswalker p)
@@ -355,14 +355,17 @@ assignmentLog answer p = case p of
 -- legal one would find another after the engine's check moved, and the case would
 -- stay green while proving nothing. An unlisted creature is answered with the
 -- empty division, which never totals its power and so assigns nothing.
+-- `recorded` picks what is logged of each offer's thresholds and paid map:
+-- `const` for the thresholds.
 pinnedAssignments ::
+  (Map.Map Recipient.Recipient Natural -> Map.Map Recipient.Recipient Natural -> Map.Map Recipient.Recipient Natural) ->
   (forall a. Prompt.Prompt a -> a) ->
   [(ObjectId.ObjectId, Map.Map Recipient.Recipient Natural)] ->
   Prompt.Prompt r ->
   State.State [Map.Map Recipient.Recipient Natural] r
-pinnedAssignments base answers p = case p of
-  Prompt.AssignCombatDamage _ _ source thresholds _ -> do
-    State.modify' (\seen -> seen <> [thresholds])
+pinnedAssignments recorded base answers p = case p of
+  Prompt.AssignCombatDamage _ _ source thresholds paid _ -> do
+    State.modify' (\seen -> seen <> [recorded thresholds paid])
     pure (Maybe.fromMaybe Map.empty (List.lookup source answers))
   _ -> pure (base p)
 
@@ -461,8 +464,8 @@ trampleOverPlaneswalkersSpec s registry = Spec.describe s "TrampleOverPlaneswalk
         pikerAtBob p = case p of
           Prompt.ChooseAttackTarget _ _ oid options | oid == pikerId -> NonEmpty.head options
           _ -> attackThePlaneswalker p
-        (shared, sharedOffer) = runCombatLogging (pinnedAssignments attackThePlaneswalker [(thrastaId, answer)]) gs
-        (alone, aloneOffer) = runCombatLogging (pinnedAssignments pikerAtBob [(thrastaId, answer)]) gs
+        (shared, sharedOffer) = runCombatLogging (pinnedAssignments const attackThePlaneswalker [(thrastaId, answer)]) gs
+        (alone, aloneOffer) = runCombatLogging (pinnedAssignments const pikerAtBob [(thrastaId, answer)]) gs
     Spec.assertEqWith s "CR 702.19c: Jace is offered at his LOYALTY either way" sharedOffer offer
     Spec.assertEqWith s "CR 510.1e: with the Piker elsewhere, the same offer is asked again" aloneOffer (offer <> offer)
     Spec.assertEqWith s "the Piker's 2 plus Thrasta's 1 is Jace's whole loyalty, so 6 reaches bob" (S.lifeOf S.bob shared) (Just 14)
@@ -490,7 +493,7 @@ trampleOverPlaneswalkersSpec s registry = Spec.describe s "TrampleOverPlaneswalk
     let (gs, mine, jaceId) = jaceBoard jace [rats, thrasta]
         thrastaId = case mine of [_, t] -> t; _ -> S.noSource
         answer = Map.fromList [(Recipient.ToPlaneswalker jaceId, 1), (Recipient.ToPlayer S.bob, 6)]
-        (after, offered) = runCombatLogging (pinnedAssignments attackThePlaneswalker [(thrastaId, answer)]) gs
+        (after, offered) = runCombatLogging (pinnedAssignments const attackThePlaneswalker [(thrastaId, answer)]) gs
     Spec.assertEqWith s "Jace is offered at his loyalty, and asked again (CR 510.1e)" offered (replicate 2 (Map.fromList [(Recipient.ToPlaneswalker jaceId, 3), (Recipient.ToPlayer S.bob, 0)]))
     Spec.assertEqWith s "the Rats' deathtouch 1 counts as 1, so Thrasta's division is rejected" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "CR 306.8: only the Rats' 1 came off Jace" (S.counterOf CounterKind.Loyalty jaceId after) 2
@@ -559,8 +562,12 @@ trampleOverPlaneswalkersSpec s registry = Spec.describe s "TrampleOverPlaneswalk
 -- Two cases, for the rule's two consumers: the CHECK on a division (below) and
 -- the elision that decides whether a division is asked for at all (after it).
 blockingAll :: [ObjectId.ObjectId] -> Prompt.Prompt a -> a
-blockingAll attackers p = case p of
-  Prompt.DeclareBlockers _ _ blockers _ -> Map.fromList (fmap (\b -> (b, Set.fromList attackers)) blockers)
+blockingAll attackers = blockingAs (const (Set.fromList attackers))
+
+-- Each blocker blocking the attackers `blocks` names for it.
+blockingAs :: (ObjectId.ObjectId -> Set.Set ObjectId.ObjectId) -> Prompt.Prompt a -> a
+blockingAs blocks p = case p of
+  Prompt.DeclareBlockers _ _ blockers _ -> Map.fromList (fmap (\b -> (b, blocks b)) blockers)
   _ -> S.aggressiveAnswer p
 
 sharedBlockerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -587,8 +594,8 @@ sharedBlockerSpec s registry = Spec.describe s "SharedBlocker" $ do
             -- blocks. Pinned onto the Wurm so the board says which.
             (guardId, Map.singleton (Recipient.ToCreature wurmId) 1)
           ]
-        (both, bothOffered) = runCombatLogging (pinnedAssignments (blockingAll [wurmId, thrastaId]) answers) gs
-        (one, oneOffered) = runCombatLogging (pinnedAssignments (blockingAll [wurmId]) answers) gs
+        (both, bothOffered) = runCombatLogging (pinnedAssignments const (blockingAll [wurmId, thrastaId]) answers) gs
+        (one, oneOffered) = runCombatLogging (pinnedAssignments const (blockingAll [wurmId]) answers) gs
     Spec.assertEqWith
       s
       "CR 702.19b: each trampler is offered the Guard's WHOLE bar, and the defending player behind it"
@@ -632,8 +639,8 @@ sharedBlockerSpec s registry = Spec.describe s "SharedBlocker" $ do
             (wurmId, Map.fromList [(Recipient.ToCreature guardId, 4), (Recipient.ToPlayer S.bob, 5)]),
             (guardId, Map.singleton (Recipient.ToCreature wurmId) 1)
           ]
-        (both, bothOffered) = runCombatLogging (pinnedAssignments (blockingAll [maulersId, wurmId]) answers) gs
-        (alone, aloneOffered) = runCombatLogging (pinnedAssignments (blockingAll [maulersId]) answers) gs
+        (both, bothOffered) = runCombatLogging (pinnedAssignments const (blockingAll [maulersId, wurmId]) answers) gs
+        (alone, aloneOffered) = runCombatLogging (pinnedAssignments const (blockingAll [maulersId]) answers) gs
     Spec.assertEqWith
       s
       "the Maulers are asked to divide, and offered the same bar the Wurm is"
@@ -699,10 +706,10 @@ sharedBlockerSpec s registry = Spec.describe s "SharedBlocker" $ do
             Map.fromList [(Recipient.ToCreature firstId, 0), (Recipient.ToCreature wurmId, 0)]
           ]
         (withDeathtouch, deadlyOffered) =
-          runCombatLogging (pinnedAssignments (blockingAll [ratsId, deadlyWurm]) (spillItAll deadlyWurm deadlyGuard)) deadly
+          runCombatLogging (pinnedAssignments const (blockingAll [ratsId, deadlyWurm]) (spillItAll deadlyWurm deadlyGuard)) deadly
         (without, plainOffered) =
-          runCombatLogging (pinnedAssignments (blockingAll [elvesId, plainWurm]) (spillItAll plainWurm plainGuard)) plain
-        (paid, _) = runCombatLogging (pinnedAssignments (blockingAll [elvesId, plainWurm]) payTheBar) plain
+          runCombatLogging (pinnedAssignments const (blockingAll [elvesId, plainWurm]) (spillItAll plainWurm plainGuard)) plain
+        (paid, _) = runCombatLogging (pinnedAssignments const (blockingAll [elvesId, plainWurm]) payTheBar) plain
     -- The OFFER is unchanged: a threshold is the blocker's own toughness-minus-
     -- marked bar (Damage.lethalFrom), and CR 702.2c reaches the CHECK, which
     -- is not settled until the whole step is announced.
@@ -728,6 +735,30 @@ sharedBlockerSpec s registry = Spec.describe s "SharedBlocker" $ do
     -- The same board paying that 3: the most that can reach bob without deathtouch.
     Spec.assertEqWith s "paying the bar by the numbers costs the Wurm exactly 3" (S.lifeOf S.bob paid) (Just 14)
     Spec.assertBool s (not (Set.member plainGuard (GameState.battlefield paid))) "CR 704.5g: 1 + 3 is the Guard's whole toughness"
+  -- CR 510.1e asks an illegal division again with the step's other
+  -- announcements standing, a later one included. Panglacial Wurm (9/5 trample)
+  -- and Llanowar Elves (1/1) attack; Palace Guard blocks both, Shield Bearer
+  -- (banding) the Wurm, so bob divides the Wurm's damage (CR 702.22j) and alice
+  -- the Elves' forced 1 onto the Guard, announced after the Wurm's. bob's empty
+  -- division is no division and is asked again, now offered the Elves' 1 as paid
+  -- -- and again with the Guard's own division once bob's group has announced.
+  Spec.it s "CR 510.1e an assignment asked again is offered what a later attacker announced" $ do
+    wurm <- S.printingOf s registry "Panglacial Wurm"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    guard <- S.printingOf s registry "Palace Guard"
+    bearer <- S.printingOf s registry "Shield Bearer"
+    let (gs, mine, theirs) = S.combatBoardOf [wurm, elves] [guard, bearer]
+    case (mine, theirs) of
+      ([wurmId, elvesId], [guardId, bearerId]) -> do
+        let blocks b = Set.fromList (if b == bearerId then [wurmId] else [wurmId, elvesId])
+            answers = [(guardId, Map.singleton (Recipient.ToCreature elvesId) 1)]
+            (_, offered) = runCombatLogging (pinnedAssignments (const id) (blockingAs blocks) answers) gs
+        Spec.assertEqWith
+          s
+          "the Wurm is offered nothing paid, then the Elves' 1 on the Guard each time it is asked again"
+          offered
+          [Map.empty, Map.singleton (Recipient.ToCreature guardId) 1, Map.empty, Map.singleton (Recipient.ToCreature guardId) 1, Map.empty]
+      _ -> Spec.assertFailure s "fixture should have two attackers and two blockers"
 
 -- Aim a spell's every target slot at one object, whatever Recipient arm names it.
 -- The filter rather than a built Recipient, so the answer is drawn from what the

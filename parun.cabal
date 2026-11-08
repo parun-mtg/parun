@@ -14,8 +14,12 @@ license-file: LICENSE.txt
 data-dir: data
 data-files:
   cards/*.json
+  comprehensive-rules.txt
   decks/**/*.txt
+  formats/*.json
+  legalities.json
   oracle-unrendered.txt
+  printings.json
   scenarios/**/*.json
   sticker-sheets/*.json
 
@@ -168,6 +172,8 @@ library codec
     Parun.Codec.AimedAtSpec
     Parun.Codec.AimedPlayers
     Parun.Codec.AimedPlayersSpec
+    Parun.Codec.AloneAmong
+    Parun.Codec.AloneAmongSpec
     Parun.Codec.AloneUnless
     Parun.Codec.AloneUnlessSpec
     Parun.Codec.AlternativeActivationCost
@@ -632,6 +638,8 @@ library codec
     Parun.Codec.DealtDamageToSpec
     Parun.Codec.Decider
     Parun.Codec.DeciderSpec
+    Parun.Codec.DeckLimit
+    Parun.Codec.DeckLimitSpec
     Parun.Codec.DeclarationTrigger
     Parun.Codec.DeclarationTriggerSpec
     Parun.Codec.DefendersAre
@@ -861,6 +869,10 @@ library codec
     Parun.Codec.ForEachSpec
     Parun.Codec.ForetellCost
     Parun.Codec.ForetellCostSpec
+    Parun.Codec.Format
+    Parun.Codec.FormatSpec
+    Parun.Codec.FreeCastFromHand
+    Parun.Codec.FreeCastFromHandSpec
     Parun.Codec.FromAnywhere
     Parun.Codec.FromAnywhereSpec
     Parun.Codec.FromOutsideTheGame
@@ -961,6 +973,10 @@ library codec
     Parun.Codec.LeavingPermanentSpec
     Parun.Codec.LeftTheGame
     Parun.Codec.LeftTheGameSpec
+    Parun.Codec.Legality
+    Parun.Codec.LegalitySpec
+    Parun.Codec.LegalityTable
+    Parun.Codec.LegalityTableSpec
     Parun.Codec.LentCards
     Parun.Codec.LibraryDeparture
     Parun.Codec.LibraryDepartureSpec
@@ -1222,6 +1238,8 @@ library codec
     Parun.Codec.PermissionPoolSpec
     Parun.Codec.PermissionVerb
     Parun.Codec.PermissionVerbSpec
+    Parun.Codec.PerTarget
+    Parun.Codec.PerTargetSpec
     Parun.Codec.Phase
     Parun.Codec.PhasedOut
     Parun.Codec.PhasedOutSpec
@@ -1327,9 +1345,12 @@ library codec
     Parun.Codec.PrintedReplacement
     Parun.Codec.PrintedReplacementSpec
     Parun.Codec.Printing
+    Parun.Codec.PrintingEntry
     Parun.Codec.PrintingId
     Parun.Codec.PrintingIdSpec
     Parun.Codec.PrintingSpec
+    Parun.Codec.PrintingTable
+    Parun.Codec.PrintingTableSpec
     Parun.Codec.ProductionTag
     Parun.Codec.ProductionTagSpec
     Parun.Codec.Prohibit
@@ -1446,6 +1467,8 @@ library codec
     Parun.Codec.RoundingSpec
     Parun.Codec.RuleAbilities
     Parun.Codec.RuleAbilitiesSpec
+    Parun.Codec.RuleFamily
+    Parun.Codec.RuleFamilySpec
     Parun.Codec.Sacrifice
     Parun.Codec.SacrificeAnyNumber
     Parun.Codec.SacrificeAnyNumberSpec
@@ -1529,6 +1552,8 @@ library codec
     Parun.Codec.SpliceSpec
     Parun.Codec.StackObjectKind
     Parun.Codec.StackObjectKindSpec
+    Parun.Codec.StateBasedAction
+    Parun.Codec.StateBasedActionSpec
     Parun.Codec.StatedFlip
     Parun.Codec.StatedFlipSpec
     Parun.Codec.StaticAbility
@@ -1602,6 +1627,8 @@ library codec
     Parun.Codec.TextWordSpec
     Parun.Codec.TheseDiscard
     Parun.Codec.TheseDiscardSpec
+    Parun.Codec.ThrowResult
+    Parun.Codec.ThrowResultSpec
     Parun.Codec.Timed
     Parun.Codec.TimedSpec
     Parun.Codec.Times
@@ -1841,6 +1868,7 @@ library engine
     Parun.Engine.ManaCount
     Parun.Engine.ManaFilter
     Parun.Engine.ManaRider
+    Parun.Engine.ManaSymbolText
     Parun.Engine.ManifestDread
     Parun.Engine.Mint
     Parun.Engine.Modal
@@ -1989,6 +2017,7 @@ library extra
 library interpreter
   import: library
   build-depends:
+    containers ^>={0.7, 0.8},
     parun:engine,
     parun:exceptions,
     parun:registry,
@@ -2137,6 +2166,7 @@ library mtgish
   import: library
   build-depends:
     containers ^>={0.7, 0.8},
+    parun:engine,
     parun:extra,
     parun:json,
     parun:json-codec,
@@ -2160,6 +2190,7 @@ library play
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
+    directory ^>=1.3.8,
     parun:codec,
     parun:engine,
     parun:exceptions,
@@ -2183,6 +2214,7 @@ library play
     Parun.Play.Client
     Parun.Play.Command
     Parun.Play.Game
+    Parun.Play.Match
     Parun.Play.Protocol
     Parun.Play.Record
     Parun.Play.Render
@@ -2199,6 +2231,7 @@ library registry
     parun:codec,
     parun:engine,
     parun:exceptions,
+    parun:extra,
     parun:json,
     parun:json-codec,
     parun:oracle,
@@ -2214,6 +2247,7 @@ library registry
     Parun.DeckList
     Parun.Decks
     Parun.Ingest
+    Parun.Legality
     Parun.Registry
     Parun.StickerSheets
 
@@ -2243,6 +2277,7 @@ library scenario
   exposed-modules:
     Parun.Scenario
     Parun.Scenario.Load
+    Parun.Scenario.Offer
     Parun.Scenario.Prompt
     Parun.Scenario.Reply
 
@@ -2392,6 +2427,7 @@ library test
     Parun.LearnSpec
     Parun.LeavesTriggerSpec
     Parun.LedgerSpec
+    Parun.LegalitySpec
     Parun.LibraryOrderSpec
     Parun.LifeReplacementSpec
     Parun.LifeTriggerSpec
@@ -2399,6 +2435,7 @@ library test
     Parun.ManaSpec
     Parun.ManaSymbolSpec
     Parun.MassEffectSpec
+    Parun.MatchSpec
     Parun.MeldSpec
     Parun.ModalDoubleFacedSpec
     Parun.ModalSpec
@@ -2521,6 +2558,7 @@ library types
     Parun.Types.Aggregation
     Parun.Types.AimedAt
     Parun.Types.AimedPlayers
+    Parun.Types.AloneAmong
     Parun.Types.AloneUnless
     Parun.Types.AlternativeActivationCost
     Parun.Types.AlternativeCost
@@ -2784,6 +2822,7 @@ library types
     Parun.Types.DealtDamageTo
     Parun.Types.Decider
     Parun.Types.Deck
+    Parun.Types.DeckLimit
     Parun.Types.DeclarationTrigger
     Parun.Types.DefendersAre
     Parun.Types.Defense
@@ -2909,6 +2948,8 @@ library types
     Parun.Types.ForEach
     Parun.Types.ForEachNumber
     Parun.Types.ForetellCost
+    Parun.Types.Format
+    Parun.Types.FreeCastFromHand
     Parun.Types.FromAnywhere
     Parun.Types.FromOutsideTheGame
     Parun.Types.FromReference
@@ -2975,6 +3016,8 @@ library types
     Parun.Types.LeavesZoneTrigger
     Parun.Types.LeavingPermanent
     Parun.Types.LeftTheGame
+    Parun.Types.Legality
+    Parun.Types.LegalityTable
     Parun.Types.LentCards
     Parun.Types.LibraryDeparture
     Parun.Types.LibraryDepth
@@ -3032,6 +3075,7 @@ library types
     Parun.Types.ManaUnit
     Parun.Types.ManaWindow
     Parun.Types.ManifestedDread
+    Parun.Types.MatchOptions
     Parun.Types.Measure
     Parun.Types.Measures
     Parun.Types.Meld
@@ -3127,6 +3171,7 @@ library types
     Parun.Types.PermissionLimit
     Parun.Types.PermissionPool
     Parun.Types.PermissionVerb
+    Parun.Types.PerTarget
     Parun.Types.Phase
     Parun.Types.PhasedOut
     Parun.Types.PhasePattern
@@ -3185,7 +3230,9 @@ library types
     Parun.Types.PreventNextDamage
     Parun.Types.PrintedReplacement
     Parun.Types.Printing
+    Parun.Types.PrintingEntry
     Parun.Types.PrintingId
+    Parun.Types.PrintingTable
     Parun.Types.PriorityWindow
     Parun.Types.ProductionTag
     Parun.Types.Program
@@ -3257,6 +3304,7 @@ library types
     Parun.Types.Rounding
     Parun.Types.RowSource
     Parun.Types.RuleAbilities
+    Parun.Types.RuleFamily
     Parun.Types.Sacrifice
     Parun.Types.SacrificeAnyNumber
     Parun.Types.SacrificeEffect
@@ -3305,6 +3353,7 @@ library types
     Parun.Types.StackObjectKind
     Parun.Types.Staged
     Parun.Types.Start
+    Parun.Types.StateBasedAction
     Parun.Types.StatedFlip
     Parun.Types.StateDigest
     Parun.Types.StaticAbility
@@ -3330,6 +3379,7 @@ library types
     Parun.Types.SuspendCounters
     Parun.Types.TakeExtraTurn
     Parun.Types.Taking
+    Parun.Types.Tally
     Parun.Types.Tap
     Parun.Types.TapForMana
     Parun.Types.TapForTotalPower
@@ -3351,6 +3401,7 @@ library types
     Parun.Types.Threshold
     Parun.Types.Throw
     Parun.Types.ThrowKind
+    Parun.Types.ThrowResult
     Parun.Types.Timed
     Parun.Types.Times
     Parun.Types.Timestamp
@@ -3403,6 +3454,7 @@ library types
     Parun.Types.VentureMarkerEntered
     Parun.Types.View
     Parun.Types.ViewIs
+    Parun.Types.Violation
     Parun.Types.Visibility
     Parun.Types.Vote
     Parun.Types.VoteChoices

@@ -12,8 +12,8 @@
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$asp"]}},
     {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
-    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"View": {"of": "Offered", "player": "bob", "is": ["Pass", "EndEffect $asp", "EndEffect $asp #2", "ActivateManaAbility $forest-1", "ActivateManaAbility $forest-2"]}}},
-    {"turn": 2, "step": "Upkeep", "player": "bob", "do": {"Take": {"action": "EndEffect $asp", "mana": ["$forest-1", null]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"View": {"of": "Offered", "player": "bob", "is": ["Pass", "EndEffect $asp 1", "EndEffect $asp 2", "ActivateManaAbility $forest-1", "ActivateManaAbility $forest-2"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "do": {"Take": {"action": "EndEffect $asp 1", "mana": ["$forest-1", null]}}},
     {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"View": {"of": "Offered", "player": "bob", "is": ["Pass", "EndEffect $asp", "ActivateManaAbility $forest-2"]}}},
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "bob", "life": 17}}},
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 20}}}

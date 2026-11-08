@@ -371,8 +371,8 @@ blankGame settings order active =
       GameState.gameNumber = 1,
       GameState.turnAnchor = Nothing,
       GameState.extraTurnUnderWay = Nothing,
-      GameState.rollingDie = Nothing,
-      GameState.rerollRequested = False,
+      GameState.throwing = Nothing,
+      GameState.rethrowRequested = False,
       GameState.undone = Map.empty
     }
 
@@ -721,7 +721,7 @@ startGameFromCards perform exemptions = do
       --
       -- Every one of them, as `commanderIds` takes every commander: CR 902.1's
       -- one card per player is a deck-construction rule parun does not enforce
-      -- (#4458), and rule 313.2 is stated of each vanguard card rather than of the
+      -- (#6398), and rule 313.2 is stated of each vanguard card rather than of the
       -- one the player designated, so there is nothing here to choose between.
       vanguardIds = Map.keysSet (Map.filterWithKey (\oid _ -> Vanguard.isVanguard oid gs) rebuilt)
       -- CR 315.3: "if a conspiracy card would leave the command zone, it remains
@@ -843,7 +843,7 @@ chooseConspiracies pid = do
   gs <- State.get
   let available = Map.mapKeys OutsideCard.InPool (Conspiracy.inSideboard pid gs)
       atMost = sum (Map.elems available)
-  Monad.forM_ (NonEmpty.nonEmpty (Map.keys available)) $ \candidates -> do
+  Monad.forM_ (NonEmpty.nonEmpty (Map.toList available)) $ \candidates -> do
     answer <- Game.choose (Prompt.ChooseFromOutsideTheGame (Decide.deciderFor pid gs) pid candidates 0 atMost)
     Monad.forM_ (Event.settleOutside id available 0 atMost answer) $ \card -> case card of
       OutsideCard.InPool printingId -> do
@@ -855,10 +855,8 @@ chooseConspiracies pid = do
 -- card from their library into the ante, through the zone-change funnel. Run
 -- after CR 103.1's starting player is settled and before CR 103.5's draws. An
 -- empty library antes nothing, and a lone card is not a draw. Randomness and
--- not a choice, so Prompt.RandomObject, filtered rather than trusted.
---
--- Not implemented: CR 407.2 takes the card from the deck before it is
--- shuffled, and this takes it from the shuffled library (#4824).
+-- not a choice, so Prompt.RandomObject, filtered rather than trusted. A random
+-- card of the shuffled library is distributed as one of the deck (CR 103.3).
 anteFromLibraries :: [PlayerId] -> Game ()
 anteFromLibraries seated = do
   playing <- State.gets (GameSettings.ante . GameState.settings)

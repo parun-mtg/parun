@@ -5,6 +5,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.PlayerEffect as PlayerEffect
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.Audience as Audience
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CardName as CardName
@@ -23,6 +24,7 @@ import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.InZone as InZone
@@ -56,6 +58,7 @@ import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -311,6 +314,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition (Filter.Not Filter.IsAbility) (Filter.HasColor Color.Blue)))
       " {\"type\":\"CantBeCountered\",\"value\":{\"countered\":{\"type\":\"Not\",\"value\":{\"type\":\"IsAbility\"}},\"counterers\":{\"type\":\"HasColor\",\"value\":\"Blue\"}}} "
+  -- CR 611.2a / Theorist's Proxy: the marker the next spell's cast uses up.
+  Spec.it s "NextSpell" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.NextSpell (Filter.And []))
+      " {\"type\":\"NextSpell\",\"value\":{\"type\":\"And\",\"value\":[]}} "
   -- CR 115 / 101.2 / Autumn's Veil: a targeting restriction whose affected set
   -- is a Filter.
   Spec.it s "RestrictTargeting" $
@@ -378,12 +388,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.CantBecomeMonarch
       " {\"type\":\"CantBecomeMonarch\"} "
   -- CR 704.5j / Hall of Echoes.
-  Spec.it s "LegendRuleDoesntApply" $
+  Spec.it s "StateBasedActionDoesntApply" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      PlayerEffect.LegendRuleDoesntApply
-      " {\"type\":\"LegendRuleDoesntApply\"} "
+      (PlayerEffect.StateBasedActionDoesntApply StateBasedAction.LegendRule)
+      " {\"type\":\"StateBasedActionDoesntApply\",\"value\":\"LegendRule\"} "
   -- CR 701.32 / All in Good Time.
   Spec.it s "CantSetSchemesInMotion" $
     Common.assertCodec
@@ -459,14 +469,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []))
+      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []) Nothing)
       " {\"type\":\"CantActivateAbilities\",\"value\":{}} "
   -- CR 702.193a / Kang the Conqueror's "power-up abilities can't be activated".
   Spec.it s "CantActivateAbilities naming a keyword" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities (Just (KeywordDesignator.OfKeyword Keyword.PowerUp)) (Filter.And []))
+      (PlayerEffect.CantActivateAbilities (Just (KeywordDesignator.OfKeyword Keyword.PowerUp)) (Filter.And []) Nothing)
       " {\"type\":\"CantActivateAbilities\",\"value\":{\"designator\":{\"type\":\"OfKeyword\",\"value\":{\"type\":\"PowerUp\"}}}} "
   -- CR 602.5 / Grand Abolisher's "abilities of artifacts, creatures, or
   -- enchantments", which names the sources.
@@ -474,8 +484,16 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CantActivateAbilities Nothing (Filter.HasCardType CardType.Artifact))
+      (PlayerEffect.CantActivateAbilities Nothing (Filter.HasCardType CardType.Artifact) Nothing)
       " {\"type\":\"CantActivateAbilities\",\"value\":{\"sources\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
+  -- CR 605.1a / Yuriko, Blade of the Mighty's "abilities that aren't mana
+  -- abilities", which names the kind.
+  Spec.it s "CantActivateAbilities naming the kind" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.CantActivateAbilities Nothing (Filter.And []) (Just AbilityKind.NonManaAbility))
+      " {\"type\":\"CantActivateAbilities\",\"value\":{\"kind\":\"NonManaAbility\"}} "
   -- CR 305.1 / City in a Bottle's land half, whose Filter names the land
   -- (Damping Engine's writes the empty And instead).
   Spec.it s "CantPlayLands" $
@@ -527,15 +545,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFromHandWithoutPayingManaCost (Filter.And []))
-      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"type\":\"And\",\"value\":[]}} "
+      (PlayerEffect.CastFromHandWithoutPayingManaCost (FreeCastFromHand.MkFreeCastFromHand (Filter.And []) Nothing))
+      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"And\",\"value\":[]}}} "
   -- The same grant narrowed, which is the axis a second printing would use.
   Spec.it s "CastFromHandWithoutPayingManaCost, a filter that names qualities" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFromHandWithoutPayingManaCost (Filter.HasCardType CardType.Creature))
-      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+      (PlayerEffect.CastFromHandWithoutPayingManaCost (FreeCastFromHand.MkFreeCastFromHand (Filter.HasCardType CardType.Creature) Nothing))
+      " {\"type\":\"CastFromHandWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Solemnity's first sentence, which names no kind, so the key is null -- the
   -- wire form data/cards/solemnity.json writes.
   Spec.it s "CantGetCounters, no kind named" $

@@ -883,7 +883,7 @@ data View = MkView
 -- a player is not an object (CR 109.1) and has none of those. The player's own
 -- identity is the only thing THIS VIEW can answer, which is exactly what
 -- IsPlayer asks. The other player-shaped atoms are answered elsewhere on
--- purpose: Controls, IsControllerOfBound and CardsInGraveyardAtLeast
+-- purpose: Controls, IsControllerOfBound, CardsInGraveyardAtLeast and OwnsBoundAtLeast
 -- each ask about the board or a zone, which a function taking nothing but a
 -- PlayerId cannot see, so Parun.Engine.Count.bakePerspective bakes them against
 -- the game state before the match instead.
@@ -1147,7 +1147,9 @@ data Context = MkContext
     -- Parun.Engine.Projection.View.referenceAdmits for a conjure's reference pick
     -- (Parun.Types.FromReference's `amount`), and
     -- Parun.Engine.CombatRestriction.amountFrame for a combat restriction's
-    -- affected set (Parun.Types.AffectedUnless's). It is Nothing at every other
+    -- affected set (Parun.Types.AffectedUnless's), and
+    -- Parun.Engine.PlayerEffect.freeCastAdmits for a free-cast grant's spells
+    -- (Parun.Types.FreeCastFromHand's). It is Nothing at every other
     -- position, and Parun.FilterPositionLintSpec's lint is what keeps a card out of
     -- them.
     --
@@ -1510,6 +1512,14 @@ data Context = MkContext
     -- Count arm was handed, so the CR 613 projection's types and not the printed
     -- ones. Nothing where unfilled, and the atom then answers False.
     evaluatedCreatureTypes :: Maybe (Set.Set Subtype.Subtype),
+    -- CR 903.3e: the creature types of the perspective player's commanders, at
+    -- their current characteristics in any zone, for Shares CreatureType
+    -- YourCommander (Path of Ancestry). Filled by
+    -- Parun.Engine.Projection.framedByCommanders, which a spend trigger's match
+    -- calls (Parun.Engine.ManaRider.spentOnMatches); empty everywhere else, so
+    -- the atom answers False, and Parun.FilterPositionLintSpec keeps a card to
+    -- that position.
+    commanderCreatureTypes :: Set.Set Subtype.Subtype,
     -- CR 400.7 / 607.5: the objects an effect of the SOURCE's reading abilities
     -- put onto the battlefield, as those objects, for EnteredWithSource (Animate
     -- Dead's enchant ability). Filled from GameState.enteredWith by
@@ -1770,7 +1780,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
 
 -- contextFor over a game: its teams (CR 102.4) and its active players (CR 102.1,
 -- 805.4a) filled from the state, the two facts about the table a match may ask.
@@ -1918,6 +1928,16 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Nothing
     Trait.CreatureType -> Nothing
     Trait.CardType _ -> Nothing
+  -- A commander with no creature type shares none, and neither does a player
+  -- with no commander: both leave the set empty.
+  Anchor.YourCommander -> case trait of
+    Trait.CreatureType -> Just (\context view -> meets (subtypes view) (commanderCreatureTypes context))
+    Trait.Color -> Nothing
+    Trait.Name -> Nothing
+    Trait.Owner -> Nothing
+    Trait.Controller -> Nothing
+    Trait.Sector -> Nothing
+    Trait.CardType _ -> Nothing
   where
     meets a b = not (Set.disjoint a b)
     held = foldMap Set.singleton . controller
@@ -1943,6 +1963,7 @@ attachedAnchored anchor = case anchor of
       )
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
+  Anchor.YourCommander -> Nothing
 
 -- CR 205.2a: a view's card types, among the named ones where a Trait names some.
 cardTypesAmong :: Maybe (Set.Set CardType.CardType) -> View -> Set.Set CardType.CardType
@@ -2256,6 +2277,9 @@ matches context view predicate = case predicate of
   -- characteristics, so a candidate that is not a player has nothing to answer
   -- with either. Parun.Engine.Count.bakePerspective answers it for a player.
   Filter.CardsInGraveyardAtLeast _ -> False
+  -- False wherever it is reached, for the atom above's reason: this module holds
+  -- no game state to ask CR 400.7j's question of the slot's objects with.
+  Filter.OwnsBoundAtLeast {} -> False
   -- CR 508.1k: a creature stays attacking until it is removed from combat or the
   -- combat phase ends, so this is a live read of the combat record, never a stamp
   -- on the object.
@@ -2705,6 +2729,7 @@ rewrite pairs predicate = case predicate of
   -- card count is a number rather than one. "Graveyard" is a zone name, which
   -- rule 612.1 does not reach either.
   Filter.CardsInGraveyardAtLeast _ -> predicate
+  Filter.OwnsBoundAtLeast n slot f -> Filter.OwnsBoundAtLeast n slot (rewrite pairs f)
   Filter.IsAttacking -> predicate
   Filter.IsAttackingPlayer _ -> predicate
   Filter.IsAttackingPlaneswalker _ -> predicate
@@ -3368,7 +3393,7 @@ overComponent onFilter onCounters component = case component of
   CostComponent.Blight _ -> component
   CostComponent.Forage -> component
   CostComponent.FlipCoin -> component
-  CostComponent.ExileThisFromGraveyard -> component
+  CostComponent.ExileThisFrom _ -> component
   CostComponent.ExileThis -> component
   CostComponent.MillCards _ -> component
   CostComponent.RevealTopOfLibrary _ -> component
@@ -3481,6 +3506,9 @@ bakeBound players objects controllers predicate = case predicate of
   -- Untouched: the atom names no slot at all, so CR 603.2's map has nothing to
   -- substitute into it. Baked one module out, as the atom above is.
   Filter.CardsInGraveyardAtLeast _ -> predicate
+  -- Descended into for Controls' reason; the slot holds OBJECTS, which this
+  -- map does not substitute, so it is answered one module out.
+  Filter.OwnsBoundAtLeast n slot f -> Filter.OwnsBoundAtLeast n slot (bakeBound players objects controllers f)
   Filter.IsAttacking -> predicate
   Filter.IsAttackingPlayer _ -> predicate
   Filter.IsAttackingPlaneswalker _ -> predicate
@@ -3656,6 +3684,7 @@ manaValueThresholds predicate = case predicate of
   -- No threshold: the literal bounds a COUNT OF CARDS in a zone, not a mana
   -- value, so CR 601.3a's sample has nothing to learn from it.
   Filter.CardsInGraveyardAtLeast _ -> []
+  Filter.OwnsBoundAtLeast _ _ f -> manaValueThresholds f
   Filter.IsAttacking -> []
   Filter.IsAttackingPlayer _ -> []
   Filter.IsAttackingPlaneswalker _ -> []
@@ -3827,6 +3856,7 @@ statesAQuality predicate = case predicate of
   Filter.IsPlayer _ -> True
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInGraveyardAtLeast _ -> True
+  Filter.OwnsBoundAtLeast {} -> True
   Filter.IsAttacking -> True
   Filter.IsAttackingPlayer _ -> True
   Filter.IsAttackingPlaneswalker _ -> True
@@ -3958,6 +3988,7 @@ readsSourceValues predicate = case predicate of
     Anchor.Bound _ -> False
     Anchor.Evaluated -> False
     Anchor.AnyPermanent group -> readsSourceValues group
+    Anchor.YourCommander -> False
   Filter.HasSubtype _ -> False
   Filter.HasName _ -> False
   Filter.NameWordsAtLeast _ -> False
@@ -3992,6 +4023,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsPlayer _ -> False
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInGraveyardAtLeast _ -> False
+  Filter.OwnsBoundAtLeast _ _ f -> readsSourceValues f
   Filter.IsAttacking -> False
   Filter.IsAttackingPlayer _ -> False
   Filter.IsAttackingPlaneswalker _ -> False
@@ -4160,6 +4192,8 @@ overBoundSlotsWith f predicate = case predicate of
   -- is read exactly as one written at the top level.
   Filter.Controls n g -> fmap (Filter.Controls n) (overBoundSlotsWith f g)
   Filter.CardsInGraveyardAtLeast _ -> pure predicate
+  -- Reads the whole bound set, IsBound's arity, and descends for Controls'.
+  Filter.OwnsBoundAtLeast n slot g -> Filter.OwnsBoundAtLeast n <$> f SlotArity.Many slot <*> overBoundSlotsWith f g
   Filter.IsAttacking -> pure predicate
   Filter.IsAttackingPlayer _ -> pure predicate
   Filter.IsAttackingPlaneswalker _ -> pure predicate
@@ -4245,6 +4279,7 @@ overAnchorSlot f anchor = case anchor of
   Anchor.Evaluated -> pure anchor
   Anchor.Source -> pure anchor
   Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (overBoundSlotsWith f group)
+  Anchor.YourCommander -> pure anchor
 
 -- The filter an anchor nests, for a traversal that descends into one.
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
@@ -4253,6 +4288,7 @@ anchorFilter anchor = case anchor of
   Anchor.Bound _ -> Nothing
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
+  Anchor.YourCommander -> Nothing
 
 -- A rewrite of the filter an anchor nests.
 mapAnchor :: (nested -> nested) -> Anchor.Anchor nested -> Anchor.Anchor nested
@@ -4261,6 +4297,7 @@ mapAnchor f anchor = case anchor of
   Anchor.Bound _ -> anchor
   Anchor.Evaluated -> anchor
   Anchor.Source -> anchor
+  Anchor.YourCommander -> anchor
 
 -- overBoundSlotsWith without the arity: CR 700.2d's rename.
 overBoundSlots :: (Applicative f) => (SlotName.SlotName -> f SlotName.SlotName) -> Filter.Filter Keyword.Type.Keyword -> f (Filter.Filter Keyword.Type.Keyword)

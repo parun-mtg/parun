@@ -58,6 +58,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
@@ -865,7 +866,7 @@ policedChamber ::
   ObjectId.ObjectId ->
   m (GameState.GameState, [CardName.CardName])
 policedChamber s registry opponent fallback queue gs oid = do
-  let lifted = Registry.MkRegistry {Registry.fetchCard = Trans.lift . Registry.fetchCard registry, Registry.cards = Trans.lift (Registry.cards registry)}
+  let lifted = Registry.hoist Trans.lift registry
       play = Engine.runGameAsked (Interpreter.policingCardNames lifted (Trans.lift . S.brokenCorpus s) (queuedChamberAnswer opponent fallback)) gs (S.cast S.alice oid >> Stack.resolveTop)
   ((_, after), left) <- State.runStateT play queue
   pure (after, left)
@@ -1439,7 +1440,7 @@ runedHaloSpec s registry =
       curse <- S.printingOf s registry "Curse of Vitality"
       let (haloId, _, board) = runedHaloBoard plains halo curse
           corpus = InvalidCorpus.MkInvalidCorpus "cards" ["cards/goblin-piker.json: unreadable"]
-          answering found = Registry.MkRegistry {Registry.fetchCard = const (pure found), Registry.cards = pure (fmap (const []) found)}
+          answering found = Registry.MkRegistry {Registry.fetchCard = const (pure found), Registry.cards = pure (fmap (const []) found), Registry.printings = PrintingTable.empty, Registry.stickerSheets = Map.empty}
           naming reference = fmap snd (Engine.runGameAsked (Interpreter.lookingUpCards reference Left (namingAnswer (CardName.MkCardName (Text.pack "Goblin Piker")))) board (S.cast S.alice haloId >> Stack.resolveTop))
       case naming (answering (Left corpus)) of
         Left reached -> Spec.assertEqWith s "the registry's failure reaches the handler" reached corpus

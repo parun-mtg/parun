@@ -1,0 +1,196 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Way of the Cryomancer",
+      "oracleText": "When Way of the Cryomancer enters, empower Jace 5. (Put five loyalty counters on a Jace token you control. If you don't control one, first create a blue Jace planeswalker token with \"[−1]: Surveil 1\" and \"[−3]: Draw a card.\")\nPlaneswalkers you control have \"[−3]: When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy.\"",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Planeswalker"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "RemoveLoyaltyFromThis",
+                        "value": {
+                          "type": "Fixed",
+                          "value": 3
+                        }
+                      }
+                    ],
+                    "mana": []
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "ArmDelayedTrigger",
+                                "value": {
+                                  "ability": {
+                                    "type": "Triggered",
+                                    "value": {
+                                      "condition": {
+                                        "type": "SpellCast",
+                                        "value": {
+                                          "scope": {
+                                            "type": "PlayersTurn",
+                                            "value": {
+                                              "type": "Relative",
+                                              "value": "AnyPlayer"
+                                            }
+                                          },
+                                          "spell": {
+                                            "type": "Matching",
+                                            "value": {
+                                              "type": "And",
+                                              "value": [
+                                                {
+                                                  "type": "HeldBy",
+                                                  "value": {
+                                                    "holder": "Controller",
+                                                    "relation": "You"
+                                                  }
+                                                },
+                                                {
+                                                  "type": "Or",
+                                                  "value": [
+                                                    {
+                                                      "type": "HasCardType",
+                                                      "value": "Instant"
+                                                    },
+                                                    {
+                                                      "type": "HasCardType",
+                                                      "value": "Sorcery"
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "modal": {
+                                        "modes": [
+                                          {
+                                            "clauses": [
+                                              {
+                                                "effects": [
+                                                  {
+                                                    "type": "CopyStackObject",
+                                                    "value": {
+                                                      "ref": {
+                                                        "type": "InSlot",
+                                                        "value": "thatSpell"
+                                                      },
+                                                      "targets": {
+                                                        "type": "ChosenByController"
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "duration": {
+                                    "type": "UntilUsed"
+                                  },
+                                  "name": "copy that spell"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Amass",
+                        "value": {
+                          "kind": {
+                            "type": "EmpowerJace"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 5
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

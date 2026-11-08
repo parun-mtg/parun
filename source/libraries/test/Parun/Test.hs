@@ -70,6 +70,7 @@ import qualified Parun.Codec.AgainstSlotSpec
 import qualified Parun.Codec.AggregationSpec
 import qualified Parun.Codec.AimedAtSpec
 import qualified Parun.Codec.AimedPlayersSpec
+import qualified Parun.Codec.AloneAmongSpec
 import qualified Parun.Codec.AloneUnlessSpec
 import qualified Parun.Codec.AlternativeActivationCostSpec
 import qualified Parun.Codec.AlternativeCostSpec
@@ -292,6 +293,7 @@ import qualified Parun.Codec.DealDamageSpec
 import qualified Parun.Codec.DealtDamageSpec
 import qualified Parun.Codec.DealtDamageToSpec
 import qualified Parun.Codec.DeciderSpec
+import qualified Parun.Codec.DeckLimitSpec
 import qualified Parun.Codec.DeclarationTriggerSpec
 import qualified Parun.Codec.DefendersAreSpec
 import qualified Parun.Codec.DefenseSpec
@@ -404,6 +406,8 @@ import qualified Parun.Codec.ForEachSpec
 import qualified Parun.Codec.ForbidAttackSpec
 import qualified Parun.Codec.ForbidBeingBlockedSpec
 import qualified Parun.Codec.ForetellCostSpec
+import qualified Parun.Codec.FormatSpec
+import qualified Parun.Codec.FreeCastFromHandSpec
 import qualified Parun.Codec.FromAnywhereSpec
 import qualified Parun.Codec.FromOutsideTheGameSpec
 import qualified Parun.Codec.FromReferenceSpec
@@ -451,6 +455,8 @@ import qualified Parun.Codec.LeavesTriggerSpec
 import qualified Parun.Codec.LeavesZoneTriggerSpec
 import qualified Parun.Codec.LeavingPermanentSpec
 import qualified Parun.Codec.LeftTheGameSpec
+import qualified Parun.Codec.LegalitySpec
+import qualified Parun.Codec.LegalityTableSpec
 import qualified Parun.Codec.LibraryDepartureSpec
 import qualified Parun.Codec.LibraryDepthSpec
 import qualified Parun.Codec.LibraryPlacementSpec
@@ -568,6 +574,7 @@ import qualified Parun.Codec.PaymentDecisionSpec
 import qualified Parun.Codec.PendingEntryEffectSpec
 import qualified Parun.Codec.PendingReplacementEffectSpec
 import qualified Parun.Codec.PendingSkipEffectSpec
+import qualified Parun.Codec.PerTargetSpec
 import qualified Parun.Codec.PermanentActionSpec
 import qualified Parun.Codec.PermanentBecomesDesignatedSpec
 import qualified Parun.Codec.PermanentCandidateSpec
@@ -629,6 +636,7 @@ import qualified Parun.Codec.PreventionSpec
 import qualified Parun.Codec.PrintedReplacementSpec
 import qualified Parun.Codec.PrintingIdSpec
 import qualified Parun.Codec.PrintingSpec
+import qualified Parun.Codec.PrintingTableSpec
 import qualified Parun.Codec.ProductionTagSpec
 import qualified Parun.Codec.ProhibitSpec
 import qualified Parun.Codec.ProhibitedCostSpec
@@ -684,6 +692,7 @@ import qualified Parun.Codec.RoomHalfSpec
 import qualified Parun.Codec.RoomIndexSpec
 import qualified Parun.Codec.RoundingSpec
 import qualified Parun.Codec.RuleAbilitiesSpec
+import qualified Parun.Codec.RuleFamilySpec
 import qualified Parun.Codec.SacrificeAnyNumberSpec
 import qualified Parun.Codec.SacrificeEffectSpec
 import qualified Parun.Codec.SacrificeRestrictionSpec
@@ -725,6 +734,7 @@ import qualified Parun.Codec.SpendManaAsThoughSpec
 import qualified Parun.Codec.SpendTriggerSpec
 import qualified Parun.Codec.SpliceSpec
 import qualified Parun.Codec.StackObjectKindSpec
+import qualified Parun.Codec.StateBasedActionSpec
 import qualified Parun.Codec.StatedFlipSpec
 import qualified Parun.Codec.StaticAbilitySpec
 import qualified Parun.Codec.StatusSpec
@@ -759,6 +769,7 @@ import qualified Parun.Codec.TeamIdSpec
 import qualified Parun.Codec.TeamsSpec
 import qualified Parun.Codec.TextWordSpec
 import qualified Parun.Codec.TheseDiscardSpec
+import qualified Parun.Codec.ThrowResultSpec
 import qualified Parun.Codec.TimedSpec
 import qualified Parun.Codec.TimesSpec
 import qualified Parun.Codec.TimestampSpec
@@ -911,6 +922,7 @@ import qualified Parun.KeywordTriggerSpec
 import qualified Parun.LearnSpec
 import qualified Parun.LeavesTriggerSpec
 import qualified Parun.LedgerSpec
+import qualified Parun.LegalitySpec
 import qualified Parun.LibraryOrderSpec
 import qualified Parun.LifeReplacementSpec
 import qualified Parun.LifeTriggerSpec
@@ -918,6 +930,7 @@ import qualified Parun.ManaSourceSpec
 import qualified Parun.ManaSpec
 import qualified Parun.ManaSymbolSpec
 import qualified Parun.MassEffectSpec
+import qualified Parun.MatchSpec
 import qualified Parun.MeldSpec
 import qualified Parun.ModalDoubleFacedSpec
 import qualified Parun.ModalSpec
@@ -997,7 +1010,7 @@ import qualified Test.Tasty.HUnit as HU
 main :: IO ()
 main = do
   root <- Registry.defaultRoot
-  registry <- Registry.fileRegistry root
+  registry <- Registry.defaultRegistry
   corpus <- Registry.loadRoot root
   testTree <- buildTestTree registry corpus
   Tasty.defaultMain testTree
@@ -1080,6 +1093,7 @@ spec s registry corpus = do
   Parun.Codec.AffectedSpec.spec s
   Parun.Codec.AffectedUnlessSpec.spec s
   Parun.Codec.AnchorSpec.spec s
+  Parun.Codec.AloneAmongSpec.spec s
   Parun.Codec.AloneUnlessSpec.spec s
   Parun.Codec.AffectPlayersSpec.spec s
   Parun.Codec.AfterObjectTurnSpec.spec s
@@ -1315,6 +1329,12 @@ spec s registry corpus = do
   Parun.Codec.DaytimeSpec.spec s
   Parun.Codec.DealDamageSpec.spec s
   Parun.Codec.DeciderSpec.spec s
+  Parun.Codec.DeckLimitSpec.spec s
+  Parun.Codec.FormatSpec.spec s
+  Parun.Codec.LegalitySpec.spec s
+  Parun.Codec.LegalityTableSpec.spec s
+  Parun.Codec.PrintingTableSpec.spec s
+  Parun.Codec.RuleFamilySpec.spec s
   Parun.Codec.DeclarationTriggerSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s
   Parun.Codec.DefenseSpec.spec s
@@ -1419,6 +1439,7 @@ spec s registry corpus = do
   Parun.Codec.FightSpec.spec s
   Parun.Codec.FilterSpec.spec s
   Parun.Codec.FlipCoinSpec.spec s
+  Parun.Codec.FreeCastFromHandSpec.spec s
   Parun.Codec.FloatingCandidateSpec.spec s
   Parun.Codec.ForbidAttackSpec.spec s
   Parun.Codec.ForbidBeingBlockedSpec.spec s
@@ -1579,6 +1600,7 @@ spec s registry corpus = do
   Parun.Codec.PastActivationSpec.spec s
   Parun.Codec.PayBranchSpec.spec s
   Parun.Codec.PayGateSpec.spec s
+  Parun.Codec.PerTargetSpec.spec s
   Parun.Codec.PayingSpec.spec s
   Parun.Codec.PaymentDecisionSpec.spec s
   Parun.Codec.PayObligationSpec.spec s
@@ -1752,6 +1774,7 @@ spec s registry corpus = do
   Parun.Codec.SpendTriggerSpec.spec s
   Parun.Codec.SpliceSpec.spec s
   Parun.Codec.StackObjectKindSpec.spec s
+  Parun.Codec.StateBasedActionSpec.spec s
   Parun.Codec.StatedFlipSpec.spec s
   Parun.Codec.StaticAbilitySpec.spec s
   Parun.Codec.StatusSpec.spec s
@@ -1783,6 +1806,7 @@ spec s registry corpus = do
   Parun.Codec.TeamIdSpec.spec s
   Parun.Codec.TeamsSpec.spec s
   Parun.Codec.TheseDiscardSpec.spec s
+  Parun.Codec.ThrowResultSpec.spec s
   Parun.Codec.TimedSpec.spec s
   Parun.Codec.TimesSpec.spec s
   Parun.Codec.TimestampSpec.spec s
@@ -2001,7 +2025,9 @@ spec s registry corpus = do
   Parun.BotSpec.spec s registry
   Parun.ClientSpec.spec s registry
   Parun.RecordSpec.spec s registry
+  Parun.MatchSpec.spec s registry
   Parun.DecksSpec.spec s registry
+  Parun.LegalitySpec.spec s registry
   Parun.ReplySpec.spec s registry
   Parun.ScenarioSpec.corpusSpec s registry
   Parun.ScenarioSpec.loadSpec s

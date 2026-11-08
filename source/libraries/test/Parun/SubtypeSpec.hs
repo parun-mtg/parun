@@ -1,6 +1,7 @@
 -- Covers Parun.Engine.Subtype's families, Parun.Types.CardType and
--- Parun.Types.Supertype against the closed lists docs/rules.txt names, so a
--- rules update that adds a type turns the suite red until the enum has it.
+-- Parun.Types.Supertype against the closed lists data/comprehensive-rules.txt
+-- names, so a rules update that adds a type turns the suite red until the enum
+-- has it.
 module Parun.SubtypeSpec where
 
 import qualified Data.ByteString as ByteString
@@ -90,5 +91,5 @@ listedBy rules rule markers = Set.fromList (concatMap items markers)
 rulesText :: IO Text.Text
 rulesText = do
   root <- Registry.defaultRoot
-  bytes <- ByteString.readFile (root <> "/../../docs/rules.txt")
+  bytes <- ByteString.readFile (root <> "/../comprehensive-rules.txt")
   either (fail . show) pure (Encoding.decodeUtf8' bytes)

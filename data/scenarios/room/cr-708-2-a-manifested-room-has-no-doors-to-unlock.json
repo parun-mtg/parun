@@ -101,7 +101,7 @@
           "player": "alice",
           "is": [
             "Pass",
-            "Unlock $furnace Roaring Furnace",
+            "Unlock $furnace",
             "ActivateManaAbility $mountain",
             "ActivateManaAbility $mountain-2"
           ]

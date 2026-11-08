@@ -1,6 +1,7 @@
 module Parun.Types.PlayerEffect where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -12,6 +13,7 @@ import qualified Parun.Types.DrawReveal as DrawReveal
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.InZone as InZone
@@ -28,6 +30,7 @@ import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -61,8 +64,11 @@ data PlayerEffect
     -- under that rule-702 keyword (Parun.Types.ActivatedAbility.keyword), Kang the
     -- Conqueror's "power-up abilities can't be activated". The Filter names
     -- the abilities' SOURCES, Grand Abolisher's "abilities of artifacts,
-    -- creatures, or enchantments"; the empty And is every source.
-    CantActivateAbilities (Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)) (Filter.Filter Keyword.Keyword)
+    -- creatures, or enchantments"; the empty And is every source. The CR
+    -- 605.1a kind narrows it as Parun.Types.ActivationProhibition's does:
+    -- Nothing is both, and Yuriko, Blade of the Mighty's "abilities that
+    -- aren't mana abilities" names NonManaAbility.
+    CantActivateAbilities (Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)) (Filter.Filter Keyword.Keyword) (Maybe AbilityKind.AbilityKind)
   | -- | CR 601.3 / Rule of Law: this player can't cast more than this many spells
     -- each turn.
     CantCastMoreThan Natural.Natural
@@ -133,6 +139,10 @@ data PlayerEffect
     -- abilities on the stack controlled by the players this effect's scope names
     -- can't be countered by the matching counterers.
     CantBeCountered CounterProhibition.CounterProhibition
+  | -- | CR 611.2a / Theorist's Proxy: no effect of its own; the next matching
+    -- spell this player casts uses it up, becoming "that spell" to the rows its
+    -- source installed beside it (Parun.Engine.Cast.bindUser).
+    NextSpell (Filter.Filter Keyword.Keyword)
   | -- | CR 115 / 101.2 / 613.11 / Autumn's Veil: the matching permanents the
     -- players this effect's scope names control can't be the targets of the
     -- restriction's kind of spell or ability.
@@ -158,9 +168,9 @@ data PlayerEffect
   | -- | CR 726.1 / 101.2 / Jared Carthalion, True Heir: this player can't become
     -- the monarch.
     CantBecomeMonarch
-  | -- | CR 704.5j / Hall of Echoes: the legend rule doesn't apply to permanents
-    -- this player controls.
-    LegendRuleDoesntApply
+  | -- | CR 704.5i / 704.5j / Hall of Echoes, Sanctum Lurker: the state-based
+    -- action doesn't apply to permanents this player controls.
+    StateBasedActionDoesntApply StateBasedAction.StateBasedAction
   | -- | CR 701.32 / 904.9 / All in Good Time: schemes can't be set in motion.
     CantSetSchemesInMotion
   | -- | CR 603.6a / 603.2d / 613.11 / Hushwing Gryff, Yarok, the Desecrated:
@@ -227,9 +237,7 @@ data PlayerEffect
     PlotFrom PlotFromZone.PlotFromZone
   | -- | CR 118.9 / Omniscience: this player may cast a matching spell from their
     -- hand without paying its mana cost.
-    --
-    -- The filter reads the card's CR 613.1 view in the hand, as CastFrom's does.
-    CastFromHandWithoutPayingManaCost (Filter.Filter Keyword.Keyword)
+    CastFromHandWithoutPayingManaCost FreeCastFromHand.FreeCastFromHand
   | -- | CR 101.2 / 122.1 / Solemnity, Melira Sylvok Outcast: this player can't get
     -- counters -- of the kind the Maybe names, or of every kind where it is Nothing.
     CantGetCounters (Maybe PlayerCounterKind.PlayerCounterKind)

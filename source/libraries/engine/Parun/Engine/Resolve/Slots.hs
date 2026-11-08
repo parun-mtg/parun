@@ -911,7 +911,7 @@ effectObjectRefs effect = case effect of
   Effect.ExileHandThenDraw -> []
   Effect.NoteManaSpent -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName {} -> []
   Effect.ChooseQuality _ -> []
@@ -1147,7 +1147,7 @@ effectPlayerRefs effect = case effect of
   Effect.ExileHandThenDraw -> []
   Effect.NoteManaSpent -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName ref _ _) -> [ref]
   Effect.ChooseQuality _ -> []
@@ -1215,6 +1215,7 @@ productionPlayerRefs production = case production of
   ManaProduction.CouldProduce _ -> []
   ManaProduction.Pooled counted -> [ManaCount.player counted]
   ManaProduction.ProducedByTapped -> []
+  ManaProduction.InCommanderIdentity -> []
 
 -- The slot a production reads: only the tapped permanent's types name one.
 productionSlots :: ManaProduction.ManaProduction -> Map.Map SlotName SlotArity
@@ -1227,6 +1228,7 @@ productionSlots production = case production of
   ManaProduction.CouldProduce _ -> Map.empty
   ManaProduction.Pooled _ -> Map.empty
   ManaProduction.ProducedByTapped -> oneSlot Binding.manaSource
+  ManaProduction.InCommanderIdentity -> Map.empty
 
 -- The slots a MonarchTarget reads: only the targeted arm names one.
 monarchTargetSlots :: MonarchTarget.MonarchTarget -> Map.Map SlotName SlotArity
@@ -1317,7 +1319,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       (maybe Map.empty oneSlot subject)
   Effect.ExileAllGraveyards -> Map.empty
   Effect.Proliferate -> Map.empty
-  Effect.Reroll -> Map.empty
+  Effect.Rethrow -> Map.empty
   -- A READ: the slot names the permanent whose stored results are rerolled.
   Effect.RerollStoredResults slot -> oneSlot slot
   -- CR 201.4's name is not an object, so the choice binds no slot of its own and
@@ -1728,6 +1730,9 @@ durationSlots duration = case duration of
   Duration.UntilEvent DurationEvent.SourceExiledCard -> Map.empty
   Duration.UntilEvent DurationEvent.SourceLeftBattlefield -> Map.empty
   Duration.UntilEvent (DurationEvent.SpellCast criterion) -> filterSlotsOf criterion
+  -- CR 601.2i / 400.7: the card the slot bound, baked the same way.
+  Duration.UntilEvent (DurationEvent.BoundCardCast slot) -> oneSlot slot
+  Duration.UntilEvent (DurationEvent.CardCast _) -> Map.empty
 
 -- Both sides of a comparison are a Quantity, and either may read a slot.
 conditionSlots :: Condition.Type.Condition -> Map.Map SlotName SlotArity
@@ -1887,6 +1892,7 @@ entryRewriteReads rewrite = case rewrite of
   EntryRewrite.Prepared -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.Reveal filter_) -> ([filter_], [])
+  EntryRewrite.OrTapped (EntryPrice.Behold filter_) -> ([filter_], [])
   EntryRewrite.EntersTransformed -> ([], [])
   -- The nested effects' reads are replacementRowEffects' answer rather than this
   -- one's, for the reason replacementRowReads' header gives.
@@ -2197,7 +2203,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> all Quantity.slotsAreExhaustive quantity
   Effect.ExileAllGraveyards -> True
   Effect.Proliferate -> True
-  Effect.Reroll -> True
+  Effect.Rethrow -> True
   Effect.RerollStoredResults _ -> True
   Effect.ChooseCardName _ -> True
   Effect.ChooseQuality _ -> True
@@ -2500,7 +2506,7 @@ hasRead wanted =
         Effect.Search (Search.MkSearch _ _ _ _ quantity filter_ descriptions _ _ _ _ _ _ _ _) -> any (Quantity.hasRead wanted) quantity || (isX && any (Set.member Binding.variableX . Filter.boundSlots) (filter_ : Foldable.toList descriptions))
         Effect.ExileAllGraveyards -> False
         Effect.Proliferate -> False
-        Effect.Reroll -> False
+        Effect.Rethrow -> False
         Effect.RerollStoredResults _ -> False
         -- No Quantity: rule 201.4 chooses one name and states no count.
         Effect.ChooseCardName _ -> False
@@ -2786,7 +2792,7 @@ boundSlots effect = case effect of
   Effect.Search search -> foldMap Set.singleton (Search.slot search) <> foldMap Set.singleton (Search.handSlot search)
   Effect.ExileAllGraveyards -> Set.empty
   Effect.Proliferate -> Set.empty
-  Effect.Reroll -> Set.empty
+  Effect.Rethrow -> Set.empty
   Effect.RerollStoredResults _ -> Set.empty
   -- Binds nothing: the name goes on the SOURCE (Object.chosenNames) and is read
   -- back off it by Filter.HasChosenName, so no slot carries it.

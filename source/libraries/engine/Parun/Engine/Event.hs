@@ -252,6 +252,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
+import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import Parun.Types.Prevention (Prevention)
@@ -1461,11 +1462,11 @@ mintOutside pid printingId gs =
 -- Alchemy's conjure keyword action: create the given card out of nothing and put
 -- it into the conjuring player's zone.
 --
--- DIGITAL-ONLY, so there is no rule to cite -- docs/rules.txt has no "conjure".
--- What the CR settles is what this is NOT: CR 111.1's token is not a card, where
--- a conjured object is one, so this interns a Printing and mints Source.OfCard
--- rather than Source.OfToken, and the result is castable and shufflable like any
--- other card.
+-- DIGITAL-ONLY, so there is no rule to cite -- data/comprehensive-rules.txt has
+-- no "conjure". What the CR settles is what this is NOT: CR 111.1's token is
+-- not a card, where a conjured object is one, so this interns a Printing and
+-- mints Source.OfCard rather than Source.OfToken, and the result is castable
+-- and shufflable like any other card.
 --
 -- Here rather than in Parun.Engine.Resolve, createEmblem's placement: the mint is
 -- what the two roads into mintCard share, and an opcode arm is not the place to
@@ -1838,7 +1839,7 @@ bringInto payload source pid = do
         | atMost == 0 = True
         | Set.null axes = atMost == sum (Map.elems available) || Map.size available == 1
         | otherwise = atMost == List.genericLength (Map.keys available)
-  chosen <- case NonEmpty.nonEmpty (Map.keys available) of
+  chosen <- case NonEmpty.nonEmpty (Map.toList available) of
     Nothing -> pure []
     Just candidates
       | atLeast == atMost && forced ->
@@ -1865,7 +1866,7 @@ pickOutside source pid revealed (OutsidePick.MkOutsidePick relation count) = do
     then pure revealed
     else do
       seat <- Players.chooseOne pid source Nothing (Players.chooserOffer pid gs relation)
-      case (seat, NonEmpty.nonEmpty (Map.keys offered)) of
+      case (seat, NonEmpty.nonEmpty (Map.toList offered)) of
         (Just who, Just candidates)
           | Map.size offered > 1 -> do
               gs1 <- State.get
@@ -3091,7 +3092,10 @@ apply settle batch applied batchPrevented candidate event =
         -- Not implemented: Pokey, the Scallywagg's roll instead of this flip, no
         -- CR 706 thrower reaching the zone-change funnel (#5354). `flipOneCoin`
         -- says how it is kept out, so the face is always a coin's.
-        (face, _) <- flipOneCoin Nothing flipper Nothing statements
+        --
+        -- Not implemented: Goblin Bookie's reflip window over this coin, for
+        -- the same reason (#6647).
+        (face, _) <- flipOneCoin Nothing (\_ _ -> pure False) flipper Nothing statements
         let picked = case Maybe.fromMaybe CoinFace.Tails face of
               CoinFace.Heads -> EntryFlip.heads entryFlip
               CoinFace.Tails -> EntryFlip.tails entryFlip
@@ -4148,6 +4152,19 @@ apply settle batch applied batchPrevented candidate event =
               -- the refusal.
               case answer of
                 Just shown | List.elem shown candidates -> reveal RevealCause.Ordinary controller shown
+                _ -> enterTapped oid
+            -- CR 701.4a: the reveal above, with the permanents the controller
+            -- controls offered beside the hand, on the same prompt and posture.
+            -- A beheld permanent is only chosen, so nothing is logged for it.
+            EntryPrice.Behold filter_ -> do
+              let candidates = Replacement.beholdableOnEntry controller filter_ gs
+              answer <- case NonEmpty.nonEmpty candidates of
+                Nothing -> pure Nothing
+                Just offered -> Game.choose (Prompt.ChooseRevealOnEntry (Decide.deciderFor controller gs) controller oid offered)
+              case answer of
+                Just shown
+                  | List.elem shown candidates ->
+                      Monad.when (fmap Object.zone (Game.lookupObject shown gs) == Just Zone.Hand) (reveal RevealCause.Ordinary controller shown)
                 _ -> enterTapped oid
         pure (Just event)
       -- CR 702.145b's first static ability: "if it is night and this permanent
@@ -6762,14 +6779,15 @@ resolveLifeGainSpent settle spent pid n =
 -- stands for the d20 and is called, `settleCoins`' posture.
 --
 -- `throw` is the caller's CR 706 road for that roll (Parun.Engine.Resolve.Effect's
--- throwForCoin), which this module cannot reach: Resolve passes it directly and
+-- throwForCoin), and `reflip` its CR 705.1 window over each coin flipped
+-- (reflipWindow; see `settleCoins`), which this module cannot reach: Resolve passes it directly and
 -- Parun.Engine.Cost through Parun.Types.ManaAbilityPerformer. A caller with no
 -- thrower passes Nothing, and the substitution is then kept out of CR 616.1's
 -- offer through Replacement.allocatedOut, a share of 0 in the loop's allowances.
 -- Not implemented: substituting a roll on the entry road, which has no CR 706
 -- thrower (#5354).
-flipOneCoin :: Maybe (Throw.Throw -> Game [Natural]) -> Maybe PlayerId -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game (Maybe CoinFace.CoinFace, Bool)
-flipOneCoin throw mFlipper called stated = case mFlipper of
+flipOneCoin :: Maybe (Throw.Throw -> Game [Natural]) -> (PlayerId -> CoinFace.CoinFace -> Game Bool) -> Maybe PlayerId -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game (Maybe CoinFace.CoinFace, Bool)
+flipOneCoin throw reflip mFlipper called stated = case mFlipper of
   Nothing -> do
     face <- Game.ask Prompt.FlipCoin
     pure (Just (Maybe.fromMaybe face (Coin.statedFace stated)), any StatedFlip.wins stated)
@@ -6794,7 +6812,7 @@ flipOneCoin throw mFlipper called stated = case mFlipper of
       -- A roll with no thrower is unreachable, `kept` above being what keeps it
       -- out; were it reached, its units would be flipped as coins.
       _ -> do
-        faces <- settleCoins pid settled called stated
+        faces <- settleCoins reflip pid settled called stated
         -- Exactly one face: a flip names one coin, and every unit a row adds
         -- comes with an ignore (Parun.Types.Throw).
         pure $ case faces of
@@ -6865,8 +6883,18 @@ substitutes candidate = case ReplacementCandidate.controller candidate of
 --
 -- A dropped unit's coin records nothing: CR 706.6's ignored roll "is considered
 -- to have never happened", and the coin stands for that roll.
-settleCoins :: PlayerId -> Throw.Throw -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game [(CoinFace.CoinFace, Bool)]
-settleCoins flipper settled called stated = do
+--
+-- Each coin, once it lands, is open to Goblin Bookie's "reflip any coin"
+-- (`reflip`, Parun.Engine.Resolve.Effect.reflipWindow): the same coin flipped
+-- again, its first face discarded, before Krark's Thumb's ignore is chosen.
+-- docs/decisions.md, "What Goblin Bookie's reflip is", says why it is neither a
+-- new flip nor called again.
+settleCoins :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Throw.Throw -> Maybe CoinFace.CoinFace -> [StatedFlip.StatedFlip] -> Game [(CoinFace.CoinFace, Bool)]
+settleCoins reflip flipper settled called stated = do
+  let flipReflipped = do
+        face <- Game.ask Prompt.FlipCoin
+        again <- reflip flipper face
+        if again then flipReflipped else pure face
   flips <- Monad.forM (Foldable.toList (Throw.units settled)) $ \coins -> do
     call <- case called of
       Just face -> pure (Just face)
@@ -6875,7 +6903,7 @@ settleCoins flipper settled called stated = do
             gs <- State.get
             Just <$> Game.choose (Prompt.CallCoin (Decide.deciderFor flipper gs) flipper)
         | otherwise -> pure Nothing
-    faces <- Monad.replicateM (Natural.toIntSaturating coins) (Game.ask Prompt.FlipCoin)
+    faces <- Monad.replicateM (Natural.toIntSaturating coins) flipReflipped
     pure (call, faces)
   kept <- Monad.forM flips $ \(call, faces) -> do
     face <- keepCoin flipper faces
@@ -6937,8 +6965,8 @@ keepCoin flipper faces =
 -- A cancelled event is unreachable -- no arm of Parun.Types.DieRollRewrite replaces
 -- the roll with nothing -- so the fallback is defensive, and in the direction rule
 -- 706.1 leaves standing: the instruction's own dice, none of them ignored.
-proposeDiceRoll :: PlayerId -> Natural -> Natural -> Game (Either [Natural] Throw.Throw)
-proposeDiceRoll pid sides named = do
+proposeDiceRoll :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Natural -> Natural -> Game (Either [Natural] Throw.Throw)
+proposeDiceRoll reflip pid sides named = do
   let proposed = Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.Dice sides, Throw.units = Seq.replicate (Natural.toIntSaturating named) 1, Throw.ignored = 0, Throw.instead = False}
   if named == 0
     then pure (Right proposed)
@@ -6949,7 +6977,7 @@ proposeDiceRoll pid sides named = do
         ThrowKind.Dice _ -> pure (Right settled)
         ThrowKind.Coins -> do
           statements <- Coin.statementsFor (Just (Throw.thrower settled))
-          faces <- settleCoins (Throw.thrower settled) settled Nothing statements
+          faces <- settleCoins reflip (Throw.thrower settled) settled Nothing statements
           pure (Left (fmap (resultOfFace . fst) faces))
 
 -- CR 705.2's win/lose flip, whole: the call, the flip and the comparison, with
@@ -6979,11 +7007,11 @@ proposeDiceRoll pid sides named = do
 -- roll is read as against the call, and no CR 705.1 event is recorded: Pokey's
 -- reminder, "it counts as rolling a die, not flipping a coin", so "whenever you
 -- win a coin flip" does not trigger.
-flipWinLoseCoin :: Maybe (Throw.Throw -> Game [Natural]) -> PlayerId -> [StatedFlip.StatedFlip] -> Game Bool
-flipWinLoseCoin throw pid statements = do
+flipWinLoseCoin :: Maybe (Throw.Throw -> Game [Natural]) -> (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> [StatedFlip.StatedFlip] -> Game Bool
+flipWinLoseCoin throw reflip pid statements = do
   gs <- State.get
   called <- Game.choose (Prompt.CallCoin (Decide.deciderFor pid gs) pid)
-  (face, wins) <- flipOneCoin throw (Just pid) (Just called) statements
+  (face, wins) <- flipOneCoin throw reflip (Just pid) (Just called) statements
   pure (wins || face == Just called)
 
 -- CR 111.1: settle a proposed token creation. Nothing means none are created.
@@ -11555,7 +11583,8 @@ matchesTrigger gs = matchesTriggerGiven Map.empty (battlefieldCandidates gs) gs
 
 -- CR 603.2b / 109.5: does this condition restrict the turn its event may occur
 -- on to the ABILITY'S CONTROLLER's turn? True for "at the beginning of YOUR
--- <step>" and for nothing else.
+-- <step>", "whenever you attack", and a scope naming your turn ("during your
+-- turn").
 --
 -- A CLASSIFICATION of a trigger condition, the third of the same kind as
 -- eventBindingSlots and zonesTriggeredFrom above.
@@ -11670,7 +11699,9 @@ controllerTurnScoped cond = case cond of
   TriggerCondition.StateIs _ -> False
   TriggerCondition.DealsDamage _ -> False
   TriggerCondition.IsDealtDamage _ -> False
-  TriggerCondition.PlayerIsDealtDamage _ -> False
+  -- The field again, LeavesZone's reading below: Fblthp, Impossibly Lost's
+  -- "during your turn".
+  TriggerCondition.PlayerIsDealtDamage watched -> Turn.isControllersTurn (PlayerIsDealtDamage.scope watched)
   TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> False
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> False
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> False

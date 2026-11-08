@@ -4,6 +4,7 @@ import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.TurnScope as TurnScope
 
@@ -29,9 +30,11 @@ data CostModifier = MkCostModifier
     -- Mauler's "that target this creature". Once, however many match.
     whichTargets :: Maybe (Filter.Filter Keyword.Keyword),
     -- | CR 601.2c: when Just, the change applies once per DISTINCT announced
-    -- target this matches -- Hinata, Dawn-Crowned's "{1} more to cast for each
-    -- target", Battlefield Thaumaturge's "for each creature it targets".
-    perTarget :: Maybe (Filter.Filter Keyword.Keyword),
+    -- target this matches, or as many times as its `each` reads against that
+    -- target -- Hinata, Dawn-Crowned's "{1} more to cast for each target",
+    -- Battlefield Thaumaturge's "for each creature it targets", Warrior's
+    -- Blades' "for each +1/+1 counter on the creature it targets".
+    perTarget :: Maybe PerTarget.PerTarget,
     -- | CR 601.2f: when Just, the change applies this many times, read as the
     -- total is determined against the effect's source -- Henzie "Toolbox"
     -- Torre's "{1} less for each time you've cast your commander". Multiplies

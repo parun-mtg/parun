@@ -243,6 +243,11 @@ arm resolving targets controller source duration gs = case duration of
               DurationEvent.SourceExiledCard -> event
               DurationEvent.SourceLeftBattlefield -> event
               DurationEvent.SpellCast criterion -> DurationEvent.SpellCast (Filter.bakeBound (Binding.playersIn targets) Map.empty Map.empty criterion)
+              -- CR 400.7: the object the slot bound, named outright. Left
+              -- standing where the slot is unbound -- the card never arrived,
+              -- so no cast of it can end the effect.
+              DurationEvent.BoundCardCast slot -> maybe event DurationEvent.CardCast (Map.lookup slot (Binding.objectsIn targets))
+              DurationEvent.CardCast _ -> event
           )
       )
   where
@@ -394,8 +399,9 @@ data Moment
   | -- | CR 701.27b: this object was turned face down. Ends the effects it is
     -- the source of, PaidFor's grain.
     TurnedFaceDown ObjectId
-  | -- | CR 601.2i: this spell became cast.
-    Cast ObjectId
+  | -- | CR 601.2i: this card, under the id it had before CR 601.2a moved it,
+    -- became cast as this spell.
+    Cast ObjectId ObjectId
   | -- | CR 901.11: a player planeswalked.
     Planeswalked
   | -- | CR 607.2a: an instruction of this object exiled a card. Ends the
@@ -481,7 +487,7 @@ endsAt gs moment source expiry = case expiry of
   -- spell from the baked seat. Not by its source leaving: the effect is a
   -- resolved one, which outlives it.
   Expiry.OnEvent (EventExpiry.MkEventExpiry you (DurationEvent.SpellCast criterion)) -> case moment of
-    Cast spell -> Filter.matches (Projection.sourceContext gs (Just you) source) (Projection.viewOfObject spell gs) criterion
+    Cast _ spell -> Filter.matches (Projection.sourceContext gs (Just you) source) (Projection.viewOfObject spell gs) criterion
     _ -> False
   -- CR 901.11: ended by any player's planeswalk, which
   -- Parun.Engine.Planechase.encounterTop sweeps. Not by its source leaving: the
@@ -496,6 +502,14 @@ endsAt gs moment source expiry = case expiry of
   -- was armed ends it at the first settle, so the effect does nothing:
   -- Squidnapper's 2019-11-12 ruling on this duration (Oubliette's 2020-08-07,
   -- Out of Time's 2021-06-18 and The Moment's 2023-10-13 agree).
+  -- CR 601.2i / 400.7: ended by a cast of the very object the slot bound, so a
+  -- card that left that zone first and was cast as a new object never ends it.
+  -- Not by its source leaving, SpellCast's reason. An unbaked slot named
+  -- nothing, so nothing ends it.
+  Expiry.OnEvent (EventExpiry.MkEventExpiry _ (DurationEvent.CardCast card)) -> case moment of
+    Cast former _ -> former == card
+    _ -> False
+  Expiry.OnEvent (EventExpiry.MkEventExpiry _ (DurationEvent.BoundCardCast _)) -> False
   Expiry.OnEvent (EventExpiry.MkEventExpiry _ DurationEvent.SourceLeftBattlefield) ->
     moment == Settle && Set.notMember source (GameState.battlefield gs) && Map.notMember source (GameState.phasedOut gs)
   where

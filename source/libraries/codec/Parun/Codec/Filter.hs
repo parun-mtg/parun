@@ -1,6 +1,7 @@
 module Parun.Codec.Filter where
 
 import qualified Data.Typeable as Typeable
+import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.AbilityKind as AbilityKind
 import qualified Parun.Codec.Anchor as Anchor
 import qualified Parun.Codec.BlockRole as BlockRole
@@ -96,6 +97,7 @@ codec keywordCodec =
       -- rejected at decode instead of decoding into a vacuously true filter: a
       -- zone holds no negative number of cards.
       Arm.payload "CardsInGraveyardAtLeast" Common.natural Filter.CardsInGraveyardAtLeast (\x -> case x of Filter.CardsInGraveyardAtLeast y -> Just y; _ -> Nothing),
+      Arm.payload "OwnsBoundAtLeast" (ownsBound keywordCodec) (\(n, y, f) -> Filter.OwnsBoundAtLeast n y f) (\x -> case x of Filter.OwnsBoundAtLeast n y f -> Just (n, y, f); _ -> Nothing),
       Arm.nullary "IsSource" Filter.IsSource,
       Arm.payload "IsObject" ObjectId.codec Filter.IsObject (\x -> case x of Filter.IsObject y -> Just y; _ -> Nothing),
       Arm.nullary "TargetsSource" Filter.TargetsSource,
@@ -199,6 +201,15 @@ controls keywordCodec =
       <$> Fields.required "margin" ControlMargin.codec fst
       <*> Fields.required "filter" (codec keywordCodec) snd
 
+-- | How many of the slot's objects the candidate must own, and which count.
+ownsBound :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Natural.Natural, SlotName.SlotName, Filter.Filter keyword)
+ownsBound keywordCodec =
+  Fields.object $
+    (,,)
+      <$> Fields.required "atLeast" Common.natural (\(n, _, _) -> n)
+      <*> Fields.required "slot" SlotName.codec (\(_, y, _) -> y)
+      <*> Fields.required "filter" (codec keywordCodec) (\(_, _, f) -> f)
+
 -- | Which of the candidate's players, and how it relates to the perspective.
 heldBy :: Codec.Codec (Holder.Holder, PlayerRelation.PlayerRelation)
 heldBy =
@@ -267,6 +278,7 @@ tagOf x = case x of
   Filter.IsControllerOfBound {} -> "IsControllerOfBound"
   Filter.Controls {} -> "Controls"
   Filter.CardsInGraveyardAtLeast {} -> "CardsInGraveyardAtLeast"
+  Filter.OwnsBoundAtLeast {} -> "OwnsBoundAtLeast"
   Filter.IsSource {} -> "IsSource"
   Filter.IsObject {} -> "IsObject"
   Filter.TargetsSource {} -> "TargetsSource"

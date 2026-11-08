@@ -1208,7 +1208,8 @@ batchScoped condition = case condition of
   TriggerCondition.RevealedThisWay _ -> False
   -- OneOrMore beside a OneOrMore Leaves: "whenever you discard one or more cards"
   -- (Magmakin Artillerist) names a whole CR 608.2f / 601.2h discard as one
-  -- trigger event, where EachOccurrence is CR 603.2c's second sentence. Only as
+  -- trigger event per discarder (Event.Binding's batchPartition), where
+  -- EachOccurrence is CR 603.2c's second sentence. Only as
   -- good as the brackets around every caller discarding several cards at once
   -- -- a cost, Effect.Discard, connive, the cleanup discard -- since an
   -- unbracketed loop gives each card a group of its own.
@@ -1217,9 +1218,9 @@ batchScoped condition = case condition of
   -- CR 508.3b / 805.10b: one combined declaration attacks a target once, but
   -- Parun.Engine.Combat records one GameEvent.BecameAttacked per (attacking
   -- player, target) pair, CR 508.3e's arity, bracketed as one group. "Is
-  -- attacked" names no attacking player and matches one target only, so one
-  -- trigger per group is one per target. Parun.TeamSpec's "CR 508.3b a player
-  -- two teammates attack is attacked once" is the proof.
+  -- attacked" names no attacking player, so the group is the trigger event and
+  -- Event.Binding.batchPartition splits it per attacked target. Parun.TeamSpec's
+  -- "CR 508.3b a player two teammates attack is attacked once" is the proof.
   TriggerCondition.Attacks (AttackTrigger.Attacked t) -> Maybe.isNothing (AttackedTrigger.attacker t)
   TriggerCondition.Attacks _ -> False
   -- FALSE despite naming batches in the RULES, which is the one group of answers
@@ -3397,31 +3398,12 @@ reflexiveFiring gs entry =
 copiesIn :: [TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card)] -> TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card) -> Natural
 copiesIn abilities ability = List.genericLength (filter (== ability) abilities)
 
--- CR 603.7: delayed abilities whose trigger event is among these events. An entry
--- that TRIGGERS is REMOVED from the store (CR 603.7b) unless it carries a stated
--- duration, which is that rule's own exception -- one of Expiry's sweeps ends
--- those instead. Expiry.firesOnce says which entries are one-shot: also those
--- whose duration ends as it is used, "the next ... this turn". The survivors
--- are returned so the caller can store them back. CR 603.7d-f: the controller
--- travels with the entry, so a delayed ability resolves under whoever controlled
--- the spell that created it even once that spell's source is gone.
---
--- `matching` matches its condition only against EVENTS, never live game state -- the
--- turn number `delayedArmed` reads is CR 603.7a's arming gate, which can only withhold a
--- match. So a stored entry whose condition is StateIs would never fire, and
--- without a stated duration would never leave the store. Not a live gap: no card
--- in this pool arms a delayed ability with a StateIs condition.
---
--- CR 603.4 is applied HERE rather than in gatherTriggers, because the surviving
--- store depends on it: "the ability triggers only if [the condition] is [true];
--- otherwise it does nothing", and CR 603.7b bounds how many times the ability
--- TRIGGERS, not how many occurrences of its event it watches. So an entry whose
--- intervening "if" is false at the occurrence has not triggered, nothing is spent
--- against 603.7b's one shot, and it stays armed for the next occurrence. No other
--- 603.7 subrule evicts an entry, so triggering and a stated duration remain its
--- only two exits.
-delayedPending :: [LoggedEvent.LoggedEvent] -> GameState -> Game ([PendingTrigger], Seq.Seq DelayedTrigger)
-delayedPending grouped gs =
+-- CR 603.7 and CR 603.2c: the occurrences among `grouped` that fire one delayed
+-- entry, and the pending trigger each one becomes -- before CR 603.7b's one-shot
+-- choice and CR 603.4's check, which delayedPending applies. Pure, so
+-- Parun.Engine.Mana's offer reads the same match the payment fires.
+delayedMatches :: [LoggedEvent.LoggedEvent] -> GameState -> (DelayedTrigger -> [LoggedEvent.LoggedEvent], DelayedTrigger -> LoggedEvent.LoggedEvent -> PendingTrigger)
+delayedMatches grouped gs =
   let -- WHICH events fired the entry, rather than merely whether one did: the
       -- payload reads CR 603.2's event through eventBindings below, so the match
       -- has to hand each event forward.
@@ -3471,6 +3453,79 @@ delayedPending grouped gs =
         | otherwise = matching entry
       memberSlots entry logged = eventBindingsOver (battlefieldAt (LoggedEvent.group logged) gs) gs Nothing Map.empty (DelayedTrigger.source entry) (DelayedTrigger.controller entry) (TriggeredAbility.condition (DelayedTrigger.ability entry)) (LoggedEvent.event logged)
       partitionOf entry = batchPartition (TriggeredAbility.condition (DelayedTrigger.ability entry)) . memberSlots entry
+      -- CR 603.2c's first sentence on this path, `oncePerBatch`'s join: a
+      -- batch-scoped condition's bindings are every matching member's of the
+      -- group that fired it, a per-occurrence one's are its own event's.
+      eventSlots entry logged =
+        let cond = TriggeredAbility.condition (DelayedTrigger.ability entry)
+            one = memberSlots entry
+            sameOccurrence other = LoggedEvent.group other == LoggedEvent.group logged && partitionOf entry other == partitionOf entry logged
+         in case filter sameOccurrence (matching entry) of
+              first : rest | batchScoped cond -> batchBindings (fmap one (first NonEmpty.:| rest))
+              _ -> one logged
+      pend entry logged =
+        PendingTrigger.MkPendingTrigger
+          (TriggerSource.OfObject (DelayedTrigger.source entry))
+          (DelayedTrigger.controller entry)
+          (DelayedTrigger.ability entry)
+          -- CR 603.2's event slots over CR 603.7c's captured environment, the way an
+          -- object's trigger gets them in eventTriggers -- False Cure's "that
+          -- player" is the seat that just gained, not one the arming spell named.
+          -- Map.union is left-biased, so a name the arming environment happens to
+          -- share is read as THIS firing's, which is what the printed word means.
+          -- Except a step's beginning, which names only the seat the turn began
+          -- with (Binding.eventBindingsOver) and happens to no player: under CR
+          -- 805.4 that seat is a teammate of the one Nafs Asp hit or Elkin Lair
+          -- exiled from, so what the arming environment named stands. Proved by
+          -- data/scenarios/nafs-asp-under-shared-turns-costs-the-teammate-it-hit.json.
+          -- Nothing for CR 400.7f's bearer arrival: this scan looks for events a
+          -- delayed entry watches, not for a bearer's own departure, and the
+          -- entry's captured environment (CR 603.7c) is where what it knows about
+          -- its own object comes from. The empty arrival table beside it for the
+          -- same reason -- this scan gathers no batch -- which is why CR 400.7e's
+          -- new object is claimed by eventBindingSlotsSometimes and not by the
+          -- floor wherever eventBindings reads that table.
+          ( case LoggedEvent.event logged of
+              GameEvent.StepBegan _ -> Map.union (DelayedTrigger.bindings entry) (eventSlots entry logged)
+              _ -> Map.union (eventSlots entry logged) (DelayedTrigger.bindings entry)
+          )
+          -- CR 603.7a: what tells the ability this becomes apart from one its
+          -- source simply has, once it is on the stack.
+          (Just (DelayedTrigger.createdAt entry))
+          -- CR 603.2's event, the same one the slots above were read off.
+          (Just logged)
+          -- One entry is one instance, CR 603.7's ability created on its own.
+          1
+          -- CR 113.7a, read off the board as it stood after the firing event.
+          (delayedAsTriggered (battlefieldAt (LoggedEvent.group logged) gs) (DelayedTrigger.source entry) gs)
+   in (occurrences, pend)
+
+-- CR 603.7: delayed abilities whose trigger event is among these events. An entry
+-- that TRIGGERS is REMOVED from the store (CR 603.7b) unless it carries a stated
+-- duration, which is that rule's own exception -- one of Expiry's sweeps ends
+-- those instead. Expiry.firesOnce says which entries are one-shot: also those
+-- whose duration ends as it is used, "the next ... this turn". The survivors
+-- are returned so the caller can store them back. CR 603.7d-f: the controller
+-- travels with the entry, so a delayed ability resolves under whoever controlled
+-- the spell that created it even once that spell's source is gone.
+--
+-- delayedMatches matches its condition only against EVENTS, never live game state -- the
+-- turn number `delayedArmed` reads is CR 603.7a's arming gate, which can only withhold a
+-- match. So a stored entry whose condition is StateIs would never fire, and
+-- without a stated duration would never leave the store. Not a live gap: no card
+-- in this pool arms a delayed ability with a StateIs condition.
+--
+-- CR 603.4 is applied HERE rather than in gatherTriggers, because the surviving
+-- store depends on it: "the ability triggers only if [the condition] is [true];
+-- otherwise it does nothing", and CR 603.7b bounds how many times the ability
+-- TRIGGERS, not how many occurrences of its event it watches. So an entry whose
+-- intervening "if" is false at the occurrence has not triggered, nothing is spent
+-- against 603.7b's one shot, and it stays armed for the next occurrence. No other
+-- 603.7 subrule evicts an entry, so triggering and a stated duration remain its
+-- only two exits.
+delayedPending :: [LoggedEvent.LoggedEvent] -> GameState -> Game ([PendingTrigger], Seq.Seq DelayedTrigger)
+delayedPending grouped gs =
+  let (occurrences, pend) = delayedMatches grouped gs
       -- Which entries CR 603.7b's second sentence actually ASKS, answered without
       -- asking: the CR 101.4c ordering below has to know before the first
       -- question is raised. The three gates are firedBy's own, read through this
@@ -3531,51 +3586,6 @@ delayedPending grouped gs =
                       -- the end falls back to the earliest.
                       answer <- Game.choose (Prompt.ChooseDelayedTriggerEvent (Decide.deciderFor controller gs) controller (DelayedTrigger.source entry) candidates)
                       pure [Replacement.at (NonEmpty.toList block) answer (NonEmpty.head block)]
-      -- CR 603.2c's first sentence on this path, `oncePerBatch`'s join: a
-      -- batch-scoped condition's bindings are every matching member's of the
-      -- group that fired it, a per-occurrence one's are its own event's.
-      eventSlots entry logged =
-        let cond = TriggeredAbility.condition (DelayedTrigger.ability entry)
-            one = memberSlots entry
-            sameOccurrence other = LoggedEvent.group other == LoggedEvent.group logged && partitionOf entry other == partitionOf entry logged
-         in case filter sameOccurrence (matching entry) of
-              first : rest | batchScoped cond -> batchBindings (fmap one (first NonEmpty.:| rest))
-              _ -> one logged
-      pend entry logged =
-        PendingTrigger.MkPendingTrigger
-          (TriggerSource.OfObject (DelayedTrigger.source entry))
-          (DelayedTrigger.controller entry)
-          (DelayedTrigger.ability entry)
-          -- CR 603.2's event slots over CR 603.7c's captured environment, the way an
-          -- object's trigger gets them in eventTriggers -- False Cure's "that
-          -- player" is the seat that just gained, not one the arming spell named.
-          -- Map.union is left-biased, so a name the arming environment happens to
-          -- share is read as THIS firing's, which is what the printed word means.
-          -- Except a step's beginning, which names only the seat the turn began
-          -- with (Binding.eventBindingsOver) and happens to no player: under CR
-          -- 805.4 that seat is a teammate of the one Nafs Asp hit or Elkin Lair
-          -- exiled from, so what the arming environment named stands. Proved by
-          -- data/scenarios/nafs-asp-under-shared-turns-costs-the-teammate-it-hit.json.
-          -- Nothing for CR 400.7f's bearer arrival: this scan looks for events a
-          -- delayed entry watches, not for a bearer's own departure, and the
-          -- entry's captured environment (CR 603.7c) is where what it knows about
-          -- its own object comes from. The empty arrival table beside it for the
-          -- same reason -- this scan gathers no batch -- which is why CR 400.7e's
-          -- new object is claimed by eventBindingSlotsSometimes and not by the
-          -- floor wherever eventBindings reads that table.
-          ( case LoggedEvent.event logged of
-              GameEvent.StepBegan _ -> Map.union (DelayedTrigger.bindings entry) (eventSlots entry logged)
-              _ -> Map.union (eventSlots entry logged) (DelayedTrigger.bindings entry)
-          )
-          -- CR 603.7a: what tells the ability this becomes apart from one its
-          -- source simply has, once it is on the stack.
-          (Just (DelayedTrigger.createdAt entry))
-          -- CR 603.2's event, the same one the slots above were read off.
-          (Just logged)
-          -- One entry is one instance, CR 603.7's ability created on its own.
-          1
-          -- CR 113.7a, read off the board as it stood after the firing event.
-          (delayedAsTriggered (battlefieldAt (LoggedEvent.group logged) gs) (DelayedTrigger.source entry) gs)
       store = GameState.delayedTriggers gs
       -- CR 603.2 plus CR 603.4: the event matched AND the intervening "if" held,
       -- which together are what "triggered" means. Per occurrence, since CR 603.4

@@ -71,5 +71,11 @@ spec s = Spec.describe s "Parun.Codec.ManaProduction" $ do
       ManaProduction.codec
       ManaProduction.ProducedByTapped
       " {\"type\":\"ProducedByTapped\"} "
+  Spec.it s "InCommanderIdentity" $
+    Common.assertCodec
+      s
+      ManaProduction.codec
+      ManaProduction.InCommanderIdentity
+      " {\"type\":\"InCommanderIdentity\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ManaProduction.codec

@@ -226,7 +226,7 @@
       "player": "bob",
       "do": {
         "Take": {
-          "action": "TurnFaceUp $silencer Morph",
+          "action": "TurnFaceUp $silencer",
           "mana": [
             "$bi-1",
             "$bi-2",

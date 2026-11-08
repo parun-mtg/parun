@@ -522,7 +522,7 @@ exiledPermanent = SlotName.MkSlotName (Text.pack "thatExiledPermanent")
 -- so every read is CURRENT information (CR 608.2h's first clause) and
 -- Parun.Engine.Resolve.Slots.effectViewOf needs no arm.
 --
--- Bound by Parun.Engine.Cost.payComponent's ExileThis and ExileThisFromGraveyard
+-- Bound by Parun.Engine.Cost.payComponent's ExileThis and ExileThisFrom
 -- arms alike, the two components that exile the object the cost is on, and left
 -- UNBOUND where nothing arrived in exile -- a replacement effect may have sent
 -- the object elsewhere, and a slot naming the object that did not arrive would
@@ -841,6 +841,13 @@ waterbendCost = SlotName.MkSlotName (Text.pack "thatWaterbendCost")
 -- card's targetSlots may name it" sweep as the slots above.
 removedCounters :: SlotName
 removedCounters = SlotName.MkSlotName (Text.pack "thatManyCountersRemoved")
+
+-- CR 606.4 / 606.5: the reserved slot under which a loyalty ability's payment
+-- binds how many loyalty counters it removed -- the combined cost actually paid,
+-- not the printed one (Way of the Mind Sculptor). Folded onto the ability by
+-- Parun.Engine.Activate, removedCounters' road; not a target either.
+loyaltyRemoved :: SlotName
+loyaltyRemoved = SlotName.MkSlotName (Text.pack "thatManyLoyaltyRemoved")
 
 -- CR 400.7d: the part of a spell's binding environment the permanent it
 -- becomes keeps -- "information about the spell ... including what costs were
@@ -1217,7 +1224,9 @@ attackingCreature = SlotName.MkSlotName (Text.pack "thatAttackingCreature")
 -- control attack, THEY gain deathtouch". Stamped by
 -- Parun.Engine.Event.Binding.eventBindings off GameEvent.AttackersDeclared: the
 -- declared attackers that player controls which the condition's Filter admits,
--- so "they" names exactly what made the trigger fire.
+-- so "they" names exactly what made the trigger fire. CR 508.3b's "is attacked"
+-- binds it too, off GameEvent.BecameAttacked: the creatures declared attacking
+-- that target (Garruk, Curse Breaker's "those creatures").
 --
 -- A GROUP (Binding.objects), crewers' reason: named, never targeted (CR
 -- 115.10a), and a set CR 611.2c freezes when a resolution's effect begins, so a
@@ -1506,7 +1515,8 @@ setBlockedCreature oid = Map.insert blockedCreature (toObject oid)
 setAttackingCreature :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setAttackingCreature oid = Map.insert attackingCreature (toObject oid)
 
--- Bind the counted attackers under the reserved attackingCreatures slot (CR 508.3c).
+-- Bind the counted or attacking creatures under the reserved attackingCreatures
+-- slot (CR 508.3b / 508.3c).
 setAttackingCreatures :: Seq ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setAttackingCreatures oids = Map.insert attackingCreatures (toObjects oids)
 

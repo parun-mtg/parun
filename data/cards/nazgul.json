@@ -1,6 +1,10 @@
 {
   "faces": [
     {
+      "deckLimit": {
+        "type": "UpTo",
+        "value": 9
+      },
       "keywords": [
         {
           "type": "Deathtouch"

@@ -41,6 +41,7 @@ import qualified Parun.Codec.CostReduction as CostReduction
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
 import qualified Parun.Codec.Counterability as Counterability
 import qualified Parun.Codec.CrewRestriction as CrewRestriction
+import qualified Parun.Codec.DeckLimit as DeckLimit
 import qualified Parun.Codec.Defense as Defense
 import qualified Parun.Codec.DungeonRoom as DungeonRoom
 import qualified Parun.Codec.Effect as Effect
@@ -197,6 +198,8 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   claimsStartingPlayer <- Fields.defaulted "claimsStartingPlayer" False Common.boolean Face.claimsStartingPlayer
   -- CR 407.3: False is the absence of the ante reminder.
   anteOnly <- Fields.defaulted "anteOnly" False Common.boolean Face.anteOnly
+  -- CR 100.2a: Nothing is the absence of an "A deck can have" line.
+  deckLimit <- Fields.defaulted "deckLimit" Nothing (Common.maybe DeckLimit.codec) Face.deckLimit
   pure
     Face.MkFace
       { Face.name = name,
@@ -253,5 +256,6 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.counterability = counterability,
         Face.canBeYourCommander = canBeYourCommander,
         Face.claimsStartingPlayer = claimsStartingPlayer,
-        Face.anteOnly = anteOnly
+        Face.anteOnly = anteOnly,
+        Face.deckLimit = deckLimit
       }

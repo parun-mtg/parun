@@ -68,6 +68,7 @@ import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
+import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
@@ -192,11 +193,14 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (fmap Text.pack ["haste", "horsemanship"]) (Normalise.normalise x (Text.pack "Haste; horsemanship (This creature can't be blocked except by creatures with horsemanship.)"))
 
   -- CR 201.5 / 201.5c / 700.7: a card names itself by its name, a legendary one by
-  -- the part before the comma, and newer Oracle text as "this creature".
+  -- the part before the comma or the word before " of ", and newer Oracle text
+  -- as "this creature".
   Spec.it s "normalise writes every self-reference alike, and only whole words" $ do
     let rograkh = CardName.MkCardName (Text.pack "Rograkh, Son of Rohgahh")
         shock = CardName.MkCardName (Text.pack "Shock")
+        kiora = CardName.MkCardName (Text.pack "Kiora of Fire and Ashes")
     Spec.assertEq s (Normalise.normalise rograkh (Text.pack "Rograkh, Son of Rohgahh deals 1 damage.")) (Normalise.normalise rograkh (Text.pack "Rograkh deals 1 damage."))
+    Spec.assertEq s [Text.pack "when ~ enters"] (Normalise.normalise kiora (Text.pack "When Kiora enters"))
     Spec.assertEq s (Normalise.normalise rograkh (Text.pack "Rograkh deals 1 damage.")) (Normalise.normalise rograkh (Text.pack "This creature deals 1 damage."))
     Spec.assertEq s [Text.pack "~ deals 2 damage to any target."] (Normalise.normalise shock (Text.pack "Shock deals 2 damage to any target."))
     Spec.assertEq s [Text.pack "shockwave."] (Normalise.normalise shock (Text.pack "Shockwave."))
@@ -220,6 +224,11 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Protection from red")) (Oracle.render (card Layout.Normal [[Keyword.Protection (Protection.MkProtection (Filter.HasColor Color.Red) Nothing)]]))
     Spec.assertEq s (Just (Text.pack "Affinity for artifacts")) (Oracle.render (card Layout.Normal [[Keyword.Affinity (Filter.HasCardType CardType.Artifact)]]))
     Spec.assertEq s (Just (Text.pack "Nonbasic landwalk")) (Oracle.render (card Layout.Normal [[Keyword.Landwalk (Filter.Not (Filter.HasSupertype Supertype.Basic))]]))
+
+  -- CR 100.2a: a card's own deck limit, named by the card itself.
+  Spec.it s "render prints a deck limit" $ do
+    Spec.assertEq s (Just (Text.pack "A deck can have up to nine cards named Spark.")) (Oracle.render (withFace (\f -> f {Face.deckLimit = Just (DeckLimit.UpTo 9)})))
+    Spec.assertEq s (Just (Text.pack "A deck can have any number of cards named Spark.")) (Oracle.render (withFace (\f -> f {Face.deckLimit = Just DeckLimit.AnyNumber})))
 
   -- CR 602.1a: "[Cost]: [Effect.]"; CR 107.5's {T}; CR 106.1's mana.
   Spec.it s "render prints an activated mana ability" $ do
@@ -575,12 +584,16 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let rising = activated (Cost.MkCost (Just (ManaCost.MkManaCost [green])) []) (Effect.MoveToZone (move (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) Zone.Battlefield) {MoveToZone.origin = Just Zone.Graveyard})
     Spec.assertEq s (Just (Text.pack "{G}: Return Spark from your graveyard to the battlefield.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [rising]})))
 
-  -- CR 110.4a: every permanent type is "permanent", every one but land
-  -- "nonland permanent" (Restoration Seminar).
+  -- CR 110.4a: every permanent type is "permanent", and with land negated
+  -- "nonland permanent" (Restoration Seminar); every type but land is not,
+  -- since it admits an artifact land.
   Spec.it s "render names a permanent card" $ do
-    let permanents = [CardType.Artifact, CardType.Battle, CardType.Creature, CardType.Enchantment, CardType.Planeswalker]
-        seminar = spell [clause [Effect.MoveToZone (move (ObjectRef.InSlot target) Zone.Battlefield)]] [(target, graveyard PlayerRelation.You (Just (Filter.Or (fmap Filter.HasCardType permanents))))]
-    Spec.assertEq s (Just (Text.pack "Return target nonland permanent card from your graveyard to the battlefield.")) (Oracle.render seminar)
+    let permanents = [CardType.Artifact, CardType.Battle, CardType.Creature, CardType.Enchantment, CardType.Land, CardType.Planeswalker]
+        seminar f = spell [clause [Effect.MoveToZone (move (ObjectRef.InSlot target) Zone.Battlefield)]] [(target, graveyard PlayerRelation.You (Just f))]
+        nonland = Filter.And [Filter.Or (fmap Filter.HasCardType permanents), Filter.Not (Filter.HasCardType CardType.Land)]
+        allButLand = Filter.Or (fmap Filter.HasCardType (filter (/= CardType.Land) permanents))
+    Spec.assertEq s (Just (Text.pack "Return target nonland permanent card from your graveyard to the battlefield.")) (Oracle.render (seminar nonland))
+    Spec.assertBool s (Oracle.render (seminar allButLand) /= Oracle.render (seminar nonland)) "all but land read as nonland"
 
   -- A nonlegendary object reads so (Cytoshape) or as one "that isn't
   -- legendary" (Urza's Ruinous Blast), as printings differ.
@@ -648,7 +661,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let forests = countOf (Filter.HasSubtype Subtype.Forest) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))
     Spec.assertEq s [[Text.pack "You gain 1 life for each Forest on the battlefield.", Text.pack "You gain life equal to the number of Forests on the battlefield."]] (Oracle.abilities (spell [clause [gainLifeBy forests]] []))
     let hand = countOf (Filter.And []) (InZone.MkInZone Zone.Hand (PlayerRef.Relative PlayerRelation.You))
-    Spec.assertEq s [[Text.pack "You gain 2 life for each card in your hand."]] (Oracle.abilities (spell [clause [gainLifeBy (Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes 2 hand)))]] []))
+    Spec.assertEq s [[Text.pack "You gain 2 life for each card in your hand."]] (Oracle.abilities (spell [clause [gainLifeBy (Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal 2) hand)))]] []))
     let tapped = countOf (Filter.And [Filter.HasCardType CardType.Creature, Filter.IsTapped, Filter.HeldByBound Holder.Controller target]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))
         opponent = [(target, TargetSlot.required Pool.Players (Just (Filter.IsPlayer PlayerRelation.Opponent)))]
     Spec.assertEq s [[Text.pack "Draw a card for each tapped creature target opponent controls.", Text.pack "Draw cards equal to the number of tapped creatures target opponent controls."]] (Oracle.abilities (spell [clause [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) tapped Nothing)]] opponent))
@@ -724,7 +737,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let hand = countOf (Filter.And []) (InZone.MkInZone Zone.Hand (PlayerRef.Relative PlayerRelation.You))
         snake = token "Snake Token" [Color.Green] [Subtype.Snake] 1 []
         swarm = Effect.Create (Create.MkCreate hand snake EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False)
-    Spec.assertEq s [[Text.pack "Create a 1/1 green Snake creature token for each card in your hand.", Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "Create X 1/1 green Snake creature tokens, where X is the number of cards in your hand."]] (Oracle.abilities (spell [clause [swarm]] []))
+    Spec.assertEq s [[Text.pack "Create a 1/1 green Snake creature token for each card in your hand.", Text.pack "You create a 1/1 green Snake creature token for each card in your hand.", Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "You create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "Create X 1/1 green Snake creature tokens, where X is the number of cards in your hand.", Text.pack "You create X 1/1 green Snake creature tokens, where X is the number of cards in your hand."]] (Oracle.abilities (spell [clause [swarm]] []))
     let opponents = Quantity.Count (Count.MkCount (Scope.OverPlayers (PlayerRef.Relative PlayerRelation.Opponent)) (Filter.And []) Aggregation.Members)
         invasion = Effect.Create (Create.MkCreate opponents snake EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False)
     Spec.assertBool s (Oracle.says (spell [clause [invasion]] []) (CardName.MkCardName (Text.pack "Spark")) (Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of opponents you have.")) "no \"opponents you have\""
@@ -781,7 +794,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
         removing n spread f = CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n (WhichCounters.OfKind CounterKind.PlusOnePlusOne) f spread)
     Spec.assertEq s (Just (Text.pack "Return Spark to its owner's hand: Draw a card.")) (costed [CostComponent.ReturnThis])
     Spec.assertEq s (Just (Text.pack "{T}, Exile Spark: Draw a card.")) (costed [CostComponent.TapThis, CostComponent.ExileThis])
-    Spec.assertEq s (Just (Text.pack "Exile Spark from your graveyard: Draw a card.")) (costed [CostComponent.ExileThisFromGraveyard])
+    Spec.assertEq s (Just (Text.pack "Exile Spark from your graveyard: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Graveyard])
+    Spec.assertEq s (Just (Text.pack "Exile Spark from your hand: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Hand])
     Spec.assertEq s (Just (Text.pack "Pay {E}{E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Fixed 2)])
     Spec.assertEq s (Just (Text.pack "Pay X {E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))])
     Spec.assertEq s (Just (Text.pack "Remove two wish counters from Spark: Draw a card.")) (costed [CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "wish"))) 2)])
@@ -932,7 +946,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "{G}: You gain 1 life. Activate only as a sorcery.")) (Oracle.render (restricted [ActivationRestriction.SorcerySpeed]))
     Spec.assertEq s (Just (Text.pack "{G}: You gain 1 life. Activate only during your turn.")) (Oracle.render (restricted [ActivationRestriction.DuringTurn (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))]))
     Spec.assertEq s (Just (Text.pack "{G}: You gain 1 life. Activate only during your upkeep and only once each turn.")) (Oracle.render (restricted [upkeep, ActivationRestriction.TimesEachTurn 1]))
-    Spec.assertEq s Nothing (Oracle.render (restricted [ActivationRestriction.DuringDieRoll]))
+    Spec.assertEq s Nothing (Oracle.render (restricted [ActivationRestriction.DuringThrow]))
     -- CR 602.5b counted past once is a sentence of its own (Vampire Bats).
     Spec.assertEq s (Just (Text.pack "{G}: You gain 1 life. Activate no more than twice each turn.")) (Oracle.render (restricted [ActivationRestriction.TimesEachTurn 2]))
     Spec.assertEq s (Just (Text.pack "{G}: You gain 1 life. Activate no more than three times each turn.")) (Oracle.render (restricted [ActivationRestriction.TimesEachTurn 3]))

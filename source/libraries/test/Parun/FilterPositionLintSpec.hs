@@ -14,7 +14,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -95,6 +95,7 @@ import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersTrigger as EntersTrigger
@@ -108,6 +109,7 @@ import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EquipTarget as EquipTarget
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
@@ -322,6 +324,8 @@ filterAtomsOf leaf predicate = case predicate of
   -- A leaf for the nullary atoms' reason, a payload over: CR 400.1's card count is
   -- a Natural, which holds no Filter for a card author to reach.
   Filter.Type.CardsInGraveyardAtLeast _ -> leaf predicate
+  -- A Filter position for Controls' reason: the nest describes what is counted.
+  Filter.Type.OwnsBoundAtLeast _ _ f -> filterAtomsOf leaf f
   Filter.Type.IsAttacking -> leaf predicate
   Filter.Type.IsAttackingPlayer _ -> leaf predicate
   Filter.Type.IsAttackingPlaneswalker _ -> leaf predicate
@@ -425,6 +429,8 @@ sourceFramed framing = case framing of
   -- Parun.Engine.Mana.admitsUnder frames its context by no source: the mana's
   -- source may be gone by the time it is spent (CR 106.6).
   ManaRestrictionFramed -> False
+  -- Parun.Engine.ManaRider.spentOnMatches likewise frames by no source.
+  SpentOnFramed -> False
   -- Conservative, KeywordFramed's posture: refusing the atom only narrows what
   -- a card may write. A keyword's own Filter is matched against an aiming
   -- object at CR 702.16b and CR 702.11d (Parun.Engine.Target.targetable), whose
@@ -642,9 +648,10 @@ amountedSlotAtoms value = case value of
         tagged names = any (\v -> case v of Value.String t -> String.unwrap t `elem` fmap Text.pack names; _ -> False) (keyed "type")
         referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference"] then keyed "value" else []))
         restrictionAtoms = sum (fmap (amountedAtoms "affected") (if tagged ["CantAttack", "CantBlock"] then keyed "value" else []))
+        freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["CastFromHandWithoutPayingManaCost"] then keyed "value" else []))
         here =
           if null (keyed "pool") || null (keyed "amount")
-            then referenceAtoms + restrictionAtoms
+            then referenceAtoms + restrictionAtoms + freeCastAtoms
             else sum (fmap (jsonAtoms enclosingAmountTag) (keyed "filter"))
      in here + sum (fmap (amountedSlotAtoms . Pair.value) pairs)
   Value.String _ -> 0
@@ -652,8 +659,9 @@ amountedSlotAtoms value = case value of
   Value.Boolean _ -> 0
   Value.Number _ -> 0
 
--- A conjure reference pick's value, or a combat restriction's
--- (Parun.Types.AffectedUnless): the atoms of its subtree at `key` where an
+-- A conjure reference pick's value, a combat restriction's
+-- (Parun.Types.AffectedUnless) or a free-cast grant's
+-- (Parun.Types.FreeCastFromHand): the atoms of its subtree at `key` where an
 -- "amount" sits beside it, and none where it does not.
 amountedAtoms :: String -> Value.Value -> Int
 amountedAtoms key value = case value of
@@ -664,13 +672,14 @@ amountedAtoms key value = case value of
   _ -> 0
 
 -- How many CR 202.3 computed-bound operands this card carries in a target slot,
--- reference pick or combat restriction that names an amount, and how many
+-- reference pick, combat restriction or free-cast grant that names an amount, and how many
 -- anywhere else. The second
 -- number is the offence; the first is what Celestine, the Living Saint
 -- legitimately has one of.
 --
 -- Parun.Engine.Target.slotContext fills Filter.Context.slotAmount off the SLOT's
--- own Quantity (Parun.Engine.CombatRestriction.amountFrame off a restriction's),
+-- own Quantity (Parun.Engine.CombatRestriction.amountFrame off a restriction's,
+-- Parun.Engine.PlayerEffect.freeCastAdmits off a free-cast grant's),
 -- so the operand in a slot that names none -- or in a Count filter, a static
 -- ability's affected set, a search filter, a cost criterion -- is a silent False
 -- rather than a rejected card. This is where that is made loud.
@@ -1151,6 +1160,26 @@ framedNameOffends card =
 -- evaluatedOffends polices the Evaluated one.
 boundCreatureTypeAtoms :: Value.Value -> Int
 boundCreatureTypeAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.CreatureType (Anchor.Bound _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.Bound _) -> True; _ -> False)
+
+-- The CR 903.3e atoms in an encoding: Filter.Shares at YourCommander.
+yourCommanderAtoms :: Value.Value -> Int
+yourCommanderAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares _ Anchor.YourCommander -> True; _ -> False)
+
+-- How many CR 903.3e atoms this card carries where
+-- Parun.Engine.Projection.framedByCommanders fills the commanders' creature
+-- types (SpentOnFramed), and how many anywhere else, where the atom is a silent
+-- False. The second number is the offence.
+yourCommanderCounts :: Face.Face Card.Type.Card -> (Int, Int)
+yourCommanderCounts card =
+  let total wanted = sum (fmap (\(_, f) -> yourCommanderAtoms (atomJson f)) (filter (\(framing, _) -> (framing == SpentOnFramed) == wanted) (cardFilters card)))
+   in (total True, total False)
+
+-- The atom outside that position, or the traversal and the codec disagreeing
+-- about how many the card holds -- boundCreatureTypeOffends' two offences.
+yourCommanderOffends :: Face.Face Card.Type.Card -> Bool
+yourCommanderOffends card =
+  let (framed, elsewhere) = yourCommanderCounts card
+   in elsewhere /= 0 || framed + elsewhere /= yourCommanderAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
 
 -- How many CR 205.3m atoms this card carries in a resolution's own positions --
 -- an effect's ObjectRef (Heirloom Blade), a clause's "if" (Mudbutton Clanger), a
@@ -1804,6 +1833,19 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (boundCreatureTypeOffends restricted) "the atom in an affected set offends"
     Spec.assertEqWith s "counted outside the admitted positions" (boundCreatureTypeCounts restricted) (1, 1)
+  -- CR 903.3e's commander comparison: answerable only where
+  -- Parun.Engine.ManaRider.spentOnMatches fills
+  -- Filter.Context.commanderCreatureTypes.
+  Spec.it s "CR 903.3e no card compares against its commander outside what mana was spent on" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace yourCommanderOffends . Printing.card) ps
+    Spec.assertEqWith s "the atom sits only in a spend trigger or rider" (fmap (S.nameOf . Printing.card) offenders) []
+    path <- S.printingOf s registry "Path of Ancestry"
+    let face = S.combinedFace path
+        atom = Filter.Type.Shares Trait.CreatureType Anchor.YourCommander
+        restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
+    Spec.assertEqWith s "Path of Ancestry's one atom is in its spend trigger" (yourCommanderCounts face) (1, 0)
+    Spec.assertBool s (yourCommanderOffends restricted) "the atom in an affected set offends"
   -- CR 208.1's bound comparison in the arm above's frame, one Filter.Context field
   -- over: answerable only where effectContext fills Filter.Context.slotMeasures.
   -- See ofBoundOffends for the two offences.
@@ -1951,11 +1993,16 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- player effect comparing a mana value against any other operand would leave
   -- the sample too short with nothing failing. The position lints above keep the
   -- source, bound-object and enclosing-amount operands out of a player effect;
-  -- this keeps the rest out too.
+  -- this keeps the rest out too. A printed free-cast grant's spells are exempt:
+  -- Parun.Engine.PlayerEffect's freeCastAdmits reaches neither choiceCouldEscape
+  -- nor choiceCouldApply,
+  -- and CR 107.3b fixes X at 0 under the grant, so the hand's mana value is the
+  -- spell's (Omnipresence's EnclosingAmount).
   Spec.it s "CR 601.3a no player effect compares a mana value against anything but a literal" $ do
     ps <- S.allPrintings s corpus
     let encode = Codec.encode (Filter.Codec.codec Keyword.Codec.codec)
-        inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]]
+        freeCastSpells c = [FreeCastFromHand.spells grant | PlayerEffect.CastFromHandWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)]
+        inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c]
         nonLiteral = (/= Text.pack "Literal")
         offenders = filter (anyFace ((/= 0) . inPlayerEffects nonLiteral) . Printing.card) ps
     Spec.assertEqWith s "every player effect's mana value comparison is against a literal" (fmap (S.nameOf . Printing.card) offenders) []
@@ -1971,8 +2018,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- axis is the SLOT rather than the Framing: Parun.Engine.Target.slotContext fills
   -- Filter.Context.slotAmount off the target slot's own Quantity, so an
   -- EnclosingAmount operand in a slot naming no amount -- or anywhere that is not
-  -- a target slot, a conjure's reference pick or a combat restriction's affected
-  -- set at all -- is a silent False. See enclosingAmountCounts.
+  -- a target slot, a conjure's reference pick, a combat restriction's affected
+  -- set or a free-cast grant's spells at all -- is a silent False. See enclosingAmountCounts.
   Spec.it s "CR 202.3 no card compares against an enclosing amount outside a slot that names one" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace enclosingAmountOffends . Printing.card) ps
@@ -1994,7 +2041,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Tamiyo, Compleated
     -- Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
-    -- Verdict, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
+    -- Verdict, Synthetic Wide Muster on a modal trigger, Spell Blast and Detonate in a slot, and Fear of Change and Ornate Imitations in a reference
     -- pick, at the top level and
     -- inside a ForEachNumber body; Isareth the Awakener in a reflexive delayed
     -- ability's slot, whose amount the arming resolution's chosen X binds.
@@ -2007,6 +2054,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     --
     -- Greater than, against the power, in a combat restriction's affected set:
     -- Ensnaring Bridge.
+    --
+    -- At most, against the mana value, in a free-cast grant's spells: Omnipresence.
     assertAuthors
       s
       registry
@@ -2030,6 +2079,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Synthetic Paired Verdict", 1),
         ("Synthetic Total Verdict", 1),
         ("Synthetic Divided Verdict", 1),
+        ("Synthetic Wide Muster", 1),
         ("Spell Blast", 1),
         ("Detonate", 1),
         ("Fear of Change", 1),
@@ -2039,6 +2089,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("March of Otherworldly Light", 1),
         ("March of Burgeoning Life", 1),
         ("Ensnaring Bridge", 1),
+        ("Omnipresence", 1),
         ("Isareth the Awakener", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
@@ -2771,6 +2822,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         (AffectedSetFramed, [bound]),
         (ActivationCostFramed, [bound]),
         (ManaRestrictionFramed, [bound]),
+        (SpentOnFramed, [bound]),
         (TriggerConditionFramed, [bound]),
         (StoredClassFramed, [bound]),
         (ChosenSourceFramed, [bound])
@@ -3036,6 +3088,23 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs crowned) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted reference is seen" (atoms planted) 1
+  -- CR 400.7's baked half of DurationEvent.BoundCardCast: the object a cost
+  -- exiled, written by Parun.Engine.Expiry.arm and round-tripped by a total
+  -- codec, so nothing but this keeps card JSON from naming it. The unbaked slot
+  -- is card data (Emrakul, the Exigent Doom) and is not swept.
+  Spec.it s "CR 611.2a no card writes a CardCast duration" $ do
+    ps <- S.allPrintings s corpus
+    let atoms c = jsonAtoms (Text.pack "CardCast") (Codec.encode (Face.Codec.codec Card.codec) c)
+        offenders = filter (anyFace ((/= 0) . atoms) . Printing.card) ps
+    Spec.assertEqWith s "the baked event is the engine's alone" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous, for the sibling sweeps' reason.
+    piker <- S.printingOf s registry "Goblin Piker"
+    let planted =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.UntilEvent (DurationEvent.CardCast (ObjectId.MkObjectId 1))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You))))
+            }
+    Spec.assertEqWith s "a planted event is seen" (atoms planted) 1
   -- The sweep above passes VACUOUSLY for every card but Aura Graft, and Aura
   -- Graft only exercises the ACCEPTING direction, so the rejecting direction is
   -- proven here instead -- hand-built, never a card file, because a card that

@@ -83,6 +83,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.WordFamily as WordFamily
@@ -97,6 +98,9 @@ data Prompt r where
   ChooseAction :: Decider.Decider -> PlayerId.PlayerId -> [Action.Action] -> Prompt Action.Action
   -- | CR 104.3a. No Decider: CR 724.6 needs the ask to reach the true player.
   Concede :: PlayerId.PlayerId -> Prompt Concession.Concession
+  -- | CR 807.5b: which of these turn markers' stacks, by number, a player with
+  -- priority for each acts on next.
+  ChooseTurnMarker :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty Natural.Natural -> Prompt Natural.Natural
   Shuffle :: [ObjectId.ObjectId] -> Prompt [ObjectId.ObjectId]
   -- | CR 730.2 \/ 103.1c: a starting player drawn at random from these
   -- players -- a subgame's seats, or the players claiming to be the starting
@@ -184,26 +188,28 @@ data Prompt r where
   -- "any number" including none.
   ChooseStoredRerolls :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Map.Map StoredResult.StoredResult Natural.Natural -> Prompt (Map.Map StoredResult.StoredResult Natural.Natural)
   -- | CR 706.2b's first step: whether a reroll a permanent offers is taken
-  -- (Clam-I-Am's "you may reroll that die"). A choice and not a roll, so it
+  -- (Clam-I-Am's "you may reroll that die"), or whether a coin just flipped
+  -- is reflipped (CR 705.1, Goblin Bookie). A choice and not a roll, so it
   -- carries a Decider and the seat where RollDie above carries neither.
   --
   -- The seat is the MODIFIER's "you" (CR 109.5) and not always the roller: Wall
   -- of Fortune reaches every player's roll and puts the "may" -- and the cost --
   -- on the Wall's controller.
   --
-  -- The Natural is the NATURAL result the die came up, which is what rule
+  -- The ThrowResult is the NATURAL result the die came up, which is what rule
   -- 706.2b hands the offer and the only thing separating this question from the
-  -- next die's. The die's SIZE is not here: every offer in force has already
-  -- been matched against it, so it narrows nothing the seat is deciding.
+  -- next die's, or the face the coin landed on. The die's SIZE is not here:
+  -- every offer in force has already been matched against it, so it narrows
+  -- nothing the seat is deciding.
   --
   -- The Cost is CR 706.2a's "associated cost", Nothing where the modifier states
   -- none -- or the activation cost of an ability activated inside the roll
-  -- (Goblin Bookie, ActivationRestriction.DuringDieRoll). Raised only once the payer can afford it, Prompt.ChooseToPay's posture
+  -- (Goblin Bookie, ActivationRestriction.DuringThrow). Raised only once the payer can afford it, Prompt.ChooseToPay's posture
   -- for CR 118.12 -- so an accepted offer is one that goes through.
   --
   -- Never elided. CR 706.2a's "may" makes one offer a real fork, and the two
   -- answers are two different numbers on the board.
-  RerollDie :: Decider.Decider -> PlayerId.PlayerId -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
+  Rethrow :: Decider.Decider -> PlayerId.PlayerId -> ThrowResult.ThrowResult -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
   -- | CR 706.2b's second step: whether an increase-or-decrease modifier a
   -- permanent offers is taken, on which die, and which way (Night Shift of the
   -- Living Dead's "you may pay 1 life. If you do, increase or decrease the
@@ -214,7 +220,7 @@ data Prompt r where
   -- in roll order, since the printed ruling lets the roller see them all before
   -- picking the one to shift. The results are Integers, unclamped: the
   -- instruction's own modifier may have taken one below zero, and CR 706.2
-  -- clamps nothing before the last modifier. RerollDie's seat and cost, for its
+  -- clamps nothing before the last modifier. Rethrow's seat and cost, for its
   -- reasons; the lone Natural is the amount.
   AdjustDieRoll :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty Integer -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt (Maybe (Natural.Natural, RollAdjustment.RollAdjustment))
   -- | CR 706.2b: which of two or more competing modifiers the player who
@@ -405,11 +411,12 @@ data Prompt r where
   -- | CR 400.11c \/ 730.4: which cards a player brings in from outside the
   -- game, at least the first Natural and at most the second; an OutsideCard
   -- rather than a printing because which zone it leaves decides what triggers
-  -- (CR 730.4a). Two copies of one printing are one offer, which the answer may
-  -- name once per copy. Also a search's find outside the game (CR 701.23j),
+  -- (CR 730.4a). Two copies of one printing are one offer, beside how many
+  -- copies there are, which the answer may name once each. Also a search's find
+  -- outside the game (CR 701.23j),
   -- asked after its find in the zones, and the opponent's pick among revealed
   -- cards (Parun.Types.OutsidePick), asked of that opponent.
-  ChooseFromOutsideTheGame :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty OutsideCard.OutsideCard -> Natural.Natural -> Natural.Natural -> Prompt [OutsideCard.OutsideCard]
+  ChooseFromOutsideTheGame :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty (OutsideCard.OutsideCard, Natural.Natural) -> Natural.Natural -> Natural.Natural -> Prompt [OutsideCard.OutsideCard]
   -- | CR 309.5a \/ 701.49b: which arrow out of the current room a venturing
   -- player follows; the ObjectId is the dungeon card.
   ChooseRoom :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty RoomIndex.RoomIndex -> Prompt RoomIndex.RoomIndex
@@ -452,10 +459,12 @@ data Prompt r where
   -- Filtered by Parun.Engine.Combat.dividePiles.
   DividePiles :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt [Set.Set ObjectId.ObjectId]
   -- | CR 510.1 / 702.19b: the assigning creature divides its power among the
-  -- recipients; the Map is recipient to lethal threshold (0 on the blocking
-  -- side, CR 510.1d). Damage.wellFormedAssignment and Damage.tiersCleared
-  -- validate.
-  AssignCombatDamage :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Map.Map Recipient.Recipient Natural.Natural -> Natural.Natural -> Prompt (Map.Map Recipient.Recipient Natural.Natural)
+  -- recipients; the first Map is recipient to lethal threshold (0 on the
+  -- blocking side, CR 510.1d), the second how much of each threshold the
+  -- step's attacking creatures announced so far already pay (CR 702.19b-c,
+  -- 702.2c; Damage.paidBy), a recipient paid nothing absent.
+  -- Damage.wellFormedAssignment and Damage.tiersCleared validate.
+  AssignCombatDamage :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Map.Map Recipient.Recipient Natural.Natural -> Map.Map Recipient.Recipient Natural.Natural -> Natural.Natural -> Prompt (Map.Map Recipient.Recipient Natural.Natural)
   -- | CR 510.1b-c: whether the creature the ObjectId names assigns all its
   -- combat damage as the option allows rather than as those rules say. Asked
   -- just before it assigns, wherever the option changes where its damage goes.
@@ -649,9 +658,9 @@ data Prompt r where
   -- so it enters untapped; not asked below N life, a zero amount excepted (CR
   -- 119.4b).
   ChoosePayLifeOnEntry :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Natural.Natural -> Prompt OptionalDecision.OptionalDecision
-  -- | CR 614.1c with CR 701.20a: which matching hand card is revealed as the
-  -- permanent enters so it enters untapped, Nothing declining; raised at one
-  -- candidate too.
+  -- | CR 614.1c with CR 701.20a / 701.4a: which matching hand card is revealed,
+  -- or permanent beheld, as the permanent enters so it enters untapped, Nothing
+  -- declining; raised at one candidate too.
   ChooseRevealOnEntry :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt (Maybe ObjectId.ObjectId)
   -- | CR 105.4: a colour chosen for the object (Parun.Engine.Event's
   -- chooseQuality), from those (CR 105.1) not already chosen for it.
@@ -786,8 +795,9 @@ data Prompt r where
   -- many. The arm above\'s payload read as a threshold, which is
   -- ChooseTapsForTotalPower\'s relation to ChooseTaps -- and NEVER elided for its
   -- reason: whether the answer is forced is a question about subsets, so eliding
-  -- it would decide for the player.
-  ChooseCollectEvidence :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- it would decide for the player. Each candidate carries its mana value, so
+  -- the answerer can judge a total without reading the board.
+  ChooseCollectEvidence :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Any number of the candidates, the empty set included, at most the Natural
   -- where there is one; the AnyNumberOf says what they are and what is done to
   -- them. Asked at one candidate, where declining is a second answer, and
@@ -815,8 +825,9 @@ data Prompt r where
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).
   -- Never elided, forcedness being a question about subsets. Answers as
-  -- Response.ChoseTaps.
-  ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- Response.ChoseTaps. Each candidate carries its power, ChooseCollectEvidence\'s
+  -- reason.
+  ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Which permanents are tapped to pay a cost naming how many (CR 601.2f);
   -- ChooseSacrifices' shape and elision. Answers as Response.ChoseTaps.
   ChooseTaps :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)

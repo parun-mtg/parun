@@ -204,6 +204,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.CardsInGraveyardAtLeast 7)
       " {\"type\":\"CardsInGraveyardAtLeast\",\"value\":7} "
+  Spec.it s "OwnsBoundAtLeast" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.OwnsBoundAtLeast 2 (SlotName.MkSlotName (Text.pack "discarded")) (Filter.Not (Filter.HasCardType CardType.Land)))
+      " {\"type\":\"OwnsBoundAtLeast\",\"value\":{\"atLeast\":2,\"filter\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"slot\":\"discarded\"}} "
   Spec.it s "IsSource" $
     Common.assertCodec
       s

@@ -5,6 +5,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.ClauseIndex as ClauseIndex
+import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Game as Game
 import qualified Parun.Types.GrantedAbility as GrantedAbility
@@ -36,8 +37,8 @@ import qualified Parun.Types.Throw as Throw
 -- whichever call site forgot it.
 --
 -- A RECORD rather than one function, so that CR 605.4a's triggered mana ability,
--- CR 118.12's resolution cost and CR 706's roll for a cost's coin flip ride the
--- same injection: the payment path needs them too, and all live in
+-- CR 118.12's resolution cost and CR 706's roll and CR 705.1's reflip window
+-- for a cost's coin flip ride the same injection: the payment path needs them too, and all live in
 -- Parun.Engine.Resolve, so a parameter of each own would have to be threaded
 -- through every caller of Parun.Engine.Cost.pay for no gain.
 data ManaAbilityPerformer = MkManaAbilityPerformer
@@ -58,6 +59,10 @@ data ManaAbilityPerformer = MkManaAbilityPerformer
     -- | CR 614.6 / 706.1: throw and record the die roll Pokey, the Scallywagg
     -- makes instead of a cost's coin flip, answering the kept results.
     throwForCoin :: Throw.Throw -> Game.Game [Natural.Natural],
+    -- | CR 705.1: the window Goblin Bookie's reflip is activated in, over the
+    -- flipper's coin just flipped for a cost; answers whether it is flipped
+    -- again.
+    reflipWindow :: PlayerId.PlayerId -> CoinFace.CoinFace -> Game.Game Bool,
     -- | CR 614.11a: run what a replacement queued in a draw's place, between
     -- the draws Lich makes in place of a gain made in a life payment's place.
     settle :: Game.Game ()

@@ -35,6 +35,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Keyword as Keyword.Type
@@ -50,6 +51,7 @@ import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TypeLine as TypeLine
+import qualified Parun.Types.Zone as Zone
 
 -- | The card's rules text in its current Oracle wording, or 'Nothing' for a
 -- card some part of which is not rendered yet: each face's ('renderFace'),
@@ -117,12 +119,12 @@ without whole part = case (whole, part) of
 -- abilities (CR 702.5a), its characteristic-defining power and toughness
 -- (CR 604.3), its static abilities (CR 604) and the replacement effects of
 -- its static abilities (CR 614.1), its spell (CR 112), its activated
--- abilities (CR 602) and its triggered abilities (CR 603). A face
--- with no rules text has no abilities, which is what a vanilla creature and a
--- basic land print (CR 305.6, CR 207.2a). Whatever else the face holds is one
--- more ability, never rendered: the face with the fields rendered here
--- cleared must be 'Face.Oracle.bare', so a field nothing here renders keeps
--- the card unrendered rather than silently left out.
+-- abilities (CR 602), its triggered abilities (CR 603) and its deck limit
+-- (CR 100.2a). A face with no rules text has no abilities, which is what a
+-- vanilla creature and a basic land print (CR 305.6, CR 207.2a). Whatever
+-- else the face holds is one more ability, never rendered: the face with the
+-- fields rendered here cleared must be 'Face.Oracle.bare', so a field nothing
+-- here renders keeps the card unrendered rather than silently left out.
 faceAbilities :: Face.Face Card.Card -> [[Text.Text]]
 faceAbilities face =
   let self = CardName.unwrap (Face.name face)
@@ -134,7 +136,7 @@ faceAbilities face =
         [word <> Text.pack " " <> one, Text.pack "that " <> one]
       context = contextOf self host
       -- A printed loyalty (CR 306.5a) is no Oracle text, as power is not.
-      rest = face {Face.loyalty = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing}
+      rest = face {Face.loyalty = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing, Face.deckLimit = Nothing}
       subtypes = TypeLine.subtypes (Face.typeLine face)
       unread = rest /= Face.Oracle.bare (Face.name face) (Face.oracleText face) (Face.manaCost face) (Face.colorIndicator face) (Face.typeLine face) (Face.power face) (Face.toughness face) Map.empty
       spell = [Effect.modal context {Target.breaks = [Text.pack " ", Text.pack "\n"]} (Face.spell face) | Face.spell face /= Face.defaultSpell]
@@ -152,7 +154,17 @@ faceAbilities face =
         <> spell
         <> fmap (activated context) (Face.activatedAbilities face)
         <> fmap (triggered context (Set.member CardType.Creature (TypeLine.types (Face.typeLine face)))) (Face.triggeredAbilities face)
+        <> fmap (deckLimit self) (Maybe.maybeToList (Face.deckLimit face))
         <> [[] | unread]
+
+-- | CR 100.2a: the line by which a card named `self` lifts the four-card
+-- limit for its own name.
+deckLimit :: Text.Text -> DeckLimit.DeckLimit -> [Text.Text]
+deckLimit self limit =
+  let many = case limit of
+        DeckLimit.UpTo most -> Text.pack "up to " <> Prose.cardinal (toInteger most)
+        DeckLimit.AnyNumber -> Text.pack "any number of"
+   in [Text.pack "A deck can have " <> many <> Text.pack " cards named " <> self <> Text.pack "."]
 
 -- | What an ability of the card named `self` renders in, `host` being what an
 -- aura's or equipment's ability calls the object it is attached to.
@@ -220,7 +232,7 @@ activated context a
       word <-
         Text.empty
           : [ Text.pack "Renew \8212 "
-            | elem CostComponent.ExileThisFromGraveyard components,
+            | elem (CostComponent.ExileThisFrom Zone.Graveyard) components,
               elem ActivationRestriction.SorcerySpeed (ActivatedAbility.restrictions a)
             ]
       [word <> cost <> Text.pack ": " <> effect <> rider]

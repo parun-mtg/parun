@@ -2975,7 +2975,7 @@ leylinePhantomSpec s registry = Spec.describe s "Leyline Phantom" $ do
             -- CR 510.1c's division, so both are dealt damage.
             dividing :: Prompt.Prompt r -> r
             dividing p = case p of
-              Prompt.AssignCombatDamage _ _ _ thresholds n -> case Map.keys thresholds of
+              Prompt.AssignCombatDamage _ _ _ thresholds _ n -> case Map.keys thresholds of
                 k : rest -> Map.fromList ((k, n - List.genericLength rest) : fmap (\r -> (r, 1)) rest)
                 [] -> thresholds
               _ -> S.identityAnswer p
@@ -2986,6 +2986,258 @@ leylinePhantomSpec s registry = Spec.describe s "Leyline Phantom" $ do
         Spec.assertBool s (not (S.onBattlefield phantomId resolved)) "the Phantom left the battlefield"
         Spec.assertEqWith s "and is in alice's hand" (S.handSize S.alice resolved) 1
       _ -> Spec.assertFailure s "fixture should have one attacker and two blockers"
+
+-- Null Summoner's "if you cast it" (CR 603.4) and Massacre Girl, Most Wanted's
+-- "another" (CR 603.10a), each refused on a board paired with the one where the
+-- trigger fires. Asked here rather than in their scenarios: a wrongly fired
+-- trigger targets an opponent, and the scenario runner fails on that unscheduled
+-- target prompt before any check can read the stack (data/scenarios/README.md).
+-- Under S.identityAnswer the prompt is answered, so the stack is what differs.
+-- Three seats, so "target opponent" has two candidates.
+nullSummonerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+nullSummonerSpec s registry = Spec.describe s "Null Summoner" $ do
+  -- alice has an Island and three Swamps, paying either {3}{B} or {2}{U}{B},
+  -- and Zombify in hand; the legs differ in where the Summoner starts and which
+  -- card she casts.
+  let summonerBoard castIt =
+        let summoner = S.aliased "summoner" (S.cardSetup "Null Summoner")
+            zombify = S.aliased "zombify" (S.cardSetup "Zombify")
+         in S.board
+              ( (S.battlefield S.alice (fmap S.permanent ["Island", "Swamp", "Swamp", "Swamp"]))
+                  { Seat.hand = Seq.fromList (if castIt then [zombify, summoner] else [zombify]),
+                    Seat.graveyard = Seq.fromList [summoner | not castIt]
+                  }
+                  NonEmpty.:| [S.hand S.bob [S.cardSetup "Hill Giant"], S.hand S.carol [S.cardSetup "Grizzly Bears"]]
+              )
+              S.alice
+              S.precombatMain
+      opponentsHand gs = S.handSize S.bob gs + S.handSize S.carol gs
+      arrive spell gs =
+        let cast = S.runPure S.identityAnswer gs (S.cast S.alice spell)
+            resolved = S.runPure S.identityAnswer cast Stack.resolveTop
+         in S.runPure S.identityAnswer resolved Engine.settleForPriority
+  Spec.it s "CR 603.4 cast from hand, its enters trigger exiles a card from an opponent's hand" $ do
+    built <- S.buildBoardOrFail s registry (summonerBoard True)
+    case aliasIn "summoner" built of
+      Just summonerId -> do
+        let settled = arrive summonerId (Staged.state built)
+            after = S.runPure S.identityAnswer settled Stack.resolveTop
+        Spec.assertEqWith s "the trigger is on the stack" (length (GameState.stack settled)) 1
+        Spec.assertEqWith s "and took one card from the opponents' hands" (opponentsHand after) 1
+      Nothing -> Spec.assertFailure s "fixture should alias the Summoner"
+  Spec.it s "CR 603.4 put onto the battlefield by Zombify, it was not cast, so nothing triggers" $ do
+    built <- S.buildBoardOrFail s registry (summonerBoard False)
+    case aliasIn "zombify" built of
+      Just zombifyId -> do
+        let settled = arrive zombifyId (Staged.state built)
+        Spec.assertEqWith s "Zombify returned the Summoner" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Null Summoner")) S.alice settled) 1
+        Spec.assertEqWith s "and no trigger is on the stack" (GameState.stack settled) []
+        Spec.assertEqWith s "so the opponents keep their hands" (opponentsHand settled) 2
+      Nothing -> Spec.assertFailure s "fixture should alias Zombify"
+
+massacreGirlSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+massacreGirlSpec s registry = Spec.describe s "Massacre Girl, Most Wanted" $ do
+  -- alice's 4/4 Girl and Grizzly Bears, one of them placed with lethal damage:
+  -- CR 704.5g destroys it at the settle, which places what its death triggered.
+  let girlBoard girlDies =
+        let lethal n p = p {Placement.damage = n}
+            girl = S.aliased "girl" (S.cardSetup "Massacre Girl, Most Wanted")
+            bears = S.aliased "bears" (S.cardSetup "Grizzly Bears")
+         in S.board
+              ( S.battlefield S.alice (if girlDies then [lethal 4 girl, bears] else [girl, lethal 2 bears])
+                  NonEmpty.:| [S.playerSetup S.bob, S.playerSetup S.carol]
+              )
+              S.alice
+              S.precombatMain
+      lives gs = fmap (`S.lifeOf` gs) [S.alice, S.bob, S.carol]
+  Spec.it s "CR 603.10a another creature alice controls dying pings an opponent" $ do
+    built <- S.buildBoardOrFail s registry (girlBoard False)
+    let settled = S.runPure S.identityAnswer (Staged.state built) Engine.settleForPriority
+        after = S.runPure S.identityAnswer settled Stack.resolveTop
+    Spec.assertEqWith s "the Bears' death put the trigger on the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "which dealt 1 to bob and gained alice 1" (lives after) [Just 21, Just 19, Just 20]
+  Spec.it s "CR 603.10a the Girl sees her own death, which another excludes" $ do
+    built <- S.buildBoardOrFail s registry (girlBoard True)
+    case aliasIn "girl" built of
+      Just girlId -> do
+        let settled = S.runPure S.identityAnswer (Staged.state built) Engine.settleForPriority
+        Spec.assertBool s (not (S.onBattlefield girlId settled)) "the Girl died"
+        Spec.assertEqWith s "and no trigger is on the stack" (GameState.stack settled) []
+        Spec.assertEqWith s "so no life changed" (lives settled) [Just 20, Just 20, Just 20]
+      Nothing -> Spec.assertFailure s "fixture should alias the Girl"
+
+-- Vraska, the Cutting Glare's "if you control six or more lands" (CR 603.4),
+-- refused on a board paired with the one where the trigger fires, for Null
+-- Summoner's reason: a wrongly fired trigger targets, and the scenario runner
+-- fails on its target prompt. Three seats, each opponent with one creature.
+vraskaSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+vraskaSpec s registry = Spec.describe s "Vraska, the Cutting Glare" $ do
+  -- alice pays {B}{B}{G} from two Swamps and a Forest; the legs differ in
+  -- whether a third Island makes her lands six or five.
+  let vraskaBoard islands =
+        let vraska = S.aliased "vraska" (S.cardSetup "Vraska, the Cutting Glare")
+         in S.board
+              ( (S.battlefield S.alice (fmap S.permanent (["Swamp", "Swamp", "Forest"] <> replicate islands "Island")))
+                  { Seat.hand = Seq.fromList [vraska]
+                  }
+                  NonEmpty.:| [S.battlefield S.bob [S.permanent "Hill Giant"], S.battlefield S.carol [S.permanent "Grizzly Bears"]]
+              )
+              S.alice
+              S.precombatMain
+      opponentsCreatures gs =
+        S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.bob gs
+          + S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Grizzly Bears")) S.carol gs
+      arrive islands = do
+        built <- S.buildBoardOrFail s registry (vraskaBoard islands)
+        pure $ case aliasIn "vraska" built of
+          Just vraskaId ->
+            let cast = S.runPure S.identityAnswer (Staged.state built) (S.cast S.alice vraskaId)
+                resolved = S.runPure S.identityAnswer cast Stack.resolveTop
+             in Just (S.runPure S.identityAnswer resolved Engine.settleForPriority)
+          Nothing -> Nothing
+  Spec.it s "CR 603.4 with six lands, its enters trigger destroys an opponent's creature" $ do
+    arrived <- arrive 3
+    case arrived of
+      Just settled -> do
+        let after = S.runPure S.identityAnswer settled Stack.resolveTop
+        Spec.assertEqWith s "the trigger is on the stack" (length (GameState.stack settled)) 1
+        Spec.assertEqWith s "and destroyed one of the opponents' creatures" (opponentsCreatures after) 1
+      Nothing -> Spec.assertFailure s "fixture should alias Vraska"
+  Spec.it s "CR 603.4 with five lands, nothing triggers" $ do
+    arrived <- arrive 2
+    case arrived of
+      Just settled -> do
+        Spec.assertEqWith s "Vraska entered" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Vraska, the Cutting Glare")) S.alice settled) 1
+        Spec.assertEqWith s "and no trigger is on the stack" (GameState.stack settled) []
+        Spec.assertEqWith s "so the opponents keep their creatures" (opponentsCreatures settled) 2
+      Nothing -> Spec.assertFailure s "fixture should alias Vraska"
+
+-- Uldaros Theorix's "if you cast him" (CR 603.4), refused on a board paired
+-- with the one where the trigger fires, for Null Summoner's reason. A Shock in
+-- alice's graveyard is a target either leg's trigger could take.
+uldarosSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+uldarosSpec s registry = Spec.describe s "Uldaros Theorix" $ do
+  -- alice has two Swamps and four Islands, paying {3}{U}{B}{B} or {3}{B}, and
+  -- Zombify in hand; the legs differ in where Uldaros starts and which card
+  -- she casts.
+  let uldarosBoard castIt =
+        let uldaros = S.aliased "uldaros" (S.cardSetup "Uldaros Theorix")
+            zombify = S.aliased "zombify" (S.cardSetup "Zombify")
+         in S.board
+              ( (S.battlefield S.alice (fmap S.permanent ["Island", "Swamp", "Swamp", "Island", "Island", "Island"]))
+                  { Seat.hand = Seq.fromList (if castIt then [zombify, uldaros] else [zombify]),
+                    Seat.graveyard = Seq.fromList (S.cardSetup "Shock" : [uldaros | not castIt])
+                  }
+                  NonEmpty.:| [S.playerSetup S.bob, S.playerSetup S.carol]
+              )
+              S.alice
+              S.precombatMain
+      arrive spell gs =
+        let cast = S.runPure S.identityAnswer gs (S.cast S.alice spell)
+            resolved = S.runPure S.identityAnswer cast Stack.resolveTop
+         in S.runPure S.identityAnswer resolved Engine.settleForPriority
+  Spec.it s "CR 603.4 cast from hand, its enters trigger goes on the stack" $ do
+    built <- S.buildBoardOrFail s registry (uldarosBoard True)
+    case aliasIn "uldaros" built of
+      Just uldarosId -> do
+        let settled = arrive uldarosId (Staged.state built)
+        Spec.assertEqWith s "the trigger is on the stack" (length (GameState.stack settled)) 1
+      Nothing -> Spec.assertFailure s "fixture should alias Uldaros"
+  Spec.it s "CR 603.4 put onto the battlefield by Zombify, he was not cast, so nothing triggers" $ do
+    built <- S.buildBoardOrFail s registry (uldarosBoard False)
+    case aliasIn "zombify" built of
+      Just zombifyId -> do
+        let settled = arrive zombifyId (Staged.state built)
+        Spec.assertEqWith s "Zombify returned Uldaros" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Uldaros Theorix")) S.alice settled) 1
+        Spec.assertEqWith s "and no trigger is on the stack" (GameState.stack settled) []
+      Nothing -> Spec.assertFailure s "fixture should alias Zombify"
+
+-- Roiling Canopy's "a Forest you control", "five other Forests" and "you
+-- control" (CR 603.4), each refused on a board paired with the one where the
+-- trigger fires. Asked here for Null Summoner's reason: a wrongly fired trigger
+-- raises a target prompt the scenario cannot schedule. The pump resolving is
+-- what differs, so each leg reads Grizzly Bears' power and toughness after the
+-- priority loop has played the land and emptied the stack.
+roilingCanopySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+roilingCanopySpec s registry = Spec.describe s "Roiling Canopy" $ do
+  -- alice holds the Canopy, Grizzly Bears and `forests` Forests; bob holds two
+  -- Forests, which only a reading ignoring "you control" would count.
+  let canopyBoard active forests landInHand bobsHand =
+        let bears = S.aliased "bears" (S.cardSetup "Grizzly Bears")
+         in S.board
+              ( (S.battlefield S.alice ([S.permanent "Roiling Canopy", bears] <> replicate forests (S.permanent "Forest")))
+                  { Seat.hand = Seq.fromList (fmap S.cardSetup landInHand)
+                  }
+                  NonEmpty.:| [ (S.battlefield S.bob (replicate 2 (S.permanent "Forest"))) {Seat.hand = Seq.fromList (fmap S.cardSetup bobsHand)},
+                                S.playerSetup S.carol
+                              ]
+              )
+              active
+              S.precombatMain
+      bearsAfter board = do
+        built <- S.buildBoardOrFail s registry board
+        case aliasIn "bears" built of
+          Just bearsId -> pure (Just (S.powerToughnessOf bearsId (S.runPure S.playLandAnswer (Staged.state built) Engine.priorityLoop)))
+          Nothing -> pure Nothing
+  Spec.it s "CR 603.4 a Forest entering beside five other Forests gives Grizzly Bears +3/+3" $ do
+    after <- bearsAfter (canopyBoard S.alice 5 ["Forest"] [])
+    Spec.assertEqWith s "the Bears are 5/5" after (Just (Just (5, 5)))
+  Spec.it s "CR 603.4 four other Forests are too few, the entering one and bob's two uncounted" $ do
+    after <- bearsAfter (canopyBoard S.alice 4 ["Forest"] [])
+    Spec.assertEqWith s "the Bears stay 2/2" after (Just (Just (2, 2)))
+  Spec.it s "CR 603.4 an Island entering is no Forest, so nothing triggers" $ do
+    after <- bearsAfter (canopyBoard S.alice 5 ["Island"] [])
+    Spec.assertEqWith s "the Bears stay 2/2" after (Just (Just (2, 2)))
+  Spec.it s "CR 603.4 a Forest bob plays is not one alice controls" $ do
+    after <- bearsAfter (canopyBoard S.bob 5 [] ["Forest"])
+    Spec.assertEqWith s "the Bears stay 2/2" after (Just (Just (2, 2)))
+
+-- Tether Technician's "When you do" (CR 603.12), refused on a board paired with
+-- the one where the reflexive trigger fires. Asked here for Null Summoner's
+-- reason: a wrongly fired trigger raises a target prompt the scenario cannot
+-- schedule. The legs differ only in whether alice pays the discard.
+tetherTechnicianSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+tetherTechnicianSpec s registry = Spec.describe s "Tether Technician" $ do
+  -- alice holds the Technician, five Mountains to cast it and a Plains to
+  -- discard.
+  let technicianBoard =
+        let technician = S.aliased "technician" (S.cardSetup "Tether Technician")
+         in S.board
+              ( (S.battlefield S.alice (fmap S.permanent (replicate 5 "Mountain")))
+                  { Seat.hand = Seq.fromList [technician, S.cardSetup "Plains"]
+                  }
+                  NonEmpty.:| [S.playerSetup S.bob, S.playerSetup S.carol]
+              )
+              S.alice
+              S.precombatMain
+      paying :: Prompt.Prompt r -> r
+      paying p = case p of
+        Prompt.ChooseToPay {} -> PaymentDecision.Pays
+        _ -> S.identityAnswer p
+      -- Cast and resolve the Technician, then resolve its enters trigger under
+      -- the leg's answerer: what is left on the stack is the reflexive trigger.
+      entered :: (forall r. Prompt.Prompt r -> r) -> Staged.Staged -> Maybe GameState.GameState
+      entered answer built = do
+        technicianId <- aliasIn "technician" built
+        let cast = S.runPure answer (Staged.state built) (S.cast S.alice technicianId)
+            resolved = S.runPure answer cast Stack.resolveTop
+            arrived = S.runPure answer resolved Engine.settleForPriority
+            triggered = S.runPure answer arrived Stack.resolveTop
+        pure (S.runPure answer triggered Engine.settleForPriority)
+  Spec.it s "CR 603.12 discarding a card arms the reflexive damage trigger" $ do
+    built <- S.buildBoardOrFail s registry technicianBoard
+    case entered paying built of
+      Just settled -> do
+        Spec.assertEqWith s "the reflexive trigger is on the stack" (length (GameState.stack settled)) 1
+        Spec.assertEqWith s "and alice discarded the Plains" (S.handSize S.alice settled) 0
+      Nothing -> Spec.assertFailure s "fixture should alias the Technician"
+  Spec.it s "CR 603.12 declining the discard, nothing triggers" $ do
+    built <- S.buildBoardOrFail s registry technicianBoard
+    case entered S.identityAnswer built of
+      Just settled -> do
+        Spec.assertEqWith s "no trigger is on the stack" (GameState.stack settled) []
+        Spec.assertEqWith s "and alice kept the Plains" (S.handSize S.alice settled) 1
+      Nothing -> Spec.assertFailure s "fixture should alias the Technician"
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
@@ -3026,3 +3278,9 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   deeprootPilgrimageSpec s registry
   marduSkullhunterSpec s registry
   leylinePhantomSpec s registry
+  nullSummonerSpec s registry
+  massacreGirlSpec s registry
+  vraskaSpec s registry
+  uldarosSpec s registry
+  roilingCanopySpec s registry
+  tetherTechnicianSpec s registry

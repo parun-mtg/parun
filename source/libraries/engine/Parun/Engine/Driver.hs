@@ -84,6 +84,7 @@ deciderOf :: Prompt.Prompt r -> Maybe PlayerId.PlayerId
 deciderOf prompt = case prompt of
   Prompt.ChooseAction decider _ _ -> Just (Decider.unwrap decider)
   Prompt.Concede pid -> Just pid
+  Prompt.ChooseTurnMarker decider _ _ -> Just (Decider.unwrap decider)
   Prompt.Shuffle {} -> Nothing
   Prompt.RandomFirstPlayer {} -> Nothing
   Prompt.RandomObject {} -> Nothing
@@ -105,7 +106,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseSurveil decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseFateseal decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseExplore decider _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.RerollDie decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.Rethrow decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AdjustDieRoll decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseRollModifier decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseDefender decider _ _ -> Just (Decider.unwrap decider)
@@ -161,7 +162,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseExert decider _ _ -> Just (Decider.unwrap decider)
   Prompt.DeclareBlockers decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.DividePiles decider _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.AssignCombatDamage decider _ _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.AssignCombatDamage decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTargets decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AnnounceTargets decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseWordSwap decider _ _ _ _ _ -> Just (Decider.unwrap decider)

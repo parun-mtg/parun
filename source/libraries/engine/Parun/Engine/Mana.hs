@@ -16,11 +16,13 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Claim as Claim
+import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
+import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword.Engine
@@ -66,6 +68,7 @@ import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExiledPile as ExiledPile
@@ -295,6 +298,10 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- board answers for them (Parun.Types.TappedForMana). CR 605.4a applies the
 -- ability right after that tap, so its latest tap is the one. Without the slot
 -- (an activated ability) no type is defined, and CR 106.5 adds none.
+--
+-- Command Tower's colour identity is its controller's commanders' (CR
+-- 702.124c), and with no commander or an empty identity no colour is defined:
+-- CR 903.4f, and CR 106.5 again adds none, not {C}.
 produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> ObjectId -> GameState -> ManaProduction -> Produced
 produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 
@@ -320,6 +327,8 @@ producedVisiting bound visited oid gs poolBoard production = case production of
      in Settles (foldMap (fmap ManaUnit.manaType) (ManaCount.units (Projection.fullView poolBoard) context poolBoard counted))
   ManaProduction.ProducedByTapped ->
     among [manaType | Recipient.ToObject tapped <- foldMap Set.toList (Map.lookup Binding.manaSource bound), manaType <- Set.toList (latestTapProduced tapped gs)]
+  ManaProduction.InCommanderIdentity ->
+    among (foldMap (fmap ManaType.Colored . Set.toList) (Projection.controllerOf oid gs >>= (`Commander.commanderColorIdentity` gs)))
   where
     among types = case types of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
@@ -738,6 +747,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
                     CounterSpread.FromAmongAtLeast -> [floor_ .. sum carriers]
                     CounterSpread.FromAmong -> [floor_]
                     CounterSpread.FromOne -> [floor_]
+                    -- Refused by Parun.Codec.CountersFromPermanents.
+                    CounterSpread.FromAmongAtMost -> []
         _ -> Nothing
       pricedRemoving option n = [shareOf priced | (offered, priced) <- manaRepricingsGiven (Map.singleton Binding.removedCounters (Binding.toAmount n)) gs pcs oid gs, offered == option]
       choosable option =
@@ -821,7 +832,8 @@ watchOf gs =
 -- `watch` is `watchOf gs`: its sample is the CR 603.10 board every event is
 -- filed with, and its standing sources are the scan's, both `gs`'s own, the
 -- copy differing from it only in its log. The scan offers only the watch's
--- holders: what it leaves out triggers no mana ability.
+-- holders: what it leaves out triggers no mana ability. The CR 603.7 store,
+-- which no object holds, is read whole.
 triggeredYields :: Watch -> PlayerId -> Map.Map SlotName.SlotName (Set.Set PlayerId) -> ObjectId -> ManaOption -> Mana -> GameState -> [Mana]
 triggeredYields watch pid chosen oid option share gs =
   let made = yieldUnits option
@@ -840,7 +852,16 @@ triggeredYields watch pid chosen oid option share gs =
       events = tapped <> added <> [resolved]
       board = List.foldl' (flip (Event.recordEventOver (watchSample watch))) gs events
       recorded = Foldable.toList (Seq.drop (Seq.length (GameState.events board) - length events) (GameState.events board))
-      fired = filter (\pending -> ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy pending)) (PendingTrigger.ability pending)) (Event.reactionTriggersGiven (Just (watchHolders watch)) (watchStanding watch) recorded board)
+      (occurrences, pend) = Trigger.delayedMatches recorded board
+      -- CR 603.7's store, under applyManaTriggers' gate. A one-shot entry fires
+      -- once, on the occurrence delayedPending takes when nothing is asked.
+      delayed =
+        [ pend entry logged
+        | entry <- Foldable.toList (GameState.delayedTriggers board),
+          ManaAbility.mayBeTriggeredManaAbility (DelayedTrigger.ability entry),
+          logged <- (if Expiry.firesOnce board (DelayedTrigger.source entry) (DelayedTrigger.expiry entry) then take 1 else id) (occurrences entry)
+        ]
+      fired = filter (\pending -> ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy pending)) (PendingTrigger.ability pending)) (Event.reactionTriggersGiven (Just (watchHolders watch)) (watchStanding watch) recorded board <> filter (Trigger.interveningHolds board) delayed)
    in fmap (Mana.MkMana . concat) (traverse (triggerAdds pid board) fired)
 
 -- What one fired triggered mana ability adds to `pid`'s pool, a list entry per
@@ -894,6 +915,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.CouldProduce _ -> False
       ManaProduction.Pooled _ -> True
       ManaProduction.ProducedByTapped -> False
+      ManaProduction.InCommanderIdentity -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as
 -- one mana is produced, its text read off the source's rules text now.
@@ -2606,12 +2628,202 @@ canPayCommitting subject capacity spending pid committed committedEnergy claimed
 -- option only adds claims, life and energy to what that board spends, so no
 -- board passes where it fails. Parun.ManaSpec's "a cost demanding no mana"
 -- group pins it to the walk's answer.
+--
+-- A cost the pool and the plain sources pay is answered by plainPayable,
+-- also without the walk, and one the board's mana ceiling cannot reach by
+-- ceilingAdmits; the walk then answers only what those two leave.
 canPayCommittingGiven :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> Natural -> Natural -> [Claim] -> ManaCost -> GameState -> Bool
 canPayCommittingGiven subject spending sources pcs pid committed committedEnergy claimed cost gs
   | any demandsNothing (resolutions spending cost) = activatingNothing pid committed committedEnergy claimed gs
+  | plainPayable subject spending sources pid committed committedEnergy claimed cost gs = True
+  | not (ceilingAdmits subject spending sources pid cost gs) = False
   | otherwise = not (null (payableResolutionsGiven subject spending sources pcs pid committed committedEnergy claimed cost gs))
   where
     demandsNothing (demands, generic, life) = null demands && generic == 0 && life == 0
+
+-- A source the walk would only ever add supplies for, and what it adds: one
+-- route group (sourceOptions' `groupsOf`) eating no mana, paying no life or
+-- energy, doubling nothing, announcing no X, claiming nothing but the source
+-- itself and no yield claiming apart from its route, its mana unrestricted
+-- (CR 106.6), and either every yield one mana or one yield in all. A land, a
+-- mana creature, Sol Ring. Its option at its ceiling is `times` of what one
+-- activation adds: the union supply of its one-mana yields, or its one yield's
+-- units each on its own -- sourceOptions' collapse, at no subject's narrowing.
+--
+-- The supplies' admitting sets are empty: plainPayable asks admission of the
+-- cost's own payment alone, which every unrestricted unit has at an
+-- unnarrowed subject.
+plainSupplies :: [SpendManaAsThough.SpendManaAsThough] -> ObjectId -> [(Activations.Activations, Yield, ManaCost, Activations.Activations)] -> Maybe [(Supply, Natural)]
+plainSupplies clauses oid routes = case ListUtils.nubOrd [activations | (activations, _, _, _) <- routes] of
+  [activations]
+    | Activations.life activations == 0,
+      Activations.energy activations == 0,
+      all ownClaim (Activations.claims activations),
+      all plainRoute routes,
+      all (Maybe.isNothing . ManaUnit.restriction) units ->
+        let times = Activations.times activations
+            supply unitsOfOne = rewriteSupply clauses MkSupply {supplyTypes = typesIn unitsOfOne, supplyMade = typesIn unitsOfOne, supplyTags = Set.unions (fmap ManaUnit.tags unitsOfOne), supplyAdmits = Set.empty}
+         in if all ((<= 1) . length) yields
+              then Just [(supply units, times) | not (null units)]
+              else case yields of
+                [only] -> Just [(supply [unit], times) | unit <- only]
+                _ -> Nothing
+  _ -> Nothing
+  where
+    yields = [unitsOf (yieldMana yield) | (_, yield, _, _) <- routes]
+    units = concat yields
+    typesIn = Set.fromList . fmap ManaUnit.manaType
+    ownClaim claim = Claim.Type.pool claim == Set.singleton oid && Maybe.isNothing (Claim.Type.threshold claim)
+    plainRoute (activations, yield, manaCost, own) =
+      own == activations
+        && null (ManaCost.unwrap manaCost)
+        && Map.null (yieldDoubling yield)
+        && Maybe.isNothing (yieldX yield)
+
+-- A SUFFICIENT condition for payableResolutionsGiven, asked first because it
+-- costs no walk: the board the pool and the plain sources make (plainSupplies)
+-- with every other group taken no times. Every such board is one the walk
+-- reaches or one a board it reaches adds only supplies to -- a free
+-- uncontended group is taken at its ceiling there, and the clauses only grow
+-- with supplies -- so where this holds the walk does too (#6532). Where it
+-- does not, the walk answers.
+--
+-- A plain source some claim of the cost's own could take is left off, so the
+-- claims stay disjoint and CR 118.3's joint satisfiability is `claimed`'s
+-- alone. A subject narrowing its mana types (ActivationRestriction.SpendOnly)
+-- is left to the walk. Parun.ManaSpec's "plain sources" group pins this to
+-- the walk's answer.
+plainPayable :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> PlayerId -> Natural -> Natural -> [Claim] -> ManaCost -> GameState -> Bool
+plainPayable subject spending swept pid committed committedEnergy claimed cost gs =
+  Maybe.isNothing (narrowingOf subject)
+    && Claim.satisfiable claimed
+    && committedEnergy <= Game.energyOf pid gs
+    && any payable (resolutions spending cost)
+  where
+    clauses = sourceClauses swept
+    costClauses = PlayerEffect.spendManaAsThoughForGiven clauses pid subject gs
+    servesCost
+      | costClauses == clauses = serves
+      | otherwise = serves . rewriteSupply costClauses
+    withheld = Map.restrictKeys (sourcePlain swept) (Set.unions (fmap Claim.Type.pool claimed))
+    lessen total less = if total > less then Just (total - less) else Nothing
+    sourced = Map.differenceWith lessen (sourcePlainTotal swept) (Map.fromListWith (+) (concat (Map.elems withheld)))
+    pooled = [rewriteSupply clauses (supplyOf (const Set.empty) unit) | unit <- unitsOf (Game.poolOf pid gs), admitsUnder subject pid gs unit]
+    supplies = Map.toList (Map.unionWith (+) sourced (Map.fromListWith (+) (fmap (\supply -> (supply, 1)) pooled)))
+    payable (demands, generic, life) =
+      let wanted_ = demands <> List.genericReplicate generic anyTypeDemand
+          couldServe subset = sum [n | (supply, n) <- supplies, any (servesCost supply) subset]
+          demandedIn subset = Natural.length (filter (`elem` subset) wanted_)
+       in sourceLifePayable swept (committed + life)
+            && all (\subset -> demandedIn subset <= couldServe subset) (List.subsequences (Set.toList (Set.fromList wanted_)))
+
+-- What a board's sources could add at most, ignoring what they spend: the
+-- bound ceilingAdmits holds a cost to.
+data Ceiling = MkCeiling
+  { -- Every group's PROFILE (ceilingProfile), with the activations summed over
+    -- groups sharing one.
+    ceilingGroups :: Map.Map [[Supply]] Natural,
+    -- What each unit of a type in the pool becomes under some group's CR
+    -- 701.10f doubling, unioned over the groups that can be activated at all:
+    -- as many times over as the walk likes, since its yield grows with the pool.
+    ceilingDoubling :: Map.Map ManaType [Supply],
+    -- CR 116.2c's life for mana, one supply per mana it may add, each as often
+    -- as the walk likes.
+    ceilingLifeForMana :: [Supply],
+    -- What a group announcing an X (Wizard's Rockets) makes of each mana its
+    -- {X} eats: one supply per unit its yield at X = 1 holds.
+    ceilingConverters :: [Supply]
+  }
+
+-- What one group of a source's routes (groupsOf) could add to a board at most,
+-- as its yields' units, each a supply admitting no payment: the PROFILE
+-- ceilingGroups sums `times` over, beside what its CR 701.10f doubling makes of
+-- each type. A group announcing an X is ceilingConverters', not this.
+ceilingProfile :: [SpendManaAsThough.SpendManaAsThough] -> (GroupKey, [([ManaUnit], Activations.Activations, Maybe Natural)]) -> ([[Supply]], Natural, Map.Map ManaType [Supply])
+ceilingProfile clauses ((activations, _, doubling, _), entries) =
+  (ListUtils.nubOrd [List.sort (fmap (ceilingSupply clauses) units) | (units, _, _) <- entries, not (null units)], Activations.times activations, fmap (fmap (ceilingSupply clauses)) doubling)
+
+-- One unit as the ceiling counts it: a supply admitting no payment.
+ceilingSupply :: [SpendManaAsThough.SpendManaAsThough] -> ManaUnit -> Supply
+ceilingSupply clauses unit = rewriteSupply clauses (supplyOf (const Set.empty) unit)
+
+-- The board's Ceiling, from every group of every source and CR 116.2c's life
+-- for mana. `atOne` is each source announcing an X measured at X = 1
+-- (manaSuppliesGiven 1). Nothing where a route there that can be activated
+-- adds more than the one mana its {X} eats, the yield of X mana ceilingAdmits
+-- assumes.
+ceilingOf :: [SpendManaAsThough.SpendManaAsThough] -> [(ObjectId, Natural, ManaType)] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]] -> Maybe Ceiling
+ceilingOf clauses lifeForMana supplies atOne = do
+  let announces (_, _, _, announcing) = announcing
+      profiles = fmap (ceilingProfile clauses) (concatMap (filter (not . announces . fst) . groupsOf) supplies)
+      converting = [unitsOf (yieldMana yield) | (activations, yield, _, _) <- concat atOne, yieldX yield == Just 1, Activations.times activations > 0]
+  Monad.guard (all ((<= 1) . length) converting)
+  pure
+    MkCeiling
+      { ceilingGroups = Map.fromListWith (+) [(yields, times) | (yields, times, _) <- profiles],
+        ceilingDoubling = Map.unionsWith (<>) [doubling | (_, times, doubling) <- profiles, times > 0],
+        ceilingLifeForMana = ListUtils.nubOrd [ceilingSupply clauses (lifeForManaUnit manaType) | (_, _, manaType) <- lifeForMana],
+        ceilingConverters = ListUtils.nubOrd (fmap (ceilingSupply clauses) (concat converting))
+      }
+
+-- A NECESSARY condition for payableResolutionsGiven, asked before it because
+-- it costs no walk: Hall's condition over each resolution's own demands,
+-- against the pool and every group taken at its ceiling, each activation
+-- making whichever of its yields serves the demands at hand best. What a group
+-- eats, the life and energy it pays and the objects it claims are dropped, and
+-- so is CR 106.6's restriction, all of which only refuse more; so where this
+-- fails the walk does too. sourceCeiling sums the groups by profile once per
+-- sweep, so this is a pass over distinct profiles rather than sources.
+--
+-- Mana that grows with the cost is held to its TYPES alone, unbounded in
+-- number: CR 116.2c's life for mana, and a CR 701.10f doubling of every type
+-- the pool, a group or another doubling could hold. A demand set one of those
+-- serves is met.
+--
+-- A group announcing an X (CR 601.2b by way of CR 602.2b) adds X mana for
+-- the {X} it eats, so it converts mana and never adds any: a demand set its
+-- yield serves is held to every unit the pool and the groups could make, and
+-- met outright beside mana that grows. The yield of X mana is the one printed
+-- shape, payableResolutionsGiven's `xCeiling` assumption too; ceilingOf
+-- decides nothing past it. Parun.ManaSpec's "mana ceiling" group pins this to
+-- the walk's answer.
+ceilingAdmits :: PaymentSubject.PaymentSubject -> ManaSpending -> Sources -> PlayerId -> ManaCost -> GameState -> Bool
+ceilingAdmits subject spending swept pid cost gs = case sourceCeiling swept of
+  Nothing -> True
+  Just ceiling_ -> any (reachable ceiling_) (resolutions spending cost)
+  where
+    clauses = sourceClauses swept
+    costClauses = PlayerEffect.spendManaAsThoughForGiven clauses pid subject gs
+    servesCost
+      | costClauses == clauses = serves
+      | otherwise = serves . rewriteSupply costClauses
+    pooled = [rewriteSupply clauses (supplyOf (const Set.empty) unit) | unit <- unitsOf (Game.poolOf pid gs)]
+    -- What the doublings make of every type the pool, a group, life for mana
+    -- or another doubling could hold.
+    doubledFrom ceiling_ =
+      let bounded = pooled <> ceilingLifeForMana ceiling_ <> ceilingConverters ceiling_ <> [supply | (yields, times) <- Map.toList (ceilingGroups ceiling_), times > 0, supply <- concat yields]
+          close made =
+            let grown = Set.union made (Set.unions [supplyMade supply | (manaType, supplies) <- Map.toList (ceilingDoubling ceiling_), Set.member manaType made, supply <- supplies])
+             in if grown == made then made else close grown
+          made_ = close (Set.unions (fmap supplyMade bounded))
+       in concat (Map.elems (Map.restrictKeys (ceilingDoubling ceiling_) made_))
+    reachable ceiling_ (demands, generic, _) =
+      let wanted_ = demands <> List.genericReplicate generic anyTypeDemand
+          servesAny subset supply = any (servesCost supply) subset
+          unbounded = ceilingLifeForMana ceiling_ <> doubledFrom ceiling_
+          couldServe subset =
+            Natural.length (filter (servesAny subset) pooled)
+              + sum [times * List.foldl' max 0 (fmap (Natural.length . filter (servesAny subset)) yields) | (yields, times) <- Map.toList (ceilingGroups ceiling_)]
+          -- Every unit made, whatever it serves: what a conversion could turn
+          -- into the demands at hand.
+          made = couldServe (Set.singleton anyTypeDemand)
+          converted subset = any (servesAny subset) (ceilingConverters ceiling_)
+          demandedIn subset = Natural.length (filter (`elem` subset) wanted_)
+          met subset
+            | any (servesAny subset) unbounded = True
+            | converted subset = not (null unbounded) || demandedIn subset <= made
+            | otherwise = demandedIn subset <= couldServe subset
+       in all met (List.subsequences (Set.toList (Set.fromList wanted_)))
 
 -- CR 118.3 asked of the board activating no mana ability: the claims, CR
 -- 107.14's energy and CR 119.4's life the rest of the cost spends, held by
@@ -3161,7 +3373,14 @@ data Sources = MkSources
     sourceBorrowed :: ObjectId -> [Maybe ManaRestriction.ManaRestriction],
     sourceClauses :: [SpendManaAsThough.SpendManaAsThough],
     sourceLifeForMana :: [(ObjectId, Natural, ManaType)],
-    sourceLifePayable :: Natural -> Bool
+    sourceLifePayable :: Natural -> Bool,
+    -- The PLAIN sources among `sourceIds` (plainSupplies), each with the
+    -- supplies it offers, and the same supplies summed over every plain
+    -- source: what plainPayable reads in place of the walk.
+    sourcePlain :: Map.Map ObjectId [(Supply, Natural)],
+    sourcePlainTotal :: Map.Map Supply Natural,
+    -- The board's ceilingOf: what ceilingAdmits reads in place of the walk.
+    sourceCeiling :: Maybe Ceiling
   }
 
 -- The supply sweep of `pid`'s board under `capacity`, and what Sources measures
@@ -3172,15 +3391,22 @@ supplySourcesGiven capacity grants pcs pid gs =
       borrowed = PlayerEffect.tapForManaGrants pid gs
       watch = watchOf gs
       rewritesOf = Replacement.manaRewrites gs
+      supplies = fmap (\oid -> manaSuppliesGiven 0 capacity watch rewritesOf pcs pid (borrowed oid) oid gs) ids
+      clauses = PlayerEffect.spendManaAsThough pid gs
+      plain = Map.fromList [(oid, offered) | (oid, routes) <- zip ids supplies, Just offered <- [plainSupplies clauses oid routes]]
+      lifeForMana = PlayerEffect.lifeForMana pid gs
    in MkSources
         { sourceIds = ids,
           sourceCapacity = capacity,
           sourceWatch = watch,
           sourceRewrites = rewritesOf,
-          sourceSupplies = fmap (\oid -> manaSuppliesGiven 0 capacity watch rewritesOf pcs pid (borrowed oid) oid gs) ids,
+          sourceSupplies = supplies,
           sourceBorrowed = borrowed,
-          sourceClauses = PlayerEffect.spendManaAsThough pid gs,
-          sourceLifeForMana = PlayerEffect.lifeForMana pid gs,
+          sourceClauses = clauses,
+          sourcePlain = plain,
+          sourcePlainTotal = Map.fromListWith (+) (concat (Map.elems plain)),
+          sourceCeiling = ceilingOf clauses lifeForMana supplies [manaSuppliesGiven 1 capacity watch rewritesOf pcs pid (borrowed oid) oid gs | (oid, routes) <- zip ids supplies, any (\(_, yield, _, _) -> Maybe.isJust (yieldX yield)) routes],
+          sourceLifeForMana = lifeForMana,
           sourceLifePayable = Event.lifePayable pid gs
         }
 

@@ -84,6 +84,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Pool as Pool
@@ -653,7 +654,10 @@ joined context predicates = case predicates of
         ]
       together = [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q)]
       apart = [(text, allMentions p <> allMentions q) | text <- followedBy context (sentences p) (sentences q)]
-      thenImperative = [(Prose.sentence (clauseText p <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> mentions q) | Maybe.isNothing (subject p), implied q]
+      -- Free: a series, whose last step alone keeps "then" (Curse-Marred
+      -- Demon's "put it into your hand, shuffle, then discard a card at random").
+      thenImperative = [(Prose.sentence (first <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> mentions q) | Maybe.isNothing (subject p), implied q, first <- clauseText p : serial (clauseText p)]
+      serial t = [Text.dropEnd 5 before <> rest | let (before, rest) = Text.breakOnEnd (Text.pack ", then ") t, not (Text.null before)]
       andImperative = [(Prose.sentence (clauseText p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q) | Maybe.isNothing (subject p), implied q]
       -- Free: an imperative joined to a stated subject (Vampire Gourmand).
       imperativeAnd = [(Prose.sentence (verb p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | implied p, not (implied q)]
@@ -785,7 +789,16 @@ effect context e = case e of
           -- (Tyranid Invasion) or "X ..., where X is" (Krenko, Mob Boss).
           Target.ForEach n each' -> fmap (<> Text.pack " for each " <> each') (some (Quantity.Literal n))
           Target.EqualTo equal -> [Text.pack "a number of " <> many <> Text.pack " equal to " <> equal, Text.pack "X " <> many <> Text.pack ", where X is " <> equal]
-        naming (Target.names a) (imperative context (Create.creator c) (Text.pack "create " <> tokens) (Text.pack "creates " <> tokens))
+        let create = Text.pack "create " <> tokens
+            creates = Text.pack "creates " <> tokens
+            -- "You create" too, where a trigger on another player's turn
+            -- names the creator (Verdant Kraken).
+            spoken = do
+              (_, person) <- Target.player context (Create.creator c)
+              case person of
+                Target.Second -> declarative context (Create.creator c) create creates
+                Target.Third -> []
+        naming (Target.names a) (imperative context (Create.creator c) create creates <> spoken)
   -- A limit on the total has no wording yet, so a limited placement renders nothing.
   Effect.PutCounters p | Maybe.isNothing (PutCounters.totalAtMost p) -> do
     ref <- Target.object context Target.Each (PutCounters.ref p)
@@ -803,6 +816,16 @@ effect context e = case e of
   -- instruction's controller sacrifices. A sweep is not spelled out here.
   Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect r@(ObjectRef.InSlot _) Sacrificer.EffectController Nothing) -> acted context (Text.pack "sacrifice ") r
   Effect.Untap r -> acted context (Text.pack "untap ") r
+  -- "That player sacrifices a creature of their choice" (CR 701.21a): a
+  -- stated number of permanents a player a slot names chooses. Free: "of their
+  -- choice" or not, Oracle wording edicts both ways. A player named otherwise
+  -- is not spelled out here.
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices who f (Quantity.Literal n) Nothing)
+    | slotted who -> do
+        p <- Filter.phrase f (Target.keyword context)
+        noun <- Cost.some n (Filter.MkNoun (Text.pack "permanent") (Just (Text.pack "permanents"))) p
+        choice <- [Text.pack " of their choice", Text.empty]
+        imperative context who (Text.pack "sacrifice " <> noun) (Text.pack "sacrifices " <> noun <> choice)
   -- "Regenerate this creature" (CR 701.19a): a shield for the rest of the
   -- turn, used up by the one destruction it replaces, on the source or on
   -- the object a slot holds.
@@ -867,6 +890,13 @@ effect context e = case e of
               _ -> Text.pack "can't be blocked" <> by <> thisTurn
         [MkPredicate (Just who) verb' [] [] Nothing False]
   _ -> []
+
+-- | Whether a reference names the players a slot holds.
+slotted :: PlayerRef.PlayerRef -> Bool
+slotted ref = case ref of
+  PlayerRef.InSlot _ -> True
+  PlayerRef.EachInSlot _ -> True
+  _ -> False
 
 -- | "[Return/Exile/Put] [objects] [to/into/on] [zone]": a zone change (CR
 -- 400.7) as Oracle text words it by where the objects go. A card returns to a
@@ -1081,6 +1111,7 @@ added production count = case (production, count) of
         let symbols = Text.concat (List.genericReplicate n (Text.pack "{" <> Cost.manaType t <> Text.pack "}"))
          in [(Symbols symbols, symbols)]
   (ManaProduction.AnyColor _, Quantity.Literal 1) -> [(Described, Text.pack "one mana of any color")]
+  (ManaProduction.InCommanderIdentity, Quantity.Literal 1) -> [(Described, Text.pack "one mana of any color in your commander's color identity")]
   (ManaProduction.AnyColor ColorSpread.AnyCombination, Quantity.Literal n)
     | n >= 2 -> [(Described, Prose.cardinal n <> Text.pack " mana in any combination of colors")]
   _ -> []

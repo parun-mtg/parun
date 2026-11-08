@@ -117,8 +117,8 @@
         "View": {
           "is": [
             "Pass",
-            "Cast $wt",
-            "Cast $wt",
+            "Cast $wt Wear",
+            "Cast $wt Tear",
             "ActivateManaAbility $m1",
             "ActivateManaAbility $m2",
             "ActivateManaAbility $p"

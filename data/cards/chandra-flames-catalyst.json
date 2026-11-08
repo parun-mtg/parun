@@ -193,8 +193,10 @@
                           "effect": {
                             "type": "CastFromHandWithoutPayingManaCost",
                             "value": {
-                              "type": "And",
-                              "value": []
+                              "spells": {
+                                "type": "And",
+                                "value": []
+                              }
                             }
                           },
                           "players": {

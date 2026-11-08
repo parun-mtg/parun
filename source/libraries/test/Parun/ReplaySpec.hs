@@ -142,7 +142,7 @@ combatReplaySpec s =
       otherOid = ObjectId.MkObjectId 11
       attackPrompt = Prompt.DeclareAttackers decider S.alice [oid]
       blockPrompt = Prompt.DeclareBlockers decider S.bob [oid] [oid]
-      damagePrompt = Prompt.AssignCombatDamage decider S.alice oid (Map.singleton (Recipient.ToCreature oid) 0) 2
+      damagePrompt = Prompt.AssignCombatDamage decider S.alice oid (Map.singleton (Recipient.ToCreature oid) 0) Map.empty 2
       -- CR 118.12a: Mana Leak's {3}, the cost Prompt.ChooseToPay carries.
       genericThree = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.Type.components = []}
       -- CR 726.2's own pair, one borne and one sourceless: the crown steal hung
@@ -848,7 +848,7 @@ combatReplaySpec s =
         -- between the exile and the sacrifice. What the second assertion pins is
         -- that a ChooseSacrifices entry still does not answer it.
         Spec.it s "ChooseCollectEvidence records and replays a Set ObjectId" $ do
-          let p = Prompt.ChooseCollectEvidence decider S.alice oid [oid, ObjectId.MkObjectId 8] 3
+          let p = Prompt.ChooseCollectEvidence decider S.alice oid [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3
               answer = Set.singleton (ObjectId.MkObjectId 8)
           Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
           Spec.assertEqWith
@@ -863,7 +863,7 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "every candidate"
-            (Replay.defaultAnswer (Prompt.ChooseCollectEvidence decider S.alice oid [oid, ObjectId.MkObjectId 8] 3))
+            (Replay.defaultAnswer (Prompt.ChooseCollectEvidence decider S.alice oid [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3))
             (Set.fromList [oid, ObjectId.MkObjectId 8])
         -- CR 702.167a does NOT share Response.ChoseExilesFromGraveyard with the
         -- two prompts above, unlike the pair just above each other: its pool
@@ -1382,6 +1382,11 @@ combatReplaySpec s =
           let p = Prompt.ChooseStickerKeeper decider S.alice (PrintingId.MkPrintingId 3 NonEmpty.:| [PrintingId.MkPrintingId 4])
           Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
           Spec.assertEqWith s "a short transcript keeps them on the first" (Replay.defaultAnswer p) 0
+        -- CR 807.5b: which stack a player with priority for several acts on.
+        Spec.it s "ChooseTurnMarker round-trips through the transcript" $ do
+          let p = Prompt.ChooseTurnMarker decider S.alice (2 NonEmpty.:| [1])
+          Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p 1)) (Just 1)
+          Spec.assertEqWith s "a short transcript acts on the first offered" (Replay.defaultAnswer p) 2
         -- CR 702.33h: sticker kicker's "may put" carries a declining half.
         Spec.it s "ChooseStickerOrNone round-trips through the transcript" $ do
           let a = StickerRef.MkStickerRef S.alice 0 StickerKind.Art 0
@@ -1420,7 +1425,7 @@ combatReplaySpec s =
         Spec.it s "ChooseFromOutsideTheGame round-trips through the transcript" $ do
           let a = OutsideCard.InPool (PrintingId.MkPrintingId 7)
               b = OutsideCard.InAnotherGame (ObjectId.MkObjectId 9)
-              p = Prompt.ChooseFromOutsideTheGame decider S.alice (a NonEmpty.:| [b]) 1 2
+              p = Prompt.ChooseFromOutsideTheGame decider S.alice ((a, 1) NonEmpty.:| [(b, 1)]) 1 2
           Spec.assertEqWith s "choosing the second round trips" (Replay.decode p (Replay.encode p [b])) (Just [b])
           Spec.assertEqWith s "choosing both round trips" (Replay.decode p (Replay.encode p [a, b])) (Just [a, b])
           -- Discriminating: fails if the prompt reuses Response.ChoseDungeon

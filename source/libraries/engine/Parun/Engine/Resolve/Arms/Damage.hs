@@ -913,7 +913,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     -- match -- Invasion of Arcavios's searcher who wants her
                     -- sideboard's sorcery over her graveyard's.
                     outsideRoom = min (capHere - min capHere (List.genericLength picked)) outsideCopies
-                outsidePicked <- case NonEmpty.nonEmpty (Map.keys outsideAvailable) of
+                outsidePicked <- case NonEmpty.nonEmpty (Map.toList outsideAvailable) of
                   Just candidates
                     | outsideRoom > 0 -> do
                         outsideAnswer <- Game.choose (Prompt.ChooseFromOutsideTheGame decider searcher candidates 0 outsideRoom)
@@ -1400,13 +1400,14 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
     acquisition <- State.gets (\g -> Game.readingAcquisition resolving source g target)
     State.modify' (Common.storeOn acquisition target sides (foldMap (\(_, _, _, results) -> results) rolled))
 
--- CR 706.2b's reroll, asked for by the ability Goblin Bookie activates inside
--- throwDice's window, through GameState.rerollRequested. The die is thrown
--- again once the ability is done, by throwSettled's `rethrow`, as the
--- activating player's CR 706.1 roll. No window open, no die to reroll, and
--- nothing happens.
-reroll :: Game ()
-reroll = State.modify' (\g -> if Maybe.isJust (GameState.rollingDie g) then g {GameState.rerollRequested = True} else g)
+-- CR 706.2b's reroll or a coin's reflip, asked for by the ability Goblin
+-- Bookie activates inside throwDice's window or Parun.Engine.Resolve.Effect's
+-- reflipWindow, through GameState.rethrowRequested. The die is thrown again
+-- once the ability is done, by throwSettled's `rethrow`, as the activating
+-- player's CR 706.1 roll; the coin by Parun.Engine.Event.settleCoins. No
+-- window open, nothing to throw again, and nothing happens.
+rethrow :: Game ()
+rethrow = State.modify' (\g -> if Maybe.isJust (GameState.throwing g) then g {GameState.rethrowRequested = True} else g)
 
 -- CR 706.8b: the controller chooses which of the slot's stored results to
 -- reroll, rolls one die of each noted kind per result through throwDice --
@@ -1482,8 +1483,8 @@ rerollStoredResults throwDice runSubgame resolving source controller legal slot 
 -- Parun.Engine.Event.flipOneCoin, before the comparison here sees the face at
 -- all, which is why a statement of heads alone still loses this flip against a
 -- call of tails.
-flipCoinArm :: (Game Result -> Throw.Throw -> Game [Natural]) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> FlipCoin.FlipCoin -> Game ()
-flipCoinArm throwForCoin runSubgame resolving source controller legal flipCoin = do
+flipCoinArm :: (Game Result -> Throw.Throw -> Game [Natural]) -> (Game Result -> PlayerId -> CoinFace.CoinFace -> Game Bool) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> FlipCoin.FlipCoin -> Game ()
+flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller legal flipCoin = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -1509,7 +1510,7 @@ flipCoinArm throwForCoin runSubgame resolving source controller legal flipCoin =
           -- That module's haddock argues the order of the two questions, and
           -- Parun.CoinSpec's "only the flipping player calls" proves it by what
           -- the engine ASKED rather than by anything the board shows.
-          CoinReading.Wins -> Event.flipWinLoseCoin (Just (throwForCoin runSubgame)) flipper statements
+          CoinReading.Wins -> Event.flipWinLoseCoin (Just (throwForCoin runSubgame)) (reflipWindow runSubgame) flipper statements
           -- CR 705.2's first sentence: the effect cares only about the face, so
           -- no Prompt.CallCoin is asked -- "no player wins or loses a coin flip
           -- for this kind of effect", so there is no call to make and nothing
@@ -1527,7 +1528,7 @@ flipCoinArm throwForCoin runSubgame resolving source controller legal flipCoin =
           -- flipped a coin for that d20, the coin is called
           -- (Event.settleCoins).
           CoinReading.Heads -> do
-            (face, _) <- Event.flipOneCoin (Just (throwForCoin runSubgame)) (Just flipper) Nothing statements
+            (face, _) <- Event.flipOneCoin (Just (throwForCoin runSubgame)) (reflipWindow runSubgame) (Just flipper) Nothing statements
             pure (face == Just CoinFace.Heads)
         pure (if hit then acc + 1 else acc)
   -- Bound AFTER every coin, since the slot tallies all of one instruction's flips.

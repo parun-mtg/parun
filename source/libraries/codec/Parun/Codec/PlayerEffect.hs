@@ -1,5 +1,6 @@
 module Parun.Codec.PlayerEffect where
 
+import qualified Parun.Codec.AbilityKind as AbilityKind
 import qualified Parun.Codec.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Codec.CantSearchLibraries as CantSearchLibraries
 import qualified Parun.Codec.CastFromZone as CastFromZone
@@ -11,6 +12,7 @@ import qualified Parun.Codec.DrawReveal as DrawReveal
 import qualified Parun.Codec.EntriesTrigger as EntriesTrigger
 import qualified Parun.Codec.ExtraVotes as ExtraVotes
 import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Codec.GameOutcome as GameOutcome
 import qualified Parun.Codec.HexproofExemption as HexproofExemption
 import qualified Parun.Codec.InZone as InZone
@@ -27,6 +29,7 @@ import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.Codec.PlotFromZone as PlotFromZone
 import qualified Parun.Codec.Shows as Shows
 import qualified Parun.Codec.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Codec.StateBasedAction as StateBasedAction
 import qualified Parun.Codec.StatedFlip as StatedFlip
 import qualified Parun.Codec.TapForMana as TapForMana
 import qualified Parun.Codec.TargetRestriction as TargetRestriction
@@ -43,12 +46,13 @@ codec :: Codec.Codec PlayerEffect.PlayerEffect
 codec =
   let filterCodec = Filter.codec Keyword.codec
       -- The designator absent is every ability; the source Filter absent, the
-      -- empty And, every source.
+      -- empty And, every source; the kind absent, both kinds.
       activationBan =
         Fields.object $
-          (,)
-            <$> Fields.defaulted "designator" Nothing (Common.maybe (KeywordDesignator.codec Keyword.codec)) fst
-            <*> Fields.defaulted "sources" (Filter.Type.And []) filterCodec snd
+          (,,)
+            <$> Fields.defaulted "designator" Nothing (Common.maybe (KeywordDesignator.codec Keyword.codec)) (\(x, _, _) -> x)
+            <*> Fields.defaulted "sources" (Filter.Type.And []) filterCodec (\(_, x, _) -> x)
+            <*> Fields.defaulted "kind" Nothing (Common.maybe AbilityKind.codec) (\(_, _, x) -> x)
       lifeForMana =
         Fields.object $
           (,)
@@ -63,7 +67,7 @@ codec =
    in Arm.tagged
         tagOf
         [ Arm.nullary "CantCastSpells" PlayerEffect.CantCastSpells,
-          Arm.payload "CantActivateAbilities" activationBan (uncurry PlayerEffect.CantActivateAbilities) (\x -> case x of PlayerEffect.CantActivateAbilities y z -> Just (y, z); _ -> Nothing),
+          Arm.payload "CantActivateAbilities" activationBan (\(y, z, w) -> PlayerEffect.CantActivateAbilities y z w) (\x -> case x of PlayerEffect.CantActivateAbilities y z w -> Just (y, z, w); _ -> Nothing),
           Arm.payload "CantCastMoreThan" Common.natural PlayerEffect.CantCastMoreThan (\x -> case x of PlayerEffect.CantCastMoreThan y -> Just y; _ -> Nothing),
           Arm.payload "ModifyCost" CostModifier.codec PlayerEffect.ModifyCost (\x -> case x of PlayerEffect.ModifyCost y -> Just y; _ -> Nothing),
           Arm.payload "AlternativeActivationCost" AlternativeActivationCost.codec PlayerEffect.AlternativeActivationCost (\x -> case x of PlayerEffect.AlternativeActivationCost y -> Just y; _ -> Nothing),
@@ -83,6 +87,7 @@ codec =
           Arm.payload "LoyaltyGrant" LoyaltyGrant.codec PlayerEffect.LoyaltyGrant (\x -> case x of PlayerEffect.LoyaltyGrant y -> Just y; _ -> Nothing),
           Arm.payload "MayTapForMana" TapForMana.codec PlayerEffect.MayTapForMana (\x -> case x of PlayerEffect.MayTapForMana y -> Just y; _ -> Nothing),
           Arm.payload "CantBeCountered" CounterProhibition.codec PlayerEffect.CantBeCountered (\x -> case x of PlayerEffect.CantBeCountered y -> Just y; _ -> Nothing),
+          Arm.payload "NextSpell" filterCodec PlayerEffect.NextSpell (\x -> case x of PlayerEffect.NextSpell y -> Just y; _ -> Nothing),
           Arm.payload "RestrictTargeting" (TargetRestriction.codec filterCodec) PlayerEffect.RestrictTargeting (\x -> case x of PlayerEffect.RestrictTargeting y -> Just y; _ -> Nothing),
           Arm.payload "TargetPastHexproof" HexproofExemption.codec PlayerEffect.TargetPastHexproof (\x -> case x of PlayerEffect.TargetPastHexproof y -> Just y; _ -> Nothing),
           Arm.payload "DamageCantBePrevented" DamagePattern.codec PlayerEffect.DamageCantBePrevented (\x -> case x of PlayerEffect.DamageCantBePrevented y -> Just y; _ -> Nothing),
@@ -90,7 +95,7 @@ codec =
           Arm.payload "CantSearchLibraries" CantSearchLibraries.codec PlayerEffect.CantSearchLibraries (\x -> case x of PlayerEffect.CantSearchLibraries y -> Just y; _ -> Nothing),
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
           Arm.nullary "CantBecomeMonarch" PlayerEffect.CantBecomeMonarch,
-          Arm.nullary "LegendRuleDoesntApply" PlayerEffect.LegendRuleDoesntApply,
+          Arm.payload "StateBasedActionDoesntApply" StateBasedAction.codec PlayerEffect.StateBasedActionDoesntApply (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y -> Just y; _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
           Arm.payload "AdditionalTriggers" filterCodec PlayerEffect.AdditionalTriggers (\x -> case x of PlayerEffect.AdditionalTriggers y -> Just y; _ -> Nothing),
@@ -105,7 +110,7 @@ codec =
           Arm.payload "CastFrom" CastFromZone.codec PlayerEffect.CastFrom (\x -> case x of PlayerEffect.CastFrom y -> Just y; _ -> Nothing),
           Arm.payload "PlayLandsFrom" InZone.codec PlayerEffect.PlayLandsFrom (\x -> case x of PlayerEffect.PlayLandsFrom y -> Just y; _ -> Nothing),
           Arm.payload "PlotFrom" PlotFromZone.codec PlayerEffect.PlotFrom (\x -> case x of PlayerEffect.PlotFrom y -> Just y; _ -> Nothing),
-          Arm.payload "CastFromHandWithoutPayingManaCost" filterCodec PlayerEffect.CastFromHandWithoutPayingManaCost (\x -> case x of PlayerEffect.CastFromHandWithoutPayingManaCost y -> Just y; _ -> Nothing),
+          Arm.payload "CastFromHandWithoutPayingManaCost" FreeCastFromHand.codec PlayerEffect.CastFromHandWithoutPayingManaCost (\x -> case x of PlayerEffect.CastFromHandWithoutPayingManaCost y -> Just y; _ -> Nothing),
           Arm.payload "CantGetCounters" (Common.maybe PlayerCounterKind.codec) PlayerEffect.CantGetCounters (\x -> case x of PlayerEffect.CantGetCounters y -> Just y; _ -> Nothing),
           Arm.payload "StateCoinFlip" StatedFlip.codec PlayerEffect.StateCoinFlip (\x -> case x of PlayerEffect.StateCoinFlip y -> Just y; _ -> Nothing),
           Arm.payload "ModifyDieRoll" ModifiedRoll.codec PlayerEffect.ModifyDieRoll (\x -> case x of PlayerEffect.ModifyDieRoll y -> Just y; _ -> Nothing),
@@ -142,6 +147,7 @@ tagOf x = case x of
   PlayerEffect.LoyaltyGrant {} -> "LoyaltyGrant"
   PlayerEffect.MayTapForMana {} -> "MayTapForMana"
   PlayerEffect.CantBeCountered {} -> "CantBeCountered"
+  PlayerEffect.NextSpell {} -> "NextSpell"
   PlayerEffect.RestrictTargeting {} -> "RestrictTargeting"
   PlayerEffect.TargetPastHexproof {} -> "TargetPastHexproof"
   PlayerEffect.DamageCantBePrevented {} -> "DamageCantBePrevented"
@@ -149,7 +155,7 @@ tagOf x = case x of
   PlayerEffect.CantSearchLibraries {} -> "CantSearchLibraries"
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"
   PlayerEffect.CantBecomeMonarch {} -> "CantBecomeMonarch"
-  PlayerEffect.LegendRuleDoesntApply {} -> "LegendRuleDoesntApply"
+  PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
   PlayerEffect.EntriesTrigger {} -> "EntriesTrigger"
   PlayerEffect.AdditionalTriggers {} -> "AdditionalTriggers"

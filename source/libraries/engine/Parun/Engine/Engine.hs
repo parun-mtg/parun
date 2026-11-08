@@ -718,8 +718,9 @@ placePendingTriggers boards = do
   -- events that fired them, reading the same classifier.
   --
   -- Only `pending` is filtered. CR 605.1b's conditions are all EVENT conditions
-  -- (ManaAbility.triggersFromMana), so no state trigger, no delayed entry and
-  -- neither inherent gather above can produce one.
+  -- (ManaAbility.triggersFromMana), so no state trigger and neither inherent
+  -- gather above can produce one. A delayed entry can (Molten Tide), and
+  -- applyManaTriggers has applied it too.
   --
   -- CR 605.5a: the EVENT that fired it decides too, so a trigger watching mana
   -- added by an ability that resolved (Caged Sun off Crumbling Vestige) is no
@@ -1021,15 +1022,30 @@ placeBorne srcId pending = do
   case fmap LoggedEvent.event (PendingTrigger.firedBy pending) of
     Just (GameEvent.Revealed revealed) -> Monad.mapM_ (Event.stampReveal (RevealWindow.WhileOnStack abilId)) (Event.revealedObjects revealed gs2)
     _ -> pure ()
-  if not (Modal.selectionPossible legal selection)
-    then -- CR 603.3c: no selection satisfies the instruction.
-      State.modify' (Game.cease abilId)
-    else do
-      -- CR 700.2b: forced when there is nothing to choose, prompted otherwise.
-      -- Sorted on the way in, for Cast.castProposed's reason (CR 608.2c, 700.2d).
-      chosenModes <- case Modal.forcedSelection legal selection of
-        Just forced -> pure forced
-        Nothing -> fmap Seq.sort (Game.choose (Prompt.ChooseModes decider controller abilId legal selection))
+  -- CR 700.2b: forced when there is nothing to choose, prompted otherwise.
+  -- Sorted on the way in, for Cast.castProposed's reason (CR 608.2c, 700.2d).
+  --
+  -- An answer Modal.selectionSatisfiedBy refuses is RE-ASKED, for the reason
+  -- the target announcement below gives: a trigger has no `before` for CR
+  -- 601.2e's rewind. Bounded the same way, keyed on the answer narrowed to
+  -- `legal` and cut one past the most the instruction allows, a finite set.
+  let askModes rejected = do
+        answer <- fmap Seq.sort (Game.choose (Prompt.ChooseModes decider controller abilId legal selection))
+        if Modal.selectionSatisfiedBy legal selection answer
+          then pure (Just answer)
+          else
+            let key = Seq.take (Natural.toIntSaturating (Modal.mostOf selection + 1)) (Seq.filter (`Set.member` legal) answer)
+             in if Set.member key rejected
+                  then pure Nothing
+                  else askModes (Set.insert key rejected)
+  answeredModes <-
+    if not (Modal.selectionPossible legal selection)
+      then pure Nothing
+      else maybe (askModes Set.empty) (pure . Just) (Modal.forcedSelection legal selection)
+  case answeredModes of
+    -- CR 603.3c: no selection satisfies the instruction, or none was made.
+    Nothing -> State.modify' (Game.cease abilId)
+    Just chosenModes -> do
       -- CR 700.17: the controller faced a dilemma.
       Monad.when (Modal.facesDilemma chosenModes modal) $
         State.modify' (Event.recordEvent (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma controller abilId)))
@@ -1271,6 +1287,9 @@ settleForPriority = Monad.void performSettle
 -- In Grand Melee the log scanned is the worked turn's, so a trigger goes on
 -- the stack of the turn in which its event happened (docs/decisions.md,
 -- "Which stack a Grand Melee trigger goes on").
+--
+-- Not implemented: CR 807.5b's choice of stack for a trigger whose controller
+-- has priority for several (#6561).
 performSettle :: Game Bool
 performSettle = do
   -- CR 725.1f / 725.2f: the boards CR 725.1c's or 725.2c's check left behind
@@ -1975,21 +1994,43 @@ unbegunRegisters gs =
 -- (docs/decisions.md, "In what order Grand Melee's running turns are asked").
 -- Every marker whose holder can begin has begun first, the last to begin
 -- being the one worked. A turn running alone takes its step whole, as runStep
--- does outside the variant.
+-- does outside the variant. A priority holder reached with priority for
+-- several stacks picks the one this unit's decision is on (chooseStack).
 --
--- Not implemented: CR 807.5b's choice of stack for a player with priority
--- for several, who is asked on each in turn and acts on the one asking
--- (#6536). CR 733.3's fragmented loop is looked for within one unit of a
--- window while another turn runs, its trail starting empty at each (#6537).
+-- Not implemented: CR 733.3's fragmented loop is looked for within one unit
+-- of a window while another turn runs, its trail starting empty at each
+-- (#6537).
 runMarkedUnit :: Game ()
 runMarkedUnit = do
   beginReady
   gs <- State.get
   let running = [TurnMarker.number m | m <- GameState.turnMarkers gs, TurnMarker.underWay m]
-      next = Maybe.listToMaybe (foldMap (\w -> filter (> w) running) (Turn.workedMarker gs) <> running)
-  Foldable.for_ next $ \n -> do
+      order = foldMap (\w -> filter (> w) running) (Turn.workedMarker gs) <> running
+  Foldable.for_ (Maybe.listToMaybe order) $ \n -> do
     State.modify' (workOn n)
+    chosen <- chooseStack n (ListUtils.nubOrd order)
+    State.modify' (workOn chosen)
     runUnit (length running == 1)
+
+-- CR 807.5b: the marker whose stack the worked turn's priority holder acts on,
+-- asked of them only when another running turn's window has them holding
+-- priority too, the worked marker `n` offered first and the rest in `order`.
+-- A pass then passes on the chosen stack alone (CR 117.3d).
+chooseStack :: Natural -> [Natural] -> Game Natural
+chooseStack n order = do
+  gs <- State.get
+  case (GameState.turnResume gs, GameState.priority gs) of
+    (TurnResume.InWindow, Just p) | List.elem p (Game.stillPlaying gs) -> do
+      let holding m = case Map.lookup m (GameState.parkedTurns gs) of
+            Just r -> TurnRegisters.turnResume r == TurnResume.InWindow && TurnRegisters.priority r == Just p
+            Nothing -> False
+          offered = n NonEmpty.:| filter (\m -> m /= n && holding m) order
+      case offered of
+        _ NonEmpty.:| [] -> pure n
+        _ -> do
+          answered <- Game.choose (Prompt.ChooseTurnMarker (Decide.deciderFor p gs) p offered)
+          pure (if List.elem answered offered then answered else n)
+    _ -> pure n
 
 -- The worked turn's next unit, or with `alone` the rest of its step.
 runUnit :: Bool -> Game ()

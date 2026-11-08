@@ -175,10 +175,10 @@ amounts context q = case q of
   Quantity.Count c -> do
     (one, many, ms) <- counting context c
     [MkAmount (ForEach 1 one) ms, MkAmount (EqualTo (Text.pack "the number of " <> many)) ms]
-  Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes f (Quantity.Count c)))
+  Quantity.Arithmetic (Arithmetic.Times (Times.MkTimes (Quantity.Literal f) (Quantity.Count c)))
     | f > 1 -> do
         (one, _, ms) <- counting context c
-        [MkAmount (ForEach (toInteger f) one) ms]
+        [MkAmount (ForEach f one) ms]
   Quantity.Measure m -> do
     word <- measure m
     [MkAmount (EqualTo (possessive (self context) <> Text.pack " " <> word)) []]
@@ -325,7 +325,9 @@ object context determiner ref = case ref of
     -- Free for a disjunction: one description (Magmaquake's "each creature
     -- without flying or planeswalker", or Iron Spider, Stark Upgrade's "each
     -- artifact creature and/or Vehicle") or one per disjunct ("each creature
-    -- without flying and each planeswalker").
+    -- without flying and each planeswalker"), or nouns joined with "and" and
+    -- qualified in the plural (Fulminous Forte's "each creature and
+    -- planeswalker your opponents control").
     Each ->
       let whole = do
             p <- ListUtils.nubOrd (Filter.phrase f (keyword context) <> Filter.phraseJoining Filter.Inclusive f (keyword context))
@@ -336,7 +338,13 @@ object context determiner ref = case ref of
               texts <- traverse (\g -> Filter.phrase g (keyword context) >>= Filter.describe Filter.Singular permanent) fs
               [MkReference (Prose.listing "and" (fmap (Text.pack "each " <>) texts)) [] Filter.Plural]
             _ -> []
-       in whole <> apart
+          conjoined = do
+            p <- Filter.phraseJoining Filter.Conjoined f (keyword context)
+            text <- Filter.describe Filter.Singular permanent p {Filter.qualifiers = []}
+            after <- traverse (Filter.agreeing Filter.Plural) (Filter.qualifiers p)
+            let wording' = Text.unwords (Text.pack "each " <> text : after)
+            [MkReference wording' [] Filter.Plural | wording' `notElem` fmap wording whole]
+       in whole <> apart <> conjoined
     All -> do
       p <- Filter.phrase f (keyword context)
       text <- Filter.describe Filter.Plural permanent p
@@ -396,6 +404,8 @@ player context ref = case ref of
     | s == youSlot -> [(MkReference (Text.pack "you") [] Filter.Singular, Second)]
     | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular, Third)]
     | otherwise -> fmap (\r -> (r, Third)) (target context s)
+  -- CR 701.55a's facing player, one at a time.
+  PlayerRef.EachInSlot s | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular, Third)]
   PlayerRef.HolderOfBound holder Hop.Itself s -> (MkReference (possessor <> Text.pack (holderWord holder)) [] Filter.Singular, Third) : thatNoun <> thatPlayer
     where
       -- "that artifact's controller" (Crumble), once the slot's announcement

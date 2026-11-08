@@ -59,8 +59,10 @@
                 "value": []
               },
               "perTarget": {
-                "type": "And",
-                "value": []
+                "matching": {
+                  "type": "And",
+                  "value": []
+                }
               },
               "subject": {
                 "type": "Spells"
@@ -89,8 +91,10 @@
                 "value": []
               },
               "perTarget": {
-                "type": "And",
-                "value": []
+                "matching": {
+                  "type": "And",
+                  "value": []
+                }
               },
               "subject": {
                 "type": "Spells"

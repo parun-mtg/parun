@@ -7,6 +7,7 @@ module Parun.ScenarioSpec where
 import qualified Control.Monad.IO.Class as MonadIO
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.ByteString as ByteString
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -31,6 +32,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Board as Board
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
@@ -39,6 +41,8 @@ import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Discrepancy as Discrepancy
+import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameState as GameState
@@ -49,6 +53,7 @@ import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Placement as Placement
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Readiness as Readiness
@@ -61,6 +66,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TeamId as TeamId
+import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.When as When
 import qualified System.Directory as Directory
 
@@ -533,6 +539,42 @@ spec s registry = Spec.describe s "Scenario" $ do
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "a declaration that stood passed as refused"
 
+  -- CR 601.2c: Roaming Ghostlight's "up to one target" admits none, so a refused
+  -- entry omitting the slot names an offered count of 0 and must not be
+  -- passed over as refused already.
+  Spec.it s "a refused announcement omitting an up-to slot names zero targets, which is offered" $ do
+    result <- runJson s registry (ghostlightRefusing "{}")
+    case result of
+      Left (ScenarioFailure.MkUnreachedEntries _ _ entries) ->
+        Spec.assertEqWith s "the refusal stood, unanswered" (fmap Timed.entry (Foldable.toList (Seq.take 1 entries))) [Entry.Refuse (Move.ChooseTargets Map.empty)]
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "a refused entry naming an offered count of 0 passed as refused already"
+
+  Spec.it s "the same refusal naming a non-offered target passes" $ do
+    result <- runJson s registry (ghostlightRefusing "{\"target\":[\"$spirit\"]}")
+    case result of
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right final -> Spec.assertEqWith s "the Hill Giant returned" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.bob final) 0
+
+  -- Yoshimaru, Scrappy Stray's trigger has slots `mine` and `theirs`, so a
+  -- refusal naming `mien` is a typo, not a target refused already.
+  Spec.it s "a refused trigger target naming a slot the ability lacks is a script error" $ do
+    result <- runJson s registry (yoshimaruRefusing "{\"mien\":[\"Yoshimaru, Scrappy Stray\"],\"theirs\":[\"$bears\"]}" "{\"mine\":[\"$giant\"],\"theirs\":[\"$bears\"]}")
+    case result of
+      Left (ScenarioFailure.MkUnknownSlot _ _ slot slots) -> do
+        Spec.assertEqWith s "the misspelled slot" slot (Text.pack "mien")
+        Spec.assertEqWith s "the slots the ability has" slots [Text.pack "mine", Text.pack "theirs"]
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "a refusal naming a misspelled slot passed as refused already"
+
+  -- CR 603.3d: the refusal announced one target for `theirs`, and the engine
+  -- asks the announcement again, so the next entry may name none.
+  Spec.it s "a trigger target refused already re-reads the announcement from the next entry" $ do
+    result <- runJson s registry (yoshimaruRefusing "{\"mine\":[\"Yoshimaru, Scrappy Stray\"],\"theirs\":[\"$bears\"]}" "{\"mine\":[\"$giant\"],\"theirs\":[]}")
+    case result of
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right final -> Spec.assertEqWith s "the Bears fought nobody" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Grizzly Bears")) S.bob final) 1
+
   -- CR 601.2e / 734.1: a cast the engine finds illegal is reversed, so a script
   -- whose cast is taken and then rejected fails rather than passing on a game
   -- in which nothing was cast. Convoking five creatures for the Loxodon's {4}{W}
@@ -657,9 +699,10 @@ spec s registry = Spec.describe s "Scenario" $ do
   Spec.it s "a check that reads false fails as a false check, naming what it saw" $ do
     result <- runJson s registry (attackThen "{\"turn\":1,\"step\":\"EndOfCombat\",\"player\":\"alice\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":17}}}" "[]")
     case result of
-      Left (ScenarioFailure.MkCheckFailed (Just key) _ observed) -> do
+      Left (ScenarioFailure.MkCheckFailed (Just key) _ observed skipped) -> do
         Spec.assertEqWith s "the moment it ran at" key (When.MkWhen 1 S.endOfCombat (S.seatLabel S.alice))
         Spec.assertEqWith s "what it saw" observed (Text.pack "18")
+        Spec.assertEqWith s "nothing skipped before it" (length skipped) 0
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "a false check passed"
 
@@ -672,12 +715,24 @@ spec s registry = Spec.describe s "Scenario" $ do
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "an unrun check passed"
 
+  Spec.it s "a false check names the earlier checks that never ran" $ do
+    -- CR 514.3: the turn-1 cleanup check never runs; bob's turn-2 upkeep check
+    -- then reads false and stops the run, which must not hide the first.
+    result <- runJson s registry (attackThen "{\"turn\":1,\"step\":\"Cleanup\",\"player\":\"alice\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":18}}},{\"turn\":2,\"step\":\"Upkeep\",\"player\":\"bob\",\"check\":{\"Life\":{\"player\":\"bob\",\"life\":17}}}" "[]")
+    case result of
+      Left failure@(ScenarioFailure.MkCheckFailed (Just key) _ _ skipped) -> do
+        Spec.assertEqWith s "the false check" key (When.MkWhen 2 (Phase.Beginning BeginningStep.Upkeep) (S.seatLabel S.bob))
+        Spec.assertEqWith s "the unrun check" (fmap Timed.when (Foldable.toList skipped)) [When.MkWhen 1 (Phase.Ending EndingStep.Cleanup) (S.seatLabel S.alice)]
+        Spec.assertBool s (List.isInfixOf "never ran" (S.renderFailure failure)) "the unrun check is rendered"
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "a false check passed"
+
   Spec.it s "a final check runs where the run stopped, once the timeline is spent" $ do
     -- The attack is the last entry, so the run stops after the declare
     -- attackers step, before any damage: bob is still at 20 there.
     result <- runJson s registry (attackThen "" "[{\"Life\":{\"player\":\"bob\",\"life\":18}}]")
     case result of
-      Left (ScenarioFailure.MkCheckFailed Nothing _ observed) -> Spec.assertEqWith s "bob before damage" observed (Text.pack "20")
+      Left (ScenarioFailure.MkCheckFailed Nothing _ observed _) -> Spec.assertEqWith s "bob before damage" observed (Text.pack "20")
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "the final check read a state past the run's end"
 
@@ -789,6 +844,49 @@ runJson :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> String -> m (Eit
 runJson s registry json = case Common.parse (Text.pack json) >>= Codec.decode Codec.Scenario.codec of
   Left problem -> Spec.assertFailure s (Text.unpack problem)
   Right scenario -> Scenario.run registry scenario
+
+-- alice casts Roaming Ghostlight and its enters trigger refuses `refused`
+-- before returning bob's Hill Giant.
+ghostlightRefusing :: String -> String
+ghostlightRefusing refused =
+  let entry body = "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\"," <> body <> "}"
+      library = "\"library\":[" <> List.intercalate "," (replicate 5 "{\"card\":\"Island\"}") <> "]"
+   in "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"hand\":[{\"card\":\"Roaming Ghostlight\",\"label\":\"spell\"}],\"manaPool\":\"CCCUU\","
+        <> library
+        <> "},{\"name\":\"bob\",\"battlefield\":[{\"card\":\"Hill Giant\",\"label\":\"giant\",\"ready\":true},{\"card\":\"Roaming Ghostlight\",\"label\":\"spirit\",\"ready\":true}],"
+        <> library
+        <> "}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},\"timeline\":["
+        <> List.intercalate
+          ","
+          [ entry "\"do\":{\"Cast\":{\"object\":\"$spell\"}}",
+            entry "\"do\":\"Pass\"",
+            entry ("\"refuse\":{\"ChooseTargets\":" <> refused <> "}"),
+            entry "\"do\":{\"ChooseTargets\":{\"target\":[\"$giant\"]}}",
+            entry "\"do\":\"Pass\""
+          ]
+        <> "]}"
+
+-- alice casts Yoshimaru, Scrappy Stray and its enters trigger refuses
+-- `refused`, then chooses `chosen`.
+yoshimaruRefusing :: String -> String -> String
+yoshimaruRefusing refused chosen =
+  let entry body = "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\"," <> body <> "}"
+      library = "\"library\":[" <> List.intercalate "," (replicate 3 "{\"card\":\"Island\"}") <> "]"
+   in "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"hand\":[{\"card\":\"Yoshimaru, Scrappy Stray\",\"label\":\"yosh\"}],\"manaPool\":\"GG\","
+        <> "\"battlefield\":[{\"card\":\"Hill Giant\",\"label\":\"giant\",\"ready\":true}],"
+        <> library
+        <> "},{\"name\":\"bob\",\"battlefield\":[{\"card\":\"Grizzly Bears\",\"label\":\"bears\",\"ready\":true}],"
+        <> library
+        <> "}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},\"timeline\":["
+        <> List.intercalate
+          ","
+          [ entry "\"do\":{\"Cast\":{\"object\":\"$yosh\"}}",
+            entry "\"do\":\"Pass\"",
+            entry ("\"refuse\":{\"ChooseTargets\":" <> refused <> "}"),
+            entry ("\"do\":{\"ChooseTargets\":" <> chosen <> "}"),
+            entry "\"do\":\"Pass\""
+          ]
+        <> "]}"
 
 -- alice casts Venerated Loxodon at once, convoking `taps` from four Goblin
 -- Pikers and a Palace Guard.

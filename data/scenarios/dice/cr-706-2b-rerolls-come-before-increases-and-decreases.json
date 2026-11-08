@@ -1,6 +1,6 @@
 {
   "description": "CR 706.2b rerolls come before increases and decreases",
-  "note": "A natural 2 shifted to 3 is not rerolled: no RerollDie answer is scheduled, so a reroll offered after the shift would be an unscheduled prompt. The control is the test's second leg with the shift taken rather than declined, so its effect shows which number the one shift offer saw: the rerolled 1, made 2, not the natural 3.",
+  "note": "A natural 2 shifted to 3 is not rerolled: no Rethrow answer is scheduled, so a reroll offered after the shift would be an unscheduled prompt. The control is the test's second leg with the shift taken rather than declined, so its effect shows which number the one shift offer saw: the rerolled 1, made 2, not the natural 3.",
   "board": {
     "seats": [
       {
