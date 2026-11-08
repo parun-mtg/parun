@@ -1,0 +1,41 @@
+{
+  "abilities": [
+    {
+      "keywords": [
+        {
+          "type": "Skulk"
+        }
+      ],
+      "tickets": 2
+    },
+    {
+      "keywords": [
+        {
+          "type": "BattleCry"
+        }
+      ],
+      "tickets": 3
+    }
+  ],
+  "art": 3,
+  "name": "Space Fungus Snickerdoodle",
+  "names": [
+    "Space",
+    "Fungus",
+    "Snickerdoodle"
+  ],
+  "number": 29,
+  "oracleText": "{TK}{TK} — Skulk (This creature can't be blocked by creatures with greater power.)\n{TK}{TK}{TK} — Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)\n{TK}{TK} — 3/2\n{TK}{TK}{TK}{TK}{TK} — 6/8",
+  "powerToughness": [
+    {
+      "power": 3,
+      "tickets": 2,
+      "toughness": 2
+    },
+    {
+      "power": 6,
+      "tickets": 5,
+      "toughness": 8
+    }
+  ]
+}
