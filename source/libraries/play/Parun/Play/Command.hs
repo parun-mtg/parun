@@ -83,16 +83,20 @@ usage problems = do
   Exit.exitFailure
 
 -- | A deck list file, as `parun deck` reads it.
+--
+-- Not implemented: checking the list against the format its header names
+-- (#6658).
 load :: Registry.Registry Identity.Identity -> FilePath -> IO Deck.Deck
 load registry path = do
   bytes <- ByteString.readFile path
   contents <- either (\err -> failWith (path <> ": not valid UTF-8: " <> show err)) pure (Encoding.decodeUtf8' bytes)
   case Identity.runIdentity (DeckList.parse registry contents) of
     Left corpus -> failWith (Exception.displayException corpus)
-    Right (Left problems) -> do
-      mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
-      Exit.exitFailure
-    Right (Right deck) -> pure deck
+    Right listed -> case DeckList.sound listed of
+      Left problems -> do
+        mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
+        Exit.exitFailure
+      Right deck -> pure deck
 
 -- | Stops before the game when a deck breaks the named format's rules or pool
 -- in a game not for ante, naming every violation of every deck.

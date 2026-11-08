@@ -37,19 +37,23 @@ entriesOf cards = List.sort [(CardName.unwrap (S.nameOf (Printing.card printing)
 deckOf :: Spec.Spec IO n -> String -> Registry.Registry IO -> String -> IO Deck.Deck
 deckOf s label registry text = do
   result <- DeckList.parse registry (Text.pack text)
-  case result of
+  case fmap DeckList.sound result of
     Right (Right deck) -> pure deck
     Right (Left problems) -> Spec.assertFailure s (label <> ": " <> show (fmap DeckList.explain problems))
     Left corpus -> S.brokenCorpus s corpus
 
+-- What a list says, failing the case rather than escaping when the corpus
+-- does not read.
+listedOf :: Spec.Spec IO n -> Registry.Registry IO -> String -> IO DeckList.Listed
+listedOf s registry text = DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure
+
 -- The problems a list raises, failing the case when it unexpectedly parses.
 problemsOf :: Spec.Spec IO n -> String -> Registry.Registry IO -> String -> IO [DeckList.Problem]
 problemsOf s label registry text = do
-  result <- DeckList.parse registry (Text.pack text)
-  case result of
-    Right (Left problems) -> pure problems
-    Right (Right _) -> Spec.assertFailure s (label <> ": expected the list to be rejected")
-    Left corpus -> S.brokenCorpus s corpus
+  listed <- listedOf s registry text
+  case DeckList.problems listed of
+    [] -> Spec.assertFailure s (label <> ": expected the list to be rejected")
+    problems -> pure problems
 
 spec :: (Monad n) => Spec.Spec IO n -> n ()
 spec s = Spec.describe s "Parun.DeckList" $ do
@@ -91,9 +95,9 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       half <- deckOf s "half" registry "3 Wane\n"
       Spec.assertEqWith s "one card, three times" (entriesOf (Deck.cards half)) [(Text.pack "Wax//Wane", 3)]
       spaced <- DeckList.parse registry (Text.pack "3 Wax // Wane\n")
-      Spec.assertEqWith s "the printed spelling is that same deck" spaced (Right (Right half))
+      Spec.assertEqWith s "the printed spelling is that same deck" (fmap DeckList.sound spaced) (Right (Right half))
       unspaced <- DeckList.parse registry (Text.pack "3 Wax//Wane\n")
-      Spec.assertEqWith s "and so is the unspaced spelling" unspaced (Right (Right half))
+      Spec.assertEqWith s "and so is the unspaced spelling" (fmap DeckList.sound unspaced) (Right (Right half))
 
   -- A joined name whose halves are two cards names no one card. Without this
   -- the parser could take the first half and silently drop the rest, which
@@ -124,7 +128,7 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       broken <- DeckList.parse registry (Text.pack "4 Goblin Piker\n2 Shivan Dragon\n")
       Spec.assertEqWith s "the registry's failure, naming the file" (fmap (fmap (List.isInfixOf "bird-maiden.json") . InvalidCorpus.problems) (either Just (const Nothing) broken)) (Just [True])
       sound <- DeckList.parse registry (Text.pack "4 Goblin Piker\n")
-      Spec.assertBool s (either (const False) (either (const False) (const True)) sound) "a list reaching only the good file reads"
+      Spec.assertBool s (either (const False) (null . DeckList.problems) sound) "a list reaching only the good file reads"
 
   -- Every bad line is reported rather than the first, for Parun.Registry.index's
   -- reason: a report naming one offender at a time is read once per offender.
@@ -148,7 +152,45 @@ spec s = Spec.describe s "Parun.DeckList" $ do
     . withPool "round-trip"
     $ \registry -> do
       deck <- deckOf s "round-trip" registry "4 Goblin Piker\n\nSideboard\n2 Wax // Wane\n"
-      let text = DeckList.render deck
+      let text = DeckList.render Nothing deck
       Spec.assertBool s (Text.isInfixOf (Text.pack "2 Wax // Wane") text) ("the printed spelling: " <> show text)
       again <- deckOf s "round-trip-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
+
+  -- A bad line costs the list its line, not its deck: the good lines still
+  -- describe one, so a format can check it in the same report (#6396).
+  Spec.it s "a list with a bad line still has the deck its good lines describe"
+    . withPool "partial"
+    $ \registry -> do
+      listed <- listedOf s registry "4 Goblin Piker\n2 Shivan Dragon\n"
+      Spec.assertEqWith s "the bad line" (DeckList.problems listed) [DeckList.NoSuchCard 2 (CardName.MkCardName (Text.pack "Shivan Dragon"))]
+      Spec.assertEqWith s "and the good one's deck" (entriesOf (Deck.cards (DeckList.deck listed))) [(Text.pack "Goblin Piker", 4)]
+
+  Spec.it s "a format header names the list's format, and a rendered list writes it back"
+    . withPool "format"
+    $ \registry -> do
+      listed <- listedOf s registry "Format: Limited\n4 Goblin Piker\n"
+      Spec.assertEqWith s "lowercased, as a format file is named" (DeckList.format listed) (Just (1, Text.pack "limited"))
+      Spec.assertEqWith s "and no card is read from it" (DeckList.problems listed) []
+      again <- listedOf s registry (Text.unpack (DeckList.render (Just (Text.pack "limited")) (DeckList.deck listed)))
+      Spec.assertEqWith s "the same format" (fmap snd (DeckList.format again)) (Just (Text.pack "limited"))
+      Spec.assertEqWith s "and the same deck" (DeckList.deck again) (DeckList.deck listed)
+
+  Spec.it s "a second format header is a problem, and the first names the format"
+    . withPool "format-twice"
+    $ \registry -> do
+      listed <- listedOf s registry "Format: modern\nFormat: limited\nFormat:\n"
+      Spec.assertEqWith s "the format" (DeckList.format listed) (Just (1, Text.pack "modern"))
+      Spec.assertEqWith s "the problems" (DeckList.problems listed) [DeckList.FormatRepeated 2 (Text.pack "limited"), DeckList.Unreadable 3 (Text.pack "Format:")]
+
+  -- The format asked for is checked, but a header naming another is reported
+  -- rather than silently overruled.
+  Spec.it s "a format asked for that the header contradicts is a problem"
+    . withPool "format-asked"
+    $ \registry -> do
+      listed <- listedOf s registry "Format: modern\n4 Goblin Piker\n"
+      let modern = Text.pack "modern"
+          limited = Text.pack "limited"
+      Spec.assertEqWith s "the header's own" (DeckList.formatFor Nothing listed) (Just modern, [])
+      Spec.assertEqWith s "the same one asked for" (DeckList.formatFor (Just modern) listed) (Just modern, [])
+      Spec.assertEqWith s "another asked for" (DeckList.formatFor (Just limited) listed) (Just limited, [DeckList.FormatDisagrees 1 modern limited])

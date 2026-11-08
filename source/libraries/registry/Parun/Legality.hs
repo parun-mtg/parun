@@ -17,6 +17,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.Format as Format.Codec
 import qualified Parun.Codec.Legality as Legality.Codec
 import qualified Parun.Codec.LegalityTable as LegalityTable.Codec
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Ingest as Ingest
@@ -130,6 +131,20 @@ basicLand :: Card.Type.Card -> Bool
 basicLand card =
   let typeLine = Face.typeLine (Card.combined card)
    in Set.member Supertype.Basic (TypeLine.supertypes typeLine) && Set.member CardType.Land (TypeLine.types typeLine)
+
+-- | Everything wrong with a deck list, as lines a person can read: its bad
+-- lines, then its deck's violations of the format asked for or its header
+-- names, in a game not for ante. Beside them, the format checked.
+report :: Maybe Text.Text -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
+report asked listed = do
+  let (format, disagreement) = DeckList.formatFor asked listed
+      lines' = fmap DeckList.explain (DeckList.problems listed <> disagreement)
+  checked <- traverse named format
+  let violations = case checked of
+        Nothing -> []
+        Just (Left problem) -> [problem]
+        Just (Right known) -> fmap explain (known GameSettings.plain (DeckList.deck listed))
+  pure (format, lines' <> violations)
 
 -- | A violation as a line a person can read.
 explain :: Violation.Violation -> Text.Text

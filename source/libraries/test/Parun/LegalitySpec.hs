@@ -11,6 +11,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Numeric.Natural as Natural
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
 import qualified Parun.Registry as Registry
@@ -71,6 +72,19 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 100.2a: five Grizzly Bears in a constructed deck are one too many" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 5), ("Mountain", 55)] []
     Spec.assertEqWith s "violations" found [copies "Grizzly Bears" 5]
+
+  -- A misspelt name does not keep the rest of the list from being checked:
+  -- both are reported together (#6396).
+  Spec.it s "CR 100.2a: a list with a bad line still has its five Grizzly Bears counted" $ do
+    let text = "5 Grizzly Bears\n55 Mountain\n1 Lightnin Bolt\n"
+    listed <- DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure
+    (format, reported) <- Legality.report (Just (Text.pack "constructed")) listed
+    Spec.assertEqWith s "the format" format (Just (Text.pack "constructed"))
+    Spec.assertEqWith s "the bad line, then the violation" reported [DeckList.explain (DeckList.NoSuchCard 3 (nameOf "Lightnin Bolt")), Legality.explain (copies "Grizzly Bears" 5)]
+    headed <- DeckList.parse registry (Text.pack ("Format: limited\n" <> text)) >>= either (S.brokenCorpus s) pure
+    (headerFormat, headerReported) <- Legality.report Nothing headed
+    Spec.assertEqWith s "the header's format" headerFormat (Just (Text.pack "limited"))
+    Spec.assertEqWith s "under which five are legal" headerReported [DeckList.explain (DeckList.NoSuchCard 4 (nameOf "Lightnin Bolt"))]
 
   Spec.it s "CR 100.2a: a constructed deck of 59 cards is too small" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 4), ("Mountain", 55)] []

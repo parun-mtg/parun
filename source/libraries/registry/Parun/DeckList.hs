@@ -40,6 +40,10 @@ data Problem
   | -- | CR 709.4a: a joined name whose halves name two different cards, so the
     -- line names no one card.
     HalvesDisagree Natural.Natural CardName.CardName
+  | -- | A format header after the one that already named the list's format.
+    FormatRepeated Natural.Natural Text.Text
+  | -- | A format header naming one format when another was asked for.
+    FormatDisagrees Natural.Natural Text.Text Text.Text
   deriving (Eq, Ord, Show)
 
 -- | A problem as a line a person can read.
@@ -50,6 +54,8 @@ explain problem =
         Unreadable n content -> at n <> Text.pack "not a count and a card name: " <> content
         NoSuchCard n name -> at n <> Text.pack "no card is named " <> CardName.unwrap name
         HalvesDisagree n name -> at n <> Text.pack "the halves of " <> CardName.unwrap name <> Text.pack " are different cards"
+        FormatRepeated n name -> at n <> Text.pack "the format is already named, so not " <> name
+        FormatDisagrees n named asked -> at n <> Text.pack "the list names the format " <> named <> Text.pack ", not " <> asked
 
 -- | Which of a deck list's two sections the lines that follow belong to. CR
 -- 100.4 makes the sideboard a group of cards beside the deck rather than part
@@ -59,8 +65,22 @@ data Section
   | Side
   deriving (Eq, Ord, Show)
 
--- | The deck a deck list describes, or every line that stopped it; outside
--- both, the registry's failure to read a card file a lookup reached.
+-- | What a deck list says: the deck its good lines describe, the format its
+-- header names, and every line that did not become part of either. A list with
+-- a bad line still has a deck, so it can be checked against its format in the
+-- same report (#6396).
+data Listed = MkListed
+  { -- | The deck the resolved lines add up to.
+    deck :: Deck.Deck,
+    -- | The line of the list's format header and the format it names.
+    format :: Maybe (Natural.Natural, Text.Text),
+    -- | Every bad line, in order.
+    problems :: [Problem]
+  }
+  deriving (Eq, Show)
+
+-- | What a deck list says; outside it, the registry's failure to read a card
+-- file a lookup reached.
 --
 -- The two sections a deck list has are the two fields this fills. CR 903.3's
 -- commander, CR 902.3's vanguard card and CR 309.2's dungeon cards are brought
@@ -70,38 +90,82 @@ data Section
 -- Not implemented: CR 718.2's Attraction deck and the Unstable FAQ's Contraption
 -- deck, and naming which printing of an Attraction a line means, whose lights
 -- CR 718.1 lets differ (#4118).
-parse :: (Monad m) => Registry.Registry m -> Text.Text -> m (Either InvalidCorpus.InvalidCorpus (Either [Problem] Deck.Deck))
+parse :: (Monad m) => Registry.Registry m -> Text.Text -> m (Either InvalidCorpus.InvalidCorpus Listed)
 parse registry text = do
   looked <- mapM (lineOf registry) (List.zip [1 ..] (Text.lines text))
   pure (fmap assemble (sequence looked))
 
--- The deck the lines' meanings add up to, or every line that stopped it.
-assemble :: [Either Problem (Maybe (Either Section (Natural.Natural, Card.Card)))] -> Either [Problem] Deck.Deck
+-- What one line of a deck list means.
+data Line
+  = -- | Nothing.
+    Blank
+  | -- | The section the lines after it belong to.
+    Header Section
+  | -- | The format the list is for.
+    Named Text.Text
+  | -- | A count and the card it names.
+    Entry Natural.Natural Card.Card
+
+-- The deck the lines' meanings add up to, the format the first header names,
+-- and every line that is neither.
+assemble :: [(Natural.Natural, Either Problem Line)] -> Listed
 assemble results =
-  let step (section, entries, problems) result = case result of
-        Left problem -> (section, entries, problem : problems)
-        Right Nothing -> (section, entries, problems)
-        Right (Just (Left next)) -> (next, entries, problems)
-        Right (Just (Right (count, card))) -> (section, (section, card, count) : entries, problems)
-      (_, found, bad) = List.foldl' step (Main, [], []) results
+  let step (section, entries, named, bad) (number, result) = case result of
+        Left problem -> (section, entries, named, problem : bad)
+        Right Blank -> (section, entries, named, bad)
+        Right (Header next) -> (next, entries, named, bad)
+        Right (Named name) -> case named of
+          Nothing -> (section, entries, Just (number, name), bad)
+          Just _ -> (section, entries, named, FormatRepeated number name : bad)
+        Right (Entry count card) -> (section, (section, card, count) : entries, named, bad)
+      (_, found, header, reported) = List.foldl' step (Main, [], Nothing, []) results
       gather want = Map.fromListWith (+) [(Printing.ofCard card, count) | (section, card, count) <- found, section == want, count /= 0]
-      deck = Deck.fromCards (gather Main)
-   in case List.reverse bad of
-        [] -> Right deck {Deck.sideboard = gather Side}
-        problems -> Left problems
+   in MkListed
+        { deck = (Deck.fromCards (gather Main)) {Deck.sideboard = gather Side},
+          format = header,
+          problems = List.reverse reported
+        }
+
+-- | The deck of a list with no bad line, or every bad line: for a caller that
+-- plays the deck rather than reporting on it.
+sound :: Listed -> Either [Problem] Deck.Deck
+sound listed = case problems listed of
+  [] -> Right (deck listed)
+  bad -> Left bad
+
+-- | The format a list is checked against: the one asked for, else the one its
+-- header names. A header naming another is a problem rather than silently
+-- overruled, and the format asked for is still the one checked.
+formatFor :: Maybe Text.Text -> Listed -> (Maybe Text.Text, [Problem])
+formatFor asked listed = case (asked, format listed) of
+  (Just wanted, Just (number, named)) | wanted /= named -> (asked, [FormatDisagrees number named wanted])
+  (Just _, _) -> (asked, [])
+  (Nothing, header) -> (fmap snd header, [])
 
 -- What one line means: nothing (blank), the section the lines after it belong
--- to, or a count and the card it names.
-lineOf :: (Monad m) => Registry.Registry m -> (Natural.Natural, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Either Problem (Maybe (Either Section (Natural.Natural, Card.Card)))))
+-- to, the format the list is for, or a count and the card it names.
+lineOf :: (Monad m) => Registry.Registry m -> (Natural.Natural, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
 lineOf registry (number, raw) =
   let trimmed = Text.strip raw
    in if Text.null trimmed
-        then pure (Right (Right Nothing))
-        else case sectionNamed trimmed of
-          Just section -> pure (Right (Right (Just (Left section))))
-          Nothing -> case entryOf trimmed of
-            Nothing -> pure (Right (Left (Unreadable number trimmed)))
-            Just (count, name) -> fmap (fmap (fmap (\card -> Just (Right (count, card))))) (resolve registry number name)
+        then pure (Right (number, Right Blank))
+        else case (sectionNamed trimmed, formatNamed trimmed) of
+          (Just section, _) -> pure (Right (number, Right (Header section)))
+          (_, Just named) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
+          _ -> case entryOf trimmed of
+            Nothing -> pure (Right (number, Left (Unreadable number trimmed)))
+            Just (count, name) -> fmap (fmap ((,) number . fmap (Entry count))) (resolve registry number name)
+
+-- The format a "Format:" header names, lowercased as data/formats files are
+-- named; Just Nothing for a header naming none. No card's name begins
+-- "Format:", so a header never hides a card.
+formatNamed :: Text.Text -> Maybe (Maybe Text.Text)
+formatNamed text =
+  let (key, rest) = Text.breakOn (Text.singleton ':') text
+      named = Text.toLower (Text.strip (Text.drop 1 rest))
+   in if Text.toLower (Text.strip key) == Text.pack "format" && not (Text.null rest)
+        then Just (if Text.null named then Nothing else Just named)
+        else Nothing
 
 -- The section a header line names, if it is one. Only the two headers a deck
 -- list actually carries: everything else on a line of its own is a card name
@@ -166,16 +230,18 @@ halvesOf name =
         Nothing -> NonEmpty.singleton name
         Just halves -> fmap CardName.MkCardName halves
 
--- | A deck as a deck list, which `parse` reads back.
+-- | A deck as a deck list, headed by the format it is for if any, which
+-- `parse` reads back.
 --
 -- Sorted by the name written, so the text is a fact about the deck rather than
 -- about the order a Map enumerates its structural keys in.
-render :: Deck.Deck -> Text.Text
-render deck =
+render :: Maybe Text.Text -> Deck.Deck -> Text.Text
+render header listed =
   let entries m = fmap line (List.sortOn snd [(count, written (Printing.card printing)) | (printing, count) <- Map.toList m])
       line (count, name) = Text.pack (show count) <> Text.singleton ' ' <> name
-      side = entries (Deck.sideboard deck)
-      body = entries (Deck.cards deck) <> if null side then [] else Text.empty : Text.pack "Sideboard" : side
+      side = entries (Deck.sideboard listed)
+      heading = foldMap (\named -> [Text.pack "Format: " <> named, Text.empty]) header
+      body = heading <> entries (Deck.cards listed) <> if null side then [] else Text.empty : Text.pack "Sideboard" : side
    in Text.unlines body
 
 -- A card's name as a deck list writes it: its face names joined by a SPACED
