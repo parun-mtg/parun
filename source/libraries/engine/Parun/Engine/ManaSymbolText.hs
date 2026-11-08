@@ -37,7 +37,7 @@ symbol s = case Text.unpack s of
   _ -> Nothing
 
 -- | CR 903.4 / 903.4c: the mana symbols in rules text outside its reminder
--- text, which is parenthesized (CR 207.2).
+-- text, which is parenthesized (CR 207.2a).
 rulesTextSymbols :: Text.Text -> [ManaSymbol.ManaSymbol]
 rulesTextSymbols = go . Text.unpack
   where
