@@ -132,7 +132,7 @@ zoneOfComponent component = case component of
   CostComponent.SacrificeThis -> Nothing
   CostComponent.ExileThis -> Nothing
   CostComponent.PayLife _ -> Nothing
-  CostComponent.PayHalfLife _ -> Nothing
+  CostComponent.PayComputedLife _ -> Nothing
   CostComponent.Sacrifice {} -> Nothing
   -- These tap permanents that stay on the battlefield, so nothing moves out of
   -- any zone and CR 113.6's default stands.

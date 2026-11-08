@@ -3383,7 +3383,7 @@ overComponent onFilter onCounters component = case component of
   CostComponent.SacrificeThis -> component
   CostComponent.ReturnThis -> component
   CostComponent.PayLife _ -> component
-  CostComponent.PayHalfLife _ -> component
+  CostComponent.PayComputedLife _ -> component
   CostComponent.DiscardThis _ -> component
   CostComponent.PayEnergy _ -> component
   CostComponent.AddLoyaltyToThis _ -> component

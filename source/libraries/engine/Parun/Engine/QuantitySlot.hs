@@ -26,6 +26,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.CastFrom as CastFrom
+import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.DamageTally as DamageTally
@@ -214,6 +215,7 @@ overSlots f quantity =
         Quantity.CompletedDungeon {} -> pure quantity
         -- And CR 903.8's cast tally, a PlayerRef with nothing beside it.
         Quantity.CommanderCasts _ -> pure quantity
+        Quantity.CommanderColors _ -> pure quantity
         -- And a nullary arm, which names nothing at all: CR 400.7's entry is read
         -- against the object the evaluation is aimed at, as ObjectCounters is.
         Quantity.EnteredThisTurn -> pure quantity
@@ -387,6 +389,7 @@ nestedRefs quantity = case quantity of
   Quantity.SubgamesThisMatch -> Set.empty
   Quantity.DungeonsCompleted ref -> Set.singleton (Left ref)
   Quantity.CommanderCasts ref -> Set.singleton (Left ref)
+  Quantity.CommanderColors c -> Set.singleton (Left (CommanderColors.player c))
   Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref _) -> Set.singleton (Left ref)
   Quantity.EnteredThisTurn -> Set.empty
   Quantity.EnteredFrom inZone -> Set.singleton (Left (InZone.player inZone))
@@ -511,6 +514,7 @@ nestedCounts quantity = case quantity of
   Quantity.SubgamesThisMatch -> []
   Quantity.DungeonsCompleted _ -> []
   Quantity.CommanderCasts _ -> []
+  Quantity.CommanderColors _ -> []
   Quantity.CompletedDungeon {} -> []
   Quantity.EnteredThisTurn -> []
   -- CR 400.7's logged origin zone and CR 601.2a's logged cast: player references
@@ -662,6 +666,7 @@ mapPlayerRefs f intoCount quantity =
         Quantity.SubgamesThisMatch -> quantity
         Quantity.DungeonsCompleted ref -> Quantity.DungeonsCompleted (f ref)
         Quantity.CommanderCasts ref -> Quantity.CommanderCasts (f ref)
+        Quantity.CommanderColors c -> Quantity.CommanderColors c {CommanderColors.player = f (CommanderColors.player c)}
         Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref name) -> Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon (f ref) name)
         Quantity.EnteredFrom z -> Quantity.EnteredFrom z {InZone.player = f (InZone.player z)}
         Quantity.WasCastFrom c ->

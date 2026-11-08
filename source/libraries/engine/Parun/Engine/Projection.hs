@@ -29,6 +29,7 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
 import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
@@ -4718,6 +4719,8 @@ quantityReads q = case q of
   Quantity.Type.SubgamesThisMatch -> Set.empty
   Quantity.Type.DungeonsCompleted _ -> Set.empty
   Quantity.Type.CommanderCasts _ -> Set.empty
+  -- CR 903.4a: read off the printed cards, which no layer writes.
+  Quantity.Type.CommanderColors _ -> Set.empty
   Quantity.Type.CompletedDungeon {} -> Set.empty
   Quantity.Type.EnteredThisTurn -> Set.empty
   Quantity.Type.EnteredFrom _ -> Set.empty
@@ -5760,7 +5763,7 @@ phyrexianLifePaidOf oid gs = maybe 0 Object.phyrexianLifePaid (Game.lookupObject
 colorsSpentOf :: ObjectId -> GameState -> Set Color.Color
 colorsSpentOf oid gs = case Game.lookupObject oid gs of
   Nothing -> Set.empty
-  Just obj -> Set.fromList (Maybe.mapMaybe (Quantity.colorOfManaType . ManaUnit.manaType) (Mana.unwrap (Object.manaSpent obj)))
+  Just obj -> Set.fromList (Maybe.mapMaybe (ManaSymbolText.colorOfManaType . ManaUnit.manaType) (Mana.unwrap (Object.manaSpent obj)))
 
 -- CR 122.1c: the pair of effects one or more shield counters create.
 --

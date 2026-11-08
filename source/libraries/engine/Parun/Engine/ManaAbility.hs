@@ -269,7 +269,7 @@ costMovesLibraryCard component = case component of
   CostComponent.TapForTotalPower {} -> False
   CostComponent.TapPermanents {} -> False
   CostComponent.PayLife _ -> False
-  CostComponent.PayHalfLife _ -> False
+  CostComponent.PayComputedLife _ -> False
   CostComponent.PayEnergy _ -> False
   CostComponent.AddLoyaltyToThis _ -> False
   CostComponent.RemoveLoyaltyFromThis _ -> False

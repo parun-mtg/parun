@@ -2,6 +2,7 @@ module Parun.Types.CostComponent where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Behold as Behold
+import qualified Parun.Types.ComputedLife as ComputedLife
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
@@ -14,7 +15,6 @@ import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
-import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -51,9 +51,9 @@ data CostComponent keyword
   | -- | CR 119.4 / Greed, Hatred: pay this much life, payable only out of a life
     -- total at least that large.
     PayLife CostAmount.CostAmount
-  | -- | CR 119.4 / 107.1a / Lurking Evil: pay half the paying player's life,
-    -- rounded as printed, fixed to a PayLife by Parun.Engine.Cost.announce.
-    PayHalfLife Rounding.Rounding
+  | -- | CR 119.4: pay the life the payload computes, fixed to a PayLife by
+    -- Parun.Engine.Cost.announce, and unpayable while it is undefined (CR 903.4f).
+    PayComputedLife ComputedLife.ComputedLife
   | -- | CR 701.21a / Village Rites, Fireblast, Grim Hireling: sacrifice this many
     -- permanents matching the Filter, which the payer chooses.
     Sacrifice (Sacrifice.Sacrifice keyword)

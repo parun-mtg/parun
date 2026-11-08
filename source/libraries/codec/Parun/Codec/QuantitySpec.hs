@@ -19,6 +19,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.Cost as Cost
@@ -804,6 +805,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.CommanderCasts (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"CommanderCasts\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+  Spec.it s "CommanderColors" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.CommanderColors (CommanderColors.MkCommanderColors (PlayerRef.Relative PlayerRelation.You) (Set.singleton Color.Red)))
+      " {\"type\":\"CommanderColors\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"colors\":[\"Red\"]}} "
   -- CR 309.7 asked of one dungeon by name, the tally's named sibling.
   Spec.it s "CompletedDungeon, a player and a printed name" $
     Common.assertCodec

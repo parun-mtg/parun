@@ -2,6 +2,7 @@ module Parun.Codec.CostComponent where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.Behold as Behold
+import qualified Parun.Codec.ComputedLife as ComputedLife
 import qualified Parun.Codec.CostAmount as CostAmount
 import qualified Parun.Codec.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Codec.CountersOnThis as CountersOnThis
@@ -13,7 +14,6 @@ import qualified Parun.Codec.ExilePermanents as ExilePermanents
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Gift as Gift
 import qualified Parun.Codec.ReturnPermanents as ReturnPermanents
-import qualified Parun.Codec.Rounding as Rounding
 import qualified Parun.Codec.Sacrifice as Sacrifice
 import qualified Parun.Codec.TapForTotalPower as TapForTotalPower
 import qualified Parun.Codec.TapPermanents as TapPermanents
@@ -42,7 +42,7 @@ codec keywordCodec =
       Arm.nullary "SacrificeThis" CostComponent.SacrificeThis,
       Arm.nullary "ReturnThis" CostComponent.ReturnThis,
       Arm.payload "PayLife" CostAmount.codec CostComponent.PayLife (\x -> case x of CostComponent.PayLife y -> Just y; _ -> Nothing),
-      Arm.payload "PayHalfLife" Rounding.codec CostComponent.PayHalfLife (\x -> case x of CostComponent.PayHalfLife y -> Just y; _ -> Nothing),
+      Arm.payload "PayComputedLife" ComputedLife.codec CostComponent.PayComputedLife (\x -> case x of CostComponent.PayComputedLife y -> Just y; _ -> Nothing),
       Arm.payload "Sacrifice" (Sacrifice.codec keywordCodec) CostComponent.Sacrifice (\x -> case x of CostComponent.Sacrifice y -> Just y; _ -> Nothing),
       Arm.payload "TapForTotalPower" (TapForTotalPower.codec keywordCodec) CostComponent.TapForTotalPower (\x -> case x of CostComponent.TapForTotalPower y -> Just y; _ -> Nothing),
       Arm.payload "TapPermanents" (TapPermanents.codec keywordCodec) CostComponent.TapPermanents (\x -> case x of CostComponent.TapPermanents y -> Just y; _ -> Nothing),
@@ -94,7 +94,7 @@ tagOf x = case x of
   CostComponent.SacrificeThis {} -> "SacrificeThis"
   CostComponent.ReturnThis {} -> "ReturnThis"
   CostComponent.PayLife {} -> "PayLife"
-  CostComponent.PayHalfLife {} -> "PayHalfLife"
+  CostComponent.PayComputedLife {} -> "PayComputedLife"
   CostComponent.Sacrifice {} -> "Sacrifice"
   CostComponent.TapForTotalPower {} -> "TapForTotalPower"
   CostComponent.TapPermanents {} -> "TapPermanents"

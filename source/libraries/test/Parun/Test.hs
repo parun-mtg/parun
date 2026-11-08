@@ -197,12 +197,14 @@ import qualified Parun.Codec.CombatDeclarationSpec
 import qualified Parun.Codec.CombatRestrictionSpec
 import qualified Parun.Codec.CombatSpec
 import qualified Parun.Codec.CombatStepSpec
+import qualified Parun.Codec.CommanderColorsSpec
 import qualified Parun.Codec.CommanderDeckRuleSpec
 import qualified Parun.Codec.CompanyCountSpec
 import qualified Parun.Codec.ComparesSpec
 import qualified Parun.Codec.ComparisonSpec
 import qualified Parun.Codec.CompletedDungeonSpec
 import qualified Parun.Codec.ComponentCardSpec
+import qualified Parun.Codec.ComputedLifeSpec
 import qualified Parun.Codec.ConditionSpec
 import qualified Parun.Codec.ConjureCardsSpec
 import qualified Parun.Codec.ConjureDestinationSpec
@@ -1349,6 +1351,8 @@ spec s registry corpus = do
   Parun.Codec.DestructionRewriteSpec.spec s
   Parun.Codec.DestructionRSpec.spec s
   Parun.Codec.DevotionSpec.spec s
+  Parun.Codec.CommanderColorsSpec.spec s
+  Parun.Codec.ComputedLifeSpec.spec s
   Parun.Codec.DevourCountSpec.spec s
   Parun.Codec.DevourSpec.spec s
   Parun.Codec.DiceReadingSpec.spec s

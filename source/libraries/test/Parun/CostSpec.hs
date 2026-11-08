@@ -1531,12 +1531,12 @@ hatredBoard swamp piker hatred life =
         gs {GameState.players = Map.adjust (\p -> p {Player.life = life}) S.alice (GameState.players gs)}
       )
 
--- CR 119.4 / 107.1a: "Pay half your life, rounded up" (CostComponent.PayHalfLife),
+-- CR 119.4 / 107.1a: "Pay half your life, rounded up" (ComputedLife.HalfLife),
 -- an amount measured against the payer. Odd life totals throughout, so a
 -- rounding down is visible.
 halfLifeSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 halfLifeSpec s registry =
-  Spec.describe s "PayHalfLife" $ do
+  Spec.describe s "PayComputedLife HalfLife" $ do
     -- CR 118.3: the half and Mana Confluence's 1 life share one life total.
     -- At 1 life the pair owes 2, so the activation is not offered; at 3 it owes
     -- 3 and is. The pair differs in life alone.

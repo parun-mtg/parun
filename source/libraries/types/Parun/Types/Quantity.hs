@@ -10,6 +10,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AtMost as AtMost
 import qualified Parun.Types.CastFrom as CastFrom
+import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.Count as Count
@@ -334,6 +335,10 @@ data Quantity
     -- command zone this game, every commander's tally summed
     -- (Player.commanderCasts).
     CommanderCasts PlayerRef.PlayerRef
+  | -- | CR 903.4 / 702.124c: how many of the payload's colours are in that
+    -- player's commanders' combined colour identity; undefined without a
+    -- commander (CR 903.4f).
+    CommanderColors CommanderColors.CommanderColors
   | -- | CR 309.7 as a 0\/1: has that player completed a dungeon with this name --
     -- Acererak the Archlich's "if you haven't completed Tomb of Annihilation".
     CompletedDungeon CompletedDungeon.CompletedDungeon

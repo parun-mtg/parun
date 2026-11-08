@@ -9,6 +9,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ComputedLife as ComputedLife
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
@@ -80,12 +81,12 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.PayLife (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X"))))
       " {\"type\":\"PayLife\",\"value\":{\"type\":\"Announced\",\"value\":\"X\"}} "
-  Spec.it s "PayHalfLife" $
+  Spec.it s "PayComputedLife" $
     Common.assertCodec
       s
       codec
-      (CostComponent.PayHalfLife Rounding.Up)
-      " {\"type\":\"PayHalfLife\",\"value\":\"Up\"} "
+      (CostComponent.PayComputedLife (ComputedLife.HalfLife Rounding.Up))
+      " {\"type\":\"PayComputedLife\",\"value\":{\"type\":\"HalfLife\",\"value\":\"Up\"}} "
   -- The count and the Filter both ride the payload, positionally.
   Spec.it s "Sacrifice" $
     Common.assertCodec

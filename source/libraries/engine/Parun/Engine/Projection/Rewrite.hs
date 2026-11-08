@@ -2513,6 +2513,9 @@ rewriteQuantity pairs quantity = case quantity of
   Quantity.Type.SubgamesThisMatch -> quantity
   Quantity.Type.DungeonsCompleted _ -> quantity
   Quantity.Type.CommanderCasts _ -> quantity
+  -- A leaf: "each color" enumerates CR 105.1's colours rather than printing
+  -- colour words for CR 612.2 to swap (Commander's Plate).
+  Quantity.Type.CommanderColors _ -> quantity
   Quantity.Type.CompletedDungeon {} -> quantity
   Quantity.Type.EnteredThisTurn -> quantity
   Quantity.Type.EnteredFrom _ -> quantity

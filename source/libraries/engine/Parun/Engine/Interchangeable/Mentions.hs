@@ -131,6 +131,7 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
+import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
@@ -1175,7 +1176,7 @@ costComponentNames asking onKeyword x = case x of
   CostComponent.SacrificeThis -> mempty
   CostComponent.ReturnThis -> mempty
   CostComponent.PayLife amount -> costAmountNames asking amount
-  CostComponent.PayHalfLife _rounding -> mempty
+  CostComponent.PayComputedLife _computed -> mempty
   CostComponent.Sacrifice sacrifice -> sacrificeNames asking sacrifice
   CostComponent.TapForTotalPower tapForTotalPower -> tapForTotalPowerNames asking tapForTotalPower
   CostComponent.TapPermanents tapPermanents -> tapPermanentsNames asking tapPermanents
@@ -2802,6 +2803,7 @@ quantityNames asking x = case x of
   Quantity.SubgamesThisMatch -> mempty
   Quantity.DungeonsCompleted playerRef -> playerRefNames asking playerRef
   Quantity.CommanderCasts playerRef -> playerRefNames asking playerRef
+  Quantity.CommanderColors (CommanderColors.MkCommanderColors player _colors) -> playerRefNames asking player
   Quantity.CompletedDungeon completedDungeon -> completedDungeonNames asking completedDungeon
   Quantity.EnteredThisTurn -> history asking HistoryRead.Entries
   Quantity.EnteredFrom inZone -> history asking HistoryRead.Entries <> inZoneNames asking inZone

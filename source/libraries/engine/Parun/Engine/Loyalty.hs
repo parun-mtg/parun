@@ -57,7 +57,7 @@ loyaltyAmountOf component = case component of
   CostComponent.SacrificeThis -> Nothing
   CostComponent.ReturnThis -> Nothing
   CostComponent.PayLife _ -> Nothing
-  CostComponent.PayHalfLife _ -> Nothing
+  CostComponent.PayComputedLife _ -> Nothing
   CostComponent.Sacrifice {} -> Nothing
   CostComponent.TapForTotalPower {} -> Nothing
   CostComponent.TapPermanents {} -> Nothing

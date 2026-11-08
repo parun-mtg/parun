@@ -442,6 +442,8 @@ library codec
     Parun.Codec.CombatSpec
     Parun.Codec.CombatStep
     Parun.Codec.CombatStepSpec
+    Parun.Codec.CommanderColors
+    Parun.Codec.CommanderColorsSpec
     Parun.Codec.CommanderDeckRule
     Parun.Codec.CommanderDeckRuleSpec
     Parun.Codec.CompanyCount
@@ -454,6 +456,8 @@ library codec
     Parun.Codec.CompletedDungeonSpec
     Parun.Codec.ComponentCard
     Parun.Codec.ComponentCardSpec
+    Parun.Codec.ComputedLife
+    Parun.Codec.ComputedLifeSpec
     Parun.Codec.Condition
     Parun.Codec.ConditionSpec
     Parun.Codec.Conjure
@@ -2715,6 +2719,7 @@ library types
     Parun.Types.CombatDeclaration
     Parun.Types.CombatRestriction
     Parun.Types.CombatStep
+    Parun.Types.CommanderColors
     Parun.Types.CommanderDeckRule
     Parun.Types.CommandZoneDecision
     Parun.Types.CompanyCount
@@ -2723,6 +2728,7 @@ library types
     Parun.Types.CompletedDungeon
     Parun.Types.Completion
     Parun.Types.ComponentCard
+    Parun.Types.ComputedLife
     Parun.Types.Concession
     Parun.Types.Condition
     Parun.Types.Conjure
