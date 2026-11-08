@@ -34,6 +34,7 @@ import qualified Parun.Codec.CastingRestriction as CastingRestriction
 import qualified Parun.Codec.CharacteristicPT as CharacteristicPT
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatRestriction as CombatRestriction
+import qualified Parun.Codec.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.CostComponent as CostComponent
@@ -200,6 +201,8 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   anteOnly <- Fields.defaulted "anteOnly" False Common.boolean Face.anteOnly
   -- CR 100.2a: Nothing is the absence of an "A deck can have" line.
   deckLimit <- Fields.defaulted "deckLimit" Nothing (Common.maybe DeckLimit.codec) Face.deckLimit
+  -- CR 903.5e: empty is the absence of a commander's deck-construction rule.
+  commanderDeckRules <- Fields.defaulted "commanderDeckRules" Set.empty (Common.set CommanderDeckRule.codec) Face.commanderDeckRules
   pure
     Face.MkFace
       { Face.name = name,
@@ -257,5 +260,6 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.canBeYourCommander = canBeYourCommander,
         Face.claimsStartingPlayer = claimsStartingPlayer,
         Face.anteOnly = anteOnly,
-        Face.deckLimit = deckLimit
+        Face.deckLimit = deckLimit,
+        Face.commanderDeckRules = commanderDeckRules
       }

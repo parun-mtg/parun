@@ -262,6 +262,14 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     large <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 99)] []
     Spec.assertEqWith s "101" large [Violation.TooManyCards 101 100]
 
+  Spec.it s "CR 903.5e: Whtz, the Bibliophile lifts CR 903.5a's maximum for the deck it leads" $ do
+    whtz <- ledViolationsNamed s registry "commander" ["Whtz, the Bibliophile"] [("Plains", 100)] []
+    Spec.assertEqWith s "Whtz leading 101" whtz []
+    other <- ledViolationsNamed s registry "commander" ["Cho-Manno, Revolutionary"] [("Plains", 100)] []
+    Spec.assertEqWith s "Cho-Manno leading 101" other [Violation.TooManyCards 101 100]
+    small <- ledViolationsNamed s registry "commander" ["Whtz, the Bibliophile"] [("Plains", 98)] []
+    Spec.assertEqWith s "Whtz leading 99" small [Violation.TooFewCards 99 100]
+
   Spec.it s "CR 903.3: a Commander deck with no commander is refused" $ do
     found <- ledViolations s registry RuleFamily.Commander [] [("Mountain", 100)] []
     Spec.assertEqWith s "violations" found [Violation.NoCommander]

@@ -1,0 +1,27 @@
+{
+  "description": "Whtz, the Bibliophile's ability costs its full {3} from a starting deck of 199 cards, its commander among them: the three floating mana pay it.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CCC",
+        "battlefield": [{"card": "Whtz, the Bibliophile", "label": "whtz", "ready": true, "commander": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "startingDeck": [{"key": "Plains", "value": 198}, {"key": "Whtz, the Bibliophile", "value": 1}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$whtz", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}}
+  ]
+}

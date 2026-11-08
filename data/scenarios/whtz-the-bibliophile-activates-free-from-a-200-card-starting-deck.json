@@ -1,0 +1,25 @@
+{
+  "description": "Whtz, the Bibliophile's ability costs {3} less from a starting deck of 200 cards, its commander among them (CR 103.2a, 903.6): with no mana, Whtz taps to draw a card and gain 1 life.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Whtz, the Bibliophile", "label": "whtz", "ready": true, "commander": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "startingDeck": [{"key": "Plains", "value": 199}, {"key": "Whtz, the Bibliophile", "value": 1}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$whtz", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}}
+  ]
+}

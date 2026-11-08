@@ -6,6 +6,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.GraveyardOrder as GraveyardOrder
 import qualified Parun.Codec.Label as Label
 import qualified Parun.Codec.Placement as Placement
@@ -41,6 +42,7 @@ codec = Fields.object $ do
   command <- Fields.defaulted "command" Seq.empty (Common.seq Placement.codec) Seat.command
   ante <- Fields.defaulted "ante" Seq.empty (Common.seq Placement.codec) Seat.ante
   sideDecks <- Fields.defaulted "sideDecks" Map.empty (Common.keyedList (Common.keyValue SideDeck.codec (Common.seq Placement.codec))) Seat.sideDecks
+  startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.multiset CardName.codec) Seat.startingDeck
   pure
     Seat.MkSeat
       { Seat.name = name,
@@ -58,7 +60,8 @@ codec = Fields.object $ do
         Seat.exile = exile,
         Seat.command = command,
         Seat.ante = ante,
-        Seat.sideDecks = sideDecks
+        Seat.sideDecks = sideDecks,
+        Seat.startingDeck = startingDeck
       }
 
 -- | A pool as one letter per unit, CR 105.1's W, U, B, R and G and CR 106.1b's

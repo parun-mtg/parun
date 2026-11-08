@@ -2450,6 +2450,7 @@ rewriteQuantity pairs quantity = case quantity of
   Quantity.Type.ManaCount count -> Quantity.Type.ManaCount count {ManaCount.filter = rewriteManaFilter pairs (ManaCount.filter count)}
   Quantity.Type.LifeTotal _ -> quantity
   Quantity.Type.StartingLifeTotal _ -> quantity
+  Quantity.Type.StartingDeckSize _ -> quantity
   Quantity.Type.Speed _ -> quantity
   Quantity.Type.IsMonarch _ -> quantity
   Quantity.Type.HasPlayerDesignation {} -> quantity

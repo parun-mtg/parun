@@ -3,6 +3,7 @@ module Parun.Types.Seat where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.ManaType as ManaType
@@ -43,6 +44,9 @@ data Seat = MkSeat
     ante :: Seq.Seq Placement.Placement,
     -- | CR 718.2 / 904.3: the supplementary decks this seat brings, each top
     -- first and face down in the command zone.
-    sideDecks :: Map.Map SideDeck.SideDeck (Seq.Seq Placement.Placement)
+    sideDecks :: Map.Map SideDeck.SideDeck (Seq.Seq Placement.Placement),
+    -- | CR 103.2a: the player's starting deck, counted by name, which no zone
+    -- above records once the game has begun.
+    startingDeck :: Map.Map CardName.CardName Natural
   }
   deriving (Eq, Ord, Show)

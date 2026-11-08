@@ -492,6 +492,7 @@ vanillaFace name typeLine =
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
       Face.deckLimit = Nothing,
+      Face.commanderDeckRules = Set.empty,
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.staticAbilities = [],
@@ -4330,6 +4331,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.ManaCount _ -> []
   Quantity.Type.LifeTotal _ -> []
   Quantity.Type.StartingLifeTotal _ -> []
+  Quantity.Type.StartingDeckSize _ -> []
   Quantity.Type.Speed _ -> []
   Quantity.Type.IsMonarch _ -> []
   Quantity.Type.HasPlayerDesignation {} -> []

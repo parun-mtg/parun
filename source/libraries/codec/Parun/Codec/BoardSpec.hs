@@ -157,5 +157,6 @@ seat name =
       Seat.Type.exile = Seq.empty,
       Seat.Type.command = Seq.empty,
       Seat.Type.ante = Seq.empty,
-      Seat.Type.sideDecks = Map.empty
+      Seat.Type.sideDecks = Map.empty,
+      Seat.Type.startingDeck = Map.empty
     }
