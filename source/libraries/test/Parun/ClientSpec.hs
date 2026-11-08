@@ -1350,7 +1350,6 @@ spec s registry = Spec.describe s "Client" $ do
         alice = Decider.MkDecider S.alice
         upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
         mode = ModeIndex.MkModeIndex
-        free = Cost.MkCost Nothing []
         pool = OutsideCard.InPool printing
         refused :: String -> Prompt.Prompt r -> Bool
         refused line prompt = either (== Text.pack "end of input") (const False) (fst (asking facing [line] gs prompt))

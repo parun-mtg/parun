@@ -496,9 +496,9 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   -- CR 702.47b: each card beside the splice cost it adds, the effects
   -- happening in the order the cards are typed.
   "ChooseSplice" -> do
-    costs <- field "costs" offer >>= arrayOf
     among <- field "among" offer >>= arrayOf
-    let spliced card = optionName view card <> foldMap (\cost -> Text.pack " (splice for " <> candidateName (objectName view card) cost <> Text.pack ")") (lookup card (zip among costs))
+    let costs = Maybe.fromMaybe [] (field "costs" offer >>= arrayOf)
+        spliced card = optionName view card <> foldMap (\cost -> Text.pack " (splice for " <> candidateName (objectName view card) cost <> Text.pack ")") (lookup card (zip among costs))
     subset spliced (Text.pack "; the first typed happens first") R.Array
   -- CR 701.34a: the permanents picked, then the players.
   "ChooseProliferate" ->
