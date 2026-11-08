@@ -99,7 +99,7 @@
           "player": "alice",
           "is": [
             "Pass",
-            "PayLifeForMana 1 Colorless"
+            "PayLifeForMana"
           ]
         }
       }

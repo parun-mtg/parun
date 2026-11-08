@@ -102,8 +102,12 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   or `{ "type": "ByNoKeyword" }`.
   `Take` takes any other action offered at priority (CR 116.2, 605.3a), named
   as the `Offered` view renders it, with a cast's choices such as `mana`:
-  `{ "action": "TurnFaceUp $piker Manifest", "mana": ["$mountain"] }`.
-  A second CR 116.2c offer from one source to one seat renders as `EndEffect $asp #2`.
+  `{ "action": "TurnFaceUp $piker", "mana": ["$mountain"] }`.
+  That line is the line protocol's offer (`Parun.Scenario.Offer`): its
+  `action` and `object`, then each further field's value only where another
+  offer of the same action, agreeing on the fields before it, differs there,
+  so two CR 116.2c offers from one source to one seat are `EndEffect $asp 1`
+  and `EndEffect $asp 2`, and a morph's casts `Cast $ainok` and `Cast $ainok Morphed`.
   A paid later offer (CR 116.2c, Guardian Angel) is `MakeLaterPayment spell of $angel`.
   `OrderTriggers` lists one player's simultaneous triggers by source, `null`
   for a sourceless one such as the monarch's draw, in the order they go on the

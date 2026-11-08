@@ -2276,6 +2276,7 @@ library scenario
   exposed-modules:
     Parun.Scenario
     Parun.Scenario.Load
+    Parun.Scenario.Offer
     Parun.Scenario.Prompt
     Parun.Scenario.Reply
 

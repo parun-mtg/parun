@@ -37,6 +37,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
+import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Spec as Spec
@@ -67,6 +68,8 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
+import qualified Parun.Types.FaceDownReason as FaceDownReason
+import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Game as Game.Type
@@ -163,6 +166,26 @@ spec s registry = Spec.describe s "Protocol" $ do
         offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
         activate i = R.Object [(Text.pack "action", R.Text (Text.pack "Activate")), (Text.pack "object", Protocol.object oid), (Text.pack "ability", R.Number i)]
     Spec.assertEqWith s "offer" offered (R.Array [activate 0, activate 1])
+  Spec.it s "a scenario names an offer by its action and object, then only the fields telling it from its action's other offers" $ do
+    let offer kind extra = R.Object ((Text.pack "action", R.Text (Text.pack kind)) : [(Text.pack key, value) | (key, value) <- extra])
+        on label = ("object", R.Text (Text.pack label))
+        named name = ("name", R.Text (Text.pack name))
+        offers =
+          [ offer "Pass" [],
+            offer "Activate" [on "$vane", ("ability", R.Number 0)],
+            offer "Activate" [on "$vane", ("ability", R.Number 1)],
+            offer "Activate" [on "$tower", ("ability", R.Number 0)],
+            offer "Cast" [on "$ainok", named "Ainok Tracker"],
+            offer "Cast" [on "$ainok", named "Ainok Tracker", ("faceDown", R.Text (Text.pack "Morphed"))],
+            offer "Cast" [on "$giant", named "Bonecrusher Giant"],
+            offer "Cast" [on "$giant", named "Stomp"],
+            offer "PayLifeForMana" [("life", R.Number 1), ("mana", R.Text (Text.pack "Colorless"))]
+          ]
+    Spec.assertEqWith
+      s
+      "lines"
+      (Offer.linesOf offers)
+      (fmap Text.pack ["Pass", "Activate $vane 0", "Activate $vane 1", "Activate $tower", "Cast $ainok", "Cast $ainok Morphed", "Cast $giant Bonecrusher Giant", "Cast $giant Stomp", "PayLifeForMana"])
 
   Spec.it s "CR 701.40c / 116.2d / 702.170a a turn-up, ignore or plot is offered with its procedure, ability or cost" $ do
     let oid = ObjectId.MkObjectId 7
@@ -172,6 +195,14 @@ spec s registry = Spec.describe s "Protocol" $ do
         offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.TurnFaceUp oid TurnUpProcedure.Manifest, Action.Ignore oid ban, Action.Plot oid cost])
         acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", Protocol.object oid)] <> [(Text.pack key, value) | (key, value) <- extra])
     Spec.assertEqWith s "offer" offered (R.Array [acting "TurnFaceUp" [("procedure", R.Text (Text.pack "Manifest"))], acting "Ignore" [("abilityName", R.Text (Text.pack "search ban"))], acting "Plot" [("cost", Protocol.payment cost)]])
+  Spec.it s "CR 305.1 / 708.6 a land play is a PlayLand, and a face-down cast is offered with its reason" $ do
+    let oid = ObjectId.MkObjectId 7
+        gs = Setup.emptyGame S.bothPlayers
+        name = CardName.MkCardName (Text.pack "Ainok Tracker")
+        offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Play oid Nothing, Action.Cast oid name Facing.FaceUp, Action.Cast oid name (Facing.FaceDown (FaceDownState.defaultFor FaceDownReason.Morphed))])
+        acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", Protocol.object oid)] <> [(Text.pack key, value) | (key, value) <- extra])
+        casting = ("name", R.Text (Text.pack "Ainok Tracker"))
+    Spec.assertEqWith s "offer" offered (R.Array [acting "PlayLand" [], acting "Cast" [casting], acting "Cast" [casting, ("faceDown", R.Text (Text.pack "Morphed"))]])
 
   Spec.it s "CR 601.2b / 702.152a / 101.4b a choice of cost offers each candidate's keyword, and it and an offer to pay what earlier payers answered" $ do
     let oid = ObjectId.MkObjectId 7
@@ -373,7 +404,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 101.4b the piles earlier choosers took" (field "earlier" (Protocol.offerOf gs (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) (Seq.singleton (S.bob, Set.singleton o9))))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [Protocol.object o9]]]))
     Spec.assertEqWith s "CR 103.5b a card's action, by its place where it has two, then none" (offered (Prompt.MulliganAction alice S.alice [(o7, hand 0), (o7, hand 1), (o9, hand 0)])) (Right ([Just (o7, hand 0), Just (o7, hand 1), Just (o9, hand 0), Nothing], entries [R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 0)], R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 1)], R.Object [(Text.pack "source", Protocol.object o9)]]))
     Spec.assertEqWith s "CR 103.6 an opening-hand action, then none" (fmap fst (offered (Prompt.OpeningHandAction alice S.alice [(o9, hand 0)]))) (Right [Just (o9, hand 0), Nothing])
-    Spec.assertEqWith s "CR 608.2g a cast as its action, then none" (offered (Prompt.CastWhileSearching alice S.alice [(o9, hillGiant, Facing.FaceUp)])) (Right ([Just (o9, hillGiant, Facing.FaceUp), Nothing], entries [Protocol.actionOffer gs (Action.Cast o9 hillGiant Facing.FaceUp)]))
+    Spec.assertEqWith s "CR 608.2g a cast as its action, then none" (offered (Prompt.CastWhileSearching alice S.alice [(o9, hillGiant, Facing.FaceUp)])) (Right ([Just (o9, hillGiant, Facing.FaceUp), Nothing], entries [Offer.offer Protocol.namer gs (Action.Cast o9 hillGiant Facing.FaceUp)]))
 
   Spec.it s "a prompt answered by a number offers its least and greatest, and a die adjustment each die moved either way" $ do
     let o7 = ObjectId.MkObjectId 7

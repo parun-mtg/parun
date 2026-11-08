@@ -117,8 +117,8 @@
         "View": {
           "is": [
             "Pass",
-            "Activate $sorcerer",
-            "Activate $sorcerer"
+            "Activate $sorcerer 0",
+            "Activate $sorcerer 1"
           ],
           "of": "Offered",
           "player": "bob"

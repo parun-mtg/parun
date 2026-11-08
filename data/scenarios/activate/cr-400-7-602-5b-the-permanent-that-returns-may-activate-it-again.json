@@ -197,8 +197,8 @@
         "View": {
           "is": [
             "Pass",
-            "Activate Greenbelt Guardian",
-            "Activate Greenbelt Guardian",
+            "Activate Greenbelt Guardian 0",
+            "Activate Greenbelt Guardian 1",
             "ActivateManaAbility $f7",
             "ActivateManaAbility $f8",
             "ActivateManaAbility $f9",

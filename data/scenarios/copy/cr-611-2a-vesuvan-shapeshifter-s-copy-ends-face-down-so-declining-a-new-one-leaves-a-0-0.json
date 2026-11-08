@@ -37,7 +37,7 @@
     { "turn": 3, "step": "Upkeep", "player": "alice", "do": { "ChooseOptional": "Exercises" }, "source": "Vesuvan Shapeshifter" },
     { "turn": 3, "step": "Upkeep", "player": "alice", "check": { "Names": { "object": "Vesuvan Shapeshifter", "names": [] } } },
     { "turn": 3, "step": "Upkeep", "player": "alice", "check": { "PowerToughness": { "object": "Vesuvan Shapeshifter", "power": 2, "toughness": 2 } } },
-    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "TurnFaceUp Vesuvan Shapeshifter Morph", "mana": ["Island", "Island#2", null] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "TurnFaceUp Vesuvan Shapeshifter", "mana": ["Island", "Island#2", null] } } },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "ChooseCopyTarget": null } }
   ],
   "final": [

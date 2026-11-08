@@ -75,7 +75,7 @@
           "player": "alice",
           "is": [
             "Pass",
-            "TurnFaceUp $piker Manifest",
+            "TurnFaceUp $piker",
             "ActivateManaAbility $mountain",
             "ActivateManaAbility $mountain-2"
           ]

@@ -264,8 +264,8 @@
           "player": "alice",
           "is": [
             "Pass",
-            "TurnFaceUp Thragtusk Manifest",
-            "TurnFaceUp Thragtusk#2 Manifest",
+            "TurnFaceUp Thragtusk",
+            "TurnFaceUp Thragtusk#2",
             "ActivateManaAbility Island#2",
             "ActivateManaAbility Island#3",
             "ActivateManaAbility Island#4",
