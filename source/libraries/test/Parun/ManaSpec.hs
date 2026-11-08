@@ -65,6 +65,7 @@ import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.Decider as Decider
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndingStep as EndingStep
@@ -72,7 +73,6 @@ import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
-import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
@@ -102,8 +102,8 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Printing as Printing
-import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.ProductionTag as ProductionTag
+import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
@@ -1646,7 +1646,7 @@ circledSpec s registry = Spec.describe s "Mana of the circled colors (CR 207.5)"
     Spec.assertEqWith s "and the colour asked for reaches the pool" (tappedFor (prefersColor Color.Green) redGreenId both) [ManaType.Colored Color.Green]
   -- CR 106.5: nothing circled defines no colour, so the ability adds no mana
   -- rather than one the engine picks. A text deck list brings such a copy
-  -- (#6675).
+  -- (#6399).
   Spec.it s "CR 207.5 a Cryptic Spires with nothing circled adds no mana" $ do
     spires <- S.printingOf s registry "Cryptic Spires"
     let (oid, gs) = S.addPermanent spires S.alice (Setup.emptyGame S.bothPlayers)

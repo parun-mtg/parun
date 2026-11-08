@@ -299,7 +299,7 @@ printingNamed text = case List.reverse (Text.words text) of
 -- the card (`firstPrintings`), else the card with no lights.
 --
 -- Not implemented: a line circling Cryptic Spires' colours, which every line
--- leaves with none (#6675).
+-- leaves with none (#6399).
 --
 -- The printing at a suffix must be of the line's card, by Parun.Ingest.cardKey,
 -- the key MTGJSON names it by.
