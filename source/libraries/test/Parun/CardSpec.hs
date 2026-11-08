@@ -4930,6 +4930,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 601.3b's "a spell with certain qualities", which is a Filter over the
   -- spell exactly as a cost modifier's is (Vedalken Orrery's is `And []`).
   PlayerEffect.CastAsThoughItHadFlash f -> [f]
+  PlayerEffect.NextSpell f -> [f]
   -- CR 601.1a / 601.3b's play-scoped sibling, the same shape (Scout's Warning's
   -- is HasCardType Creature).
   PlayerEffect.MayPlayAsThoughItHadFlash f -> [f]

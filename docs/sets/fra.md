@@ -244,12 +244,6 @@ Nothing: every card `parun translate` stopped at is in the pool.
 - Way of the Mind Sculptor: "if you removed two or more loyalty counters to
   activate it" reads the paid loyalty cost, which nothing records.
 
-### #6588: the next spell can't be made uncounterable without a flash grant
-
-- Theorist's Proxy: "the next spell you cast this turn can't be countered" has
-  no one-shot row for the cast to spend; only Savage Summoning's flash grant
-  binds the next spell into a `CantBeCountered` row.
-
 ### #6568: a free-cast permission can't bound mana value by a count
 
 - Omnipresence: its free casts take spells with mana value at most the number

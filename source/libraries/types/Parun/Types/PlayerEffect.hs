@@ -139,6 +139,10 @@ data PlayerEffect
     -- abilities on the stack controlled by the players this effect's scope names
     -- can't be countered by the matching counterers.
     CantBeCountered CounterProhibition.CounterProhibition
+  | -- | CR 611.2a / Theorist's Proxy: no effect of its own; the next matching
+    -- spell this player casts uses it up, becoming "that spell" to the rows its
+    -- source installed beside it (Parun.Engine.Cast.bindUser).
+    NextSpell (Filter.Filter Keyword.Keyword)
   | -- | CR 115 / 101.2 / 613.11 / Autumn's Veil: the matching permanents the
     -- players this effect's scope names control can't be the targets of the
     -- restriction's kind of spell or ability.
