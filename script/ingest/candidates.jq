@@ -1,12 +1,16 @@
 # Reduces MTGJSON's AtomicCards.json to what `parun ingest` reads (#9): every
 # single-faced card as a record it may build, and every preparation card (CR
 # 723) as a record of its faces' records, which it leaves out; each with the
-# sets it was printed in for `parun translate --set`, and every face's Oracle
-# text by card and face name, which both stamp on the cards they write. Run as
+# sets it was printed in for `parun translate --set`; every face's Oracle
+# text by card and face name, which both stamp on the cards they write; and
+# every card's legalities by its faces' names, as Parun.Ingest.cardKey joins
+# them, which `parun ingest` writes to data/legalities.json for the pool. A
+# reversible card is a second printing of a card, so it is left out. Run as
 #   jq -f script/ingest/candidates.jq _scratch/AtomicCards.json > _scratch/candidates.json
 def printed: {manaCost, colorIndicator, supertypes, types, subtypes, power, toughness, text};
 {
   version: .meta.version,
+  date: .meta.date,
   cards: [
     .data[]
     | select(all(.[]; (.isFunny // false) == false))
@@ -18,5 +22,6 @@ def printed: {manaCost, colorIndicator, supertypes, types, subtypes, power, toug
         empty
       end
   ],
+  legalities: [.data[] | select(.[0].layout != "reversible_card") | {card: ([sort_by(.side)[] | (.faceName // .name)] | join(" // ")), legalities: .[0].legalities}],
   texts: [.data | to_entries[] | .key as $card | .value[] | {card: $card, name: (.faceName // .name), text: (.text // "")}] | unique
 }

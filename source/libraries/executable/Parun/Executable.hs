@@ -35,9 +35,12 @@ import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Test
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
+import qualified Parun.Types.Violation as Violation
 import qualified System.Directory as Directory
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
@@ -58,11 +61,13 @@ main = do
     ["schema"] -> schema
     ["schema", "scenario"] -> scenarioSchema
     ["deck", path] -> deck Nothing path
-    ["deck", "--format", format, path] -> case Legality.named (Text.pack format) of
-      Just known -> deck (Just known) path
-      Nothing -> do
-        IO.hPutStrLn IO.stderr ("not a format: " <> format)
-        Exit.exitFailure
+    ["deck", "--format", format, path] -> do
+      checker <- Legality.named (Text.pack format)
+      case checker of
+        Right known -> deck (Just (known GameSettings.plain)) path
+        Left problem -> do
+          TextIO.hPutStrLn IO.stderr problem
+          Exit.exitFailure
     ["ingest", path] -> ingest path
     ["oracle"] -> oracle
     "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
@@ -73,7 +78,7 @@ main = do
     "test" : rest -> Environment.withArgs rest Parun.Test.main
     _ -> do
       name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format constructed|limited] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
+      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
       Exit.exitFailure
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a
@@ -85,9 +90,9 @@ main = do
 -- Parun.Registry.parseCard's reason: that one decodes using the locale encoding,
 -- so a card with a non-ASCII character in its name would fail under LC_ALL=C.
 --
--- With a format, a deck breaking its rules is reported, every violation, and
--- not written back.
-deck :: Maybe Format.Format -> FilePath -> IO ()
+-- With a format, a deck breaking its rules or pool in a game not for ante is
+-- reported, every violation, and not written back.
+deck :: Maybe (Deck.Deck -> [Violation.Violation]) -> FilePath -> IO ()
 deck format path = do
   bytes <- ByteString.readFile path
   case Encoding.decodeUtf8' bytes of
@@ -105,7 +110,7 @@ deck format path = do
         Right (Left problems) -> do
           mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
           Exit.exitFailure
-        Right (Right parsed) -> case foldMap (`Legality.check` parsed) format of
+        Right (Right parsed) -> case foldMap ($ parsed) format of
           [] -> TextIO.putStr (DeckList.render parsed)
           violations -> do
             mapM_ (TextIO.hPutStrLn IO.stderr . (\v -> Text.pack (path <> ": ") <> Legality.explain v)) violations
@@ -116,7 +121,8 @@ deck format path = do
 -- (#9). A card already in the pool is never overwritten -- the hand-written
 -- file wins -- and is named on stderr if it says something other than MTGJSON
 -- does. Then every pool card gains its faces' Oracle text, the one field this
--- writes into a hand-written file. Files are written compact;
+-- writes into a hand-written file, and data/legalities.json is rewritten with
+-- the pool's cards' legalities. Files are written compact;
 -- `script/format-json.sh fix` puts them in canonical form.
 --
 -- Prints what it did, and why the cards it did not write were left out, by the
@@ -129,16 +135,22 @@ ingest path = do
         fields <- Common.parse contents >>= Common.asObject
         records <- Common.field "cards" fields >>= Common.asArray
         known <- Common.field "texts" fields >>= Ingest.texts
-        pure (records, known)
+        date <- Common.field "date" fields >>= Common.asText
+        legalities <- Common.field "legalities" fields >>= Ingest.legalities
+        pure (records, known, LegalityTable.MkLegalityTable date legalities)
   case parsed of
     Left problem -> do
       TextIO.hPutStrLn IO.stderr (Text.pack (path <> ": ") <> problem)
       Exit.exitFailure
-    Right (records, known) -> do
+    Right (records, known, everyCard) -> do
       root <- Registry.defaultRoot
       outcomes <- mapM (ingestOne root) records
       loaded <- Registry.loadRoot root
-      stamped <- fmap length . Monad.filterM (stampOne known) $ Maybe.mapMaybe (\entry@(file, _) -> fmap ((,) file) (Registry.referenceCard entry)) loaded
+      let pool = Maybe.mapMaybe (\entry@(file, _) -> fmap ((,) file) (Registry.referenceCard entry)) loaded
+      stamped <- fmap length . Monad.filterM (stampOne known) $ pool
+      tableFile <- Legality.tablePath
+      let table = everyCard {LegalityTable.cards = Map.restrictKeys (LegalityTable.cards everyCard) (Set.fromList (fmap (Ingest.cardKey . snd) pool))}
+      ByteString.writeFile tableFile (Encoding.encodeUtf8 (Legality.renderTable table))
       sheetRoot <- StickerSheets.defaultRoot
       sheets <- StickerSheets.loadRoot sheetRoot
       sheetsStamped <- fmap length (Monad.filterM (stampSheet known) [(file, sheet) | (file, Right sheet) <- sheets])
@@ -147,6 +159,7 @@ ingest path = do
       putStrLn $ "already in the pool: " <> show (length (filter (== Right False) outcomes))
       putStrLn $ "pool files given Oracle text: " <> show stamped
       putStrLn $ "sticker sheets given Oracle text: " <> show sheetsStamped
+      putStrLn $ "pool cards with legality data: " <> show (Map.size (LegalityTable.cards table)) <> " of " <> show (length pool)
       putStrLn $ "left out: " <> show (sum reasons)
       mapM_ (\(kind, n) -> TextIO.putStrLn (Text.pack "  " <> kind <> Text.pack (": " <> show n))) (Map.toDescList reasons)
 

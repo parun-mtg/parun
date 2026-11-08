@@ -1,9 +1,9 @@
 module Parun.Types.PlayOptions where
 
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Data.Word as Word
 import qualified Numeric.Natural as Natural
-import qualified Parun.Types.Format as Format
 
 -- | What `parun play` was asked for, seats numbered from one.
 data PlayOptions = MkPlayOptions
@@ -19,8 +19,9 @@ data PlayOptions = MkPlayOptions
     -- | CR 404.3: the seats that arrange cards put into their graveyard at the
     -- same time.
     arrangesGraveyard :: Set.Set Natural.Natural,
-    -- | The format both decks must be legal in; any deck at all when absent.
-    format :: Maybe Format.Format
+    -- | The name of the format both decks must be legal in, a file under
+    -- data/formats; any deck at all when absent.
+    format :: Maybe Text.Text
   }
   deriving (Eq, Show)
 
