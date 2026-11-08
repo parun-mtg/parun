@@ -18,6 +18,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingEntry as PrintingEntry
@@ -28,8 +29,10 @@ import qualified Parun.Types.StickerSheet as StickerSheet
 -- A registry over Goblin Piker and Wax // Wane, which between them are a name
 -- with no halves and CR 709.4a's name with two, two preparation cards
 -- sharing the prepare spell Seed Suture, whose name is therefore no card's,
--- and Bumper Cars, whose printings light different numbers (CR 718.1), with
--- `printings` for its printing table and the sticker sheets parun ships.
+-- Bumper Cars, whose printings light different numbers (CR 718.1), and
+-- Cryptic Spires and The Prismatic Piper, which take a choice as their deck is
+-- built (CR 207.5, 903.4b), with `printings` for its printing table and the
+-- sticker sheets parun ships.
 withPool :: String -> (Registry.Registry IO -> IO a) -> IO a
 withPool label action = do
   sheets <- StickerSheets.defaultRoot >>= StickerSheets.loadRoot
@@ -39,7 +42,9 @@ withPool label action = do
   angel <- S.committedJson angelFile
   phytomedic <- S.committedJson "emergency-phytomedic-seed-suture.json"
   cars <- S.committedJson "bumper-cars.json"
-  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars)] (Registry.fileRegistry Monad.>=> action . withData bySlug)
+  spires <- S.committedJson "cryptic-spires.json"
+  piper <- S.committedJson "the-prismatic-piper.json"
+  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars), ("cryptic-spires.json", spires), ("the-prismatic-piper.json", piper)] (Registry.fileRegistry Monad.>=> action . withData bySlug)
   where
     angelFile = "blossom-blessed-angel-seed-suture.json"
     withData bySlug registry = registry {Registry.printings = printings, Registry.stickerSheets = bySlug}
@@ -339,3 +344,57 @@ spec s = Spec.describe s "Parun.DeckList" $ do
           DeckList.NoSuchStickerSheet 3 (Text.pack "Goblin Piker"),
           DeckList.NoSuchStickerSheet 4 (Text.pack "Slimy Burrito Illusion (SUNF) 3")
         ]
+
+  -- CR 207.5: each copy's circled pair is an annotation after the name, so
+  -- two copies circling different pairs are two printings on two lines, and
+  -- a rendered list writes each pair back.
+  Spec.it s "CR 207.5 an annotation circles each copy's colours, and a rendered list writes it back"
+    . withPool "circled"
+    $ \registry -> do
+      deck <- deckOf s "circled" registry "1 Cryptic Spires {circled: W U}\n2 Cryptic Spires {circled: r b}\n"
+      Spec.assertEqWith s "two printings, each circling its pair" (List.sort [(Printing.circled printing, count) | (printing, count) <- Map.toList (Deck.cards deck)]) [(Set.fromList [Color.White, Color.Blue], 1), (Set.fromList [Color.Black, Color.Red], 2)]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertEqWith s "one line each" text (Text.pack "2 Cryptic Spires {circled: B R}\n1 Cryptic Spires {circled: W U}\n")
+      again <- deckOf s "circled-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- CR 903.4b: The Prismatic Piper's colour is chosen as its deck's commander.
+  Spec.it s "CR 903.4b an annotation chooses a commander's colour, and a rendered list writes it back"
+    . withPool "chosen"
+    $ \registry -> do
+      deck <- deckOf s "chosen" registry "4 Goblin Piker\n\nCommander\nThe Prismatic Piper {color: g}\n"
+      Spec.assertEqWith s "chosen green" (fmap Printing.chosenColor (Set.toList (Deck.commander deck))) [Just Color.Green]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\nCommander\n1 The Prismatic Piper {color: G}\n") text) ("the choice: " <> show text)
+      again <- deckOf s "chosen-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- One closed set of choices, each taking as many colours as its rule says,
+  -- recorded once for a card that makes it there and never for one that does
+  -- not: The Prismatic Piper outside the Commander section chooses nothing.
+  Spec.it s "CR 207.5 an annotation no card's choice reads, or a choice left out, is a problem"
+    . withPool "bad-annotation"
+    $ \registry -> do
+      problems <- problemsOf s "bad-annotation" registry "1 Cryptic Spires {flavor: W U}\n1 Cryptic Spires {circled: W}\n1 Cryptic Spires {circled: W W}\n1 Cryptic Spires {circled: W X}\n1 Goblin Piker {circled: W U}\n1 The Prismatic Piper {color: G}\n1 The Prismatic Piper\n1 Cryptic Spires\n1 Cryptic Spires {circled: W U} {circled: B R}\nCommander\n1 The Prismatic Piper\n"
+      let named = CardName.MkCardName . Text.pack
+      Spec.assertEqWith
+        s
+        "each line"
+        problems
+        [ DeckList.BadAnnotation 1 (Text.pack "flavor: W U"),
+          DeckList.BadAnnotation 2 (Text.pack "circled: W"),
+          DeckList.BadAnnotation 3 (Text.pack "circled: W W"),
+          DeckList.BadAnnotation 4 (Text.pack "circled: W X"),
+          DeckList.ChoiceNotMade 5 (named "Goblin Piker") DeckList.CircledColors,
+          DeckList.ChoiceNotMade 6 (named "The Prismatic Piper") DeckList.CommanderColor,
+          DeckList.ChoiceMissing 8 (named "Cryptic Spires") DeckList.CircledColors,
+          DeckList.ChoiceRepeated 9 (named "Cryptic Spires") DeckList.CircledColors,
+          DeckList.ChoiceMissing 11 (named "The Prismatic Piper") DeckList.CommanderColor
+        ]
+
+  -- A printing suffix comes before the annotation, as an export writes it.
+  Spec.it s "an annotation follows a printing suffix"
+    . withPool "suffix-annotation"
+    $ \registry -> do
+      problems <- problemsOf s "suffix-annotation" registry "1 Goblin Piker (M10) 146 {circled: W U}\n"
+      Spec.assertEqWith s "the suffix read, the annotation refused" problems [DeckList.ChoiceNotMade 1 (CardName.MkCardName (Text.pack "Goblin Piker")) DeckList.CircledColors]

@@ -26,6 +26,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
@@ -1644,9 +1645,20 @@ circledSpec s registry = Spec.describe s "Mana of the circled colors (CR 207.5)"
     Spec.assertEqWith s "one taps for blue or black" (Mana.manaTypesOf blueBlackId both) [ManaType.Colored Color.Blue, ManaType.Colored Color.Black]
     Spec.assertEqWith s "the other for red or green" (Mana.manaTypesOf redGreenId both) [ManaType.Colored Color.Red, ManaType.Colored Color.Green]
     Spec.assertEqWith s "and the colour asked for reaches the pool" (tappedFor (prefersColor Color.Green) redGreenId both) [ManaType.Colored Color.Green]
+  -- CR 207.5: a deck list records each copy's pair as an annotation, so two
+  -- copies circling different pairs are two printings, each tapping for its
+  -- own.
+  Spec.it s "CR 207.5 a deck list's two Cryptic Spires tap for the colours each line circled" $ do
+    listed <- DeckList.parse registry (Text.pack "1 Cryptic Spires {circled: W U}\n1 Cryptic Spires {circled: B R}\n") >>= either (S.brokenCorpus s) pure
+    let brought = [printing | (printing, n) <- Map.toList (Deck.cards (DeckList.deck listed)), _ <- [1 .. n]]
+        board = List.foldl' (\gs printing -> snd (S.addPermanent printing S.alice gs)) (Setup.emptyGame S.bothPlayers) brought
+        tapsFor = List.sort (fmap (`Mana.manaTypesOf` board) (Game.zoneMembers Zone.Battlefield S.alice board))
+    -- THE GAMEPLAY ASSERTION: each copy taps for its own pair alone.
+    Spec.assertEqWith s "white or blue, and black or red" tapsFor [[ManaType.Colored Color.White, ManaType.Colored Color.Blue], [ManaType.Colored Color.Black, ManaType.Colored Color.Red]]
+    Spec.assertEqWith s "no problem" (DeckList.problems listed) []
   -- CR 106.5: nothing circled defines no colour, so the ability adds no mana
-  -- rather than one the engine picks. A text deck list brings such a copy
-  -- (#6399).
+  -- rather than one the engine picks. A deck list brings no such copy
+  -- (Parun.DeckList.ChoiceMissing).
   Spec.it s "CR 207.5 a Cryptic Spires with nothing circled adds no mana" $ do
     spires <- S.printingOf s registry "Cryptic Spires"
     let (oid, gs) = S.addPermanent spires S.alice (Setup.emptyGame S.bothPlayers)
