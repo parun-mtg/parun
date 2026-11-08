@@ -29,9 +29,8 @@ data GameSettings = MkGameSettings
     -- of CR 704.6c's state-based action.
     --
     -- Not implemented: CR 903.12b, CR 903.12d and CR 903.12e, which are deck
-    -- construction (the card pool, the 60-card deck, the basic-land exception).
-    -- Parun enforces no deck legality at all (#4458), so a Brawl deck is unchecked
-    -- exactly as a Commander deck is.
+    -- construction (the card pool, the 60-card deck, the basic-land exception),
+    -- so a Brawl deck is unchecked exactly as a Commander deck is (#6397).
     brawl :: Bool,
     -- | CR 806.2b: which of the three attack options this game uses, if any.
     -- 'AttackOption.MultiplePlayers' by default ('plain'), and read in two
@@ -116,7 +115,7 @@ data GameSettings = MkGameSettings
     -- Parun.Engine.Planechase and Parun.Engine.Setup.
     --
     -- Not implemented: CR 901.15a's deck construction (size, phenomena,
-    -- names), as no deck legality is checked (#4458).
+    -- names) (#6398).
     singlePlanarDeck :: Bool
   }
   deriving (Eq, Ord, Show)

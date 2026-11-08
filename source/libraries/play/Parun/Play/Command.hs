@@ -24,6 +24,7 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Legality as Legality
 import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Protocol as Protocol
@@ -32,6 +33,7 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
@@ -51,6 +53,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Right options -> do
       registry <- Registry.defaultRoot >>= Registry.fileRegistry
       decks <- (,) <$> load registry one <*> load registry two
+      refuse (PlayOptions.format options) [(one, fst decks), (two, snd decks)]
       play options registry decks
   (_, _, problems) -> usage problems
 
@@ -62,7 +65,8 @@ flags =
     GetOpt.Option [] ["json"] (GetOpt.NoArg (\o -> Right o {PlayOptions.json = True})) "speak the line protocol on standard input and output",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["no-auto-pass"] (GetOpt.NoArg (\o -> Right o {PlayOptions.autoPass = False})) "ask at every priority, even when passing and mana abilities are all there is",
-    GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "1|2") "a seat asked to order cards put into its graveyard at the same time"
+    GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "1|2") "a seat asked to order cards put into its graveyard at the same time",
+    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a format: " <> s)) (\f -> Right o {PlayOptions.format = Just f}) (Legality.named (Text.pack s))) "constructed|limited") "refuse a deck that is not legal in this format"
   ]
   where
     seat s = case Read.readMaybe s of
@@ -86,6 +90,15 @@ load registry path = do
       mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
       Exit.exitFailure
     Right (Right deck) -> pure deck
+
+-- | Stops before the game when a deck breaks the format's rules, naming every
+-- violation of every deck.
+refuse :: Maybe Format.Format -> [(FilePath, Deck.Deck)] -> IO ()
+refuse format decks =
+  let violations = [Text.pack (path <> ": ") <> Legality.explain v | (path, deck) <- decks, v <- foldMap (`Legality.check` deck) format]
+   in Monad.unless (null violations) $ do
+        mapM_ (TextIO.hPutStrLn IO.stderr) violations
+        Exit.exitFailure
 
 -- | Nanoseconds since the epoch; on macOS only microseconds tick.
 nanoseconds :: Clock.SystemTime -> Natural
