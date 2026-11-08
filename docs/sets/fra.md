@@ -17,7 +17,9 @@ Nothing. Every Reality Fracture card is in the pool.
 
 MTGJSON lists one FRA deck, Reality Fracture Redemption, an MTGO redemption
 list rather than a playable deck, so `data/decks/sets/fra/` holds only the set
-list.
+list. It writes a preparation card by its front face's name, its only name
+(CR 723.4), not MTGJSON's joined one, which names no card when another card
+shares the prepare spell (#6660).
 
 ## How it went
 

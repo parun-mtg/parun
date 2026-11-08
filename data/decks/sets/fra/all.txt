@@ -15,13 +15,13 @@
 1 Bestial Incursion
 1 Blazing Crescendo
 1 Blessed Ghoul
-1 Bloodline Recollector // Ancestral Craving
+1 Bloodline Recollector
 1 Bloombrute
-1 Blossom-Blessed Angel // Seed Suture
+1 Blossom-Blessed Angel
 1 Break Under Pressure
 1 Budding Insurgent
 1 Campus Crier
-1 Carnivorous Cultivator // Enroot
+1 Carnivorous Cultivator
 1 Cast Away Doubt
 1 Chandra's Emberling
 1 Chandra, Chill of Compliance
@@ -45,13 +45,13 @@
 1 Denzilore Fatehold
 1 Deserted Beach
 1 Desperate Futurescribe
-1 Diviner of Victory // Unwind History
+1 Diviner of Victory
 1 Divining Duelist
 1 Draconic Visitor
 1 Eardrum Rattler
 1 Edgar, Ancient Bloodlord
 1 Edgar, Moonlit Sovereign
-1 Emergency Phytomedic // Seed Suture
+1 Emergency Phytomedic
 1 Emrakul, the Exigent Doom
 1 Enlightened Confidant
 1 Entrust the Spark
@@ -62,7 +62,7 @@
 1 Face Yourself
 1 Fatehold Annex
 1 Fatehold Charm
-1 Fatehold Chronologist // Peer Review
+1 Fatehold Chronologist
 1 Fateshaper Aspirant
 1 Fblthp, Impossibly Lost
 1 Fblthp, Knows the Way
@@ -90,12 +90,12 @@
 1 Grim Repriser
 1 Guiding Hydra
 1 Hall of Echoes
-1 Hallway Heckler // Vicious Verse
+1 Hallway Heckler
 1 Hapatra, the Desert Fang
 1 Hapatra, the Desert Frost
 1 Haunted Ridge
 1 Heartstring Puller
-1 Heartwood Crafter // Soul Tether
+1 Heartwood Crafter
 1 Hexhaven Battalion
 1 Hexhaven Dueling Arena
 1 Hexhaven Invigorator
@@ -120,7 +120,7 @@
 1 Kiora of Salt and Sand
 1 Konstrari Annex
 1 Konstrari Charm
-1 Konstrari Improviser // Soul Tether
+1 Konstrari Improviser
 1 Koth of the Homestead
 1 Koth, the Geomancer
 1 Kwia Vigorbloom
@@ -153,13 +153,13 @@
 1 Omnipresence
 1 Overgrown Farmland
 1 Overwrite the Multiverse
-1 Paradox Shaper // Omit Variables
+1 Paradox Shaper
 1 Perfected Theory
 1 Pia, Aether Ascetic
 1 Pia, Determined Rebuilder
 1 Plains
 1 Plan for All Outcomes
-1 Pompous Battlemage // Improvised Act
+1 Pompous Battlemage
 1 Precise Redaction
 1 Predictive Preparations
 1 Primal Witchstalker
@@ -168,9 +168,9 @@
 1 Proft, Sinister Mastermind
 1 Prophesied End
 1 Protege's Awakening
-1 Prudent Fateseer // Peer Review
+1 Prudent Fateseer
 1 Puppet Crafting
-1 Pyre Rhymer // Molten Tide
+1 Pyre Rhymer
 1 Rampart Hunter
 1 Rank Rat
 1 Recursive Recruitment
@@ -193,7 +193,7 @@
 1 Sanctum Lurker
 1 Screeching Soulbreaker
 1 Seasoned Cryomancer
-1 Semester Foreseer // Peer Review
+1 Semester Foreseer
 1 Shatterwing Pegasus
 1 Shipwreck Marsh
 1 Silence the Echo
@@ -208,7 +208,7 @@
 1 Stingcaster Mage
 1 Stingerquill Annex
 1 Stingerquill Charm
-1 Stingerquill Voxmancer // Vicious Verse
+1 Stingerquill Voxmancer
 1 Stinging Vitriol
 1 Sureshot Sower
 1 Surgical Precision
@@ -233,7 +233,7 @@
 1 Theorist's Sanctum
 1 Theorix Annex
 1 Theorix Charm
-1 Theorix Metamage // Omit Variables
+1 Theorix Metamage
 1 Tinybones, Pocket Nuisance
 1 Titanbones, Towering Heart
 1 Tomik, Izzet Sparkmage
@@ -247,15 +247,15 @@
 1 Undulating Witness
 1 Unflinching Hortimancer
 1 Unsummon
-1 Variable Chaser // Arc of Fortune
+1 Variable Chaser
 1 Verdant Kraken
 1 Vigorbloom Annex
 1 Vigorbloom Charm
-1 Vigorbloom Vanguard // Seed Suture
+1 Vigorbloom Vanguard
 1 Vindictive Triumph
 1 Vinelasher Adept
 1 Violent Echoes
-1 Void Extrapolator // Omit Variables
+1 Void Extrapolator
 1 Vraska's Final Mercy
 1 Vraska, Soul of Stone
 1 Vraska, the Cutting Glare
@@ -270,10 +270,10 @@
 1 Way of the Pyromancer
 1 Way of the Warlord
 1 Way of the Wildspeaker
-1 Whiplash Wordsmith // Vicious Verse
+1 Whiplash Wordsmith
 1 Winter, Team Player
 1 Winter, Tormented Loner
-1 Woodwork Prodigy // Soul Tether
+1 Woodwork Prodigy
 1 Wrath of the Bloodmane
 1 Wrecking Gecko
 1 Yargle, Glutton of Urborg
