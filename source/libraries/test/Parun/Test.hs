@@ -574,6 +574,7 @@ import qualified Parun.Codec.PaymentDecisionSpec
 import qualified Parun.Codec.PendingEntryEffectSpec
 import qualified Parun.Codec.PendingReplacementEffectSpec
 import qualified Parun.Codec.PendingSkipEffectSpec
+import qualified Parun.Codec.PerTargetSpec
 import qualified Parun.Codec.PermanentActionSpec
 import qualified Parun.Codec.PermanentBecomesDesignatedSpec
 import qualified Parun.Codec.PermanentCandidateSpec
@@ -1597,6 +1598,7 @@ spec s registry corpus = do
   Parun.Codec.PastActivationSpec.spec s
   Parun.Codec.PayBranchSpec.spec s
   Parun.Codec.PayGateSpec.spec s
+  Parun.Codec.PerTargetSpec.spec s
   Parun.Codec.PayingSpec.spec s
   Parun.Codec.PaymentDecisionSpec.spec s
   Parun.Codec.PayObligationSpec.spec s

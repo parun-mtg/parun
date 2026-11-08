@@ -3230,6 +3230,7 @@ warden-of-the-beyond
 warden-of-the-woods
 warp-world
 warped-devotion
+warriors-blades
 warriors-oath
 warriors-stand
 warstorm-surge

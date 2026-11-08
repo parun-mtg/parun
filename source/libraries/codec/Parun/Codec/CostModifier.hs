@@ -8,6 +8,7 @@ import qualified Parun.Codec.CostChange as CostChange
 import qualified Parun.Codec.CostSubject as CostSubject
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.PerTarget as PerTarget
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.TurnScope as TurnScope
 import qualified Parun.JsonCodec.Codec as Codec
@@ -33,7 +34,7 @@ codec = Fields.objectWith check $ do
   subject <- Fields.required "subject" CostSubject.codec CostModifier.subject
   matching <- Fields.required "matching" (Filter.codec Keyword.codec) CostModifier.matching
   whichTargets <- Fields.defaulted "whichTargets" Nothing (Common.maybe (Filter.codec Keyword.codec)) CostModifier.whichTargets
-  perTarget <- Fields.defaulted "perTarget" Nothing (Common.maybe (Filter.codec Keyword.codec)) CostModifier.perTarget
+  perTarget <- Fields.defaulted "perTarget" Nothing (Common.maybe PerTarget.codec) CostModifier.perTarget
   perEach <- Fields.defaulted "perEach" Nothing (Common.maybe Quantity.codec) CostModifier.perEach
   onlyFirst <- Fields.defaulted "onlyFirst" Nothing (Common.maybe TurnScope.codec) CostModifier.onlyFirst
   change <- Fields.required "change" CostChange.codec CostModifier.change

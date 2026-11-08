@@ -346,6 +346,7 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
@@ -2515,9 +2516,13 @@ costChangeNames asking x = case x of
   CostChange.Reduce _appliedReduction -> mempty
   CostChange.Add costAddition -> costAdditionNames asking costAddition
 
+perTargetNames :: (Monoid r) => Asking r -> PerTarget.PerTarget -> r
+perTargetNames asking x = case x of
+  PerTarget.MkPerTarget matching each -> filterNames asking matching <> foldMap (quantityNames asking) each
+
 costModifierNames :: (Monoid r) => Asking r -> CostModifier.CostModifier -> r
 costModifierNames asking x = case x of
-  CostModifier.MkCostModifier subject matching whichTargets perTarget perEach onlyFirst change -> foldMap (\scope -> history asking (costSubjectHistory subject) <> turnScopeNames asking scope) onlyFirst <> costSubjectNames asking subject <> filterNames asking matching <> foldMap (filterNames asking) whichTargets <> foldMap (filterNames asking) perTarget <> foldMap (quantityNames asking) perEach <> costChangeNames asking change
+  CostModifier.MkCostModifier subject matching whichTargets perTarget perEach onlyFirst change -> foldMap (\scope -> history asking (costSubjectHistory subject) <> turnScopeNames asking scope) onlyFirst <> costSubjectNames asking subject <> filterNames asking matching <> foldMap (filterNames asking) whichTargets <> foldMap (perTargetNames asking) perTarget <> foldMap (quantityNames asking) perEach <> costChangeNames asking change
 
 -- The turn's history a cost modifier's `onlyFirst` reads: CR 601.2i's casts
 -- for a spell, CR 602.2's activations for an ability.

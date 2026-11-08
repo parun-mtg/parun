@@ -4408,7 +4408,7 @@ aimingSignature pid oid gs cost
           routes r = case Recipient.objectOf r of
             Nothing -> []
             Just o -> [(activations {Activations.claims = []}, fmap (selfless o) (relevant supply), mana, cost') | (source, supply@(_, mana, cost', activations)) <- supplies, source == o, not (null (relevant supply))]
-       in Just (\r -> (fmap (toInteger . fromEnum) (PlayerEffect.targetQuestions pid gs r) <> self r <> claimed r <> evidence r <> pooled r, routes r))
+       in Just (\r -> (PlayerEffect.targetQuestions pid gs r <> self r <> claimed r <> evidence r <> pooled r, routes r))
   where
     criteria = concatMap criteriaOf (Cost.components cost)
 

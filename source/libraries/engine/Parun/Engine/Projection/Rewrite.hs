@@ -221,6 +221,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -547,7 +548,7 @@ rewritePlayerEffect pairs effect = case effect of
           CostChange.Add (CostAddition.MkCostAddition components scale) -> CostChange.Add (CostAddition.MkCostAddition (fmap (Filter.rewriteComponent pairs) components) (rewriteCostScale pairs scale))
           CostChange.Increase _ -> change
           CostChange.Reduce _ -> change
-     in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (Filter.rewrite pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
+     in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (rewritePerTarget pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
   -- No filter to rewrite: a rule-702 designator is not a word CR 612.1 swaps.
   PlayerEffect.AlternativeActivationCost _ -> effect
   PlayerEffect.CastAsThoughItHadFlash f -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f)
@@ -2417,6 +2418,11 @@ rewritePlacement pairs placement = case placement of
   LibraryPlacement.ArrangedBy _ -> placement
   LibraryPlacement.Beneath quantity -> LibraryPlacement.Beneath (rewriteQuantity pairs quantity)
   LibraryPlacement.BeneathOrBottom quantity -> LibraryPlacement.BeneathOrBottom (rewriteQuantity pairs quantity)
+
+-- A per-target cost change's filter and count, each descended as
+-- rewriteEffect descends its own (CR 612.1).
+rewritePerTarget :: [(TextWord.TextWord, TextWord.TextWord)] -> PerTarget.PerTarget -> PerTarget.PerTarget
+rewritePerTarget pairs (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTarget (Filter.rewrite pairs matching) (fmap (rewriteQuantity pairs) each)
 
 rewriteQuantity :: [(TextWord.TextWord, TextWord.TextWord)] -> Quantity.Type.Quantity -> Quantity.Type.Quantity
 rewriteQuantity pairs quantity = case quantity of
