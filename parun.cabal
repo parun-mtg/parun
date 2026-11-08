@@ -2231,6 +2231,7 @@ library registry
     parun:codec,
     parun:engine,
     parun:exceptions,
+    parun:extra,
     parun:json,
     parun:json-codec,
     parun:oracle,

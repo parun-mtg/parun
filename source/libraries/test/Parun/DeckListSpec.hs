@@ -5,6 +5,7 @@
 module Parun.DeckListSpec where
 
 import qualified Control.Monad as Monad
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -14,6 +15,7 @@ import qualified Parun.DeckList as DeckList
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
+import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
@@ -21,23 +23,26 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingEntry as PrintingEntry
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.StickerSheet as StickerSheet
 
 -- A registry over Goblin Piker and Wax // Wane, which between them are a name
 -- with no halves and CR 709.4a's name with two, two preparation cards
 -- sharing the prepare spell Seed Suture, whose name is therefore no card's,
 -- and Bumper Cars, whose printings light different numbers (CR 718.1), with
--- `printings` for its printing table.
+-- `printings` for its printing table and the sticker sheets parun ships.
 withPool :: String -> (Registry.Registry IO -> IO a) -> IO a
 withPool label action = do
+  sheets <- StickerSheets.defaultRoot >>= StickerSheets.loadRoot
+  bySlug <- either (\(file, problem) -> ioError (userError (file <> ": " <> Text.unpack problem))) pure (Registry.sheetsBySlug sheets)
   piker <- S.pikerJson
   waxWane <- S.waxWaneJson
   angel <- S.committedJson angelFile
   phytomedic <- S.committedJson "emergency-phytomedic-seed-suture.json"
   cars <- S.committedJson "bumper-cars.json"
-  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars)] (Registry.fileRegistry Monad.>=> action . withPrintings)
+  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars)] (Registry.fileRegistry Monad.>=> action . withData bySlug)
   where
     angelFile = "blossom-blessed-angel-seed-suture.json"
-    withPrintings registry = registry {Registry.printings = printings}
+    withData bySlug registry = registry {Registry.printings = printings, Registry.stickerSheets = bySlug}
 
 -- Two Bumper Cars printings and a Goblin Piker, as data/printings.json holds
 -- them.
@@ -303,3 +308,34 @@ spec s = Spec.describe s "Parun.DeckList" $ do
     $ \registry -> do
       problems <- problemsOf s "bad-printing" registry "1 Bumper Cars (UNF) 999\n1 Goblin Piker (UNF) 202a\n"
       Spec.assertEqWith s "each line" problems [DeckList.NoSuchPrinting 1 (Text.pack "UNF") (Text.pack "999"), DeckList.PrintingDisagrees 2 (CardName.MkCardName (Text.pack "Goblin Piker")) (Text.pack "UNF") (Text.pack "202a")]
+
+  -- CR 123.2: a sticker sheet is named by name or slug, as a card is, and
+  -- kept in the order written, by which a player's sheets are told apart
+  -- (CR 123.3a); a rendered list writes that order back, a run of one sheet
+  -- as a count.
+  Spec.it s "CR 123.2 a Stickers section brings its sheets in order, and a rendered list writes it back"
+    . withPool "stickers"
+    $ \registry -> do
+      deck <- deckOf s "stickers" registry "4 Goblin Piker\n\nStickers\n2 Eldrazi Guacamole Tightrope\nslimy-burrito-illusion\n1 Eldrazi Guacamole Tightrope\n"
+      let tightrope = Text.pack "Eldrazi Guacamole Tightrope"
+      Spec.assertEqWith s "the sheets, in order" (fmap StickerSheet.name (Foldable.toList (Deck.stickerSheets deck))) [tightrope, tightrope, Text.pack "Slimy Burrito Illusion", tightrope]
+      Spec.assertEqWith s "and the deck" (entriesOf (Deck.cards deck)) [(Text.pack "Goblin Piker", 4)]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\nStickers\n2 Eldrazi Guacamole Tightrope\n1 Slimy Burrito Illusion\n1 Eldrazi Guacamole Tightrope\n") text) ("in order: " <> show text)
+      again <- deckOf s "stickers-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- A sheet is not a card and a card is not a sheet, so each section reads only
+  -- its own names; a sheet has one printing, so a suffix is part of the name.
+  Spec.it s "CR 123.2 a name no sheet has is a problem, and a sheet is no card"
+    . withPool "bad-stickers"
+    $ \registry -> do
+      problems <- problemsOf s "bad-stickers" registry "1 Slimy Burrito Illusion\nStickers\n1 Goblin Piker\n1 Slimy Burrito Illusion (SUNF) 3\n"
+      Spec.assertEqWith
+        s
+        "each line"
+        problems
+        [ DeckList.NoSuchCard 1 (CardName.MkCardName (Text.pack "Slimy Burrito Illusion")),
+          DeckList.NoSuchStickerSheet 3 (Text.pack "Goblin Piker"),
+          DeckList.NoSuchStickerSheet 4 (Text.pack "Slimy Burrito Illusion (SUNF) 3")
+        ]

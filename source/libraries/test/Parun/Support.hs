@@ -522,7 +522,8 @@ fixtureRegistry reference =
   Registry.MkRegistry
     { Registry.fetchCard = \name -> pure (Right (List.find ((== name) . nameOf) reference)),
       Registry.cards = pure (Right reference),
-      Registry.printings = PrintingTable.empty
+      Registry.printings = PrintingTable.empty,
+      Registry.stickerSheets = Map.empty
     }
 
 -- The answer to a broken corpus where a case has no Spec to fail through: a

@@ -1,9 +1,10 @@
 {-# LANGUAGE RankNTypes #-}
 
--- Answering three questions: given a card's name, what card is that? Which
--- cards are there? And what does a set code and collector number print?
+-- Answering four questions: given a card's name, what card is that? Which
+-- cards are there? What does a set code and collector number print? And
+-- given a sticker sheet's name, what sheet is that?
 --
--- The registry is those three and nothing else. It is parameterized over the
+-- The registry is those four and nothing else. It is parameterized over the
 -- monad a LOOKUP works in, which is what lets a registry that does no IO to
 -- answer -- a fixture map, a pool compiled in, a generated one, or the
 -- file-backed one below, which reads every file's bytes before the registry
@@ -43,10 +44,12 @@ import qualified Parun.Exceptions.MissingRoot as MissingRoot
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Slug as Slug
+import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Paths_parun as Paths
 import qualified System.Directory as Directory
 
@@ -62,12 +65,16 @@ data Registry m = MkRegistry
     -- | The pool's cards' printings, which a deck list naming a printing
     -- reads (#4118). Data rather than a lookup in m: the table is read whole
     -- before the registry exists.
-    printings :: PrintingTable.PrintingTable
+    printings :: PrintingTable.PrintingTable,
+    -- | CR 123.2: the sticker sheets parun ships, by the slug of their name,
+    -- which a deck list's Stickers section reads (#6667). Not cards, so not
+    -- answered by `fetchCard`; data for `printings`' reason.
+    stickerSheets :: Map.Map Slug.Slug StickerSheet.StickerSheet
   }
 
 -- The same registry answering in another monad, each lookup carried over.
 hoist :: (forall a. m a -> n a) -> Registry m -> Registry n
-hoist lift registry = MkRegistry {fetchCard = lift . fetchCard registry, cards = lift (cards registry), printings = printings registry}
+hoist lift registry = MkRegistry {fetchCard = lift . fetchCard registry, cards = lift (cards registry), printings = printings registry, stickerSheets = stickerSheets registry}
 
 -- A card by name ("Goblin Piker") or by slug ("goblin-piker") -- a file-backed
 -- registry slugifies, and slugify is idempotent, so both are the same lookup.
@@ -84,13 +91,22 @@ defaultRoot :: IO FilePath
 defaultRoot = Paths.getDataFileName "cards"
 
 -- The registry parun ships: 'fileRegistry' over 'defaultRoot', knowing the
--- printings data/printings.json holds.
+-- printings data/printings.json holds and the sheets data/sticker-sheets does.
 defaultRegistry :: (Applicative m) => IO (Registry m)
 defaultRegistry = do
   registry <- defaultRoot >>= fileRegistry
   path <- printingsPath
   table <- loadPrintings path
-  either (\problem -> ioError (userError (path <> ": " <> Text.unpack problem))) (\loaded -> pure registry {printings = loaded}) table
+  sheets <- StickerSheets.defaultRoot >>= StickerSheets.loadRoot
+  let failing (file, problem) = ioError (userError (file <> ": " <> Text.unpack problem))
+  loaded <- either (curry failing path) pure table
+  bySlug <- either failing pure (sheetsBySlug sheets)
+  pure registry {printings = loaded, stickerSheets = bySlug}
+
+-- Every sheet a root holds by the slug of its name, or the first file that
+-- will not parse.
+sheetsBySlug :: [(FilePath, Either Text.Text StickerSheet.StickerSheet)] -> Either (FilePath, Text.Text) (Map.Map Slug.Slug StickerSheet.StickerSheet)
+sheetsBySlug = fmap Map.fromList . traverse (\(file, parsed) -> either (Left . (,) file) (\sheet -> Right (Slug.fromText (StickerSheet.name sheet), sheet)) parsed)
 
 -- Where the shipped printing table is, script/ingest/printings.jq's output.
 printingsPath :: IO FilePath
@@ -105,8 +121,8 @@ loadPrintings path = do
     Common.parse contents >>= Codec.decode PrintingTable.Codec.codec
 
 -- A registry over a directory of one-card-per-file JSON, read once, here, and
--- parsed only as far as lookups reach. It knows no printing; 'defaultRegistry'
--- adds the shipped table.
+-- parsed only as far as lookups reach. It knows no printing and no sticker
+-- sheet; 'defaultRegistry' adds the shipped ones.
 --
 -- The root is checked before anything else because a mistyped --cards-dir
 -- otherwise surfaces as N identical failures, one per card, instead of one
@@ -147,7 +163,7 @@ fileRegistry root = do
             case Map.lookup slug near of
               Just card -> Right (Just card)
               Nothing -> fmap (Map.lookup slug) whole
-      pure MkRegistry {fetchCard = pure . find, cards = pure (fmap (const (Maybe.mapMaybe referenceCard loaded)) whole), printings = PrintingTable.empty}
+      pure MkRegistry {fetchCard = pure . find, cards = pure (fmap (const (Maybe.mapMaybe referenceCard loaded)) whole), printings = PrintingTable.empty, stickerSheets = Map.empty}
 
 -- The slug a card file is named by: its file name, less the directory and the
 -- extension.
