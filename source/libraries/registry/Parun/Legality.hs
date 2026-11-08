@@ -24,6 +24,8 @@ import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Commander as Commander
+import qualified Parun.Engine.Filter as Filter
+import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Ingest as Ingest
 import qualified Parun.JsonCodec.Codec as Codec
@@ -46,6 +48,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Violation as Violation
 import qualified Paths_parun as Paths
@@ -163,6 +166,11 @@ commanders settings deck
 -- Nothing without one, which CR 903.4f leaves undefined. Deck.cards alone: CR
 -- 903.5c asks it of a card in the deck, which a companion is not.
 --
+-- CR 903.5e: a card the deck designates as its commander exempts the cards its
+-- AnyColorIdentity filters match, read off its front face as commanderAtMost
+-- reads it, each candidate judged by its printed characteristics with nothing
+-- in play (Parun.Engine.Companion.fulfilled's posture).
+--
 -- CR 903.12e: under a Brawl commander with no colour, basic land cards of one
 -- basic land type are exempt. A deck list states no type, so the type the most
 -- basic land cards have stands in, the first in Subtype's order on a tie:
@@ -176,7 +184,10 @@ inIdentity brawl deck
           basics = Map.fromListWith (+) [(subtype, count) | (printing, count) <- Map.toList (Deck.cards deck), basicLand (Printing.card printing), subtype <- Set.toList (landTypes printing)]
           chosen = if brawl && Set.null identity then fmap fst (Maybe.listToMaybe (List.sortOn (Ord.Down . snd) (Map.toList basics))) else Nothing
           exempt printing = basicLand (Printing.card printing) && any (`Set.member` landTypes printing) chosen
-          outside printing = not (exempt printing) && not (Set.isSubsetOf (deckColors printing) identity)
+          widened = [matching | printing <- Set.toList (Deck.commander deck), CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
+          context = Filter.contextFor Teams.none Nothing Nothing
+          admitted printing = any (Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing)))) widened
+          outside printing = not (exempt printing) && not (admitted printing) && not (Set.isSubsetOf (deckColors printing) identity)
           byName = Map.fromList [(Face.name (Card.combined (Printing.card printing)), printing) | printing <- Map.keys (Deck.cards deck)]
        in [Violation.OutsideColorIdentity written | (written, printing) <- Map.toList byName, outside printing]
 
