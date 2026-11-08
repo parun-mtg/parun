@@ -11,7 +11,6 @@ import qualified Parun.Types.Keyword as Keyword
 data CommanderDeckRule
   = -- | "A deck with this commander has no maximum deck size." (CR 903.5a)
     NoMaximumDeckSize
-  | -- | "A deck with this commander can have [matching] cards of any color
-    -- identity": matching cards are exempt from CR 903.5c and 903.5d.
+  | -- | Matching cards are exempt from CR 903.5c and 903.5d (CR 903.5e).
     AnyColorIdentity (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)
