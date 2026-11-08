@@ -9,7 +9,10 @@ module Parun.Legality where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
+import qualified Data.Ord as Ord
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
@@ -20,21 +23,27 @@ import qualified Parun.Codec.LegalityTable as LegalityTable.Codec
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Card as Card
+import qualified Parun.Engine.Commander as Commander
+import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Ingest as Ingest
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Legality as Legality
 import qualified Parun.Types.LegalityTable as LegalityTable
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Violation as Violation
@@ -51,25 +60,49 @@ rules :: LegalityTable.LegalityTable -> GameSettings.GameSettings -> Format.Form
 rules table settings format =
   let standing = fmap (poolStanding table) (Format.pool format)
       restricted card = any (\standingOf -> standingOf card == Just (Just Legality.Restricted)) standing
+      -- CR 903.5a / 903.12d: exactly so many cards, commanders included. CR
+      -- 903.5b: one of each name but a basic land, unless a card's own
+      -- deckLimit says otherwise (CR 101.1). The format, and not the game's
+      -- settings, says which of CR 903.3 and CR 903.12c judges the commander.
+      commander brawl size =
+        [atLeast size withCommander, atMost size withCommander, copiesAtMost restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
+          <> foldMap (pure . inPool) standing
+          <> [anteCards settings, conspiracies]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast 60, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies]
+        RuleFamily.Constructed -> [atLeast 60 Deck.cards, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast 40, copiesAtMost restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings]
+        RuleFamily.Limited -> [atLeast 40 Deck.cards, copiesAtMost restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings]
+        -- CR 903.5.
+        RuleFamily.Commander -> commander False 100
+        -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
+        -- 903.12d's size and CR 903.12e's basic lands.
+        RuleFamily.Brawl -> commander True 60
 
 -- Deck and sideboard together: CR 100.4a counts the sideboard, and a card
 -- barred from the deck is barred from both (CR 407.3).
 bothSections :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
 bothSections = Map.unionWith (+) <$> Deck.cards <*> Deck.sideboard
 
--- CR 100.2a / 100.2b: a minimum deck size, counting the deck and not the
--- sideboard (CR 100.4).
-atLeast :: Natural.Natural -> Deck.Deck -> [Violation.Violation]
-atLeast least deck =
-  let size = sum (Deck.cards deck)
+-- CR 100.2a / 100.2b: a minimum deck size, counting the cards `counted`
+-- picks: the deck and not the sideboard (CR 100.4), and its commanders where
+-- CR 903.5a counts them.
+atLeast :: Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
+atLeast least counted deck =
+  let size = sum (counted deck)
    in [Violation.TooFewCards size least | size < least]
+
+-- CR 903.5a / 903.12d: a maximum deck size, counting as `atLeast` does.
+atMost :: Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
+atMost most counted deck =
+  let size = sum (counted deck)
+   in [Violation.TooManyCards size most | size > most]
+
+-- CR 903.5a: the deck with its commanders, which it counts among its cards.
+withCommander :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
+withCommander deck = Map.unionWith (+) (Deck.cards deck) (Map.fromSet (const 1) (Deck.commander deck))
 
 -- CR 100.2a / 100.4a: at most so many cards of one English name, among the
 -- cards `counted` picks: one for a card the pool restricts, else the card's
@@ -94,6 +127,58 @@ sideboardAtMost :: Natural.Natural -> Deck.Deck -> [Violation.Violation]
 sideboardAtMost most deck =
   let size = sum (Deck.sideboard deck)
    in [Violation.SideboardTooLarge size most | size > most]
+
+-- CR 903.5f: no sideboard, but for one card with companion, which CR
+-- 702.139a reveals from outside the game and Parun.DeckList's Companion
+-- section brings in the sideboard.
+noSideboard :: Deck.Deck -> [Violation.Violation]
+noSideboard deck =
+  let companion = any (any isCompanion . Face.keywordSet . Card.combined . Printing.card) (Map.keys (Deck.sideboard deck))
+      isCompanion keyword = case keyword of
+        Keyword.Companion _ -> True
+        _ -> False
+   in sideboardAtMost (if companion then 1 else 0) deck
+
+-- CR 903.3 / 903.12c / 702.124: a commander, designated as
+-- Parun.Engine.Commander.designations allows; each card of a refused
+-- designation is reported.
+commanders :: GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]
+commanders settings deck
+  | Set.null (Deck.commander deck) = [Violation.NoCommander]
+  | Set.null (Commander.designations settings deck) = [Violation.IllegalCommander (Face.name (Card.combined (Printing.card printing))) | printing <- Set.toList (Deck.commander deck)]
+  | otherwise = []
+
+-- CR 903.5c / 903.5d: each card of the deck inside the combined colour
+-- identity of the cards it designates (CR 702.124c), legal commanders or not.
+-- Nothing without one, which CR 903.4f leaves undefined. Deck.cards alone: CR
+-- 903.5c asks it of a card in the deck, which a companion is not.
+--
+-- CR 903.12e: under a Brawl commander with no colour, basic land cards of one
+-- basic land type are exempt. A deck list states no type, so the type the most
+-- basic land cards have stands in, the first in Subtype's order on a tie:
+-- every basic land card has at most one basic land type, so the deck is legal
+-- under some choice exactly when it is under that one.
+inIdentity :: Bool -> Deck.Deck -> [Violation.Violation]
+inIdentity brawl deck
+  | Set.null (Deck.commander deck) = []
+  | otherwise =
+      let identity = foldMap Commander.colorIdentity (Deck.commander deck)
+          basics = Map.fromListWith (+) [(subtype, count) | (printing, count) <- Map.toList (Deck.cards deck), basicLand (Printing.card printing), subtype <- Set.toList (landTypes printing)]
+          chosen = if brawl && Set.null identity then fmap fst (Maybe.listToMaybe (List.sortOn (Ord.Down . snd) (Map.toList basics))) else Nothing
+          exempt printing = basicLand (Printing.card printing) && any (`Set.member` landTypes printing) chosen
+          outside printing = not (exempt printing) && not (Set.isSubsetOf (deckColors printing) identity)
+          byName = Map.fromList [(Face.name (Card.combined (Printing.card printing)), printing) | printing <- Map.keys (Deck.cards deck)]
+       in [Violation.OutsideColorIdentity written | (written, printing) <- Map.toList byName, outside printing]
+
+-- CR 903.5c / 903.5d: a card's colour identity, and the colours of mana its
+-- basic land types make (CR 305.6), which a basic land's reminder text keeps
+-- out of its identity (CR 903.4c).
+deckColors :: Printing.Printing -> Set.Set Color.Color
+deckColors printing = Commander.colorIdentity printing <> Set.fromList [color | Just (ManaType.Colored color) <- fmap Subtype.Engine.subtypeMana (Set.toList (landTypes printing))]
+
+-- CR 305.6: the basic land types on any of a card's faces.
+landTypes :: Printing.Printing -> Set.Set Subtype.Subtype
+landTypes printing = Set.filter (Maybe.isJust . Subtype.Engine.subtypeMana) (foldMap (TypeLine.subtypes . Face.typeLine) (Card.Type.faces (Printing.card printing)))
 
 -- A card's standing in one pool: Nothing for a card the table does not have,
 -- and Just Nothing for one the pool does not have, which is not legal there.
@@ -121,9 +206,9 @@ anteCards settings deck = [Violation.AnteCard written | (written, card) <- cards
 conspiracies :: Deck.Deck -> [Violation.Violation]
 conspiracies deck = [Violation.ConspiracyCard written | (written, card) <- cardsIn deck, Set.member CardType.Conspiracy (TypeLine.types (Face.typeLine (Card.combined card)))]
 
--- Each card of deck and sideboard once, by name.
+-- Each card of deck, sideboard and commanders once, by name.
 cardsIn :: Deck.Deck -> [(CardName.CardName, Card.Type.Card)]
-cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck), let card = Printing.card printing])
+cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck) <> Set.toList (Deck.commander deck), let card = Printing.card printing])
 
 -- CR 205.4c: the supertype makes a basic land, not the name or a basic land
 -- type, so snow basics and Wastes are exempt and Dryad Arbor is not.
@@ -150,6 +235,7 @@ report asked listed = do
 explain :: Violation.Violation -> Text.Text
 explain violation = Text.pack $ case violation of
   Violation.TooFewCards size least -> show size <> " cards in the deck, fewer than " <> show least
+  Violation.TooManyCards size most -> show size <> " cards in the deck, more than " <> show most
   Violation.TooManyCopies written count limit -> show count <> " copies of " <> spelled written <> ", more than " <> show limit
   Violation.SideboardTooLarge size most -> show size <> " cards in the sideboard, more than " <> show most
   Violation.BannedCard written -> spelled written <> " is banned"
@@ -157,6 +243,9 @@ explain violation = Text.pack $ case violation of
   Violation.NoLegalityData written -> spelled written <> " has no legality data"
   Violation.AnteCard written -> spelled written <> " is an ante card in a game not for ante"
   Violation.ConspiracyCard written -> spelled written <> " is a conspiracy card in constructed play"
+  Violation.NoCommander -> "no commander"
+  Violation.IllegalCommander written -> spelled written <> " cannot be this deck's commander"
+  Violation.OutsideColorIdentity written -> spelled written <> " is outside the commander's colour identity"
   where
     spelled = Text.unpack . CardName.unwrap
 

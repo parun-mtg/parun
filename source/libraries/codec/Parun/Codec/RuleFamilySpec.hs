@@ -11,3 +11,7 @@ spec s = Spec.describe s "Parun.Codec.RuleFamily" $ do
     Common.assertCodec s RuleFamily.codec RuleFamily.Constructed " \"Constructed\" "
   Spec.it s "Limited" $
     Common.assertCodec s RuleFamily.codec RuleFamily.Limited " \"Limited\" "
+  Spec.it s "Commander" $
+    Common.assertCodec s RuleFamily.codec RuleFamily.Commander " \"Commander\" "
+  Spec.it s "Brawl" $
+    Common.assertCodec s RuleFamily.codec RuleFamily.Brawl " \"Brawl\" "

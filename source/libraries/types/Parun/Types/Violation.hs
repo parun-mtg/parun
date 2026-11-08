@@ -8,6 +8,9 @@ data Violation
   = -- | CR 100.2a / 100.2b: fewer cards in the deck than the minimum; the
     -- deck's size, then the minimum.
     TooFewCards Natural.Natural Natural.Natural
+  | -- | CR 903.5a / 903.12d: more cards in the deck than the maximum; the
+    -- deck's size, then the maximum.
+    TooManyCards Natural.Natural Natural.Natural
   | -- | CR 100.2a / 100.4a: more cards of one English name across deck and
     -- sideboard than the limit, a restricted card's one included; the name, the
     -- count, then the limit.
@@ -25,4 +28,12 @@ data Violation
     AnteCard CardName.CardName
   | -- | CR 315.1: a conspiracy card in a constructed deck or sideboard.
     ConspiracyCard CardName.CardName
+  | -- | CR 903.3: a Commander deck that designates no commander.
+    NoCommander
+  | -- | CR 903.3 / 903.12c / 702.124: a designated card the deck may not have as
+    -- a commander, alone or in its pair.
+    IllegalCommander CardName.CardName
+  | -- | CR 903.5c / 903.5d: a card with a colour, in its colour identity or in
+    -- the mana its basic land types make, outside its commander's identity.
+    OutsideColorIdentity CardName.CardName
   deriving (Eq, Ord, Show)
