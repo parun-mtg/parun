@@ -1,0 +1,273 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 5
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "CardType",
+                            "value": {
+                              "cardType": "Creature",
+                              "mode": "InAddition"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "CreatureSubtype",
+                            "value": {
+                              "mode": "InAddition",
+                              "subtype": "Bear"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Static",
+                              "value": {
+                                "affected": {
+                                  "type": "Matching",
+                                  "value": {
+                                    "type": "IsSource"
+                                  }
+                                },
+                                "modifications": [
+                                  {
+                                    "type": "SetBasePowerToughness",
+                                    "value": {
+                                      "power": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "And",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Land"
+                                              },
+                                              {
+                                                "type": "HeldBy",
+                                                "value": {
+                                                  "holder": "Controller",
+                                                  "relation": "You"
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          "scope": {
+                                            "type": "InZone",
+                                            "value": {
+                                              "player": {
+                                                "type": "Relative",
+                                                "value": "AnyPlayer"
+                                              },
+                                              "zone": "Battlefield"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "toughness": {
+                                        "type": "Count",
+                                        "value": {
+                                          "aggregation": {
+                                            "type": "Members"
+                                          },
+                                          "filter": {
+                                            "type": "And",
+                                            "value": [
+                                              {
+                                                "type": "HasCardType",
+                                                "value": "Land"
+                                              },
+                                              {
+                                                "type": "HeldBy",
+                                                "value": {
+                                                  "holder": "Controller",
+                                                  "relation": "You"
+                                                }
+                                              }
+                                            ]
+                                          },
+                                          "scope": {
+                                            "type": "InZone",
+                                            "value": {
+                                              "player": {
+                                                "type": "Relative",
+                                                "value": "AnyPlayer"
+                                              },
+                                              "zone": "Battlefield"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Beorn's Hospitality",
+      "oracleText": "Landfall — Whenever a land you control enters, put a +1/+1 counter on target creature you control.\n{5}{G}{G}: This enchantment becomes a Bear creature in addition to its other types and gains \"This creature's power and toughness are each equal to the number of lands you control.\" (This effect doesn't end.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Land"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

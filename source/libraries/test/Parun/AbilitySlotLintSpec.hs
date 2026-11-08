@@ -616,6 +616,18 @@ armingCostSlots card =
         (Face.activatedAbilities card)
     )
 
+-- The fifth half: the reserved slot a CR 118.12 cost an arming ability pays AS
+-- IT RESOLVES binds (payGateBound), which Parun.Engine.Resolve.Common.foldPaid
+-- writes onto the resolving object before CR 603.7c captures it -- Bolg of the
+-- North's reflexive "that creature's power". LOOSE about which ability armed,
+-- armingTargetSlots' caveat.
+armingPayGateSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
+armingPayGateSlots card =
+  Set.unions
+    ( fmap (payGateBound . ActivatedAbility.modal) (Face.activatedAbilities card)
+        <> fmap (payGateBound . TriggeredAbility.modal) (Face.triggeredAbilities card)
+    )
+
 -- The fourth half: CR 106.6's spend trigger, armed at payment with "that spell"
 -- bound as Binding.castSpell (Parun.Engine.Cost.armSpendTriggers) -- Pyromancer's
 -- Goggles' copy. LOOSE about which ability that AddMana names, armingTargetSlots'
@@ -774,7 +786,9 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- event slot a TRIGGERED arming ability's condition stamped into that same
   -- environment (armingEventSlots -- Ivory Gargoyle's delayed return reading CR
   -- 400.7e's `became`), a slot an ACTIVATED arming ability's own cost bound
-  -- (armingCostSlots -- Calim, Djinn Emperor's discarded card), or a CR 603.2
+  -- (armingCostSlots -- Calim, Djinn Emperor's discarded card), a slot an
+  -- arming ability's resolution-time cost bound (armingPayGateSlots -- Bolg of
+  -- the North's sacrificed creature), or a CR 603.2
   -- event slot the entry's own condition binds as it fires
   -- (Event.eventBindingSlots -- False Cure's "that player ... they gained", which
   -- Event.delayedPending stamps on top of the captured environment exactly as
@@ -797,7 +811,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- nothing the minting resolution bound is in scope.
   Spec.it s "every slot a delayed ability reads is bound by its card" $ do
     ps <- S.allPrintings s corpus
-    let cardBound card = Set.insert Binding.triggerSource (Set.unions [armingTargetSlots card, armingEventSlots card, armingCostSlots card, armingSpendSlots card, Resolve.definedSlots (cardResolutionEffects card)])
+    let cardBound card = Set.insert Binding.triggerSource (Set.unions [armingTargetSlots card, armingEventSlots card, armingCostSlots card, armingPayGateSlots card, armingSpendSlots card, Resolve.definedSlots (cardResolutionEffects card)])
         abilityOffends card ability =
           modalSlotsOffend
             (const Set.empty)
