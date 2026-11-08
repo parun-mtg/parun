@@ -7,7 +7,7 @@ import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Subtype as Subtype
 
-spec :: (Monad m) => Spec.Spec m n -> n ()
+spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CommanderDeckRule" $ do
   Spec.it s "NoMaximumDeckSize" $
     Common.assertCodec s CommanderDeckRule.codec CommanderDeckRule.NoMaximumDeckSize " {\"type\":\"NoMaximumDeckSize\"} "
