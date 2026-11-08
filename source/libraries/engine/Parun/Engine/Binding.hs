@@ -842,6 +842,13 @@ waterbendCost = SlotName.MkSlotName (Text.pack "thatWaterbendCost")
 removedCounters :: SlotName
 removedCounters = SlotName.MkSlotName (Text.pack "thatManyCountersRemoved")
 
+-- CR 606.4 / 606.5: the reserved slot under which a loyalty ability's payment
+-- binds how many loyalty counters it removed -- the combined cost actually paid,
+-- not the printed one (Way of the Mind Sculptor). Folded onto the ability by
+-- Parun.Engine.Activate, removedCounters' road; not a target either.
+loyaltyRemoved :: SlotName
+loyaltyRemoved = SlotName.MkSlotName (Text.pack "thatManyLoyaltyRemoved")
+
 -- CR 400.7d: the part of a spell's binding environment the permanent it
 -- becomes keeps -- "information about the spell ... including what costs were
 -- paid to cast that spell". Parun.Engine.Event.changeZoneAttaching writes it
