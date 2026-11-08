@@ -57,7 +57,6 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
-import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
