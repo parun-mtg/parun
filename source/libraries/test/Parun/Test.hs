@@ -923,6 +923,7 @@ import qualified Parun.ManaSourceSpec
 import qualified Parun.ManaSpec
 import qualified Parun.ManaSymbolSpec
 import qualified Parun.MassEffectSpec
+import qualified Parun.MatchSpec
 import qualified Parun.MeldSpec
 import qualified Parun.ModalDoubleFacedSpec
 import qualified Parun.ModalSpec
@@ -2010,6 +2011,7 @@ spec s registry corpus = do
   Parun.BotSpec.spec s registry
   Parun.ClientSpec.spec s registry
   Parun.RecordSpec.spec s registry
+  Parun.MatchSpec.spec s registry
   Parun.DecksSpec.spec s registry
   Parun.LegalitySpec.spec s registry
   Parun.ReplySpec.spec s registry

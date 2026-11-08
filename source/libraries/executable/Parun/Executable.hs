@@ -27,6 +27,7 @@ import qualified Parun.Mtgish as Mtgish
 import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Play.Command
+import qualified Parun.Play.Match
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
@@ -67,11 +68,12 @@ main = do
     "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
     "scenario" : paths@(_ : _) -> scenario paths
     "play" : rest -> Parun.Play.Command.main rest
+    "match" : rest -> Parun.Play.Match.main rest
     "bench" : rest -> Environment.withArgs rest Parun.Benchmark.main
     "test" : rest -> Environment.withArgs rest Parun.Test.main
     _ -> do
       name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format constructed|limited] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | bench | test)"
+      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format constructed|limited] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
       Exit.exitFailure
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a
