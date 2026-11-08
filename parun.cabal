@@ -19,6 +19,7 @@ data-files:
   formats/*.json
   legalities.json
   oracle-unrendered.txt
+  printings.json
   scenarios/**/*.json
   sticker-sheets/*.json
 
@@ -1344,9 +1345,12 @@ library codec
     Parun.Codec.PrintedReplacement
     Parun.Codec.PrintedReplacementSpec
     Parun.Codec.Printing
+    Parun.Codec.PrintingEntry
     Parun.Codec.PrintingId
     Parun.Codec.PrintingIdSpec
     Parun.Codec.PrintingSpec
+    Parun.Codec.PrintingTable
+    Parun.Codec.PrintingTableSpec
     Parun.Codec.ProductionTag
     Parun.Codec.ProductionTagSpec
     Parun.Codec.Prohibit
@@ -3224,7 +3228,9 @@ library types
     Parun.Types.PreventNextDamage
     Parun.Types.PrintedReplacement
     Parun.Types.Printing
+    Parun.Types.PrintingEntry
     Parun.Types.PrintingId
+    Parun.Types.PrintingTable
     Parun.Types.PriorityWindow
     Parun.Types.ProductionTag
     Parun.Types.Program

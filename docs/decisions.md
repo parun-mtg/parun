@@ -1551,3 +1551,19 @@ Entries are ordered by the first rule each cites.
   `coin/cr-705-1-goblin-bookie-reflips-another-player-s-won-flip` and
   `coin/cr-705-1-goblin-bookie-reflips-one-of-krark-s-thumb-s-coins-before-the-flipper-keeps-one`.
 - **Issue**: #4017.
+
+## Which printing a deck list's bare name brings
+
+- **Question**: CR 718.1 lets two printings of one Attraction light different
+  numbers. A deck list line naming only the card says which card, not which
+  printing. Which lights does it bring?
+- **Rules**: CR 718.1, 718.2 (CR of 2026-11-06); nothing official reads deck
+  lists.
+- **Decision**: The card's first printing in data/printings.json, by set code
+  then collector number. A `(SET) NUMBER` suffix names one exactly.
+- **Rejected**: No lights, which brings an Attraction no roll ever visits;
+  the most recent or cheapest printing, which the table cannot order without
+  more data and which a new set would silently change.
+- **Site**: `Parun.DeckList.printingOf`, through `firstPrintings`. Proved by
+  `Parun.DeckList`'s "CR 718.1 a bare name is the card's first printing".
+- **Issue**: #4118.

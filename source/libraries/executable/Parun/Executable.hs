@@ -92,8 +92,7 @@ deck format path = do
       IO.hPutStrLn IO.stderr $ path <> ": not valid UTF-8: " <> show err
       Exit.exitFailure
     Right contents -> do
-      root <- Registry.defaultRoot
-      registry <- Registry.fileRegistry root
+      registry <- Registry.defaultRegistry
       result <- DeckList.parse registry contents
       case result of
         Left corpus -> do
@@ -102,7 +101,7 @@ deck format path = do
         Right listed -> do
           (checked, problems) <- Legality.report format listed
           case problems of
-            [] -> TextIO.putStr (DeckList.render checked (DeckList.deck listed))
+            [] -> TextIO.putStr (DeckList.render (Registry.printings registry) checked (DeckList.deck listed))
             _ -> do
               mapM_ (TextIO.hPutStrLn IO.stderr . (Text.pack (path <> ": ") <>)) problems
               Exit.exitFailure
@@ -357,8 +356,7 @@ scenarioSchema =
 -- Exits 1 if any did not decode or did not run clean.
 scenario :: [FilePath] -> IO ()
 scenario paths = do
-  root <- Registry.defaultRoot
-  registry <- Registry.fileRegistry root
+  registry <- Registry.defaultRegistry
   outcomes <- mapM (runOne registry) paths
   Monad.unless (and outcomes) Exit.exitFailure
 

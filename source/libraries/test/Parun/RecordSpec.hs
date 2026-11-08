@@ -33,6 +33,7 @@ import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario.Type
@@ -167,7 +168,7 @@ saved = savedWith Map.empty
 -- The scenario a game recorded at these graveyard orders saves as, read back.
 savedWith :: Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
 savedWith orders matchup timeline =
-  let scenario = Record.scenario Text.empty (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
+  let scenario = Record.scenario PrintingTable.empty Text.empty (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
    in Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec scenario))
 
 labels :: Map.Map PlayerId.PlayerId Label.Label

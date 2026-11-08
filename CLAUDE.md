@@ -180,7 +180,9 @@ to agents as written. What it doesn't say:
   script/ingest/candidates.jq` over MTGJSON's `AtomicCards.json`, then `parun
   ingest` on the result. That run also stamps every pool card's faces'
   `oracleText` and names on stderr each card disagreeing with MTGJSON; re-run
-  it after adding cards by hand.
+  it after adding cards by hand. `script/ingest/printings.jq` over
+  `AllPrintings.json` likewise regenerates `data/printings.json`, which a deck
+  list's `(SET) NUMBER` suffix reads; its header has the command.
 
 - A card the DSL already expresses is translated before it is hand-written:
   `parun translate _scratch/mtgish/data/mtgish.lines.json CANDIDATES (NAME |

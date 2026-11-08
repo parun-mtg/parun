@@ -22,6 +22,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Tally as Tally
@@ -91,4 +92,4 @@ renumbered matchup result = case result of
 
 -- The scenario a match game saves as, read back.
 saved :: NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-saved matchup timeline = Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec (Command.saved Text.empty Map.empty matchup timeline)))
+saved matchup timeline = Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec (Command.saved PrintingTable.empty Text.empty Map.empty matchup timeline)))

@@ -7,6 +7,7 @@ module Parun.DeckListSpec where
 import qualified Control.Monad as Monad
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.DeckList as DeckList
@@ -17,19 +18,44 @@ import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingEntry as PrintingEntry
+import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.SideDeck as SideDeck
 
 -- A registry over Goblin Piker and Wax // Wane, which between them are a name
--- with no halves and CR 709.4a's name with two, and two preparation cards
--- sharing the prepare spell Seed Suture, whose name is therefore no card's.
+-- with no halves and CR 709.4a's name with two, two preparation cards
+-- sharing the prepare spell Seed Suture, whose name is therefore no card's,
+-- and Bumper Cars, whose printings light different numbers (CR 718.1), with
+-- `printings` for its printing table.
 withPool :: String -> (Registry.Registry IO -> IO a) -> IO a
 withPool label action = do
   piker <- S.pikerJson
   waxWane <- S.waxWaneJson
   angel <- S.committedJson angelFile
   phytomedic <- S.committedJson "emergency-phytomedic-seed-suture.json"
-  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic)] (Registry.fileRegistry Monad.>=> action)
+  cars <- S.committedJson "bumper-cars.json"
+  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars)] (Registry.fileRegistry Monad.>=> action . withPrintings)
   where
     angelFile = "blossom-blessed-angel-seed-suture.json"
+    withPrintings registry = registry {Registry.printings = printings}
+
+-- Two Bumper Cars printings and a Goblin Piker, as data/printings.json holds
+-- them.
+printings :: PrintingTable.PrintingTable
+printings =
+  PrintingTable.MkPrintingTable
+    (Text.pack "2026-11-07")
+    ( Map.fromList
+        [ (Text.pack "M10", Map.singleton (Text.pack "146") (entry "Goblin Piker" [])),
+          (Text.pack "UNF", Map.fromList [(Text.pack "202a", entry "Bumper Cars" [2, 3, 6]), (Text.pack "202f", entry "Bumper Cars" [4, 5, 6])])
+        ]
+    )
+  where
+    entry name lights = PrintingEntry.MkPrintingEntry (Text.pack name) (Set.fromList lights)
+
+-- The lights of each printing in a deck's Attraction deck, by count.
+attractionLights :: Deck.Deck -> [(Set.Set Natural.Natural, Natural.Natural)]
+attractionLights deck = [(Printing.lights printing, count) | (printing, count) <- Map.toList (Map.findWithDefault Map.empty SideDeck.Attraction (Deck.sideDecks deck))]
 
 -- A section's contents as sorted (name, count) pairs. Named through
 -- Parun.Engine.Card.combined rather than Parun.DeckList.written, so what an
@@ -159,7 +185,7 @@ spec s = Spec.describe s "Parun.DeckList" $ do
     . withPool "round-trip"
     $ \registry -> do
       deck <- deckOf s "round-trip" registry "4 Goblin Piker\n1 Blossom-Blessed Angel\n\nSideboard\n2 Wax // Wane\n"
-      let text = DeckList.render Nothing deck
+      let text = DeckList.render (Registry.printings registry) Nothing deck
       Spec.assertBool s (Text.isInfixOf (Text.pack "2 Wax // Wane") text) ("the printed spelling: " <> show text)
       again <- deckOf s "round-trip-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
@@ -180,7 +206,7 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       listed <- listedOf s registry "Format: Limited\n4 Goblin Piker\n"
       Spec.assertEqWith s "lowercased, as a format file is named" (DeckList.format listed) (Just (1, Text.pack "limited"))
       Spec.assertEqWith s "and no card is read from it" (DeckList.problems listed) []
-      again <- listedOf s registry (Text.unpack (DeckList.render (Just (Text.pack "limited")) (DeckList.deck listed)))
+      again <- listedOf s registry (Text.unpack (DeckList.render (Registry.printings registry) (Just (Text.pack "limited")) (DeckList.deck listed)))
       Spec.assertEqWith s "the same format" (fmap snd (DeckList.format again)) (Just (Text.pack "limited"))
       Spec.assertEqWith s "and the same deck" (DeckList.deck again) (DeckList.deck listed)
 
@@ -202,3 +228,78 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       Spec.assertEqWith s "the header's own" (DeckList.formatFor Nothing listed) (Just modern, [])
       Spec.assertEqWith s "the same one asked for" (DeckList.formatFor (Just modern) listed) (Just modern, [])
       Spec.assertEqWith s "another asked for" (DeckList.formatFor (Just limited) listed) (Just limited, [DeckList.FormatDisagrees 1 modern limited])
+
+  Spec.it s "every section's heading reads back as that section" $
+    Spec.assertEqWith s "each its own" (fmap (DeckList.sectionNamed . DeckList.heading) DeckList.sections) (fmap Just DeckList.sections)
+
+  -- Each of Parun.Types.Deck's fields beside the deck is a section, and a
+  -- rendered list writes each back. Distinct counts and cards per section, so
+  -- one section read into another's field cannot pass.
+  Spec.it s "each section fills its field, and a rendered list writes it back"
+    . withPool "sections"
+    $ \registry -> do
+      deck <-
+        deckOf s "sections" registry . unlines $
+          [ "Deck",
+            "4 Goblin Piker",
+            "Sideboard",
+            "2 Goblin Piker",
+            "Companion",
+            "1 Wax // Wane",
+            "Commander",
+            "1 Blossom-Blessed Angel",
+            "Planar Deck",
+            "3 Wane",
+            "Scheme Deck",
+            "5 Goblin Piker",
+            "Conspiracies",
+            "6 Goblin Piker",
+            "Dungeons",
+            "1 Goblin Piker",
+            "Vanguard",
+            "1 Wax"
+          ]
+      let named = S.nameOf . Printing.card
+      Spec.assertEqWith s "the deck" (entriesOf (Deck.cards deck)) [(Text.pack "Goblin Piker", 4)]
+      Spec.assertEqWith s "CR 702.139a: the companion in the sideboard" (entriesOf (Deck.sideboard deck)) [(Text.pack "Goblin Piker", 2), (Text.pack "Wax//Wane", 1)]
+      Spec.assertEqWith s "the commander" (fmap named (Set.toList (Deck.commander deck))) [CardName.MkCardName (Text.pack "Blossom-Blessed Angel")]
+      Spec.assertEqWith s "the side decks" (Map.map entriesOf (Deck.sideDecks deck)) (Map.fromList [(SideDeck.Planar, [(Text.pack "Wax//Wane", 3)]), (SideDeck.Scheme, [(Text.pack "Goblin Piker", 5)])])
+      Spec.assertEqWith s "the conspiracies" (entriesOf (Deck.conspiracies deck)) [(Text.pack "Goblin Piker", 6)]
+      Spec.assertEqWith s "the dungeons" (fmap named (Set.toList (Deck.dungeons deck))) [CardName.MkCardName (Text.pack "Goblin Piker")]
+      Spec.assertEqWith s "the vanguard" (fmap named (Deck.vanguard deck)) (Just (CardName.MkCardName (Text.pack "Wax//Wane")))
+      again <- deckOf s "sections-again" registry (Text.unpack (DeckList.render (Registry.printings registry) Nothing deck))
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- CR 902.1: one vanguard card.
+  Spec.it s "CR 902.1 a second vanguard is a problem"
+    . withPool "vanguard"
+    $ \registry -> do
+      problems <- problemsOf s "vanguard" registry "Vanguard\n1 Wax\n1 Goblin Piker\n2 Wax\n"
+      Spec.assertEqWith s "the second line and the third" problems [DeckList.VanguardRepeated 3 (CardName.MkCardName (Text.pack "Goblin Piker")), DeckList.VanguardRepeated 4 (CardName.MkCardName (Text.pack "Wax"))]
+
+  -- CR 718.1: two printings of one Attraction light different numbers, so a
+  -- line names which by set code and collector number, as Arena exports it.
+  Spec.it s "CR 718.1 a printing suffix brings that printing's lights, and a rendered list writes it back"
+    . withPool "printing"
+    $ \registry -> do
+      deck <- deckOf s "printing" registry "Attraction Deck\n2 Bumper Cars (UNF) 202a\n1 Bumper Cars (unf) 202f\n4 Goblin Piker (M10) 146\n"
+      Spec.assertEqWith s "two printings, each lit as printed" (attractionLights deck) [(Set.fromList [2, 3, 6], 2), (Set.fromList [4, 5, 6], 1), (Set.empty, 4)]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "1 Bumper Cars (UNF) 202f\n") text) ("the suffix: " <> show text)
+      Spec.assertBool s (Text.isInfixOf (Text.pack "4 Goblin Piker\n") text) ("no suffix where nothing is lit: " <> show text)
+      again <- deckOf s "printing-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- The owner's reading on #4118: a bare name is some printing of the card,
+  -- here the table's first by set code and collector number.
+  Spec.it s "CR 718.1 a bare name is the card's first printing"
+    . withPool "bare-printing"
+    $ \registry -> do
+      deck <- deckOf s "bare-printing" registry "Attraction Deck\n1 Bumper Cars\n"
+      Spec.assertEqWith s "202a's lights" (attractionLights deck) [(Set.fromList [2, 3, 6], 1)]
+
+  Spec.it s "a suffix the table lacks, or printing another card, is a problem"
+    . withPool "bad-printing"
+    $ \registry -> do
+      problems <- problemsOf s "bad-printing" registry "1 Bumper Cars (UNF) 999\n1 Goblin Piker (UNF) 202a\n"
+      Spec.assertEqWith s "each line" problems [DeckList.NoSuchPrinting 1 (Text.pack "UNF") (Text.pack "999"), DeckList.PrintingDisagrees 2 (CardName.MkCardName (Text.pack "Goblin Piker")) (Text.pack "UNF") (Text.pack "202a")]

@@ -43,7 +43,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
   (updates, [one, two], []) -> case foldr (=<<) (Right MatchOptions.none) updates of
     Left problem -> usage [problem]
     Right options -> do
-      registry <- Registry.defaultRoot >>= Registry.fileRegistry
+      registry <- Registry.defaultRegistry
       lists <- (,) <$> Command.load registry one <*> Command.load registry two
       Command.refuse Nothing [(one, fst lists), (two, snd lists)]
       match options registry (Bifunctor.bimap DeckList.deck DeckList.deck lists)
@@ -77,7 +77,7 @@ match options registry decks = do
           let (outcome, timeline) = Identity.runIdentity (game registry seed index decks)
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) Map.empty (Command.seated (firstAt index) decks) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) Map.empty (Command.seated (firstAt index) decks) timeline)
           pure (tallied outcome tally)
       )
       Tally.empty
