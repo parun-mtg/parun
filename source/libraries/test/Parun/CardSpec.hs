@@ -492,6 +492,7 @@ vanillaFace name typeLine =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.circlesTwo = False,
       Face.deckLimit = Nothing,
       Face.commanderDeckRules = Set.empty,
       Face.keywords = Map.empty,
@@ -7344,6 +7345,19 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 flagged = any Face.anteOnly faces
              in if prints == flagged then Nothing else Just (path <> ": prints the ante reminder " <> show prints <> " but anteOnly is " <> show flagged)
     Spec.assertEqWith s "every ante card is flagged, and only those" (Maybe.mapMaybe offends corpus) []
+  -- CR 207.5: a card circles two colours exactly when it prints the
+  -- instruction; Parun.Legality reads the flag and never the text.
+  Spec.it s "CR 207.5 a card circles two colours exactly when it prints the instruction" $ do
+    Spec.assertBool s (not (null corpus)) "the corpus is not empty"
+    let line = Text.pack "circle two of the colors"
+        offends (path, result) = case result of
+          Left reason -> Just (path <> ": " <> Text.unpack reason)
+          Right card ->
+            let faces = Foldable.toList (Card.Type.faces card)
+                prints = any (maybe False (Text.isInfixOf line) . Face.oracleText) faces
+                flagged = any Face.circlesTwo faces
+             in if prints == flagged then Nothing else Just (path <> ": prints the instruction " <> show prints <> " but circlesTwo is " <> show flagged)
+    Spec.assertEqWith s "every card printing the instruction is flagged, and only those" (Maybe.mapMaybe offends corpus) []
   -- CR 100.2a: a card carries a deck limit exactly when it prints "A deck can
   -- have"; Parun.Legality reads the field and never the text.
   Spec.it s "CR 100.2a a card carries a deck limit exactly when it prints one" $ do

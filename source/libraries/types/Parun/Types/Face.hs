@@ -148,6 +148,10 @@ data Face card = MkFace
     -- claimsStartingPlayer's reason: its reader (Parun.Engine.Ante.barred) runs
     -- on a card outside the game, where no object exists.
     anteOnly :: Bool,
+    -- | CR 207.5: whether this card instructs a player to circle two of its
+    -- colours as they create their deck. A printed flag for anteOnly's reason:
+    -- its reader (Parun.Legality) checks a deck before any game.
+    circlesTwo :: Bool,
     -- | CR 100.2a: how many cards of this name a deck may hold, where the card
     -- prints "A deck can have ...", or Nothing. A printed field for anteOnly's
     -- reason: its reader (Parun.Legality) checks a deck before any game.

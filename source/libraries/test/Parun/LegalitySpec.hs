@@ -21,10 +21,12 @@ import qualified Parun.Spec as Spec
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.LegalityTable as LegalityTable
+import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.Violation as Violation
@@ -277,6 +279,25 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 315.1: Power Play in a limited sideboard is not" $ do
     found <- violations s registry RuleFamily.Limited [("Mountain", 40)] [("Power Play", 1)]
     Spec.assertEqWith s "violations" found []
+
+  Spec.it s "CR 207.5: a Cryptic Spires circling blue and black is legal, one circling none or three is not" $ do
+    let constructed = Format.MkFormat RuleFamily.Constructed Nothing
+        circling colors = do
+          spires <- S.printingOf s registry "Cryptic Spires"
+          deck <- deckOf s registry [("Mountain", 59)] []
+          pure (Legality.check noTable GameSettings.plain constructed deck {Deck.cards = Map.insert spires {Printing.circled = Set.fromList colors} 1 (Deck.cards deck)})
+    two <- circling [Color.Blue, Color.Black]
+    Spec.assertEqWith s "two circled" two []
+    none <- circling []
+    Spec.assertEqWith s "none circled" none [Violation.MiscircledCard (nameOf "Cryptic Spires") 0 2]
+    three <- circling [Color.White, Color.Blue, Color.Black]
+    Spec.assertEqWith s "three circled" three [Violation.MiscircledCard (nameOf "Cryptic Spires") 3 2]
+
+  Spec.it s "CR 207.5: a sideboard Mountain circling two colours is refused" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    deck <- deckOf s registry [("Mountain", 60)] []
+    let found = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Limited Nothing) deck {Deck.sideboard = Map.singleton mountain {Printing.circled = Set.fromList [Color.Red, Color.Green]} 1}
+    Spec.assertEqWith s "violations" found [Violation.MiscircledCard (nameOf "Mountain") 2 0]
 
   Spec.it s "CR 903.5: Krenko leading Lightning Bolt and 98 Mountains is a legal Commander deck" $ do
     found <- ledViolationsNamed s registry "commander" ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 98)] []
