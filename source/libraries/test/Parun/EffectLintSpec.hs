@@ -577,6 +577,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.SubgamesThisMatch -> False
   Quantity.Type.DungeonsCompleted {} -> False
   Quantity.Type.CommanderCasts {} -> False
+  Quantity.Type.CommanderColors {} -> False
   Quantity.Type.CompletedDungeon {} -> False
   Quantity.Type.EnteredThisTurn -> False
   Quantity.Type.EnteredFrom {} -> False

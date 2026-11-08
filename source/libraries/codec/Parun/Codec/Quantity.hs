@@ -8,6 +8,7 @@ import qualified Parun.Codec.AgainstLastCardExiledWith as AgainstLastCardExiledW
 import qualified Parun.Codec.AgainstSlot as AgainstSlot
 import qualified Parun.Codec.AtMost as AtMost
 import qualified Parun.Codec.CastFrom as CastFrom
+import qualified Parun.Codec.CommanderColors as CommanderColors
 import qualified Parun.Codec.CompletedDungeon as CompletedDungeon
 import qualified Parun.Codec.Count as Count
 import qualified Parun.Codec.CounterKind as CounterKind
@@ -222,6 +223,7 @@ codec =
       -- Comparison's, not this arm's.
       Arm.payload "DungeonsCompleted" PlayerRef.codec Quantity.DungeonsCompleted (\x -> case x of Quantity.DungeonsCompleted y -> Just y; _ -> Nothing),
       Arm.payload "CommanderCasts" PlayerRef.codec Quantity.CommanderCasts (\x -> case x of Quantity.CommanderCasts y -> Just y; _ -> Nothing),
+      Arm.payload "CommanderColors" CommanderColors.codec Quantity.CommanderColors (\x -> case x of Quantity.CommanderColors y -> Just y; _ -> Nothing),
       -- CR 309.7 asked of ONE dungeon, so a player and a printed name go on the
       -- wire together -- PlayerCounters' payload shape. The threshold that turns
       -- the 0\/1 into "you haven't completed it" is the Comparison's.
@@ -342,6 +344,7 @@ tagOf x = case x of
   Quantity.SubgamesThisMatch {} -> "SubgamesThisMatch"
   Quantity.DungeonsCompleted {} -> "DungeonsCompleted"
   Quantity.CommanderCasts {} -> "CommanderCasts"
+  Quantity.CommanderColors {} -> "CommanderColors"
   Quantity.CompletedDungeon {} -> "CompletedDungeon"
   Quantity.EnteredThisTurn {} -> "EnteredThisTurn"
   Quantity.EnteredFrom {} -> "EnteredFrom"

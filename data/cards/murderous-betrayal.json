@@ -6,8 +6,11 @@
           "cost": {
             "components": [
               {
-                "type": "PayHalfLife",
-                "value": "Up"
+                "type": "PayComputedLife",
+                "value": {
+                  "type": "HalfLife",
+                  "value": "Up"
+                }
               }
             ],
             "mana": [

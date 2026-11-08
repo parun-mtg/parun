@@ -56,6 +56,7 @@ import qualified Parun.Engine.Loyalty as Loyalty
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaRider as ManaRider
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
@@ -93,6 +94,7 @@ import qualified Parun.Types.Claim as Claim.Type
 import qualified Parun.Types.ClaimAxis as ClaimAxis
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
+import qualified Parun.Types.ComputedLife as ComputedLife
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAdjustments as CostAdjustments
@@ -173,7 +175,6 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealWindow as RevealWindow
-import qualified Parun.Types.Rounding as Rounding
 import Parun.Types.RowSource (RowSource)
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotName as SlotName
@@ -1394,7 +1395,7 @@ totalWith adjustments cost = cost {Cost.mana = fmap (applyAdjustments adjustment
 --
 -- The SCALE is cashed here, the only place CR 601.2f's addition meets the cost
 -- it is added to. Drought counts CR 107.4a's coloured mana symbol through
--- Quantity.symbolColors, so CR 107.4e's and CR 107.4f's count too, on THIS
+-- ManaSymbolText.symbolColors, so CR 107.4e's and CR 107.4f's count too, on THIS
 -- cost before any reduction -- CR 601.2f's order, argued rather than tested.
 --
 -- Applied AFTER `substituteX`, so an ADDED component may not carry CR 601.2b's
@@ -1406,7 +1407,7 @@ plusComponents adjustments cost =
   let symbols = foldMap ManaCost.unwrap (Cost.mana cost)
       repeats scale = case scale of
         CostScale.Once -> 1
-        CostScale.PerColoredSymbol color -> length (filter (elem color . Quantity.symbolColors) symbols)
+        CostScale.PerColoredSymbol color -> length (filter (elem color . ManaSymbolText.symbolColors) symbols)
       expand (scale, component) = replicate (repeats scale) component
       added = concatMap expand (CostAdjustments.components adjustments)
    in cost {Cost.components = combineLoyalty (Cost.components cost <> added)}
@@ -1803,7 +1804,7 @@ traverseAmount f component = case component of
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> f amount
   CostComponent.Sacrifice sacrifice -> (\count -> CostComponent.Sacrifice sacrifice {Sacrifice.count = count}) <$> traverseCount f (Sacrifice.count sacrifice)
   CostComponent.RemoveCounters remove -> (\amount -> CostComponent.RemoveCounters remove {CountersFromPermanents.count = amount}) <$> f (CountersFromPermanents.count remove)
-  CostComponent.PayHalfLife _ -> pure component
+  CostComponent.PayComputedLife _ -> pure component
   CostComponent.TapThis -> pure component
   CostComponent.UntapThis -> pure component
   CostComponent.SacrificeThis -> pure component
@@ -1942,7 +1943,7 @@ componentDemandGrowsWith slot component = case component of
   -- and names no number of counters that is too many. So a Soul Immolation
   -- announcement is refused by CR 101.1's sentence alone.
   CostComponent.Blight _ -> False
-  CostComponent.PayHalfLife _ -> False
+  CostComponent.PayComputedLife _ -> False
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
   CostComponent.SacrificeThis -> False
@@ -2061,7 +2062,7 @@ xValue reader pid oid gs quantity =
 -- so an activation's and a resolution-time payment's answers are discarded by
 -- their callers. `lifeOwedBy`'s sum also goes IN, as the life this cost owes OUTSIDE
 -- its mana part -- without it a route the player cannot afford gets offered. A
--- PayHalfLife is fixed to its number first (`fixHalfLife`).
+-- PayComputedLife is fixed to its number first (`fixComputedLife`).
 --
 -- `total` is CR 601.2f's totalling, the CALLER's to supply, and it must be the
 -- SAME cost the caller's own gate measured: against the printed cost a reduction
@@ -2071,7 +2072,7 @@ xValue reader pid oid gs quantity =
 announce :: PaymentSubject.PaymentSubject -> ManaSpending.ManaSpending -> PlayerId -> ObjectId -> (ManaCost.ManaCost -> [ManaCost.ManaCost]) -> Cost Keyword.Type.Keyword -> Game (Cost Keyword.Type.Keyword, Natural)
 announce subject spending pid oid total_ printed = do
   gs <- State.get
-  let cost = fixHalfLife pid gs printed
+  let cost = fixComputedLife pid gs printed
   case Cost.mana cost of
     -- CR 118.6: an object with no mana cost has no mana symbols to announce.
     Nothing -> pure (cost, 0)
@@ -2313,7 +2314,7 @@ componentStatesHiddenQuality component = case component of
   -- to find -- DiscardThis' answer above and for its reason.
   CostComponent.ReturnThis -> False
   CostComponent.PayLife _ -> False
-  CostComponent.PayHalfLife _ -> False
+  CostComponent.PayComputedLife _ -> False
   CostComponent.PayEnergy _ -> False
   CostComponent.AddLoyaltyToThis _ -> False
   CostComponent.RemoveLoyaltyFromThis _ -> False
@@ -2978,7 +2979,7 @@ claimOfGiven board slots pid oid component gs =
         CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) ->
           claim (ClaimAxis.Removal Zone.Battlefield) (Set.fromList (returnCandidatesGiven board slots pid oid criterion gs)) n
         CostComponent.PayLife _ -> Nothing
-        CostComponent.PayHalfLife _ -> Nothing
+        CostComponent.PayComputedLife _ -> Nothing
         CostComponent.PayEnergy _ -> Nothing
         CostComponent.AddLoyaltyToThis _ -> Nothing
         CostComponent.RemoveLoyaltyFromThis _ -> Nothing
@@ -3409,7 +3410,7 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.RevealTopOfLibrary _ -> Nothing
   -- Counted by `lifeCeiling`, CR 119.4.
   CostComponent.PayLife _ -> Nothing
-  CostComponent.PayHalfLife _ -> Nothing
+  CostComponent.PayComputedLife _ -> Nothing
   CostComponent.TapThis -> Just 1
   CostComponent.UntapThis -> Just 1
   -- A THRESHOLD on an aggregate, so NOT `objectCeiling`'s division: four 1/1s
@@ -3732,22 +3733,33 @@ canPaySomeCompletionGiven slots subject spending sources board pid oid total_ su
             (total_ (ManaCost.MkManaCost completed))
      in any payable (Mana.completions symbols)
 
+-- The life a PayComputedLife asks of this payer, or Nothing where it is
+-- undefined.
+--
 -- CR 107.1a / 107.1b: half the payer's life total, rounded as printed, and 0
 -- from a total at or below 0 -- Lurking Evil's ruling, "if you have zero or
 -- negative life, half your life is zero".
-halfLifeOf :: Rounding.Rounding -> PlayerId -> GameState -> Natural
-halfLifeOf rounding pid gs =
-  maybe 0 (Integer.toNaturalSaturating . (\life -> Quantity.divide rounding life 2) . Player.life) (Map.lookup pid (GameState.players gs))
+--
+-- CR 903.4 / 702.124c: the colours in the payer's commanders' combined colour
+-- identity, undefined without a commander (CR 903.4f). An empty identity is 0
+-- (War Room's ruling, 2020-11-10).
+computedLifeOf :: ComputedLife.ComputedLife -> PlayerId -> GameState -> Maybe Natural
+computedLifeOf computed pid gs = case computed of
+  ComputedLife.HalfLife rounding ->
+    Just (maybe 0 (Integer.toNaturalSaturating . (\life -> Quantity.divide rounding life 2) . Player.life) (Map.lookup pid (GameState.players gs)))
+  ComputedLife.CommanderColorCount ->
+    fmap Natural.length (Commander.commanderColorIdentity pid gs)
 
--- CR 601.2f: a half-life cost is fixed to a number once, against the life total
--- the payer has as the total cost is determined, so a CR 601.2g mana ability
--- that pays life cannot move it. Applied by `announce`, the seam a cast, an
--- activation and a CR 118.12 payment each pass before paying; Parun.CostSpec's
--- Murderous Betrayal case is the proof.
-fixHalfLife :: PlayerId -> GameState -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
-fixHalfLife pid gs cost =
+-- CR 601.2f: a computed life cost is fixed to a number once, against the board
+-- as the total cost is determined, so a CR 601.2g mana ability that pays life
+-- cannot move it. Applied by `announce`, the seam a cast, an activation and a
+-- CR 118.12 payment each pass before paying; Parun.CostSpec's Murderous
+-- Betrayal case is the proof. An undefined amount stays unfixed, which
+-- `canPayComponent` refuses (CR 903.4f).
+fixComputedLife :: PlayerId -> GameState -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
+fixComputedLife pid gs cost =
   let fixed component = case component of
-        CostComponent.PayHalfLife rounding -> CostComponent.PayLife (CostAmount.Fixed (halfLifeOf rounding pid gs))
+        CostComponent.PayComputedLife computed | Just n <- computedLifeOf computed pid gs -> CostComponent.PayLife (CostAmount.Fixed n)
         _ -> component
    in cost {Cost.components = fmap fixed (Cost.components cost)}
 
@@ -3783,7 +3795,7 @@ targetComputed component = case component of
   CostComponent.SacrificeThis -> False
   CostComponent.ReturnThis -> False
   CostComponent.PayLife _ -> False
-  CostComponent.PayHalfLife _ -> False
+  CostComponent.PayComputedLife _ -> False
   CostComponent.Sacrifice _ -> False
   CostComponent.TapForTotalPower _ -> False
   CostComponent.TapPermanents _ -> False
@@ -3819,7 +3831,7 @@ targetComputed component = case component of
 -- CR 119.4's payments a cost owes OUTSIDE its mana part, added up -- what CR
 -- 118.3 makes the mana part's own life share a total with. Total, so a new
 -- life-spending component cannot be added without answering here. The payer and
--- the board are PayHalfLife's, whose amount is measured against them.
+-- the board are PayComputedLife's, whose amount is measured against them.
 lifeOwedBy :: PlayerId -> GameState -> [CostComponent.CostComponent Keyword.Type.Keyword] -> Natural
 lifeOwedBy pid gs = sum . fmap (lifeOwedByComponent pid gs)
 
@@ -3832,7 +3844,8 @@ lifeOwedByComponent pid gs component = case component of
   -- CR 118.3: shares a total with the life a mana ability spends. Parun.CostSpec's
   -- "CR 118.3 Murderous Betrayal's half and Mana Confluence's life are weighed
   -- together" is the proof.
-  CostComponent.PayHalfLife rounding -> halfLifeOf rounding pid gs
+  -- 0 where undefined, which `canPayComponent` refuses outright.
+  CostComponent.PayComputedLife computed -> Maybe.fromMaybe 0 (computedLifeOf computed pid gs)
   CostComponent.TapThis -> 0
   CostComponent.UntapThis -> 0
   CostComponent.SacrificeThis -> 0
@@ -3884,7 +3897,7 @@ energyOwedByComponent component = case component of
   -- reason.
   CostComponent.PayEnergy (CostAmount.Announced _) -> 0
   CostComponent.PayLife _ -> 0
-  CostComponent.PayHalfLife _ -> 0
+  CostComponent.PayComputedLife _ -> 0
   CostComponent.TapThis -> 0
   CostComponent.UntapThis -> 0
   CostComponent.SacrificeThis -> 0
@@ -3943,7 +3956,7 @@ countersOwedByComponent component = case component of
   CostComponent.RemoveCounters {} -> []
   CostComponent.PutCountersOnThis _ -> []
   CostComponent.PayLife _ -> []
-  CostComponent.PayHalfLife _ -> []
+  CostComponent.PayComputedLife _ -> []
   CostComponent.TapThis -> []
   CostComponent.UntapThis -> []
   CostComponent.SacrificeThis -> []
@@ -4035,9 +4048,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- component ALONE, which is not CR 118.3's question -- canPay hands
   -- `lifeOwedBy`'s sum to the mana side, and this can only be the weaker check.
   CostComponent.PayLife amount -> payableAnnounced amount (\n -> Event.canPayLife pid n gs)
-  -- CR 119.4 over the amount `halfLifeOf` measures, which never exceeds the
-  -- total it halves -- so only CR 119.8's prohibition refuses it.
-  CostComponent.PayHalfLife rounding -> Event.canPayLife pid (halfLifeOf rounding pid gs) gs
+  -- CR 119.4 over the amount `computedLifeOf` measures; CR 903.4f makes an
+  -- undefined one unpayable.
+  CostComponent.PayComputedLife computed -> maybe False (\n -> Event.canPayLife pid n gs) (computedLifeOf computed pid gs)
   -- CR 701.21a: this player must control at least `n` matching permanents. This
   -- component ALONE, PayLife's caveat -- two Sacrifice components of one cost can
   -- each find the same permanent here, and `jointlyPayable` asks them together.
@@ -4482,7 +4495,7 @@ criteriaOf component = case component of
   CostComponent.SacrificeThis -> []
   CostComponent.ReturnThis -> []
   CostComponent.PayLife _ -> []
-  CostComponent.PayHalfLife _ -> []
+  CostComponent.PayComputedLife _ -> []
   CostComponent.DiscardThis _ -> []
   CostComponent.PayEnergy _ -> []
   CostComponent.AddLoyaltyToThis _ -> []
@@ -5545,7 +5558,7 @@ paidInSecondPass component = case component of
   CostComponent.TapForTotalPower {} -> False
   CostComponent.TapPermanents {} -> False
   CostComponent.PayLife _ -> False
-  CostComponent.PayHalfLife _ -> False
+  CostComponent.PayComputedLife _ -> False
   CostComponent.PayEnergy _ -> False
   CostComponent.AddLoyaltyToThis _ -> False
   CostComponent.RemoveLoyaltyFromThis _ -> False
@@ -5717,7 +5730,7 @@ orderSensitive component = case component of
   -- CR 701.20b leaves the cards where they were, so no other part's pool changes.
   CostComponent.RevealTopOfLibrary _ -> False
   CostComponent.PayLife _ -> False
-  CostComponent.PayHalfLife _ -> False
+  CostComponent.PayComputedLife _ -> False
   CostComponent.PayEnergy _ -> False
 
 -- CR 601.2g: if the total cost includes a mana payment, the player then has a
@@ -6718,10 +6731,11 @@ payPayable perform paidFor slots pid oid component = case component of
     pure bindsNothing
   -- PayLife's arm over the live half: `announce` fixes the component first, so
   -- only one joining after it (PayLife's caveat above) is measured here. A FENCE:
-  -- no card in `data/cards/` adds a half-life cost that way.
-  CostComponent.PayHalfLife rounding -> do
+  -- no card in `data/cards/` adds a computed life cost that way. Undefined is
+  -- Unpaid, `paidAnnounced`'s reading (CR 903.4f).
+  CostComponent.PayComputedLife computed -> do
     gs <- State.get
-    payPayable perform paidFor slots pid oid (CostComponent.PayLife (CostAmount.Fixed (halfLifeOf rounding pid gs)))
+    maybe (pure Payment.Unpaid) (payPayable perform paidFor slots pid oid . CostComponent.PayLife . CostAmount.Fixed) (computedLifeOf computed pid gs)
   -- CR 701.17a: the top `n` cards of the PAYING player's own library (CR 400.3),
   -- moved to their graveyard. `canPayComponent` above has already refused a cost
   -- milling more than the library holds (CR 701.17b); an InstructionR row resizing

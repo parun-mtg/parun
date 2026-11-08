@@ -91,6 +91,7 @@ substituteStar star quantity = case quantity of
   Quantity.SubgamesThisMatch -> quantity
   Quantity.DungeonsCompleted _ -> quantity
   Quantity.CommanderCasts _ -> quantity
+  Quantity.CommanderColors _ -> quantity
   Quantity.CompletedDungeon {} -> quantity
   Quantity.EnteredThisTurn -> quantity
   Quantity.EnteredFrom _ -> quantity

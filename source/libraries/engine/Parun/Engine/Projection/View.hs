@@ -29,6 +29,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaAbility as ManaAbility
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Quantity as Quantity
@@ -850,7 +851,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.manaSpentTagColors =
         Map.unionsWith
           Set.union
-          [ Map.fromSet (const (foldMap Set.singleton (Quantity.colorOfManaType (ManaUnit.manaType unit)))) (ManaUnit.tags unit)
+          [ Map.fromSet (const (foldMap Set.singleton (ManaSymbolText.colorOfManaType (ManaUnit.manaType unit)))) (ManaUnit.tags unit)
           | object <- Maybe.maybeToList (Game.lookupObject oid gs),
             unit <- Mana.unwrap (Object.manaSpent object)
           ],
@@ -2205,7 +2206,7 @@ definesEveryCreatureType = Set.member Keyword.Type.Changeling
 manaCostColors :: Maybe ManaCost.ManaCost -> Set Color.Color
 manaCostColors mc = case mc of
   Nothing -> Set.empty
-  Just (ManaCost.MkManaCost symbols) -> Set.fromList (concatMap Quantity.symbolColors symbols)
+  Just (ManaCost.MkManaCost symbols) -> Set.fromList (concatMap ManaSymbolText.symbolColors symbols)
 
 -- CR 113.6 / 614.12: the battlefield permanents whose static abilities FUNCTION
 -- right now. Everything on the battlefield, minus the permanents entering beside

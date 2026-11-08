@@ -38,7 +38,6 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
-import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
@@ -455,7 +454,7 @@ colorIdentity printing = Printing.circled printing <> foldMap ofFace (Card.Type.
         <> symbolColors (foldMap ManaCost.unwrap (Face.manaCost face))
         <> symbolColors (foldMap ManaSymbolText.rulesTextSymbols (Face.oracleText face))
     symbolColors :: [ManaSymbol.ManaSymbol] -> Set.Set Color.Color
-    symbolColors = Set.fromList . concatMap Quantity.symbolColors
+    symbolColors = Set.fromList . concatMap ManaSymbolText.symbolColors
 
 -- | CR 903.10a / CR 704.6c: "a player who's been dealt 21 or more combat damage
 -- by the same commander over the course of the game loses the game". The

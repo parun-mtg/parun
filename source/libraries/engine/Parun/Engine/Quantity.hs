@@ -10,11 +10,13 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaCount as ManaCount
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Subtype as Subtype.Engine
@@ -35,6 +37,7 @@ import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlClock as ControlClock
@@ -50,8 +53,6 @@ import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hop as Hop
-import qualified Parun.Types.Hybrid as Hybrid
-import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
@@ -61,7 +62,6 @@ import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
@@ -1046,6 +1046,12 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.CommanderCasts ref -> case playersOf ref of
           Just [pid] -> Just (toInteger (maybe 0 (sum . Player.commanderCasts) (Map.lookup pid (GameState.players gs))))
           _ -> Nothing
+        -- CR 903.4 / 702.124c off Commander.commanderColorIdentity, which reads
+        -- each commander's printed card (CR 903.4a); Nothing without a commander
+        -- is CR 903.4f's undefined, so a comparison reading it holds nowhere.
+        Quantity.CommanderColors (CommanderColors.MkCommanderColors ref colors) -> case playersOf ref of
+          Just [pid] -> fmap (toInteger . Set.size . Set.intersection colors) (Commander.commanderColorIdentity pid gs)
+          _ -> Nothing
         -- CR 400.7 / 608.2i read as a 0/1: did the object this evaluation is aimed at
         -- enter the battlefield this turn?
         --
@@ -1443,6 +1449,7 @@ objectSlots quantity = case quantity of
   Quantity.SubgamesThisMatch -> Set.empty
   Quantity.DungeonsCompleted _ -> Set.empty
   Quantity.CommanderCasts _ -> Set.empty
+  Quantity.CommanderColors _ -> Set.empty
   Quantity.CompletedDungeon {} -> Set.empty
   Quantity.EnteredThisTurn -> Set.empty
   Quantity.EnteredFrom _ -> Set.empty
@@ -1730,6 +1737,7 @@ hasRead wanted quantity = case quantity of
   Quantity.SubgamesThisMatch -> False
   Quantity.DungeonsCompleted _ -> False
   Quantity.CommanderCasts _ -> False
+  Quantity.CommanderColors _ -> False
   Quantity.CompletedDungeon {} -> False
   Quantity.EnteredThisTurn -> False
   Quantity.EnteredFrom _ -> False
@@ -1827,6 +1835,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.SubgamesThisMatch -> False
   Quantity.DungeonsCompleted _ -> False
   Quantity.CommanderCasts _ -> False
+  Quantity.CommanderColors _ -> False
   Quantity.CompletedDungeon {} -> False
   Quantity.EnteredThisTurn -> False
   Quantity.EnteredFrom _ -> False
@@ -1881,34 +1890,6 @@ symbolValue symbol = case symbol of
 variablesOf :: ManaCost.ManaCost -> Integer
 variablesOf = toInteger . length . filter (== ManaSymbol.Variable) . ManaCost.unwrap
 
--- CR 202.2b: only a coloured mana symbol carries a colour; colourless is not a
--- colour (CR 105.2c). A list, since a hybrid is all of its colours (CR 107.4e).
---
--- symbolValue's sibling, and here beside it rather than in
--- Parun.Engine.Projection.View where it used to sit, because CR 700.5's devotion
--- reads it from this module and the projection imports this one.
-symbolColors :: ManaSymbol.ManaSymbol -> [Color.Color]
-symbolColors symbol = case symbol of
-  ManaSymbol.OfType (ManaType.Colored c) -> [c]
-  ManaSymbol.OfType ManaType.Colorless -> []
-  ManaSymbol.Hybrid (Hybrid.MkHybrid a b) -> Maybe.mapMaybe colorOfManaType [a, b]
-  -- CR 107.4b/107.4e: a monocolored hybrid's other half is generic, so the named
-  -- half is the whole contribution.
-  ManaSymbol.MonocoloredHybrid t -> Maybe.maybeToList (colorOfManaType t)
-  -- CR 107.4f / 202.2d: Phyrexian symbols are coloured mana symbols. Total `[c]`
-  -- since Phyrexian carries a Color -- there is no colourless Phyrexian symbol.
-  ManaSymbol.Phyrexian c -> [c]
-  -- CR 107.4f: "a hybrid Phyrexian mana symbol is BOTH of its component
-  -- colors", which CR 202.2d makes the object. Tamiyo, Compleated Sage is green
-  -- and blue whichever of her {G/U/P}'s three ways paid for her.
-  ManaSymbol.HybridPhyrexian (HybridPhyrexian.MkHybridPhyrexian l r) -> [l, r]
-  -- CR 107.4h: snow is neither a colour nor a type of mana.
-  ManaSymbol.Snow -> []
-  ManaSymbol.Generic _ -> []
-  -- CR 107.3 / 202.2b: {X} is a placeholder, not a coloured mana symbol, so it
-  -- contributes nothing to CR 700.5's devotion whatever was announced for it.
-  ManaSymbol.Variable -> []
-
 -- CR 700.5: one player's devotion to a colour or combination of colours.
 --
 -- ONE QUESTION PER SYMBOL, and that is the whole content of CR 700.5's second
@@ -1927,7 +1908,7 @@ devotionOf viewOf colors pid gs =
           if Filter.controller view == Just pid
             then foldMap ManaCost.unwrap (Filter.manaCost view)
             else []
-      counts symbol = any (`Set.member` colors) (symbolColors symbol)
+      counts symbol = any (`Set.member` colors) (ManaSymbolText.symbolColors symbol)
    in toInteger (length (concatMap (filter counts . symbolsOf) (Set.toList (GameState.battlefield gs))))
 
 -- CR 700.8a / 700.8b: how many creatures that player controls can fill
@@ -1954,12 +1935,6 @@ partySizeOf viewOf pid gs =
           (\subset -> length (filter (not . Set.disjoint subset) members) >= Set.size subset)
           (Set.toList (Set.powerSet types))
    in toInteger (foldr (max . Set.size) 0 (filter fillable (Set.toList (Set.powerSet partyTypes))))
-
--- CR 105.2c: colourless is not a colour, so a colourless hybrid half adds none.
-colorOfManaType :: ManaType.ManaType -> Maybe Color.Color
-colorOfManaType manaType = case manaType of
-  ManaType.Colored c -> Just c
-  ManaType.Colorless -> Nothing
 
 -- CR 702.30a's clock for one object, live or remembered: Object.controlClock
 -- while the permanent is on the battlefield, and CR 608.2h's

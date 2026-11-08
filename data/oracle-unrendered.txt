@@ -593,6 +593,7 @@ comeuppance
 command-of-unsummoning
 command-the-dreadhorde
 command-the-stage
+commanders-plate
 commit-memory
 commune-with-lava
 commune-with-nature
@@ -3410,6 +3411,7 @@ wand-of-denial
 wanderguard-sentry
 wanderwine-prophets
 war-falcon
+war-room
 warbreak-trumpeter
 warden-of-evos-isle
 warden-of-the-beyond
