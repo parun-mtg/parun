@@ -1320,6 +1320,7 @@ commanderDeckRuleNames :: (Monoid r) => Asking r -> CommanderDeckRule.CommanderD
 commanderDeckRuleNames asking x = case x of
   CommanderDeckRule.NoMaximumDeckSize -> mempty
   CommanderDeckRule.AnyColorIdentity matching -> filterNames asking matching
+  CommanderDeckRule.ChosenExtraColor matching -> filterNames asking matching
 
 crewRestrictionNames :: (Monoid r) => Asking r -> CrewRestriction.CrewRestriction -> r
 crewRestrictionNames asking x = case x of

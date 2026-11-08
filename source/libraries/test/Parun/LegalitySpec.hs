@@ -349,6 +349,18 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     brainstorm <- ledViolationsNamed s registry "commander" ["Seluma, Light of Aysen"] [("Brainstorm", 1), ("Plains", 98)] []
     Spec.assertEqWith s "Seluma leading a blue non-Angel" brainstorm [Violation.OutsideColorIdentity (nameOf "Brainstorm")]
 
+  Spec.it s "CR 903.5e: Tolabow, Loch Rascal admits instant and sorcery cards of one chosen colour more" $ do
+    black <- ledViolationsNamed s registry "commander" ["Tolabow, Loch Rascal"] [("Doom Blade", 1), ("Sign in Blood", 1), ("Swamp", 1), ("Island", 96)] []
+    Spec.assertEqWith s "Tolabow leading a black instant, a black sorcery and a Swamp" black []
+    other <- ledViolationsNamed s registry "commander" ["Tolabow, Loch Rascal"] [("Doom Blade", 1), ("Day of Judgment", 1), ("Island", 97)] []
+    Spec.assertEqWith s "Tolabow leading a black instant and a white sorcery" other [Violation.OutsideColorIdentity (nameOf "Doom Blade")]
+    most <- ledViolationsNamed s registry "commander" ["Tolabow, Loch Rascal"] [("Doom Blade", 1), ("Sign in Blood", 1), ("Day of Judgment", 1), ("Island", 96)] []
+    Spec.assertEqWith s "Tolabow leading two black spells and a white one" most [Violation.OutsideColorIdentity (nameOf "Day of Judgment")]
+    beyond <- ledViolationsNamed s registry "commander" ["Tolabow, Loch Rascal"] [("Crackling Doom", 1), ("Phyrexian Arena", 1), ("Island", 97)] []
+    Spec.assertEqWith s "Tolabow leading a three-colour instant and a black enchantment" beyond [Violation.OutsideColorIdentity (nameOf "Crackling Doom"), Violation.OutsideColorIdentity (nameOf "Phyrexian Arena")]
+    control <- ledViolationsNamed s registry "commander" ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Doom Blade", 1), ("Mountain", 97)] []
+    Spec.assertEqWith s "Krenko leading a black instant" control [Violation.OutsideColorIdentity (nameOf "Doom Blade")]
+
   Spec.it s "CR 903.3: a Commander deck with no commander is refused" $ do
     found <- ledViolations s registry RuleFamily.Commander [] [("Mountain", 100)] []
     Spec.assertEqWith s "violations" found [Violation.NoCommander]
