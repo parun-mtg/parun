@@ -1111,6 +1111,7 @@ added production count = case (production, count) of
         let symbols = Text.concat (List.genericReplicate n (Text.pack "{" <> Cost.manaType t <> Text.pack "}"))
          in [(Symbols symbols, symbols)]
   (ManaProduction.AnyColor _, Quantity.Literal 1) -> [(Described, Text.pack "one mana of any color")]
+  (ManaProduction.InCommanderIdentity, Quantity.Literal 1) -> [(Described, Text.pack "one mana of any color in your commander's color identity")]
   (ManaProduction.AnyColor ColorSpread.AnyCombination, Quantity.Literal n)
     | n >= 2 -> [(Described, Prose.cardinal n <> Text.pack " mana in any combination of colors")]
   _ -> []

@@ -16,6 +16,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Claim as Claim
+import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Decide as Decide
@@ -297,6 +298,10 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- board answers for them (Parun.Types.TappedForMana). CR 605.4a applies the
 -- ability right after that tap, so its latest tap is the one. Without the slot
 -- (an activated ability) no type is defined, and CR 106.5 adds none.
+--
+-- Command Tower's colour identity is its controller's commanders' (CR
+-- 702.124c), and with no commander or an empty identity no colour is defined:
+-- CR 903.4f, and CR 106.5 again adds none, not {C}.
 produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> ObjectId -> GameState -> ManaProduction -> Produced
 produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 
@@ -322,6 +327,8 @@ producedVisiting bound visited oid gs poolBoard production = case production of
      in Settles (foldMap (fmap ManaUnit.manaType) (ManaCount.units (Projection.fullView poolBoard) context poolBoard counted))
   ManaProduction.ProducedByTapped ->
     among [manaType | Recipient.ToObject tapped <- foldMap Set.toList (Map.lookup Binding.manaSource bound), manaType <- Set.toList (latestTapProduced tapped gs)]
+  ManaProduction.InCommanderIdentity ->
+    among (foldMap (fmap ManaType.Colored . Set.toList) (Projection.controllerOf oid gs >>= (`Commander.commanderColorIdentity` gs)))
   where
     among types = case types of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
@@ -908,6 +915,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.CouldProduce _ -> False
       ManaProduction.Pooled _ -> True
       ManaProduction.ProducedByTapped -> False
+      ManaProduction.InCommanderIdentity -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as
 -- one mana is produced, its text read off the source's rules text now.

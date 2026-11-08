@@ -1864,6 +1864,7 @@ library engine
     Parun.Engine.ManaCount
     Parun.Engine.ManaFilter
     Parun.Engine.ManaRider
+    Parun.Engine.ManaSymbolText
     Parun.Engine.ManifestDread
     Parun.Engine.Mint
     Parun.Engine.Modal

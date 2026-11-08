@@ -107,6 +107,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
@@ -191,6 +192,24 @@ spec s registry = Spec.describe s "Parun.Engine.Commander" $ do
   restartSpec s registry
   ninjutsuSpec s registry
   departureSpec s registry
+  colorIdentitySpec s registry
+
+-- CR 903.4: a card's colour identity, read off its printing.
+colorIdentitySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+colorIdentitySpec s registry = Spec.describe s "Color identity" $ do
+  Spec.it s "CR 903.4 the colours of the mana symbols in a card's mana cost and rules text" $ do
+    garland <- S.printingOf s registry "Garland, Royal Kidnapper"
+    hama <- S.printingOf s registry "Hama, the Bloodbender"
+    codie <- S.printingOf s registry "Codie, Ravenous Codex"
+    Spec.assertEqWith s "Garland's {2}{U}{B}" (Commander.colorIdentity garland) (Set.fromList [Color.Blue, Color.Black])
+    Spec.assertEqWith s "Hama's hybrid {U/B}" (Commander.colorIdentity hama) (Set.fromList [Color.Blue, Color.Black])
+    Spec.assertEqWith s "Codie's {3} and its ability's {W}{U}{B}{R}{G}" (Commander.colorIdentity codie) (Set.fromList [minBound .. maxBound])
+  Spec.it s "CR 903.4c reminder text is ignored" $ do
+    screecher <- S.printingOf s registry "Basilica Screecher"
+    Spec.assertEqWith s "extort's {W/B} is reminder text" (Commander.colorIdentity screecher) (Set.singleton Color.Black)
+  Spec.it s "CR 903.4d the back face is included" $ do
+    ranger <- S.printingOf s registry "Daybreak Ranger"
+    Spec.assertEqWith s "Nightfall Predator's red colour indicator" (Commander.colorIdentity ranger) (Set.fromList [Color.Red, Color.Green])
 
 designationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 designationSpec s registry = Spec.describe s "Designation" $ do

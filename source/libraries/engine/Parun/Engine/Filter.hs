@@ -1512,6 +1512,14 @@ data Context = MkContext
     -- Count arm was handed, so the CR 613 projection's types and not the printed
     -- ones. Nothing where unfilled, and the atom then answers False.
     evaluatedCreatureTypes :: Maybe (Set.Set Subtype.Subtype),
+    -- CR 903.3e: the creature types of the perspective player's commanders, at
+    -- their current characteristics in any zone, for Shares CreatureType
+    -- YourCommander (Path of Ancestry). Filled by
+    -- Parun.Engine.Projection.framedByCommanders, which a spend trigger's match
+    -- calls (Parun.Engine.ManaRider.spentOnMatches); empty everywhere else, so
+    -- the atom answers False, and Parun.FilterPositionLintSpec keeps a card to
+    -- that position.
+    commanderCreatureTypes :: Set.Set Subtype.Subtype,
     -- CR 400.7 / 607.5: the objects an effect of the SOURCE's reading abilities
     -- put onto the battlefield, as those objects, for EnteredWithSource (Animate
     -- Dead's enchant ability). Filled from GameState.enteredWith by
@@ -1772,7 +1780,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
 
 -- contextFor over a game: its teams (CR 102.4) and its active players (CR 102.1,
 -- 805.4a) filled from the state, the two facts about the table a match may ask.
@@ -1920,6 +1928,16 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Nothing
     Trait.CreatureType -> Nothing
     Trait.CardType _ -> Nothing
+  -- A commander with no creature type shares none, and neither does a player
+  -- with no commander: both leave the set empty.
+  Anchor.YourCommander -> case trait of
+    Trait.CreatureType -> Just (\context view -> meets (subtypes view) (commanderCreatureTypes context))
+    Trait.Color -> Nothing
+    Trait.Name -> Nothing
+    Trait.Owner -> Nothing
+    Trait.Controller -> Nothing
+    Trait.Sector -> Nothing
+    Trait.CardType _ -> Nothing
   where
     meets a b = not (Set.disjoint a b)
     held = foldMap Set.singleton . controller
@@ -1945,6 +1963,7 @@ attachedAnchored anchor = case anchor of
       )
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
+  Anchor.YourCommander -> Nothing
 
 -- CR 205.2a: a view's card types, among the named ones where a Trait names some.
 cardTypesAmong :: Maybe (Set.Set CardType.CardType) -> View -> Set.Set CardType.CardType
@@ -3969,6 +3988,7 @@ readsSourceValues predicate = case predicate of
     Anchor.Bound _ -> False
     Anchor.Evaluated -> False
     Anchor.AnyPermanent group -> readsSourceValues group
+    Anchor.YourCommander -> False
   Filter.HasSubtype _ -> False
   Filter.HasName _ -> False
   Filter.NameWordsAtLeast _ -> False
@@ -4259,6 +4279,7 @@ overAnchorSlot f anchor = case anchor of
   Anchor.Evaluated -> pure anchor
   Anchor.Source -> pure anchor
   Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (overBoundSlotsWith f group)
+  Anchor.YourCommander -> pure anchor
 
 -- The filter an anchor nests, for a traversal that descends into one.
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
@@ -4267,6 +4288,7 @@ anchorFilter anchor = case anchor of
   Anchor.Bound _ -> Nothing
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
+  Anchor.YourCommander -> Nothing
 
 -- A rewrite of the filter an anchor nests.
 mapAnchor :: (nested -> nested) -> Anchor.Anchor nested -> Anchor.Anchor nested
@@ -4275,6 +4297,7 @@ mapAnchor f anchor = case anchor of
   Anchor.Bound _ -> anchor
   Anchor.Evaluated -> anchor
   Anchor.Source -> anchor
+  Anchor.YourCommander -> anchor
 
 -- overBoundSlotsWith without the arity: CR 700.2d's rename.
 overBoundSlots :: (Applicative f) => (SlotName.SlotName -> f SlotName.SlotName) -> Filter.Filter Keyword.Type.Keyword -> f (Filter.Filter Keyword.Type.Keyword)

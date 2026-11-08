@@ -14,7 +14,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -429,6 +429,8 @@ sourceFramed framing = case framing of
   -- Parun.Engine.Mana.admitsUnder frames its context by no source: the mana's
   -- source may be gone by the time it is spent (CR 106.6).
   ManaRestrictionFramed -> False
+  -- Parun.Engine.ManaRider.spentOnMatches likewise frames by no source.
+  SpentOnFramed -> False
   -- Conservative, KeywordFramed's posture: refusing the atom only narrows what
   -- a card may write. A keyword's own Filter is matched against an aiming
   -- object at CR 702.16b and CR 702.11d (Parun.Engine.Target.targetable), whose
@@ -1159,6 +1161,26 @@ framedNameOffends card =
 boundCreatureTypeAtoms :: Value.Value -> Int
 boundCreatureTypeAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.CreatureType (Anchor.Bound _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.Bound _) -> True; _ -> False)
 
+-- The CR 903.3e atoms in an encoding: Filter.Shares at YourCommander.
+yourCommanderAtoms :: Value.Value -> Int
+yourCommanderAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares _ Anchor.YourCommander -> True; _ -> False)
+
+-- How many CR 903.3e atoms this card carries where
+-- Parun.Engine.Projection.framedByCommanders fills the commanders' creature
+-- types (SpentOnFramed), and how many anywhere else, where the atom is a silent
+-- False. The second number is the offence.
+yourCommanderCounts :: Face.Face Card.Type.Card -> (Int, Int)
+yourCommanderCounts card =
+  let total wanted = sum (fmap (\(_, f) -> yourCommanderAtoms (atomJson f)) (filter (\(framing, _) -> (framing == SpentOnFramed) == wanted) (cardFilters card)))
+   in (total True, total False)
+
+-- The atom outside that position, or the traversal and the codec disagreeing
+-- about how many the card holds -- boundCreatureTypeOffends' two offences.
+yourCommanderOffends :: Face.Face Card.Type.Card -> Bool
+yourCommanderOffends card =
+  let (framed, elsewhere) = yourCommanderCounts card
+   in elsewhere /= 0 || framed + elsewhere /= yourCommanderAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
+
 -- How many CR 205.3m atoms this card carries in a resolution's own positions --
 -- an effect's ObjectRef (Heirloom Blade), a clause's "if" (Mudbutton Clanger), a
 -- search, a mill tally or a hand sweep, each read through
@@ -1811,6 +1833,19 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (boundCreatureTypeOffends restricted) "the atom in an affected set offends"
     Spec.assertEqWith s "counted outside the admitted positions" (boundCreatureTypeCounts restricted) (1, 1)
+  -- CR 903.3e's commander comparison: answerable only where
+  -- Parun.Engine.ManaRider.spentOnMatches fills
+  -- Filter.Context.commanderCreatureTypes.
+  Spec.it s "CR 903.3e no card compares against its commander outside what mana was spent on" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace yourCommanderOffends . Printing.card) ps
+    Spec.assertEqWith s "the atom sits only in a spend trigger or rider" (fmap (S.nameOf . Printing.card) offenders) []
+    path <- S.printingOf s registry "Path of Ancestry"
+    let face = S.combinedFace path
+        atom = Filter.Type.Shares Trait.CreatureType Anchor.YourCommander
+        restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
+    Spec.assertEqWith s "Path of Ancestry's one atom is in its spend trigger" (yourCommanderCounts face) (1, 0)
+    Spec.assertBool s (yourCommanderOffends restricted) "the atom in an affected set offends"
   -- CR 208.1's bound comparison in the arm above's frame, one Filter.Context field
   -- over: answerable only where effectContext fills Filter.Context.slotMeasures.
   -- See ofBoundOffends for the two offences.
@@ -2787,6 +2822,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         (AffectedSetFramed, [bound]),
         (ActivationCostFramed, [bound]),
         (ManaRestrictionFramed, [bound]),
+        (SpentOnFramed, [bound]),
         (TriggerConditionFramed, [bound]),
         (StoredClassFramed, [bound]),
         (ChosenSourceFramed, [bound])

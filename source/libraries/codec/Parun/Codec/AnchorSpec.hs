@@ -39,6 +39,12 @@ spec s = Spec.describe s "Parun.Codec.Anchor" $ do
       codec
       (Anchor.AnyPermanent (Filter.Type.HasCardType CardType.Creature))
       " {\"type\":\"AnyPermanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "YourCommander" $
+    Common.assertCodec
+      s
+      codec
+      Anchor.YourCommander
+      " {\"type\":\"YourCommander\"} "
 
 codec :: Codec.Codec (Anchor.Anchor (Filter.Type.Filter Keyword.Type.Keyword))
 codec = Anchor.codec (Filter.codec Keyword.codec)
