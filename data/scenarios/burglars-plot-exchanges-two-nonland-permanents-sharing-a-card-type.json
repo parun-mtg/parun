@@ -1,0 +1,257 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Bilbo, Luckwearer",
+            "label": "bilbo"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Bonesplitter",
+            "label": "split"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.12a, 601.2c, 115.3: Burglar's Plot exchanges control of two target nonland permanents that share a card type, and the two targets are different permanents",
+  "note": "Bob's Bonesplitter and alice's Grizzly Bears share no card type, and the cast naming them is refused; so is naming the Bears twice. Her Bears and his Hill Giant share creature and are exchanged, the Bonesplitter staying put. The card then waits in exile on its adventure.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "face": "Burglar's Plot",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5"
+          ],
+          "object": "$bilbo",
+          "targetsBySlot": {
+            "first": [
+              "$split"
+            ],
+            "second": [
+              "$bears"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "face": "Burglar's Plot",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5"
+          ],
+          "object": "$bilbo",
+          "targetsBySlot": {
+            "first": [
+              "$bears"
+            ],
+            "second": [
+              "$bears"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "face": "Burglar's Plot",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5"
+          ],
+          "object": "$bilbo",
+          "targetsBySlot": {
+            "first": [
+              "$bears"
+            ],
+            "second": [
+              "$giant"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "$bears",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$giant",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "object": "$split",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bilbo, Luckwearer",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

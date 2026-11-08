@@ -1,0 +1,169 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Bombur, Gentle Dreamer",
+            "label": "bombur",
+            "tapped": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "tapped": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Bonesplitter",
+            "label": "s1"
+          },
+          {
+            "card": "Bonesplitter",
+            "label": "s2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 502.3, 702.195b: Bombur stays tapped through its controller's untap step until she has an enduring story, then untaps",
+  "note": "Bombur alone is one legendary, short of storied's three, so turn 3's untap step leaves it tapped. Two Bonesplitters cast on turn 3 make three, and turn 5's untap step untaps it; the Mountain beside it untaps both times, so the step itself ran.",
+  "timeline": [
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bombur",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$m1",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            null
+          ],
+          "object": "$s1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m2"
+          ],
+          "object": "$s2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bonesplitter",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bombur",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    }
+  ]
+}

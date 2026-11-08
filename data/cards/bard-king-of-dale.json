@@ -1,0 +1,90 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        },
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Bard, King of Dale",
+      "oracleText": "Reach, vigilance\nIf you would draw a card except the first one you draw in each of your draw steps, draw two cards instead.\nIf one or more tokens would be created under your control, twice that many of those tokens are created instead.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DrawR",
+            "value": {
+              "exceptFirstInDrawStep": true,
+              "rewrite": {
+                "type": "DrawInstead",
+                "value": 2
+              },
+              "whose": {
+                "type": "You"
+              }
+            }
+          }
+        },
+        {
+          "effect": {
+            "type": "TokenR",
+            "value": {
+              "matching": {
+                "whose": {
+                  "type": "You"
+                }
+              },
+              "scaling": {
+                "type": "Multiply",
+                "value": 2
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Archer",
+          "Human",
+          "Noble"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

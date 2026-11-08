@@ -1,0 +1,101 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Gift",
+          "value": {
+            "type": "Treasure"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Bilbo's Gambit",
+      "oracleText": "Gift a Treasure (You may promise an opponent a gift as you cast this spell. If you do, they create a Treasure token before its other effects. It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nReturn target spell to its owner's hand. If the gift was promised, players can't cast spells this turn.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "spell"
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "TimesPaid",
+                      "value": {
+                        "type": "Printed",
+                        "value": "Gift"
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "AffectPlayers",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "CantCastSpells"
+                      },
+                      "players": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "AnyPlayer"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "spell": {
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

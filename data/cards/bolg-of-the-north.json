@@ -1,0 +1,197 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "damage when you do": {
+          "condition": {
+            "type": "Reflexive"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "excessTally": "excess",
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "AgainstSlot",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  },
+                                  "slot": "thatSacrificedPermanent"
+                                }
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "InSlot",
+                          "value": "excess"
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "Amass",
+                        "value": {
+                          "kind": {
+                            "type": "Army",
+                            "value": "Goblin"
+                          },
+                          "quantity": {
+                            "type": "InSlot",
+                            "value": "excess"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Bolg of the North",
+      "oracleText": "When Bolg enters, you may sacrifice another creature. When you do, Bolg deals damage equal to that creature's power to another target creature. If excess damage was dealt this way, amass Goblins X, where X is that excess damage. (Put X +1/+1 counters on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ArmDelayedTrigger",
+                        "value": {
+                          "name": "damage when you do"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "Sacrifice",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
+                              "whichPermanents": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "Not",
+                                    "value": {
+                                      "type": "IsSource"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Goblin",
+          "Soldier"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

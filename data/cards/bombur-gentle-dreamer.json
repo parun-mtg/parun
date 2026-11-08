@@ -1,0 +1,76 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Storied"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Bombur, Gentle Dreamer",
+      "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nBombur doesn't untap during your untap step unless you have an enduring story.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bard",
+          "Dwarf"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      },
+      "untapRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "while": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "HasPlayerDesignation",
+                "value": {
+                  "designation": "EnduringStory",
+                  "player": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Bilbo, Thief in the Night",
+      "oracleText": "Spells you cast from anywhere other than your hand cost {1} less to cast.\nWhenever Bilbo attacks, you may cast an artifact, instant, or sorcery spell from your graveyard. If an instant or sorcery spell cast this way would be put into your graveyard, exile it instead.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "Not",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "WasCastFrom",
+                      "value": "Hand"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Owner",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "OfferCast",
+                        "value": {
+                          "ref": {
+                            "type": "EachCardInGraveyard",
+                            "value": {
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Instant"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Sorcery"
+                                  }
+                                ]
+                              },
+                              "graveyards": {
+                                "type": "Scoped",
+                                "value": {
+                                  "type": "You"
+                                }
+                              }
+                            }
+                          },
+                          "slot": "spell"
+                        }
+                      },
+                      {
+                        "type": "Replace",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "effect": {
+                            "type": "ZoneChangeR",
+                            "value": {
+                              "destination": "Exile",
+                              "matching": {
+                                "whatObject": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "IsBound",
+                                      "value": "spell"
+                                    },
+                                    {
+                                      "type": "Or",
+                                      "value": [
+                                        {
+                                          "type": "HasCardType",
+                                          "value": "Instant"
+                                        },
+                                        {
+                                          "type": "HasCardType",
+                                          "value": "Sorcery"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "whenDestination": "Graveyard"
+                              }
+                            }
+                          },
+                          "origin": "Other",
+                          "uses": "Unlimited"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Halfling",
+          "Rogue"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

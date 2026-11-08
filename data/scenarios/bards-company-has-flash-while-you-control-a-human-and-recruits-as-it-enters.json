@@ -1,0 +1,260 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Bard's Company",
+            "label": "bc"
+          },
+          {
+            "card": "Elite Vanguard",
+            "label": "ev"
+          },
+          {
+            "card": "Memnite",
+            "label": "mem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 702.8a, 601.3, 701.70a: Bard's Company may be cast as though it had flash while its caster controls a Human, recruits as it enters, and pumps only her other creatures",
+  "note": "On bob's first upkeep alice controls no Human and the cast is refused with the four lands that later pay for it untapped; on his second she controls Elite Vanguard and it is cast. The recruit discards Memnite, a nonland card, so the Human Soldier token is created, and it and the Vanguard get +1/+1 while the Company stays 2/3.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$bc"
+        }
+      },
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            null
+          ],
+          "object": "$ev"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Elite Vanguard",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p2",
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$bc"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Bard's Company"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$mem"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Human Soldier Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Elite Vanguard",
+          "power": 3,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Bard's Company",
+          "power": 2,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Human Soldier Token",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    }
+  ]
+}

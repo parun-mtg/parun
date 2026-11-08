@@ -82,6 +82,7 @@ alluring-scent
 alluring-siren
 alms-collector
 aloe-alchemist
+along-the-crooked-way
 alpha-authority
 alpine-houndmaster
 alpine-moon
@@ -97,6 +98,7 @@ amulet-of-quoz
 amulet-of-safekeeping
 an-havva-constable
 an-offer-you-cant-refuse
+an-unexpected-party-at-the-door
 anafenza-the-foremost
 anavolver
 ancestor-dragon
@@ -244,6 +246,7 @@ balance-of-power
 balduvian-shaman
 baleful-stare
 balemurk-leech
+balin-loremaster
 ballot-broker
 ballyrush-banneret
 bamboozle
@@ -259,6 +262,9 @@ baral-chief-of-compliance
 barbarian-outcast
 barbarian-ring
 barbed-sextant
+bard-king-of-dale
+bard-the-bowman
+bards-company
 barkhide-troll
 barls-cage
 barrin
@@ -283,6 +289,7 @@ beacon-of-unrest
 beatrix-loyal-general
 befoul
 befriending-the-moths-imperial-moth
+bejeweled-warg
 belladonna-took
 bellowing-fiend
 bellowing-mauler
@@ -291,12 +298,20 @@ benalish-commander
 benevolent-blessing
 benevolent-river-spirit
 benevolent-unicorn
+beorn-reluctant-host-till-and-tend
+beorn-the-fierce
+beorns-hospitality
 berg-strider
 berserk
 berserkers-of-blood-ridge
 betrayal
 bewitching-leechcraft
+bifur-melodic-rider
 bifurcate
+bilbo-baggins-burglar-take-a-glance
+bilbo-luckwearer-burglars-plot
+bilbo-thief-in-the-night
+bilbos-gambit
 binding-grasp
 biogenic-upgrade
 biolume-egg-biolume-serpent
@@ -354,8 +369,11 @@ blossoming-tortoise
 blue-mana-battery
 blue-ward
 blurred-mongoose
+bofur-reliable-guardian-concerted-care
 bogbrew-witch
+bolg-of-the-north
 bolt-bend
+bombur-gentle-dreamer
 bonded-construct
 bone-mask
 bone-splinters

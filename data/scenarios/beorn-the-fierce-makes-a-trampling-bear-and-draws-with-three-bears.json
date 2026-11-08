@@ -1,0 +1,323 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Beorn the Fierce",
+            "label": "beorn"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 122.1b, 205.1b, 608.2c: Beorn the Fierce's combat trigger gives the target a trample counter and the Bear type, then draws two only if its controller controls three or more Bears once it has",
+  "note": "Turn 1 makes the Hill Giant the second Bear, so nothing is drawn; turn 3 makes the Goblin Piker the third, so two cards are drawn on top of the draw step's one. Both read the count after the type change, since before it the first board has one Bear and the second two. The new Bears get Beorn's +2/+2 and Beorn does not.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceTargets",
+          "with": [
+            [
+              "target",
+              1
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "target",
+              [
+                [
+                  "Creature",
+                  "$giant"
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Keyword",
+            "value": {
+              "type": "Trample"
+            }
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$giant",
+          "subtypes": [
+            "Bear",
+            "Giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$giant",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$beorn",
+          "power": 6,
+          "toughness": 6
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceTargets",
+          "with": [
+            [
+              "target",
+              1
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "target",
+              [
+                [
+                  "Creature",
+                  "$piker"
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 3,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 4,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    }
+  ]
+}

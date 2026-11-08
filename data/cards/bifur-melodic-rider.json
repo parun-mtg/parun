@@ -1,0 +1,154 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Storied"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "White"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "White"
+            }
+          }
+        }
+      ],
+      "name": "Bifur, Melodic Rider",
+      "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nWhenever Bifur enters or attacks, put a +1/+1 counter on target creature.\nAs long as you have an enduring story, if a triggered ability of a Dwarf you control triggers, that ability triggers an additional time.",
+      "playerAbilities": [
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "HasPlayerDesignation",
+                "value": {
+                  "designation": "EnduringStory",
+                  "player": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "effect": {
+            "type": "AdditionalTriggers",
+            "value": {
+              "type": "HasSubtype",
+              "value": "Dwarf"
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Enters",
+                "value": {}
+              },
+              {
+                "type": "Attacks",
+                "value": {
+                  "type": "Attacker",
+                  "value": {}
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Bard",
+          "Dwarf"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
