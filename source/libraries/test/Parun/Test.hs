@@ -636,6 +636,7 @@ import qualified Parun.Codec.PreventionSpec
 import qualified Parun.Codec.PrintedReplacementSpec
 import qualified Parun.Codec.PrintingIdSpec
 import qualified Parun.Codec.PrintingSpec
+import qualified Parun.Codec.PrintingTableSpec
 import qualified Parun.Codec.ProductionTagSpec
 import qualified Parun.Codec.ProhibitSpec
 import qualified Parun.Codec.ProhibitedCostSpec
@@ -1009,7 +1010,7 @@ import qualified Test.Tasty.HUnit as HU
 main :: IO ()
 main = do
   root <- Registry.defaultRoot
-  registry <- Registry.fileRegistry root
+  registry <- Registry.defaultRegistry
   corpus <- Registry.loadRoot root
   testTree <- buildTestTree registry corpus
   Tasty.defaultMain testTree
@@ -1332,6 +1333,7 @@ spec s registry corpus = do
   Parun.Codec.FormatSpec.spec s
   Parun.Codec.LegalitySpec.spec s
   Parun.Codec.LegalityTableSpec.spec s
+  Parun.Codec.PrintingTableSpec.spec s
   Parun.Codec.RuleFamilySpec.spec s
   Parun.Codec.DeclarationTriggerSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s

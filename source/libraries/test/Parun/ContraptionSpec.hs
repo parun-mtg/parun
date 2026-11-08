@@ -19,6 +19,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Contraption as Contraption
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -130,6 +131,18 @@ assembleSpec s registry = Spec.describe s "Assemble" $ do
     Spec.assertEqWith s "the three sprockets were offered, once" (sprocketsOffered asked) [[Designation.Sprocket1, Designation.Sprocket2, Designation.Sprocket3]]
     Spec.assertEqWith s "one card is left in the Contraption deck" (length (Game.sideDeckOf SideDeck.Contraption S.alice after)) 1
     Spec.assertBool s (not (Set.member thopter (GameState.battlefield after))) "and the Ornithopter was destroyed"
+  -- #4118: a deck list's Contraption section is the deck First Pick draws on.
+  Spec.it s "First Pick assembles the Arms Depot a deck list's Contraption section brings" $ do
+    pick <- S.printingOf s registry "First Pick"
+    forest <- S.printingOf s registry "Forest"
+    ornithopter <- S.printingOf s registry "Ornithopter"
+    listed <- DeckList.parse registry (Text.pack "Contraption Deck\n1 Arms Depot\n") >>= either (S.brokenCorpus s) pure
+    let (thopter, lands) = S.addPermanent ornithopter S.bob (S.landsInPlay forest 4)
+        board = S.runPure S.identityAnswer lands (Setup.createDeck S.alice (DeckList.deck listed))
+        (gs, spellId) = S.handOne pick board
+        (after, _) = driving [Designation.Sprocket2] id (Just thopter) gs (S.cast S.alice spellId >> Engine.priorityLoop)
+    Spec.assertEqWith s "the Depot entered onto the second sprocket" (depotsOn after) [Set.singleton Designation.Sprocket2]
+    Spec.assertEqWith s "and nothing else was listed" (DeckList.problems listed) []
   Spec.it s "a card in the Contraption deck is face down to every player, owner included" $ do
     depot <- S.printingOf s registry "Arms Depot"
     let gs = withDepots depot 2 S.alice (Setup.emptyGame S.bothPlayers)

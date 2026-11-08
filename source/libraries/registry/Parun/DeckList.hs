@@ -1,10 +1,12 @@
 -- Answering one question: given the text a player would actually type, what
 -- deck is that?
 --
--- A deck list is a count and a card name per line, with CR 100.4's sideboard
--- written as a section of its own. Every name is resolved through a
--- Parun.Registry, which is the only thing that knows what cards exist; this
--- module decides what a LINE means and never what a name means.
+-- A deck list is a count and a card name per line, optionally naming a printing
+-- by set code and collector number, with each thing a player brings beside
+-- the deck (Parun.Types.Deck's fields) written as a section of its own. Every
+-- name and printing is resolved through a Parun.Registry, which is the only
+-- thing that knows what cards exist; this module decides what a LINE means and
+-- never what a name means.
 --
 -- Here rather than in the test suite or the executable because both of those
 -- already build their decks in Haskell and a deck list is what they cannot
@@ -15,16 +17,22 @@ import qualified Data.Char as Char
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
+import qualified Parun.Ingest as Ingest
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingEntry as PrintingEntry
+import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Text.Read as Read
 
 -- | Why a deck list's line did not become a deck entry, and which line it was.
@@ -45,6 +53,12 @@ data Problem
     FormatRepeated Natural.Natural Text.Text
   | -- | A format header naming one format when another was asked for.
     FormatDisagrees Natural.Natural Text.Text Text.Text
+  | -- | A set code and collector number the registry knows no printing at.
+    NoSuchPrinting Natural.Natural Text.Text Text.Text
+  | -- | A set code and collector number printing a card other than the line's.
+    PrintingDisagrees Natural.Natural CardName.CardName Text.Text Text.Text
+  | -- | CR 902.1: a vanguard card after the one the list already brings.
+    VanguardRepeated Natural.Natural CardName.CardName
   deriving (Eq, Ord, Show)
 
 -- | A problem as a line a person can read.
@@ -57,14 +71,50 @@ explain problem =
         HalvesDisagree n name -> at n <> Text.pack "the halves of " <> CardName.unwrap name <> Text.pack " are different cards"
         FormatRepeated n name -> at n <> Text.pack "the format is already named, so not " <> name
         FormatDisagrees n named asked -> at n <> Text.pack "the list names the format " <> named <> Text.pack ", not " <> asked
+        NoSuchPrinting n set number -> at n <> Text.pack "nothing is printed at " <> suffix (set, number)
+        PrintingDisagrees n name set number -> at n <> Text.pack "the printing at " <> suffix (set, number) <> Text.pack " is not " <> CardName.unwrap name
+        VanguardRepeated n name -> at n <> Text.pack "the list already brings a vanguard, so not " <> CardName.unwrap name
 
--- | Which of a deck list's two sections the lines that follow belong to. CR
--- 100.4 makes the sideboard a group of cards beside the deck rather than part
--- of it, which is why Parun.Types.Deck keeps the two apart.
+-- | Which part of what a player brings the lines that follow belong to: the
+-- deck or one of Parun.Types.Deck's fields beside it.
 data Section
-  = Main
-  | Side
+  = -- | Deck.cards.
+    Main
+  | -- | CR 100.4: Deck.sideboard.
+    Side
+  | -- | CR 702.139a: a companion, which is brought in the sideboard, as Arena
+    -- exports it.
+    Companion
+  | -- | CR 903.3: Deck.commander.
+    Commander
+  | -- | CR 718.2, 901.3, 904.3: one of Deck.sideDecks.
+    Supplementary SideDeck.SideDeck
+  | -- | CR 315.2: Deck.conspiracies.
+    Conspiracies
+  | -- | CR 309.2: Deck.dungeons.
+    Dungeons
+  | -- | CR 902.3: Deck.vanguard.
+    Vanguard
   deriving (Eq, Ord, Show)
+
+-- | Every section, in the order `render` writes them.
+--
+-- Not implemented: CR 123.2's sticker sheets (Deck.stickerSheets), which the
+-- registry does not hold (#6667).
+sections :: [Section]
+sections = [Main, Side, Companion, Commander] <> fmap Supplementary [minBound .. maxBound] <> [Conspiracies, Dungeons, Vanguard]
+
+-- | The header a section is written under.
+heading :: Section -> Text.Text
+heading section = Text.pack $ case section of
+  Main -> "Deck"
+  Side -> "Sideboard"
+  Companion -> "Companion"
+  Commander -> "Commander"
+  Supplementary sideDeck -> show sideDeck <> " Deck"
+  Conspiracies -> "Conspiracies"
+  Dungeons -> "Dungeons"
+  Vanguard -> "Vanguard"
 
 -- | What a deck list says: the deck its good lines describe, the format its
 -- header names, and every line that did not become part of either. A list with
@@ -83,17 +133,12 @@ data Listed = MkListed
 -- | What a deck list says; outside it, the registry's failure to read a card
 -- file a lookup reached.
 --
--- The two sections a deck list has are the two fields this fills. CR 903.3's
--- commander, CR 902.3's vanguard card and CR 309.2's dungeon cards are brought
--- alongside a deck rather than written on its list, so a caller in one of those
--- formats designates them itself.
---
--- Not implemented: CR 718.2's Attraction deck and the Unstable FAQ's Contraption
--- deck, and naming which printing of an Attraction a line means, whose lights
--- CR 718.1 lets differ (#4118).
+-- Each section fills its field. Which commanders or vanguards are legal is the
+-- format's business, not the list's.
 parse :: (Monad m) => Registry.Registry m -> Text.Text -> m (Either InvalidCorpus.InvalidCorpus Listed)
 parse registry text = do
-  looked <- mapM (lineOf registry) (List.zip [1 ..] (Text.lines text))
+  let first = firstPrintings (Registry.printings registry)
+  looked <- mapM (lineOf registry first) (List.zip [1 ..] (Text.lines text))
   pure (fmap assemble (sequence looked))
 
 -- What one line of a deck list means.
@@ -104,8 +149,8 @@ data Line
     Header Section
   | -- | The format the list is for.
     Named Text.Text
-  | -- | A count and the card it names.
-    Entry Natural.Natural Card.Card
+  | -- | A count, the name written and the printing it names.
+    Entry Natural.Natural CardName.CardName Printing.Printing
 
 -- The deck the lines' meanings add up to, the format the first header names,
 -- and every line that is neither.
@@ -118,11 +163,24 @@ assemble results =
         Right (Named name) -> case named of
           Nothing -> (section, entries, Just (number, name), bad)
           Just _ -> (section, entries, named, FormatRepeated number name : bad)
-        Right (Entry count card) -> (section, (section, card, count) : entries, named, bad)
+        Right (Entry count name printing)
+          | count == 0 -> (section, entries, named, bad)
+          | section == Vanguard && (count > 1 || any (\(s, _, _) -> s == Vanguard) entries) -> (section, entries, named, VanguardRepeated number name : bad)
+          | otherwise -> (section, (section, printing, count) : entries, named, bad)
       (_, found, header, reported) = List.foldl' step (Main, [], Nothing, []) results
-      gather want = Map.fromListWith (+) [(Printing.ofCard card, count) | (section, card, count) <- found, section == want, count /= 0]
+      gather want = Map.fromListWith (+) [(printing, count) | (section, printing, count) <- found, section `elem` want]
+      once want = Map.keysSet (gather [want])
+      sideDecks = Map.filter (not . Map.null) (Map.fromList [(sideDeck, gather [Supplementary sideDeck]) | sideDeck <- [minBound .. maxBound]])
    in MkListed
-        { deck = (Deck.fromCards (gather Main)) {Deck.sideboard = gather Side},
+        { deck =
+            (Deck.fromCards (gather [Main]))
+              { Deck.sideboard = gather [Side, Companion],
+                Deck.commander = once Commander,
+                Deck.sideDecks = sideDecks,
+                Deck.conspiracies = gather [Conspiracies],
+                Deck.dungeons = once Dungeons,
+                Deck.vanguard = Set.lookupMin (once Vanguard)
+              },
           format = header,
           problems = List.reverse reported
         }
@@ -144,9 +202,9 @@ formatFor asked listed = case (asked, format listed) of
   (Nothing, header) -> (fmap snd header, [])
 
 -- What one line means: nothing (blank), the section the lines after it belong
--- to, the format the list is for, or a count and the card it names.
-lineOf :: (Monad m) => Registry.Registry m -> (Natural.Natural, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
-lineOf registry (number, raw) =
+-- to, the format the list is for, or a count and the printing it names.
+lineOf :: (Monad m) => Registry.Registry m -> Map.Map Text.Text PrintingEntry.PrintingEntry -> (Natural.Natural, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
+lineOf registry first (number, raw) =
   let trimmed = Text.strip raw
    in if Text.null trimmed
         then pure (Right (number, Right Blank))
@@ -155,7 +213,7 @@ lineOf registry (number, raw) =
           (_, Just named) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
           _ -> case entryOf trimmed of
             Nothing -> pure (Right (number, Left (Unreadable number trimmed)))
-            Just (count, name) -> fmap (fmap ((,) number . fmap (Entry count))) (resolve registry number name)
+            Just (count, name, at) -> fmap (fmap ((,) number . (>>= fmap (Entry count name) . printingOf (Registry.printings registry) first number name at))) (resolve registry number name)
 
 -- The format a "Format:" header names, lowercased as data/formats files are
 -- named; Just Nothing for a header naming none. No card's name begins
@@ -168,28 +226,27 @@ formatNamed text =
         then Just (if Text.null named then Nothing else Just named)
         else Nothing
 
--- The section a header line names, if it is one. Only the two headers a deck
--- list actually carries: everything else on a line of its own is a card name
--- with an implicit count of one, so this set stays closed rather than
--- swallowing lines it does not understand.
+-- The section a header line names, if it is one: a section's `heading`, or
+-- another spelling of the deck's. Everything else on a line of its own is a
+-- card name with an implicit count of one, so this set stays closed rather
+-- than swallowing lines it does not understand. No card is named for a
+-- heading, so a header never hides a card.
 sectionNamed :: Text.Text -> Maybe Section
-sectionNamed text = case Text.unpack (Text.toLower (Text.filter (/= ':') text)) of
-  "deck" -> Just Main
-  "maindeck" -> Just Main
-  "main deck" -> Just Main
-  "sideboard" -> Just Side
-  _ -> Nothing
+sectionNamed text =
+  let spelled = Text.toLower (Text.strip (Text.filter (/= ':') text))
+   in lookup spelled ([(Text.toLower (heading section), section) | section <- sections] <> [(Text.pack "maindeck", Main), (Text.pack "main deck", Main)])
 
--- A line's count and the name it precedes. A bare name is one copy, which is
--- how every export writes a singleton deck's list.
---
--- Everything after the count is the name, so an export that appends a set code
--- and a collector number ("4 Lightning Bolt (M10) 146") names no card here and
--- is reported as such rather than guessed at.
-entryOf :: Text.Text -> Maybe (Natural.Natural, CardName.CardName)
-entryOf text =
+-- A line's count, the name it precedes and the printing it names, if any. A
+-- bare name is one copy, which is how every export writes a singleton deck's
+-- list.
+entryOf :: Text.Text -> Maybe (Natural.Natural, CardName.CardName, Maybe (Text.Text, Text.Text))
+entryOf text = fmap (\(count, (name, at)) -> (count, CardName.MkCardName name, at)) (countOf text >>= traverse (Just . printingNamed))
+
+-- A line's count and the text after it.
+countOf :: Text.Text -> Maybe (Natural.Natural, Text.Text)
+countOf text =
   let (digits, rest) = Text.span Char.isDigit text
-      named = CardName.MkCardName . Text.strip
+      named = Text.strip
    in if Text.null digits
         then Just (1, named text)
         else do
@@ -199,6 +256,60 @@ entryOf text =
           -- digit as a count plus the rest of itself.
           stripped <- if Text.null rest || Char.isSpace (Text.head rest) then Just (Text.strip rest) else Nothing
           if Text.null stripped then Nothing else Just (count, named stripped)
+
+-- A name and the printing an Arena or MTGO export's suffix names, "(M10) 146":
+-- a set code in parentheses and a collector number, each one word. The set
+-- code is upper-cased, as MTGJSON writes it.
+printingNamed :: Text.Text -> (Text.Text, Maybe (Text.Text, Text.Text))
+printingNamed text = case List.reverse (Text.words text) of
+  number : code : rest@(_ : _)
+    | Just set <- Text.stripPrefix (Text.singleton '(') code >>= Text.stripSuffix (Text.singleton ')'),
+      not (Text.null set) ->
+        (Text.unwords (List.reverse rest), Just (Text.toUpper set, number))
+  _ -> (text, Nothing)
+
+-- The printing a line means of the card its name resolved to: the one at the
+-- set code and collector number it names, else the first the table holds of
+-- the card (`firstPrintings`), else the card with no lights.
+--
+-- The printing at a suffix must be of the line's card, by Parun.Ingest.cardKey,
+-- the key MTGJSON names it by.
+printingOf :: PrintingTable.PrintingTable -> Map.Map Text.Text PrintingEntry.PrintingEntry -> Natural.Natural -> CardName.CardName -> Maybe (Text.Text, Text.Text) -> Card.Card -> Either Problem Printing.Printing
+printingOf table first number name at card =
+  let lit entry = Printing.MkPrinting {Printing.card = card, Printing.lights = PrintingEntry.lights entry}
+   in case at of
+        Nothing -> Right (maybe (Printing.ofCard card) lit (Map.lookup (Ingest.cardKey card) first))
+        Just (set, collector) -> case Map.lookup set (PrintingTable.printings table) >>= Map.lookup collector of
+          Nothing -> Left (NoSuchPrinting number set collector)
+          Just entry
+            | PrintingEntry.card entry /= Ingest.cardKey card -> Left (PrintingDisagrees number name set collector)
+            | otherwise -> Right (lit entry)
+
+-- Each card's first printing in the table, by set code then collector number:
+-- the printing a bare name means (docs/decisions.md, "Which printing a deck
+-- list's bare name brings").
+firstPrintings :: PrintingTable.PrintingTable -> Map.Map Text.Text PrintingEntry.PrintingEntry
+firstPrintings table = Map.fromListWith (\_ earlier -> earlier) [(PrintingEntry.card entry, entry) | entry <- foldMap Map.elems (Map.elems (PrintingTable.printings table))]
+
+-- The set code and collector number a printing is written with: the first the
+-- table holds of its card with its lights. Nothing for a printing with no
+-- lights, which every printing of its card shares, and for one the table
+-- does not hold, which is written as its bare name.
+suffixFor :: PrintingTable.PrintingTable -> Printing.Printing -> Maybe (Text.Text, Text.Text)
+suffixFor table printing
+  | Set.null (Printing.lights printing) = Nothing
+  | otherwise =
+      Maybe.listToMaybe
+        [ (set, collector)
+        | (set, byNumber) <- Map.toAscList (PrintingTable.printings table),
+          (collector, entry) <- Map.toAscList byNumber,
+          PrintingEntry.card entry == Ingest.cardKey (Printing.card printing),
+          PrintingEntry.lights entry == Printing.lights printing
+        ]
+
+-- A set code and collector number as a line's suffix writes them.
+suffix :: (Text.Text, Text.Text) -> Text.Text
+suffix (set, number) = Text.singleton '(' <> set <> Text.pack ") " <> number
 
 -- The card a deck list's name means.
 --
@@ -231,18 +342,33 @@ halvesOf name =
         Nothing -> NonEmpty.singleton name
         Just halves -> fmap CardName.MkCardName halves
 
--- | A deck as a deck list, headed by the format it is for if any, which
--- `parse` reads back.
+-- | A deck as a deck list, headed by the format it is for if any, each
+-- printing with lights named by its set code and collector number in
+-- `table`, which `parse` reads back. A companion is written in the sideboard
+-- it is brought in.
 --
--- Sorted by the name written, so the text is a fact about the deck rather than
+-- Sorted by the line written, so the text is a fact about the deck rather than
 -- about the order a Map enumerates its structural keys in.
-render :: Maybe Text.Text -> Deck.Deck -> Text.Text
-render header listed =
-  let entries m = fmap line (List.sortOn snd [(count, written (Printing.card printing)) | (printing, count) <- Map.toList m])
+render :: PrintingTable.PrintingTable -> Maybe Text.Text -> Deck.Deck -> Text.Text
+render table header listed =
+  let entries m = fmap line (List.sortOn snd [(count, writtenAt printing) | (printing, count) <- Map.toList m])
+      writtenAt printing = written (Printing.card printing) <> foldMap ((Text.singleton ' ' <>) . suffix) (suffixFor table printing)
       line (count, name) = Text.pack (show count) <> Text.singleton ' ' <> name
-      side = entries (Deck.sideboard listed)
-      heading = foldMap (\named -> [Text.pack "Format: " <> named, Text.empty]) header
-      body = heading <> entries (Deck.cards listed) <> if null side then [] else Text.empty : Text.pack "Sideboard" : side
+      once = Map.fromSet (const (1 :: Natural.Natural))
+      contents section = case section of
+        Main -> Deck.cards listed
+        Side -> Deck.sideboard listed
+        Companion -> Map.empty
+        Commander -> once (Deck.commander listed)
+        Supplementary sideDeck -> Map.findWithDefault Map.empty sideDeck (Deck.sideDecks listed)
+        Conspiracies -> Deck.conspiracies listed
+        Dungeons -> once (Deck.dungeons listed)
+        Vanguard -> foldMap (`Map.singleton` 1) (Deck.vanguard listed)
+      block section = case entries (contents section) of
+        [] -> []
+        written' -> Text.empty : heading section : written'
+      top = foldMap (\named -> [Text.pack "Format: " <> named, Text.empty]) header
+      body = top <> entries (Deck.cards listed) <> foldMap block (filter (/= Main) sections)
    in Text.unlines body
 
 -- A card's name as a deck list writes it: the names of the faces it shows off

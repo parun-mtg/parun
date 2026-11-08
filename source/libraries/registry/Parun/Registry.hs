@@ -1,9 +1,9 @@
 {-# LANGUAGE RankNTypes #-}
 
--- Answering two questions: given a card's name, what card is that? And which
--- cards are there?
+-- Answering three questions: given a card's name, what card is that? Which
+-- cards are there? And what does a set code and collector number print?
 --
--- The registry is those two functions and nothing else. It is parameterized over the
+-- The registry is those three and nothing else. It is parameterized over the
 -- monad a LOOKUP works in, which is what lets a registry that does no IO to
 -- answer -- a fixture map, a pool compiled in, a generated one, or the
 -- file-backed one below, which reads every file's bytes before the registry
@@ -36,6 +36,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Codec.Card as Card
+import qualified Parun.Codec.PrintingTable as PrintingTable.Codec
 import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Exceptions.MissingRoot as MissingRoot
@@ -45,6 +46,7 @@ import qualified Parun.Slug as Slug
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Paths_parun as Paths
 import qualified System.Directory as Directory
 
@@ -56,12 +58,16 @@ data Registry m = MkRegistry
   { fetchCard :: CardName.CardName -> m (Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)),
     -- | Every card of the Oracle card reference the pool holds, once each. A
     -- synthetic test fixture is in the pool without being such a card.
-    cards :: m (Either InvalidCorpus.InvalidCorpus [Card.Card])
+    cards :: m (Either InvalidCorpus.InvalidCorpus [Card.Card]),
+    -- | The pool's cards' printings, which a deck list naming a printing
+    -- reads (#4118). Data rather than a lookup in m: the table is read whole
+    -- before the registry exists.
+    printings :: PrintingTable.PrintingTable
   }
 
 -- The same registry answering in another monad, each lookup carried over.
 hoist :: (forall a. m a -> n a) -> Registry m -> Registry n
-hoist lift registry = MkRegistry {fetchCard = lift . fetchCard registry, cards = lift (cards registry)}
+hoist lift registry = MkRegistry {fetchCard = lift . fetchCard registry, cards = lift (cards registry), printings = printings registry}
 
 -- A card by name ("Goblin Piker") or by slug ("goblin-piker") -- a file-backed
 -- registry slugifies, and slugify is idempotent, so both are the same lookup.
@@ -77,8 +83,30 @@ named registry = fetchCard registry . CardName.MkCardName . Text.pack
 defaultRoot :: IO FilePath
 defaultRoot = Paths.getDataFileName "cards"
 
+-- The registry parun ships: 'fileRegistry' over 'defaultRoot', knowing the
+-- printings data/printings.json holds.
+defaultRegistry :: (Applicative m) => IO (Registry m)
+defaultRegistry = do
+  registry <- defaultRoot >>= fileRegistry
+  path <- printingsPath
+  table <- loadPrintings path
+  either (\problem -> ioError (userError (path <> ": " <> Text.unpack problem))) (\loaded -> pure registry {printings = loaded}) table
+
+-- Where the shipped printing table is, script/ingest/printings.jq's output.
+printingsPath :: IO FilePath
+printingsPath = Paths.getDataFileName "printings.json"
+
+-- The printing table a file holds.
+loadPrintings :: FilePath -> IO (Either Text.Text PrintingTable.PrintingTable)
+loadPrintings path = do
+  bytes <- ByteString.readFile path
+  pure $ do
+    contents <- either (\err -> Left (Text.pack ("not valid UTF-8: " <> show err))) Right (Encoding.decodeUtf8' bytes)
+    Common.parse contents >>= Codec.decode PrintingTable.Codec.codec
+
 -- A registry over a directory of one-card-per-file JSON, read once, here, and
--- parsed only as far as lookups reach.
+-- parsed only as far as lookups reach. It knows no printing; 'defaultRegistry'
+-- adds the shipped table.
 --
 -- The root is checked before anything else because a mistyped --cards-dir
 -- otherwise surfaces as N identical failures, one per card, instead of one
@@ -119,7 +147,7 @@ fileRegistry root = do
             case Map.lookup slug near of
               Just card -> Right (Just card)
               Nothing -> fmap (Map.lookup slug) whole
-      pure MkRegistry {fetchCard = pure . find, cards = pure (fmap (const (Maybe.mapMaybe referenceCard loaded)) whole)}
+      pure MkRegistry {fetchCard = pure . find, cards = pure (fmap (const (Maybe.mapMaybe referenceCard loaded)) whole), printings = PrintingTable.empty}
 
 -- The slug a card file is named by: its file name, less the directory and the
 -- extension.

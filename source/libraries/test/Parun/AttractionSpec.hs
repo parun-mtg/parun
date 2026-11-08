@@ -24,6 +24,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Attraction as Attraction
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -176,7 +177,7 @@ visitWith rolls target gs =
   rolling rolls target gs (Engine.runTurnBasedActions Phase.PrecombatMain >> Engine.priorityLoop)
 
 -- CR 718.4: rolling to visit.
-visitSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+visitSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 visitSpec s registry = Spec.describe s "Roll to visit" $ do
   Spec.it s "CR 718.4 a player who controls no Attraction does not roll" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -186,6 +187,22 @@ visitSpec s registry = Spec.describe s "Roll to visit" $ do
         bobs = gs {GameState.activePlayer = S.bob, GameState.priority = Just S.bob}
     Spec.assertEqWith s "alice rolls one d6 on her turn" (snd (visitWith [3] mine gs)) [6]
     Spec.assertEqWith s "bob rolls nothing on his" (snd (visitWith [3] mine bobs)) []
+  -- #4118: a deck list names a printing by set code and collector number, and
+  -- the registry's table supplies its lights.
+  Spec.it s "CR 718.1 a deck list's two Bumper Cars printings light their own numbers" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    listed <- DeckList.parse registry (Text.pack "Attraction Deck\n1 Bumper Cars (UNF) 202a\n1 Bumper Cars (UNF) 202f\n") >>= either (S.brokenCorpus s) pure
+    let brought = [printing | (printing, n) <- Map.toList (Map.findWithDefault Map.empty SideDeck.Attraction (Deck.sideDecks (DeckList.deck listed))), _ <- [1 .. n]]
+    case brought of
+      [first, second] -> do
+        let (gs, mine, _, firstId) = visitBoard piker first
+            (_, both) = S.addPermanent second S.alice gs
+            rolled = fst (rolling [2] mine both (Engine.runTurnBasedActions Phase.PrecombatMain >> Engine.settleForPriority))
+            visited = Maybe.mapMaybe (`Game.abilitySourceOf` rolled) (GameState.stack rolled)
+        -- THE GAMEPLAY ASSERTION: 202a lights 2 and 202f does not.
+        Spec.assertEqWith s "a 2 visits the first alone" visited [firstId]
+        Spec.assertEqWith s "lit as printed" (fmap Printing.lights brought) [Set.fromList [2, 3, 6], Set.fromList [4, 5, 6]]
+      _ -> Spec.assertFailure s ("two printings, not " <> show (length brought) <> ": " <> show (DeckList.problems listed))
 
 -- CR 718.6: the junkyard.
 junkyardSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

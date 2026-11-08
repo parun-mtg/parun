@@ -82,6 +82,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
@@ -225,6 +226,13 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     Spec.assertEqWith s "alice is designated it" (fmap (commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just [shimatsu])
     Spec.assertEqWith s "and it is her commander" (fmap (\oid -> Commander.isCommander oid gs) (inCommandZone gs)) [True]
     Spec.assertEqWith s "having cast it no times yet" (commanderCastsOf gs) []
+  -- #4118: a deck list's Commander section is Deck.commander.
+  Spec.it s "CR 903.6 a deck list's Commander section starts Krenko in the command zone" $ do
+    krenko <- S.printingOf s registry "Krenko, Mob Boss"
+    listed <- DeckList.parse registry (Text.pack "4 Mountain\n\nCommander\n1 Krenko, Mob Boss\n") >>= either (S.brokenCorpus s) pure
+    let gs = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice (DeckList.deck listed))
+    Spec.assertEqWith s "Krenko is in the command zone" (fmap (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (inCommandZone gs)) [Just (S.printingName krenko)]
+    Spec.assertEqWith s "and is not among the library's four" (length (Game.zoneMembers Zone.Library S.alice gs)) 4
   -- CR 903.3: the designation is "an attribute of the card itself", so a second
   -- Cid, Timeless Artificer in the deck -- which its own text allows -- is no
   -- commander. Each Cid is put onto the battlefield and destroyed in turn, and

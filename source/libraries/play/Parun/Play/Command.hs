@@ -39,6 +39,7 @@ import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Terminal as Terminal
@@ -53,7 +54,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
   (updates, [one, two], []) -> case foldr (=<<) (Right PlayOptions.none) updates of
     Left problem -> usage [problem]
     Right options -> do
-      registry <- Registry.defaultRoot >>= Registry.fileRegistry
+      registry <- Registry.defaultRegistry
       lists <- (,) <$> load registry one <*> load registry two
       refuse (PlayOptions.format options) [(one, fst lists), (two, snd lists)]
       play options registry (Bifunctor.bimap DeckList.deck DeckList.deck lists)
@@ -144,7 +145,7 @@ play options registry (one, two) = do
   outcome <- Exception.catch (Game.run reference observers seats finish hotseat generator orders matchup) interrupted
   Monad.forM_ (PlayOptions.save options) $ \path -> do
     timeline <- IORef.readIORef entries
-    save path (saved (Text.pack ("Played with parun play, seed " <> show seed <> ".")) orders matchup timeline)
+    save path (saved (Registry.printings registry) (Text.pack ("Played with parun play, seed " <> show seed <> ".")) orders matchup timeline)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Render.result result)
     Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
@@ -166,8 +167,8 @@ labels = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show n))) 
 -- | The scenario a game played from this matchup, each seat at its graveyard
 -- order in `orders` and its answers' entries recorded in `timeline`, replays
 -- as.
-saved :: Text.Text -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
-saved description orders matchup = Record.scenario description (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
+saved :: PrintingTable.PrintingTable -> Text.Text -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
+saved table description orders matchup = Record.scenario table description (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
 
 -- | Writes a scenario to `path`.
 save :: FilePath -> Scenario.Scenario -> IO ()

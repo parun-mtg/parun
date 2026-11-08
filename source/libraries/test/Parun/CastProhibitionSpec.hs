@@ -58,6 +58,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
@@ -1439,7 +1440,7 @@ runedHaloSpec s registry =
       curse <- S.printingOf s registry "Curse of Vitality"
       let (haloId, _, board) = runedHaloBoard plains halo curse
           corpus = InvalidCorpus.MkInvalidCorpus "cards" ["cards/goblin-piker.json: unreadable"]
-          answering found = Registry.MkRegistry {Registry.fetchCard = const (pure found), Registry.cards = pure (fmap (const []) found)}
+          answering found = Registry.MkRegistry {Registry.fetchCard = const (pure found), Registry.cards = pure (fmap (const []) found), Registry.printings = PrintingTable.empty}
           naming reference = fmap snd (Engine.runGameAsked (Interpreter.lookingUpCards reference Left (namingAnswer (CardName.MkCardName (Text.pack "Goblin Piker")))) board (S.cast S.alice haloId >> Stack.resolveTop))
       case naming (answering (Left corpus)) of
         Left reached -> Spec.assertEqWith s "the registry's failure reaches the handler" reached corpus
