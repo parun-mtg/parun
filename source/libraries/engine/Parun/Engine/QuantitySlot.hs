@@ -130,6 +130,7 @@ overSlots f quantity =
         -- TARGET slot, not an amount one.
         Quantity.LifeTotal _ -> pure quantity
         Quantity.StartingLifeTotal _ -> pure quantity
+        Quantity.StartingDeckSize _ -> pure quantity
         -- And a fourth: LifeTotal's sibling carries a PlayerRef in the same position.
         Quantity.Speed _ -> pure quantity
         -- And a fifth, CR 726.1's designation -- a PlayerRef and nothing else.
@@ -331,6 +332,7 @@ nestedRefs quantity = case quantity of
   Quantity.ManaCount c -> Set.singleton (Left (ManaCount.Type.player c))
   Quantity.LifeTotal ref -> Set.singleton (Left ref)
   Quantity.StartingLifeTotal ref -> Set.singleton (Left ref)
+  Quantity.StartingDeckSize ref -> Set.singleton (Left ref)
   Quantity.Speed ref -> Set.singleton (Left ref)
   Quantity.IsMonarch ref -> Set.singleton (Left ref)
   Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref _) -> Set.singleton (Left ref)
@@ -449,6 +451,7 @@ nestedCounts quantity = case quantity of
   -- game, so none of them holds a Count:
   Quantity.LifeTotal _ -> []
   Quantity.StartingLifeTotal _ -> []
+  Quantity.StartingDeckSize _ -> []
   Quantity.Speed _ -> []
   Quantity.IsMonarch _ -> []
   Quantity.HasPlayerDesignation {} -> []
@@ -630,6 +633,7 @@ mapPlayerRefs f intoCount quantity =
    in case quantity of
         Quantity.LifeTotal ref -> Quantity.LifeTotal (f ref)
         Quantity.StartingLifeTotal ref -> Quantity.StartingLifeTotal (f ref)
+        Quantity.StartingDeckSize ref -> Quantity.StartingDeckSize (f ref)
         Quantity.Speed ref -> Quantity.Speed (f ref)
         Quantity.IsMonarch ref -> Quantity.IsMonarch (f ref)
         Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref mark) -> Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally (f ref) mark)

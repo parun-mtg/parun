@@ -32,6 +32,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Face as Face
@@ -65,7 +66,7 @@ rules table settings format =
       -- deckLimit says otherwise (CR 101.1). The format, and not the game's
       -- settings, says which of CR 903.3 and CR 903.12c judges the commander.
       commander brawl size =
-        [atLeast size withCommander, atMost size withCommander, copiesAtMost restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
+        [atLeast size withCommander, commanderAtMost size, copiesAtMost restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
           <> foldMap (pure . inPool) standing
           <> [anteCards settings, conspiracies]
    in case Format.rules format of
@@ -99,6 +100,15 @@ atMost :: Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Nat
 atMost most counted deck =
   let size = sum (counted deck)
    in [Violation.TooManyCards size most | size > most]
+
+-- CR 903.5a / 903.12d: atMost, unless a card the deck designates as its
+-- commander lifts the maximum (CR 903.5e), legal commander or not, as
+-- inIdentity reads them. Read off the front face, as
+-- Parun.Engine.Commander.soleCommander reads CR 903.3a's ability.
+commanderAtMost :: Natural.Natural -> Deck.Deck -> [Violation.Violation]
+commanderAtMost most deck
+  | any (Set.member CommanderDeckRule.NoMaximumDeckSize . Face.commanderDeckRules . Card.frontFace . Printing.card) (Deck.commander deck) = []
+  | otherwise = atMost most withCommander deck
 
 -- CR 903.5a: the deck with its commanders, which it counts among its cards.
 withCommander :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural

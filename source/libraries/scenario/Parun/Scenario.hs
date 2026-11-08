@@ -395,7 +395,8 @@ stage registry board =
             Just label -> pure (Left (Failure.MkMisseated label))
             Nothing -> do
               placed <- placeSeats registry (NonEmpty.toList seated) (Staged.MkStaged positioned ids Map.empty)
-              pure (fmap (designateDefenders . settleStartingLife) (placed >>= attachAll (placementsOf board)))
+              withDecks <- either (pure . Left) (recordStartingDecks registry (NonEmpty.toList seated)) placed
+              pure (fmap (designateDefenders . settleStartingLife) (withDecks >>= attachAll (placementsOf board)))
 
 -- | CR 500.7: each seat's turns of the game on a board that starts at `turn`
 -- with `active`'s turn, as an ordinary rotation with no extra turn taken would
@@ -422,6 +423,23 @@ settleStartingLife board =
       seats = length (GameState.turnOrder gs)
       record pid p = p {Player.startingLife = Setup.startingLifeOf (GameState.settings gs) seats pid (Player.commander p) (Setup.lifeModifierOf pid gs)}
    in board {Staged.state = gs {GameState.players = Map.mapWithKey record (GameState.players gs)}}
+
+-- | CR 103.2a: each seat's starting deck, as setup would have recorded it,
+-- each card interned as a placement's is.
+recordStartingDecks :: (Monad m) => Registry.Registry m -> [(Seat.Seat, PlayerId.PlayerId)] -> Staged.Staged -> m (Either Failure.ScenarioFailure Staged.Staged)
+recordStartingDecks registry seated board = Monad.foldM record (Right board) [(pid, name, count) | (seat, pid) <- seated, (name, count) <- Map.toAscList (Seat.startingDeck seat)]
+  where
+    record next (pid, name, count) = case next of
+      Left failure -> pure (Left failure)
+      Right sofar -> do
+        found <- Registry.fetchCard registry name
+        pure $ case found of
+          Left corpus -> Left (Failure.MkInvalidCorpus corpus)
+          Right Nothing -> Left (Failure.MkUnknownCard name)
+          Right (Just card) ->
+            let (printingId, interned) = Game.intern (Printing.ofCard card) (Staged.state sofar)
+                stamp p = p {Player.startingDeck = Map.insertWith (+) printingId count (Player.startingDeck p)}
+             in Right sofar {Staged.state = interned {GameState.players = Map.adjust stamp pid (GameState.players interned)}}
 
 -- | One unrestricted unit of a type, as a board floats it (CR 106.4).
 plainUnit :: ManaType.ManaType -> ManaUnit.ManaUnit

@@ -3464,6 +3464,7 @@ whispering-wizard
 white-mana-battery
 white-tiger-ava-ayala
 white-ward
+whtz-the-bibliophile
 wibbly-wobbly-timey-wimey
 wiccan-young-avenger
 wicker-picker

@@ -466,6 +466,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.StartingLifeTotal ref -> case playersOf ref of
           Just [pid] -> fmap Player.startingLife (Map.lookup pid (GameState.players gs))
           _ -> Nothing
+        -- CR 103.2a: StartingLifeTotal's arm over the deck setup recorded.
+        Quantity.StartingDeckSize ref -> case playersOf ref of
+          Just [pid] -> fmap (toInteger . sum . Player.startingDeck) (Map.lookup pid (GameState.players gs))
+          _ -> Nothing
         -- CR 702.179e / 702.179f: a player's speed. LifeTotal's arm in every respect
         -- above -- read live, resolved through the same playersOf, and Nothing
         -- for a reference naming anything but exactly one player.
@@ -1384,6 +1388,7 @@ objectSlots quantity = case quantity of
   Quantity.ManaCount _ -> Set.empty
   Quantity.LifeTotal _ -> Set.empty
   Quantity.StartingLifeTotal _ -> Set.empty
+  Quantity.StartingDeckSize _ -> Set.empty
   Quantity.Speed _ -> Set.empty
   Quantity.IsMonarch _ -> Set.empty
   Quantity.HasPlayerDesignation {} -> Set.empty
@@ -1657,8 +1662,8 @@ hasRead wanted quantity = case quantity of
   -- payload is a strictly smaller subterm.
   Quantity.Count c -> QuantitySlot.anyCount (hasRead wanted) c
   -- Every remaining arm is a LEAF holding no Quantity, so none can hide an X.
-  -- The ten references below (ManaCount's, LifeTotal's, StartingLifeTotal's,
-  -- Speed's, IsMonarch's, HasPlayerDesignation's, IsStartingPlayer's,
+  -- The eleven references below (ManaCount's, LifeTotal's, StartingLifeTotal's,
+  -- StartingDeckSize's, Speed's, IsMonarch's, HasPlayerDesignation's, IsStartingPlayer's,
   -- IsActivePlayer's, PlayerCounters', Devotion's) are PlayerRefs, whose InSlot names a TARGET slot rather than an
   -- amount one, and X is only ever an amount.
   Quantity.Literal _ -> False
@@ -1668,6 +1673,7 @@ hasRead wanted quantity = case quantity of
   Quantity.ManaCount _ -> False
   Quantity.LifeTotal _ -> False
   Quantity.StartingLifeTotal _ -> False
+  Quantity.StartingDeckSize _ -> False
   Quantity.Speed _ -> False
   Quantity.IsMonarch _ -> False
   Quantity.HasPlayerDesignation {} -> False
@@ -1768,6 +1774,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.ManaCount _ -> False
   Quantity.LifeTotal _ -> False
   Quantity.StartingLifeTotal _ -> False
+  Quantity.StartingDeckSize _ -> False
   Quantity.Speed _ -> False
   Quantity.IsMonarch _ -> False
   Quantity.HasPlayerDesignation {} -> False
