@@ -112,6 +112,7 @@ armyToken subtype =
               Face.claimsStartingPlayer = False,
               Face.anteOnly = False,
               Face.deckLimit = Nothing,
+              Face.commanderDeckRules = Set.empty,
               Face.keywords = Map.empty,
               Face.colorIndicator = Set.singleton Color.Black,
               Face.characteristicPT = Nothing,

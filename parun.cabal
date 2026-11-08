@@ -442,6 +442,8 @@ library codec
     Parun.Codec.CombatSpec
     Parun.Codec.CombatStep
     Parun.Codec.CombatStepSpec
+    Parun.Codec.CommanderDeckRule
+    Parun.Codec.CommanderDeckRuleSpec
     Parun.Codec.CompanyCount
     Parun.Codec.CompanyCountSpec
     Parun.Codec.Compares
@@ -2713,6 +2715,7 @@ library types
     Parun.Types.CombatDeclaration
     Parun.Types.CombatRestriction
     Parun.Types.CombatStep
+    Parun.Types.CommanderDeckRule
     Parun.Types.CommandZoneDecision
     Parun.Types.CompanyCount
     Parun.Types.Compares

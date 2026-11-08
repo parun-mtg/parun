@@ -34,6 +34,7 @@ import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatRestriction as CombatRestriction
+import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
@@ -150,6 +151,10 @@ data Face card = MkFace
     -- prints "A deck can have ...", or Nothing. A printed field for anteOnly's
     -- reason: its reader (Parun.Legality) checks a deck before any game.
     deckLimit :: Maybe DeckLimit.DeckLimit,
+    -- | CR 903.5e: the deck-construction rules this card changes for the deck
+    -- it is the commander of. A printed field for anteOnly's reason: its reader
+    -- (Parun.Legality) checks a deck before any game.
+    commanderDeckRules :: Set.Set CommanderDeckRule.CommanderDeckRule,
     -- | CR 702, counted. A card can print the same keyword twice -- Apex
     -- Devastator's "Cascade, cascade, cascade, cascade" -- and CR 702.85c makes
     -- each instance trigger separately, so the count is printed text rather than

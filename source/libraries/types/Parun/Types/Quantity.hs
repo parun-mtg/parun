@@ -119,6 +119,9 @@ data Quantity
     LifeTotal PlayerRef.PlayerRef
   | -- | CR 103.4 / 119.1: that player's starting life total.
     StartingLifeTotal PlayerRef.PlayerRef
+  | -- | CR 103.2a: how many cards that player's starting deck held, a
+    -- commander included (CR 903.6).
+    StartingDeckSize PlayerRef.PlayerRef
   | -- | CR 702.179: that player's speed; no speed reads 0 (CR 702.179f).
     Speed PlayerRef.PlayerRef
   | -- | CR 726.1: 1 if that player is the monarch, else 0; no monarch reads 0
