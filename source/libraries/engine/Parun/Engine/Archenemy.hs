@@ -6,9 +6,8 @@
 -- No GameSettings field, Parun.Engine.Vanguard's posture: every rule here is
 -- stated of the archenemy's scheme deck or a scheme card, so a player who
 -- brought a scheme deck is an archenemy (isArchenemy). CR 904.12b's Supervillain
--- Rumble, where every player is one, is that same reading.
---
--- Not implemented: CR 904.13d's scheme deck construction (#6398).
+-- Rumble, where every player is one, is that same reading. CR 904.3's and
+-- 904.13d's scheme deck construction is Parun.Legality's.
 module Parun.Engine.Archenemy where
 
 import qualified Control.Monad as Monad

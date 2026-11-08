@@ -32,9 +32,9 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * CR 902.2's deck construction (#6398), so a game where one player brought a
---     vanguard and another did not is playable here and is not a legal Vanguard
---     game.
+--   * CR 902.3's vanguard card for every player (#6705), so a game where one
+--     player brought a vanguard and another did not is playable here and is not
+--     a legal Vanguard game.
 module Parun.Engine.Vanguard where
 
 import qualified Data.List as List
@@ -124,9 +124,10 @@ homeZoneOf oid gs = if functionsFromCommandZone oid gs then Zone.Command else Zo
 -- | CR 902.3 \/ 902.6: this player's vanguard card, which is theirs to own and
 -- sits in the command zone all game.
 --
--- The FIRST by id where a player somehow has two, which no legal Vanguard game
--- has (CR 902.1's "one face-up vanguard card"); no vanguard deck is validated
--- (#6398), so the tie is broken rather than reported.
+-- The FIRST by id where a player somehow has two, which no deck
+-- Parun.Legality.check passes brings: Deck.vanguard holds one (CR 902.1), and
+-- a vanguard card in a supplementary deck is misplaced. An unchecked deck can,
+-- so the tie is broken.
 vanguardOf :: PlayerId -> GameState -> Maybe ObjectId
 vanguardOf pid gs = List.find (\oid -> isVanguard oid gs) (Game.zoneMembers Zone.Command pid gs)
 

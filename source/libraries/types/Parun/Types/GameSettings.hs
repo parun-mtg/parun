@@ -113,7 +113,7 @@ data GameSettings = MkGameSettings
     -- Parun.Engine.Planechase and Parun.Engine.Setup.
     --
     -- Not implemented: CR 901.15a's deck construction (size, phenomena,
-    -- names) (#6398).
+    -- names) (#6705).
     singlePlanarDeck :: Bool
   }
   deriving (Eq, Ord, Show)

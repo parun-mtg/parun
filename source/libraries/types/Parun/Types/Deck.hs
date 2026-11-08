@@ -108,9 +108,9 @@ data Deck = MkDeck
     -- by which deck (Parun.Types.SideDeck). A multiset apiece: CR 718.2b lets a
     -- limited Attraction deck repeat a name, CR 904.3 two schemes of a name,
     -- and the FAQ a limited Contraption deck its duplicates. CR 901.3's
-    -- one-of-each planar deck is deck construction, which this type does not
-    -- judge (a Set of printings could not either, two printings sharing a
-    -- name).
+    -- one-of-each planar deck is deck construction, which Parun.Legality
+    -- judges and this type does not (a Set of printings could not, two
+    -- printings sharing a name).
     sideDecks :: Map.Map SideDeck.SideDeck (Map.Map Printing.Printing Natural.Natural),
     -- | CR 123.2: the sticker sheets this player brings. A Seq, not a Set:
     -- CR 123.2b lets a limited player bring two of one sheet, and CR 123.3a
