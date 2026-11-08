@@ -507,10 +507,8 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseModes _ _ source legal selection ->
     subset (Just source) (("names", R.Array (fmap (modeName gs source) (Set.toList legal))) : [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection]) (Just (Modal.leastOf selection), Just (Modal.mostOf selection)) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
   -- CR 702.47b: the cards in the order the answer names them, the first
-  -- happening first.
-  --
-  -- Not implemented: the splice cost each card adds (#6619).
-  Prompt.ChooseSplice _ _ source offers -> subset (Just source) [] (Just 0, Nothing) (fmap (object . fst) offers)
+  -- happening first, and under @"costs"@ the splice cost each adds.
+  Prompt.ChooseSplice _ _ source offers -> subset (Just source) [("costs", R.Array (fmap (payment . snd) offers))] (Just 0, Nothing) (fmap (object . fst) offers)
   -- CR 701.23a / 701.23j: at least one place, each named.
   Prompt.ChooseSearchZones _ _ places ->
     subset Nothing [("names", R.Array (fmap (R.Text . placeName) (Set.toList places)))] (Just 1, Nothing) (fmap (Reply.encode Reply.searchPlace namer) (Set.toList places))

@@ -83,6 +83,7 @@ import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -413,7 +414,8 @@ spec s registry = Spec.describe s "Protocol" $ do
         told prompt = fmap (\key -> field key (Protocol.offerOf gs prompt))
         mode = ModeIndex.MkModeIndex
         modes = Prompt.ChooseModes alice S.alice o7 (Set.fromList [mode 0, mode 2]) (ModeSelection.ChooseExactlyWithRepeats 2)
-        splice = Prompt.ChooseSplice alice S.alice o7 [(o9, free), (card, free)]
+        spliceCost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Red)])) []
+        splice = Prompt.ChooseSplice alice S.alice o7 [(o9, free), (card, spliceCost)]
         zones = Prompt.ChooseSearchZones alice S.alice (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame])
         pool = OutsideCard.InPool printing
         outside = Prompt.ChooseFromOutsideTheGame alice S.alice ((pool, 2) NonEmpty.:| []) 1 2
@@ -423,6 +425,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 700.2d as many as the selection takes, one chosen again" (told modes ["least", "most", "repeats"]) [Just (R.Number 2), Just (R.Number 2), Just (R.Boolean True)]
     Spec.assertEqWith s "and null for a mode with no text" (told modes ["names"]) [Just (R.Array [R.Null, R.Null])]
     Spec.assertEqWith s "and a mode named twice reads back" (Protocol.decodeAnswer modes (R.Array (replicate 2 (R.Number 2)))) (Right (Seq.fromList [mode 2, mode 2]))
+    Spec.assertEqWith s "CR 702.47a each card beside the splice cost it adds" (told splice ["costs"]) [Just (R.Array (fmap Protocol.payment [free, spliceCost]))]
     Spec.assertEqWith s "CR 702.47b the cards read back in the order named" (Protocol.decodeAnswer splice (R.Array (reverse (among splice)))) (Right [card, o9])
     Spec.assertEqWith s "CR 701.23j at least one place, each named" (told zones ["least", "names"]) [Just (R.Number 1), Just (R.Array (fmap R.Text [Text.pack "a graveyard", Text.pack "outside the game"]))]
     Spec.assertEqWith s "and the places read back" (Protocol.decodeAnswer zones (R.Array (among zones))) (Right (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame]))
