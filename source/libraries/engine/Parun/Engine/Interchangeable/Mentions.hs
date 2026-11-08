@@ -2550,6 +2550,7 @@ playerEffectNames asking x = case x of
   PlayerEffect.CantBeTargetedBy _playerScope quality -> foldMap (filterNames asking) quality
   PlayerEffect.HasProtectionFrom filter_ -> filterNames asking filter_
   PlayerEffect.CastAsThoughItHadFlash filter_ -> filterNames asking filter_
+  PlayerEffect.NextSpell filter_ -> filterNames asking filter_
   PlayerEffect.MayPlayAsThoughItHadFlash filter_ -> filterNames asking filter_
   PlayerEffect.KeywordRiderGrant grant ->
     keywordDesignatorNames asking (KeywordRiderGrant.abilities grant) <> filterNames asking (KeywordRiderGrant.permanents grant)

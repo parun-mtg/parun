@@ -1246,6 +1246,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.LoyaltyGrant _ -> False
   PlayerEffect.MayTapForMana _ -> False
   PlayerEffect.CantBeCountered _ -> False
+  PlayerEffect.NextSpell _ -> False
   PlayerEffect.RestrictTargeting _ -> False
   PlayerEffect.TargetPastHexproof _ -> False
   PlayerEffect.CantCastMatching _ -> False
@@ -1327,6 +1328,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.LoyaltyGrant _ -> False
   PlayerEffect.MayTapForMana _ -> False
   PlayerEffect.CantBeCountered _ -> False
+  PlayerEffect.NextSpell _ -> False
   PlayerEffect.RestrictTargeting _ -> False
   PlayerEffect.TargetPastHexproof _ -> False
   PlayerEffect.CantCastMatching _ -> False

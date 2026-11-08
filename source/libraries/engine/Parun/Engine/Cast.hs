@@ -3109,6 +3109,8 @@ followIntoSpell permission old new gs = case permission of
 -- row then follows the spell onto the permanent it becomes
 -- (Parun.Engine.Event.reenter). data/scenarios/cast-permission's Savage
 -- Summoning scenarios prove both riders.
+-- Theorist's Proxy spends PlayerEffect.NextSpell instead, a marker with no
+-- effect of its own; its cast-permission scenario proves the binding.
 --
 -- The cast road only: a land play spends a grant (spentByLandPlay) but is no
 -- spell for "that spell" to name.
