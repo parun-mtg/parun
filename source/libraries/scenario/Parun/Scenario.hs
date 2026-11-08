@@ -262,7 +262,7 @@ enter :: (Monad m) => Registry.Registry m -> NonEmpty.NonEmpty Entrant.Entrant -
 enter registry entrants = do
   let seated = NonEmpty.zip entrants (fmap PlayerId.MkPlayerId (0 NonEmpty.:| [1 ..]))
       ids = Map.fromList (fmap (Bifunctor.first Entrant.name) (NonEmpty.toList seated))
-  decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap DeckList.explain) ((,) pid))) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
+  decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap DeckList.explain) ((,) pid) . DeckList.sound)) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
   pure $ case List.find ((> 1) . length) (List.group (List.sort (fmap Entrant.name (NonEmpty.toList entrants)))) of
     Just (label : _) -> Left (Failure.MkDuplicateLabel label)
     _ -> do

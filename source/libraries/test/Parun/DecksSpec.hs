@@ -29,7 +29,7 @@ spec s registry = do
 
     Monad.forM_ decks $ \path -> Spec.it s (drop (length root + 1) path <> " reads") $ do
       contents <- Decks.loadFile path
-      parsed <- either (pure . Left . (: []) . Text.unpack) (fmap (either (Left . (: []) . Exception.displayException) (either (Left . fmap (Text.unpack . DeckList.explain)) Right)) . DeckList.parse registry) contents
+      parsed <- either (pure . Left . (: []) . Text.unpack) (fmap (either (Left . (: []) . Exception.displayException) (either (Left . fmap (Text.unpack . DeckList.explain)) Right . DeckList.sound)) . DeckList.parse registry) contents
       Spec.assertEqWith s (path <> ": problems") (Either.fromLeft [] parsed) []
 
     let starters = ("starter-1", "starter-2")
@@ -37,7 +37,7 @@ spec s registry = do
       Spec.it s ("two bots finish a game with the " <> set <> " starter decks, and it replays clean") $ do
         let read' name = do
               contents <- Decks.loadFile (root <> "/sets/" <> code <> name)
-              either (const (pure (Left []))) (fmap (Either.fromRight (Left [])) . DeckList.parse registry) contents
+              either (const (pure (Left []))) (fmap (either (const (Left [])) DeckList.sound) . DeckList.parse registry) contents
         decksRead <- (,) <$> read' ("/" <> first <> ".txt") <*> read' ("/" <> second <> ".txt")
         case decksRead of
           (Right one, Right two) -> played (S.alice, one) (S.bob, two)

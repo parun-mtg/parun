@@ -35,12 +35,9 @@ import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Test
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
-import qualified Parun.Types.Violation as Violation
 import qualified System.Directory as Directory
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
@@ -61,13 +58,7 @@ main = do
     ["schema"] -> schema
     ["schema", "scenario"] -> scenarioSchema
     ["deck", path] -> deck Nothing path
-    ["deck", "--format", format, path] -> do
-      checker <- Legality.named (Text.pack format)
-      case checker of
-        Right known -> deck (Just (known GameSettings.plain)) path
-        Left problem -> do
-          TextIO.hPutStrLn IO.stderr problem
-          Exit.exitFailure
+    ["deck", "--format", format, path] -> deck (Just (Text.pack format)) path
     ["ingest", path] -> ingest path
     ["oracle"] -> oracle
     "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
@@ -90,9 +81,10 @@ main = do
 -- Parun.Registry.parseCard's reason: that one decodes using the locale encoding,
 -- so a card with a non-ASCII character in its name would fail under LC_ALL=C.
 --
--- With a format, a deck breaking its rules or pool in a game not for ante is
--- reported, every violation, and not written back.
-deck :: Maybe (Deck.Deck -> [Violation.Violation]) -> FilePath -> IO ()
+-- With a format, asked for or named by the list's header, a deck breaking its
+-- rules or pool in a game not for ante is reported, every violation beside
+-- every bad line, and not written back.
+deck :: Maybe Text.Text -> FilePath -> IO ()
 deck format path = do
   bytes <- ByteString.readFile path
   case Encoding.decodeUtf8' bytes of
@@ -107,14 +99,13 @@ deck format path = do
         Left corpus -> do
           IO.hPutStrLn IO.stderr (Exception.displayException corpus)
           Exit.exitFailure
-        Right (Left problems) -> do
-          mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
-          Exit.exitFailure
-        Right (Right parsed) -> case foldMap ($ parsed) format of
-          [] -> TextIO.putStr (DeckList.render parsed)
-          violations -> do
-            mapM_ (TextIO.hPutStrLn IO.stderr . (\v -> Text.pack (path <> ": ") <> Legality.explain v)) violations
-            Exit.exitFailure
+        Right listed -> do
+          (checked, problems) <- Legality.report format listed
+          case problems of
+            [] -> TextIO.putStr (DeckList.render checked (DeckList.deck listed))
+            _ -> do
+              mapM_ (TextIO.hPutStrLn IO.stderr . (Text.pack (path <> ": ") <>)) problems
+              Exit.exitFailure
 
 -- | Reads script/ingest/candidates.jq's reduction of MTGJSON's AtomicCards and
 -- writes a card file for every keyword-only card it holds, Oracle text included

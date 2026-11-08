@@ -92,7 +92,7 @@ scenario :: Text.Text -> NonEmpty.NonEmpty (Label.Label, GraveyardOrder.Graveyar
 scenario description entrants timeline =
   Scenario.Type.MkScenario
     { Scenario.Type.description = description,
-      Scenario.Type.start = Start.FromDecks (fmap (\(label, order, deck) -> Entrant.MkEntrant label (Text.lines (DeckList.render deck)) order) entrants),
+      Scenario.Type.start = Start.FromDecks (fmap (\(label, order, deck) -> Entrant.MkEntrant label (Text.lines (DeckList.render Nothing deck)) order) entrants),
       Scenario.Type.timeline = timeline,
       Scenario.Type.final = Seq.empty
     }
