@@ -32,6 +32,7 @@ import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -136,7 +137,7 @@ faceAbilities face =
         [word <> Text.pack " " <> one, Text.pack "that " <> one]
       context = contextOf self host
       -- A printed loyalty (CR 306.5a) is no Oracle text, as power is not.
-      rest = face {Face.loyalty = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing, Face.deckLimit = Nothing}
+      rest = face {Face.loyalty = Nothing, Face.keywords = Map.empty, Face.spell = Face.defaultSpell, Face.activatedAbilities = [], Face.triggeredAbilities = [], Face.staticAbilities = [], Face.replacementEffects = [], Face.combatRestrictions = [], Face.playerAbilities = [], Face.enchant = [], Face.characteristicPT = Nothing, Face.characteristicColors = Nothing, Face.deckLimit = Nothing}
       subtypes = TypeLine.subtypes (Face.typeLine face)
       unread = rest /= Face.Oracle.bare (Face.name face) (Face.oracleText face) (Face.manaCost face) (Face.colorIndicator face) (Face.typeLine face) (Face.power face) (Face.toughness face) Map.empty
       spell = [Effect.modal context {Target.breaks = [Text.pack " ", Text.pack "\n"]} (Face.spell face) | Face.spell face /= Face.defaultSpell]
@@ -146,6 +147,7 @@ faceAbilities face =
    in Keyword.abilities self (Face.keywords face)
         <> fmap (Continuous.enchant context) (Face.enchant face)
         <> fmap (Continuous.defining context (Face.power face) (Face.toughness face)) (Maybe.maybeToList (Face.characteristicPT face))
+        <> fmap (colorDefining self) (Maybe.maybeToList (Face.characteristicColors face))
         <> joint
         <> fmap (Continuous.static context attached (Face.enchant face)) statics
         <> fmap (Continuous.replacement context) (Face.replacementEffects face)
@@ -156,6 +158,12 @@ faceAbilities face =
         <> fmap (triggered context (Set.member CardType.Creature (TypeLine.types (Face.typeLine face)))) (Face.triggeredAbilities face)
         <> fmap (deckLimit self) (Maybe.maybeToList (Face.deckLimit face))
         <> [[] | unread]
+
+-- | CR 604.3 / 105.2: the line by which a card named `self` defines its
+-- colours: "is all colors" (Transguild Courier). Any other set is not spelled
+-- out here.
+colorDefining :: Text.Text -> Set.Set Color.Color -> [Text.Text]
+colorDefining self colors = [self <> Text.pack " is all colors." | colors == Set.fromList [minBound .. maxBound]]
 
 -- | CR 100.2a: the line by which a card named `self` lifts the four-card
 -- limit for its own name.

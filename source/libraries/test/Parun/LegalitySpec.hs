@@ -240,6 +240,10 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     found <- ledViolationsNamed s registry "commander" ["Krenko, Mob Boss"] [("Brainstorm", 1), ("Mountain", 98)] []
     Spec.assertEqWith s "violations" found [Violation.OutsideColorIdentity (nameOf "Brainstorm")]
 
+  Spec.it s "CR 903.5c: Transguild Courier is outside Krenko's colour identity by the colours it defines" $ do
+    found <- ledViolationsNamed s registry "commander" ["Krenko, Mob Boss"] [("Transguild Courier", 1), ("Mountain", 98)] []
+    Spec.assertEqWith s "violations" found [Violation.OutsideColorIdentity (nameOf "Transguild Courier")]
+
   Spec.it s "CR 903.5: the commander is checked against the pool too, which bans Golos" $ do
     found <- ledViolationsNamed s registry "commander" ["Golos, Tireless Pilgrim"] [("Mountain", 99)] []
     Spec.assertEqWith s "violations" found [Violation.BannedCard (nameOf "Golos, Tireless Pilgrim")]

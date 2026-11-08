@@ -133,6 +133,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   -- once reads and writes exactly as it did when this was a set.
   keywords <- Fields.defaulted "keywords" Map.empty (Common.repeats Keyword.codec) Face.keywords
   colorIndicator <- Fields.defaulted "colorIndicator" Set.empty (Common.set Color.codec) Face.colorIndicator
+  characteristicColors <- Fields.defaulted "characteristicColors" Nothing (Common.maybe (Common.set Color.codec)) Face.characteristicColors
   spell <- Fields.defaulted "spell" Face.defaultSpell (Modal.codec cardCodec (GrantedAbility.codec cardCodec)) Face.spell
   staticAbilities <- Fields.defaulted "staticAbilities" [] (Common.list (StaticAbility.codec (GrantedAbility.codec cardCodec))) Face.staticAbilities
   activatedAbilities <- Fields.defaulted "activatedAbilities" [] (Common.list (ActivatedAbility.codec cardCodec (GrantedAbility.codec cardCodec))) Face.activatedAbilities
@@ -219,6 +220,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.enchant = enchant,
         Face.keywords = keywords,
         Face.colorIndicator = colorIndicator,
+        Face.characteristicColors = characteristicColors,
         Face.spell = spell,
         Face.staticAbilities = staticAbilities,
         Face.activatedAbilities = activatedAbilities,

@@ -166,6 +166,7 @@ theRingEmblem temptations =
               Face.keywords = Map.empty,
               Face.colorIndicator = Set.empty,
               Face.characteristicPT = Nothing,
+              Face.characteristicColors = Nothing,
               Face.staticAbilities = [theRingIsLegendary],
               Face.spell = Face.defaultSpell,
               Face.activatedAbilities = [],

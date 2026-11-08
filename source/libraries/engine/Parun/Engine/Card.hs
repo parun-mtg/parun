@@ -132,6 +132,7 @@ faceDownFace listed =
       Face.keywords = Map.fromSet (const 1) (FaceDownCharacteristics.keywords listed),
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,
+      Face.characteristicColors = Nothing,
       Face.staticAbilities = [a | GrantedAbility.Static a <- listedAbilities],
       Face.spell = Face.defaultSpell,
       Face.activatedAbilities = [a | GrantedAbility.Activated a <- listedAbilities],
@@ -366,9 +367,11 @@ flippedFace card =
                   Face.manaCost = Face.manaCost normal,
                   -- CR 710.1c, second half: the colour does not change either, and CR
                   -- 202.2 with CR 204.2 makes it exactly the mana cost above plus this
-                  -- indicator. No printed flip card has one; taking the normal half's
-                  -- is what makes the rule true rather than the pool.
-                  Face.colorIndicator = Face.colorIndicator normal
+                  -- indicator, or what a colour-defining ability says (CR 604.3). No
+                  -- printed flip card has either; taking the normal half's is what
+                  -- makes the rule true rather than the pool.
+                  Face.colorIndicator = Face.colorIndicator normal,
+                  Face.characteristicColors = Face.characteristicColors normal
                 }
         Layout.Adventure -> Nothing
         Layout.Omen -> Nothing
@@ -472,6 +475,8 @@ merge2 l r =
           -- CR 709.4: the colour indicator is a characteristic (CR 109.3), and no
           -- subrule narrows it the way 709.4b narrows the mana cost.
           Face.colorIndicator = Set.union (Face.colorIndicator l) (Face.colorIndicator r),
+          -- CR 709.4c: each half's colour-defining ability, its colours joined.
+          Face.characteristicColors = Face.characteristicColors l <> Face.characteristicColors r,
           -- CR 709.4c: "each ability in the text box of each half".
           Face.staticAbilities = Face.staticAbilities l <> Face.staticAbilities r,
           Face.activatedAbilities = Face.activatedAbilities l <> Face.activatedAbilities r,

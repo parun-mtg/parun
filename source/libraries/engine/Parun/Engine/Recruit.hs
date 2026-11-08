@@ -91,6 +91,7 @@ soldierToken =
               Face.keywords = Map.empty,
               Face.colorIndicator = Set.singleton Color.White,
               Face.characteristicPT = Nothing,
+              Face.characteristicColors = Nothing,
               Face.staticAbilities = [],
               Face.spell = Face.defaultSpell,
               Face.activatedAbilities = [],
