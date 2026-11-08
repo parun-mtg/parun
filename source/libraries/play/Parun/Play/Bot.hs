@@ -173,7 +173,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseUnleash {} -> exercisesOrDeclines
   Prompt.OfferedExtra {} -> exercisesOrDeclines
   Prompt.OfferedMiracleReveal {} -> exercisesOrDeclines
-  Prompt.RerollDie {} -> exercisesOrDeclines
+  Prompt.Rethrow {} -> exercisesOrDeclines
   Prompt.ChooseOfferedCastSpell _ _ options -> SplitMix.pick options
   -- CR 707.5: any candidate, or the card's "may" declined.
   Prompt.ChooseCopyTarget _ _ _ candidates -> SplitMix.pick (Nothing NonEmpty.:| fmap Just candidates)

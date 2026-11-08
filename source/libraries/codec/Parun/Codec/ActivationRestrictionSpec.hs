@@ -150,12 +150,12 @@ spec s = Spec.describe s "Parun.Codec.ActivationRestriction" $ do
       (ActivationRestriction.TimesEachTurn 1)
       " {\"type\":\"TimesEachTurn\",\"value\":1} "
   -- Goblin Bookie's "Activate only any time it makes sense".
-  Spec.it s "DuringDieRoll" $
+  Spec.it s "DuringThrow" $
     Common.assertCodec
       s
       ActivationRestriction.codec
-      ActivationRestriction.DuringDieRoll
-      " {\"type\":\"DuringDieRoll\"} "
+      ActivationRestriction.DuringThrow
+      " {\"type\":\"DuringThrow\"} "
   -- Rhystic Cave's "Activate only as an instant".
   Spec.it s "InstantSpeed" $
     Common.assertCodec

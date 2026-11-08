@@ -330,7 +330,7 @@ manaProduced effect = case effect of
   Effect.Search {} -> Nothing
   Effect.ExileAllGraveyards -> Nothing
   Effect.Proliferate -> Nothing
-  Effect.Reroll -> Nothing
+  Effect.Rethrow -> Nothing
   Effect.RerollStoredResults _ -> Nothing
   Effect.ChooseCardName _ -> Nothing
   Effect.ChooseQuality _ -> Nothing
@@ -535,7 +535,7 @@ playerChoice effect = case effect of
   Effect.Search {} -> Nothing
   Effect.ExileAllGraveyards -> Nothing
   Effect.Proliferate -> Nothing
-  Effect.Reroll -> Nothing
+  Effect.Rethrow -> Nothing
   Effect.RerollStoredResults _ -> Nothing
   Effect.ChooseCardName _ -> Nothing
   Effect.ChooseQuality _ -> Nothing
@@ -787,7 +787,7 @@ movesLibraryCard effect = case effect of
   Effect.ChangeText {} -> False
   Effect.ExileAllGraveyards -> False
   Effect.Proliferate -> False
-  Effect.Reroll -> False
+  Effect.Rethrow -> False
   Effect.RerollStoredResults _ -> False
   Effect.ChooseCardName _ -> False
   Effect.ChooseQuality _ -> False

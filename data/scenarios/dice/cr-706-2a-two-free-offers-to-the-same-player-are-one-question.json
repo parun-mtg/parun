@@ -1,6 +1,6 @@
 {
   "description": "CR 706.2a two free offers to the same player are one question",
-  "note": "Two Clams over the natural 3 raise ONE RerollDie and no ChooseRollModifier: a second offer or a pick between them would be an unscheduled prompt. The control accepts that one offer and the 3 is rerolled.",
+  "note": "Two Clams over the natural 3 raise ONE Rethrow and no ChooseRollModifier: a second offer or a pick between them would be an unscheduled prompt. The control accepts that one offer and the 3 is rerolled.",
   "board": {
     "seats": [
       {
@@ -105,7 +105,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }

@@ -5622,7 +5622,7 @@ countsActivations = any counted . restrictionsOf
       ActivationRestriction.DuringCombatBefore _ -> False
       ActivationRestriction.BeforeStep _ -> False
       ActivationRestriction.OnlyIf _ -> False
-      ActivationRestriction.DuringDieRoll -> False
+      ActivationRestriction.DuringThrow -> False
       ActivationRestriction.SpendOnly _ -> False
       ActivationRestriction.InstantSpeed -> False
 

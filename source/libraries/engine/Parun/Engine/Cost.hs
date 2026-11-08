@@ -7287,7 +7287,7 @@ payPayable perform paidFor slots pid oid component = case component of
   -- is the proof.
   CostComponent.FlipCoin -> do
     statements <- Coin.statementsFor (Just pid)
-    _ <- Event.flipWinLoseCoin (Just (ManaAbilityPerformer.throwForCoin perform)) pid statements
+    _ <- Event.flipWinLoseCoin (Just (ManaAbilityPerformer.throwForCoin perform)) (ManaAbilityPerformer.reflipWindow perform) pid statements
     pure bindsNothing
   -- CR 702.174a's first ability, paid by naming the opponent the gift is
   -- promised to, through Prompt.ChooseOpponent carrying the promise it records,

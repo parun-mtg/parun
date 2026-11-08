@@ -70,6 +70,7 @@ import qualified Parun.Codec.Result as Result
 import qualified Parun.Codec.ReturnWatch as ReturnWatch
 import qualified Parun.Codec.SideDeck as SideDeck
 import qualified Parun.Codec.SpellWasCast as SpellWasCast
+import qualified Parun.Codec.ThrowResult as ThrowResult
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.TurnMarker as TurnMarker
 import qualified Parun.Codec.TurnRegisters as TurnRegisters
@@ -256,8 +257,8 @@ codec resolve = Fields.object $ do
   gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural GameState.gameNumber
   turnAnchor <- Fields.defaulted "turnAnchor" Nothing (Common.maybe PlayerId.codec) GameState.turnAnchor
   extraTurnUnderWay <- Fields.defaulted "extraTurnUnderWay" Nothing (Common.maybe Timestamp.codec) GameState.extraTurnUnderWay
-  rollingDie <- Fields.defaulted "rollingDie" Nothing (Common.maybe Common.natural) GameState.rollingDie
-  rerollRequested <- Fields.defaulted "rerollRequested" False Common.boolean GameState.rerollRequested
+  throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) GameState.throwing
+  rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean GameState.rethrowRequested
   undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) GameState.undone
   pure
     GameState.MkGameState
@@ -393,8 +394,8 @@ codec resolve = Fields.object $ do
         GameState.gameNumber = gameNumber,
         GameState.turnAnchor = turnAnchor,
         GameState.extraTurnUnderWay = extraTurnUnderWay,
-        GameState.rollingDie = rollingDie,
-        GameState.rerollRequested = rerollRequested,
+        GameState.throwing = throwing,
+        GameState.rethrowRequested = rethrowRequested,
         GameState.undone = undone,
         -- Derived rather than written: see the note above.
         GameState.printingIds = invert printings

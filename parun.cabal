@@ -1609,6 +1609,8 @@ library codec
     Parun.Codec.TextWordSpec
     Parun.Codec.TheseDiscard
     Parun.Codec.TheseDiscardSpec
+    Parun.Codec.ThrowResult
+    Parun.Codec.ThrowResultSpec
     Parun.Codec.Timed
     Parun.Codec.TimedSpec
     Parun.Codec.Times
@@ -3362,6 +3364,7 @@ library types
     Parun.Types.Threshold
     Parun.Types.Throw
     Parun.Types.ThrowKind
+    Parun.Types.ThrowResult
     Parun.Types.Timed
     Parun.Types.Times
     Parun.Types.Timestamp

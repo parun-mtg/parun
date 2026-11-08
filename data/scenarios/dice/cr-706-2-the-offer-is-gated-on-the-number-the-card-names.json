@@ -1,6 +1,6 @@
 {
   "description": "CR 706.2 the offer is gated on the number the card names",
-  "note": "No RerollDie answer is scheduled, so a reroll offered over the 2 or the 5 would be an unscheduled prompt and fail the run; the two RollDie answers are the two dice. The control shows each die is a d6: a 7 reads as the out-of-range fallback 1 and a 6 stands.",
+  "note": "No Rethrow answer is scheduled, so a reroll offered over the 2 or the 5 would be an unscheduled prompt and fail the run; the two RollDie answers are the two dice. The control shows each die is a d6: a 7 reads as the out-of-range fallback 1 and a 6 stands.",
   "board": {
     "seats": [
       {

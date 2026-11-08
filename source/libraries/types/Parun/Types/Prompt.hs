@@ -83,6 +83,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.WordFamily as WordFamily
@@ -187,26 +188,28 @@ data Prompt r where
   -- "any number" including none.
   ChooseStoredRerolls :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Map.Map StoredResult.StoredResult Natural.Natural -> Prompt (Map.Map StoredResult.StoredResult Natural.Natural)
   -- | CR 706.2b's first step: whether a reroll a permanent offers is taken
-  -- (Clam-I-Am's "you may reroll that die"). A choice and not a roll, so it
+  -- (Clam-I-Am's "you may reroll that die"), or whether a coin just flipped
+  -- is reflipped (CR 705.1, Goblin Bookie). A choice and not a roll, so it
   -- carries a Decider and the seat where RollDie above carries neither.
   --
   -- The seat is the MODIFIER's "you" (CR 109.5) and not always the roller: Wall
   -- of Fortune reaches every player's roll and puts the "may" -- and the cost --
   -- on the Wall's controller.
   --
-  -- The Natural is the NATURAL result the die came up, which is what rule
+  -- The ThrowResult is the NATURAL result the die came up, which is what rule
   -- 706.2b hands the offer and the only thing separating this question from the
-  -- next die's. The die's SIZE is not here: every offer in force has already
-  -- been matched against it, so it narrows nothing the seat is deciding.
+  -- next die's, or the face the coin landed on. The die's SIZE is not here:
+  -- every offer in force has already been matched against it, so it narrows
+  -- nothing the seat is deciding.
   --
   -- The Cost is CR 706.2a's "associated cost", Nothing where the modifier states
   -- none -- or the activation cost of an ability activated inside the roll
-  -- (Goblin Bookie, ActivationRestriction.DuringDieRoll). Raised only once the payer can afford it, Prompt.ChooseToPay's posture
+  -- (Goblin Bookie, ActivationRestriction.DuringThrow). Raised only once the payer can afford it, Prompt.ChooseToPay's posture
   -- for CR 118.12 -- so an accepted offer is one that goes through.
   --
   -- Never elided. CR 706.2a's "may" makes one offer a real fork, and the two
   -- answers are two different numbers on the board.
-  RerollDie :: Decider.Decider -> PlayerId.PlayerId -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
+  Rethrow :: Decider.Decider -> PlayerId.PlayerId -> ThrowResult.ThrowResult -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt OptionalDecision.OptionalDecision
   -- | CR 706.2b's second step: whether an increase-or-decrease modifier a
   -- permanent offers is taken, on which die, and which way (Night Shift of the
   -- Living Dead's "you may pay 1 life. If you do, increase or decrease the
@@ -217,7 +220,7 @@ data Prompt r where
   -- in roll order, since the printed ruling lets the roller see them all before
   -- picking the one to shift. The results are Integers, unclamped: the
   -- instruction's own modifier may have taken one below zero, and CR 706.2
-  -- clamps nothing before the last modifier. RerollDie's seat and cost, for its
+  -- clamps nothing before the last modifier. Rethrow's seat and cost, for its
   -- reasons; the lone Natural is the amount.
   AdjustDieRoll :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty Integer -> Natural.Natural -> Maybe (Cost.Cost Keyword.Keyword) -> Prompt (Maybe (Natural.Natural, RollAdjustment.RollAdjustment))
   -- | CR 706.2b: which of two or more competing modifiers the player who

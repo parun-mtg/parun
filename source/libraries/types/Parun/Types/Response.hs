@@ -166,7 +166,7 @@ data Response
     ChoseExplore OptionalDecision.OptionalDecision
   | -- | CR 706.2b: whether the seat CR 109.5's "you" names on the modifier took
     -- a reroll it offered (Clam-I-Am, Wall of Fortune).
-    ChoseReroll OptionalDecision.OptionalDecision
+    ChoseRethrow OptionalDecision.OptionalDecision
   | -- | CR 706.2b: the die an increase-or-decrease modifier was taken on and
     -- its direction, or Nothing for declining it (Night Shift of the Living
     -- Dead).

@@ -130,6 +130,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -576,7 +577,7 @@ rerollAnswer index p = case p of
         State.put (t, decisions)
         pure h
       [] -> pure 6
-  Prompt.RerollDie {} -> do
+  Prompt.Rethrow {} -> do
     (rolls, decisions) <- State.get
     case decisions of
       h : t -> do
@@ -603,7 +604,7 @@ rerollPrompts rolls decisions spell board =
           let (answer, next) = State.runState (rerollAnswer 0 p) scripted
           State.put (sides : seen, asked, next)
           pure answer
-        Prompt.RerollDie _ _ natural _ -> do
+        Prompt.Rethrow _ _ (ThrowResult.DieCameUp natural) _ -> do
           (seen, asked, scripted) <- State.get
           let (answer, next) = State.runState (rerollAnswer 0 p) scripted
           State.put (seen, natural : asked, next)
@@ -712,7 +713,7 @@ rerollSeats rolls decisions spell board =
       logging p = do
         (asked, scripted) <- State.get
         let (answer, next) = State.runState (rerollAnswer 0 p) scripted
-        State.put (case p of Prompt.RerollDie _ pid _ _ -> pid : asked; _ -> asked, next)
+        State.put (case p of Prompt.Rethrow _ pid _ _ -> pid : asked; _ -> asked, next)
         pure answer
       (seats, _) = State.execState (Engine.runGame logging board (S.cast S.alice spell >> Stack.resolveTop)) ([], (rolls, decisions))
    in reverse seats
@@ -728,8 +729,7 @@ rerollSeats rolls decisions spell board =
 -- thing an ACTIVATED ability needs and a static modifier would not: the mana
 -- (CR 602.2b), and a creature's settle before paying {T} (CR 302.6).
 --
--- Not transcribed: the "reflip any coin" half (#4017). Stricter than printed:
--- bob can reflip nothing.
+-- The coin half is the scenarios coin/cr-705-1-goblin-bookie-*.
 activatedRerollSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 activatedRerollSpec s registry = Spec.describe s "Activated reroll" $ do
   Spec.it s "CR 706.2b Goblin Bookie rerolls another player's die" $ do
@@ -912,7 +912,7 @@ nightShiftAnswer index p = case p of
     case rolls of
       h : t -> State.put (t, rerolls, shifts, shown) >> pure h
       [] -> pure 6
-  Prompt.RerollDie {} -> do
+  Prompt.Rethrow {} -> do
     (rolls, rerolls, shifts, shown) <- State.get
     case rerolls of
       h : t -> State.put (rolls, t, shifts, shown) >> pure h

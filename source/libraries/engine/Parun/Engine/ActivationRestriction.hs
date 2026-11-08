@@ -200,12 +200,12 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   ActivationRestriction.TimesEachTurn limit -> case ability of
     Nothing -> False
     Just this -> unspent limit srcId this (Map.findWithDefault Map.empty srcId (GameState.activatedThisTurn gs)) gs
-  -- Goblin Bookie's "any time it makes sense": while a die is being rolled, and
-  -- not with nothing to reroll (docs/decisions.md, "Whether Goblin Bookie can be
+  -- Goblin Bookie's "any time it makes sense": while a die is being rolled or a
+  -- coin has just been flipped, and not with nothing to reroll (docs/decisions.md, "Whether Goblin Bookie can be
   -- activated with nothing to reroll").
   -- Not implemented: activating at priority to reroll a Die creature, which
   -- Pippa, Duchess of Dice's rulings allow (#6221).
-  ActivationRestriction.DuringDieRoll -> Maybe.isJust (GameState.rollingDie gs)
+  ActivationRestriction.DuringThrow -> Maybe.isJust (GameState.throwing gs)
   -- A payment rule, not a gate: Parun.Engine.Mana.admitsUnder spends only the
   -- mana it names (PaymentSubject.Activating's colours).
   ActivationRestriction.SpendOnly _ -> True
@@ -256,7 +256,7 @@ relaxedBy clause restriction = case restriction of
   ActivationRestriction.TimesEachTurn limit -> case clause of
     RiderClause.InstantSpeed -> restriction
     RiderClause.TimesEachTurn raised -> ActivationRestriction.TimesEachTurn (max limit raised)
-  ActivationRestriction.DuringDieRoll -> restriction
+  ActivationRestriction.DuringThrow -> restriction
   ActivationRestriction.SpendOnly _ -> restriction
   ActivationRestriction.InstantSpeed -> restriction
 
@@ -382,7 +382,7 @@ needsEmptyStack restriction = case restriction of
   ActivationRestriction.TimesEachTurn _ -> False
   -- A die roll's modification step opens inside a resolution, never at a
   -- payment's gate, so no move between the two can close it.
-  ActivationRestriction.DuringDieRoll -> False
+  ActivationRestriction.DuringThrow -> False
   ActivationRestriction.SpendOnly _ -> False
   -- Not a stack question: `refusedMidPayment` is how the payment windows ask.
   ActivationRestriction.InstantSpeed -> False
@@ -409,7 +409,7 @@ refusedMidPayment restriction = case restriction of
   ActivationRestriction.OnlyIf _ -> False
   ActivationRestriction.OnlyOnce -> False
   ActivationRestriction.TimesEachTurn _ -> False
-  ActivationRestriction.DuringDieRoll -> False
+  ActivationRestriction.DuringThrow -> False
   ActivationRestriction.SpendOnly _ -> False
 
 -- The mana types an activation under these restrictions may spend, Nothing for
