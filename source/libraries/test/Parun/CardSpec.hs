@@ -6712,7 +6712,7 @@ cardFilters card =
         <> unframed (Maybe.mapMaybe CostReduction.whichTargets (Face.costReductions card))
         <> concatMap (slotlessCost . specialActionFilters) (Face.specialActions card)
         <> ruleAbilitiesFilters (Projection.ruleAbilitiesOfFace card)
-        <> [matching | CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules card)]
+        <> [(Unframed, matching) | CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules card)]
     )
     <> concatMap printedReplacementFilters (Face.replacementEffects card)
     <> concatMap staticAbilityFilters (Face.staticAbilities card)
