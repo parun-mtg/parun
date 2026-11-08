@@ -17,6 +17,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
+import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Card as Card
@@ -244,9 +245,13 @@ render header listed =
       body = heading <> entries (Deck.cards listed) <> if null side then [] else Text.empty : Text.pack "Sideboard" : side
    in Text.unlines body
 
--- A card's name as a deck list writes it: its face names joined by a SPACED
--- "//", which is how every printing and every export spells a split card's name
--- (#679). Parun.Types.CardName.join writes the same names unspaced, which is
--- data/comprehensive-rules.txt's spelling; `halvesOf` accepts either.
+-- A card's name as a deck list writes it: the names of the faces it shows off
+-- the stack (Parun.Engine.Card.combinedFaces), joined by a SPACED "//", which is
+-- how every printing and every export spells a split card's name (#679).
+-- Parun.Types.CardName.join writes the same names unspaced, which is
+-- data/comprehensive-rules.txt's spelling; `halvesOf` accepts either. Every
+-- other layout shows one face (CR 710.2, 712.6a, 713.1b, 716.4, 721.4, 723.4),
+-- so its inset or back face's name, which another card may share, is not
+-- written.
 written :: Card.Card -> Text.Text
-written = Text.intercalate (Text.pack " // ") . NonEmpty.toList . fmap (CardName.unwrap . Face.name) . Card.faces
+written = Text.intercalate (Text.pack " // ") . NonEmpty.toList . fmap (CardName.unwrap . Face.name) . EngineCard.combinedFaces
