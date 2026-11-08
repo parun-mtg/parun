@@ -52,6 +52,26 @@ violationsNamed s registry name main side = do
   deck <- deckOf s registry main side
   either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain deck)) checker
 
+-- A deck and a sideboard led by the commanders named.
+ledBy :: Spec.Spec IO n -> Registry.Registry IO -> [String] -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO Deck.Deck
+ledBy s registry commanders main side = do
+  deck <- deckOf s registry main side
+  named <- traverse (S.printingOf s registry) commanders
+  pure deck {Deck.commander = Set.fromList named}
+
+-- The violations a deck led by the commanders named raises under a rule
+-- family with no pool, in a game whose settings say nothing of Brawl.
+ledViolations :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> [String] -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO [Violation.Violation]
+ledViolations s registry family commanders main side = fmap (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing)) (ledBy s registry commanders main side)
+
+-- The violations a deck led by the commanders named raises in a shipped
+-- format, by name, in a game whose settings say nothing of Brawl.
+ledViolationsNamed :: Spec.Spec IO n -> Registry.Registry IO -> String -> [String] -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO [Violation.Violation]
+ledViolationsNamed s registry name commanders main side = do
+  checker <- Legality.named (Text.pack name)
+  deck <- ledBy s registry commanders main side
+  either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain deck)) checker
+
 -- A table with no cards, for a format with no pool, which reads none.
 noTable :: LegalityTable.LegalityTable
 noTable = LegalityTable.MkLegalityTable Text.empty Map.empty
@@ -146,6 +166,8 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     Spec.assertEqWith s "problems" [(name, problem) | (name, Just (Left problem)) <- zip names loaded] []
     Spec.assertEqWith s "constructed" (lookup (Text.pack "constructed") (zip names loaded)) (Just (Just (Right (Format.MkFormat RuleFamily.Constructed Nothing))))
     Spec.assertEqWith s "limited" (lookup (Text.pack "limited") (zip names loaded)) (Just (Just (Right (Format.MkFormat RuleFamily.Limited Nothing))))
+    Spec.assertEqWith s "commander" (lookup (Text.pack "commander") (zip names loaded)) (Just (Just (Right (Format.MkFormat RuleFamily.Commander (Just (Text.pack "commander"))))))
+    Spec.assertEqWith s "brawl, from Standard's pool (CR 903.12b)" (lookup (Text.pack "brawl") (zip names loaded)) (Just (Just (Right (Format.MkFormat RuleFamily.Brawl (Just (Text.pack "standard"))))))
 
   Spec.it s "a name with no format file is no format" $ do
     root <- Legality.formatsRoot
@@ -209,6 +231,79 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 315.1: Power Play in a limited sideboard is not" $ do
     found <- violations s registry RuleFamily.Limited [("Mountain", 40)] [("Power Play", 1)]
     Spec.assertEqWith s "violations" found []
+
+  Spec.it s "CR 903.5: Krenko leading Lightning Bolt and 98 Mountains is a legal Commander deck" $ do
+    found <- ledViolationsNamed s registry "commander" ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 98)] []
+    Spec.assertEqWith s "violations" found []
+
+  Spec.it s "CR 903.5c: Brainstorm is outside Krenko's colour identity" $ do
+    found <- ledViolationsNamed s registry "commander" ["Krenko, Mob Boss"] [("Brainstorm", 1), ("Mountain", 98)] []
+    Spec.assertEqWith s "violations" found [Violation.OutsideColorIdentity (nameOf "Brainstorm")]
+
+  Spec.it s "CR 903.5: the commander is checked against the pool too, which bans Golos" $ do
+    found <- ledViolationsNamed s registry "commander" ["Golos, Tireless Pilgrim"] [("Mountain", 99)] []
+    Spec.assertEqWith s "violations" found [Violation.BannedCard (nameOf "Golos, Tireless Pilgrim")]
+
+  Spec.it s "CR 903.5d: a Plains is outside Krenko's colour identity by the mana it makes" $ do
+    found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Plains", 1), ("Mountain", 98)] []
+    Spec.assertEqWith s "violations" found [Violation.OutsideColorIdentity (nameOf "Plains")]
+
+  Spec.it s "CR 903.5b: two Lightning Bolt in a Commander deck are one too many" $ do
+    found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 2), ("Mountain", 97)] []
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (nameOf "Lightning Bolt") 2 1]
+
+  Spec.it s "CR 903.5b: a second Krenko beside the commander is one too many" $ do
+    found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Krenko, Mob Boss", 1), ("Mountain", 98)] []
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (nameOf "Krenko, Mob Boss") 2 1]
+
+  Spec.it s "CR 903.5a: a Commander deck is exactly 100 cards, its commander included" $ do
+    small <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 97)] []
+    Spec.assertEqWith s "99" small [Violation.TooFewCards 99 100]
+    large <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 99)] []
+    Spec.assertEqWith s "101" large [Violation.TooManyCards 101 100]
+
+  Spec.it s "CR 903.3: a Commander deck with no commander is refused" $ do
+    found <- ledViolations s registry RuleFamily.Commander [] [("Mountain", 100)] []
+    Spec.assertEqWith s "violations" found [Violation.NoCommander]
+
+  Spec.it s "CR 702.124h: Rograkh beside Shimatsu, who has no partner, is refused" $ do
+    refused <- ledViolations s registry RuleFamily.Commander ["Rograkh, Son of Rohgahh", "Shimatsu the Bloodcloaked"] [("Mountain", 98)] []
+    Spec.assertEqWith s "refused" refused [Violation.IllegalCommander (nameOf "Rograkh, Son of Rohgahh"), Violation.IllegalCommander (nameOf "Shimatsu the Bloodcloaked")]
+    partners <- ledViolations s registry RuleFamily.Commander ["Rograkh, Son of Rohgahh", "Akiri, Line-Slinger"] [("Mountain", 97), ("Plains", 1)] []
+    Spec.assertEqWith s "control leg: Rograkh beside Akiri, both with partner, and her white" partners []
+
+  Spec.it s "CR 903.5f / 702.139a: a Commander deck has no sideboard but its companion" $ do
+    companion <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 98)] [("Zirda, the Dawnwaker", 1)]
+    Spec.assertEqWith s "Zirda" companion []
+    more <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 98)] [("Zirda, the Dawnwaker", 1), ("Lightning Bolt", 1)]
+    Spec.assertEqWith s "Zirda and a Lightning Bolt" more [Violation.SideboardTooLarge 2 1]
+    bolt <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 98)] [("Lightning Bolt", 1)]
+    Spec.assertEqWith s "a Lightning Bolt" bolt [Violation.SideboardTooLarge 1 0]
+
+  Spec.it s "CR 903.5: a Commander deck breaking four rules reports all four" $ do
+    found <- ledViolations s registry RuleFamily.Commander ["Krenko, Mob Boss"] [("Lightning Bolt", 2), ("Brainstorm", 1), ("Mountain", 95)] [("Lightning Bolt", 1)]
+    Spec.assertEqWith s "violations" found [Violation.TooFewCards 99 100, Violation.TooManyCopies (nameOf "Lightning Bolt") 2 1, Violation.SideboardTooLarge 1 0, Violation.OutsideColorIdentity (nameOf "Brainstorm")]
+
+  Spec.it s "CR 903.12d: a Brawl deck is exactly 60 cards" $ do
+    legal <- ledViolationsNamed s registry "brawl" ["Krenko, Mob Boss"] [("Mountain", 59)] []
+    Spec.assertEqWith s "60" legal []
+    large <- ledViolationsNamed s registry "brawl" ["Krenko, Mob Boss"] [("Mountain", 99)] []
+    Spec.assertEqWith s "100" large [Violation.TooManyCards 100 60]
+
+  Spec.it s "CR 903.12b: Lightning Bolt is not in a Brawl deck's Standard pool" $ do
+    found <- ledViolationsNamed s registry "brawl" ["Krenko, Mob Boss"] [("Lightning Bolt", 1), ("Mountain", 58)] []
+    Spec.assertEqWith s "violations" found [Violation.NotLegalCard (nameOf "Lightning Bolt")]
+
+  -- The settings say nothing of Brawl, so the format alone admits Karn.
+  Spec.it s "CR 903.12c / 903.12e: Karn Liberated leads a Brawl deck of Mountains, and no Commander deck" $ do
+    brawl <- ledViolations s registry RuleFamily.Brawl ["Karn Liberated"] [("Mountain", 59)] []
+    Spec.assertEqWith s "Brawl" brawl []
+    commander <- ledViolations s registry RuleFamily.Commander ["Karn Liberated"] [("Mountain", 99)] []
+    Spec.assertEqWith s "Commander" commander [Violation.IllegalCommander (nameOf "Karn Liberated"), Violation.OutsideColorIdentity (nameOf "Mountain")]
+
+  Spec.it s "CR 903.12e: a colourless Brawl commander admits basic lands of one type only" $ do
+    found <- ledViolations s registry RuleFamily.Brawl ["Karn Liberated"] [("Mountain", 30), ("Plains", 29)] []
+    Spec.assertEqWith s "violations" found [Violation.OutsideColorIdentity (nameOf "Plains")]
 
   Spec.it s "parun play --format refuses a name with no format file"
     . S.withCorpusDir "legality-play-nonesuch" [("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]

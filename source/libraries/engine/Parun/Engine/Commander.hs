@@ -21,9 +21,9 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * CR 903.5's deck construction, which reads `colorIdentity` (#6397).
---   * CR 903.12b, CR 903.12d and CR 903.12e's Brawl deck construction, and CR
---     903.13's Commander Draft (#6397).
+--   * CR 903.13's Commander Draft deck construction (#6670). Commander's and
+--     Brawl's are Parun.Legality's, which reads `designations` and
+--     `colorIdentity`.
 module Parun.Engine.Commander where
 
 import qualified Control.Monad as Monad
@@ -107,10 +107,10 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- is absolute, so a Background that also said it could be your commander (CR
 -- 903.3a) would still be refused.
 --
--- Empty is also what an ILLEGAL pair gets, which is the closest parun can come to
--- rejecting the deck: nothing validates a Commander deck (#6397) and Parun.Engine.Setup has
--- no channel to refuse one, so a pair rule 702.124 does not allow designates
--- neither card and starts no commander in the command zone.
+-- Empty is also what an ILLEGAL pair gets: Parun.Legality's Commander rule
+-- family refuses such a deck, but Parun.Engine.Setup has no channel to refuse
+-- one, so a pair rule 702.124 does not allow designates neither card and starts
+-- no commander in the command zone.
 --
 -- Rule 702.124m's requirement is one-sided where rule 702.124k's is not. Rule
 -- 702.124k forbids a Background named alone; rule 702.124m says nothing of the
@@ -149,9 +149,9 @@ designations settings deck =
 -- says it can be your commander.
 --
 -- Brawl adds a planeswalker card to those three, which is the whole of CR
--- 903.12c's difference from rule 903.3 and the reason this takes the settings. No
--- Commander deck is validated (#6397), so a card this refuses is designated as nothing and
--- starts nowhere, which is `designations`' posture for every illegal deck.
+-- 903.12c's difference from rule 903.3 and the reason this takes the settings. A
+-- card this refuses is designated as nothing and starts nowhere, which is
+-- `designations`' posture for every illegal deck.
 --
 -- Clauses (b) and (c) are REGRESSION FENCES and not proved: no legendary Vehicle
 -- and no legendary Spacecraft is in the corpus (Dawnsire, Sunstar Dreadnought and
@@ -444,7 +444,7 @@ commanderColorIdentity pid gs = case Maybe.mapMaybe (\oid -> commanderCardOf oid
 -- 903.4d, 903.4e). Rules text is Face.oracleText less its reminder text (CR
 -- 903.4c).
 --
--- Not implemented: a colour a characteristic-defining ability defines (#6397),
+-- Not implemented: a colour a characteristic-defining ability defines (#6671),
 -- the colour CR 903.4b chooses before the game (#6225), and colours circled at
 -- deck building (#884).
 colorIdentity :: Printing.Printing -> Set.Set Color.Color

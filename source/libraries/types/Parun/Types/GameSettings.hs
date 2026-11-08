@@ -26,11 +26,9 @@ data GameSettings = MkGameSettings
   { -- | CR 903.12a: whether this is a Brawl game. Four rules read it -- CR
     -- 903.12c's designation (Parun.Engine.Commander.soleCommander), CR 903.12f's
     -- starting life, CR 903.12g's free first mulligan, and CR 903.12h's removal
-    -- of CR 704.6c's state-based action.
-    --
-    -- Not implemented: CR 903.12b, CR 903.12d and CR 903.12e, which are deck
-    -- construction (the card pool, the 60-card deck, the basic-land exception),
-    -- so a Brawl deck is unchecked exactly as a Commander deck is (#6397).
+    -- of CR 704.6c's state-based action. Deck construction is the Brawl rule
+    -- family's (Parun.Legality), which judges the commander as though this
+    -- were set.
     brawl :: Bool,
     -- | CR 806.2b: which of the three attack options this game uses, if any.
     -- 'AttackOption.MultiplePlayers' by default ('plain'), and read in two
