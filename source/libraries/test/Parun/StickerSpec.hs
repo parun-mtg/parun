@@ -506,7 +506,7 @@ spec s registry = Spec.describe s "Sticker" $ do
                 ptStickers = Foldable.toList (StickerSheet.powerToughness sheet)
                 ptText p = Text.pack (show (PowerToughnessSticker.power p) <> "/" <> show (PowerToughnessSticker.toughness p))
                 keywordsAgree a (_, rest) =
-                  let printed = [Oracle.Keyword.printed Text.empty k | k <- Map.keys (AbilitySticker.keywords a)]
+                  let printed = [Oracle.Keyword.printed Text.empty k | (k, n) <- Map.toList (AbilitySticker.keywords a), _ <- [1 .. n]]
                    in not (null (AbilitySticker.abilities a)) || not (null (AbilitySticker.castingPermissions a)) || any (\p -> length p /= 1) printed || List.sort (Normalise.normalise (CardName.MkCardName Text.empty) rest) == List.sort (fmap Text.toLower (concat printed))
                 checks =
                   [ ("file named for the sheet", Slug.unwrap (Slug.fromText (StickerSheet.name sheet)) <> Text.pack ".json" == Text.pack (reverse (takeWhile (/= '/') (reverse path)))),

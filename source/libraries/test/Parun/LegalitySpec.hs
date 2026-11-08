@@ -7,6 +7,7 @@ import qualified Data.ByteString as ByteString
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
@@ -17,6 +18,7 @@ import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Match as Match
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
+import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -26,6 +28,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.Violation as Violation
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
@@ -86,6 +89,21 @@ shippedNames = do
 
 nameOf :: String -> CardName.CardName
 nameOf = CardName.MkCardName . Text.pack
+
+-- The committed sticker sheets, in collector-number order.
+committedSheets :: Spec.Spec IO n -> IO [StickerSheet.StickerSheet]
+committedSheets s = do
+  root <- StickerSheets.defaultRoot
+  loaded <- StickerSheets.loadRoot root
+  sheets <- traverse (either (Spec.assertFailure s . Text.unpack) pure . snd) loaded
+  pure (List.sortOn StickerSheet.number sheets)
+
+-- The violations a deck bringing these sheets raises under a rule family with
+-- no pool, in a game not for ante.
+withSheets :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> [(String, Natural.Natural)] -> [StickerSheet.StickerSheet] -> IO [Violation.Violation]
+withSheets s registry family main sheets = do
+  deck <- deckOf s registry main []
+  pure (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing) deck {Deck.stickerSheets = Seq.fromList sheets})
 
 copies :: String -> Natural.Natural -> Violation.Violation
 copies name count = Violation.TooManyCopies (CardName.MkCardName (Text.pack name)) count 4
@@ -160,6 +178,34 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     Spec.assertEqWith s "nine" nine []
     ten <- violations s registry RuleFamily.Limited [("Nazgûl", 10), ("Mountain", 30)] []
     Spec.assertEqWith s "ten" ten [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+
+  -- Proficient Pyrodancer's player brings sheets for its stickers.
+  Spec.it s "CR 123.2a: a constructed player bringing sticker sheets brings ten, each unique" $ do
+    sheets <- committedSheets s
+    let main = [("Proficient Pyrodancer", 4), ("Mountain", 56 :: Natural.Natural)]
+        firstName = foldMap StickerSheet.name (List.take 1 sheets)
+    Spec.assertEqWith s "ten sheets are committed" (length sheets) 10
+    none <- withSheets s registry RuleFamily.Constructed main []
+    Spec.assertEqWith s "none, played without stickers" none []
+    two <- withSheets s registry RuleFamily.Constructed main (take 2 sheets)
+    Spec.assertEqWith s "two" two [Violation.TooFewStickerSheets 2 10]
+    nine <- withSheets s registry RuleFamily.Constructed main (take 9 sheets)
+    Spec.assertEqWith s "nine unique" nine [Violation.TooFewStickerSheets 9 10]
+    repeated <- withSheets s registry RuleFamily.Constructed main (take 9 sheets <> take 1 sheets)
+    Spec.assertEqWith s "ten with a duplicate" repeated [Violation.DuplicateStickerSheet firstName 2]
+    ten <- withSheets s registry RuleFamily.Constructed main sheets
+    Spec.assertEqWith s "ten unique" ten []
+    Spec.assertEqWith s "explained" (fmap Legality.explain (two <> repeated)) (fmap Text.pack ["2 sticker sheets, fewer than 10", "2 copies of the sticker sheet " <> Text.unpack firstName <> ", more than 1"])
+
+  Spec.it s "CR 123.2a: a Commander player bringing sticker sheets is in constructed play too" $ do
+    sheets <- committedSheets s
+    found <- fmap (\deck -> Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Commander Nothing) deck {Deck.stickerSheets = Seq.fromList (take 2 sheets)}) (ledBy s registry ["Krenko, Mob Boss"] [("Mountain", 99)] [])
+    Spec.assertEqWith s "violations" found [Violation.TooFewStickerSheets 2 10]
+
+  Spec.it s "CR 123.2b: a limited player may bring two of one sticker sheet" $ do
+    sheets <- committedSheets s
+    found <- withSheets s registry RuleFamily.Limited [("Proficient Pyrodancer", 4), ("Mountain", 36)] (take 1 sheets <> take 1 sheets)
+    Spec.assertEqWith s "violations" found []
 
   Spec.it s "every shipped format file decodes, constructed and limited with no pool" $ do
     root <- Legality.formatsRoot
@@ -294,6 +340,14 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     Spec.assertEqWith s "Cho-Manno leading 101" other [Violation.TooManyCards 101 100]
     small <- ledViolationsNamed s registry "commander" ["Whtz, the Bibliophile"] [("Plains", 98)] []
     Spec.assertEqWith s "Whtz leading 99" small [Violation.TooFewCards 99 100]
+
+  Spec.it s "CR 903.5e: Seluma, Light of Aysen admits Angel and basic land cards of any colour identity" $ do
+    seluma <- ledViolationsNamed s registry "commander" ["Seluma, Light of Aysen"] [("Illusory Angel", 1), ("Island", 1), ("Plains", 97)] []
+    Spec.assertEqWith s "Seluma leading a blue Angel and an Island" seluma []
+    other <- ledViolationsNamed s registry "commander" ["Cho-Manno, Revolutionary"] [("Illusory Angel", 1), ("Island", 1), ("Plains", 97)] []
+    Spec.assertEqWith s "Cho-Manno leading both" other [Violation.OutsideColorIdentity (nameOf "Illusory Angel"), Violation.OutsideColorIdentity (nameOf "Island")]
+    brainstorm <- ledViolationsNamed s registry "commander" ["Seluma, Light of Aysen"] [("Brainstorm", 1), ("Plains", 98)] []
+    Spec.assertEqWith s "Seluma leading a blue non-Angel" brainstorm [Violation.OutsideColorIdentity (nameOf "Brainstorm")]
 
   Spec.it s "CR 903.3: a Commander deck with no commander is refused" $ do
     found <- ledViolations s registry RuleFamily.Commander [] [("Mountain", 100)] []

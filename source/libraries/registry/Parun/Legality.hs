@@ -9,6 +9,7 @@ module Parun.Legality where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -24,8 +25,11 @@ import qualified Parun.DeckList as DeckList
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Commander as Commander
+import qualified Parun.Engine.Filter as Filter
+import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Int as Int
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Ingest as Ingest
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -45,8 +49,10 @@ import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Violation as Violation
 import qualified Paths_parun as Paths
@@ -69,10 +75,10 @@ rules table settings format =
       commander brawl size =
         [atLeast size withCommander, commanderAtMost size, copiesAtMost restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
           <> foldMap (pure . inPool) standing
-          <> [anteCards settings, conspiracies, circledColors]
+          <> [anteCards settings, conspiracies, stickerSheets, circledColors]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast 60 Deck.cards, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, circledColors]
+        RuleFamily.Constructed -> [atLeast 60 Deck.cards, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
@@ -164,6 +170,11 @@ commanders settings deck
 -- Nothing without one, which CR 903.4f leaves undefined. Deck.cards alone: CR
 -- 903.5c asks it of a card in the deck, which a companion is not.
 --
+-- CR 903.5e: a card the deck designates as its commander exempts the cards its
+-- AnyColorIdentity filters match, read off its front face as commanderAtMost
+-- reads it, each candidate judged by its printed characteristics with nothing
+-- in play (Parun.Engine.Companion.fulfilled's posture).
+--
 -- CR 903.12e: under a Brawl commander with no colour, basic land cards of one
 -- basic land type are exempt. A deck list states no type, so the type the most
 -- basic land cards have stands in, the first in Subtype's order on a tie:
@@ -177,7 +188,10 @@ inIdentity brawl deck
           basics = Map.fromListWith (+) [(subtype, count) | (printing, count) <- Map.toList (Deck.cards deck), basicLand (Printing.card printing), subtype <- Set.toList (landTypes printing)]
           chosen = if brawl && Set.null identity then fmap fst (Maybe.listToMaybe (List.sortOn (Ord.Down . snd) (Map.toList basics))) else Nothing
           exempt printing = basicLand (Printing.card printing) && any (`Set.member` landTypes printing) chosen
-          outside printing = not (exempt printing) && not (Set.isSubsetOf (deckColors printing) identity)
+          widened = [matching | printing <- Set.toList (Deck.commander deck), CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
+          context = Filter.contextFor Teams.none Nothing Nothing
+          admitted printing = any (Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing)))) widened
+          outside printing = not (exempt printing) && not (admitted printing) && not (Set.isSubsetOf (deckColors printing) identity)
           byName = Map.fromList [(Face.name (Card.combined (Printing.card printing)), printing) | printing <- Map.keys (Deck.cards deck)]
        in [Violation.OutsideColorIdentity written | (written, printing) <- Map.toList byName, outside printing]
 
@@ -232,6 +246,18 @@ circledColors deck =
         circled /= instructed
       ]
 
+-- CR 123.2a: a constructed player who brings sticker sheets brings at least
+-- ten, each unique; one who brings none plays without stickers. A Commander
+-- deck is built ahead of time, so constructed play (CR 100.2a). Sheets are
+-- told apart by name, as Parun.DeckList's Stickers section names them.
+stickerSheets :: Deck.Deck -> [Violation.Violation]
+stickerSheets deck =
+  let brought = Deck.stickerSheets deck
+      size = Natural.length brought
+      tallies = Map.fromListWith (+) [(StickerSheet.name sheet, 1 :: Natural.Natural) | sheet <- Foldable.toList brought]
+   in [Violation.TooFewStickerSheets size 10 | not (null brought), size < 10]
+        <> [Violation.DuplicateStickerSheet name count | (name, count) <- Map.toList tallies, count > 1]
+
 -- Each card of deck, sideboard and commanders once, by name.
 cardsIn :: Deck.Deck -> [(CardName.CardName, Card.Type.Card)]
 cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck) <> Set.toList (Deck.commander deck), let card = Printing.card printing])
@@ -273,6 +299,8 @@ explain violation = Text.pack $ case violation of
   Violation.NoCommander -> "no commander"
   Violation.IllegalCommander written -> spelled written <> " cannot be this deck's commander"
   Violation.OutsideColorIdentity written -> spelled written <> " is outside the commander's colour identity"
+  Violation.TooFewStickerSheets size least -> show size <> " sticker sheets, fewer than " <> show least
+  Violation.DuplicateStickerSheet name count -> show count <> " copies of the sticker sheet " <> Text.unpack name <> ", more than 1"
   where
     spelled = Text.unpack . CardName.unwrap
 
