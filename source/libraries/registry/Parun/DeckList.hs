@@ -4,9 +4,9 @@
 -- A deck list is a count and a card name per line, optionally naming a printing
 -- by set code and collector number, with each thing a player brings beside
 -- the deck (Parun.Types.Deck's fields) written as a section of its own. Every
--- name and printing is resolved through a Parun.Registry, which is the only
--- thing that knows what cards exist; this module decides what a LINE means and
--- never what a name means.
+-- name, printing and sticker sheet is resolved through a Parun.Registry, which
+-- is the only thing that knows what cards and sheets exist; this module decides
+-- what a LINE means and never what a name means.
 --
 -- Here rather than in the test suite or the executable because both of those
 -- already build their decks in Haskell and a deck list is what they cannot
@@ -18,13 +18,16 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Ingest as Ingest
 import qualified Parun.Registry as Registry
+import qualified Parun.Slug as Slug
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
@@ -33,6 +36,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingEntry as PrintingEntry
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Text.Read as Read
 
 -- | Why a deck list's line did not become a deck entry, and which line it was.
@@ -59,6 +63,8 @@ data Problem
     PrintingDisagrees Natural.Natural CardName.CardName Text.Text Text.Text
   | -- | CR 902.1: a vanguard card after the one the list already brings.
     VanguardRepeated Natural.Natural CardName.CardName
+  | -- | CR 123.2: a name in the Stickers section that no sticker sheet has.
+    NoSuchStickerSheet Natural.Natural Text.Text
   deriving (Eq, Ord, Show)
 
 -- | A problem as a line a person can read.
@@ -74,6 +80,7 @@ explain problem =
         NoSuchPrinting n set number -> at n <> Text.pack "nothing is printed at " <> suffix (set, number)
         PrintingDisagrees n name set number -> at n <> Text.pack "the printing at " <> suffix (set, number) <> Text.pack " is not " <> CardName.unwrap name
         VanguardRepeated n name -> at n <> Text.pack "the list already brings a vanguard, so not " <> CardName.unwrap name
+        NoSuchStickerSheet n name -> at n <> Text.pack "no sticker sheet is named " <> name
 
 -- | Which part of what a player brings the lines that follow belong to: the
 -- deck or one of Parun.Types.Deck's fields beside it.
@@ -95,14 +102,13 @@ data Section
     Dungeons
   | -- | CR 902.3: Deck.vanguard.
     Vanguard
+  | -- | CR 123.2: Deck.stickerSheets.
+    Stickers
   deriving (Eq, Ord, Show)
 
 -- | Every section, in the order `render` writes them.
---
--- Not implemented: CR 123.2's sticker sheets (Deck.stickerSheets), which the
--- registry does not hold (#6667).
 sections :: [Section]
-sections = [Main, Side, Companion, Commander] <> fmap Supplementary [minBound .. maxBound] <> [Conspiracies, Dungeons, Vanguard]
+sections = [Main, Side, Companion, Commander] <> fmap Supplementary [minBound .. maxBound] <> [Conspiracies, Dungeons, Vanguard, Stickers]
 
 -- | The header a section is written under.
 heading :: Section -> Text.Text
@@ -115,6 +121,7 @@ heading section = Text.pack $ case section of
   Conspiracies -> "Conspiracies"
   Dungeons -> "Dungeons"
   Vanguard -> "Vanguard"
+  Stickers -> "Stickers"
 
 -- | What a deck list says: the deck its good lines describe, the format its
 -- header names, and every line that did not become part of either. A list with
@@ -138,7 +145,10 @@ data Listed = MkListed
 parse :: (Monad m) => Registry.Registry m -> Text.Text -> m (Either InvalidCorpus.InvalidCorpus Listed)
 parse registry text = do
   let first = firstPrintings (Registry.printings registry)
-  looked <- mapM (lineOf registry first) (List.zip [1 ..] (Text.lines text))
+      rows = Text.lines text
+      -- The section each line is read in: the one the headers before it name.
+      within = List.scanl (\section line -> Maybe.fromMaybe section (sectionNamed (Text.strip line))) Main rows
+  looked <- mapM (lineOf registry first) (List.zip3 [1 ..] within rows)
   pure (fmap assemble (sequence looked))
 
 -- What one line of a deck list means.
@@ -151,23 +161,28 @@ data Line
     Named Text.Text
   | -- | A count, the name written and the printing it names.
     Entry Natural.Natural CardName.CardName Printing.Printing
+  | -- | A count and the sticker sheet it names.
+    Sheet Natural.Natural StickerSheet.StickerSheet
 
 -- The deck the lines' meanings add up to, the format the first header names,
 -- and every line that is neither.
 assemble :: [(Natural.Natural, Either Problem Line)] -> Listed
 assemble results =
-  let step (section, entries, named, bad) (number, result) = case result of
-        Left problem -> (section, entries, named, problem : bad)
-        Right Blank -> (section, entries, named, bad)
-        Right (Header next) -> (next, entries, named, bad)
+  let step (section, entries, sheets, named, bad) (number, result) = case result of
+        Left problem -> (section, entries, sheets, named, problem : bad)
+        Right Blank -> (section, entries, sheets, named, bad)
+        Right (Header next) -> (next, entries, sheets, named, bad)
         Right (Named name) -> case named of
-          Nothing -> (section, entries, Just (number, name), bad)
-          Just _ -> (section, entries, named, FormatRepeated number name : bad)
+          Nothing -> (section, entries, sheets, Just (number, name), bad)
+          Just _ -> (section, entries, sheets, named, FormatRepeated number name : bad)
         Right (Entry count name printing)
-          | count == 0 -> (section, entries, named, bad)
-          | section == Vanguard && (count > 1 || any (\(s, _, _) -> s == Vanguard) entries) -> (section, entries, named, VanguardRepeated number name : bad)
-          | otherwise -> (section, (section, printing, count) : entries, named, bad)
-      (_, found, header, reported) = List.foldl' step (Main, [], Nothing, []) results
+          | count == 0 -> (section, entries, sheets, named, bad)
+          | section == Vanguard && (count > 1 || any (\(s, _, _) -> s == Vanguard) entries) -> (section, entries, sheets, named, VanguardRepeated number name : bad)
+          | otherwise -> (section, (section, printing, count) : entries, sheets, named, bad)
+        -- In the order written: a player's sheets are told apart by position
+        -- (Parun.Types.StickerRef, CR 123.3a).
+        Right (Sheet count sheet) -> (section, entries, sheets <> Seq.replicate (Natural.toIntSaturating count) sheet, named, bad)
+      (_, found, brought, header, reported) = List.foldl' step (Main, [], Seq.empty, Nothing, []) results
       gather want = Map.fromListWith (+) [(printing, count) | (section, printing, count) <- found, section `elem` want]
       once want = Map.keysSet (gather [want])
       sideDecks = Map.filter (not . Map.null) (Map.fromList [(sideDeck, gather [Supplementary sideDeck]) | sideDeck <- [minBound .. maxBound]])
@@ -179,7 +194,8 @@ assemble results =
                 Deck.sideDecks = sideDecks,
                 Deck.conspiracies = gather [Conspiracies],
                 Deck.dungeons = once Dungeons,
-                Deck.vanguard = Set.lookupMin (once Vanguard)
+                Deck.vanguard = Set.lookupMin (once Vanguard),
+                Deck.stickerSheets = brought
               },
           format = header,
           problems = List.reverse reported
@@ -201,19 +217,29 @@ formatFor asked listed = case (asked, format listed) of
   (Just _, _) -> (asked, [])
   (Nothing, header) -> (fmap snd header, [])
 
--- What one line means: nothing (blank), the section the lines after it belong
--- to, the format the list is for, or a count and the printing it names.
-lineOf :: (Monad m) => Registry.Registry m -> Map.Map Text.Text PrintingEntry.PrintingEntry -> (Natural.Natural, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
-lineOf registry first (number, raw) =
+-- What one line, read in a section, means: nothing (blank), the section the
+-- lines after it belong to, the format the list is for, or a count and the
+-- printing -- or, in the Stickers section, the sticker sheet -- it names.
+lineOf :: (Monad m) => Registry.Registry m -> Map.Map Text.Text PrintingEntry.PrintingEntry -> (Natural.Natural, Section, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
+lineOf registry first (number, within, raw) =
   let trimmed = Text.strip raw
    in if Text.null trimmed
         then pure (Right (number, Right Blank))
         else case (sectionNamed trimmed, formatNamed trimmed) of
           (Just section, _) -> pure (Right (number, Right (Header section)))
           (_, Just named) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
+          _ | within == Stickers -> pure (Right (number, sheetOf (Registry.stickerSheets registry) number trimmed))
           _ -> case entryOf trimmed of
             Nothing -> pure (Right (number, Left (Unreadable number trimmed)))
             Just (count, name, at) -> fmap (fmap ((,) number . (>>= fmap (Entry count name) . printingOf (Registry.printings registry) first number name at))) (resolve registry number name)
+
+-- What a line of the Stickers section means: a count and the sheet it names,
+-- by name or slug, as a card is looked up (Parun.Registry.slugFor). No
+-- printing suffix: a sheet has one printing.
+sheetOf :: Map.Map Slug.Slug StickerSheet.StickerSheet -> Natural.Natural -> Text.Text -> Either Problem Line
+sheetOf sheets number text = case countOf text of
+  Nothing -> Left (Unreadable number text)
+  Just (count, name) -> maybe (Left (NoSuchStickerSheet number name)) (Right . Sheet count) (Map.lookup (Slug.fromText name) sheets)
 
 -- The format a "Format:" header names, lowercased as data/formats files are
 -- named; Just Nothing for a header naming none. No card's name begins
@@ -348,7 +374,8 @@ halvesOf name =
 -- it is brought in.
 --
 -- Sorted by the line written, so the text is a fact about the deck rather than
--- about the order a Map enumerates its structural keys in.
+-- about the order a Map enumerates its structural keys in. Sticker sheets are
+-- the exception, written in their order (`assemble`).
 render :: PrintingTable.PrintingTable -> Maybe Text.Text -> Deck.Deck -> Text.Text
 render table header listed =
   let entries m = fmap line (List.sortOn snd [(count, writtenAt printing) | (printing, count) <- Map.toList m])
@@ -356,19 +383,20 @@ render table header listed =
       line (count, name) = Text.pack (show count) <> Text.singleton ' ' <> name
       once = Map.fromSet (const (1 :: Natural.Natural))
       contents section = case section of
-        Main -> Deck.cards listed
-        Side -> Deck.sideboard listed
-        Companion -> Map.empty
-        Commander -> once (Deck.commander listed)
-        Supplementary sideDeck -> Map.findWithDefault Map.empty sideDeck (Deck.sideDecks listed)
-        Conspiracies -> Deck.conspiracies listed
-        Dungeons -> once (Deck.dungeons listed)
-        Vanguard -> foldMap (`Map.singleton` 1) (Deck.vanguard listed)
-      block section = case entries (contents section) of
+        Main -> entries (Deck.cards listed)
+        Side -> entries (Deck.sideboard listed)
+        Companion -> []
+        Commander -> entries (once (Deck.commander listed))
+        Supplementary sideDeck -> entries (Map.findWithDefault Map.empty sideDeck (Deck.sideDecks listed))
+        Conspiracies -> entries (Deck.conspiracies listed)
+        Dungeons -> entries (once (Deck.dungeons listed))
+        Vanguard -> entries (once (Set.fromList (Maybe.maybeToList (Deck.vanguard listed))))
+        Stickers -> fmap (\run -> line (Natural.length run, StickerSheet.name (NonEmpty.head run))) (NonEmpty.group (Deck.stickerSheets listed))
+      block section = case contents section of
         [] -> []
         written' -> Text.empty : heading section : written'
       top = foldMap (\named -> [Text.pack "Format: " <> named, Text.empty]) header
-      body = top <> entries (Deck.cards listed) <> foldMap block (filter (/= Main) sections)
+      body = top <> contents Main <> foldMap block (filter (/= Main) sections)
    in Text.unlines body
 
 -- A card's name as a deck list writes it: the names of the faces it shows off
