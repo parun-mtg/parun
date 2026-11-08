@@ -5,6 +5,7 @@ module Parun.Codec.ObjectView where
 import qualified Parun.Codec.AbilityView as AbilityView
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
@@ -17,8 +18,9 @@ import qualified Parun.Types.ObjectView as ObjectView
 
 -- | A bare object keyed by the record's field names; `characteristics` is
 -- null for an object the seat may not see, and `face` for any but a face-down
--- one the seat may look at; `ability` is null for anything but an ability on
--- the stack.
+-- one the seat may look at; `foretellCostReduction` is null for anything but a
+-- card given a foretell cost the seat may look at; `ability` is null for
+-- anything but an ability on the stack.
 codec :: Codec.Codec ObjectView.ObjectView
 codec = Fields.object $ do
   object <- Fields.required "object" ObjectId.codec ObjectView.object
@@ -30,6 +32,7 @@ codec = Fields.object $ do
   attachedTo <- Fields.required "attachedTo" (Common.maybe Recipient.codec) ObjectView.attachedTo
   characteristics <- Fields.required "characteristics" (Common.maybe ProjectedCharacteristics.codec) ObjectView.characteristics
   face <- Fields.required "face" (Common.maybe ProjectedCharacteristics.codec) ObjectView.face
+  foretellCostReduction <- Fields.required "foretellCostReduction" (Common.maybe ManaCost.codec) ObjectView.foretellCostReduction
   ability <- Fields.required "ability" (Common.maybe AbilityView.codec) ObjectView.ability
   pure
     ObjectView.MkObjectView
@@ -42,5 +45,6 @@ codec = Fields.object $ do
         ObjectView.attachedTo = attachedTo,
         ObjectView.characteristics = characteristics,
         ObjectView.face = face,
+        ObjectView.foretellCostReduction = foretellCostReduction,
         ObjectView.ability = ability
       }
