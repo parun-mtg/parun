@@ -72,10 +72,10 @@
         "Answer": {
           "prompt": "ChooseScry",
           "with": [
-            [],
             [
               "Hill Giant"
-            ]
+            ],
+            []
           ]
         }
       },
