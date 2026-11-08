@@ -1,5 +1,5 @@
--- Covers Parun.Legality, the shipped formats and legality table, and `parun
--- play --format`'s refusal through Parun.Play.Command.
+-- Covers Parun.Legality, the shipped formats and legality table, and the
+-- refusal `parun play` and `parun match` make through Parun.Play.Command.
 module Parun.LegalitySpec where
 
 import qualified Control.Exception as Exception
@@ -14,6 +14,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
+import qualified Parun.Play.Match as Match
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -227,4 +228,22 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     . S.withCorpusDir "legality-play-vintage" [("lotus.txt", Text.pack "1 Black Lotus\n59 Mountain\nSideboard\n1 Black Lotus\n"), ("legal.txt", Text.pack "1 Black Lotus\n59 Mountain\n")]
     $ \dir -> do
       result <- Exception.try (Command.main ["--format", "vintage", "--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/lotus.txt", dir <> "/legal.txt"])
+      Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
+
+  Spec.it s "parun play with no --format refuses a Format: limited list of 39 cards"
+    . S.withCorpusDir "legality-play-header" [("small.txt", Text.pack "Format: limited\n4 Grizzly Bears\n35 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
+    $ \dir -> do
+      result <- Exception.try (Command.main ["--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/small.txt", dir <> "/legal.txt"])
+      Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
+
+  Spec.it s "parun play --format vintage refuses a Format: modern list"
+    . S.withCorpusDir "legality-play-disagrees" [("modern.txt", Text.pack "Format: modern\n60 Mountain\n"), ("legal.txt", Text.pack "60 Mountain\n")]
+    $ \dir -> do
+      result <- Exception.try (Command.main ["--format", "vintage", "--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/modern.txt", dir <> "/legal.txt"])
+      Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
+
+  Spec.it s "parun match refuses a Format: limited list of 39 cards"
+    . S.withCorpusDir "legality-match-header" [("small.txt", Text.pack "Format: limited\n4 Grizzly Bears\n35 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
+    $ \dir -> do
+      result <- Exception.try (Match.main ["--games", "1", "--seed", "1", dir <> "/small.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))

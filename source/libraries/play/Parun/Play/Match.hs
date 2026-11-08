@@ -5,6 +5,7 @@ module Parun.Play.Match where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Functor.Identity as Identity
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -14,6 +15,7 @@ import qualified Data.Text.IO as TextIO
 import qualified Data.Time.Clock.System as Clock
 import qualified Data.Word as Word
 import Numeric.Natural (Natural)
+import qualified Parun.DeckList as DeckList
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
@@ -42,8 +44,9 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Left problem -> usage [problem]
     Right options -> do
       registry <- Registry.defaultRoot >>= Registry.fileRegistry
-      decks <- (,) <$> Command.load registry one <*> Command.load registry two
-      match options registry decks
+      lists <- (,) <$> Command.load registry one <*> Command.load registry two
+      Command.refuse Nothing [(one, fst lists), (two, snd lists)]
+      match options registry (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions)]
