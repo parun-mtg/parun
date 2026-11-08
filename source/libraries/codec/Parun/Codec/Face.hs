@@ -201,6 +201,8 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   claimsStartingPlayer <- Fields.defaulted "claimsStartingPlayer" False Common.boolean Face.claimsStartingPlayer
   -- CR 407.3: False is the absence of the ante reminder.
   anteOnly <- Fields.defaulted "anteOnly" False Common.boolean Face.anteOnly
+  -- CR 207.5: False is the absence of an instruction to circle two colours.
+  circlesTwo <- Fields.defaulted "circlesTwo" False Common.boolean Face.circlesTwo
   -- CR 100.2a: Nothing is the absence of an "A deck can have" line.
   deckLimit <- Fields.defaulted "deckLimit" Nothing (Common.maybe DeckLimit.codec) Face.deckLimit
   -- CR 903.5e: empty is the absence of a commander's deck-construction rule.
@@ -263,6 +265,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.canBeYourCommander = canBeYourCommander,
         Face.claimsStartingPlayer = claimsStartingPlayer,
         Face.anteOnly = anteOnly,
+        Face.circlesTwo = circlesTwo,
         Face.deckLimit = deckLimit,
         Face.commanderDeckRules = commanderDeckRules
       }

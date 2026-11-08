@@ -25,6 +25,7 @@ import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Subtype as Subtype.Engine
+import qualified Parun.Extra.Int as Int
 import qualified Parun.Ingest as Ingest
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -68,14 +69,14 @@ rules table settings format =
       commander brawl size =
         [atLeast size withCommander, commanderAtMost size, copiesAtMost restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
           <> foldMap (pure . inPool) standing
-          <> [anteCards settings, conspiracies]
+          <> [anteCards settings, conspiracies, circledColors]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast 60 Deck.cards, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies]
+        RuleFamily.Constructed -> [atLeast 60 Deck.cards, copiesAtMost restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, circledColors]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast 40 Deck.cards, copiesAtMost restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings]
+        RuleFamily.Limited -> [atLeast 40 Deck.cards, copiesAtMost restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors]
         -- CR 903.5.
         RuleFamily.Commander -> commander False 100
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
@@ -216,6 +217,21 @@ anteCards settings deck = [Violation.AnteCard written | (written, card) <- cards
 conspiracies :: Deck.Deck -> [Violation.Violation]
 conspiracies deck = [Violation.ConspiracyCard written | (written, card) <- cardsIn deck, Set.member CardType.Conspiracy (TypeLine.types (Face.typeLine (Card.combined card)))]
 
+-- CR 207.5: two colours circled on each copy of a card that instructs it,
+-- in deck, sideboard and commanders, and none on any other card. Each name and
+-- count once.
+circledColors :: Deck.Deck -> [Violation.Violation]
+circledColors deck =
+  Set.toList $
+    Set.fromList
+      [ Violation.MiscircledCard (Face.name face) circled instructed
+      | printing <- Map.keys (bothSections deck) <> Set.toList (Deck.commander deck),
+        let face = Card.combined (Printing.card printing)
+            circled = Int.toNaturalSaturating (Set.size (Printing.circled printing))
+            instructed = if Face.circlesTwo face then 2 else 0 :: Natural.Natural,
+        circled /= instructed
+      ]
+
 -- Each card of deck, sideboard and commanders once, by name.
 cardsIn :: Deck.Deck -> [(CardName.CardName, Card.Type.Card)]
 cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck) <> Set.toList (Deck.commander deck), let card = Printing.card printing])
@@ -253,6 +269,7 @@ explain violation = Text.pack $ case violation of
   Violation.NoLegalityData written -> spelled written <> " has no legality data"
   Violation.AnteCard written -> spelled written <> " is an ante card in a game not for ante"
   Violation.ConspiracyCard written -> spelled written <> " is a conspiracy card in constructed play"
+  Violation.MiscircledCard written circled instructed -> spelled written <> " circles " <> show circled <> " colours, not " <> show instructed
   Violation.NoCommander -> "no commander"
   Violation.IllegalCommander written -> spelled written <> " cannot be this deck's commander"
   Violation.OutsideColorIdentity written -> spelled written <> " is outside the commander's colour identity"

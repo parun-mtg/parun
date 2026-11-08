@@ -26,6 +26,9 @@ data Violation
     NoLegalityData CardName.CardName
   | -- | CR 407.3: an ante card in a deck or sideboard of a game not for ante.
     AnteCard CardName.CardName
+  | -- | CR 207.5: a card circling other than as many colours as it instructs,
+    -- two or none; the name, the count circled, then the count instructed.
+    MiscircledCard CardName.CardName Natural.Natural Natural.Natural
   | -- | CR 315.1: a conspiracy card in a constructed deck or sideboard.
     ConspiracyCard CardName.CardName
   | -- | CR 903.3: a Commander deck that designates no commander.

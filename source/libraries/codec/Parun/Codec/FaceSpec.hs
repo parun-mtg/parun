@@ -156,6 +156,7 @@ baseFace =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.circlesTwo = False,
       Face.deckLimit = Nothing,
       Face.commanderDeckRules = Set.empty,
       Face.keywords = Map.empty,
@@ -221,6 +222,7 @@ minimalFace =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.circlesTwo = False,
       Face.deckLimit = Nothing,
       Face.commanderDeckRules = Set.empty,
       Face.keywords = Map.empty,
@@ -795,6 +797,11 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
   Spec.it s "an ante card decodes its flag" $ do
     v <- Common.assertJson s " {\"name\":\"Contract from Below\",\"typeLine\":{\"types\":[\"Sorcery\"]},\"anteOnly\":true} "
     Spec.assertEq s (Face.anteOnly <$> decodeFace v) (Right True)
+  -- CR 207.5: Cryptic Spires' "circle two of the colors below", carried as a
+  -- flag.
+  Spec.it s "a card instructing two colours circled decodes its flag" $ do
+    v <- Common.assertJson s " {\"name\":\"Cryptic Spires\",\"typeLine\":{\"types\":[\"Land\"]},\"circlesTwo\":true} "
+    Spec.assertEq s (Face.circlesTwo <$> decodeFace v) (Right True)
   -- CR 100.2a: Nazgûl's "A deck can have up to nine cards named Nazgûl.", and
   -- Nothing for a face that prints no such line.
   Spec.it s "MkFace, a deck limit" $ do

@@ -62,7 +62,7 @@ Command) are not repeated.
 | CR 106.13 | Drain Power | Tested in `ManaSpec`, `data/scenarios/mana/cr-106-13-*` |
 | CR 116.2e | Circling Vultures | Tested in `CostSpec`, `CounterspellSpec`, `SplitSecondSpec` |
 | CR 206.3a-c | City in a Bottle, Golgothian Sylex, Apocalypse Chime | Tested in `FilterSpec`, `BoardEffectSpec`, `data/scenarios/board-effect/` |
-| CR 207.5 | Cryptic Spires | Tested in `ManaSpec`, `CommanderSpec`, `data/scenarios/mana/cr-207-5-*` |
+| CR 207.5 | Cryptic Spires | Tested in `ManaSpec`, `CommanderSpec`, `LegalitySpec`, `data/scenarios/mana/cr-207-5-*` |
 | CR 612.5, 701.12h | Exchange of Words | Tested in `ProjectionSpec`, `data/scenarios/projection/` |
 | CR 612.7 | Spy Kit | Tested in `CastProhibitionSpec`, `DamageSpec` |
 | CR 702.158 | Space Beleren | Tested in `SpaceSculptorSpec` |
