@@ -2073,6 +2073,7 @@ parasitic-grasp
 pariah
 part-the-waterveil
 patchwork-crawler
+path-of-ancestry
 path-of-bravery
 path-of-peril
 path-of-the-enigma

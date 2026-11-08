@@ -2244,6 +2244,7 @@ manaProductionNames asking x = case x of
   ManaProduction.CouldProduce (CouldProduce.MkCouldProduce among _types) -> filterNames asking among
   ManaProduction.Pooled manaCount -> manaCountNames asking manaCount
   ManaProduction.ProducedByTapped -> slotNames asking Binding.Engine.manaSource
+  ManaProduction.InCommanderIdentity -> mempty
 
 manaCountNames :: (Monoid r) => Asking r -> ManaCount.ManaCount -> r
 manaCountNames asking x = case x of
@@ -3394,3 +3395,4 @@ anchorNames asking anchor = case anchor of
   Anchor.Evaluated -> mempty
   Anchor.Source -> mempty
   Anchor.AnyPermanent group -> filterNames asking group
+  Anchor.YourCommander -> mempty

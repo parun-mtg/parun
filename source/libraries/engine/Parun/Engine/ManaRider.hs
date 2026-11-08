@@ -128,9 +128,10 @@ matchesCondition oid gs rider = spentOnMatches oid gs (ManaRider.condition rider
 -- Matched against the object's own view under its CONTROLLER's perspective --
 -- the context Parun.Engine.Mana.admitsUnder builds for a restriction's filter,
 -- and honest here for the same reason: the clause names no source and binds no
--- slot.
+-- slot. Framed by that player's commanders (Path of Ancestry), as the payment
+-- is recorded (CR 601.2h).
 spentOnMatches :: ObjectId.ObjectId -> GameState.GameState -> Filter.Type.Filter Keyword.Keyword -> Bool
 spentOnMatches oid gs =
   Filter.matches
-    (Filter.contextIn gs (Projection.controllerOf oid gs) Nothing)
+    (Projection.framedByCommanders gs (Filter.contextIn gs (Projection.controllerOf oid gs) Nothing))
     (Projection.viewOfObject oid gs)

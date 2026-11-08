@@ -1,0 +1,54 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Command Tower",
+            "label": "tower",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Opt",
+            "label": "opt"
+          },
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.4f Command Tower adds no mana without a commander",
+  "note": "The board above without Garland: nothing in alice's hand is castable.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $tower"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

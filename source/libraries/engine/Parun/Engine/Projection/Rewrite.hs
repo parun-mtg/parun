@@ -657,6 +657,7 @@ rewriteManaProduction pairs production = case production of
   ManaProduction.CouldProduce could -> ManaProduction.CouldProduce could {CouldProduce.among = Filter.rewrite pairs (CouldProduce.among could)}
   ManaProduction.Pooled _ -> production
   ManaProduction.ProducedByTapped -> production
+  ManaProduction.InCommanderIdentity -> production
 
 -- CR 612's word swap over an effect's AST. Cases on an effect's
 -- STRUCTURE -- does this arm carry a word a swap could reach -- never on which

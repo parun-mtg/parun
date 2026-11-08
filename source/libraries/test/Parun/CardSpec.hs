@@ -5494,6 +5494,9 @@ blockPermissionFilters permission =
 --     adds, matched by Parun.Engine.Mana.admitsUnder, which fills the source's
 --     CR 607.2d choices off the mana unit (Pillar of Origins, Throne of
 --     Eldraine).
+--   * SpentOnFramed -- a CR 106.6 rider's condition or a spend trigger's
+--     spells, matched by Parun.Engine.ManaRider.spentOnMatches, which fills the
+--     payer's commanders' creature types (CR 903.3e, Path of Ancestry).
 --   * TriggerConditionFramed -- a triggered ability's own CR 603.2 trigger
 --     condition, matched by Parun.Engine.Event.Match against the bearer through
 --     Parun.Engine.SourceContext, which fills the bearer's CR 607.2d choices
@@ -5681,6 +5684,9 @@ data Framing
     ActivationCostFramed
   | -- | CR 106.6's restriction on added mana. See the overview above.
     ManaRestrictionFramed
+  | -- | What mana was spent on, for a rider or a spend trigger. See the overview
+    -- above.
+    SpentOnFramed
   | -- | A triggered ability's own trigger condition. See the overview above.
     TriggerConditionFramed
   | -- | A resolution's stored CR 611.2c combat restriction class. See the
@@ -5769,6 +5775,9 @@ sweptForSingularSlots framing = case framing of
   AffectedSetFramed -> True
   ActivationCostFramed -> True
   ManaRestrictionFramed -> True
+  -- SWEPT, as it was while Unframed: the split is about CR 903.3e's
+  -- commanders, not about slots.
+  SpentOnFramed -> True
   TriggerConditionFramed -> True
   -- SWEPT, as it was while Unframed: the split is about CR 110.2's bake.
   StoredClassFramed -> True
@@ -5889,6 +5898,7 @@ manaProductionFilters production = case production of
   ManaProduction.CouldProduce could -> [CouldProduce.among could]
   ManaProduction.Pooled _ -> []
   ManaProduction.ProducedByTapped -> []
+  ManaProduction.InCommanderIdentity -> []
 
 -- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.6's
 -- restriction, rider and spend trigger.
@@ -5896,8 +5906,8 @@ manaAdditionFilters :: ManaAddition.ManaAddition -> [(Framing, Filter.Type.Filte
 manaAdditionFilters addition =
   unframed (manaProductionFilters (ManaAddition.production addition))
     <> fmap ((,) ManaRestrictionFramed) (concatMap restrictionFilters (Maybe.maybeToList (ManaAddition.restriction addition)))
-    <> unframed (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
-    <> unframed (fmap WhenSpent.casts (Maybe.maybeToList (ManaAddition.whenSpent addition)))
+    <> fmap ((,) SpentOnFramed) (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
+    <> fmap ((,) SpentOnFramed . WhenSpent.casts) (Maybe.maybeToList (ManaAddition.whenSpent addition))
 
 -- Every Filter one effect carries, paired with its Framing. Two arms answer
 -- AttachDestination -- Effect.AttachTarget's destination and

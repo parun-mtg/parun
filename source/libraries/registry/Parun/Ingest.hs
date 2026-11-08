@@ -17,6 +17,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Legality as Legality.Codec
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -29,7 +30,6 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.Legality as Legality
@@ -205,7 +205,7 @@ enumWord kind word =
 -- | A color indicator's letter (CR 204, CR 105.1).
 colour :: Text.Text -> Either Text.Text Color.Color
 colour t = case Text.unpack t of
-  [c] | Just (ManaType.Colored x) <- manaType c -> Right x
+  [c] | Just (ManaType.Colored x) <- ManaSymbolText.manaType c -> Right x
   _ -> Left (Text.pack "color indicator: " <> t)
 
 -- | A printed power or toughness that is a plain number. Anything else
@@ -226,23 +226,4 @@ manaCost t = case Text.uncons t of
   where
     symbols = filter (not . Text.null) . fmap (Text.dropWhile (== '{')) . Text.splitOn (Text.pack "}")
     bad s = Left (Text.pack "mana symbol: {" <> s <> Text.pack "}")
-    symbol s = case Text.unpack s of
-      "X" -> Right ManaSymbol.Variable
-      "S" -> Right ManaSymbol.Snow
-      [c] | Just m <- manaType c -> Right (ManaSymbol.OfType m)
-      [c, '/', 'P'] | Just (ManaType.Colored x) <- manaType c -> Right (ManaSymbol.Phyrexian x)
-      ['2', '/', c] | Just m <- manaType c -> Right (ManaSymbol.MonocoloredHybrid m)
-      [a, '/', b] | Just l <- manaType a, Just r <- manaType b -> Right (ManaSymbol.Hybrid Hybrid.MkHybrid {Hybrid.left = l, Hybrid.right = r})
-      digits | all Char.isDigit digits, Just n <- Read.readMaybe digits -> Right (ManaSymbol.Generic n)
-      _ -> bad s
-
--- | A mana symbol's letter as the type of mana it stands for (CR 107.4).
-manaType :: Char -> Maybe ManaType.ManaType
-manaType c = case c of
-  'W' -> Just (ManaType.Colored Color.White)
-  'U' -> Just (ManaType.Colored Color.Blue)
-  'B' -> Just (ManaType.Colored Color.Black)
-  'R' -> Just (ManaType.Colored Color.Red)
-  'G' -> Just (ManaType.Colored Color.Green)
-  'C' -> Just ManaType.Colorless
-  _ -> Nothing
+    symbol s = maybe (bad s) Right (ManaSymbolText.symbol s)

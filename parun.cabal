@@ -1864,6 +1864,7 @@ library engine
     Parun.Engine.ManaCount
     Parun.Engine.ManaFilter
     Parun.Engine.ManaRider
+    Parun.Engine.ManaSymbolText
     Parun.Engine.ManifestDread
     Parun.Engine.Mint
     Parun.Engine.Modal
@@ -2161,6 +2162,7 @@ library mtgish
   import: library
   build-depends:
     containers ^>={0.7, 0.8},
+    parun:engine,
     parun:extra,
     parun:json,
     parun:json-codec,

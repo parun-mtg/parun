@@ -1,0 +1,63 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Command Tower",
+            "label": "tower",
+            "ready": true
+          }
+        ],
+        "command": [
+          {
+            "card": "Garland, Royal Kidnapper",
+            "commander": true,
+            "label": "garland"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Opt",
+            "label": "opt"
+          },
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.4 / 106.5 Command Tower adds blue or black for a blue-black commander, never red",
+  "note": "Garland, Royal Kidnapper's identity is blue and black. The Tower is alice's only source, so Offered shows which of Opt, Dark Ritual and Lightning Bolt its mana can cast.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $opt",
+            "Cast $ritual",
+            "ActivateManaAbility $tower"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
