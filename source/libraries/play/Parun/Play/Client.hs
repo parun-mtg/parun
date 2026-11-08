@@ -733,7 +733,7 @@ distinct view = reverse . snd . List.foldl' keep ([], []) . zip [0 ..]
     held = Map.fromList [(ObjectView.object o, o) | s <- PlayerView.seats view, SeatView.player s == PlayerView.viewer view, o <- SeatView.hand s]
     key option = do
       kind <- Protocol.field "action" option >>= textOf
-      Monad.guard (kind `elem` fmap Text.pack ["Play", "Cast", "Plot"])
+      Monad.guard (kind `elem` fmap Text.pack ["PlayLand", "Cast", "Plot"])
       o <- Protocol.field "object" option >>= objectOf >>= (`Map.lookup` held)
       R.Object pairs <- Just option
       pure (filter ((/= Text.pack "object") . fst) pairs, o {ObjectView.object = ObjectId.MkObjectId 0})
@@ -1080,7 +1080,7 @@ actionName view action =
       subject = Maybe.fromMaybe Text.empty (Monad.mplus name object)
    in case maybe "" Text.unpack (Protocol.field "action" action >>= textOf) of
         "Pass" -> Text.pack "Pass"
-        "Play" -> Text.pack "Play " <> subject
+        "PlayLand" -> Text.pack "Play " <> subject
         "Cast" -> Text.pack "Cast " <> subject
         "Activate" -> maybe (Text.pack "Activate an ability of ") (\i -> Text.pack ("Activate ability " <> show (i + 1) <> " of ")) (Protocol.field "ability" action >>= Protocol.naturalOf) <> subject
         "ActivateManaAbility" -> Text.pack "Activate a mana ability of " <> subject

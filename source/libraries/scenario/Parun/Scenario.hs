@@ -40,7 +40,6 @@ import qualified Parun.Engine.Card as Engine.Card
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Driver as Driver
-import qualified Parun.Engine.EndEffect as EndEffect
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event.Trigger as Event.Trigger
 import qualified Parun.Engine.Game as Game
@@ -65,6 +64,7 @@ import qualified Parun.Interpreter as Interpreter
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Registry as Registry
+import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Prompt as Prompt
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.Action as Action
@@ -1213,7 +1213,7 @@ answerActionPrompt gs pid actions prompt = do
         pure Action.Pass
       (Nothing, Entry.Do (Move.Answer _)) -> answerGeneric gs key (Text.pack "ChooseAction") index timed prompt
       (Nothing, Entry.Do verb) -> do
-        offered <- mapM (describeAction gs) actions
+        offered <- actionLines gs actions
         matching <- actionsMatching gs verb actions
         chosen <- case matching of
           [] -> failWith (Failure.MkActionNotOffered key verb offered)
@@ -1225,7 +1225,7 @@ answerActionPrompt gs pid actions prompt = do
       -- A refused move the engine does not offer is refused already; one it
       -- does offer is taken, and must be reversed (CR 734.1).
       (Nothing, Entry.Refuse verb) -> do
-        offered <- mapM (describeAction gs) actions
+        offered <- actionLines gs actions
         matching <- actionsMatching gs verb actions
         popAt key index
         case matching of
@@ -1323,7 +1323,7 @@ actionsMatching gs verb actions = case verb of
     oid <- resolveObject (Activation.object activation) gs
     let selected = fmap (\index -> List.genericDrop index (Projection.abilitiesOf oid gs)) (Activation.ability activation)
     pure (filter (matchesActivation oid selected) actions)
-  Move.Take taking -> fmap (fmap fst . filter ((== Taking.action taking) . snd) . zip actions) (mapM (describeAction gs) actions)
+  Move.Take taking -> fmap (fmap fst . filter ((== Taking.action taking) . snd) . zip actions) (actionLines gs actions)
   _ -> pure []
 
 matchesActivation :: ObjectId.ObjectId -> Maybe [ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> Action.Action -> Bool
@@ -1683,11 +1683,12 @@ namedObjects name gs =
    in filter matches (Map.keys (GameState.objects gs))
 
 labelOf :: PlayerId.PlayerId -> Run Label.Label
-labelOf pid = do
-  seats <- State.gets (Staged.seats . staged)
-  pure $ case List.find ((== pid) . snd) (Map.toList seats) of
-    Just (label, _) -> label
-    Nothing -> Label.MkLabel (Text.pack ("player " <> show (PlayerId.unwrap pid)))
+labelOf pid = State.gets (flip seatLabel pid . Staged.seats . staged)
+
+seatLabel :: Map.Map Label.Label PlayerId.PlayerId -> PlayerId.PlayerId -> Label.Label
+seatLabel seats pid = case List.find ((== pid) . snd) (Map.toList seats) of
+  Just (label, _) -> label
+  Nothing -> Label.MkLabel (Text.pack ("player " <> show (PlayerId.unwrap pid)))
 
 resolvePlayer :: Label.Label -> Run PlayerId.PlayerId
 resolvePlayer label = do
@@ -1944,24 +1945,44 @@ resolveDamage gs key kind offered (ref, amount) = do
 describeObject :: GameState.GameState -> ObjectId.ObjectId -> Run Text.Text
 describeObject gs oid = do
   labels <- State.gets (Staged.objects . staged)
-  let describeSource source = case List.find ((== source) . snd) (Map.toAscList labels) of
-        Just (label, _) -> Codec.Reference.toText (Reference.Labelled label)
-        Nothing -> case Game.cardOfWithLastKnown source gs of
-          Just card -> CardName.unwrap (Face.name (NonEmpty.head (Card.faces card)))
-          Nothing -> Text.pack ("object " <> show (ObjectId.unwrap source))
-  pure $ case List.find ((== oid) . snd) (Map.toAscList labels) of
-    Just (label, _) -> Codec.Reference.toText (Reference.Labelled label)
-    Nothing -> case Game.cardOf oid gs of
-      Nothing -> case fmap Object.source (Game.lookupObject oid gs) of
-        Just (Source.OfTrigger trigger) -> Text.pack "trigger of " <> describeSource (TriggeredAbilitySource.source trigger)
-        Just (Source.OfAbility ability) -> Text.pack "ability of " <> describeSource (ActivatedAbilitySource.source ability)
-        _ -> case [label | (label, card) <- Map.toAscList labels, elem oid (castsOf card gs)] of
-          label : _ -> Codec.Reference.toText (Reference.SpellOf (Reference.Labelled label))
-          [] -> Text.pack ("object " <> show (ObjectId.unwrap oid))
-      Just card ->
-        let name = Face.name (NonEmpty.head (Card.faces card))
-            occurrence = Natural.length (takeWhile (/= oid) (namedObjects name gs)) + 1
-         in Codec.Reference.toText (Reference.Printed name occurrence)
+  pure (Codec.Reference.toText (referenceTo labels gs oid))
+
+-- | An object as a scenario names it: by its label, its card's name and
+-- occurrence, or the spell or ability a labelled card became or made; one
+-- none of those reach as @object@ and its id, which no reference reads back.
+referenceTo :: Map.Map Label.Label ObjectId.ObjectId -> GameState.GameState -> ObjectId.ObjectId -> Reference.Reference
+referenceTo labels gs oid = case List.find ((== oid) . snd) (Map.toAscList labels) of
+  Just (label, _) -> Reference.Labelled label
+  Nothing -> case Game.cardOf oid gs of
+    Nothing -> case fmap Object.source (Game.lookupObject oid gs) of
+      Just (Source.OfTrigger trigger) -> Reference.TriggerOf (sourceOf (TriggeredAbilitySource.source trigger))
+      Just (Source.OfAbility ability) -> Reference.AbilityOf (sourceOf (ActivatedAbilitySource.source ability))
+      _ -> case [label | (label, card) <- Map.toAscList labels, elem oid (castsOf card gs)] of
+        label : _ -> Reference.SpellOf (Reference.Labelled label)
+        [] -> unreached oid
+    Just card ->
+      let name = Face.name (NonEmpty.head (Card.faces card))
+       in Reference.Printed name (Natural.length (takeWhile (/= oid) (namedObjects name gs)) + 1)
+  where
+    sourceOf source = case List.find ((== source) . snd) (Map.toAscList labels) of
+      Just (label, _) -> Reference.Labelled label
+      Nothing -> case Game.cardOfWithLastKnown source gs of
+        Just card -> Reference.Printed (Face.name (NonEmpty.head (Card.faces card))) 1
+        Nothing -> unreached source
+    unreached o = Reference.Printed (CardName.MkCardName (Text.pack ("object " <> show (ObjectId.unwrap o)))) 1
+
+-- | Each action's line among `actions`, in their order, as a scenario's Take
+-- and Offered view name it (Parun.Scenario.Offer).
+actionLines :: GameState.GameState -> [Action.Action] -> Run [Text.Text]
+actionLines gs actions = do
+  labels <- State.gets (Staged.objects . staged)
+  seats <- State.gets (Staged.seats . staged)
+  let namer =
+        Reply.MkNamer
+          { Reply.nameObject = referenceTo labels gs,
+            Reply.namePlayer = seatLabel seats
+          }
+  pure (Offer.linesOf (fmap (Offer.offer namer gs) actions))
 
 renderView :: GameState.GameState -> ViewIs.ViewIs -> Run ReplyType.Reply
 renderView gs viewIs =
@@ -1976,7 +1997,7 @@ renderView gs viewIs =
         View.Step -> pure (ReplyType.Text (Text.pack (Codec.Phase.flatName (GameState.phase gs))))
         View.Offered -> do
           pid <- needPlayer
-          texts (mapM (describeAction gs) (ActionEngine.legalActions pid gs))
+          texts (actionLines gs (ActionEngine.legalActions pid gs))
         View.AttachedTo -> do
           oid <- needObject
           case Game.lookupObject oid gs >>= Object.attachedTo of
@@ -2077,30 +2098,6 @@ describeTarget gs target = case target of
   AttackTarget.OfPlayer pid -> fmap (Codec.Reference.toText . Reference.Labelled) (labelOf pid)
   AttackTarget.OfPlaneswalker oid -> describeObject gs oid
   AttackTarget.OfBattle oid -> describeObject gs oid
-
-describeAction :: GameState.GameState -> Action.Action -> Run Text.Text
-describeAction gs action = case action of
-  Action.Pass -> pure (Text.pack "Pass")
-  Action.Cast oid _ _ -> fmap (Text.pack "Cast " <>) (describeObject gs oid)
-  Action.Play oid _ -> fmap (Text.pack "PlayLand " <>) (describeObject gs oid)
-  Action.Activate oid _ -> fmap (Text.pack "Activate " <>) (describeObject gs oid)
-  Action.ActivateManaAbility oid -> fmap (Text.pack "ActivateManaAbility " <>) (describeObject gs oid)
-  Action.TurnFaceUp oid procedure -> fmap (\named -> Text.pack "TurnFaceUp " <> named <> Text.pack (" " <> show procedure)) (describeObject gs oid)
-  Action.Unlock oid half -> fmap (\named -> Text.pack "Unlock " <> named <> Text.pack " " <> CardName.unwrap half) (describeObject gs oid)
-  Action.DiscardFromHand oid -> fmap (Text.pack "DiscardFromHand " <>) (describeObject gs oid)
-  Action.TurnConspiracyFaceUp oid -> fmap (Text.pack "TurnConspiracyFaceUp " <>) (describeObject gs oid)
-  Action.Ignore oid _ -> fmap (Text.pack "Ignore " <>) (describeObject gs oid)
-  Action.Plot oid _ -> fmap (Text.pack "Plot " <>) (describeObject gs oid)
-  Action.Foretell oid -> fmap (Text.pack "Foretell " <>) (describeObject gs oid)
-  Action.Suspend oid -> fmap (Text.pack "Suspend " <>) (describeObject gs oid)
-  Action.MakeLaterPayment source _ -> fmap (Text.pack "MakeLaterPayment " <>) (describeObject gs source)
-  -- The second of one source's offers to a seat reads "EndEffect $asp #2".
-  Action.EndEffect source resolution ->
-    let nth = case EndEffect.offerIndex source resolution gs of
-          0 -> Text.empty
-          index -> Text.pack (" #" <> show (index + 1))
-     in fmap (\name -> Text.pack "EndEffect " <> name <> nth) (describeObject gs source)
-  _ -> pure (Text.pack (show action))
 
 -- | One line per failure, naming entries in the JSON a scenario writes them in.
 render :: Failure.ScenarioFailure -> Text.Text

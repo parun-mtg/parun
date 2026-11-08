@@ -82,8 +82,8 @@
           "player": "alice",
           "is": [
             "Pass",
-            "Activate $shifter",
-            "Activate $shifter"
+            "Activate $shifter 0",
+            "Activate $shifter 1"
           ]
         }
       }

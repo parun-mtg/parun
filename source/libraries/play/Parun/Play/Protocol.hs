@@ -23,7 +23,6 @@ import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
 import qualified Parun.Codec.CostComponent as Codec.CostComponent
 import qualified Parun.Codec.EntryOption as Codec.EntryOption
-import qualified Parun.Codec.Facing as Codec.Facing
 import qualified Parun.Codec.Filter as Codec.Filter
 import qualified Parun.Codec.GameEvent as Codec.GameEvent
 import qualified Parun.Codec.Keyword as Codec.Keyword
@@ -39,7 +38,6 @@ import qualified Parun.Codec.Reference as Codec.Reference
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.SlotName as Codec.SlotName
-import qualified Parun.Codec.TurnUpProcedure as Codec.TurnUpProcedure
 import qualified Parun.Codec.WordFamily as Codec.WordFamily
 import qualified Parun.Codec.Zone as Codec.Zone
 import qualified Parun.Engine.Binding as Binding
@@ -66,9 +64,9 @@ import qualified Parun.Oracle.Effect as Oracle.Effect
 import qualified Parun.Oracle.Target as Oracle.Target
 import qualified Parun.Play.Render as Render
 import qualified Parun.Scenario as Scenario
+import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
 import qualified Parun.Scenario.Reply as Reply
-import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
@@ -234,7 +232,7 @@ idOf label =
 -- which are never sent.
 offerOf :: GameState.GameState -> Prompt.Prompt r -> R.Reply
 offerOf gs prompt = case prompt of
-  Prompt.ChooseAction _ _ offered -> R.Array (fmap (actionOffer gs) offered)
+  Prompt.ChooseAction _ _ offered -> R.Array (fmap (Offer.offer namer gs) offered)
   Prompt.DeclareMulligan _ _ offer ->
     fields [("taken", natural (MulliganOffer.taken offer)), ("bottom", natural (MulliganOffer.bottomCount offer))]
   Prompt.Bottom _ _ from count -> fields [("from", objects from), ("count", natural count)]
@@ -484,7 +482,7 @@ offerOf gs prompt = case prompt of
   Prompt.MulliganAction _ _ actions -> choosing prompt "options" Nothing [("entries", handActions actions)] (fmap Just actions <> [Nothing])
   Prompt.OpeningHandAction _ _ actions -> choosing prompt "options" Nothing [("entries", handActions actions)] (fmap Just actions <> [Nothing])
   -- CR 608.2g: each castable half and facing as a Cast action, then none.
-  Prompt.CastWhileSearching _ _ casts -> choosing prompt "options" Nothing [("entries", R.Array [actionOffer gs (Action.Cast oid name facing) | (oid, name, facing) <- casts])] (fmap Just casts <> [Nothing])
+  Prompt.CastWhileSearching _ _ casts -> choosing prompt "options" Nothing [("entries", R.Array [Offer.offer namer gs (Action.Cast oid name facing) | (oid, name, facing) <- casts])] (fmap Just casts <> [Nothing])
   -- Exactly the count, as many as there are where fewer (CR 701.21a).
   Prompt.ChooseSacrifices _ _ source candidates count earlier -> subset (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (exactly count candidates) (fmap object candidates)
   -- CR 118.1 / 406.2.
@@ -712,35 +710,6 @@ triggerEntry gs entry = fields (("source", source) : [("text", R.Text text) | te
              in (object oid, Oracle.triggered (Oracle.contextOf (Render.snapshotName c) []) (Set.member CardType.Creature (ProjectedCharacteristics.cardTypes c)) ability)
         | otherwise -> (object oid, [])
       TriggerSource.Sourceless -> (R.Null, Oracle.triggered (Oracle.contextOf Text.empty []) False ability)
-
--- | An action as an offer names it: its constructor, the object it acts on,
--- the face or half it names, for an Activate, the ability's place among its
--- source's (Projection.abilitiesOf, as a scenario's Activation names it), and
--- the choice a TurnFaceUp, Ignore or Plot carries.
-actionOffer :: GameState.GameState -> Action.Action -> R.Reply
-actionOffer gs action = fields (("action", R.Text (Text.pack kind)) : rest)
-  where
-    (kind, rest) = case action of
-      Action.Pass -> ("Pass", [])
-      Action.Play oid name -> ("Play", on oid <> foldMap named name)
-      Action.Cast oid name facing -> ("Cast", on oid <> named name <> [("facing", Reply.encode (Reply.viaCodec Codec.Facing.codec) namer facing)])
-      Action.Activate oid ability -> ("Activate", on oid <> [("ability", natural (Natural.length (takeWhile (/= ability) abilities))) | let abilities = Projection.abilitiesOf oid gs, ability `elem` abilities])
-      Action.ActivateManaAbility oid -> ("ActivateManaAbility", on oid)
-      Action.TurnFaceUp oid procedure -> ("TurnFaceUp", on oid <> [("procedure", Reply.encode (Reply.viaCodec Codec.TurnUpProcedure.codec) namer procedure)])
-      Action.TurnConspiracyFaceUp oid -> ("TurnConspiracyFaceUp", on oid)
-      Action.Unlock oid name -> ("Unlock", on oid <> named name)
-      Action.DiscardFromHand oid -> ("DiscardFromHand", on oid)
-      Action.Ignore oid ability -> ("Ignore", on oid <> [("abilityName", R.Text (AbilityName.unwrap ability))])
-      Action.Plot oid cost -> ("Plot", on oid <> [("cost", payment cost)])
-      Action.Foretell oid -> ("Foretell", on oid)
-      Action.Suspend oid -> ("Suspend", on oid)
-      Action.PutCompanionIntoHand -> ("PutCompanionIntoHand", [])
-      Action.EndEffect oid _ -> ("EndEffect", on oid)
-      Action.MakeLaterPayment oid _ -> ("MakeLaterPayment", on oid)
-      Action.PayLifeForMana life mana -> ("PayLifeForMana", [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)])
-      Action.RollPlanarDie -> ("RollPlanarDie", [])
-    on oid = [("object", object oid)]
-    named name = [("name", R.Text (CardName.unwrap name))]
 
 -- | CR 702.51a / 702.66a / 702.126a: the keywords of the spell `payer` is
 -- casting that let part of this cost be paid other than with mana, which

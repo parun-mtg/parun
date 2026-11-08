@@ -123,7 +123,7 @@
           "player": "alice",
           "is": [
             "Pass",
-            "TurnFaceUp $ainok Morph",
+            "TurnFaceUp $ainok",
             "ActivateManaAbility $mountain-1",
             "ActivateManaAbility $mountain-2",
             "ActivateManaAbility $mountain-3",
@@ -139,7 +139,7 @@
       "player": "alice",
       "do": {
         "Take": {
-          "action": "TurnFaceUp $ainok Morph",
+          "action": "TurnFaceUp $ainok",
           "mana": [
             "$mountain-1",
             "$mountain-2",
