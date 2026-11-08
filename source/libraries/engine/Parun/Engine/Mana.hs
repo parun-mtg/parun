@@ -302,6 +302,10 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- Command Tower's colour identity is its controller's commanders' (CR
 -- 702.124c), and with no commander or an empty identity no colour is defined:
 -- CR 903.4f, and CR 106.5 again adds none, not {C}.
+--
+-- Cryptic Spires' circled colours are the SOURCE's projected ones (CR 207.5,
+-- 613.1): a copy has the original's (CR 707.2), and an object that only gained
+-- the ability has none, so CR 106.5 adds nothing.
 produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> ObjectId -> GameState -> ManaProduction -> Produced
 produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 
@@ -329,6 +333,7 @@ producedVisiting bound visited oid gs poolBoard production = case production of
     among [manaType | Recipient.ToObject tapped <- foldMap Set.toList (Map.lookup Binding.manaSource bound), manaType <- Set.toList (latestTapProduced tapped gs)]
   ManaProduction.InCommanderIdentity ->
     among (foldMap (fmap ManaType.Colored . Set.toList) (Projection.controllerOf oid gs >>= (`Commander.commanderColorIdentity` gs)))
+  ManaProduction.Circled -> among (fmap ManaType.Colored (Set.toList (PC.circled (Projection.project oid gs))))
   where
     among types = case types of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
@@ -916,6 +921,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.Pooled _ -> True
       ManaProduction.ProducedByTapped -> False
       ManaProduction.InCommanderIdentity -> False
+      ManaProduction.Circled -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as
 -- one mana is produced, its text read off the source's rules text now.

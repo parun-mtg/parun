@@ -7,6 +7,7 @@ import qualified Parun.Codec.Placement as Placement
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName.Type
+import qualified Parun.Types.Color as Color.Type
 import qualified Parun.Types.CounterKind as CounterKind.Type
 import qualified Parun.Types.FaceDownReason as FaceDownReason.Type
 import qualified Parun.Types.Label as Label.Type
@@ -35,9 +36,10 @@ spec s = Spec.describe s "Parun.Codec.Placement" $ do
           Placement.Type.face = Just (CardName.Type.MkCardName (Text.pack "Nightfall Predator")),
           Placement.Type.faceDown = Just FaceDownReason.Type.Manifested,
           Placement.Type.protector = Just (Label.Type.MkLabel (Text.pack "carol")),
-          Placement.Type.lights = Set.fromList [2, 3, 6]
+          Placement.Type.lights = Set.fromList [2, 3, 6],
+          Placement.Type.circled = Set.fromList [Color.Type.Blue, Color.Type.Black]
         }
-      " {\"card\":\"Goblin Piker\",\"label\":\"piker\",\"tapped\":true,\"ready\":true,\"damage\":1,\"counters\":[{\"key\":{\"type\":\"PlusOnePlusOne\"},\"value\":2}],\"token\":true,\"controller\":\"bob\",\"attached\":\"bear\",\"commander\":true,\"face\":\"Nightfall Predator\",\"faceDown\":\"Manifested\",\"protector\":\"carol\",\"lights\":[2,3,6]} "
+      " {\"card\":\"Goblin Piker\",\"label\":\"piker\",\"tapped\":true,\"ready\":true,\"damage\":1,\"counters\":[{\"key\":{\"type\":\"PlusOnePlusOne\"},\"value\":2}],\"token\":true,\"controller\":\"bob\",\"attached\":\"bear\",\"commander\":true,\"face\":\"Nightfall Predator\",\"faceDown\":\"Manifested\",\"protector\":\"carol\",\"lights\":[2,3,6],\"circled\":[\"Blue\",\"Black\"]} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Placement.codec
 
@@ -57,5 +59,6 @@ plain name =
       Placement.Type.face = Nothing,
       Placement.Type.faceDown = Nothing,
       Placement.Type.protector = Nothing,
-      Placement.Type.lights = Set.empty
+      Placement.Type.lights = Set.empty,
+      Placement.Type.circled = Set.empty
     }

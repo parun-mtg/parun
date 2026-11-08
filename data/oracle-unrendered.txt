@@ -672,6 +672,7 @@ crypt-cobra
 crypt-rats
 cryptex
 cryptic-caves
+cryptic-spires
 crystal-barricade
 crystal-spray
 cubwarden

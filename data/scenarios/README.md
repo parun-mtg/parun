@@ -25,8 +25,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   `commander` (CR 903.3: its owner's commander), the name of the `face` it
   shows (CR 712.6d, `"Nightfall Predator"`), `faceDown` with the reason it is
   (CR 708.2a / 708.6, `"Manifested"`), a battle's `protector`
-  seat (CR 310.9) and the numbers its printing has `lights` up on, an
-  Attraction's (CR 718.1, `[2, 3, 6]`). `active` names a seat;
+  seat (CR 310.9), the numbers its printing has `lights` up on, an
+  Attraction's (CR 718.1, `[2, 3, 6]`), and the colours `circled` on it, a
+  Cryptic Spires' (CR 207.5, `["Blue", "Black"]`). `active` names a seat;
   `turn` (default 1) and `step` are where the game starts; `monarch` optionally names a seat;
   `attackOption` (CR 806.2b) is `MultiplePlayers` unless given, and `null` is
   CR 507.1's choice among every opponent; `brawl` (CR 903.12a),

@@ -24,7 +24,8 @@ codec =
       Arm.payload "CouldProduce" CouldProduce.codec ManaProduction.CouldProduce (\x -> case x of ManaProduction.CouldProduce y -> Just y; _ -> Nothing),
       Arm.payload "Pooled" ManaCount.codec ManaProduction.Pooled (\x -> case x of ManaProduction.Pooled y -> Just y; _ -> Nothing),
       Arm.nullary "ProducedByTapped" ManaProduction.ProducedByTapped,
-      Arm.nullary "InCommanderIdentity" ManaProduction.InCommanderIdentity
+      Arm.nullary "InCommanderIdentity" ManaProduction.InCommanderIdentity,
+      Arm.nullary "Circled" ManaProduction.Circled
     ]
 
 tagOf :: ManaProduction.ManaProduction -> String
@@ -38,3 +39,4 @@ tagOf x = case x of
   ManaProduction.Pooled {} -> "Pooled"
   ManaProduction.ProducedByTapped {} -> "ProducedByTapped"
   ManaProduction.InCommanderIdentity {} -> "InCommanderIdentity"
+  ManaProduction.Circled {} -> "Circled"

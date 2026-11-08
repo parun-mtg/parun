@@ -434,6 +434,9 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- copiable rules text, so a spell that becomes a copy resolves the copied
     -- text (Parun.Engine.Projection.View.spellFaceOf).
     spell :: Modal.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card),
+    -- | CR 207.5: the colours circled on Cryptic Spires, printed rules text
+    -- (CR 613.1), so copiable (CR 707.2). ManaProduction.Circled reads it.
+    circled :: Set.Set Color.Color,
     -- | CR 707.3 / 710.1b: a copy snapshot's reading once the copy is flipped,
     -- and Nothing for copiable values with no flip card's alternative half.
     -- Stamped by Parun.Engine.Event.copiedSnapshot; a printed flip card's

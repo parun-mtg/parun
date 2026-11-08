@@ -554,7 +554,7 @@ placeAll registry zone deck owner placements board = case placements of
       Right (Just _) | Placement.token placement && zone /= Zone.Battlefield -> pure (Left (Failure.MkTokenOffBattlefield (Placement.card placement)))
       Right (Just card) | Just name <- Placement.face placement, Maybe.isNothing (Engine.Card.faceNamed name card) -> pure (Left (Failure.MkUnknownFace (Placement.card placement) name))
       Right (Just card) -> do
-        let (printingId, interned) = Game.intern ((Printing.ofCard card) {Printing.lights = Placement.lights placement}) (Staged.state board)
+        let (printingId, interned) = Game.intern ((Printing.ofCard card) {Printing.lights = Placement.lights placement, Printing.circled = Placement.circled placement}) (Staged.state board)
             (oid, inZone) = Setup.placeCard zone owner printingId interned
             placedCard = maybe inZone (\kind -> Setup.intoSideDeck kind owner oid inZone) deck
             -- CR 903.3: a commander is designated by its card identity, which

@@ -214,6 +214,10 @@ colorIdentitySpec s registry = Spec.describe s "Color identity" $ do
   Spec.it s "CR 903.4 the colours a characteristic-defining ability defines" $ do
     courier <- S.printingOf s registry "Transguild Courier"
     Spec.assertEqWith s "Transguild Courier's {4} and 'is all colors'" (Commander.colorIdentity courier) (Set.fromList [minBound .. maxBound])
+  Spec.it s "CR 207.5 / 903.4 the colours circled on a Cryptic Spires are in its identity" $ do
+    spires <- S.printingOf s registry "Cryptic Spires"
+    Spec.assertEqWith s "nothing circled, no colour" (Commander.colorIdentity spires) Set.empty
+    Spec.assertEqWith s "blue and black circled" (Commander.colorIdentity spires {Printing.circled = Set.fromList [Color.Blue, Color.Black]}) (Set.fromList [Color.Blue, Color.Black])
 
 designationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 designationSpec s registry = Spec.describe s "Designation" $ do

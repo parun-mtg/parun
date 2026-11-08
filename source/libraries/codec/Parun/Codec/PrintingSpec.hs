@@ -11,6 +11,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.Printing as Printing
 
@@ -26,6 +27,13 @@ litMountain = (Printing.ofCard CardSpec.mountainCard) {Printing.lights = Set.fro
 
 litMountainJson :: String
 litMountainJson = init mountainJson <> ",\"lights\":[2,5]}"
+
+-- | A Mountain with colours circled, which only Cryptic Spires has (CR 207.5).
+circledMountain :: Printing.Printing
+circledMountain = (Printing.ofCard CardSpec.mountainCard) {Printing.circled = Set.fromList [Color.White, Color.Green]}
+
+circledMountainJson :: String
+circledMountainJson = init mountainJson <> ",\"circled\":[\"White\",\"Green\"]}"
 
 mountainName :: CardName.CardName
 mountainName = CardName.MkCardName (Text.pack "Mountain")
@@ -98,6 +106,20 @@ spec s = Spec.describe s "Parun.Codec.Printing" $ do
       (Printing.reference knowsMountain)
       litMountain
       (" {\"type\":\"Inline\",\"value\":" <> litMountainJson <> "} ")
+  -- CR 207.5: circled colours sit beside the card's keys, and inline the
+  -- printing for the lights' reason.
+  Spec.it s "a printing's circled colours are written beside the card" $
+    Common.assertCodec
+      s
+      Printing.codec
+      circledMountain
+      (" " <> circledMountainJson <> " ")
+  Spec.it s "a printing with circled colours is written out in full" $
+    Common.assertCodec
+      s
+      (Printing.reference knowsMountain)
+      circledMountain
+      (" {\"type\":\"Inline\",\"value\":" <> circledMountainJson <> "} ")
   -- Not a round trip: a Named printing the resolver cannot answer for has no
   -- card to decode to, and guessing is the one thing this format exists to
   -- prevent.
