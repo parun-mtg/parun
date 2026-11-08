@@ -1,6 +1,9 @@
 {
   "faces": [
     {
+      "deckLimit": {
+        "type": "AnyNumber"
+      },
       "keywords": [
         {
           "type": "Cycling",

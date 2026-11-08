@@ -635,6 +635,8 @@ library codec
     Parun.Codec.DealtDamageToSpec
     Parun.Codec.Decider
     Parun.Codec.DeciderSpec
+    Parun.Codec.DeckLimit
+    Parun.Codec.DeckLimitSpec
     Parun.Codec.DeclarationTrigger
     Parun.Codec.DeclarationTriggerSpec
     Parun.Codec.DefendersAre
@@ -2800,6 +2802,7 @@ library types
     Parun.Types.DealtDamageTo
     Parun.Types.Decider
     Parun.Types.Deck
+    Parun.Types.DeckLimit
     Parun.Types.DeclarationTrigger
     Parun.Types.DefendersAre
     Parun.Types.Defense

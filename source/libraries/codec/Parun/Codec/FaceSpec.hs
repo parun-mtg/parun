@@ -49,6 +49,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CrewRestriction as CrewRestriction
+import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryR as EntryR
@@ -154,6 +155,7 @@ baseFace =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.empty,
       Face.staticAbilities = [],
       Face.spell = minimalModal,
@@ -216,6 +218,7 @@ minimalFace =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,
@@ -777,6 +780,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
   Spec.it s "an ante card decodes its flag" $ do
     v <- Common.assertJson s " {\"name\":\"Contract from Below\",\"typeLine\":{\"types\":[\"Sorcery\"]},\"anteOnly\":true} "
     Spec.assertEq s (Face.anteOnly <$> decodeFace v) (Right True)
+  -- CR 100.2a: Nazgûl's "A deck can have up to nine cards named Nazgûl.", and
+  -- Nothing for a face that prints no such line.
+  Spec.it s "MkFace, a deck limit" $ do
+    v <- Common.assertJson s " {\"name\":\"Nazgûl\",\"typeLine\":{\"types\":[\"Creature\"]},\"deckLimit\":{\"type\":\"UpTo\",\"value\":9}} "
+    Spec.assertEq s (Face.deckLimit <$> decodeFace v) (Right (Just (DeckLimit.UpTo 9)))
+    w <- Common.assertJson s " {\"name\":\"Grizzly Bears\",\"typeLine\":{\"types\":[\"Creature\"]}} "
+    Spec.assertEq s (Face.deckLimit <$> decodeFace w) (Right Nothing)
   -- Alchemy's starting intensity, for the vanguard's reason.
   Spec.it s "MkFace, a starting intensity" $ do
     v <- Common.assertJson s " {\"name\":\"Static Discharge\",\"typeLine\":{\"types\":[\"Sorcery\"]},\"startingIntensity\":3} "

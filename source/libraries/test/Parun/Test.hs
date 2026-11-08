@@ -293,6 +293,7 @@ import qualified Parun.Codec.DealDamageSpec
 import qualified Parun.Codec.DealtDamageSpec
 import qualified Parun.Codec.DealtDamageToSpec
 import qualified Parun.Codec.DeciderSpec
+import qualified Parun.Codec.DeckLimitSpec
 import qualified Parun.Codec.DeclarationTriggerSpec
 import qualified Parun.Codec.DefendersAreSpec
 import qualified Parun.Codec.DefenseSpec
@@ -1322,6 +1323,7 @@ spec s registry corpus = do
   Parun.Codec.DaytimeSpec.spec s
   Parun.Codec.DealDamageSpec.spec s
   Parun.Codec.DeciderSpec.spec s
+  Parun.Codec.DeckLimitSpec.spec s
   Parun.Codec.DeclarationTriggerSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s
   Parun.Codec.DefenseSpec.spec s

@@ -45,6 +45,7 @@ bareFace n =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,

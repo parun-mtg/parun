@@ -490,6 +490,7 @@ vanillaFace name typeLine =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.staticAbilities = [],
@@ -7320,6 +7321,19 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 flagged = any Face.anteOnly faces
              in if prints == flagged then Nothing else Just (path <> ": prints the ante reminder " <> show prints <> " but anteOnly is " <> show flagged)
     Spec.assertEqWith s "every ante card is flagged, and only those" (Maybe.mapMaybe offends corpus) []
+  -- CR 100.2a: a card carries a deck limit exactly when it prints "A deck can
+  -- have"; Parun.Legality reads the field and never the text.
+  Spec.it s "CR 100.2a a card carries a deck limit exactly when it prints one" $ do
+    Spec.assertBool s (not (null corpus)) "the corpus is not empty"
+    let line = Text.pack "A deck can have"
+        offends (path, result) = case result of
+          Left reason -> Just (path <> ": " <> Text.unpack reason)
+          Right card ->
+            let faces = Foldable.toList (Card.Type.faces card)
+                prints = any (maybe False (Text.isInfixOf line) . Face.oracleText) faces
+                carries = any (Maybe.isJust . Face.deckLimit) faces
+             in if prints == carries then Nothing else Just (path <> ": prints a deck limit " <> show prints <> " but carries one " <> show carries)
+    Spec.assertEqWith s "every card printing a deck limit carries one, and only those" (Maybe.mapMaybe offends corpus) []
   -- CR 407.3: only an ante card adds a card to the ante or changes a card's
   -- owner, and CR 407.4 makes Effect.Ante the only road into the ante: a
   -- MoveToZone into the ante has no player to check ownership against.
