@@ -30,6 +30,7 @@ import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -163,9 +164,9 @@ data PlayerEffect
   | -- | CR 726.1 / 101.2 / Jared Carthalion, True Heir: this player can't become
     -- the monarch.
     CantBecomeMonarch
-  | -- | CR 704.5j / Hall of Echoes: the legend rule doesn't apply to permanents
-    -- this player controls.
-    LegendRuleDoesntApply
+  | -- | CR 704.5i / 704.5j / Hall of Echoes, Sanctum Lurker: the state-based
+    -- action doesn't apply to permanents this player controls.
+    StateBasedActionDoesntApply StateBasedAction.StateBasedAction
   | -- | CR 701.32 / 904.9 / All in Good Time: schemes can't be set in motion.
     CantSetSchemesInMotion
   | -- | CR 603.6a / 603.2d / 613.11 / Hushwing Gryff, Yarok, the Desecrated:

@@ -64,6 +64,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -170,12 +171,18 @@ zeroToughness pc =
 -- permanent, so absent this guard every creature on the battlefield would read as
 -- having loyalty 0 and be buried. CR 122.1e confines the reading to
 -- planeswalkers.
+--
+-- A controller under Parun.Types.PlayerEffect.StateBasedActionDoesntApply
+-- ZeroLoyalty keeps its planeswalkers (Sanctum Lurker).
 zeroLoyalty :: GameState -> PC.ProjectedCharacteristics -> ObjectId -> Bool
 zeroLoyalty gs pc oid =
   Set.member CardType.Planeswalker (PC.cardTypes pc)
     && case Game.lookupObject oid gs of
       Nothing -> False
       Just obj -> Map.findWithDefault 0 CounterKind.Loyalty (Object.counters obj) == 0
+    && case Projection.controllerOf oid gs of
+      Nothing -> True
+      Just controller -> not (PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.ZeroLoyalty controller gs)
 
 -- CR 704.5g/h: a creature destroyed by lethal marked damage or by a deathtouch
 -- source. A DESTRUCTION -- indestructible-gated (CR 702.12b) and regeneration-
@@ -540,8 +547,8 @@ stillLegalEnchant pools gs source slot recipient = case (slot, recipient) of
 -- three. Partial overlap needs no special handling anyway: CR 704.3 repeats the
 -- check, so whatever survives is re-grouped against the new board.
 --
--- A controller under Parun.Types.PlayerEffect.LegendRuleDoesntApply keys
--- nothing, since every member of a group shares its controller.
+-- A controller under Parun.Types.PlayerEffect.StateBasedActionDoesntApply
+-- LegendRule keys nothing, since every member of a group shares its controller.
 legendGroups :: Map.Map ObjectId PC.ProjectedCharacteristics -> GameState -> [(PlayerId, NonEmpty.NonEmpty ObjectId)]
 legendGroups pcs gs =
   let legendary oid = case Map.lookup oid pcs of
@@ -551,7 +558,7 @@ legendGroups pcs gs =
               case Projection.controllerOf oid gs of
                 Nothing -> []
                 Just controller
-                  | PlayerEffect.legendRuleDoesntApplyTo controller gs -> []
+                  | PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.LegendRule controller gs -> []
                   | otherwise -> fmap (\name -> ((controller, name), [oid])) (Set.toList (PC.names pc))
           | otherwise -> []
       keyed = concatMap legendary (Set.toList (GameState.battlefield gs))
