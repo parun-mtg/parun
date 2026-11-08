@@ -490,7 +490,8 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
           picked <- some False from typed
           if Natural.length picked <= n then Right (R.Array picked) else Left (Text.pack ("Choose at most " <> show n <> "."))
       )
-  -- CR 700.2: each mode by its place in the printed list.
+  -- CR 700.2: each mode as the offer names it, or else by its place in the
+  -- printed list.
   "ChooseModes" -> subset (\reply -> maybe (optionName view reply) (\i -> Text.pack ("Mode " <> show (i + 1))) (naturalOf reply)) Text.empty R.Array
   -- CR 702.47b: the effects happen in the order the cards are typed.
   "ChooseSplice" -> subset (optionName view) (Text.pack "; the first typed happens first") R.Array

@@ -1213,6 +1213,26 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertBool s resolved "resolved"
     Spec.assertBool s (any (\l -> Text.isPrefixOf (Text.pack "  Creatures: ") l && Text.isInfixOf (Text.pack "Primal Clay 1/6") l) shown) "entered as the shape picked"
 
+  Spec.it s "CR 700.2a a modal spell's modes are offered through the client by their Oracle text, and the number picks the mode" $ do
+    let heading = Text.pack "Choose modes for Ebony Charm: choose exactly 1, by number or range such as 1-3, separated by spaces:"
+        charms sc
+          | heading `elem` pending sc = Just (Text.pack "1")
+          | otherwise = castsOnce "auto" "Ebony Charm" sc
+    (_, _, _, shown) <- castTyping charms s registry "Ebony Charm" ["Swamp"]
+    -- No creature is on the board, so the fear mode is not legal (CR 700.2a).
+    Spec.assertEqWith s "each legal mode listed" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))) (fmap Text.pack ["  1. Target opponent loses 1 life and you gain 1 life.", "  2. Exile up to three target cards from a single graveyard."])
+    Spec.assertBool s (Text.pack "Player 2 loses 1 life." `elem` shown) "the first mode resolved"
+
+  Spec.it s "CR 700.2a a modal triggered ability's modes are offered through the client by their Oracle text" $ do
+    let heading = Text.pack "Choose modes for Aether Channeler's ability: choose exactly 1, by number or range such as 1-3, separated by spaces:"
+        channels sc
+          | heading `elem` pending sc = Just (Text.pack "1")
+          | otherwise = castsOnce "auto" "Aether Channeler" sc
+    (_, _, _, shown) <- castTyping channels s registry "Aether Channeler" ["Island", "Island", "Island"]
+    -- No other nonland permanent is on the board, so the bounce mode is not
+    -- legal (CR 700.2a).
+    Spec.assertEqWith s "each legal mode listed" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))) (fmap Text.pack ["  1. Create a 1/1 white Bird creature token with flying.", "  2. Draw a card."])
+
   Spec.it s "CR 701.55a a villainous choice is offered through the client by each branch's Oracle text, and the number picks the branch" $ do
     gs <- started s registry
     emperor <- S.printingOf s registry "The Dalek Emperor"
