@@ -239,11 +239,6 @@ Nothing: every card `parun translate` stopped at is in the pool.
   it targets; `CostModifier.perEach` reads the source, `perTarget` only counts
   targets.
 
-### #6607: no condition reads how many loyalty counters an activation's cost removed
-
-- Way of the Mind Sculptor: "if you removed two or more loyalty counters to
-  activate it" reads the paid loyalty cost, which nothing records.
-
 ### #6568: a free-cast permission can't bound mana value by a count
 
 - Omnipresence: its free casts take spells with mana value at most the number

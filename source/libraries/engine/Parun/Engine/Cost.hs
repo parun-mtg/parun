@@ -7122,9 +7122,13 @@ payPayable perform paidFor slots pid oid component = case component of
   -- apply itself: CR 606.6 has already refused an activation the permanent
   -- cannot pay for, so a saturating removal is unreachable through this door
   -- anyway.
+  --
+  -- Binds HOW MANY it removed under Binding.loyaltyRemoved: after
+  -- combineLoyalty this is CR 606.5's one combined cost, so the amount is what
+  -- was paid, an announced X and Carth the Lion's [+1] included.
   CostComponent.RemoveLoyaltyFromThis amount -> paidAnnounced amount $ \n -> do
     Event.removeCounters oid CounterKind.Loyalty n
-    pure bindsNothing
+    pure (Payment.Paid (Map.singleton Binding.loyaltyRemoved (Binding.toAmount n)))
   -- CR 118.1's removal as a cost, through Event.removeCounters -- CR 122's
   -- removal funnel, RemoveLoyaltyFromThis' road above and for its reason: what
   -- the funnel adds is the GameEvent.CountersRemoved record a counter-watching

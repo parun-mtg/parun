@@ -2891,6 +2891,7 @@ reservedSlots =
       Binding.collectedEvidence,
       Binding.waterbendCost,
       Binding.removedCounters,
+      Binding.loyaltyRemoved,
       Binding.crewedVehicle,
       Binding.crewers,
       Binding.manaSource,

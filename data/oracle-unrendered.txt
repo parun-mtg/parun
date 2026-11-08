@@ -3563,6 +3563,7 @@ vraska-the-cutting-glare
 way-of-the-cryomancer
 way-of-the-deathbringer
 way-of-the-healer
+way-of-the-mind-sculptor
 way-of-the-paradox
 way-of-the-pyromancer
 way-of-the-warlord
