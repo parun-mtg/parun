@@ -4353,7 +4353,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
-        -- Theorist's Proxy's marker, which only binds the spell this reads.
+        -- Theorist's Proxy's marker: it binds the spell this reads, and stops nothing.
         PlayerEffect.NextSpell _ -> False
         -- Autumn's Veil's OTHER clause, which CR 115 reads at targeting.
         PlayerEffect.RestrictTargeting _ -> False
