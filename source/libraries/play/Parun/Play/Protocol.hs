@@ -646,9 +646,9 @@ replacementEntry gs entry =
 
 -- | CR 700.2a: a mode as its Oracle text, as it reads now
 -- (Resolve.resolvingMode) or, for a spell whose modes are not yet chosen, as
--- its face prints it; null where it does not render.
+-- its face prints it; null where it does not render or renders empty.
 modeName :: GameState.GameState -> ObjectId.ObjectId -> ModeIndex.ModeIndex -> R.Reply
-modeName gs source idx = maybe R.Null R.Text (Maybe.listToMaybe texts)
+modeName gs source idx = maybe R.Null R.Text (List.find (not . Text.null) texts)
   where
     self = Render.snapshotName (Projection.project source gs)
     printed = Projection.View.spellFaceOf source gs >>= Modal.modeAtIndex idx . Face.spell
