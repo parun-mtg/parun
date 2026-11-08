@@ -298,11 +298,14 @@ printingNamed text = case List.reverse (Text.words text) of
 -- set code and collector number it names, else the first the table holds of
 -- the card (`firstPrintings`), else the card with no lights.
 --
+-- Not implemented: a line circling Cryptic Spires' colours, which every line
+-- leaves with none (#6675).
+--
 -- The printing at a suffix must be of the line's card, by Parun.Ingest.cardKey,
 -- the key MTGJSON names it by.
 printingOf :: PrintingTable.PrintingTable -> Map.Map Text.Text PrintingEntry.PrintingEntry -> Natural.Natural -> CardName.CardName -> Maybe (Text.Text, Text.Text) -> Card.Card -> Either Problem Printing.Printing
 printingOf table first number name at card =
-  let lit entry = Printing.MkPrinting {Printing.card = card, Printing.lights = PrintingEntry.lights entry}
+  let lit entry = (Printing.ofCard card) {Printing.lights = PrintingEntry.lights entry}
    in case at of
         Nothing -> Right (maybe (Printing.ofCard card) lit (Map.lookup (Ingest.cardKey card) first))
         Just (set, collector) -> case Map.lookup set (PrintingTable.printings table) >>= Map.lookup collector of

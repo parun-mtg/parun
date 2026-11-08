@@ -72,6 +72,7 @@ import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
+import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
@@ -101,6 +102,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
@@ -1623,6 +1625,33 @@ chosenColorSpec s registry = Spec.describe s "Mana of the chosen color (CR 607.2
     Spec.assertEqWith s "so it offers no mana" (Mana.manaTypesOf oid gs) []
     Spec.assertEqWith s "and tapping it adds none" (tappedFor S.identityAnswer oid gs) []
     Spec.assertBool s (not (Mana.canPay Cost.manaActivations S.alice (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Blue)]) gs)) "and it pays for nothing"
+
+-- CR 207.5: Cryptic Spires' "{T}: Add one mana of either of the circled
+-- colors" reads the colours circled on its own copy as its deck was built
+-- (Printing.circled). Two copies in one deck circling different pairs are what
+-- tells a per-copy record from one hung off the card they share.
+circledSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+circledSpec s registry = Spec.describe s "Mana of the circled colors (CR 207.5)" $ do
+  Spec.it s "CR 207.5 two Cryptic Spires in one deck keep the colours each circled" $ do
+    spires <- S.printingOf s registry "Cryptic Spires"
+    let blueBlack = spires {Printing.circled = Set.fromList [Color.Blue, Color.Black]}
+        redGreen = spires {Printing.circled = Set.fromList [Color.Red, Color.Green]}
+        dealt = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice (Deck.fromCards (Map.fromList [(blueBlack, 1), (redGreen, 1)])))
+        circledIn gs = Set.fromList (fmap (\oid -> PC.circled (Projection.project oid gs)) (Game.zoneMembers Zone.Library S.alice gs))
+        (blueBlackId, played) = S.addPermanent blueBlack S.alice (Setup.emptyGame S.bothPlayers)
+        (redGreenId, both) = S.addPermanent redGreen S.alice played
+    Spec.assertEqWith s "each card in the library carries its own pair" (circledIn dealt) (Set.fromList [Printing.circled blueBlack, Printing.circled redGreen])
+    Spec.assertEqWith s "one taps for blue or black" (Mana.manaTypesOf blueBlackId both) [ManaType.Colored Color.Blue, ManaType.Colored Color.Black]
+    Spec.assertEqWith s "the other for red or green" (Mana.manaTypesOf redGreenId both) [ManaType.Colored Color.Red, ManaType.Colored Color.Green]
+    Spec.assertEqWith s "and the colour asked for reaches the pool" (tappedFor (prefersColor Color.Green) redGreenId both) [ManaType.Colored Color.Green]
+  -- CR 106.5: nothing circled defines no colour, so the ability adds no mana
+  -- rather than one the engine picks. A text deck list brings such a copy
+  -- (#6675).
+  Spec.it s "CR 207.5 a Cryptic Spires with nothing circled adds no mana" $ do
+    spires <- S.printingOf s registry "Cryptic Spires"
+    let (oid, gs) = S.addPermanent spires S.alice (Setup.emptyGame S.bothPlayers)
+    Spec.assertEqWith s "no option" (Mana.manaTypesOf oid gs) []
+    Spec.assertEqWith s "and tapping it adds none" (tappedFor S.identityAnswer oid gs) []
 
 -- CR 602.2b sends an activation through CR 601.2b-i, so tapping for mana pays the
 -- ability's whole cost -- which is not always just {T}. Mana Confluence (Land,
@@ -4104,6 +4133,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   anyColorSpec s registry
   rhysticCaveSpec s registry
   chosenColorSpec s registry
+  circledSpec s registry
   solRingSpec s registry
   ancientTombSpec s registry
   palladiumMyrSpec s registry

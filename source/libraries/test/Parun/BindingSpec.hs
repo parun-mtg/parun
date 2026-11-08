@@ -70,6 +70,7 @@ sampleSnapshot =
       PC.alternativeSpell = Nothing,
       PC.prototyped = False,
       PC.spell = Face.defaultSpell,
+      PC.circled = Set.empty,
       PC.flipped = Nothing
     }
 

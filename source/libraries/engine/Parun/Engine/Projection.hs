@@ -909,7 +909,10 @@ exchangeTextBoxFrom from pc =
       PC.staticAbilities = PC.staticAbilities from,
       PC.playerAbilities = PC.playerAbilities from,
       PC.specialActions = PC.specialActions from,
-      PC.ruleAbilities = PC.ruleAbilities from
+      PC.ruleAbilities = PC.ruleAbilities from,
+      -- CR 207.5: the circled symbols are rules text, so they move with the
+      -- box. A regression fence: no test exchanges a Cryptic Spires' text.
+      PC.circled = PC.circled from
     }
 
 -- CR 612.6: `from`'s full text over `pc` -- its text box as exchangeTextBoxFrom

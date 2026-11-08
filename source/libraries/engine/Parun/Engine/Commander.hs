@@ -442,13 +442,12 @@ commanderColorIdentity pid gs = case Maybe.mapMaybe (\oid -> commanderCardOf oid
 -- | CR 903.4: a card's colour identity, the colours of the mana symbols in its
 -- mana cost and rules text and of its colour indicator, over every face (CR
 -- 903.4d, 903.4e). Rules text is Face.oracleText less its reminder text (CR
--- 903.4c).
+-- 903.4c), plus the symbols circled on this copy (CR 207.5).
 --
 -- Not implemented: a colour a characteristic-defining ability defines (#6671),
--- the colour CR 903.4b chooses before the game (#6225), and colours circled at
--- deck building (#884).
+-- and the colour CR 903.4b chooses before the game (#6225).
 colorIdentity :: Printing.Printing -> Set.Set Color.Color
-colorIdentity printing = foldMap ofFace (Card.Type.faces (Printing.card printing))
+colorIdentity printing = Printing.circled printing <> foldMap ofFace (Card.Type.faces (Printing.card printing))
   where
     ofFace face =
       Face.colorIndicator face
