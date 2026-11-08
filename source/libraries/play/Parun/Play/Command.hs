@@ -6,6 +6,7 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.ByteString as ByteString
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
@@ -33,7 +34,7 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
-import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
@@ -68,7 +69,7 @@ flags =
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["no-auto-pass"] (GetOpt.NoArg (\o -> Right o {PlayOptions.autoPass = False})) "ask at every priority, even when passing and mana abilities are all there is",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "1|2") "a seat asked to order cards put into its graveyard at the same time",
-    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a format: " <> s)) (\f -> Right o {PlayOptions.format = Just f}) (Legality.named (Text.pack s))) "constructed|limited") "refuse a deck that is not legal in this format"
+    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "refuse a deck that is not legal in this format: constructed, limited, or one with a pool, such as vintage"
   ]
   where
     seat s = case Read.readMaybe s of
@@ -93,14 +94,20 @@ load registry path = do
       Exit.exitFailure
     Right (Right deck) -> pure deck
 
--- | Stops before the game when a deck breaks the format's rules, naming every
--- violation of every deck.
-refuse :: Maybe Format.Format -> [(FilePath, Deck.Deck)] -> IO ()
-refuse format decks =
-  let violations = [Text.pack (path <> ": ") <> Legality.explain v | (path, deck) <- decks, v <- foldMap (`Legality.check` deck) format]
-   in Monad.unless (null violations) $ do
-        mapM_ (TextIO.hPutStrLn IO.stderr) violations
-        Exit.exitFailure
+-- | Stops before the game when a deck breaks the named format's rules or pool
+-- in a game not for ante, naming every violation of every deck.
+refuse :: Maybe Text.Text -> [(FilePath, Deck.Deck)] -> IO ()
+refuse format decks = Foldable.for_ format $ \name -> do
+  checker <- Legality.named name
+  case checker of
+    Left problem -> do
+      TextIO.hPutStrLn IO.stderr problem
+      Exit.exitFailure
+    Right known ->
+      let violations = [Text.pack (path <> ": ") <> Legality.explain v | (path, deck) <- decks, v <- known GameSettings.plain deck]
+       in Monad.unless (null violations) $ do
+            mapM_ (TextIO.hPutStrLn IO.stderr) violations
+            Exit.exitFailure
 
 -- | Nanoseconds since the epoch; on macOS only microseconds tick.
 nanoseconds :: Clock.SystemTime -> Natural

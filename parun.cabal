@@ -16,6 +16,8 @@ data-files:
   cards/*.json
   comprehensive-rules.txt
   decks/**/*.txt
+  formats/*.json
+  legalities.json
   oracle-unrendered.txt
   scenarios/**/*.json
   sticker-sheets/*.json
@@ -866,6 +868,8 @@ library codec
     Parun.Codec.ForEachSpec
     Parun.Codec.ForetellCost
     Parun.Codec.ForetellCostSpec
+    Parun.Codec.Format
+    Parun.Codec.FormatSpec
     Parun.Codec.FreeCastFromHand
     Parun.Codec.FreeCastFromHandSpec
     Parun.Codec.FromAnywhere
@@ -968,6 +972,10 @@ library codec
     Parun.Codec.LeavingPermanentSpec
     Parun.Codec.LeftTheGame
     Parun.Codec.LeftTheGameSpec
+    Parun.Codec.Legality
+    Parun.Codec.LegalitySpec
+    Parun.Codec.LegalityTable
+    Parun.Codec.LegalityTableSpec
     Parun.Codec.LentCards
     Parun.Codec.LibraryDeparture
     Parun.Codec.LibraryDepartureSpec
@@ -1453,6 +1461,8 @@ library codec
     Parun.Codec.RoundingSpec
     Parun.Codec.RuleAbilities
     Parun.Codec.RuleAbilitiesSpec
+    Parun.Codec.RuleFamily
+    Parun.Codec.RuleFamilySpec
     Parun.Codec.Sacrifice
     Parun.Codec.SacrificeAnyNumber
     Parun.Codec.SacrificeAnyNumberSpec
@@ -2996,6 +3006,8 @@ library types
     Parun.Types.LeavesZoneTrigger
     Parun.Types.LeavingPermanent
     Parun.Types.LeftTheGame
+    Parun.Types.Legality
+    Parun.Types.LegalityTable
     Parun.Types.LentCards
     Parun.Types.LibraryDeparture
     Parun.Types.LibraryDepth
@@ -3279,6 +3291,7 @@ library types
     Parun.Types.Rounding
     Parun.Types.RowSource
     Parun.Types.RuleAbilities
+    Parun.Types.RuleFamily
     Parun.Types.Sacrifice
     Parun.Types.SacrificeAnyNumber
     Parun.Types.SacrificeEffect

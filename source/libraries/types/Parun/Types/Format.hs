@@ -1,10 +1,15 @@
 module Parun.Types.Format where
 
--- | CR 100.2: the construction rules a deck is built under. A format's card
--- pool is not represented (#6395).
-data Format
-  = -- | CR 100.2a / 100.4a: each player builds their own deck ahead of time.
-    Constructed
-  | -- | CR 100.2b: each player builds from the same quantity of unopened product.
-    Limited
-  deriving (Bounded, Enum, Eq, Ord, Show)
+import qualified Data.Text as Text
+import qualified Parun.Types.RuleFamily as RuleFamily
+
+-- | A format: construction rules plus the card pool a deck draws from, one file
+-- under data/formats each.
+data Format = MkFormat
+  { -- | CR 100.2: the construction rules.
+    rules :: RuleFamily.RuleFamily,
+    -- | The key of the format's pool in Parun.Types.LegalityTable, or no pool
+    -- at all: any card, under the rules alone.
+    pool :: Maybe Text.Text
+  }
+  deriving (Eq, Show)

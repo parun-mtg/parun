@@ -406,6 +406,7 @@ import qualified Parun.Codec.ForEachSpec
 import qualified Parun.Codec.ForbidAttackSpec
 import qualified Parun.Codec.ForbidBeingBlockedSpec
 import qualified Parun.Codec.ForetellCostSpec
+import qualified Parun.Codec.FormatSpec
 import qualified Parun.Codec.FreeCastFromHandSpec
 import qualified Parun.Codec.FromAnywhereSpec
 import qualified Parun.Codec.FromOutsideTheGameSpec
@@ -454,6 +455,8 @@ import qualified Parun.Codec.LeavesTriggerSpec
 import qualified Parun.Codec.LeavesZoneTriggerSpec
 import qualified Parun.Codec.LeavingPermanentSpec
 import qualified Parun.Codec.LeftTheGameSpec
+import qualified Parun.Codec.LegalitySpec
+import qualified Parun.Codec.LegalityTableSpec
 import qualified Parun.Codec.LibraryDepartureSpec
 import qualified Parun.Codec.LibraryDepthSpec
 import qualified Parun.Codec.LibraryPlacementSpec
@@ -687,6 +690,7 @@ import qualified Parun.Codec.RoomHalfSpec
 import qualified Parun.Codec.RoomIndexSpec
 import qualified Parun.Codec.RoundingSpec
 import qualified Parun.Codec.RuleAbilitiesSpec
+import qualified Parun.Codec.RuleFamilySpec
 import qualified Parun.Codec.SacrificeAnyNumberSpec
 import qualified Parun.Codec.SacrificeEffectSpec
 import qualified Parun.Codec.SacrificeRestrictionSpec
@@ -1324,6 +1328,10 @@ spec s registry corpus = do
   Parun.Codec.DealDamageSpec.spec s
   Parun.Codec.DeciderSpec.spec s
   Parun.Codec.DeckLimitSpec.spec s
+  Parun.Codec.FormatSpec.spec s
+  Parun.Codec.LegalitySpec.spec s
+  Parun.Codec.LegalityTableSpec.spec s
+  Parun.Codec.RuleFamilySpec.spec s
   Parun.Codec.DeclarationTriggerSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s
   Parun.Codec.DefenseSpec.spec s
