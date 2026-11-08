@@ -2352,6 +2352,7 @@ subgameSpellOn borrowed name effects gs0 =
             Face.castingPermissions = [],
             Face.castingRestrictions = [],
             Face.characteristicPT = Nothing,
+            Face.characteristicColors = Nothing,
             Face.playerAbilities = [],
             Face.blockRequirements = [],
             Face.blockPermissions = [],

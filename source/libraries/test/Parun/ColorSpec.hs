@@ -241,6 +241,29 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
         gs = S.withEffect droneId (Modification.Colors ChangeMode.Replace (Set.singleton Color.Black)) board
     Spec.assertEq s (Projection.colorsOf droneId gs) $ Set.singleton Color.Black
 
+  Spec.it s "CR 604.3 Transguild Courier is all colors despite its {4}, in hand and on the battlefield" $ do
+    courier <- S.printingOf s registry "Transguild Courier"
+    let gs0 = Setup.emptyGame S.bothPlayers
+        (inHand, handId) = S.handOne courier gs0
+        (courierId, gs) = S.addPermanent courier S.alice inHand
+    Spec.assertEqWith s "in hand" (Projection.colorsOf handId gs) $ Set.fromList [minBound .. maxBound]
+    Spec.assertEqWith s "on the battlefield" (Projection.colorsOf courierId gs) $ Set.fromList [minBound .. maxBound]
+
+  Spec.it s "CR 604.3 Bad Moon pumps Transguild Courier, which is black among all colors" $ do
+    badMoon <- S.printingOf s registry "Bad Moon"
+    courier <- S.printingOf s registry "Transguild Courier"
+    let gs0 = Setup.emptyGame S.bothPlayers
+        (_, withMoon) = S.addPermanent badMoon S.alice gs0
+        (courierId, gs) = S.addPermanent courier S.alice withMoon
+    Spec.assertEqWith s "the 3/3 Courier is 4/4" (Projection.powerOf courierId gs, Projection.toughnessOf courierId gs) (Just 4, Just 4)
+
+  Spec.it s "CR 613.3 a timestamped colour change applies over Transguild Courier's all colors" $ do
+    courier <- S.printingOf s registry "Transguild Courier"
+    let gs0 = Setup.emptyGame S.bothPlayers
+        (courierId, board) = S.addPermanent courier S.alice gs0
+        gs = S.withEffect courierId (Modification.Colors ChangeMode.Replace (Set.singleton Color.Red)) board
+    Spec.assertEq s (Projection.colorsOf courierId gs) $ Set.singleton Color.Red
+
   Spec.it s "Bad Moon pumps a black creature but not a red one" $ do
     badMoon <- S.printingOf s registry "Bad Moon"
     typhoidRats <- S.printingOf s registry "Typhoid Rats"

@@ -505,6 +505,7 @@ vanillaFace name typeLine =
       Face.castingPermissions = [],
       Face.castingRestrictions = [],
       Face.characteristicPT = Nothing,
+      Face.characteristicColors = Nothing,
       Face.playerAbilities = [],
       Face.blockRequirements = [],
       Face.blockPermissions = [],

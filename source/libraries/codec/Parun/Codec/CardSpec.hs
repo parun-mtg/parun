@@ -49,6 +49,7 @@ bareFace n =
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,
+      Face.characteristicColors = Nothing,
       Face.staticAbilities = [],
       Face.spell = Face.defaultSpell,
       Face.activatedAbilities = [],

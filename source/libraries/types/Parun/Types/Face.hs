@@ -194,6 +194,12 @@ data Face card = MkFace
     -- (Parun.Engine.Card.merge2) can hold one half's ability in one slot and the
     -- other half's in the other.
     characteristicPT :: Maybe CharacteristicPT.CharacteristicPT,
+    -- | CR 604.3 / 105.2: the colours this face's colour-defining ability says
+    -- it is (Transguild Courier's "is all colors"), overriding those of its mana
+    -- cost and colour indicator, or Nothing. Read through
+    -- Parun.Engine.Projection.colorsOf, never directly, except by CR 903.4's
+    -- printed colour identity (Parun.Engine.Commander.colorIdentity).
+    characteristicColors :: Maybe (Set.Set Color.Color),
     -- | CR 604.1/604.2: this face's static continuous abilities (Humility), which
     -- the projection gathers live.
     staticAbilities :: [StaticAbility.StaticAbility (GrantedAbility.GrantedAbility card)],

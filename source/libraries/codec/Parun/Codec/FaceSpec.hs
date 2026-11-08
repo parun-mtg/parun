@@ -166,6 +166,7 @@ baseFace =
       Face.castingRestrictions = [],
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,
+      Face.characteristicColors = Nothing,
       Face.delayedAbilities = Map.empty,
       Face.rooms = Seq.empty,
       Face.dungeonEntryQuality = Nothing,
@@ -222,6 +223,7 @@ minimalFace =
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,
+      Face.characteristicColors = Nothing,
       Face.staticAbilities = [],
       Face.spell = Face.defaultSpell,
       Face.activatedAbilities = [],
@@ -411,6 +413,9 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
     Spec.it s "colorIndicator (CR 204.1/204.2) defaults to the empty set" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.colorIndicator <$> decodeFace v) (Right Set.empty)
+    Spec.it s "characteristicColors (CR 604.3/105.2) defaults to Nothing" $ do
+      v <- Common.assertJson s baseFaceJson
+      Spec.assertEq s (Face.characteristicColors <$> decodeFace v) (Right Nothing)
     Spec.it s "characteristicPT (CR 604.3/208.2a) defaults to Nothing" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.characteristicPT <$> decodeFace v) (Right Nothing)
@@ -515,6 +520,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         decodeFace
         baseFace {Face.colorIndicator = Set.singleton Color.White}
         (init baseFaceJson <> ",\"colorIndicator\":[\"White\"]}")
+    Spec.it s "characteristicColors" $
+      Common.assertJsonCodec
+        s
+        encodeFace
+        decodeFace
+        baseFace {Face.characteristicColors = Just (Set.fromList [Color.White, Color.Green])}
+        (init baseFaceJson <> ",\"characteristicColors\":[\"White\",\"Green\"]}")
     Spec.it s "characteristicPT" $
       Common.assertJsonCodec
         s

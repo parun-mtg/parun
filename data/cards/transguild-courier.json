@@ -1,0 +1,38 @@
+{
+  "faces": [
+    {
+      "characteristicColors": [
+        "White",
+        "Blue",
+        "Black",
+        "Red",
+        "Green"
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Transguild Courier",
+      "oracleText": "Transguild Courier is all colors.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Golem"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

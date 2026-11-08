@@ -440,18 +440,18 @@ commanderColorIdentity pid gs = case Maybe.mapMaybe (\oid -> commanderCardOf oid
   cards -> Just (foldMap (maybe Set.empty colorIdentity . (`Game.printingOf` gs) . fst) cards)
 
 -- | CR 903.4: a card's colour identity, the colours of the mana symbols in its
--- mana cost and rules text and of its colour indicator, over every face (CR
--- 903.4d, 903.4e). Rules text is Face.oracleText less its reminder text (CR
--- 903.4c).
+-- mana cost and rules text, of its colour indicator and of its colour-defining
+-- ability, over every face (CR 903.4d, 903.4e). Rules text is Face.oracleText
+-- less its reminder text (CR 903.4c).
 --
--- Not implemented: a colour a characteristic-defining ability defines (#6671),
--- the colour CR 903.4b chooses before the game (#6225), and colours circled at
--- deck building (#884).
+-- Not implemented: the colour CR 903.4b chooses before the game (#6225), and
+-- colours circled at deck building (#884).
 colorIdentity :: Printing.Printing -> Set.Set Color.Color
 colorIdentity printing = foldMap ofFace (Card.Type.faces (Printing.card printing))
   where
     ofFace face =
       Face.colorIndicator face
+        <> Foldable.fold (Face.characteristicColors face)
         <> symbolColors (foldMap ManaCost.unwrap (Face.manaCost face))
         <> symbolColors (foldMap ManaSymbolText.rulesTextSymbols (Face.oracleText face))
     symbolColors :: [ManaSymbol.ManaSymbol] -> Set.Set Color.Color

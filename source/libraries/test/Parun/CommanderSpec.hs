@@ -211,6 +211,9 @@ colorIdentitySpec s registry = Spec.describe s "Color identity" $ do
   Spec.it s "CR 903.4d the back face is included" $ do
     ranger <- S.printingOf s registry "Daybreak Ranger"
     Spec.assertEqWith s "Nightfall Predator's red colour indicator" (Commander.colorIdentity ranger) (Set.fromList [Color.Red, Color.Green])
+  Spec.it s "CR 903.4 the colours a characteristic-defining ability defines" $ do
+    courier <- S.printingOf s registry "Transguild Courier"
+    Spec.assertEqWith s "Transguild Courier's {4} and 'is all colors'" (Commander.colorIdentity courier) (Set.fromList [minBound .. maxBound])
 
 designationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 designationSpec s registry = Spec.describe s "Designation" $ do

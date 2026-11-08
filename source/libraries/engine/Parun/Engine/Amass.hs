@@ -115,6 +115,7 @@ armyToken subtype =
               Face.keywords = Map.empty,
               Face.colorIndicator = Set.singleton Color.Black,
               Face.characteristicPT = Nothing,
+              Face.characteristicColors = Nothing,
               Face.staticAbilities = [],
               Face.spell = Face.defaultSpell,
               Face.activatedAbilities = [],

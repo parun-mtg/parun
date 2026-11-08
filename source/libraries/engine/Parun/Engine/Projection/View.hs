@@ -2081,7 +2081,7 @@ withPrototype oid gs face pc = case (maybe False Object.prototyped (Game.lookupO
         -- shape, with the inset cost in place of the printed one: a colour
         -- indicator is a separate characteristic (CR 204.2) that rule 719.3b does
         -- not name, so it survives.
-        PC.colors = Set.union (Face.colorIndicator face) (manaCostColors (Just (Prototype.cost frame))),
+        PC.colors = colorsWithCost face (Just (Prototype.cost frame)),
         PC.prototyped = True
       }
   _ -> pc
@@ -2174,10 +2174,18 @@ withMergedAbilities donor base =
 -- coloured symbols and its colour indicator. No devoid here: CR 702.114a makes it
 -- a CDA, which CR 613.3 puts at the start of layer 5 (applyColorDefining).
 printedColorsOf :: Face.Face Card.Type.Card -> Set Color.Color
-printedColorsOf face =
-  Set.union
-    (Face.colorIndicator face)
-    (manaCostColors (Face.manaCost face))
+printedColorsOf face = colorsWithCost face (Face.manaCost face)
+
+-- printedColorsOf with `cost` in place of the printed mana cost. A
+-- colour-defining ability overrides both (CR 604.3), read here rather than at
+-- the start of layer 5 (CR 613.3): a copy exception replaces these colours in
+-- the snapshot, and every printed such ability says "all colors" or
+-- "colorless", which hold no colour word for layer 3 to change (CR 612.2).
+colorsWithCost :: Face.Face Card.Type.Card -> Maybe ManaCost.ManaCost -> Set Color.Color
+colorsWithCost face cost =
+  Maybe.fromMaybe
+    (Set.union (Face.colorIndicator face) (manaCostColors cost))
+    (Face.characteristicColors face)
 
 -- CR 702.114a. The one place that decides what devoid means.
 definesColorless :: Set Keyword -> Bool

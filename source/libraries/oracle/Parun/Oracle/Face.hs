@@ -111,6 +111,7 @@ bare n t c i l p x k =
       Face.keywords = k,
       Face.colorIndicator = i,
       Face.characteristicPT = Nothing,
+      Face.characteristicColors = Nothing,
       Face.staticAbilities = [],
       Face.spell = Face.defaultSpell,
       Face.activatedAbilities = [],
