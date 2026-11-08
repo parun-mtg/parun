@@ -441,6 +441,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           pc
             { PC.keywords = Map.empty,
               PC.characteristicPT = Nothing,
+              PC.definesChosenColor = False,
               PC.activatedAbilities = [],
               PC.replacementEffects = [],
               PC.triggeredAbilities = [],
@@ -913,7 +914,8 @@ exchangeTextBoxFrom from pc =
       PC.ruleAbilities = PC.ruleAbilities from,
       -- CR 207.5: the circled symbols are rules text, so they move with the
       -- box. A regression fence: no test exchanges a Cryptic Spires' text.
-      PC.circled = PC.circled from
+      PC.circled = PC.circled from,
+      PC.definesChosenColor = PC.definesChosenColor from
     }
 
 -- CR 612.6: `from`'s full text over `pc` -- its text box as exchangeTextBoxFrom
@@ -1012,6 +1014,7 @@ setLandSubtypeTo types s pc
         { PC.subtypes = Set.insert s (Set.filter (not . Subtype.isLandType) (PC.subtypes pc)),
           PC.keywords = Map.empty,
           PC.characteristicPT = Nothing,
+          PC.definesChosenColor = False,
           PC.activatedAbilities = [],
           PC.replacementEffects = [],
           PC.triggeredAbilities = [],
@@ -1573,11 +1576,15 @@ copiableMintsType oid gs =
 -- projection's keywords, which at layer 5 hold exactly CR 604.3a(2)'s sources. A
 -- GRANTED devoid never reaches here -- CR 604.3a denies it CDA status, so
 -- grantedDefiningParts routes it into layer 5 as a timestamped colour effect.
-applyColorDefining :: ProjectedCharacteristics -> ProjectedCharacteristics
-applyColorDefining pc =
-  if definesColorless (Map.keysSet (PC.keywords pc))
-    then pc {PC.colors = Set.empty}
-    else pc
+--
+-- CR 607.2p's chosen colour is added here rather than in the copiable
+-- values: the ability is copiable, the choice is the commander's alone
+-- (Commander.chosenColorOf), so a copy is no colour by it (CR 607.5a).
+applyColorDefining :: GameState -> ObjectId -> ProjectedCharacteristics -> ProjectedCharacteristics
+applyColorDefining gs oid pc
+  | definesColorless (Map.keysSet (PC.keywords pc)) = pc {PC.colors = Set.empty}
+  | PC.definesChosenColor pc, Just chosen <- Commander.chosenColorOf oid gs = pc {PC.colors = Set.insert chosen (PC.colors pc)}
+  | otherwise = pc
 
 -- CR 613.3 / 613.1d: the object's own subtype-defining ability, CR 702.73a's
 -- changeling, at the start of layer 4 -- applyColorDefining one layer down, and
@@ -5021,7 +5028,7 @@ projectDecidingFrom finish seedOf admits cands =
                   -- one can.
                   seedFor o p = case lyr of
                     Layer.Type -> applySubtypeDefining p
-                    Layer.Color -> applyColorDefining p
+                    Layer.Color -> applyColorDefining gs o p
                     Layer.CharacteristicPT | not definingMovable -> applyCharacteristicPT bounded gs o p
                     _ -> p
                   -- CR 208.5 on the PROJECTED object's own running partial, at the

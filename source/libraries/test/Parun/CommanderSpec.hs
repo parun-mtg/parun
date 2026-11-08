@@ -194,6 +194,7 @@ spec s registry = Spec.describe s "Parun.Engine.Commander" $ do
   ninjutsuSpec s registry
   departureSpec s registry
   colorIdentitySpec s registry
+  chosenColorSpec s registry
 
 -- CR 903.4: a card's colour identity, read off its printing.
 colorIdentitySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -218,6 +219,46 @@ colorIdentitySpec s registry = Spec.describe s "Color identity" $ do
     spires <- S.printingOf s registry "Cryptic Spires"
     Spec.assertEqWith s "nothing circled, no colour" (Commander.colorIdentity spires) Set.empty
     Spec.assertEqWith s "blue and black circled" (Commander.colorIdentity spires {Printing.circled = Set.fromList [Color.Blue, Color.Black]}) (Set.fromList [Color.Blue, Color.Black])
+
+-- The objects named as `printing` is in `zone`, in id order.
+namedIn :: Printing.Printing -> Zone.Zone -> GameState.GameState -> [ObjectId.ObjectId]
+namedIn printing zone gs =
+  [oid | oid <- Map.keys (GameState.objects gs), Game.zoneOf oid gs == Just zone, fmap S.nameOf (Game.cardOf oid gs) == Just (S.nameOf (Printing.card printing))]
+
+-- CR 903.4b / 607.2p: the colour chosen for a commander before the game.
+chosenColorSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+chosenColorSpec s registry = Spec.describe s "Chosen color" $ do
+  -- Alice designates a Piper chosen blue and bob's library holds the same
+  -- printing undesignated, so only the designation can tell them apart. Hers
+  -- is cast, resolves, is copied by bob's Clone (his, so CR 704.5j spares it)
+  -- and is put into her graveyard, unsettled so CR 903.9a asks nothing.
+  Spec.it s "CR 903.4b The Prismatic Piper is its chosen color in every zone, and no copy or undesignated Piper is" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    piper <- S.printingOf s registry "The Prismatic Piper"
+    clone <- S.printingOf s registry "Clone"
+    let blue = piper {Printing.chosenColor = Just Color.Blue}
+        built = S.runPure S.identityAnswer (commanderBoard mountain blue 5) (Setup.createDeck S.bob (Deck.fromCards (Map.singleton blue 1)))
+        colorsIn zone gs = fmap (`Projection.colorsOf` gs) (namedIn piper zone gs)
+        cast = List.foldl' (\g oid -> S.runPure S.identityAnswer g (S.cast S.alice oid)) built (namedIn piper Zone.Command built)
+        resolved = S.runPure S.identityAnswer cast Stack.resolveTop
+        (_, cloning) = S.spellOnStack clone S.bob resolved
+        copying p = case p of
+          Prompt.ChooseCopyTarget _ _ _ legal -> Maybe.listToMaybe legal
+          _ -> S.identityAnswer p
+        cloned = S.runPure copying cloning (Stack.resolveTop >> Engine.settleForPriority)
+        clones = filter (\oid -> fmap S.nameOf (Game.cardOf oid cloned) == Just (S.nameOf (Printing.card clone))) (Set.toList (GameState.battlefield cloned))
+        binned = List.foldl' (\g oid -> S.runPure S.identityAnswer g (Event.changeZone (pure ()) oid Zone.Graveyard)) cloned (namedIn piper Zone.Battlefield cloned)
+    Spec.assertEqWith s "in the command zone" (colorsIn Zone.Command built) [Set.singleton Color.Blue]
+    Spec.assertEqWith s "a blue spell" (colorsIn Zone.Stack cast) [Set.singleton Color.Blue]
+    Spec.assertEqWith s "a blue permanent" (colorsIn Zone.Battlefield resolved) [Set.singleton Color.Blue]
+    Spec.assertEqWith s "CR 607.5a its Clone copies the ability but not the choice" (fmap (`Projection.colorsOf` cloned) clones, fmap (`Projection.namesOf` cloned) clones) ([Set.empty], [Set.singleton (S.printingName piper)])
+    Spec.assertEqWith s "blue in her graveyard" (colorsIn Zone.Graveyard binned) [Set.singleton Color.Blue]
+    Spec.assertEqWith s "bob's undesignated Piper is colorless" (colorsIn Zone.Library binned) [Set.empty]
+    Spec.assertEqWith s "CR 903.4b her commanders' colour identity is blue" (Commander.commanderColorIdentity S.alice binned) (Just (Set.singleton Color.Blue))
+  Spec.it s "CR 903.4b the chosen color is in the commander's colour identity" $ do
+    piper <- S.printingOf s registry "The Prismatic Piper"
+    Spec.assertEqWith s "no choice, no colour" (Commander.colorIdentity piper) Set.empty
+    Spec.assertEqWith s "chosen green" (Commander.colorIdentity piper {Printing.chosenColor = Just Color.Green}) (Set.singleton Color.Green)
 
 designationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 designationSpec s registry = Spec.describe s "Designation" $ do

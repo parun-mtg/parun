@@ -71,6 +71,7 @@ sampleSnapshot =
       PC.prototyped = False,
       PC.spell = Face.defaultSpell,
       PC.circled = Set.empty,
+      PC.definesChosenColor = False,
       PC.flipped = Nothing
     }
 

@@ -1,13 +1,15 @@
 {
   "faces": [
     {
-      "characteristicColors": [
-        "White",
-        "Blue",
-        "Black",
-        "Red",
-        "Green"
-      ],
+      "characteristicColors": {
+        "colors": [
+          "White",
+          "Blue",
+          "Black",
+          "Red",
+          "Green"
+        ]
+      },
       "manaCost": [
         {
           "type": "Generic",

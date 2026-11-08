@@ -167,6 +167,7 @@ import qualified Parun.Codec.CastingSpec
 import qualified Parun.Codec.ChangeModeSpec
 import qualified Parun.Codec.ChangeTextSpec
 import qualified Parun.Codec.ChangeWordSpec
+import qualified Parun.Codec.CharacteristicColorsSpec
 import qualified Parun.Codec.CharacteristicPTSpec
 import qualified Parun.Codec.CheckSpec
 import qualified Parun.Codec.ChoicesSpec
@@ -1201,6 +1202,7 @@ spec s registry corpus = do
   Parun.Codec.CastWindowSpec.spec s
   Parun.Codec.ChangeWordSpec.spec s
   Parun.Codec.ChangeTextSpec.spec s
+  Parun.Codec.CharacteristicColorsSpec.spec s
   Parun.Codec.CharacteristicPTSpec.spec s
   Parun.Codec.CheckSpec.spec s
   Parun.Codec.ChoicesSpec.spec s

@@ -35,6 +35,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
+import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatRestriction as CombatRestriction
@@ -527,8 +528,8 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         s
         encodeFace
         decodeFace
-        baseFace {Face.characteristicColors = Just (Set.fromList [Color.White, Color.Green])}
-        (init baseFaceJson <> ",\"characteristicColors\":[\"White\",\"Green\"]}")
+        baseFace {Face.characteristicColors = Just (CharacteristicColors.MkCharacteristicColors {CharacteristicColors.colors = Set.fromList [Color.White, Color.Green], CharacteristicColors.chosen = False})}
+        (init baseFaceJson <> ",\"characteristicColors\":{\"colors\":[\"White\",\"Green\"]}}")
     Spec.it s "characteristicPT" $
       Common.assertJsonCodec
         s
