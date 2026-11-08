@@ -37,8 +37,10 @@ import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Terminal as Terminal
+import qualified Parun.Types.Timed as Timed
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Exit as Exit
 import qualified System.IO as IO
@@ -105,10 +107,7 @@ play options registry (one, two) = do
         | otherwise = (TextIO.putStrLn, Game.playOrDraw terminal)
   (starter, generator) <- State.runStateT (Game.starter tell ask options) (SplitMix.MkSplitMix seed)
   first <- maybe (failWith "end of input") pure starter
-  let matchup =
-        if first == 2
-          then (idOf 2, two) NonEmpty.:| [(idOf 1, one)]
-          else (idOf 1, one) NonEmpty.:| [(idOf 2, two)]
+  let matchup = seated first (one, two)
       answerer n
         | Set.member n (PlayOptions.bots options) = Game.bot reference
         | PlayOptions.json options = Game.wired reference exchange
@@ -120,7 +119,6 @@ play options registry (one, two) = do
         _ -> screen
   entries <- IORef.newIORef Seq.empty
   let orders = Map.fromList [(idOf n, GraveyardOrder.Matters) | n <- Set.toList (PlayOptions.arrangesGraveyard options)]
-      labels = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show n))) | n <- [1, 2 :: Natural]]
       observers = [Record.recording labels (Game.underneath . IORef.modifyIORef' entries . flip (Seq.|>)) | Maybe.isJust (PlayOptions.save options)]
       interrupted e = case e of
         Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
@@ -129,16 +127,36 @@ play options registry (one, two) = do
   outcome <- Exception.catch (Game.run reference observers seats finish hotseat generator orders matchup) interrupted
   Monad.forM_ (PlayOptions.save options) $ \path -> do
     timeline <- IORef.readIORef entries
-    let entrants = fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup
-        saved = Record.scenario (Text.pack ("Played with parun play, seed " <> show seed <> ".")) entrants timeline
-    ByteString.writeFile path (Encoding.encodeUtf8 (Common.render (Codec.encode Codec.Scenario.codec saved) <> Text.pack "\n"))
-    IO.hPutStrLn IO.stderr ("Saved " <> path <> ".")
+    save path (saved (Text.pack ("Played with parun play, seed " <> show seed <> ".")) orders matchup timeline)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Render.result result)
     Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
 
 idOf :: Natural -> PlayerId.PlayerId
 idOf n = PlayerId.MkPlayerId (n - 1)
+
+-- | Both seats with their decks, the seat numbered `first` at the head, which
+-- plays first (Game.run).
+seated :: Natural -> (Deck.Deck, Deck.Deck) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)
+seated first (one, two)
+  | first == 2 = (idOf 2, two) NonEmpty.:| [(idOf 1, one)]
+  | otherwise = (idOf 1, one) NonEmpty.:| [(idOf 2, two)]
+
+-- | Each seat's label in a saved game.
+labels :: Map.Map PlayerId.PlayerId Label.Label
+labels = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show n))) | n <- [1, 2 :: Natural]]
+
+-- | The scenario a game played from this matchup, each seat at its graveyard
+-- order in `orders` and its answers' entries recorded in `timeline`, replays
+-- as.
+saved :: Text.Text -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
+saved description orders matchup = Record.scenario description (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
+
+-- | Writes a scenario to `path`.
+save :: FilePath -> Scenario.Scenario -> IO ()
+save path scenario = do
+  ByteString.writeFile path (Encoding.encodeUtf8 (Common.render (Codec.encode Codec.Scenario.codec scenario) <> Text.pack "\n"))
+  IO.hPutStrLn IO.stderr ("Saved " <> path <> ".")
 
 terminal :: Terminal.Terminal IO
 terminal =

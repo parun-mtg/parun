@@ -2168,6 +2168,7 @@ library play
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
+    directory ^>=1.3.8,
     parun:codec,
     parun:engine,
     parun:exceptions,
@@ -2191,6 +2192,7 @@ library play
     Parun.Play.Client
     Parun.Play.Command
     Parun.Play.Game
+    Parun.Play.Match
     Parun.Play.Protocol
     Parun.Play.Record
     Parun.Play.Render
@@ -2407,6 +2409,7 @@ library test
     Parun.ManaSpec
     Parun.ManaSymbolSpec
     Parun.MassEffectSpec
+    Parun.MatchSpec
     Parun.MeldSpec
     Parun.ModalDoubleFacedSpec
     Parun.ModalSpec
@@ -3042,6 +3045,7 @@ library types
     Parun.Types.ManaUnit
     Parun.Types.ManaWindow
     Parun.Types.ManifestedDread
+    Parun.Types.MatchOptions
     Parun.Types.Measure
     Parun.Types.Measures
     Parun.Types.Meld
@@ -3341,6 +3345,7 @@ library types
     Parun.Types.SuspendCounters
     Parun.Types.TakeExtraTurn
     Parun.Types.Taking
+    Parun.Types.Tally
     Parun.Types.Tap
     Parun.Types.TapForMana
     Parun.Types.TapForTotalPower
