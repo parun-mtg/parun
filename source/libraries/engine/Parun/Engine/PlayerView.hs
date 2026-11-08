@@ -77,7 +77,8 @@ seatView pid gs seat = do
 -- | CR 110.5: an object's status for anyone; its characteristics (as projected,
 -- CR 613) for a seat that may see them, which for a face-down permanent or
 -- spell is every seat (CR 708.2); the card behind a face-down object for a
--- seat that may look at it (CR 406.3, 708.5); and what an ability came from.
+-- seat that may look at it (CR 406.3, 708.5), and the foretell cost it was
+-- given with it (CR 702.143e); and what an ability came from.
 objectView :: PlayerId.PlayerId -> GameState.GameState -> ObjectId.ObjectId -> Maybe ObjectView.ObjectView
 objectView pid gs oid = do
   object <- Game.lookupObject oid gs
@@ -100,6 +101,10 @@ objectView pid gs oid = do
         ObjectView.face =
           if seen && faceDown
             then Just (Projection.projectShown oid gs)
+            else Nothing,
+        ObjectView.foretellCostReduction =
+          if seen
+            then Object.foretellCostReduction object
             else Nothing,
         ObjectView.ability = abilityView pid gs oid
       }

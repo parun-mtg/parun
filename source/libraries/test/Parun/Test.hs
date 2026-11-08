@@ -914,6 +914,7 @@ import qualified Parun.KeywordTriggerSpec
 import qualified Parun.LearnSpec
 import qualified Parun.LeavesTriggerSpec
 import qualified Parun.LedgerSpec
+import qualified Parun.LegalitySpec
 import qualified Parun.LibraryOrderSpec
 import qualified Parun.LifeReplacementSpec
 import qualified Parun.LifeTriggerSpec
@@ -2010,6 +2011,7 @@ spec s registry corpus = do
   Parun.RecordSpec.spec s registry
   Parun.MatchSpec.spec s registry
   Parun.DecksSpec.spec s registry
+  Parun.LegalitySpec.spec s registry
   Parun.ReplySpec.spec s registry
   Parun.ScenarioSpec.corpusSpec s registry
   Parun.ScenarioSpec.loadSpec s

@@ -6,6 +6,8 @@ import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteri
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityView as AbilityView
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
@@ -20,20 +22,20 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       (hidden {ObjectView.characteristics = Just ProjectedCharacteristicsSpec.testCharacteristics})
       ( "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
-          <> ",\"face\":null,\"ability\":null}"
+          <> ",\"face\":null,\"foretellCostReduction\":null,\"ability\":null}"
       )
   Spec.it s "an ability on the stack" $
     Common.assertCodec
       s
       ObjectView.codec
       (hidden {ObjectView.ability = Just (AbilityView.MkAbilityView (Just (ObjectId.MkObjectId 5)))})
-      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"ability\":{\"source\":5}}"
+      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":{\"source\":5}}"
   Spec.it s "a hidden object" $
     Common.assertCodec
       s
       ObjectView.codec
       hidden
-      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"ability\":null}"
+      hiddenJson
   Spec.it s "a face-down object its seat may look at" $
     Common.assertCodec
       s
@@ -41,8 +43,14 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       (hidden {ObjectView.face = Just ProjectedCharacteristicsSpec.testCharacteristics})
       ( "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
-          <> ",\"ability\":null}"
+          <> ",\"foretellCostReduction\":null,\"ability\":null}"
       )
+  Spec.it s "a foretold card given a foretell cost" $
+    Common.assertCodec
+      s
+      ObjectView.codec
+      (hidden {ObjectView.foretellCostReduction = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])})
+      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":2}],\"ability\":null}"
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -58,5 +66,9 @@ hidden =
       ObjectView.attachedTo = Nothing,
       ObjectView.characteristics = Nothing,
       ObjectView.face = Nothing,
+      ObjectView.foretellCostReduction = Nothing,
       ObjectView.ability = Nothing
     }
+
+hiddenJson :: String
+hiddenJson = "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":null}"

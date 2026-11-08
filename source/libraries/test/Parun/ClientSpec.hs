@@ -1350,7 +1350,6 @@ spec s registry = Spec.describe s "Client" $ do
         alice = Decider.MkDecider S.alice
         upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
         mode = ModeIndex.MkModeIndex
-        free = Cost.MkCost Nothing []
         pool = OutsideCard.InPool printing
         refused :: String -> Prompt.Prompt r -> Bool
         refused line prompt = either (== Text.pack "end of input") (const False) (fst (asking facing [line] gs prompt))
@@ -1364,7 +1363,9 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "CR 700.2d each mode by its place, one chosen again" (upTo (Text.pack "Choose modes") modes) (fmap Text.pack ["Choose modes for Forest: choose exactly 2, by number or range such as 1-3, separated by spaces; one may be chosen more than once:", "  1. Mode 1", "  2. Mode 2"])
     Spec.assertEqWith s "the second mode twice" twice (Right (Seq.fromList [mode 1, mode 1]))
     Spec.assertBool s (refused "1 1" (Prompt.ChooseModes alice S.alice f (Set.fromList [mode 0, mode 1, mode 2]) (ModeSelection.ChooseExactly 2))) "CR 700.2d no mode twice where the card does not say so"
-    Spec.assertEqWith s "CR 702.47b the cards in the order typed" (fst (asking facing ["2 1"] gs (Prompt.ChooseSplice alice S.alice f [(b, free), (g, free)]))) (Right [g, b])
+    let (spliced, splicing) = asking facing ["2 1"] gs (Prompt.ChooseSplice alice S.alice f [(b, Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []), (g, Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Red)])) [])])
+    Spec.assertEqWith s "CR 702.47a each card beside its splice cost as Oracle text prints it" (drop 1 (upTo (Text.pack "Choose splice") splicing)) (fmap Text.pack ["  1. Your Grizzly Bears 2/2 (splice for {2})", "  2. Your Hill Giant 3/3 (splice for {1}{R})"])
+    Spec.assertEqWith s "CR 702.47b the cards in the order typed" spliced (Right [g, b])
     Spec.assertEqWith s "CR 701.34a a permanent and a player listed together" (upTo (Text.pack "Choose proliferate") proliferate) (fmap Text.pack ["Choose proliferate: choose any number, by number or range such as 1-3, separated by spaces, or press Enter for none:", "  1. Your Grizzly Bears 2/2", "  2. Player 2"])
     Spec.assertEqWith s "and sent back apart" proliferated (Right (Set.singleton b, Set.singleton S.bob))
     Spec.assertEqWith s "CR 400.11c a card listed once per copy" (drop 1 (upTo (Text.pack "Choose from outside the game") outside)) (fmap Text.pack ["  1. Grizzly Bears (sideboard)", "  2. Grizzly Bears (sideboard)"])

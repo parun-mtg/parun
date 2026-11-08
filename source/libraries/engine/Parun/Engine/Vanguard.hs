@@ -32,9 +32,9 @@
 --
 -- WHAT IS NOT IMPLEMENTED:
 --
---   * CR 902.2's deck construction, as with every other format: parun validates no
---     deck (#4458), so a game where one player brought a vanguard and another did
---     not is playable here and is not a legal Vanguard game.
+--   * CR 902.2's deck construction (#6398), so a game where one player brought a
+--     vanguard and another did not is playable here and is not a legal Vanguard
+--     game.
 module Parun.Engine.Vanguard where
 
 import qualified Data.List as List
@@ -125,8 +125,8 @@ homeZoneOf oid gs = if functionsFromCommandZone oid gs then Zone.Command else Zo
 -- sits in the command zone all game.
 --
 -- The FIRST by id where a player somehow has two, which no legal Vanguard game
--- has (CR 902.1's "one face-up vanguard card"); parun validates no deck (#4458), so
--- the tie is broken rather than reported.
+-- has (CR 902.1's "one face-up vanguard card"); no vanguard deck is validated
+-- (#6398), so the tie is broken rather than reported.
 vanguardOf :: PlayerId -> GameState -> Maybe ObjectId
 vanguardOf pid gs = List.find (\oid -> isVanguard oid gs) (Game.zoneMembers Zone.Command pid gs)
 

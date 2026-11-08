@@ -21,9 +21,9 @@
 -- WHAT IS NOT IMPLEMENTED:
 --
 --   * CR 903.4's colour identity and CR 903.5's singleton deck construction
---     (#4458) -- both are deck-legality rules, and parun validates no deck.
+--     (#6397).
 --   * CR 903.12b, CR 903.12d and CR 903.12e's Brawl deck construction, and CR
---     903.13's Commander Draft -- deck-building rules, like rule 903.5's (#4458).
+--     903.13's Commander Draft (#6397).
 module Parun.Engine.Commander where
 
 import qualified Control.Monad as Monad
@@ -104,7 +104,7 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- 903.3a) would still be refused.
 --
 -- Empty is also what an ILLEGAL pair gets, which is the closest parun can come to
--- rejecting the deck: nothing validates a deck (#4458) and Parun.Engine.Setup has
+-- rejecting the deck: nothing validates a Commander deck (#6397) and Parun.Engine.Setup has
 -- no channel to refuse one, so a pair rule 702.124 does not allow designates
 -- neither card and starts no commander in the command zone.
 --
@@ -145,8 +145,8 @@ designations settings deck =
 -- says it can be your commander.
 --
 -- Brawl adds a planeswalker card to those three, which is the whole of CR
--- 903.12c's difference from rule 903.3 and the reason this takes the settings. Parun
--- validates no deck (#4458), so a card this refuses is designated as nothing and
+-- 903.12c's difference from rule 903.3 and the reason this takes the settings. No
+-- Commander deck is validated (#6397), so a card this refuses is designated as nothing and
 -- starts nowhere, which is `designations`' posture for every illegal deck.
 --
 -- Clauses (b) and (c) are REGRESSION FENCES and not proved: no legendary Vehicle

@@ -5,6 +5,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -25,6 +26,8 @@ data ObjectView = MkObjectView
     characteristics :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
     -- | CR 406.3 / 708.5: the card a face-down object is, for a seat that may look at it.
     face :: Maybe ProjectedCharacteristics.ProjectedCharacteristics,
+    -- | CR 702.143d / 702.143e: what a granted foretell cost takes off the card's mana cost, for a seat that may look at it.
+    foretellCostReduction :: Maybe ManaCost.ManaCost,
     -- | CR 113.7a / 602.2a: what an ability on the stack came from, and Nothing for anything else.
     ability :: Maybe AbilityView.AbilityView
   }

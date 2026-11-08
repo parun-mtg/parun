@@ -22,6 +22,7 @@ import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonSchema.Define as Define
+import qualified Parun.Legality as Legality
 import qualified Parun.Mtgish as Mtgish
 import qualified Parun.Oracle as Oracle
 import qualified Parun.Oracle.Normalise as Normalise
@@ -35,6 +36,7 @@ import qualified Parun.Test
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
 import qualified System.Directory as Directory
 import qualified System.Environment as Environment
@@ -55,7 +57,12 @@ main = do
   case arguments of
     ["schema"] -> schema
     ["schema", "scenario"] -> scenarioSchema
-    ["deck", path] -> deck path
+    ["deck", path] -> deck Nothing path
+    ["deck", "--format", format, path] -> case Legality.named (Text.pack format) of
+      Just known -> deck (Just known) path
+      Nothing -> do
+        IO.hPutStrLn IO.stderr ("not a format: " <> format)
+        Exit.exitFailure
     ["ingest", path] -> ingest path
     ["oracle"] -> oracle
     "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
@@ -66,7 +73,7 @@ main = do
     "test" : rest -> Environment.withArgs rest Parun.Test.main
     _ -> do
       name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
+      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format constructed|limited] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
       Exit.exitFailure
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a
@@ -77,8 +84,11 @@ main = do
 -- Decoded as UTF-8 explicitly rather than through TextIO.readFile, for
 -- Parun.Registry.parseCard's reason: that one decodes using the locale encoding,
 -- so a card with a non-ASCII character in its name would fail under LC_ALL=C.
-deck :: FilePath -> IO ()
-deck path = do
+--
+-- With a format, a deck breaking its rules is reported, every violation, and
+-- not written back.
+deck :: Maybe Format.Format -> FilePath -> IO ()
+deck format path = do
   bytes <- ByteString.readFile path
   case Encoding.decodeUtf8' bytes of
     Left err -> do
@@ -95,7 +105,11 @@ deck path = do
         Right (Left problems) -> do
           mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
           Exit.exitFailure
-        Right (Right parsed) -> TextIO.putStr (DeckList.render parsed)
+        Right (Right parsed) -> case foldMap (`Legality.check` parsed) format of
+          [] -> TextIO.putStr (DeckList.render parsed)
+          violations -> do
+            mapM_ (TextIO.hPutStrLn IO.stderr . (\v -> Text.pack (path <> ": ") <> Legality.explain v)) violations
+            Exit.exitFailure
 
 -- | Reads script/ingest/candidates.jq's reduction of MTGJSON's AtomicCards and
 -- writes a card file for every keyword-only card it holds, Oracle text included

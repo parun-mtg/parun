@@ -314,6 +314,13 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition (Filter.Not Filter.IsAbility) (Filter.HasColor Color.Blue)))
       " {\"type\":\"CantBeCountered\",\"value\":{\"countered\":{\"type\":\"Not\",\"value\":{\"type\":\"IsAbility\"}},\"counterers\":{\"type\":\"HasColor\",\"value\":\"Blue\"}}} "
+  -- CR 611.2a / Theorist's Proxy: the marker the next spell's cast uses up.
+  Spec.it s "NextSpell" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.NextSpell (Filter.And []))
+      " {\"type\":\"NextSpell\",\"value\":{\"type\":\"And\",\"value\":[]}} "
   -- CR 115 / 101.2 / Autumn's Veil: a targeting restriction whose affected set
   -- is a Filter.
   Spec.it s "RestrictTargeting" $

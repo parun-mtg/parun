@@ -551,6 +551,7 @@ rewritePlayerEffect pairs effect = case effect of
   -- No filter to rewrite: a rule-702 designator is not a word CR 612.1 swaps.
   PlayerEffect.AlternativeActivationCost _ -> effect
   PlayerEffect.CastAsThoughItHadFlash f -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f)
+  PlayerEffect.NextSpell f -> PlayerEffect.NextSpell (Filter.rewrite pairs f)
   PlayerEffect.MayPlayAsThoughItHadFlash f -> PlayerEffect.MayPlayAsThoughItHadFlash (Filter.rewrite pairs f)
   -- A rule-702 designator is no word CR 612.1 swaps; the two grants' Filters
   -- name the permanent, so they descend as CastAsThoughItHadFlash's does.

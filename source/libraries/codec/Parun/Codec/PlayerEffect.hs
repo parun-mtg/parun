@@ -87,6 +87,7 @@ codec =
           Arm.payload "LoyaltyGrant" LoyaltyGrant.codec PlayerEffect.LoyaltyGrant (\x -> case x of PlayerEffect.LoyaltyGrant y -> Just y; _ -> Nothing),
           Arm.payload "MayTapForMana" TapForMana.codec PlayerEffect.MayTapForMana (\x -> case x of PlayerEffect.MayTapForMana y -> Just y; _ -> Nothing),
           Arm.payload "CantBeCountered" CounterProhibition.codec PlayerEffect.CantBeCountered (\x -> case x of PlayerEffect.CantBeCountered y -> Just y; _ -> Nothing),
+          Arm.payload "NextSpell" filterCodec PlayerEffect.NextSpell (\x -> case x of PlayerEffect.NextSpell y -> Just y; _ -> Nothing),
           Arm.payload "RestrictTargeting" (TargetRestriction.codec filterCodec) PlayerEffect.RestrictTargeting (\x -> case x of PlayerEffect.RestrictTargeting y -> Just y; _ -> Nothing),
           Arm.payload "TargetPastHexproof" HexproofExemption.codec PlayerEffect.TargetPastHexproof (\x -> case x of PlayerEffect.TargetPastHexproof y -> Just y; _ -> Nothing),
           Arm.payload "DamageCantBePrevented" DamagePattern.codec PlayerEffect.DamageCantBePrevented (\x -> case x of PlayerEffect.DamageCantBePrevented y -> Just y; _ -> Nothing),
@@ -146,6 +147,7 @@ tagOf x = case x of
   PlayerEffect.LoyaltyGrant {} -> "LoyaltyGrant"
   PlayerEffect.MayTapForMana {} -> "MayTapForMana"
   PlayerEffect.CantBeCountered {} -> "CantBeCountered"
+  PlayerEffect.NextSpell {} -> "NextSpell"
   PlayerEffect.RestrictTargeting {} -> "RestrictTargeting"
   PlayerEffect.TargetPastHexproof {} -> "TargetPastHexproof"
   PlayerEffect.DamageCantBePrevented {} -> "DamageCantBePrevented"

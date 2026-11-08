@@ -40,6 +40,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.Answerer as Answerer
@@ -69,6 +70,8 @@ import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
@@ -202,6 +205,29 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertEqWith s "bob looks at the card" (fmap (fmap ProjectedCharacteristics.names . ObjectView.face) (exiled S.bob)) [Just (Set.singleton (S.printingName piker))]
     Spec.assertEqWith s "its owner may not" (fmap ObjectView.face (exiled S.alice)) [Nothing]
     Spec.assertEqWith s "CR 406.3a it has no characteristics to either" (fmap ObjectView.characteristics (exiled S.alice <> exiled S.bob)) [Nothing, Nothing]
+  -- The pair differs in the card alice foretells under her Dream Devourer and
+  -- in nothing else: Hill Giant, {3}{R} and no foretell, takes the Devourer's
+  -- grant; Augury Raven keeps its printed {1}{U}, which CR 702.143e leaves out.
+  Spec.it s "CR 702.143e a foretold card shows the foretell cost Dream Devourer gave it" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    devourer <- S.printingOf s registry "Dream Devourer"
+    giant <- S.printingOf s registry "Hill Giant"
+    raven <- S.printingOf s registry "Augury Raven"
+    let foretold card =
+          let (cardId, g1) = S.addHandCard card S.alice (S.landsInPlay mountain 4)
+              (_, g2) = S.addPermanent devourer S.alice g1
+              gs = g2 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+           in S.runPure (foretelling cardId) gs Engine.priorityLoop
+        exiled pid gs = foldMap SeatView.exile (seatOf S.alice (PlayerView.viewFor pid gs))
+        reduced = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])
+        line = Text.pack "Foretell cost: its mana cost reduced by {2}"
+        drawn gs = fmap (either (const False) (elem line) . Render.details (const (Right Nothing)) (PlayerView.viewFor S.alice gs)) (exiled S.alice gs)
+    Spec.assertEqWith s "the Giant was foretold" (fmap (fmap ProjectedCharacteristics.names . ObjectView.face) (exiled S.alice (foretold giant))) [Just (Set.singleton (S.printingName giant))]
+    Spec.assertEqWith s "CR 702.143e alice sees the {2} the Devourer took off the Giant" (fmap ObjectView.foretellCostReduction (exiled S.alice (foretold giant))) [reduced]
+    Spec.assertEqWith s "and her drawing names it" (drawn (foretold giant)) [True]
+    Spec.assertEqWith s "CR 406.3 bob, who may not look at the card, does not" (fmap ObjectView.foretellCostReduction (exiled S.bob (foretold giant))) [Nothing]
+    Spec.assertEqWith s "the Raven was foretold" (fmap (fmap ProjectedCharacteristics.names . ObjectView.face) (exiled S.alice (foretold raven))) [Just (Set.singleton (S.printingName raven))]
+    Spec.assertEqWith s "and shows alice only its printed cost" (fmap ObjectView.foretellCostReduction (exiled S.alice (foretold raven))) [Nothing]
   Spec.it s "CR 708.2 / 708.5 a face-down permanent shows every seat a nameless 2/2 and its controller the card" $ do
     tracker <- S.printingOf s registry "Ainok Tracker"
     let (oid, placed) = S.addPermanent tracker S.alice (Setup.emptyGame S.bothPlayers)
@@ -601,6 +627,14 @@ drawnFor pid gs =
 -- A seat's view as its client receives it.
 encodedFor :: PlayerId.PlayerId -> GameState.GameState -> String
 encodedFor pid gs = Text.unpack (Common.render (Codec.encode Codec.PlayerView.codec (PlayerView.viewFor pid gs)))
+
+-- Foretells `oid` when offered (CR 702.143a), and otherwise passes.
+foretelling :: ObjectId.ObjectId -> Prompt.Prompt r -> r
+foretelling oid p = case p of
+  Prompt.ChooseAction _ _ actions
+    | elem (Action.Type.Foretell oid) actions -> Action.Type.Foretell oid
+    | otherwise -> Action.Type.Pass
+  _ -> S.identityAnswer p
 
 seatOf :: PlayerId.PlayerId -> PlayerView.Type.PlayerView -> Maybe SeatView.SeatView
 seatOf pid = List.find ((== pid) . SeatView.player) . PlayerView.Type.seats

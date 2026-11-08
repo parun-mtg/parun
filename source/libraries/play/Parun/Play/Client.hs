@@ -493,8 +493,13 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
   -- CR 700.2: each mode as the offer names it, or else by its place in the
   -- printed list.
   "ChooseModes" -> subset (\reply -> maybe (optionName view reply) (\i -> Text.pack ("Mode " <> show (i + 1))) (naturalOf reply)) Text.empty R.Array
-  -- CR 702.47b: the effects happen in the order the cards are typed.
-  "ChooseSplice" -> subset (optionName view) (Text.pack "; the first typed happens first") R.Array
+  -- CR 702.47b: each card beside the splice cost it adds, the effects
+  -- happening in the order the cards are typed.
+  "ChooseSplice" -> do
+    among <- field "among" offer >>= arrayOf
+    let costs = Maybe.fromMaybe [] (field "costs" offer >>= arrayOf)
+        spliced card = optionName view card <> foldMap (\cost -> Text.pack " (splice for " <> candidateName (objectName view card) cost <> Text.pack ")") (lookup card (zip among costs))
+    subset spliced (Text.pack "; the first typed happens first") R.Array
   -- CR 701.34a: the permanents picked, then the players.
   "ChooseProliferate" ->
     subset (optionName view) Text.empty (\picked -> R.Array [R.Array (filter (Maybe.isJust . objectOf) picked), R.Array [player | R.Array [R.Text tag, player] <- picked, tag == Text.pack "Player"]])
@@ -1169,7 +1174,7 @@ told view self offer = case offer of
   R.Object pairs ->
     [ label key <> Text.pack ": " <> value key reply
     | (key, reply) <- pairs,
-      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "costs", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
       reply /= R.Array []
     ]
   _ -> []
