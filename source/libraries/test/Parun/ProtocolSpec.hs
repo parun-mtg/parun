@@ -555,6 +555,19 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 305.6 basic land type problems" (problemsOf "ChooseBasicLandType" sent) [Nothing, refused]
     Spec.assertEqWith s "the second answers stand" chosen (Subtype.Goblin, Subtype.Swamp)
 
+  Spec.it s "CR 601.2h counters removed past the cost are refused and asked again" $ do
+    gs <- started s registry
+    bears <- S.printingOf s registry "Grizzly Bears"
+    sages <- S.printingOf s registry "Novijen Sages"
+    let (b, g1) = S.addPermanent bears S.alice gs
+        (n, g2) = S.addPermanent sages S.alice g1
+        board = S.addCounter CounterKind.PlusOnePlusOne 4 n (S.addCounter CounterKind.PlusOnePlusOne 2 b g2)
+        removal = Prompt.ChooseCounterRemovalAmong (Decider.MkDecider S.alice) S.alice n 2 (Map.fromList [(b, 2), (n, 4)])
+        replies = fmap (Protocol.encodeAnswer removal . Map.singleton n) [3, 2]
+        ((chosen, _), sent) = overTheLine replies board (Game.choose removal)
+    Spec.assertEqWith s "problems" (problemsOf "ChooseCounterRemovalAmong" sent) [Nothing, Just (Text.pack "amounts outside the bounds the prompt states")]
+    Spec.assertEqWith s "the second answer stands" chosen (Map.singleton n 2)
+
   Spec.it s "CR 509.1b an illegal block is refused naming the attacker, and asked again however often it is repeated" $ do
     drake <- S.printingOf s registry "Wind Drake"
     piker <- S.printingOf s registry "Goblin Piker"

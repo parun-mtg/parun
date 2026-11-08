@@ -56,6 +56,7 @@ import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Resolve as Resolve
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Visibility as Visibility
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -141,20 +142,22 @@ over judge send fallback = Answerer.MkAnswerer $ \asked -> case requestFor asked
           line <- send (render pending)
           judged <-
             either (pure . Left) (judge asked) $
-              Common.parse line >>= Codec.Reply.fromValue >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
+              Common.parse line >>= Codec.Reply.fromValue >>= decodeAnswer (Asked.prompt asked) >>= onOffer (Question.offer (Request.question request)) (Asked.prompt asked) >>= lawful named (Asked.game asked) (Asked.prompt asked)
           either (\problem -> go pending {Request.problem = Just problem}) pure judged
         named = maybe (const (Text.pack "a creature")) Render.named (Request.view request)
      in go request
 
--- | An answer the prompt offers. The engine reads one it does not with a
--- fallback of its own, which would choose for the player.
---
--- Not implemented: refusing an amount-per-item answer outside the bounds its
--- offer states (#6629).
-onOffer :: Prompt.Prompt r -> r -> Either Text.Text r
-onOffer prompt answer
-  | Scenario.withinOffer prompt answer = Right answer
-  | otherwise = Left (Text.pack "not an answer the prompt offers")
+-- | An answer the prompt offers, amounts within the bounds `offer` states
+-- where it asks for an amount per item (amountsFit). The engine reads one it
+-- does not with a fallback of its own, which would choose for the player.
+-- ProtocolSpec's Novijen Sages case is the proof.
+onOffer :: R.Reply -> Prompt.Prompt r -> r -> Either Text.Text r
+onOffer offer prompt answer
+  | not (Scenario.withinOffer prompt answer) = Left (Text.pack "not an answer the prompt offers")
+  | Just caps <- field "amounts" offer,
+    not (maybe False (amountsFit offer) (amountsIn caps (encodeAnswer prompt answer))) =
+      Left (Text.pack "amounts outside the bounds the prompt states")
+  | otherwise = Right answer
 
 -- | An answer the rules let stand: an illegal declaration of attackers (CR
 -- 508.1c, 508.1d) or blockers (CR 509.1b, 509.1c) is refused with why, where
@@ -792,3 +795,71 @@ playOrDraw send seat = go Nothing
     chosen reply = case reply of
       R.Text word | Just plays <- lookup word choices -> Right plays
       _ -> Left (Text.pack "expected Play or Draw")
+
+-- | Each amount an amount-per-item offer asks for (amounts), in order: the
+-- keys leading to it, an index for an item of a list, and the most it takes.
+amountLeaves :: R.Reply -> [([Either Natural R.Reply], Natural)]
+amountLeaves reply = case reply of
+  R.Array items
+    | all (Maybe.isJust . naturalOf) items -> [([Left i], n) | (i, Just n) <- zip [0 ..] (fmap naturalOf items)]
+    | otherwise -> [(Right key : path, n) | R.Array [key, value] <- items, (path, n) <- amountLeaves value]
+  _ -> foldMap (\n -> [([], n)]) (naturalOf reply)
+
+-- | An answer's amounts in the order amountLeaves lists the offer's `caps`,
+-- none where the answer leaves an item out; Nothing where it names one the
+-- offer does not.
+amountsIn :: R.Reply -> R.Reply -> Maybe [Natural]
+amountsIn caps answer =
+  let paths = fmap fst (amountLeaves caps)
+      given = amountLeaves answer
+   in if all ((`elem` paths) . fst) given then Just [Maybe.fromMaybe 0 (lookup path given) | path <- paths] else Nothing
+
+-- | Whether amounts, one per item of the offer's @"amounts"@ in amountLeaves'
+-- order, fit the offer (amounts): each at most its cap and at least its floor,
+-- adding up within the least and most, from one permanent where "fromOne" says
+-- so, of one kind where "oneKind" does, and each kind within its tally under
+-- "counters". The text client's reader and onOffer both ask it.
+amountsFit :: R.Reply -> [Natural] -> Bool
+amountsFit offer typed =
+  let leaves = foldMap amountLeaves (field "amounts" offer)
+      floors = foldMap amountLeaves (field "floors" offer)
+      floorOf path = Maybe.fromMaybe 0 (lookup path floors)
+      supply = foldMap (Maybe.mapMaybe entryOf) (field "counters" offer >>= arrayOf)
+      oneKind = field "oneKind" offer >>= naturalOf
+      chosen = [(path, n) | ((path, _), n) <- zip leaves typed, n > 0]
+      spent = sum typed
+      kinds = ListUtils.nubOrd (Maybe.mapMaybe (lastKey . fst) chosen)
+      firstKey path = case path of
+        Right k : _ -> Just k
+        _ -> Nothing
+      lastKey path = case reverse path of
+        Right k : _ -> Just k
+        _ -> Nothing
+   in length typed == length leaves
+        && and (zipWith (\(path, cap) n -> n <= cap && n >= floorOf path) leaves typed)
+        && all (spent >=) (field "least" offer >>= naturalOf)
+        && all (spent <=) (field "most" offer >>= naturalOf)
+        && (field "fromOne" offer /= Just (R.Boolean True) || length (ListUtils.nubOrd (Maybe.mapMaybe (firstKey . fst) chosen)) <= 1)
+        && all (\n -> case kinds of [kind] -> spent == min n (maybe 0 snd (List.find ((== kind) . fst) supply)); _ -> False) oneKind
+        && all (\(kind, held) -> sum [n | (path, n) <- chosen, lastKey path == Just kind] <= held) supply
+
+field :: String -> R.Reply -> Maybe R.Reply
+field key reply = case reply of
+  R.Object pairs -> List.lookup (Text.pack key) pairs
+  _ -> Nothing
+
+arrayOf :: R.Reply -> Maybe [R.Reply]
+arrayOf reply = case reply of
+  R.Array xs -> Just xs
+  _ -> Nothing
+
+-- | A map's entry, as the line protocol writes one.
+entryOf :: R.Reply -> Maybe (R.Reply, Natural)
+entryOf reply = case reply of
+  R.Array [key, value] -> fmap ((,) key) (naturalOf value)
+  _ -> Nothing
+
+naturalOf :: R.Reply -> Maybe Natural
+naturalOf reply = case reply of
+  R.Number n -> Integer.toNatural n
+  _ -> Nothing
