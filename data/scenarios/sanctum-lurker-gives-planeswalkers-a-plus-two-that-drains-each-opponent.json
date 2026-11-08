@@ -15,7 +15,7 @@
                 "key": {
                   "type": "Loyalty"
                 },
-                "value": 3
+                "value": 0
               }
             ],
             "label": "jace"
@@ -57,7 +57,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 606.4 / 613.1f Sanctum Lurker gives a planeswalker alice controls a +2 that drains each opponent for 1",
+  "description": "CR 606.4 / 613.1f Sanctum Lurker gives a planeswalker alice controls a +2 that drains each opponent for 1, activatable at 0 loyalty",
+  "note": "Jace starts at 0 loyalty, which the Lurker keeps on the battlefield; a planeswalker with no loyalty may still pay a + cost.",
   "timeline": [
     {
       "do": {
@@ -79,7 +80,7 @@
     {
       "check": {
         "Counters": {
-          "count": 5,
+          "count": 2,
           "kind": {
             "type": "Loyalty"
           },

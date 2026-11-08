@@ -2460,6 +2460,7 @@ samut-tyrant-of-naktamun
 sanctimony
 sanctuary-blade
 sanctum-guardian
+sanctum-lurker
 sanctum-of-calm-waters
 sanctum-of-fruitful-harvest
 sanctum-of-serra
