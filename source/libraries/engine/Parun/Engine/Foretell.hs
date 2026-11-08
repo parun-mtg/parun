@@ -144,8 +144,10 @@ foretellable pid gs = filter (\oid -> canForetell pid oid gs) (Game.zoneMembers 
 --
 -- CR 702.143e is what makes each foretold card a pile of its own in
 -- Parun.Engine.Exile.pileOf, and a seat's view lists exile by id, which CR
--- 400.7's fresh incarnation mints in arrival order. Not implemented: a
--- foretell cost other than the printed one in any seat's view (#6392).
+-- 400.7's fresh incarnation mints in arrival order, and carries the stamp's
+-- granted cost to a seat that may look at the card
+-- (Parun.Engine.PlayerView.objectView). Parun.PlayerViewSpec's "CR 702.143e a
+-- foretold card shows the foretell cost Dream Devourer gave it" proves it.
 foretell :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> ObjectId -> Game ()
 foretell perform pid oid = do
   before <- State.get

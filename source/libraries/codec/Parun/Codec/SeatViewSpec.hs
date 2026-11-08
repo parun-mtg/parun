@@ -38,8 +38,5 @@ testSeat =
 testSeatJson :: String
 testSeatJson =
   "{\"player\":0,\"life\":20,\"counters\":[],\"handSize\":3,\"hand\":["
-    <> hiddenJson
+    <> ObjectViewSpec.hiddenJson
     <> "],\"librarySize\":40,\"library\":[],\"graveyard\":[],\"exile\":[],\"manaPool\":[]}"
-
-hiddenJson :: String
-hiddenJson = "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"ability\":null}"

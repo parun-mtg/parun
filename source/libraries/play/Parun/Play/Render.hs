@@ -213,9 +213,9 @@ cardNames :: ObjectView.ObjectView -> Set.Set CardName.CardName
 cardNames o = maybe (foldMap ProjectedCharacteristics.names (ObjectView.characteristics o)) ProjectedCharacteristics.names (ObjectView.face o)
 
 -- | An object in full, as the seat sees it: its summary, its characteristics
--- now, the card behind it when face down and the seat may look, its
--- counters, and the printed Oracle text of the faces it is named for; or why
--- the card data could not say.
+-- now, the card behind it when face down and the seat may look, a foretell
+-- cost it was given (CR 702.143e), its counters, and the printed Oracle text
+-- of the faces it is named for; or why the card data could not say.
 details :: (CardName.CardName -> Either InvalidCorpus.InvalidCorpus (Maybe Card.Card)) -> PlayerView.PlayerView -> ObjectView.ObjectView -> Either InvalidCorpus.InvalidCorpus [Text.Text]
 details lookUp view o = do
   looked <- traverse lookUp (Set.toList names)
@@ -225,6 +225,7 @@ details lookUp view o = do
     [describe view o]
       <> foldMap characteristicLines (ObjectView.characteristics o)
       <> foldMap (\f -> Text.pack "Face down. You may look at it:" : characteristicLines f) (ObjectView.face o)
+      <> foldMap (\amount -> [Text.pack "Foretell cost: its mana cost reduced by " <> manaCost amount]) (ObjectView.foretellCostReduction o)
       <> [Text.pack "Counters: " <> Text.intercalate (Text.pack ", ") (fmap counted (Map.toList (ObjectView.counters o))) | not (Map.null (ObjectView.counters o))]
       <> foldMap oracle faces
   where
