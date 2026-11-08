@@ -5,8 +5,8 @@ module Parun.Play.Command where
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.ByteString as ByteString
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.IORef as IORef
 import qualified Data.List.NonEmpty as NonEmpty
@@ -34,7 +34,6 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
-import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
@@ -55,9 +54,9 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Left problem -> usage [problem]
     Right options -> do
       registry <- Registry.defaultRoot >>= Registry.fileRegistry
-      decks <- (,) <$> load registry one <*> load registry two
-      refuse (PlayOptions.format options) [(one, fst decks), (two, snd decks)]
-      play options registry decks
+      lists <- (,) <$> load registry one <*> load registry two
+      refuse (PlayOptions.format options) [(one, fst lists), (two, snd lists)]
+      play options registry (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.PlayOptions)]
@@ -82,11 +81,8 @@ usage problems = do
   IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun play [OPTION...] DECK DECK" flags)
   Exit.exitFailure
 
--- | A deck list file, as `parun deck` reads it.
---
--- Not implemented: checking the list against the format its header names
--- (#6658).
-load :: Registry.Registry Identity.Identity -> FilePath -> IO Deck.Deck
+-- | A deck list file with no bad line, as `parun deck` reads it.
+load :: Registry.Registry Identity.Identity -> FilePath -> IO DeckList.Listed
 load registry path = do
   bytes <- ByteString.readFile path
   contents <- either (\err -> failWith (path <> ": not valid UTF-8: " <> show err)) pure (Encoding.decodeUtf8' bytes)
@@ -96,22 +92,19 @@ load registry path = do
       Left problems -> do
         mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
         Exit.exitFailure
-      Right deck -> pure deck
+      Right _ -> pure listed
 
--- | Stops before the game when a deck breaks the named format's rules or pool
--- in a game not for ante, naming every violation of every deck.
-refuse :: Maybe Text.Text -> [(FilePath, Deck.Deck)] -> IO ()
-refuse format decks = Foldable.for_ format $ \name -> do
-  checker <- Legality.named name
-  case checker of
-    Left problem -> do
-      TextIO.hPutStrLn IO.stderr problem
-      Exit.exitFailure
-    Right known ->
-      let violations = [Text.pack (path <> ": ") <> Legality.explain v | (path, deck) <- decks, v <- known GameSettings.plain deck]
-       in Monad.unless (null violations) $ do
-            mapM_ (TextIO.hPutStrLn IO.stderr) violations
-            Exit.exitFailure
+-- | Stops before the game when a list's header names a format other than the
+-- one asked for, or its deck breaks the rules or pool of the format asked for
+-- or its header names, in a game not for ante, naming every violation of
+-- every deck as `parun deck` does.
+refuse :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO ()
+refuse format lists = do
+  reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report format listed)) lists
+  let violations = concat reports
+  Monad.unless (null violations) $ do
+    mapM_ (TextIO.hPutStrLn IO.stderr) violations
+    Exit.exitFailure
 
 -- | Nanoseconds since the epoch; on macOS only microseconds tick.
 nanoseconds :: Clock.SystemTime -> Natural
