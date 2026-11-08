@@ -1229,6 +1229,8 @@ library codec
     Parun.Codec.PermissionPoolSpec
     Parun.Codec.PermissionVerb
     Parun.Codec.PermissionVerbSpec
+    Parun.Codec.PerTarget
+    Parun.Codec.PerTargetSpec
     Parun.Codec.Phase
     Parun.Codec.PhasedOut
     Parun.Codec.PhasedOutSpec
@@ -3149,6 +3151,7 @@ library types
     Parun.Types.PermissionLimit
     Parun.Types.PermissionPool
     Parun.Types.PermissionVerb
+    Parun.Types.PerTarget
     Parun.Types.Phase
     Parun.Types.PhasedOut
     Parun.Types.PhasePattern

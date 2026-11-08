@@ -330,6 +330,7 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -4870,11 +4871,12 @@ triggerConditionSlots triggerCondition = case triggerCondition of
 filterSlotsReadSingly :: Filter.Type.Filter Keyword.Keyword -> [SlotName.SlotName]
 filterSlotsReadSingly = Set.toList . Filter.singularSlots
 
--- Every Count a player effect holds: a cost change's `perEach` and a free-cast
--- grant's `amount`, the Quantities a PlayerEffect carries.
+-- Every Count a player effect holds: a cost change's `perEach` and per-target
+-- `each`, and a free-cast grant's `amount`, the Quantities a PlayerEffect
+-- carries.
 playerEffectCounts :: PlayerEffect.PlayerEffect -> [Count.Type.Count Quantity.Type.Quantity]
 playerEffectCounts playerEffect = case playerEffect of
-  PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier)
+  PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier) <> foldMap quantityCounts (PerTarget.each =<< CostModifier.perTarget modifier)
   PlayerEffect.CastFromHandWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCastFromHand.amount grant)
   _ -> []
 
@@ -4900,7 +4902,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- Filters are read with the same Context, so they take the same framing.
   PlayerEffect.ModifyCost (CostModifier.MkCostModifier _ f targets perTarget perEach _ change) ->
     f
-      : Maybe.maybeToList targets <> Maybe.maybeToList perTarget <> foldMap (fmap snd . quantityFilters) perEach <> case change of
+      : Maybe.maybeToList targets <> foldMap (pure . PerTarget.matching) perTarget <> foldMap (fmap snd . quantityFilters) (Maybe.maybeToList (PerTarget.each =<< perTarget) <> Maybe.maybeToList perEach) <> case change of
         CostChange.Add addition -> concatMap costComponentFilters (CostAddition.components addition)
         CostChange.Increase _ -> []
         CostChange.Reduce _ -> []

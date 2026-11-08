@@ -114,6 +114,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
 import qualified Parun.Types.PaymentSubject as PaymentSubject
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -1763,7 +1764,8 @@ spellCostAdjustments targets pid oid gs =
 -- modifiers make, every one of them already known to reach the payment. `aims`
 -- answers `whichTargets` -- SOME announced target matches, once however many do
 -- (Kopala, Warden of Waves' ruling) -- `counted` answers `perTarget`, the
--- distinct announced targets matching, which repeats the change, and `each`
+-- distinct announced targets matching, each weighed by its own count
+-- (perTargetTimes), which repeats the change, and `each`
 -- answers `perEach` (perEachCount), which repeats it again.
 --
 -- A repeated increase or reduction is its amount REPEATED rather than multiplied, as
@@ -1775,7 +1777,7 @@ spellCostAdjustments targets pid oid gs =
 -- Additions are CONCATENATED rather than resolved between, because two effects
 -- each adding a cost both add it, and each keeps its SCALE for
 -- Parun.Engine.Cost.plusComponents to cash against the cost being adjusted.
-modifierAdjustments :: [(RowSource, CostModifier.CostModifier)] -> (RowSource -> Filter Keyword -> Bool) -> (RowSource -> Filter Keyword -> Natural) -> (RowSource -> Quantity.Type.Quantity -> Natural) -> CostAdjustments
+modifierAdjustments :: [(RowSource, CostModifier.CostModifier)] -> (RowSource -> Filter Keyword -> Bool) -> (RowSource -> PerTarget.PerTarget -> Natural) -> (RowSource -> Quantity.Type.Quantity -> Natural) -> CostAdjustments
 modifierAdjustments rows aims counted each =
   let applying' =
         [ (source, modifier, maybe 1 (counted source) (CostModifier.perTarget modifier) * maybe 1 (each source) (CostModifier.perEach modifier))
@@ -1823,10 +1825,23 @@ spellCostReadsTargets pid oid gs =
 -- Filter.View's `targetCount`, which counts instances, is not this. Merging by
 -- referent is a fence: the announcement's union already merges a recipient named
 -- twice, and no test names one object under two of CR 115.4's tags.
-perTargetCount :: Set.Set Recipient.Recipient -> PlayerId -> RowSource -> GameState -> Filter Keyword -> Natural
-perTargetCount targets pid source gs wanted =
+perTargetCount :: Set.Set Recipient.Recipient -> PlayerId -> RowSource -> GameState -> PerTarget.PerTarget -> Natural
+perTargetCount targets pid source gs perTarget =
   let referent r = (Recipient.objectOf r, Recipient.playerOf r)
-   in Natural.length (Set.map referent (Set.filter (perTargetMatches pid source gs wanted) targets))
+      matching = Set.map referent (Set.filter (perTargetMatches pid source gs (PerTarget.matching perTarget)) targets)
+   in sum (fmap (perTargetTimes pid source gs perTarget . fst) (Set.toList matching))
+
+-- CR 601.2f: how many times ONE matching target repeats a per-target change --
+-- once, or its `each` read against that target with perEachCount's context
+-- (Warrior's Blades' "for each +1/+1 counter on the creature it targets"). A
+-- player target has no object to read, so a count gives it no times: a fence,
+-- since no `each` in data/cards/ admits a player.
+perTargetTimes :: PlayerId -> RowSource -> GameState -> PerTarget.PerTarget -> Maybe ObjectId -> Natural
+perTargetTimes pid source gs perTarget target = case PerTarget.each perTarget of
+  Nothing -> 1
+  Just quantity ->
+    let context = contextFor (Just (targetPerspective pid source gs)) source gs
+     in maybe 0 Integer.toNaturalSaturating (target >>= \oid -> Quantity.evaluate (Projection.fullView gs) context gs oid quantity)
 
 -- CR 118.9: does a free-cast grant cover this card? Its filter is matched as
 -- matchesObjectFrom matches, with its `amount` evaluated into
@@ -1882,20 +1897,22 @@ targetPerspective :: PlayerId -> RowSource -> GameState -> PlayerId
 targetPerspective pid source gs = Maybe.fromMaybe pid (RowSource.object source >>= \oid -> Projection.controllerOf oid gs)
 
 -- Every question a cost change in force for `pid` asks of ONE target, answered:
--- its `whichTargets` and its `perTarget` (modifierAdjustments' `aims` and
--- `counted`). These are the only
+-- its `whichTargets` as 0 or 1 and its `perTarget` as the times the target
+-- repeats the change, -1 where it does not match (modifierAdjustments' `aims`
+-- and `counted`). These are the only
 -- reads the gathered adjustments make of CR 601.2c's targets, so two targets
 -- answering alike are interchangeable to them (Parun.Engine.Cost.aimingSignature).
 -- Asked of every such change in force rather than only those reaching the cost
 -- at hand: an extra question only splits targets further, which stays exact.
-targetQuestions :: PlayerId -> GameState -> Recipient.Recipient -> [Bool]
+targetQuestions :: PlayerId -> GameState -> Recipient.Recipient -> [Integer]
 targetQuestions pid gs r =
   let ask (source, effect) = case effect of
         PlayerEffect.ModifyCost modifier ->
           let matches wanted = case CostModifier.subject modifier of
                 CostSubject.Spells -> perTargetMatches pid source gs wanted r
                 CostSubject.Activations _ -> maybe False (\oid -> matchesObjectFor (targetPerspective pid source gs) source wanted oid gs) (Recipient.objectOf r)
-           in fmap matches (Maybe.catMaybes [CostModifier.whichTargets modifier, CostModifier.perTarget modifier])
+              weighed perTarget = if matches (PerTarget.matching perTarget) then toInteger (perTargetTimes pid source gs perTarget (Recipient.objectOf r)) else -1
+           in fmap (toInteger . fromEnum . matches) (Maybe.maybeToList (CostModifier.whichTargets modifier)) <> fmap weighed (Maybe.maybeToList (CostModifier.perTarget modifier))
         _ -> []
    in concatMap ask (applying pid gs)
 
@@ -2020,7 +2037,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
         modifierAdjustments
           [(source, modifier) | (source, PlayerEffect.ModifyCost modifier) <- effects, reaches source modifier]
           (\source wanted -> not (null (matchingTargets source wanted)))
-          (\source wanted -> Natural.length (matchingTargets source wanted))
+          (\source perTarget -> sum (fmap (perTargetTimes pid source gs perTarget . Just) (matchingTargets source (PerTarget.matching perTarget))))
           (perEachCount pid srcId gs)
       -- CR 702.193a/b: power-up's own reduction by "this permanent's mana cost",
       -- the rule's and not an effect's, so it is asked of the ability's stamp
@@ -4981,7 +4998,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
   PlayerEffect.CantActivateAbilities {} -> pure effect
   PlayerEffect.CantCastMoreThan _ -> pure effect
-  -- Not implemented: the references inside a `perEach` count (#5153).
+  -- Not implemented: the references inside a `perEach` or per-target count (#5153).
   PlayerEffect.ModifyCost {} -> pure effect
   PlayerEffect.AlternativeActivationCost _ -> pure effect
   PlayerEffect.PlayAdditionalLands _ -> pure effect

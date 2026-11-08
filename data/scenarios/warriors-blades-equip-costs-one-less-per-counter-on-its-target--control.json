@@ -1,0 +1,59 @@
+{
+  "description": "CR 601.2f Warrior's Blades' equip costs {1} less per +1/+1 counter on the creature it targets (control)",
+  "note": "One counter leaves Equip {2}, which one Mountain cannot pay, so the equip is not offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Warrior's Blades",
+            "label": "blades"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "ActivateManaAbility $mountain"
+          ]
+        }
+      }
+    }
+  ]
+}

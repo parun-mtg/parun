@@ -233,12 +233,6 @@ Nothing: every card `parun translate` stopped at is in the pool.
 
 ## Needs a capability
 
-### #6611: no cost reduction counts something on the target of the ability being activated
-
-- Warrior's Blades: its equip costs {1} less per +1/+1 counter on the creature
-  it targets; `CostModifier.perEach` reads the source, `perTarget` only counts
-  targets.
-
 ### #6568: a free-cast permission can't bound mana value by a count
 
 - Omnipresence: its free casts take spells with mana value at most the number
