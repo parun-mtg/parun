@@ -161,9 +161,9 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       deck <- deckOf s "round-trip" registry "4 Goblin Piker\n1 Blossom-Blessed Angel\n\nSideboard\n2 Wax // Wane\n"
       let text = DeckList.render Nothing deck
       Spec.assertBool s (Text.isInfixOf (Text.pack "2 Wax // Wane") text) ("the printed spelling: " <> show text)
-      Spec.assertBool s (Text.isInfixOf (Text.pack "1 Blossom-Blessed Angel\n") text) ("CR 723.4: the front name alone: " <> show text)
       again <- deckOf s "round-trip-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "1 Blossom-Blessed Angel\n") text) ("CR 723.4: the front name alone: " <> show text)
 
   -- A bad line costs the list its line, not its deck: the good lines still
   -- describe one, so a format can check it in the same report (#6396).
