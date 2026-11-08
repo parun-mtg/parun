@@ -211,6 +211,10 @@ colorIdentitySpec s registry = Spec.describe s "Color identity" $ do
   Spec.it s "CR 903.4d the back face is included" $ do
     ranger <- S.printingOf s registry "Daybreak Ranger"
     Spec.assertEqWith s "Nightfall Predator's red colour indicator" (Commander.colorIdentity ranger) (Set.fromList [Color.Red, Color.Green])
+  Spec.it s "CR 207.5 / 903.4 the colours circled on a Cryptic Spires are in its identity" $ do
+    spires <- S.printingOf s registry "Cryptic Spires"
+    Spec.assertEqWith s "nothing circled, no colour" (Commander.colorIdentity spires) Set.empty
+    Spec.assertEqWith s "blue and black circled" (Commander.colorIdentity spires {Printing.circled = Set.fromList [Color.Blue, Color.Black]}) (Set.fromList [Color.Blue, Color.Black])
 
 designationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 designationSpec s registry = Spec.describe s "Designation" $ do

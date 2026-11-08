@@ -40,6 +40,7 @@ import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.CopyCoverage as CopyCoverage
@@ -1720,6 +1721,14 @@ namesOf :: ObjectId -> GameState -> Set.Set CardName.CardName
 namesOf oid gs = case fmap Object.facing (lookupObject oid gs) of
   Just (Facing.FaceDown _) -> Set.empty
   _ -> maybe Set.empty (namesFor (lookupLayerOne oid gs) . Printing.card) (printingOfObject oid gs)
+
+-- CR 207.5: the colours circled on the printing behind an object, printed
+-- rules text (CR 613.1) that baseCharacteristics seeds. None for a face-down
+-- object, as `namesOf` above has no name for one (CR 708.2a).
+circledOf :: ObjectId -> GameState -> Set.Set Color.Color
+circledOf oid gs = case fmap Object.facing (lookupObject oid gs) of
+  Just (Facing.FaceDown _) -> Set.empty
+  _ -> foldMap Printing.circled (printingOfObject oid gs)
 
 -- `faceOf` IGNORING CR 708.2's substitution: what the object's own card shows,
 -- whichever way up the object is -- CR 709.3b's chosen half, CR 709.4's combined

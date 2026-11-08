@@ -5,6 +5,7 @@ module Parun.Codec.Placement where
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.FaceDownReason as FaceDownReason
 import qualified Parun.Codec.Keyword as Keyword
@@ -34,6 +35,7 @@ codec = Fields.object $ do
   faceDown <- Fields.defaulted "faceDown" Nothing (Common.maybe FaceDownReason.codec) Placement.faceDown
   protector <- Fields.defaulted "protector" Nothing (Common.maybe Label.codec) Placement.protector
   lights <- Fields.defaulted "lights" Set.empty (Common.set Common.natural) Placement.lights
+  circled <- Fields.defaulted "circled" Set.empty (Common.set Color.codec) Placement.circled
   pure
     Placement.MkPlacement
       { Placement.card = card,
@@ -49,5 +51,6 @@ codec = Fields.object $ do
         Placement.face = face,
         Placement.faceDown = faceDown,
         Placement.protector = protector,
-        Placement.lights = lights
+        Placement.lights = lights,
+        Placement.circled = circled
       }

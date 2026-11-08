@@ -1830,6 +1830,8 @@ noCharacteristics =
       PC.prototyped = False,
       -- CR 113.3a: no card, so no spell ability either.
       PC.spell = Face.defaultSpell,
+      -- CR 207.5: no card, so nothing circled.
+      PC.circled = Set.empty,
       -- CR 710.1b, for the same reason again.
       PC.flipped = Nothing
     }
@@ -2026,6 +2028,10 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.prototyped = False,
               -- CR 707.2: rules text, so copiable, for enchant's reason.
               PC.spell = Face.spell face,
+              -- CR 207.5: printed rules text (CR 613.1), so copiable for
+              -- enchant's reason. data/scenarios/cryptic-spires proves a copy
+              -- taps for the original's colours.
+              PC.circled = Game.circledOf oid gs,
               -- CR 707.3: a copy stamp's alternative reading, which
               -- Parun.Engine.Event.copiedSnapshot stamps. A printed flip card's
               -- alternative half is its card's, read at Game.resolveFaceFor.

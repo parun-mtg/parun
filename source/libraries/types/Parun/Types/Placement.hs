@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Keyword as Keyword
@@ -35,6 +36,8 @@ data Placement = MkPlacement
     -- | CR 310.9: the seat protecting it, a battle.
     protector :: Maybe Label.Label,
     -- | CR 718.1: the numbers lit up on its printing, an Attraction's.
-    lights :: Set.Set Natural
+    lights :: Set.Set Natural,
+    -- | CR 207.5: the colours circled on its printing, a Cryptic Spires'.
+    circled :: Set.Set Color.Color
   }
   deriving (Eq, Ord, Show)

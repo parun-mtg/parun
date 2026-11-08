@@ -70,4 +70,7 @@ data ManaProduction
     -- commanders' combined colour identity (Command Tower); none without a
     -- commander (CR 903.4f).
     InCommanderIdentity
+  | -- | CR 207.5: one mana of either colour circled on the source as its deck
+    -- was built (Cryptic Spires), read off ProjectedCharacteristics.circled.
+    Circled
   deriving (Eq, Ord, Show)

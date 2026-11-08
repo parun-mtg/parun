@@ -658,6 +658,7 @@ rewriteManaProduction pairs production = case production of
   ManaProduction.Pooled _ -> production
   ManaProduction.ProducedByTapped -> production
   ManaProduction.InCommanderIdentity -> production
+  ManaProduction.Circled -> production
 
 -- CR 612's word swap over an effect's AST. Cases on an effect's
 -- STRUCTURE -- does this arm carry a word a swap could reach -- never on which
