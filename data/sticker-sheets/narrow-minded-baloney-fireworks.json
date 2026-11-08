@@ -1,0 +1,78 @@
+{
+  "abilities": [
+    {
+      "abilities": [
+        {
+          "type": "Triggered",
+          "value": {
+            "condition": {
+              "type": "Attacks",
+              "value": {
+                "type": "Attacker",
+                "value": {}
+              }
+            },
+            "modal": {
+              "modes": [
+                {
+                  "clauses": [
+                    {
+                      "effects": [
+                        {
+                          "type": "GainLife",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "tickets": 2
+    },
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Reach"
+        }
+      ],
+      "tickets": 3
+    }
+  ],
+  "art": 3,
+  "name": "Narrow-Minded Baloney Fireworks",
+  "names": [
+    "Narrow-Minded",
+    "Baloney",
+    "Fireworks"
+  ],
+  "number": 12,
+  "oracleText": "{TK}{TK} — Whenever this creature attacks, you gain 2 life.\n{TK}{TK}{TK} — Vigilance, reach\n{TK}{TK} — 2/4\n{TK}{TK}{TK}{TK}{TK} — 7/7",
+  "powerToughness": [
+    {
+      "power": 2,
+      "tickets": 2,
+      "toughness": 4
+    },
+    {
+      "power": 7,
+      "tickets": 5,
+      "toughness": 7
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 module Parun.Types.Violation where
 
+import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardName as CardName
 
@@ -36,4 +37,10 @@ data Violation
   | -- | CR 903.5c / 903.5d: a card with a colour, in its colour identity or in
     -- the mana its basic land types make, outside its commander's identity.
     OutsideColorIdentity CardName.CardName
+  | -- | CR 123.2a: fewer sticker sheets than the minimum, from a constructed
+    -- player who brings any; the number brought, then the minimum.
+    TooFewStickerSheets Natural.Natural Natural.Natural
+  | -- | CR 123.2a: one sticker sheet a constructed player brings more than
+    -- once; its name, then how many.
+    DuplicateStickerSheet Text.Text Natural.Natural
   deriving (Eq, Ord, Show)

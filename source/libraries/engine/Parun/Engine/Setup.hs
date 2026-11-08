@@ -871,10 +871,8 @@ anteFromLibraries seated = do
 -- "up to three" (CR 123.2b) is chosen as the deck is built, so Deck.stickerSheets
 -- is that choice. Randomness, so Prompt.RandomStickerSheet, one draw
 -- at a time over the undrawn positions, filtered rather than trusted. None
--- brought means none chosen: that player plays without stickers.
---
--- Not implemented: CR 123.2a's at least ten unique sheets, which is deck
--- validation (#4886).
+-- brought means none chosen: that player plays without stickers. CR 123.2a's
+-- ten unique sheets are deck validation, Parun.Legality.stickerSheets.
 --
 -- A restart (CR 728.1) and a subgame (CR 730.2) each follow rule 103, so each
 -- draws again. A sticker that stayed on its object goes on applying off a sheet
