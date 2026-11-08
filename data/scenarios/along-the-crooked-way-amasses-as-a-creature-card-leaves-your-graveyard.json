@@ -119,7 +119,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.6c, 701.47a, 611.2c: Along the Crooked Way returns a creature card from its controller's graveyard, amasses Goblins 1 as that card leaves, and gives the Goblins and Orcs she controls menace",
+  "description": "CR 603.6, 701.47a, 611.2c: Along the Crooked Way returns a creature card from its controller's graveyard, amasses Goblins 1 as that card leaves, and gives the Goblins and Orcs she controls menace",
   "note": "The Grizzly Bears leaving alice's graveyard for her hand is the event the amass trigger sees. The activation reaches the new Goblin Army, a Goblin Piker and Brassclaw Orcs, but not her Hill Giant or bob's Goblin Piker.",
   "timeline": [
     {

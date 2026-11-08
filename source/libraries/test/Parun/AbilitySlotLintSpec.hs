@@ -616,24 +616,25 @@ armingCostSlots card =
         (Face.activatedAbilities card)
     )
 
--- The fifth half: the reserved slot a CR 118.12 cost an arming ability pays AS
--- IT RESOLVES binds (payGateBound), which Parun.Engine.Resolve.Common.foldPaid
--- writes onto the resolving object before CR 603.7c captures it -- Bolg of the
--- North's reflexive "that creature's power". LOOSE about which ability armed,
--- armingTargetSlots' caveat.
-armingPayGateSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
-armingPayGateSlots card =
-  Set.unions
-    ( fmap (payGateBound . ActivatedAbility.modal) (Face.activatedAbilities card)
-        <> fmap (payGateBound . TriggeredAbility.modal) (Face.triggeredAbilities card)
-    )
-
 -- The fourth half: CR 106.6's spend trigger, armed at payment with "that spell"
 -- bound as Binding.castSpell (Parun.Engine.Cost.armSpendTriggers) -- Pyromancer's
 -- Goggles' copy. LOOSE about which ability that AddMana names, armingTargetSlots'
 -- caveat.
 armingSpendSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
 armingSpendSlots card = if Set.null (spendArmedAbilities card) then Set.empty else Set.singleton Binding.castSpell
+
+-- The fifth half: the reserved slot a CR 118.12 cost paid AS the arming spell or
+-- ability RESOLVES binds (payGateBound), which Parun.Engine.Resolve.Common.foldPaid
+-- writes onto the resolving object before CR 603.7c captures it -- Bolg of the
+-- North's reflexive "that creature's power". LOOSE about which carrier armed,
+-- armingTargetSlots' caveat.
+armingPayGateSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
+armingPayGateSlots card =
+  Set.unions
+    ( payGateBound (Face.spell card)
+        : fmap (payGateBound . ActivatedAbility.modal) (Face.activatedAbilities card)
+          <> fmap (payGateBound . TriggeredAbility.modal) (Face.triggeredAbilities card)
+    )
 
 -- The delayed abilities a face's AddMana instructions arm as their mana is spent.
 spendArmedAbilities :: Face.Face Card.Type.Card -> Set.Set AbilityName.AbilityName

@@ -101,7 +101,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 702.8a, 601.3e, 701.70a: Bard's Company may be cast as though it had flash while its caster controls a Human, recruits as it enters, and pumps only her other creatures",
+  "description": "CR 702.8a, 601.3, 701.70a: Bard's Company may be cast as though it had flash while its caster controls a Human, recruits as it enters, and pumps only her other creatures",
   "note": "On bob's first upkeep alice controls no Human and the cast is refused with the four lands that later pay for it untapped; on his second she controls Elite Vanguard and it is cast. The recruit discards Memnite, a nonland card, so the Human Soldier token is created, and it and the Vanguard get +1/+1 while the Company stays 2/3.",
   "timeline": [
     {
