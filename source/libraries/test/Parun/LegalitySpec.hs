@@ -180,7 +180,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   -- Proficient Pyrodancer's player brings sheets for its stickers.
   Spec.it s "CR 123.2a: a constructed player bringing sticker sheets brings ten, each unique" $ do
     sheets <- committedSheets s
-    let main = [("Proficient Pyrodancer", 4), ("Mountain", 56)]
+    let main = [("Proficient Pyrodancer", 4), ("Mountain", 56 :: Natural.Natural)]
         firstName = foldMap StickerSheet.name (List.take 1 sheets)
     Spec.assertEqWith s "ten sheets are committed" (length sheets) 10
     none <- withSheets s registry RuleFamily.Constructed main []

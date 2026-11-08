@@ -227,7 +227,7 @@ stickerSheets :: Deck.Deck -> [Violation.Violation]
 stickerSheets deck =
   let brought = Deck.stickerSheets deck
       size = Natural.length brought
-      tallies = Map.fromListWith (+) [(StickerSheet.name sheet, 1) | sheet <- Foldable.toList brought]
+      tallies = Map.fromListWith (+) [(StickerSheet.name sheet, 1 :: Natural.Natural) | sheet <- Foldable.toList brought]
    in [Violation.TooFewStickerSheets size 10 | not (null brought), size < 10]
         <> [Violation.DuplicateStickerSheet name count | (name, count) <- Map.toList tallies, count > 1]
 
