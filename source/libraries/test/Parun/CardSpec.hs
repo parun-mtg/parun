@@ -4898,8 +4898,9 @@ playerEffectFilters playerEffect = case playerEffect of
   -- apply. An addition's components carry one each ("sacrifice a SWAMP"), held
   -- to a printed component's standard through costComponentFilters. The
   -- subject's criteria are not returned: neither a rule-702 designator nor CR
-  -- 605.1a's or 606.2's classification is a Filter. A `perEach` count's
-  -- Filters are read with the same Context, so they take the same framing.
+  -- 605.1a's or 606.2's classification is a Filter. A `perEach` or per-target
+  -- count's Filters are read with the same Context, so they take the same
+  -- framing.
   PlayerEffect.ModifyCost (CostModifier.MkCostModifier _ f targets perTarget perEach _ change) ->
     f
       : Maybe.maybeToList targets <> foldMap (pure . PerTarget.matching) perTarget <> foldMap (fmap snd . quantityFilters) (Maybe.maybeToList (PerTarget.each =<< perTarget) <> Maybe.maybeToList perEach) <> case change of
