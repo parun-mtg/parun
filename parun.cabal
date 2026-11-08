@@ -2222,6 +2222,7 @@ library registry
     Parun.DeckList
     Parun.Decks
     Parun.Ingest
+    Parun.Legality
     Parun.Registry
     Parun.StickerSheets
 
@@ -2400,6 +2401,7 @@ library test
     Parun.LearnSpec
     Parun.LeavesTriggerSpec
     Parun.LedgerSpec
+    Parun.LegalitySpec
     Parun.LibraryOrderSpec
     Parun.LifeReplacementSpec
     Parun.LifeTriggerSpec
@@ -2918,6 +2920,7 @@ library types
     Parun.Types.ForEach
     Parun.Types.ForEachNumber
     Parun.Types.ForetellCost
+    Parun.Types.Format
     Parun.Types.FreeCastFromHand
     Parun.Types.FromAnywhere
     Parun.Types.FromOutsideTheGame
@@ -3414,6 +3417,7 @@ library types
     Parun.Types.VentureMarkerEntered
     Parun.Types.View
     Parun.Types.ViewIs
+    Parun.Types.Violation
     Parun.Types.Visibility
     Parun.Types.Vote
     Parun.Types.VoteChoices

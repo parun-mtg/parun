@@ -721,7 +721,7 @@ startGameFromCards perform exemptions = do
       --
       -- Every one of them, as `commanderIds` takes every commander: CR 902.1's
       -- one card per player is a deck-construction rule parun does not enforce
-      -- (#4458), and rule 313.2 is stated of each vanguard card rather than of the
+      -- (#6398), and rule 313.2 is stated of each vanguard card rather than of the
       -- one the player designated, so there is nothing here to choose between.
       vanguardIds = Map.keysSet (Map.filterWithKey (\oid _ -> Vanguard.isVanguard oid gs) rebuilt)
       -- CR 315.3: "if a conspiracy card would leave the command zone, it remains

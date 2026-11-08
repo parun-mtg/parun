@@ -3,6 +3,7 @@ module Parun.Types.PlayOptions where
 import qualified Data.Set as Set
 import qualified Data.Word as Word
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.Format as Format
 
 -- | What `parun play` was asked for, seats numbered from one.
 data PlayOptions = MkPlayOptions
@@ -17,10 +18,12 @@ data PlayOptions = MkPlayOptions
     autoPass :: Bool,
     -- | CR 404.3: the seats that arrange cards put into their graveyard at the
     -- same time.
-    arrangesGraveyard :: Set.Set Natural.Natural
+    arrangesGraveyard :: Set.Set Natural.Natural,
+    -- | The format both decks must be legal in; any deck at all when absent.
+    format :: Maybe Format.Format
   }
   deriving (Eq, Show)
 
 -- | A seeded-from-the-clock game between two people, the first asked for.
 none :: PlayOptions
-none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, autoPass = True, arrangesGraveyard = Set.empty}
+none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, autoPass = True, arrangesGraveyard = Set.empty, format = Nothing}
