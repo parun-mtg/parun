@@ -58,7 +58,9 @@
         }
       ],
       "commanderDeckRules": [
-        "NoMaximumDeckSize"
+        {
+          "type": "NoMaximumDeckSize"
+        }
       ],
       "manaCost": [
         {

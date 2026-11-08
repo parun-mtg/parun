@@ -144,6 +144,7 @@ import qualified Parun.Types.CoinReading as CoinReading
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatRestriction as CombatRestriction
+import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
@@ -6655,6 +6656,8 @@ activatedAbilityFilters ability =
 --   * `counterability` -- CR 113.6g's condition (Exquisite Firecraft).
 --   * `mulliganActions` (CR 103.5b) and `openingHandActions` (CR 103.6) -- the two
 --     pregame actions, which `cardResolutionEffects` above does not reach.
+--   * `commanderDeckRules` -- CR 903.5e's cards of any colour identity, matched
+--     before the game with a bare context (Parun.Legality's inIdentity).
 --
 -- The remaining fields hold none: `name`, `manaCost`, `typeLine`, `loyalty`,
 -- `defense`, `vanguard`, `canBeYourCommander`, `claimsStartingPlayer`,
@@ -6709,6 +6712,7 @@ cardFilters card =
         <> unframed (Maybe.mapMaybe CostReduction.whichTargets (Face.costReductions card))
         <> concatMap (slotlessCost . specialActionFilters) (Face.specialActions card)
         <> ruleAbilitiesFilters (Projection.ruleAbilitiesOfFace card)
+        <> [(Unframed, matching) | CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules card)]
     )
     <> concatMap printedReplacementFilters (Face.replacementEffects card)
     <> concatMap staticAbilityFilters (Face.staticAbilities card)

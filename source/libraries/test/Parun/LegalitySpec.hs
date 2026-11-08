@@ -320,6 +320,14 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     small <- ledViolationsNamed s registry "commander" ["Whtz, the Bibliophile"] [("Plains", 98)] []
     Spec.assertEqWith s "Whtz leading 99" small [Violation.TooFewCards 99 100]
 
+  Spec.it s "CR 903.5e: Seluma, Light of Aysen admits Angel and basic land cards of any colour identity" $ do
+    seluma <- ledViolationsNamed s registry "commander" ["Seluma, Light of Aysen"] [("Illusory Angel", 1), ("Island", 1), ("Plains", 97)] []
+    Spec.assertEqWith s "Seluma leading a blue Angel and an Island" seluma []
+    other <- ledViolationsNamed s registry "commander" ["Cho-Manno, Revolutionary"] [("Illusory Angel", 1), ("Island", 1), ("Plains", 97)] []
+    Spec.assertEqWith s "Cho-Manno leading both" other [Violation.OutsideColorIdentity (nameOf "Illusory Angel"), Violation.OutsideColorIdentity (nameOf "Island")]
+    brainstorm <- ledViolationsNamed s registry "commander" ["Seluma, Light of Aysen"] [("Brainstorm", 1), ("Plains", 98)] []
+    Spec.assertEqWith s "Seluma leading a blue non-Angel" brainstorm [Violation.OutsideColorIdentity (nameOf "Brainstorm")]
+
   Spec.it s "CR 903.3: a Commander deck with no commander is refused" $ do
     found <- ledViolations s registry RuleFamily.Commander [] [("Mountain", 100)] []
     Spec.assertEqWith s "violations" found [Violation.NoCommander]
