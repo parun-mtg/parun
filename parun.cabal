@@ -380,6 +380,8 @@ library codec
     Parun.Codec.ChangeTextSpec
     Parun.Codec.ChangeWord
     Parun.Codec.ChangeWordSpec
+    Parun.Codec.CharacteristicColors
+    Parun.Codec.CharacteristicColorsSpec
     Parun.Codec.CharacteristicPT
     Parun.Codec.CharacteristicPTSpec
     Parun.Codec.Check
@@ -2680,6 +2682,7 @@ library types
     Parun.Types.ChangeTargets
     Parun.Types.ChangeText
     Parun.Types.ChangeWord
+    Parun.Types.CharacteristicColors
     Parun.Types.CharacteristicPT
     Parun.Types.Check
     Parun.Types.Choices

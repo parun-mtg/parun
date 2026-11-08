@@ -44,6 +44,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.Cost as Cost
@@ -443,19 +444,30 @@ commanderColorIdentity pid gs = case Maybe.mapMaybe (\oid -> commanderCardOf oid
 -- mana cost and rules text, of its colour indicator and of its colour-defining
 -- ability, over every face (CR 903.4d, 903.4e). Rules text is Face.oracleText
 -- less its reminder text (CR 903.4c), plus the symbols circled on this copy
--- (CR 207.5).
---
--- Not implemented: the colour CR 903.4b chooses before the game (#6225).
+-- (CR 207.5) and the colour chosen for it as a commander (CR 903.4b).
 colorIdentity :: Printing.Printing -> Set.Set Color.Color
 colorIdentity printing = Printing.circled printing <> foldMap ofFace (Card.Type.faces (Printing.card printing))
   where
     ofFace face =
       Face.colorIndicator face
-        <> Foldable.fold (Face.characteristicColors face)
+        <> foldMap (definedColors (Printing.chosenColor printing)) (Face.characteristicColors face)
         <> symbolColors (foldMap ManaCost.unwrap (Face.manaCost face))
         <> symbolColors (foldMap ManaSymbolText.rulesTextSymbols (Face.oracleText face))
     symbolColors :: [ManaSymbol.ManaSymbol] -> Set.Set Color.Color
     symbolColors = Set.fromList . concatMap Quantity.symbolColors
+
+-- | CR 604.3 / 903.4b: the colours a colour-defining ability defines, given
+-- the colour chosen for it before the game, if any (CR 607.5a).
+definedColors :: Maybe Color.Color -> CharacteristicColors.CharacteristicColors -> Set.Set Color.Color
+definedColors chosen defined =
+  CharacteristicColors.colors defined <> (if CharacteristicColors.chosen defined then foldMap Set.singleton chosen else Set.empty)
+
+-- | CR 903.4b / 607.2p: the colour chosen before the game for this object's
+-- commander card, kept as it changes zones; Nothing for an object no
+-- designated card is, so a copy of a commander and another deck's copy of its
+-- card made no choice (CR 607.5a).
+chosenColorOf :: ObjectId -> GameState -> Maybe Color.Color
+chosenColorOf oid gs = commanderCardOf oid gs >>= (`Game.printingOf` gs) . fst >>= Printing.chosenColor
 
 -- | CR 903.10a / CR 704.6c: "a player who's been dealt 21 or more combat damage
 -- by the same commander over the course of the game loses the game". The

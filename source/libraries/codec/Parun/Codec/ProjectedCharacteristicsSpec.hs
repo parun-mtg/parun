@@ -137,6 +137,9 @@ testCharacteristics =
       -- Two empty modes, off the default of one (CR 707.2).
       PC.spell = Face.Type.defaultSpell {Modal.modes = Modal.modes (Face.Type.defaultSpell :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) <> Modal.modes Face.Type.defaultSpell},
       PC.circled = Set.fromList [Color.Blue, Color.Black],
+      -- Synthetic for prepare's reason: a Mountain has no colour-defining
+      -- ability (CR 604.3).
+      PC.definesChosenColor = True,
       -- The recursive field, carrying the all-default record so the nested
       -- object's own defaults are exercised too (CR 707.3).
       PC.flipped = Just minimalCharacteristics
@@ -187,6 +190,7 @@ testCharacteristicsJson =
     <> "\"prototyped\":true,"
     <> "\"spell\":{\"modes\":[{},{}]},"
     <> "\"circled\":[\"Blue\",\"Black\"],"
+    <> "\"definesChosenColor\":true,"
     <> "\"flipped\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}}"
 
 -- | Every field but the two required ones at its default.
@@ -242,6 +246,7 @@ minimalCharacteristics =
       PC.prototyped = False,
       PC.spell = Face.Type.defaultSpell,
       PC.circled = Set.empty,
+      PC.definesChosenColor = False,
       PC.flipped = Nothing
     }
 

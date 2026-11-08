@@ -99,6 +99,7 @@ codec = Fields.object $ do
   prototyped <- Fields.defaulted "prototyped" False Common.boolean PC.prototyped
   spell <- Fields.defaulted "spell" Face.Type.defaultSpell (Modal.codec Card.codec (GrantedAbility.codec Card.codec)) PC.spell
   circled <- Fields.defaulted "circled" Set.empty (Common.set Color.codec) PC.circled
+  definesChosenColor <- Fields.defaulted "definesChosenColor" False Common.boolean PC.definesChosenColor
   flipped <- Fields.defaulted "flipped" Nothing (Common.maybe codec) PC.flipped
   pure
     PC.MkProjectedCharacteristics
@@ -151,5 +152,6 @@ codec = Fields.object $ do
         PC.prototyped = prototyped,
         PC.spell = spell,
         PC.circled = circled,
+        PC.definesChosenColor = definesChosenColor,
         PC.flipped = flipped
       }

@@ -3,6 +3,7 @@
 module Parun.Codec.Printing where
 
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Card as Card
@@ -20,15 +21,16 @@ import qualified Parun.Types.Printing as Printing
 -- | The whole record, which is what a card FILE holds and what
 -- Parun.CodecIntegrationSpec's honesty round trip over the corpus reads.
 --
--- The card's own keys plus CR 718.1's `lights` and CR 207.5's `circled`, which
--- a card file never writes: Parun.Registry reads files as cards, and both
--- belong to a printing.
+-- The card's own keys plus CR 718.1's `lights`, CR 207.5's `circled` and CR
+-- 903.4b's `chosenColor`, which a card file never writes: Parun.Registry reads
+-- files as cards, and each belongs to a printing.
 codec :: Codec.Codec Printing.Printing
 codec = Fields.object $ do
   card <- Card.fields Printing.card
   lights <- Fields.defaulted "lights" Set.empty (Common.set Common.natural) Printing.lights
   circled <- Fields.defaulted "circled" Set.empty (Common.set Color.codec) Printing.circled
-  pure Printing.MkPrinting {Printing.card = card, Printing.lights = lights, Printing.circled = circled}
+  chosenColor <- Fields.defaulted "chosenColor" Nothing (Common.maybe Color.codec) Printing.chosenColor
+  pure Printing.MkPrinting {Printing.card = card, Printing.lights = lights, Printing.circled = circled, Printing.chosenColor = chosenColor}
 
 -- | A printing in a game state's intern table: its NAME where a resolver can
 -- reproduce it, and the whole record where none can.
@@ -52,9 +54,9 @@ codec = Fields.object $ do
 --
 -- The equality check is what makes @Named@ safe: a resolver answering with a
 -- DIFFERENT card under this name would decode to that other card, so the name is
--- not written. A printing with lights or circled colours is inlined for the
--- same reason: a name resolves to a card, never to which printing of it (CR
--- 718.1, 207.5). Parun.Codec.PrintingSpec's "a name the resolver answers
+-- not written. A printing with lights, circled colours or a chosen colour is
+-- inlined for the same reason: a name resolves to a card, never to which
+-- printing of it (CR 718.1, 207.5, 903.4b). Parun.Codec.PrintingSpec's "a name the resolver answers
 -- differently for is written out in full" is that case.
 reference :: (CardName.Type.CardName -> Maybe Card.Type.Card) -> Codec.Codec Printing.Printing
 reference resolve =
@@ -71,7 +73,7 @@ reference resolve =
             Arm.valueSchema = Arm.RequiredValue (Codec.schema CardName.codec),
             Arm.projectValue = \printing ->
               let name = firstFaceName (Printing.card printing)
-               in if resolve name == Just (Printing.card printing) && Set.null (Printing.lights printing) && Set.null (Printing.circled printing)
+               in if resolve name == Just (Printing.card printing) && Set.null (Printing.lights printing) && Set.null (Printing.circled printing) && Maybe.isNothing (Printing.chosenColor printing)
                     then Just (Just (Codec.encode CardName.codec name))
                     else Nothing
           }

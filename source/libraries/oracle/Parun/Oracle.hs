@@ -32,7 +32,7 @@ import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
-import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -160,10 +160,14 @@ faceAbilities face =
         <> [[] | unread]
 
 -- | CR 604.3 / 105.2: the line by which a card named `self` defines its
--- colours: "is all colors" (Transguild Courier). Any other set is not spelled
--- out here.
-colorDefining :: Text.Text -> Set.Set Color.Color -> [Text.Text]
-colorDefining self colors = [self <> Text.pack " is all colors." | colors == Set.fromList [minBound .. maxBound]]
+-- colours: "is all colors" (Transguild Courier), or CR 607.2p's linked pair
+-- choosing it before the game (The Prismatic Piper). Any other set is not
+-- spelled out here.
+colorDefining :: Text.Text -> CharacteristicColors.CharacteristicColors -> [Text.Text]
+colorDefining self defined = case (Set.toList (CharacteristicColors.colors defined), CharacteristicColors.chosen defined) of
+  ([], True) -> [Text.pack "If " <> self <> Text.pack " is your commander, choose a color before the game begins. " <> self <> Text.pack " is the chosen color."]
+  (colors, False) | Set.fromList colors == Set.fromList [minBound .. maxBound] -> [self <> Text.pack " is all colors."]
+  _ -> []
 
 -- | CR 100.2a: the line by which a card named `self` lifts the four-card
 -- limit for its own name.

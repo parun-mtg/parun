@@ -45,6 +45,7 @@ import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeMode as ChangeMode
+import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
@@ -1270,7 +1271,8 @@ applyCopyException this own snapshot exception = case exception of
   CopyException.SetColors colors ->
     snapshot
       { PC.colors = colors,
-        PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot)
+        PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
+        PC.definesChosenColor = False
       }
   -- CR 707.9b over CR 202.1: no mana cost, so CR 202.3a's mana value 0. The
   -- colours stay as copied, since the snapshot carries them apart from the cost;
@@ -1306,7 +1308,8 @@ applyCopyException this own snapshot exception = case exception of
     Just mine ->
       snapshot
         { PC.colors = PC.colors mine,
-          PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot)
+          PC.keywords = Map.filterWithKey (\keyword _ -> not (definesColorless (Set.singleton keyword))) (PC.keywords snapshot),
+          PC.definesChosenColor = False
         }
 
 -- CR 613.2a / 613.2b: an object's LAYER 1a value -- `copiableCharacteristics`
@@ -1832,6 +1835,8 @@ noCharacteristics =
       PC.spell = Face.defaultSpell,
       -- CR 207.5: no card, so nothing circled.
       PC.circled = Set.empty,
+      -- CR 604.3: no card, so no colour-defining ability.
+      PC.definesChosenColor = False,
       -- CR 710.1b, for the same reason again.
       PC.flipped = Nothing
     }
@@ -2032,6 +2037,8 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- enchant's reason. data/scenarios/cryptic-spires proves a copy
               -- taps for the original's colours.
               PC.circled = Game.circledOf oid gs,
+              -- CR 607.2p: rules text, so copiable for enchant's reason.
+              PC.definesChosenColor = any CharacteristicColors.chosen (Face.characteristicColors face),
               -- CR 707.3: a copy stamp's alternative reading, which
               -- Parun.Engine.Event.copiedSnapshot stamps. A printed flip card's
               -- alternative half is its card's, read at Game.resolveFaceFor.
@@ -2166,6 +2173,9 @@ withMergedAbilities donor base =
       -- never does (MTGJSON of 2026-08-23, cards with mutate and a * in
       -- either box, no hit). Base first is arbitrary.
       PC.characteristicPT = PC.characteristicPT base <|> PC.characteristicPT donor,
+      -- CR 604.3 / 607.2p: a component's colour-defining ability, its choice
+      -- read off the commander card among them (Commander.chosenColorOf).
+      PC.definesChosenColor = PC.definesChosenColor base || PC.definesChosenColor donor,
       -- CR 702.140e / 118.8 / 118.9: a cost line in a component's rules text is
       -- one of its abilities too, so a duplicate of the merged permanent owes
       -- every component's. Parun.ConjureSpec's "CR 702.140e a duplicate of a
@@ -2187,10 +2197,15 @@ printedColorsOf face = colorsWithCost face (Face.manaCost face)
 -- the start of layer 5 (CR 613.3): a copy exception replaces these colours in
 -- the snapshot, and every printed such ability says "all colors" or
 -- "colorless", which hold no colour word for layer 3 to change (CR 612.2).
+--
+-- The chosen colour (CR 607.2p) is not here: it is the object's and not its
+-- card's, so Projection.applyColorDefining adds it, and a CDA naming only it
+-- leaves an object no choice reached colorless (CR 607.5a).
 colorsWithCost :: Face.Face Card.Type.Card -> Maybe ManaCost.ManaCost -> Set Color.Color
 colorsWithCost face cost =
-  Maybe.fromMaybe
+  maybe
     (Set.union (Face.colorIndicator face) (manaCostColors cost))
+    CharacteristicColors.colors
     (Face.characteristicColors face)
 
 -- CR 702.114a. The one place that decides what devoid means.

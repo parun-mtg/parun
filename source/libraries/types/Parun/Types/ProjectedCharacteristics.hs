@@ -437,6 +437,12 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- | CR 207.5: the colours circled on Cryptic Spires, printed rules text
     -- (CR 613.1), so copiable (CR 707.2). ManaProduction.Circled reads it.
     circled :: Set.Set Color.Color,
+    -- | CR 604.3 / 607.2p: it has a colour-defining ability saying it is the
+    -- colour chosen before the game (The Prismatic Piper). Copiable rules text,
+    -- applied at the start of layer 5 (CR 613.3) with the choice read off the
+    -- object itself (Parun.Engine.Commander.chosenColorOf), so a copy takes the
+    -- ability but not the choice (CR 607.5a).
+    definesChosenColor :: Bool,
     -- | CR 707.3 / 710.1b: a copy snapshot's reading once the copy is flipped,
     -- and Nothing for copiable values with no flip card's alternative half.
     -- Stamped by Parun.Engine.Event.copiedSnapshot; a printed flip card's
