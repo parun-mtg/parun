@@ -502,13 +502,10 @@ offerOf gs prompt = case prompt of
     subset (Just source) [("purpose", R.Text (Text.pack (show purpose))), ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (Just 0, most) (fmap object candidates)
   -- CR 608.2d.
   Prompt.ChooseLoopMembers _ _ source members -> subset (Just source) [] (Just 0, Nothing) (fmap (Reply.encode Reply.recipient namer) members)
-  -- CR 700.2a: the legal modes by index, as many as the selection takes, and
-  -- (CR 700.2d) whether one may be chosen again.
-  --
-  -- Not implemented: each mode's Oracle text, so a mode is named by its index
-  -- (#6618).
+  -- CR 700.2a: the legal modes by index, each named, as many as the selection
+  -- takes, and (CR 700.2d) whether one may be chosen again.
   Prompt.ChooseModes _ _ source legal selection ->
-    subset (Just source) [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection] (Just (Modal.leastOf selection), Just (Modal.mostOf selection)) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
+    subset (Just source) (("names", R.Array (fmap (modeName gs source) (Set.toList legal))) : [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection]) (Just (Modal.leastOf selection), Just (Modal.mostOf selection)) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
   -- CR 702.47b: the cards in the order the answer names them, the first
   -- happening first.
   --
@@ -646,6 +643,16 @@ replacementEntry gs entry =
       self = Render.snapshotName (Projection.project source gs)
       printed = PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEntry.effect entry) Set.empty Nothing
    in fields (("source", object source) : [("text", R.Text text) | text <- take 1 (Oracle.Continuous.replacement (Oracle.contextOf self []) printed)])
+
+-- | CR 700.2a: a mode as its Oracle text, as it reads now
+-- (Resolve.resolvingMode) or, for a spell whose modes are not yet chosen, as
+-- its face prints it; null where it does not render or renders empty.
+modeName :: GameState.GameState -> ObjectId.ObjectId -> ModeIndex.ModeIndex -> R.Reply
+modeName gs source idx = maybe R.Null R.Text (List.find (not . Text.null) texts)
+  where
+    self = Render.snapshotName (Projection.project source gs)
+    printed = Projection.View.spellFaceOf source gs >>= Modal.modeAtIndex idx . Face.spell
+    texts = foldMap (Oracle.Effect.mode (Oracle.contextOf self [])) (Foldable.asum [Resolve.resolvingMode source idx gs, printed])
 
 -- | CR 608.2d: a branch as the Oracle text of its clause, its riders aside,
 -- in the resolving object's mode as it reads now (Resolve.resolvingMode), or

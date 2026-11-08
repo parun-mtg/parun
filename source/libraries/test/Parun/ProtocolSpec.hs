@@ -393,6 +393,12 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "beside the results, unclamped, and the amount" (fmap (\key -> field key (Protocol.offerOf gs adjust)) ["results", "amount", "cost"]) [Just (R.Array [R.Number 4, R.Number (-1)]), Just (R.Number 2), Nothing]
     Spec.assertBool s (all (Scenario.withinOffer (Prompt.ChooseAssistAmount alice S.alice o7 3)) [0, 3] && not (Scenario.withinOffer (Prompt.ChooseAssistAmount alice S.alice o7 3) 4)) "the bounds are the offer's"
 
+  Spec.it s "CR 700.2a a modal spell's legal modes are each named by its Oracle text" $ do
+    charm <- S.printingOf s registry "Ebony Charm"
+    let (spell, gs) = S.addHandCard charm S.alice (Setup.emptyGame S.bothPlayers)
+        modes = Prompt.ChooseModes (Decider.MkDecider S.alice) S.alice spell (Set.fromList (fmap ModeIndex.MkModeIndex [0, 2])) (ModeSelection.ChooseExactly 1)
+    Spec.assertEqWith s "the first and third modes" (field "names" (Protocol.offerOf gs modes)) (Just (R.Array (fmap (R.Text . Text.pack) ["Target opponent loses 1 life and you gain 1 life.", "Target creature gains fear until end of turn."])))
+
   Spec.it s "a prompt answered by a set or a sequence offers each candidate as an element of the answer" $ do
     giant <- S.printingOf s registry "Hill Giant"
     let o7 = ObjectId.MkObjectId 7
@@ -415,6 +421,7 @@ spec s registry = Spec.describe s "Protocol" $ do
         scry = Prompt.ChooseScry alice S.alice [card, other]
     Spec.assertEqWith s "CR 700.2a the legal modes by index" (among modes) [R.Number 0, R.Number 2]
     Spec.assertEqWith s "CR 700.2d as many as the selection takes, one chosen again" (told modes ["least", "most", "repeats"]) [Just (R.Number 2), Just (R.Number 2), Just (R.Boolean True)]
+    Spec.assertEqWith s "and null for a mode with no text" (told modes ["names"]) [Just (R.Array [R.Null, R.Null])]
     Spec.assertEqWith s "and a mode named twice reads back" (Protocol.decodeAnswer modes (R.Array (replicate 2 (R.Number 2)))) (Right (Seq.fromList [mode 2, mode 2]))
     Spec.assertEqWith s "CR 702.47b the cards read back in the order named" (Protocol.decodeAnswer splice (R.Array (reverse (among splice)))) (Right [card, o9])
     Spec.assertEqWith s "CR 701.23j at least one place, each named" (told zones ["least", "names"]) [Just (R.Number 1), Just (R.Array (fmap R.Text [Text.pack "a graveyard", Text.pack "outside the game"]))]
