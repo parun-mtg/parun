@@ -16,6 +16,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.Printing as Printing
@@ -32,9 +33,11 @@ check format deck = concatMap ($ deck) (rules format)
 rules :: Format.Format -> [Deck.Deck -> [Violation.Violation]]
 rules format = case format of
   -- CR 100.2a / 100.4a.
-  Format.Constructed -> [atLeast 60, copiesAtMost 4, sideboardAtMost 15]
-  -- CR 100.2b: no copy limit beyond the product's own.
-  Format.Limited -> [atLeast 40]
+  Format.Constructed -> [atLeast 60, copiesAtMost (Just 4) (Map.unionWith (+) <$> Deck.cards <*> Deck.sideboard), sideboardAtMost 15]
+  -- CR 100.2b: no copy limit beyond the product's own, but a card's own
+  -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
+  -- tenth in the sideboard.
+  Format.Limited -> [atLeast 40, copiesAtMost Nothing Deck.cards]
 
 -- CR 100.2a / 100.2b: a minimum deck size, counting the deck and not the
 -- sideboard (CR 100.4).
@@ -43,14 +46,20 @@ atLeast least deck =
   let size = sum (Deck.cards deck)
    in [Violation.TooFewCards size least | size < least]
 
--- CR 100.2a / 100.4a: at most this many cards of one English name other than
--- basic land cards, deck and sideboard together. Names are compared as
+-- CR 100.2a / 100.4a: at most so many cards of one English name, among the
+-- cards `counted` picks: the format's limit, or the card's own deckLimit where
+-- it prints one, and none for a basic land card. Names are compared as
 -- Parun.Engine.Card.combined has them; no card in the pool has an
 -- interchangeable name (CR 201.3b), so equal names are the whole of it.
-copiesAtMost :: Natural.Natural -> Deck.Deck -> [Violation.Violation]
-copiesAtMost limit deck =
-  let counted = Map.fromListWith (+) [(Face.name (Card.combined card), count) | (printing, count) <- Map.toList (Map.unionWith (+) (Deck.cards deck) (Deck.sideboard deck)), let card = Printing.card printing, not (basicLand card)]
-   in [Violation.TooManyCopies written count limit | (written, count) <- Map.toList counted, count > limit]
+copiesAtMost :: Maybe Natural.Natural -> (Deck.Deck -> Map.Map Printing.Printing Natural.Natural) -> Deck.Deck -> [Violation.Violation]
+copiesAtMost limit counted deck =
+  let tallies = Map.fromListWith (\(_, new) (face, old) -> (face, old + new)) [(Face.name face, (face, count)) | (printing, count) <- Map.toList (counted deck), let card = Printing.card printing, not (basicLand card), let face = Card.combined card]
+   in [Violation.TooManyCopies written count most | (written, (face, count)) <- Map.toList tallies, Just most <- [limitOf face], count > most]
+  where
+    limitOf face = case Face.deckLimit face of
+      Nothing -> limit
+      Just (DeckLimit.UpTo most) -> Just most
+      Just DeckLimit.AnyNumber -> Nothing
 
 -- CR 100.4a: a maximum sideboard size.
 sideboardAtMost :: Natural.Natural -> Deck.Deck -> [Violation.Violation]

@@ -127,6 +127,7 @@ faceDownFace listed =
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
       Face.anteOnly = False,
+      Face.deckLimit = Nothing,
       Face.keywords = Map.fromSet (const 1) (FaceDownCharacteristics.keywords listed),
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,

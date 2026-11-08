@@ -66,6 +66,30 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     found <- violations s registry Format.Limited [("Grizzly Bears", 5), ("Mountain", 34)] []
     Spec.assertEqWith s "violations" found [Violation.TooFewCards 39 40]
 
+  Spec.it s "CR 100.2a: a deck can have up to nine cards named Nazgul" $ do
+    found <- violations s registry Format.Constructed [("Nazgûl", 9), ("Mountain", 51)] []
+    Spec.assertEqWith s "violations" found []
+
+  Spec.it s "CR 100.2a: ten cards named Nazgul are one too many" $ do
+    found <- violations s registry Format.Constructed [("Nazgûl", 10), ("Mountain", 50)] []
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+
+  Spec.it s "CR 100.4a: a card's own limit counts the sideboard too" $ do
+    found <- violations s registry Format.Constructed [("Nazgûl", 9), ("Mountain", 51)] [("Nazgûl", 1)]
+    Spec.assertEqWith s "violations" found [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+
+  Spec.it s "CR 100.2a: a deck can have any number of cards named Relentless Rats" $ do
+    found <- violations s registry Format.Constructed [("Relentless Rats", 40), ("Mountain", 20)] [("Relentless Rats", 15)]
+    Spec.assertEqWith s "violations" found []
+
+  -- Nazgûl's ruling of 2023-06-16: in limited play the rest stay in the
+  -- sideboard (CR 100.4b), so the deck alone is counted.
+  Spec.it s "CR 100.2b: a limited deck can have nine Nazgul but not ten" $ do
+    nine <- violations s registry Format.Limited [("Nazgûl", 9), ("Mountain", 31)] [("Nazgûl", 3)]
+    Spec.assertEqWith s "nine" nine []
+    ten <- violations s registry Format.Limited [("Nazgûl", 10), ("Mountain", 30)] []
+    Spec.assertEqWith s "ten" ten [Violation.TooManyCopies (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+
   Spec.it s "a format is named on the command line by its name" $
     Spec.assertEqWith s "round trip" (traverse (Legality.named . Legality.name) [minBound .. maxBound]) (Just [minBound .. maxBound :: Format.Format])
 

@@ -1,6 +1,9 @@
 {
   "faces": [
     {
+      "deckLimit": {
+        "type": "AnyNumber"
+      },
       "manaCost": [
         {
           "type": "Generic",

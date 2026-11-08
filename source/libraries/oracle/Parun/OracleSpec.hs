@@ -68,6 +68,7 @@ import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
+import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
@@ -223,6 +224,11 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Protection from red")) (Oracle.render (card Layout.Normal [[Keyword.Protection (Protection.MkProtection (Filter.HasColor Color.Red) Nothing)]]))
     Spec.assertEq s (Just (Text.pack "Affinity for artifacts")) (Oracle.render (card Layout.Normal [[Keyword.Affinity (Filter.HasCardType CardType.Artifact)]]))
     Spec.assertEq s (Just (Text.pack "Nonbasic landwalk")) (Oracle.render (card Layout.Normal [[Keyword.Landwalk (Filter.Not (Filter.HasSupertype Supertype.Basic))]]))
+
+  -- CR 100.2a: a card's own deck limit, named by the card itself.
+  Spec.it s "render prints a deck limit" $ do
+    Spec.assertEq s (Just (Text.pack "A deck can have up to nine cards named Spark.")) (Oracle.render (withFace (\f -> f {Face.deckLimit = Just (DeckLimit.UpTo 9)})))
+    Spec.assertEq s (Just (Text.pack "A deck can have any number of cards named Spark.")) (Oracle.render (withFace (\f -> f {Face.deckLimit = Just DeckLimit.AnyNumber})))
 
   -- CR 602.1a: "[Cost]: [Effect.]"; CR 107.5's {T}; CR 106.1's mana.
   Spec.it s "render prints an activated mana ability" $ do
