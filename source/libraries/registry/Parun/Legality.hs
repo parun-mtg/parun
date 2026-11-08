@@ -175,6 +175,12 @@ commanders settings deck
 -- reads it, each candidate judged by its printed characteristics with nothing
 -- in play (Parun.Engine.Companion.fulfilled's posture).
 --
+-- CR 903.5e: a ChosenExtraColor filter admits the cards it matches whose
+-- identity the commander's plus one colour covers, the same colour for every
+-- such card. A deck list states no colour, so for each filter the colour
+-- admitting the most of its cards stands in, the first in Color's order on a
+-- tie: the deck is legal under some choice exactly when it is under that one.
+--
 -- CR 903.12e: under a Brawl commander with no colour, basic land cards of one
 -- basic land type are exempt. A deck list states no type, so the type the most
 -- basic land cards have stands in, the first in Subtype's order on a tie:
@@ -190,8 +196,15 @@ inIdentity brawl deck
           exempt printing = basicLand (Printing.card printing) && any (`Set.member` landTypes printing) chosen
           widened = [matching | printing <- Set.toList (Deck.commander deck), CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
           context = Filter.contextFor Teams.none Nothing Nothing
-          admitted printing = any (Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing)))) widened
-          outside printing = not (exempt printing) && not (admitted printing) && not (Set.isSubsetOf (deckColors printing) identity)
+          matches printing = Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing)))
+          admitted printing = any (matches printing) widened
+          within extra printing = Set.isSubsetOf (deckColors printing) (foldMap Set.singleton extra <> identity)
+          candidates = [printing | printing <- Map.keys (Deck.cards deck), not (exempt printing), not (admitted printing), not (within Nothing printing)]
+          admits matching color printing = matches printing matching && within (Just color) printing
+          choose matching = admits matching (List.maximumBy (Ord.comparing (\color -> (length (filter (admits matching color) candidates), Ord.Down color))) [minBound .. maxBound])
+          extraColors = [choose matching | printing <- Set.toList (Deck.commander deck), CommanderDeckRule.ChosenExtraColor matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
+          extended printing = any ($ printing) extraColors
+          outside printing = not (exempt printing) && not (admitted printing) && not (within Nothing printing) && not (extended printing)
           byName = Map.fromList [(Face.name (Card.combined (Printing.card printing)), printing) | printing <- Map.keys (Deck.cards deck)]
        in [Violation.OutsideColorIdentity written | (written, printing) <- Map.toList byName, outside printing]
 
