@@ -2,8 +2,9 @@
 -- deck is that?
 --
 -- A deck list is a count and a card name per line, optionally naming a printing
--- by set code and collector number, with each thing a player brings beside
--- the deck (Parun.Types.Deck's fields) written as a section of its own. Every
+-- by set code and collector number and the choices made for that copy as the
+-- deck was built, with each thing a player brings beside the deck
+-- (Parun.Types.Deck's fields) written as a section of its own. Every
 -- name, printing and sticker sheet is resolved through a Parun.Registry, which
 -- is the only thing that knows what cards and sheets exist; this module decides
 -- what a LINE means and never what a name means.
@@ -14,6 +15,7 @@
 module Parun.DeckList where
 
 import qualified Data.Char as Char
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -23,15 +25,24 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Card as EngineCard
+import qualified Parun.Engine.ManaAbility as ManaAbility
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
+import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Ingest as Ingest
 import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CharacteristicColors as CharacteristicColors
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.ManaProduction as ManaProduction
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingEntry as PrintingEntry
 import qualified Parun.Types.PrintingTable as PrintingTable
@@ -65,7 +76,60 @@ data Problem
     VanguardRepeated Natural.Natural CardName.CardName
   | -- | CR 123.2: a name in the Stickers section that no sticker sheet has.
     NoSuchStickerSheet Natural.Natural Text.Text
+  | -- | A braced annotation naming no choice, or not the colours its choice
+    -- takes (`choiceOf`).
+    BadAnnotation Natural.Natural Text.Text
+  | -- | An annotation recording a choice the line's card makes none of there.
+    ChoiceNotMade Natural.Natural CardName.CardName Choice
+  | -- | A card that makes a choice as its deck is built, written without it.
+    ChoiceMissing Natural.Natural CardName.CardName Choice
+  | -- | One choice recorded twice on one line.
+    ChoiceRepeated Natural.Natural CardName.CardName Choice
   deriving (Eq, Ord, Show)
+
+-- | A choice made for one copy of a card as its deck is built, which a line
+-- records after the name as @{circled: W U}@.
+data Choice
+  = -- | CR 207.5: Printing.circled.
+    CircledColors
+  | -- | CR 903.4b: Printing.chosenColor.
+    CommanderColor
+  deriving (Bounded, Enum, Eq, Ord, Show)
+
+-- | The word an annotation names a choice by.
+keyword :: Choice -> Text.Text
+keyword choice = Text.pack $ case choice of
+  CircledColors -> "circled"
+  CommanderColor -> "color"
+
+-- | How many colours a choice takes: CR 207.5's two, CR 903.4b's one.
+colorCount :: Choice -> Int
+colorCount choice = case choice of
+  CircledColors -> 2
+  CommanderColor -> 1
+
+-- | The colours a printing records for a choice.
+chosenFor :: Choice -> Printing.Printing -> Set.Set Color.Color
+chosenFor choice printing = case choice of
+  CircledColors -> Printing.circled printing
+  CommanderColor -> foldMap Set.singleton (Printing.chosenColor printing)
+
+-- | A printing recording these colours for a choice.
+choose :: Choice -> Set.Set Color.Color -> Printing.Printing -> Printing.Printing
+choose choice colors printing = case choice of
+  CircledColors -> printing {Printing.circled = colors}
+  CommanderColor -> printing {Printing.chosenColor = Set.lookupMin colors}
+
+-- | Whether a card, read in a section, makes a choice as its deck is built:
+-- CR 207.5's for a card adding mana of its circled colours, CR 903.4b's for a
+-- commander whose colour-defining ability is the chosen colour.
+makes :: Section -> Choice -> Card.Card -> Bool
+makes within choice card = case choice of
+  CircledColors -> any (any (any circledMana . Modal.allEffects . ActivatedAbility.modal) . Face.activatedAbilities) faces
+  CommanderColor -> within == Commander && any (any CharacteristicColors.chosen . Face.characteristicColors) faces
+  where
+    faces = Card.faces card
+    circledMana = (== Just ManaProduction.Circled) . fmap ManaAddition.production . ManaAbility.manaProduced
 
 -- | A problem as a line a person can read.
 explain :: Problem -> Text.Text
@@ -81,6 +145,10 @@ explain problem =
         PrintingDisagrees n name set number -> at n <> Text.pack "the printing at " <> suffix (set, number) <> Text.pack " is not " <> CardName.unwrap name
         VanguardRepeated n name -> at n <> Text.pack "the list already brings a vanguard, so not " <> CardName.unwrap name
         NoSuchStickerSheet n name -> at n <> Text.pack "no sticker sheet is named " <> name
+        BadAnnotation n content -> at n <> Text.pack "not a choice and its colours: {" <> content <> Text.singleton '}'
+        ChoiceNotMade n name choice -> at n <> CardName.unwrap name <> Text.pack " makes no " <> keyword choice <> Text.pack " choice here"
+        ChoiceMissing n name choice -> at n <> CardName.unwrap name <> Text.pack " needs its " <> keyword choice <> Text.pack " choice"
+        ChoiceRepeated n name choice -> at n <> CardName.unwrap name <> Text.pack " has its " <> keyword choice <> Text.pack " choice twice"
 
 -- | Which part of what a player brings the lines that follow belong to: the
 -- deck or one of Parun.Types.Deck's fields beside it.
@@ -231,7 +299,9 @@ lineOf registry first (number, within, raw) =
           _ | within == Stickers -> pure (Right (number, sheetOf (Registry.stickerSheets registry) number trimmed))
           _ -> case entryOf trimmed of
             Nothing -> pure (Right (number, Left (Unreadable number trimmed)))
-            Just (count, name, at) -> fmap (fmap ((,) number . (>>= fmap (Entry count name) . printingOf (Registry.printings registry) first number name at))) (resolve registry number name)
+            Just (count, name, at, notes) ->
+              let printed card = printingOf (Registry.printings registry) first number name at card >>= annotate number within name notes
+               in fmap (fmap ((,) number . (>>= fmap (Entry count name) . printed))) (resolve registry number name)
 
 -- What a line of the Stickers section means: a count and the sheet it names,
 -- by name or slug, as a card is looked up (Parun.Registry.slugFor). No
@@ -262,11 +332,70 @@ sectionNamed text =
   let spelled = Text.toLower (Text.strip (Text.filter (/= ':') text))
    in lookup spelled ([(Text.toLower (heading section), section) | section <- sections] <> [(Text.pack "maindeck", Main), (Text.pack "main deck", Main)])
 
--- A line's count, the name it precedes and the printing it names, if any. A
--- bare name is one copy, which is how every export writes a singleton deck's
--- list.
-entryOf :: Text.Text -> Maybe (Natural.Natural, CardName.CardName, Maybe (Text.Text, Text.Text))
-entryOf text = fmap (\(count, (name, at)) -> (count, CardName.MkCardName name, at)) (countOf text >>= traverse (Just . printingNamed))
+-- A line's count, the name it precedes, the printing it names, if any, and
+-- the inside of each annotation after it. A bare name is one copy, which is
+-- how every export writes a singleton deck's list.
+entryOf :: Text.Text -> Maybe (Natural.Natural, CardName.CardName, Maybe (Text.Text, Text.Text), [Text.Text])
+entryOf text = do
+  (count, rest) <- countOf text
+  let (before, notes) = annotationsOf rest
+      (name, at) = printingNamed before
+  pure (count, CardName.MkCardName name, at, notes)
+
+-- A line's text less the braced annotations ending it, and the inside of each,
+-- in order. Last on the line, so no export's printing suffix (`printingNamed`)
+-- is mistaken for one; no card's name ends in a brace.
+annotationsOf :: Text.Text -> (Text.Text, [Text.Text])
+annotationsOf = go []
+  where
+    go notes text = case Text.stripSuffix (Text.singleton '}') (Text.stripEnd text) of
+      Just inner
+        | (before, note) <- Text.breakOnEnd (Text.singleton '{') inner,
+          not (Text.null before) ->
+            go (Text.strip note : notes) (Text.dropEnd 1 before)
+      _ -> (Text.stripEnd text, notes)
+
+-- The choice an annotation's inside names and the colours it records, each a
+-- mana symbol's letter (CR 107.4a), as many as the choice takes.
+choiceOf :: Natural.Natural -> Text.Text -> Either Problem (Choice, Set.Set Color.Color)
+choiceOf number note =
+  let (named, rest) = Text.breakOn (Text.singleton ':') note
+      letters = Text.words (Text.toUpper (Text.drop 1 rest))
+      colorOf letter = case Text.unpack letter of
+        [c] | Just (ManaType.Colored color) <- ManaSymbolText.manaType c -> Just color
+        _ -> Nothing
+   in case (lookup (Text.toLower (Text.strip named)) [(keyword choice, choice) | choice <- [minBound .. maxBound]], traverse colorOf letters) of
+        (Just choice, Just colors)
+          | not (Text.null rest),
+            Set.size (Set.fromList colors) == colorCount choice ->
+              Right (choice, Set.fromList colors)
+        _ -> Left (BadAnnotation number note)
+
+-- A line's printing with the choices its annotations record. A card that makes
+-- a choice as its deck is built is written with it, and one that makes none is
+-- written with none.
+annotate :: Natural.Natural -> Section -> CardName.CardName -> [Text.Text] -> Printing.Printing -> Either Problem Printing.Printing
+annotate number within name notes printing = do
+  made <- traverse (choiceOf number) notes
+  let given = Map.fromListWith (<>) [(choice, [colors]) | (choice, colors) <- made]
+      step p choice = case (Map.lookup choice given, makes within choice (Printing.card p)) of
+        (Nothing, False) -> Right p
+        (Nothing, True) -> Left (ChoiceMissing number name choice)
+        (Just [colors], True) -> Right (choose choice colors p)
+        (Just [_], False) -> Left (ChoiceNotMade number name choice)
+        (Just _, _) -> Left (ChoiceRepeated number name choice)
+  Foldable.foldlM step printing [minBound .. maxBound]
+
+-- The annotations a printing is written with, one per choice it records.
+annotationsFor :: Printing.Printing -> [Text.Text]
+annotationsFor printing =
+  [ Text.singleton '{' <> keyword choice <> Text.pack ": " <> Text.unwords (fmap letter (Set.toAscList colors)) <> Text.singleton '}'
+  | choice <- [minBound .. maxBound],
+    let colors = chosenFor choice printing,
+    not (Set.null colors)
+  ]
+  where
+    letter color = Text.pack [c | c <- "WUBRG", ManaSymbolText.manaType c == Just (ManaType.Colored color)]
 
 -- A line's count and the text after it.
 countOf :: Text.Text -> Maybe (Natural.Natural, Text.Text)
@@ -297,9 +426,6 @@ printingNamed text = case List.reverse (Text.words text) of
 -- The printing a line means of the card its name resolved to: the one at the
 -- set code and collector number it names, else the first the table holds of
 -- the card (`firstPrintings`), else the card with no lights.
---
--- Not implemented: a line circling Cryptic Spires' colours or choosing a
--- commander's colour (CR 903.4b), which every line leaves with none (#6399).
 --
 -- The printing at a suffix must be of the line's card, by Parun.Ingest.cardKey,
 -- the key MTGJSON names it by.
@@ -373,8 +499,8 @@ halvesOf name =
 
 -- | A deck as a deck list, headed by the format it is for if any, each
 -- printing with lights named by its set code and collector number in
--- `table`, which `parse` reads back. A companion is written in the sideboard
--- it is brought in.
+-- `table` and followed by the choices made for it, which `parse` reads back.
+-- A companion is written in the sideboard it is brought in.
 --
 -- Sorted by the line written, so the text is a fact about the deck rather than
 -- about the order a Map enumerates its structural keys in. Sticker sheets are
@@ -382,7 +508,7 @@ halvesOf name =
 render :: PrintingTable.PrintingTable -> Maybe Text.Text -> Deck.Deck -> Text.Text
 render table header listed =
   let entries m = fmap line (List.sortOn snd [(count, writtenAt printing) | (printing, count) <- Map.toList m])
-      writtenAt printing = written (Printing.card printing) <> foldMap ((Text.singleton ' ' <>) . suffix) (suffixFor table printing)
+      writtenAt printing = written (Printing.card printing) <> foldMap ((Text.singleton ' ' <>) . suffix) (suffixFor table printing) <> foldMap (Text.singleton ' ' <>) (annotationsFor printing)
       line (count, name) = Text.pack (show count) <> Text.singleton ' ' <> name
       once = Map.fromSet (const (1 :: Natural.Natural))
       contents section = case section of
