@@ -307,7 +307,7 @@ ownQuantities effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> Maybe.maybeToList quantity
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -1550,7 +1550,7 @@ effectObjectRefs effect =
         Effect.Search {} -> []
         Effect.ExileAllGraveyards -> []
         Effect.Proliferate -> []
-        Effect.Reroll -> []
+        Effect.Rethrow -> []
         Effect.RerollStoredResults _ -> []
         Effect.ChooseCardName {} -> []
         Effect.ChooseQuality _ -> []

@@ -115,7 +115,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }
@@ -126,7 +126,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Exercises"
         }
       }
@@ -194,7 +194,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }
@@ -205,7 +205,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }
@@ -227,7 +227,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }
@@ -238,7 +238,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }
@@ -279,5 +279,5 @@
       }
     }
   ],
-  "note": "The first RerollDie offer is declined and the second exercised, both before the second die is thrown, so both are over the natural 3; Six Knights mean the exercised one rerolled that 3. Either Wall pays for either Wall's offer, so later offers recur until the dice are done; each is declined."
+  "note": "The first Rethrow offer is declined and the second exercised, both before the second die is thrown, so both are over the natural 3; Six Knights mean the exercised one rerolled that 3. Either Wall pays for either Wall's offer, so later offers recur until the dice are done; each is declined."
 }

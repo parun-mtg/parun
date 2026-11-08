@@ -2446,13 +2446,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.Proliferate
       " {\"type\":\"Proliferate\"} "
-  Spec.it s "Reroll" $
+  Spec.it s "Rethrow" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      Effect.Reroll
-      " {\"type\":\"Reroll\"} "
+      Effect.Rethrow
+      " {\"type\":\"Rethrow\"} "
   Spec.it s "RerollStoredResults" $
     Common.assertJsonCodec
       s

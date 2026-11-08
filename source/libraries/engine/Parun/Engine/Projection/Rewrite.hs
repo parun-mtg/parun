@@ -699,7 +699,7 @@ rewriteEffect pairs effect = case effect of
   Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination subject slot handSlot differentIn exactly andOr) -> Effect.Search (Search.MkSearch searcher owner zones outside (fmap (rewriteQuantity pairs) quantity) (Filter.rewrite pairs filter_) (fmap (Filter.rewrite pairs) descriptions) upTo destination subject slot handSlot differentIn exactly andOr)
   Effect.ExileAllGraveyards -> effect
   Effect.Proliferate -> effect
-  Effect.Reroll -> effect
+  Effect.Rethrow -> effect
   Effect.RerollStoredResults _ -> effect
   -- CR 612.1: rule 201.4a's restriction is printed card text, so a text-changer
   -- rewrites it exactly as it rewrites a search's filter above.
@@ -2328,7 +2328,7 @@ rewriteRestriction pairs restriction = case restriction of
   ActivationRestriction.BeforeStep _ -> restriction
   ActivationRestriction.OnlyOnce -> restriction
   ActivationRestriction.TimesEachTurn _ -> restriction
-  ActivationRestriction.DuringDieRoll -> restriction
+  ActivationRestriction.DuringThrow -> restriction
   ActivationRestriction.InstantSpeed -> restriction
   ActivationRestriction.SpendOnly specified -> ActivationRestriction.SpendOnly (rewriteManaSpecification pairs specified)
 

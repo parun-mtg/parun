@@ -121,6 +121,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -433,7 +434,7 @@ spec s registry = Spec.describe s "Bot" $ do
             ("unleashes", Prompt.ChooseUnleash decider S.alice oid),
             ("extras", Prompt.OfferedExtra decider S.alice oid PlayerEffect.CantCastSpells),
             ("miracles", Prompt.OfferedMiracleReveal decider S.alice oid (CardName.MkCardName (Text.pack "Temporal Mastery")) free),
-            ("rerolls", Prompt.RerollDie decider S.alice 3 Nothing)
+            ("rerolls", Prompt.Rethrow decider S.alice (ThrowResult.DieCameUp 3) Nothing)
           ]
         both = Set.fromList [OptionalDecision.Exercises, OptionalDecision.Declines]
     Spec.assertEqWith s "mays" (fmap (fmap drawn) prompts) (fmap (fmap (const both)) prompts)

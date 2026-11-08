@@ -740,7 +740,7 @@ activationRestrictionNames asking x = case x of
   ActivationRestriction.OnlyIf condition -> conditionNames asking condition
   ActivationRestriction.OnlyOnce -> mempty
   ActivationRestriction.TimesEachTurn _ -> mempty
-  ActivationRestriction.DuringDieRoll -> mempty
+  ActivationRestriction.DuringThrow -> mempty
   ActivationRestriction.InstantSpeed -> mempty
   ActivationRestriction.SpendOnly _ -> mempty
 
@@ -1635,7 +1635,7 @@ effectNames asking onCard onAbility x = case x of
   Effect.ChoosePermanents choosePermanents -> choosePermanentsNames asking choosePermanents
   Effect.ChooseGroup choice -> chooseGroupNames asking choice
   Effect.RollDie rollDie -> rollDieNames asking rollDie
-  Effect.Reroll -> mempty
+  Effect.Rethrow -> mempty
   Effect.RerollStoredResults slotName -> slotNames asking slotName
   Effect.FlipCoin flipCoin -> flipCoinNames asking flipCoin
   Effect.Guess guess -> guessNames asking guess

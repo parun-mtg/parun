@@ -114,6 +114,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.WordFamily as WordFamily
@@ -310,7 +311,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "a land, a nonland, or neither" (options (Prompt.ChooseLandOrNonland alice S.alice o7)) (Right [Just LandOrNonland.Land, Just LandOrNonland.Nonland, Nothing])
     Spec.assertEqWith s "a mutate's sides" (options (Prompt.ChooseMutateSide alice S.alice o7 o9)) (Right [MutateSide.Over, MutateSide.Under])
     Spec.assertEqWith s "a library's ends" (options (Prompt.ChooseLibraryEnd alice S.alice o7 0)) (Right [LibraryPosition.Top, LibraryPosition.Bottom])
-    Spec.assertEqWith s "a die reroll, with no source" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.RerollDie alice S.alice 4 Nothing))) ["source", "result", "cost"]) [Nothing, Just (R.Number 4), Nothing]
+    Spec.assertEqWith s "a die reroll, with no source" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 4) Nothing))) ["source", "result", "cost"]) [Nothing, Just (R.Number 4), Nothing]
     Spec.assertBool s (all (Scenario.withinOffer dredge) [OptionalDecision.Exercises, OptionalDecision.Declines]) "every option within the offer"
 
   Spec.it s "a prompt answered by a set offers each candidate as an element of the answer, within its bounds" $ do

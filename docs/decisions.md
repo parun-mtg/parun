@@ -800,8 +800,9 @@ Entries are ordered by the first rule each cites.
 ## Whether Goblin Bookie can be activated with nothing to reroll
 
 - **Question**: "(Activate only any time it makes sense.)" is parenthetical, and
-  no rule defines "makes sense". With no die being rolled and no Die creature,
-  can the Bookie be activated at priority, tapping it and rerolling nothing?
+  no rule defines "makes sense". With no die being rolled, no coin just
+  flipped and no Die creature, can the Bookie be activated at priority, tapping
+  it and rerolling nothing?
 - **Rules**: CR 117.1b, 207.2, 207.2a, 602.1b, 609.3; Pippa, Duchess of Dice's
   rulings of 2020-02-29 settle a die that exists and not this; CR of 2026-11-06.
 - **Decision**: No. The sentence is an activation instruction (CR 602.1b), and
@@ -809,7 +810,7 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: Reading the parenthetical as text with no game function (CR
   207.2), so CR 117.1b lets it be activated at any priority: CR 207.2a's reminder
   text summarizes a rule, and no rule says this.
-- **Site**: `Parun.Types.ActivationRestriction.DuringDieRoll`, gated in
+- **Site**: `Parun.Types.ActivationRestriction.DuringThrow`, gated in
   `Parun.Engine.ActivationRestriction`, proved by `Parun.DiceSpec`'s "CR 117.1b
   the Bookie cannot be activated at priority".
 - **Issue**: PR #4020.
@@ -1526,3 +1527,27 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Seating.emperorFault`. `Parun.SeatingSpec`'s "CR
   809.6 an even-sized team's emperor sits in either centre seat".
 - **Issue**: #4497.
+
+## What Goblin Bookie's reflip is
+
+- **Question**: No rule defines a reflip. Is Goblin Bookie's "reflip any coin"
+  the same coin flipped again, or a new CR 705.1 flip by the player who
+  activated it? The answer decides whether the flipper calls again, whether
+  "whenever you flip a coin" sees one flip or two, whether Krark's Thumb
+  doubles the reflip, and whose flip a reflip of another player's coin is.
+- **Rules**: CR 705.1, 705.2, 705.3, 614.1a (CR of 2026-11-06); the card has
+  no rulings. Pippa, Duchess of Dice's ruling makes a reroll a new roll by the
+  rerolling player and says nothing about coins.
+- **Decision**: The same coin, flipped again by its flipper under the same call.
+  The first face is discarded and records nothing, so the coin is one CR 705.1
+  event. No replacement applies to the reflip, and Krark's Thumb's ignore is
+  chosen once the coins it flipped are done being reflipped.
+- **Rejected**: A new flip by the reflipping player, on the analogy of Pippa's
+  reroll: "reflip" names a coin already flipped, not an instruction to flip one,
+  and CR 705.2 lets only the flipper win or lose, which a flip by another player
+  could not satisfy for the original instruction.
+- **Site**: `Parun.Engine.Event.settleCoins`, through
+  `Parun.Engine.Resolve.Effect.reflipWindow`. Proved by the scenarios
+  `coin/cr-705-1-goblin-bookie-reflips-another-player-s-won-flip` and
+  `coin/cr-705-1-goblin-bookie-reflips-one-of-krark-s-thumb-s-coins-before-the-flipper-keeps-one`.
+- **Issue**: #4017.

@@ -124,6 +124,7 @@ import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.TargetCount as TargetCount
+import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.Visibility as Visibility.Type
@@ -454,7 +455,7 @@ offerOf gs prompt = case prompt of
   Prompt.OfferedMiracleReveal _ _ source name cost -> choosing prompt "options" (Just source) [("name", R.Text (CardName.unwrap name)), ("cost", payment cost)] yesOrNo
   Prompt.OfferedExtra _ _ source effect -> choosing prompt "options" (Just source) [("effect", Reply.encode (Reply.viaCodec Codec.PlayerEffect.codec) namer effect)] yesOrNo
   -- CR 706.2a: the result rerolled, and what rerolling costs where it costs.
-  Prompt.RerollDie _ _ result cost -> choosing prompt "options" Nothing ([("result", natural result)] <> [("cost", payment c) | Just c <- [cost]]) yesOrNo
+  Prompt.Rethrow _ _ landed cost -> choosing prompt "options" Nothing ([thrown landed] <> [("cost", payment c) | Just c <- [cost]]) yesOrNo
   -- CR 616.1: each entry as its source and, where it renders, its Oracle text.
   Prompt.ChooseReplacement _ _ entries -> indexing prompt Nothing [] (fmap (replacementEntry gs) entries)
   -- CR 208.2b / 614.1c: each shape's power, toughness, keywords and subtypes.
@@ -624,6 +625,13 @@ damageEvent event = fields [("source", object (DamageEvent.source event)), ("tar
 -- what else the seat is told, and under @key@ each option spelled as the
 -- answer that picks it, @"players"@ for seats (which the line spells as bare
 -- ids) and @"options"@ for anything else.
+-- CR 706.2b's natural result as the die's "result", CR 705.1's face as the
+-- coin's "face".
+thrown :: ThrowResult.ThrowResult -> (String, R.Reply)
+thrown landed = case landed of
+  ThrowResult.DieCameUp result -> ("result", natural result)
+  ThrowResult.CoinCameUp face -> ("face", R.Text (Text.pack (show face)))
+
 choosing :: Prompt.Prompt r -> String -> Maybe ObjectId.ObjectId -> [(String, R.Reply)] -> [r] -> R.Reply
 choosing prompt key source told = listing key source told . fmap (Reply.encode (Reply.shapeOf prompt) namer)
 

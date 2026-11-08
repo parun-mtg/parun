@@ -947,7 +947,7 @@ restrictionConditions restriction = case restriction of
   ActivationRestriction.OnlyIf condition -> [condition]
   ActivationRestriction.OnlyOnce -> []
   ActivationRestriction.TimesEachTurn _ -> []
-  ActivationRestriction.DuringDieRoll -> []
+  ActivationRestriction.DuringThrow -> []
   ActivationRestriction.InstantSpeed -> []
   ActivationRestriction.SpendOnly _ -> []
 
@@ -1289,7 +1289,7 @@ ownCounts effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> foldMap quantityCounts quantity
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -1855,7 +1855,7 @@ effectNestedEffects effect = case effect of
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -2422,7 +2422,7 @@ effectReplacements effect = case effect of
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -3001,7 +3001,7 @@ effectMintedFaces effect = case effect of
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
   Effect.ChooseQuality _ -> []
@@ -5939,7 +5939,7 @@ effectFilters effect = case effect of
   Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ _ _ _ _ _ _) -> searchFramed (f : Foldable.toList descriptions)
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate -> []
-  Effect.Reroll -> []
+  Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   -- CR 201.4a's restriction, and the WISH's frame: what judges it is
   -- Parun.Interpreter.legalCardName, on the far side of
@@ -7659,21 +7659,21 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
       (any (any variableCounters . suspendsOf) ps)
       "the pool has a suspend whose N is CR 107.3d's chosen X"
     Spec.assertEqWith s "and every suspend cost agrees with its own N" (fmap (S.nameOf . Printing.card) offenders) []
-  -- Parun.Engine.Resolve.Arms.Damage's die-roll window resolves a DuringDieRoll
-  -- ability at once and asks for it with Prompt.RerollDie, so it announces no
-  -- mode, target or X and does nothing but reroll.
-  Spec.it s "every ability activated inside a die roll is one untargeted reroll" $ do
+  -- Parun.Engine.Resolve.Effect's die-roll and coin-flip windows resolve a
+  -- DuringThrow ability at once and ask for it with Prompt.Rethrow, so it
+  -- announces no mode, target or X and does nothing but throw again.
+  Spec.it s "every ability activated inside a die roll or coin flip is one untargeted rethrow" $ do
     ps <- S.allPrintings s corpus
     let abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (Face.activatedAbilities (S.combinedFace p))
-        windowed = concatMap (filter (elem ActivationRestriction.DuringDieRoll . ActivatedAbility.restrictions . snd) . abilitiesOf) ps
+        windowed = concatMap (filter (elem ActivationRestriction.DuringThrow . ActivatedAbility.restrictions . snd) . abilitiesOf) ps
         offends (_, ab) =
           let modal = ActivatedAbility.modal ab
            in length (Modal.modes modal) /= 1
                 || not (all (null . Mode.targetSlots) (Modal.modes modal))
                 || declaresVariable (ActivatedAbility.cost ab)
-                || Modal.allEffects modal /= [Effect.Reroll]
+                || Modal.allEffects modal /= [Effect.Rethrow]
     Spec.assertBool s (not (null windowed)) "the pool has such an ability"
-    Spec.assertEqWith s "an untargeted reroll alone" (fmap fst (filter offends windowed)) []
+    Spec.assertEqWith s "an untargeted rethrow alone" (fmap fst (filter offends windowed)) []
   Spec.it s "CR 602.2b every activated ability that reads X declares {X} in its own cost" $ do
     ps <- S.allPrintings s corpus
     let abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (Face.activatedAbilities (S.combinedFace p))

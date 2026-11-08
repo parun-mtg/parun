@@ -100,7 +100,7 @@
       "player": "bob",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Exercises"
         }
       }
@@ -163,5 +163,5 @@
       }
     }
   ],
-  "note": "bob's Wall over alice's roll: the RerollDie answer is keyed to bob, so an offer put to alice would be unscheduled."
+  "note": "bob's Wall over alice's roll: the Rethrow answer is keyed to bob, so an offer put to alice would be unscheduled."
 }

@@ -160,7 +160,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Search" Search.codec Effect.Search (\x -> case x of Effect.Search y -> Just y; _ -> Nothing),
           Arm.nullary "ExileAllGraveyards" Effect.ExileAllGraveyards,
           Arm.nullary "Proliferate" Effect.Proliferate,
-          Arm.nullary "Reroll" Effect.Reroll,
+          Arm.nullary "Rethrow" Effect.Rethrow,
           Arm.payload "RerollStoredResults" SlotName.codec Effect.RerollStoredResults (\x -> case x of Effect.RerollStoredResults y -> Just y; _ -> Nothing),
           Arm.payload "ChooseCardName" ChooseCardName.codec Effect.ChooseCardName (\x -> case x of Effect.ChooseCardName y -> Just y; _ -> Nothing),
           Arm.payload "ChooseQuality" ChosenQuality.codec Effect.ChooseQuality (\x -> case x of Effect.ChooseQuality y -> Just y; _ -> Nothing),
@@ -344,7 +344,7 @@ tagOf x = case x of
   Effect.Search {} -> "Search"
   Effect.ExileAllGraveyards {} -> "ExileAllGraveyards"
   Effect.Proliferate {} -> "Proliferate"
-  Effect.Reroll {} -> "Reroll"
+  Effect.Rethrow {} -> "Rethrow"
   Effect.RerollStoredResults {} -> "RerollStoredResults"
   Effect.ChooseCardName {} -> "ChooseCardName"
   Effect.ChooseQuality {} -> "ChooseQuality"

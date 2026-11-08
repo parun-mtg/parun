@@ -204,8 +204,8 @@ withoutAnnouncement before entry closed = do
   gameNumber <- one GameState.gameNumber
   turnAnchor <- one GameState.turnAnchor
   extraTurnUnderWay <- one GameState.extraTurnUnderWay
-  rollingDie <- one GameState.rollingDie
-  rerollRequested <- one GameState.rerollRequested
+  throwing <- one GameState.throwing
+  rethrowRequested <- one GameState.rethrowRequested
   -- Written only once a reversal is over, which no announcement spans.
   undone <- one GameState.undone
   pure
@@ -343,8 +343,8 @@ withoutAnnouncement before entry closed = do
         GameState.gameNumber = gameNumber,
         GameState.turnAnchor = turnAnchor,
         GameState.extraTurnUnderWay = extraTurnUnderWay,
-        GameState.rollingDie = rollingDie,
-        GameState.rerollRequested = rerollRequested,
+        GameState.throwing = throwing,
+        GameState.rethrowRequested = rethrowRequested,
         GameState.undone = undone
       }
   where

@@ -673,9 +673,10 @@ data Effect card ability
     -- Parun.DiceSpec is what proves it. CR 706.3c's "Roll again" is Repeat with
     -- the roll in its body and the striation as its gate (Delina, Wild Mage).
     RollDie RollDie.RollDie
-  | -- | CR 706.2b: throw again the die whose modification step is open, taking
-    -- the new number as its natural result (Goblin Bookie's "reroll any die").
-    Reroll
+  | -- | CR 706.2b / 705.1: throw again the die whose modification step is
+    -- open, or the coin just flipped, discarding what it came up (Goblin
+    -- Bookie's "reflip any coin or reroll any die").
+    Rethrow
   | -- | CR 706.8b: the controller chooses any number of the stored results on
     -- the slot's permanent and rerolls them (Centaur of Attention). Choose, not
     -- target.

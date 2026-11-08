@@ -336,7 +336,7 @@ shapeOf prompt = case prompt of
   Prompt.ReferenceCards {} -> list (viaCodec Codec.CardName.codec)
   Prompt.ReferenceNames {} -> list (viaCodec Codec.CardName.codec)
   Prompt.ChooseDieResult {} -> natural
-  Prompt.RerollDie {} -> viaCodec Codec.OptionalDecision.codec
+  Prompt.Rethrow {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.AdjustDieRoll {} -> maybeOf (pairOf natural (named [RollAdjustment.Increase, RollAdjustment.Decrease]))
   Prompt.ChooseRollModifier {} -> natural
   Prompt.CallCoin {} -> viaCodec Codec.CoinFace.codec

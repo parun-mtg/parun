@@ -762,6 +762,7 @@ import qualified Parun.Codec.TeamIdSpec
 import qualified Parun.Codec.TeamsSpec
 import qualified Parun.Codec.TextWordSpec
 import qualified Parun.Codec.TheseDiscardSpec
+import qualified Parun.Codec.ThrowResultSpec
 import qualified Parun.Codec.TimedSpec
 import qualified Parun.Codec.TimesSpec
 import qualified Parun.Codec.TimestampSpec
@@ -1790,6 +1791,7 @@ spec s registry corpus = do
   Parun.Codec.TeamIdSpec.spec s
   Parun.Codec.TeamsSpec.spec s
   Parun.Codec.TheseDiscardSpec.spec s
+  Parun.Codec.ThrowResultSpec.spec s
   Parun.Codec.TimedSpec.spec s
   Parun.Codec.TimesSpec.spec s
   Parun.Codec.TimestampSpec.spec s

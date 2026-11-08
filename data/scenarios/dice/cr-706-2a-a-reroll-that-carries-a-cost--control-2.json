@@ -100,7 +100,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }
@@ -122,7 +122,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "RerollDie",
+          "prompt": "Rethrow",
           "with": "Declines"
         }
       }

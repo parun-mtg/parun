@@ -102,7 +102,7 @@ encode p answer = case p of
   Prompt.ReferenceCards {} -> Response.ReferenceCardNames answer
   Prompt.ReferenceNames _ -> Response.ReferenceCardNames answer
   Prompt.ChooseDieResult {} -> Response.ChoseDieResult answer
-  Prompt.RerollDie {} -> Response.ChoseReroll answer
+  Prompt.Rethrow {} -> Response.ChoseRethrow answer
   Prompt.AdjustDieRoll {} -> Response.ChoseRollAdjustment answer
   Prompt.ChooseRollModifier {} -> Response.ChoseRollModifier answer
   Prompt.FlipCoin -> Response.FlippedCoin answer
@@ -316,8 +316,8 @@ decode p response = case p of
   Prompt.ChooseDieResult {} -> case response of
     Response.ChoseDieResult n -> Just n
     _ -> Nothing
-  Prompt.RerollDie {} -> case response of
-    Response.ChoseReroll d -> Just d
+  Prompt.Rethrow {} -> case response of
+    Response.ChoseRethrow d -> Just d
     _ -> Nothing
   Prompt.AdjustDieRoll {} -> case response of
     Response.ChoseRollAdjustment d -> Just d
@@ -870,7 +870,7 @@ defaultAnswer p = case p of
   -- CR 706.2a's "may": declining leaves the natural result standing, which is
   -- the answer that throws no further die -- Prompt.ChooseExplore's posture
   -- below and for its reason.
-  Prompt.RerollDie {} -> OptionalDecision.Declines
+  Prompt.Rethrow {} -> OptionalDecision.Declines
   -- The same "may", and the same answer: declining leaves the result standing.
   Prompt.AdjustDieRoll {} -> Nothing
   -- CR 706.2b: every candidate is one the roller may apply; the first.

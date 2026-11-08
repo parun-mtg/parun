@@ -371,8 +371,8 @@ blankGame settings order active =
       GameState.gameNumber = 1,
       GameState.turnAnchor = Nothing,
       GameState.extraTurnUnderWay = Nothing,
-      GameState.rollingDie = Nothing,
-      GameState.rerollRequested = False,
+      GameState.throwing = Nothing,
+      GameState.rethrowRequested = False,
       GameState.undone = Map.empty
     }
 
