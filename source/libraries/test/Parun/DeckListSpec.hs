@@ -19,12 +19,17 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Printing as Printing
 
 -- A registry over Goblin Piker and Wax // Wane, which between them are a name
--- with no halves and CR 709.4a's name with two.
+-- with no halves and CR 709.4a's name with two, and two preparation cards
+-- sharing the prepare spell Seed Suture, whose name is therefore no card's.
 withPool :: String -> (Registry.Registry IO -> IO a) -> IO a
 withPool label action = do
   piker <- S.pikerJson
   waxWane <- S.waxWaneJson
-  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane)] (Registry.fileRegistry Monad.>=> action)
+  angel <- S.committedJson angelFile
+  phytomedic <- S.committedJson "emergency-phytomedic-seed-suture.json"
+  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic)] (Registry.fileRegistry Monad.>=> action)
+  where
+    angelFile = "blossom-blessed-angel-seed-suture.json"
 
 -- A section's contents as sorted (name, count) pairs. Named through
 -- Parun.Engine.Card.combined rather than Parun.DeckList.written, so what an
@@ -147,15 +152,18 @@ spec s = Spec.describe s "Parun.DeckList" $ do
   -- The rendered list is itself a deck list, which is what makes the output of
   -- `parun deck` something a person can hand back. A split card renders in the
   -- printed, spaced spelling, so the round trip is what pins that the parser
-  -- accepts it (#679).
+  -- accepts it (#679). A preparation card renders by its front face alone (CR
+  -- 723.4): its prepare spell Seed Suture is shared, so a joined name would
+  -- name no card.
   Spec.it s "a rendered deck parses back to the same deck"
     . withPool "round-trip"
     $ \registry -> do
-      deck <- deckOf s "round-trip" registry "4 Goblin Piker\n\nSideboard\n2 Wax // Wane\n"
+      deck <- deckOf s "round-trip" registry "4 Goblin Piker\n1 Blossom-Blessed Angel\n\nSideboard\n2 Wax // Wane\n"
       let text = DeckList.render Nothing deck
       Spec.assertBool s (Text.isInfixOf (Text.pack "2 Wax // Wane") text) ("the printed spelling: " <> show text)
       again <- deckOf s "round-trip-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "1 Blossom-Blessed Angel\n") text) ("CR 723.4: the front name alone: " <> show text)
 
   -- A bad line costs the list its line, not its deck: the good lines still
   -- describe one, so a format can check it in the same report (#6396).
