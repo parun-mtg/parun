@@ -450,7 +450,7 @@ fourPlayerGame = Setup.emptyGame fourPlayers
 
 -- A throwaway directory holding `files` (name, contents), for the cases that
 -- need a corpus other than the committed one. The label names the directory;
--- the unique suffix keeps cases tasty runs in parallel apart even when two
+-- the unique suffix keeps cases run in parallel apart even when two
 -- share a label.
 withCorpusDir :: String -> [(FilePath, Text.Text)] -> (FilePath -> IO a) -> IO a
 withCorpusDir label files action = do

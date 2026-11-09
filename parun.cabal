@@ -1972,9 +1972,13 @@ library engine
 -- The catalog of every exception Parun can throw, and nothing else.
 library exceptions
   import: library
+  build-depends:
+    text ^>=2.1.3
+
   hs-source-dirs: source/libraries/exceptions
   -- cabal-gild: discover source/libraries/exceptions
   exposed-modules:
+    Parun.Exceptions.AssertionFailed
     Parun.Exceptions.InvalidCorpus
     Parun.Exceptions.MissingRoot
 
@@ -2361,8 +2365,6 @@ library test
     parun:spec,
     parun:types,
     parun:uri,
-    tasty ^>=1.5.4,
-    tasty-hunit ^>=0.10.2,
     text ^>=2.1.3,
     transformers ^>=0.6.1,
 
@@ -2522,6 +2524,8 @@ library test
     Parun.TargetSpec
     Parun.TeamSpec
     Parun.Test
+    Parun.Test.Runner
+    Parun.Test.RunnerSpec
     Parun.TransformSpec
     Parun.TriggerSpec
     Parun.TurnSpec

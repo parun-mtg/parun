@@ -63,5 +63,8 @@
 
 # Restricted modules: unsafe, or for debugging only.
 - modules:
-  - name: [Debug.Trace, System.IO.Unsafe, Unsafe.Coerce, Control.Concurrent]
+  - name: [Debug.Trace, System.IO.Unsafe, Unsafe.Coerce]
     within: []
+  # The test runner's worker pool and per-case timeout, and the spec of both.
+  - name: [Control.Concurrent]
+    within: [Parun.Test.Runner, Parun.Test.RunnerSpec]

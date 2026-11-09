@@ -44,7 +44,7 @@ when adding a module, since `hooky fix` has skipped that case.
 
 One subsystem may span several spec modules --- `Parun.TriggerSpec` and its
 `Keyword`/`Zone`/`Event` siblings, `Parun.ResolveSpec` and its six --- which all
-`describe` under the same name, so the split costs a tasty pattern nothing. Cut
+`describe` under the same name, so the split costs a pattern nothing. Cut
 such a split along the FILE's order rather than the `spec` call order: helpers
 sit next to the group that uses them, so contiguous ranges keep the closure
 together and leave "the case above" reading true.
