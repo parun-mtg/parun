@@ -1783,9 +1783,10 @@ conditionSlots condition = case condition of
 -- declares them and replacementRowSlots joins slotsOf over the answer.
 replacementRowReads :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ([Filter.Type.Filter Keyword.Type.Keyword], [Quantity.Type.Quantity])
 replacementRowReads re = case re of
-  -- The rewrite is a Zone, a LibraryPosition and Bools (Parun.Types.ZoneChangeR):
-  -- nothing that can name a slot, so the pattern is the whole of it.
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _) -> ([ZoneChangePattern.whatObject pat], [])
+  -- The rewrite is a Zone, a LibraryPosition and Bools (Parun.Types.ZoneChangeR),
+  -- plus a linked trigger's effects replacementRowEffects answers for: nothing
+  -- that can name a slot, so the pattern is the whole of it.
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _) -> ([ZoneChangePattern.whatObject pat], [])
   ReplacementEffect.EntryR (EntryR.MkEntryR pat rewrite) -> addFilter pat (entryRewriteReads rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite
@@ -2049,6 +2050,8 @@ replacementRowEffects re = case re of
   -- CR 615.5's rider and CR 614.1a's instead-effects both, and in that order:
   -- the rider is the card's own field beside the rewrite.
   ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite riders) -> Foldable.toList riders <> damageRewriteEffects rewrite
+  -- CR 603.11's linked trigger resolves as its own ability, entryRewriteEffects'
+  -- reason for AsCopy's.
   ReplacementEffect.ZoneChangeR _ -> []
   ReplacementEffect.DestructionR _ -> []
   ReplacementEffect.CounterR _ -> []

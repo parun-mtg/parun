@@ -2,6 +2,8 @@
 
 module Parun.Codec.ZoneChangeR where
 
+import qualified Data.Sequence as Seq
+import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.LibraryPosition as LibraryPosition
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.Codec.ZoneChangePattern as ZoneChangePattern
@@ -13,14 +15,18 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 
 -- | A bare object keyed by the record's field names, replacing the two-element
 -- array this payload used to be (#1464).
-codec :: Codec.Codec ZoneChangeR.ZoneChangeR
-codec = Fields.object $ do
+codec ::
+  (Typeable.Typeable effect, Eq effect) =>
+  Codec.Codec effect ->
+  Codec.Codec (ZoneChangeR.ZoneChangeR effect)
+codec effectCodec = Fields.object $ do
   matching <- Fields.required "matching" ZoneChangePattern.codec ZoneChangeR.matching
   destination <- Fields.required "destination" Zone.codec ZoneChangeR.destination
   revealing <- Fields.defaulted "revealing" False Common.boolean ZoneChangeR.revealing
   shuffling <- Fields.defaulted "shuffling" False Common.boolean ZoneChangeR.shuffling
   position <- Fields.defaulted "position" LibraryPosition.defaultValue LibraryPosition.codec ZoneChangeR.position
   optional <- Fields.defaulted "optional" False Common.boolean ZoneChangeR.optional
+  whenYouDo <- Fields.defaulted "whenYouDo" Seq.empty (Common.seq effectCodec) ZoneChangeR.whenYouDo
   pure
     ZoneChangeR.MkZoneChangeR
       { ZoneChangeR.matching = matching,
@@ -28,5 +34,6 @@ codec = Fields.object $ do
         ZoneChangeR.revealing = revealing,
         ZoneChangeR.shuffling = shuffling,
         ZoneChangeR.position = position,
-        ZoneChangeR.optional = optional
+        ZoneChangeR.optional = optional,
+        ZoneChangeR.whenYouDo = whenYouDo
       }

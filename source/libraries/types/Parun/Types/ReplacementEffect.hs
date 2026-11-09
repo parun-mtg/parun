@@ -89,7 +89,7 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- The sole rules-casing site is Parun.Engine.Replacement (CR 616.1's loop).
 -- Parun.Codec also cases on every constructor, but only as the JSON data boundary.
 data ReplacementEffect card ability effect
-  = ZoneChangeR ZoneChangeR.ZoneChangeR
+  = ZoneChangeR (ZoneChangeR.ZoneChangeR effect)
   | EntryR (EntryR.EntryR ability effect)
   | DamageR (DamageR.DamageR effect)
   | DestructionR DestructionR.DestructionR

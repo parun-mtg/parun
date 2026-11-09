@@ -2906,7 +2906,7 @@ dealing de = if DamageEvent.amount de == 0 then Nothing else Just (ProposedEvent
 apply :: Game () -> Set ObjectId -> Set CandidateId -> Replacement.Tally -> ReplacementCandidate -> ProposedEvent -> Game (Maybe ProposedEvent)
 apply settle batch applied batchPrevented candidate event =
   case (ReplacementCandidate.effect candidate, event) of
-    (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ toDest revealing _ toPosition optional), ProposedEvent.WouldChangeZone zc discarded position resolving) -> do
+    (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ toDest revealing _ toPosition optional whenYouDo), ProposedEvent.WouldChangeZone zc discarded position resolving) -> do
       -- CR 614.1a's "you may ... instead" (Library of Leng): the row's
       -- controller is asked as it applies, DrawRewrite.Dredge's posture below.
       -- Declining leaves the event standing, and `applyChosen` still records the
@@ -2952,6 +2952,12 @@ apply settle batch applied batchPrevented candidate event =
             gs <- State.get
             Monad.forM_ (Game.lookupObject (ZoneChange.departed zc) gs) $ \obj ->
               reveal RevealCause.Ordinary (Object.owner obj) (ZoneChange.departed zc)
+          -- CR 603.11: the redirect applying is the "you do", so its linked
+          -- ability is armed here, once per application, as the source's and
+          -- its controller's (Replacement.linkedTrigger). No controller,
+          -- no "you" to do it.
+          Foldable.for_ ((,) <$> Replacement.linkedTrigger whenYouDo <*> ReplacementCandidate.controller candidate) $ \(linked, you) ->
+            State.modify' (armDelayed linked (ReplacementCandidate.source candidate) you Map.empty (Just TurnWindow.AnyTurn) Nothing)
           pure (Just (ProposedEvent.WouldChangeZone zc {ZoneChange.to = toDest} discarded settledPosition resolving))
     -- Unreachable: `applies` admits ZoneChangeR only against WouldChangeZone.
     (ReplacementEffect.ZoneChangeR {}, _) -> pure (Just event)
@@ -5694,11 +5700,11 @@ becomeCopyAs batch candidate asCopy oid = do
       Foldable.for_ chosen $ \src2 -> do
         -- CR 707.9g: a linked trigger an EARLIER copy effect on this object
         -- armed no longer triggers, this one being applied after it; then
-        -- this row's own is armed (Replacement.linkedCopyTrigger), on this
+        -- this row's own is armed (Replacement.linkedTrigger), on this
         -- branch alone, with the copied object bound for its effects.
         let linkedEarlier entry = DelayedTrigger.source entry == oid && Map.member Binding.copiedObject (DelayedTrigger.bindings entry)
         State.modify' (\g -> g {GameState.delayedTriggers = Seq.filter (not . linkedEarlier) (GameState.delayedTriggers g)})
-        Foldable.for_ (Replacement.linkedCopyTrigger asCopy) $ \linked ->
+        Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
           State.modify' (armDelayed linked oid controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing)
       pure (fmap (\src2 -> (src2, Maybe.mapMaybe CopyClause.counters applying)) chosen)
 
