@@ -48,14 +48,15 @@ usage() {
   cat <<'EOF'
 mutate.sh FILE SED_EXPR PATTERN [CABAL_ARG...]
 
-Applies SED_EXPR to FILE, runs the tasty subtree PATTERN selects, prints the
+Applies SED_EXPR to FILE, runs the tests PATTERN selects, prints the
 first failing assertion, and restores FILE.
 
   FILE       the file to mutate
   SED_EXPR   a sed script; it must actually change FILE. `@PATH` reads the
              script from PATH instead, for an expression the worktree guard
              refuses on the command line (parentheses, pipes, quotes, `;`)
-  PATTERN    a tasty pattern, passed as -p; required, and keep it narrow
+  PATTERN    a substring of the test path, passed as -p; required, and keep
+             it narrow
   CABAL_ARG  extra arguments for `cabal test`; `--no-semaphore -j4` when the
              shared GHC semaphore is corrupt and cabal hangs on it instead of
              failing, which the built-in retry cannot reach
@@ -72,7 +73,7 @@ Exit status is the outcome, not the test run's:
   0  RED           a case failed; its first assertion is printed
   1  NOTHING RED   the subtree passed, so nothing in it observes the mutation
   2  usage error, or a mutation that changed nothing
-  3  the mutated source did not build, or the run produced no tasty summary
+  3  the mutated source did not build, or the run produced no summary
   4  PATTERN matched no tests at all
 
 Run it from the repository root; it builds the `parun-test-suite` target at -O0
@@ -136,8 +137,8 @@ log=$work/output
 
 # --test-option, singular, passes one argument verbatim; the plural
 # --test-options takes a string that cabal splits on whitespace, so a pattern
-# naming a test case by its own words arrives as several arguments and tasty
-# rejects the second one.
+# naming a test case by its own words arrives as several arguments and the
+# runner rejects the second one.
 run() {
   cabal test parun-test-suite \
     --builddir=dist-mutate \
@@ -145,7 +146,6 @@ run() {
     --test-show-details=direct \
     --test-option=-p \
     --test-option="$pattern" \
-    --test-option=--hide-successes \
     --test-option=+RTS --test-option=-M8G --test-option=-RTS \
     ${1:+"$@"} >"$log" 2>&1 || true
 }
@@ -161,7 +161,7 @@ echo "FILE:     $file"
 echo "PATTERN:  $pattern"
 echo
 
-summary=$(grep -E '^(All [0-9]+ tests passed|[0-9]+ out of [0-9]+ tests failed)' "$log" || true)
+summary=$(grep -E '^(Passed all [0-9]+ tests|Failed [0-9]+ of [0-9]+ tests|Matched no tests) with seed [0-9]+\.$' "$log" || true)
 
 if [ -z "$summary" ]; then
   echo 'MUTATION DID NOT COMPILE (or the suite never reported)'
@@ -174,12 +174,11 @@ if [ -z "$summary" ]; then
 fi
 
 case $summary in
-  'All 0 tests passed'*)
+  'Matched no tests'*)
     echo "PATTERN MATCHED NO TESTS: $pattern"
-    echo 'tasty reports an empty selection as a pass, so this is not a green.'
     exit 4
     ;;
-  'All '*)
+  'Passed all '*)
     echo "NOTHING WENT RED ($summary)"
     echo 'The mutated line has no observer IN THIS SUBTREE -- which is a finding'
     echo 'either way: either the case proves nothing, or the pattern is pointed'
@@ -193,35 +192,18 @@ echo "RESULT: $summary"
 echo
 echo 'FIRST FAILING ASSERTION (the gameplay-level one, or a proxy ahead of it?):'
 first=$(awk '
-  state == 2 { next }
-  /^[[:space:]]*$/ { if (state == 1) state = 2; next }
-  {
-    indent = match($0, /[^ ]/) - 1
-    if (state == 1) {
-      if (indent > failIndent) { print; next }
-      state = 2
-      next
-    }
-    if ($0 ~ /:[[:space:]]+FAIL/) {
-      for (i = 0; i < indent; i++) if (i in header) print header[i]
-      print
-      failIndent = indent
-      state = 1
-      next
-    }
-    header[indent] = $0
-    for (i = indent + 1; i <= depth; i++) delete header[i]
-    depth = indent
-  }
+  state == 1 && /^  / { print; next }
+  state == 1 { exit }
+  /^FAIL / { print; state = 1 }
 ' "$log")
 
 # Falling back to the whole log rather than printing nothing: the summary says a
-# case failed, so silence here would mean the block layout changed under this
+# case failed, so silence here would mean the failure layout changed under this
 # parser, and silence reads far too much like "no failure".
 if [ -n "$first" ]; then
   printf '%s\n' "$first"
 else
-  echo '(no FAIL block recognized; the whole run follows)'
+  echo '(no FAIL line recognized; the whole run follows)'
   cat "$log"
 fi
 

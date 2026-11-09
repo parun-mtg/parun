@@ -48,7 +48,7 @@ import qualified System.IO as IO
 -- around this module and the two it delegates to, so importing this and
 -- calling 'main' is exactly the installed binary.
 --
--- Both delegates parse their own arguments (tasty and the benchmark harness each read
+-- Both delegates parse their own arguments (the test runner and the benchmark harness each read
 -- 'Environment.getArgs' themselves), so the subcommand is stripped with
 -- 'Environment.withArgs' rather than passed along.
 main :: IO ()

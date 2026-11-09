@@ -18,6 +18,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
 import qualified Data.Time.Clock.System as Clock
+import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.DeckList as DeckList
@@ -138,6 +139,10 @@ refuse format lists = do
 nanoseconds :: Clock.SystemTime -> Natural
 nanoseconds t = Integer.toNaturalSaturating (toInteger (Clock.systemSeconds t) * 1000000000 + toInteger (Clock.systemNanoseconds t))
 
+-- | A seed from the system clock, for a run given none.
+clockSeed :: IO Word.Word64
+clockSeed = fmap (SplitMix.Play.fromClock . nanoseconds) Clock.getSystemTime
+
 -- | A game between the two decks under `format`, the one 'settle' names
 -- (CR 100.2).
 play :: PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
@@ -146,7 +151,7 @@ play options registry format (one, two) = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-  seed <- maybe (fmap (SplitMix.Play.fromClock . nanoseconds) Clock.getSystemTime) pure (PlayOptions.seed options)
+  seed <- maybe clockSeed pure (PlayOptions.seed options)
   IO.hPutStrLn IO.stderr ("Seed " <> show seed <> ".")
   let people = filter (`Set.notMember` PlayOptions.bots options) [1, 2]
   let (tell, ask)

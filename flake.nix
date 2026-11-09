@@ -57,7 +57,6 @@
               '';
 
               testFlags = (old.testFlags or [ ]) ++ [
-                "--hide-successes"
                 "--timeout"
                 "120s"
               ];

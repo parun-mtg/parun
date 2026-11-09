@@ -46,10 +46,13 @@ missing, say so in the PR. Never build in the warm worktree.
 
 ### Running the suite
 
-    script/with-build-lock.sh cabal run -v0 parun -- test -p PATTERN --hide-successes
+    script/with-build-lock.sh cabal run -v0 parun -- test -p PATTERN
 
-`PATTERN` is a tasty pattern over the `Spec.describe` group names, passed
-unsplit (`--test-options` splits on spaces). Iterate on your subtree, and run
+`PATTERN` is a case-sensitive substring of a test's path, its `Spec.describe`
+group names and its own joined by dots, passed unsplit (`--test-options` splits
+on spaces); repeat `-p` to run the tests matching any. Only failures print,
+then a summary line naming the seed the run shuffled the tests with; `--seed N`
+replays that order. Iterate on your subtree, and run
 the whole suite before each commit. Redirect output to a file and read the
 file. Build with `cabal build -v0`. No `cabal clean`; keep the optimizer on
 for the suite (mutations are the exception).

@@ -1,9 +1,7 @@
 module Parun.Test where
 
 import qualified Control.Monad.IO.Class as MonadIO
-import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.Writer as Writer
-import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Parun.AbilitySlotLintSpec
 import qualified Parun.ActivateSpec
@@ -1005,6 +1003,8 @@ import qualified Parun.SubtypeSpec
 import qualified Parun.TargetPerPlayerSpec
 import qualified Parun.TargetSpec
 import qualified Parun.TeamSpec
+import qualified Parun.Test.Runner as Runner
+import qualified Parun.Test.RunnerSpec
 import qualified Parun.TransformSpec
 import qualified Parun.TriggerSpec
 import qualified Parun.TurnSpec
@@ -1018,29 +1018,13 @@ import qualified Parun.VoteSpec
 import qualified Parun.ZoneChangeSpec
 import qualified Parun.ZoneReplacementSpec
 import qualified Parun.ZoneTriggerSpec
-import qualified Test.Tasty as Tasty
-import qualified Test.Tasty.HUnit as HU
 
 main :: IO ()
-main = do
+main = Runner.main $ do
   root <- Registry.defaultRoot
   registry <- Registry.defaultRegistry
   corpus <- Registry.loadRoot root
-  testTree <- buildTestTree registry corpus
-  Tasty.defaultMain testTree
-
-tasty :: (Monad n) => Spec.Spec IO (Writer.WriterT [Tasty.TestTree] n)
-tasty =
-  Spec.MkSpec
-    { Spec.assertFailure = HU.assertFailure,
-      Spec.describe = \s w -> do
-        ts <- Trans.lift $ Writer.execWriterT w
-        Writer.tell [Tasty.testGroup s ts],
-      Spec.it = \s -> Writer.tell . List.singleton . HU.testCase s
-    }
-
-buildTestTree :: Registry.Registry IO -> [(FilePath, Either Text.Text Card.Card)] -> IO Tasty.TestTree
-buildTestTree registry = fmap (Tasty.testGroup "parun") . Writer.execWriterT . spec tasty registry
+  Writer.execWriterT $ spec Runner.runner registry corpus
 
 -- Specs that reach for card data take a registry over the same monad they
 -- assert in, and lints of the corpus parun ships take it loaded: every file's
@@ -1049,11 +1033,6 @@ buildTestTree registry = fmap (Tasty.testGroup "parun") . Writer.execWriterT . s
 -- all.
 spec :: (MonadIO.MonadIO n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Card)] -> n ()
 spec s registry corpus = do
-  -- Parun.EngineSpec comes first because tasty hands tests to its thread
-  -- pool in tree order, and this group holds the suite's two longest cases
-  -- by an order of magnitude. Started last they were the whole tail.
-  Parun.EngineSpec.spec s registry
-
   Parun.AbilitySlotLintSpec.spec s registry corpus
   Parun.ActivateSpec.spec s registry
   Parun.ActivationProhibitionSpec.spec s registry
@@ -1941,6 +1920,7 @@ spec s registry corpus = do
   Parun.EarthbendSpec.spec s registry
   Parun.EffectLintSpec.spec s registry corpus
   Parun.EmperorSpec.spec s registry
+  Parun.EngineSpec.spec s registry
   Parun.EntryReplacementSpec.spec s registry
   Parun.EntryRestrictionSpec.spec s registry
   Parun.EventSpec.spec s registry
@@ -2075,6 +2055,7 @@ spec s registry corpus = do
   Parun.TargetPerPlayerSpec.spec s registry
   Parun.TargetSpec.spec s registry
   Parun.TeamSpec.spec s registry
+  Parun.Test.RunnerSpec.spec s
   Parun.TransformSpec.spec s registry
   Parun.TriggerSpec.spec s registry
   Parun.TurnSpec.spec s registry

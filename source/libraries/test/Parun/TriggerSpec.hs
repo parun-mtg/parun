@@ -7,7 +7,7 @@
 -- The triggers themselves live in three sibling modules --
 -- Parun.KeywordTriggerSpec (CR 702 keywords), Parun.ZoneTriggerSpec (zone
 -- changes) and Parun.EventTriggerSpec (everything else). All four report under
--- the same describe name, so the split is invisible to a tasty pattern.
+-- the same describe name, so the split is invisible to a pattern.
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 
