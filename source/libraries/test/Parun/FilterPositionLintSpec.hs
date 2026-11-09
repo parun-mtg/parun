@@ -2273,6 +2273,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Sleep Paralysis", 1), -- Claustrophobia's wording
         ("Capture Sphere", 1), -- Claustrophobia's wording
         ("Blossombind", 1), -- Claustrophobia's wording
+        ("Frozen in Ice", 1), -- Claustrophobia's wording
         ("Starlight Snare", 1), -- Claustrophobia's wording
         ("Infinite Coursework", 2), -- Claustrophobia's tap, and the Effect.Undesignate beside it
         ("Artificer's Hex", 2), -- its intervening "if" and the destruction it gates

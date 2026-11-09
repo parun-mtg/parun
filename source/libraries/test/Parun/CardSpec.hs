@@ -3334,6 +3334,9 @@ namedTokens =
       CardName.MkCardName (Text.pack "Cadet"),
       -- CR 111.10j's Cursed Role (Spiteful Hexmage).
       CardName.MkCardName (Text.pack "Cursed"),
+      -- Doctor Doom's "3/3 colorless Robot Villain artifact creature tokens
+      -- named Doombot".
+      CardName.MkCardName (Text.pack "Doombot"),
       -- Koma, World-Eater's "3/3 blue Serpent creature tokens named Koma's Coil".
       CardName.MkCardName (Text.pack "Koma's Coil"),
       -- Goblin Kaboomist's "a colorless artifact token named Land Mine".
