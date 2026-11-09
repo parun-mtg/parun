@@ -84,18 +84,6 @@
     },
     {
       "do": {
-        "ChooseTargets": {
-          "provoked": [
-            "$wall"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
         "ChooseOptional": "Exercises"
       },
       "player": "alice",
@@ -173,18 +161,6 @@
         "Attack": [
           "$grappler"
         ]
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "provoked": [
-            "$wall"
-          ]
-        }
       },
       "player": "alice",
       "step": "DeclareAttackers",

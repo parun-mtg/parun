@@ -106,9 +106,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$ministrant"
-          ],
           "mana": [
             "$swamp-1",
             "$swamp-2",

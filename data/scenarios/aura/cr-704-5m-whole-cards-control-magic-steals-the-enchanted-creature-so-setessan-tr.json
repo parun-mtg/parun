@@ -94,9 +94,6 @@
       "do": {
         "Cast": {
           "object": "$training-card",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$forest-1",
             "$forest-2"
@@ -179,9 +176,6 @@
       "do": {
         "Cast": {
           "object": "$control-magic-card",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$bisland-1",
             "$bisland-2",

@@ -159,24 +159,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$m1",
-            "$m2",
-            null
-          ],
-          "object": "$h1",
-          "targets": [
-            "$home"
-          ]
-        }
-      },
-      "step": "DeclareBlockers",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
@@ -184,10 +166,7 @@
             "$m2",
             null
           ],
-          "object": "$h1",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$h1"
         }
       },
       "player": "alice",

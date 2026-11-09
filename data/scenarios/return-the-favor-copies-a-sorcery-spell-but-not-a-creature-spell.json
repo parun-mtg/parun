@@ -172,10 +172,7 @@
           "modes": [
             0
           ],
-          "object": "$favor",
-          "targets": [
-            "Volcanic Hammer"
-          ]
+          "object": "$favor"
         }
       },
       "player": "alice",

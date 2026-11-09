@@ -124,9 +124,6 @@
       "do": {
         "Cast": {
           "object": "$nat",
-          "targets": [
-            "$st"
-          ],
           "mana": [
             "$f1",
             "$f2"

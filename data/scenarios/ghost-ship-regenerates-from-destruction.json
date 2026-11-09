@@ -94,10 +94,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$twister",
-          "targets": [
-            "$ship"
-          ]
+          "object": "$twister"
         }
       },
       "player": "alice",

@@ -87,9 +87,6 @@
       "do": {
         "Cast": {
           "object": "$answer",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$a1",
             "$a2",

@@ -104,9 +104,6 @@
       "do": {
         "Cast": {
           "object": "$counter",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$ai1",
             "$ai2"

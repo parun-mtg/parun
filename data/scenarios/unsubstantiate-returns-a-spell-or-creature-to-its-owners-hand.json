@@ -143,42 +143,6 @@
   "description": "Unsubstantiate returns a spell or a creature to its owner's hand; a noncreature permanent is not a target.",
   "timeline": [
     {
-      "refuse": {
-        "Cast": {
-          "object": "$u1",
-          "mana": [
-            "$i1",
-            "$i2",
-            null
-          ],
-          "targets": [
-            "$land"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "refuse": {
-        "Cast": {
-          "object": "$u1",
-          "mana": [
-            "$i1",
-            "$i2",
-            null
-          ],
-          "targets": [
-            "$anthem"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "object": "$u1",
@@ -186,9 +150,6 @@
             "$i1",
             "$i2",
             null
-          ],
-          "targets": [
-            "$lent"
           ]
         }
       },
@@ -258,9 +219,6 @@
           "mana": [
             "$i3",
             "$i4"
-          ],
-          "targets": [
-            "Lightning Bolt"
           ]
         }
       },

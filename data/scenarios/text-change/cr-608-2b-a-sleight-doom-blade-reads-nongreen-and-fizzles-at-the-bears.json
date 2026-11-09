@@ -24,7 +24,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$blade", "targets": ["$bears"], "mana": ["$s1", "$s2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$blade", "mana": ["$s1", "$s2"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$sleight", "targets": ["Doom Blade"], "mana": ["$island"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },

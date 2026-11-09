@@ -119,18 +119,6 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "Lightning Bolt"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": "Pass"
     },
     {

@@ -78,9 +78,6 @@
       "do": {
         "Cast": {
           "object": "$aspect-of-wolf",
-          "targets": [
-            "$hill-giant"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

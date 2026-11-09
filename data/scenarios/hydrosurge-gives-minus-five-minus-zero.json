@@ -61,10 +61,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$surge",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$surge"
         }
       }
     },

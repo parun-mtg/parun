@@ -41,18 +41,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$angel"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "CombatDamage",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "CombatDamage",

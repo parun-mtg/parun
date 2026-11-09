@@ -55,25 +55,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$weaver",
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$weaver",
-          "targets": [
-            "$skeletons"
-          ]
+          "object": "$weaver"
         }
       }
     },

@@ -81,10 +81,7 @@
           "mana": [
             "$swamp"
           ],
-          "object": "$touch",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$touch"
         }
       },
       "player": "alice",

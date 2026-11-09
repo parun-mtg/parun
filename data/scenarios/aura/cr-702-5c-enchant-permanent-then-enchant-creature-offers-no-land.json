@@ -46,30 +46,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$synthetic-warden-of-two-charges",
-          "targets": [
-            "$land"
-          ],
-          "mana": [
-            "$plains",
-            "$plains-2",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$synthetic-warden-of-two-charges",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

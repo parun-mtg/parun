@@ -57,25 +57,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$strength",
-          "targets": [
-            "$knight"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$strength",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$strength"
         }
       }
     },

@@ -33,25 +33,9 @@
   "note": "Three mana pays Equip commander {3} and not Equip {5}: the Bears are no legal target for it, Krenko, Mob Boss is.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$plate",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$plate",
-          "targets": [
-            "$krenko"
-          ]
+          "object": "$plate"
         }
       },
       "player": "alice",

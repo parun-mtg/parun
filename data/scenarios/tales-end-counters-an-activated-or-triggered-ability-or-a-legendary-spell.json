@@ -245,10 +245,7 @@
             "$i2",
             null
           ],
-          "object": "$te1",
-          "targets": [
-            "Isamaru, Hound of Konda"
-          ]
+          "object": "$te1"
         }
       },
       "player": "bob",
@@ -307,10 +304,7 @@
             "$i4",
             null
           ],
-          "object": "$te2",
-          "targets": [
-            "ability of $sorc"
-          ]
+          "object": "$te2"
         }
       },
       "player": "bob",
@@ -379,10 +373,7 @@
             "$i5",
             "$i6"
           ],
-          "object": "$te3",
-          "targets": [
-            "trigger of Elvish Visionary"
-          ]
+          "object": "$te3"
         }
       },
       "player": "bob",

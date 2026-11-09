@@ -72,9 +72,6 @@
       "do": {
         "Cast": {
           "object": "$treason",
-          "targets": [
-            "$shimatsu"
-          ],
           "mana": [
             "$mountain-1",
             "$mountain-2",
@@ -109,9 +106,6 @@
       "do": {
         "Cast": {
           "object": "$unsummon",
-          "targets": [
-            "$shimatsu"
-          ],
           "mana": [
             "$island"
           ]

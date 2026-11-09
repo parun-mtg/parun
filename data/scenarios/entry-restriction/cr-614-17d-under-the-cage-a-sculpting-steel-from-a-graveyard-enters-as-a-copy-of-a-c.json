@@ -85,10 +85,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$tentacles",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$tentacles"
         }
       },
       "player": "alice",

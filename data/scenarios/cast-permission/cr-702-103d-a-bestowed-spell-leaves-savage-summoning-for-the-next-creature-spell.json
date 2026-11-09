@@ -147,10 +147,7 @@
             "$m1",
             null
           ],
-          "object": "$nyx",
-          "targets": [
-            "$host"
-          ]
+          "object": "$nyx"
         }
       },
       "player": "alice",

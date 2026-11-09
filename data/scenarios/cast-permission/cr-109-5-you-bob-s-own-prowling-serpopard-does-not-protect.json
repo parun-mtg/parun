@@ -162,9 +162,6 @@
       "do": {
         "Cast": {
           "object": "$cancel",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$island-1",
             "$island-2",

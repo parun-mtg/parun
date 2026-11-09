@@ -78,10 +78,7 @@
         "Activate": {
           "object": "$chandra",
           "ability": 1,
-          "x": 3,
-          "targets": [
-            "$wall"
-          ]
+          "x": 3
         }
       }
     },

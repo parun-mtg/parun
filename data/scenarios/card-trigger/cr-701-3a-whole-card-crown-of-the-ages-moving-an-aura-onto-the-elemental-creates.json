@@ -163,9 +163,6 @@
         "Activate": {
           "object": "Crown of the Ages",
           "ability": 0,
-          "targets": [
-            "Unholy Strength"
-          ],
           "mana": [
             "$swamp-4",
             "$swamp-5",

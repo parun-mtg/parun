@@ -37,7 +37,6 @@
       "do": { "Cast": { "object": "$dignitary", "mana": ["$p1", "$p2", "$p3", "$p4"] } }
     },
     { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
-    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$alice"] } } },
     { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
     { "turn": 4, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
     { "turn": 5, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$giant"] } },

@@ -65,9 +65,6 @@
       "do": {
         "Cast": {
           "object": "$vandalize",
-          "targets": [
-            "$bonesplitter"
-          ],
           "modes": [
             0
           ],

@@ -146,10 +146,7 @@
             "$alice-island-4",
             "$alice-island-5"
           ],
-          "object": "$desertion",
-          "targets": [
-            "Clone"
-          ]
+          "object": "$desertion"
         }
       },
       "player": "alice",

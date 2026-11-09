@@ -61,9 +61,6 @@
       "do": {
         "Cast": {
           "object": "$angelic-edict",
-          "targets": [
-            "$rest-in-peace"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

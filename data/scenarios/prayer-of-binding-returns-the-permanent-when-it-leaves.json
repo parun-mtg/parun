@@ -195,9 +195,6 @@
           "mana": [
             "$a5",
             "$a6"
-          ],
-          "targets": [
-            "Prayer of Binding"
           ]
         }
       }

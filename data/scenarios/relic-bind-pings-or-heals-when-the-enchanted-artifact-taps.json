@@ -193,25 +193,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$i1",
-            "$i2",
-            "$i3",
-            null
-          ],
-          "object": "$second",
-          "targets": [
-            "$mine"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
       "do": {
         "Attack": []
       },

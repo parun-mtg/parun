@@ -67,38 +67,9 @@
   "description": "CR 701.21a / 702.12b: Selfless Savior's sacrifice gives another target creature its controller controls indestructible until end of turn",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$savior",
-          "targets": [
-            "$savior"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$savior",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$savior",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$savior"
         }
       },
       "player": "alice",

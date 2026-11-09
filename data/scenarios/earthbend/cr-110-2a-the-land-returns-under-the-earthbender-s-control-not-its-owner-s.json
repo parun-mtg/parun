@@ -175,9 +175,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$borrowed"
-          ],
           "mana": [
             "$swamp-0",
             "$swamp-1",

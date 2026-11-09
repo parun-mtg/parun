@@ -95,9 +95,6 @@
       "do": {
         "Cast": {
           "object": "$sound",
-          "targets": [
-            "Goblin Piker#4"
-          ],
           "mana": [
             "$alice-island-1",
             "$alice-island-2"

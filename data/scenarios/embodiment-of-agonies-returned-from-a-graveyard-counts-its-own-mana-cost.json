@@ -78,10 +78,7 @@
             "$s3",
             "$s4"
           ],
-          "object": "$zombify",
-          "targets": [
-            "$embodiment"
-          ]
+          "object": "$zombify"
         }
       },
       "player": "alice",

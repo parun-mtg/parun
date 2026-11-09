@@ -62,10 +62,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$flesh",
-          "targets": [
-            "$troll"
-          ]
+          "object": "$flesh"
         }
       }
     },

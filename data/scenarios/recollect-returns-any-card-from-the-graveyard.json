@@ -55,10 +55,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$recollect",
-          "targets": [
-            "$forest"
-          ]
+          "object": "$recollect"
         }
       }
     },

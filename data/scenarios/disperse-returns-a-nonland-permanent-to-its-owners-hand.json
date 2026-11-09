@@ -63,25 +63,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$disperse",
-          "targets": [
-            "$island"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$disperse",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$disperse"
         }
       }
     },

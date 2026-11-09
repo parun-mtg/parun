@@ -102,25 +102,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$lord",
-          "targets": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$lord",
-          "targets": [
-            "$digger"
-          ]
+          "object": "$lord"
         }
       }
     },

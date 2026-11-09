@@ -67,25 +67,9 @@
   "description": "CR 701.8a / 109.5: Stroke of Midnight destroys a nonland permanent and its controller makes the Human",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$one",
-          "targets": [
-            "$land"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$one",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$one"
         }
       },
       "player": "alice",

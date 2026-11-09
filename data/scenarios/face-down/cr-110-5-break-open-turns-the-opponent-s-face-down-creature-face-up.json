@@ -112,9 +112,6 @@
       "do": {
         "Cast": {
           "object": "$break",
-          "targets": [
-            "$victim"
-          ],
           "mana": [
             "$m1",
             "$m2"

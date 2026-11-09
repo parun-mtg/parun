@@ -91,9 +91,6 @@
       "do": {
         "Activate": {
           "object": "$w",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$m1",
             "$m2"

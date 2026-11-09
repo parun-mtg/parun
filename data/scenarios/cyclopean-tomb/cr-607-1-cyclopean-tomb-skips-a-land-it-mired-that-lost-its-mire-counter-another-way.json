@@ -375,10 +375,7 @@
             "$m2",
             null
           ],
-          "object": "$shatter",
-          "targets": [
-            "$tomb"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "alice",

@@ -90,10 +90,7 @@
             "$mana",
             null
           ],
-          "object": "$alteration",
-          "targets": [
-            "$aura"
-          ]
+          "object": "$alteration"
         }
       },
       "player": "alice",

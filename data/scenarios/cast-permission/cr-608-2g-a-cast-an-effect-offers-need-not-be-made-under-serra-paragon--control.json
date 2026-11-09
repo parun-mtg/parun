@@ -94,10 +94,7 @@
       "do": {
         "Activate": {
           "object": "$bargainer",
-          "ability": 0,
-          "targets": [
-            "$elves"
-          ]
+          "ability": 0
         }
       }
     },

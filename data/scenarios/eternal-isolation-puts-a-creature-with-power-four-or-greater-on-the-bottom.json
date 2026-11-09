@@ -75,33 +75,13 @@
   "note": "bob's 3-power Hill Giant is no legal target; his Serra Angel goes under his three Islands.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$p1",
-            "$p2"
-          ],
-          "object": "$isolation",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
             "$p1",
             "$p2"
           ],
-          "object": "$isolation",
-          "targets": [
-            "$angel"
-          ]
+          "object": "$isolation"
         }
       },
       "player": "alice",

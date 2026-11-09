@@ -53,9 +53,6 @@
         "Activate": {
           "object": "$chthonian-nightmare",
           "ability": 0,
-          "targets": [
-            "$kalakscion-hunger-tyrant"
-          ],
           "x": 3,
           "costOrder": [
             0,

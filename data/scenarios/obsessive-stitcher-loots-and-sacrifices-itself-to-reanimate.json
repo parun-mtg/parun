@@ -181,26 +181,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 1,
-          "mana": [
-            "$l1",
-            "$l2",
-            "$l3",
-            "$l4"
-          ],
-          "object": "$s",
-          "targets": [
-            "$bg"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
       "do": {
         "Activate": {
           "ability": 1,
@@ -210,10 +190,7 @@
             "$l3",
             "$l4"
           ],
-          "object": "$s",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$s"
         }
       },
       "player": "alice",

@@ -255,9 +255,6 @@
       "do": {
         "Cast": {
           "object": "$e",
-          "targets": [
-            "$pac"
-          ],
           "mana": [
             "$p7",
             "$p8",

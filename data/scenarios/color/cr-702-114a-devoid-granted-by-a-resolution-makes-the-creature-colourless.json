@@ -73,9 +73,6 @@
       "do": {
         "Cast": {
           "object": "$synthetic-colorless-blessing",
-          "targets": [
-            "$typhoid-rats"
-          ],
           "mana": [
             "$island",
             null

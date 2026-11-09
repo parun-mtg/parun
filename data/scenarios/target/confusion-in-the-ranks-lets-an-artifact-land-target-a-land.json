@@ -78,18 +78,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$island"
-          ]
-        }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "bob",
       "step": "PrecombatMain",

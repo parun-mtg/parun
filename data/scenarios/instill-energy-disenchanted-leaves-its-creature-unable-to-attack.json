@@ -42,10 +42,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$kill",
-          "targets": [
-            "$aura"
-          ]
+          "object": "$kill"
         }
       }
     },

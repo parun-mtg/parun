@@ -101,9 +101,6 @@
       "do": {
         "Cast": {
           "object": "$treason",
-          "targets": [
-            "$bearer"
-          ],
           "mana": [
             "$m1",
             "$m2",

@@ -73,10 +73,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$ib",
-          "targets": [
-            "$hg"
-          ]
+          "object": "$ib"
         }
       }
     },

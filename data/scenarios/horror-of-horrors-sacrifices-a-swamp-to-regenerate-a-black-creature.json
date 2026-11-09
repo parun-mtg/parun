@@ -65,25 +65,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$horror",
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$horror",
-          "targets": [
-            "$zombies"
-          ]
+          "object": "$horror"
         }
       }
     },

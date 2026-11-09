@@ -125,10 +125,7 @@
             "$island1",
             "$island2"
           ],
-          "object": "$redirect",
-          "targets": [
-            "Forked Lightning"
-          ]
+          "object": "$redirect"
         }
       },
       "player": "bob",

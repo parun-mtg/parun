@@ -55,10 +55,7 @@
       "player": "bob",
       "do": {
         "Activate": {
-          "object": "$kongming-s-contraptions",
-          "targets": [
-            "$goblin-piker"
-          ]
+          "object": "$kongming-s-contraptions"
         }
       }
     },

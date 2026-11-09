@@ -21,7 +21,7 @@
   },
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$attacker"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$attacker", "targets": ["$bob"], "mana": ["$swamp-1", null]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$attacker", "mana": ["$swamp-1", null]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {
       "turn": 1,
@@ -29,7 +29,7 @@
       "player": "alice",
       "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Activate $attacker", "ActivateManaAbility $swamp-2", "ActivateManaAbility $swamp-3"]}}
     },
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$attacker", "targets": ["$bob"], "mana": ["$swamp-2", null]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$attacker", "mana": ["$swamp-2", null]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {
       "turn": 1,

@@ -112,100 +112,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$p1",
-            "$p2",
-            "$i1",
-            "$i2"
-          ],
-          "object": "$rescue",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "AnnounceHybridHalf",
-          "with": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "AnnounceHybridHalf",
-          "with": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$p1",
-            "$p2",
-            "$i1",
-            "$i2"
-          ],
-          "object": "$rescue",
-          "targets": [
-            "$mystic"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "AnnounceHybridHalf",
-          "with": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "AnnounceHybridHalf",
-          "with": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
@@ -214,10 +120,7 @@
             "$i1",
             "$i2"
           ],
-          "object": "$rescue",
-          "targets": [
-            "$elves"
-          ]
+          "object": "$rescue"
         }
       },
       "player": "alice",

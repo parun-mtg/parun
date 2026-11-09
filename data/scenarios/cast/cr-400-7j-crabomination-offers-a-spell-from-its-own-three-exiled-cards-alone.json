@@ -153,23 +153,8 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
         "Activate": {
           "object": "$engine",
-          "targets": [
-            "trigger of Crabomination"
-          ],
           "mana": [
             "$s7",
             "$s8"

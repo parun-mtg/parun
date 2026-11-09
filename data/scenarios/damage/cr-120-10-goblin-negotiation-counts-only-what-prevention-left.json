@@ -73,9 +73,6 @@
       "do": {
         "Cast": {
           "object": "$gn",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$m1",
             "$m2",

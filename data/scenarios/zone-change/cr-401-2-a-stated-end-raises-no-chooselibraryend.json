@@ -61,9 +61,6 @@
       "do": {
         "Cast": {
           "object": "$griptide",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

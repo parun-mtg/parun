@@ -105,23 +105,8 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
         "Cast": {
-          "object": "$dis",
-          "targets": [
-            "Dance of Many"
-          ]
+          "object": "$dis"
         }
       }
     },

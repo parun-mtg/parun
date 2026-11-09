@@ -90,10 +90,7 @@
           "mana": [
             null
           ],
-          "object": "$disenchant",
-          "targets": [
-            "$march"
-          ]
+          "object": "$disenchant"
         }
       },
       "player": "alice",

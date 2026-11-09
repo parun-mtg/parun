@@ -125,10 +125,7 @@
             "$w2",
             null
           ],
-          "object": "$boon",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$boon"
         }
       },
       "player": "alice",
@@ -219,10 +216,7 @@
             "$w3",
             "$w4"
           ],
-          "object": "$boon2",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$boon2"
         }
       },
       "player": "alice",

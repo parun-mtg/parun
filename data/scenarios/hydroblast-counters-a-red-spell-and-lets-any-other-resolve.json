@@ -121,9 +121,6 @@
           "object": "$h1",
           "modes": [
             0
-          ],
-          "targets": [
-            "Shock"
           ]
         }
       }
@@ -189,9 +186,6 @@
           "object": "$h2",
           "modes": [
             0
-          ],
-          "targets": [
-            "Grizzly Bears"
           ]
         }
       }

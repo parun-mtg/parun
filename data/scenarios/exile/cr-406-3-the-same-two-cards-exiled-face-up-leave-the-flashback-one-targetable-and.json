@@ -52,24 +52,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$rep",
-          "targets": [
-            "$piker"
-          ],
-          "mana": [
-            "$i1",
-            "$i2",
-            "$i3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "player": "alice",
@@ -86,9 +68,6 @@
       "do": {
         "Cast": {
           "object": "$rep",
-          "targets": [
-            "$think"
-          ],
           "mana": [
             "$i1",
             "$i2",

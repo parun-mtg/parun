@@ -78,9 +78,6 @@
       "do": {
         "Cast": {
           "object": "$end",
-          "targets": [
-            "$thopter"
-          ],
           "mana": [
             "$g1",
             "$g2",

@@ -65,18 +65,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "check": {
         "View": {
           "is": null,

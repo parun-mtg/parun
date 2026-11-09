@@ -52,9 +52,6 @@
       "do": {
         "Cast": {
           "object": "$telekinesis",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$island1",
             "$island2"

@@ -90,27 +90,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$ashes",
-          "targets": [
-            "$bears",
-            "$thopter"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$ashes",
-          "targets": [
-            "$bears",
-            "$giant"
-          ]
+          "object": "$ashes"
         }
       }
     },

@@ -126,15 +126,7 @@
           "mana": [
             "$f1"
           ],
-          "object": "$prey",
-          "targetsBySlot": {
-            "mine": [
-              "Vampire Nighthawk"
-            ],
-            "theirs": [
-              "$wurm"
-            ]
-          }
+          "object": "$prey"
         }
       },
       "player": "bob",

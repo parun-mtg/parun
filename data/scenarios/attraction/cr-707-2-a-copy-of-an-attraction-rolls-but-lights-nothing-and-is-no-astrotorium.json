@@ -294,10 +294,7 @@
             "$p2",
             null
           ],
-          "object": "$second",
-          "targets": [
-            "Phyrexian Metamorph"
-          ]
+          "object": "$second"
         }
       },
       "player": "alice",

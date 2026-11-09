@@ -57,25 +57,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$deathmark",
-          "targets": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$deathmark",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$deathmark"
         }
       }
     },

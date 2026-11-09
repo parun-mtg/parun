@@ -79,10 +79,7 @@
       "do": {
         "Activate": {
           "object": "$gnomes",
-          "ability": 0,
-          "targets": [
-            "Ancestral Recall"
-          ]
+          "ability": 0
         }
       }
     },

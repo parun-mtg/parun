@@ -128,10 +128,7 @@
           "mana": [
             "$p1"
           ],
-          "object": "$swords",
-          "targets": [
-            "$inc"
-          ]
+          "object": "$swords"
         }
       },
       "player": "alice",

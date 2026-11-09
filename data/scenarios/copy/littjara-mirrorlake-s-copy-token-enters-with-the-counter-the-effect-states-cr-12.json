@@ -65,9 +65,6 @@
       "do": {
         "Activate": {
           "object": "$littjara-mirrorlake",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

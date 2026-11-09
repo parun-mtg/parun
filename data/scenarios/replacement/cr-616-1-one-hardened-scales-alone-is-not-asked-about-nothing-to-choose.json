@@ -43,9 +43,6 @@
       "do": {
         "Cast": {
           "object": "$battlegrowth",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest"
           ]

@@ -99,18 +99,6 @@
       "turn": 1,
       "step": "PostcombatMain",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "equipped": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
           "of": "Zone",

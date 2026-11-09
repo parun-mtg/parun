@@ -122,9 +122,6 @@
         "Activate": {
           "object": "$lithoform-engine",
           "ability": 2,
-          "targets": [
-            "Autonomous Assembler"
-          ],
           "mana": [
             "$plains-6",
             "$plains-7",

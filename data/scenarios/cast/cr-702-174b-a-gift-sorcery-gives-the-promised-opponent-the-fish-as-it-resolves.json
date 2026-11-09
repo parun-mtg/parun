@@ -59,36 +59,6 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "mine",
-              [
-                [
-                  "Creature",
-                  "$cabal-evangel"
-                ]
-              ]
-            ],
-            [
-              "theirs",
-              [
-                [
-                  "Creature",
-                  "$hill-giant"
-                ]
-              ]
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
           "prompt": "ChooseOpponent",
           "with": "carol"
         }

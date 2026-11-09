@@ -159,18 +159,6 @@
     },
     {
       "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$firebolt"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 3,
       "step": "PostcombatMain",
       "player": "alice",
       "check": {

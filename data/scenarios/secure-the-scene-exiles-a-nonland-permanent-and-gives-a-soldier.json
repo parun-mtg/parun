@@ -87,25 +87,9 @@
   "description": "CR 406.2 / 111.1: Secure the Scene exiles a target nonland permanent, a land being no legal target, and its controller creates a 1/1 Soldier",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$spell",
-          "targets": [
-            "$land"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$spell",
-          "targets": [
-            "$sword"
-          ]
+          "object": "$spell"
         }
       },
       "player": "alice",

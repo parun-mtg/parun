@@ -165,10 +165,7 @@
       "do": {
         "Activate": {
           "ability": 2,
-          "object": "$chandra",
-          "targets": [
-            "$baloth"
-          ]
+          "object": "$chandra"
         }
       },
       "player": "alice",

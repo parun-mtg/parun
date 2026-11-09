@@ -33,7 +33,7 @@
     { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Activate": { "object": "$maze1", "targets": ["$attacker"], "mana": ["$i1", "$i2", "$i3", "$i4", null] } } },
     { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "DeclareBlockers", "player": "alice", "check": { "Attackers": { "attackers": {} } } },
-    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Activate": { "object": "$maze2", "targets": ["$blocker"], "mana": ["$i5", "$i6", "$i7", "$i8", null] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Activate": { "object": "$maze2", "mana": ["$i5", "$i6", "$i7", "$i8", null] } } },
     { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Tapped": { "object": "$maze2", "tapped": true } } }
   ]
 }

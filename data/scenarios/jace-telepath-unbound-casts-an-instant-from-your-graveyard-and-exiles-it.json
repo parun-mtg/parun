@@ -78,10 +78,7 @@
       "do": {
         "Activate": {
           "object": "$jace",
-          "ability": 1,
-          "targets": [
-            "$bolt"
-          ]
+          "ability": 1
         }
       }
     },

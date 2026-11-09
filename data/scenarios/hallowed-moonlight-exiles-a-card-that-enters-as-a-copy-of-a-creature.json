@@ -120,10 +120,7 @@
             "$s4",
             "$s5"
           ],
-          "object": "$beacon",
-          "targets": [
-            "$steel"
-          ]
+          "object": "$beacon"
         }
       },
       "player": "alice",

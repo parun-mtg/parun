@@ -127,9 +127,6 @@
       "do": {
         "Cast": {
           "object": "$bolt",
-          "targets": [
-            "$v"
-          ],
           "mana": [
             "$m1",
             "$m2",

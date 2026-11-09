@@ -93,24 +93,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$t",
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3"
-          ],
-          "targets": [
-            "$alice"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$t",
@@ -118,9 +100,6 @@
             "$s1",
             "$s2",
             "$s3"
-          ],
-          "targets": [
-            "$bob"
           ]
         }
       }

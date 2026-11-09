@@ -140,28 +140,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$blow",
-          "targets": [
-            "$whole"
-          ],
-          "mana": [
-            "$swamp"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$blow",
-          "targets": [
-            "$hurt"
-          ],
           "mana": [
             "$swamp"
           ]

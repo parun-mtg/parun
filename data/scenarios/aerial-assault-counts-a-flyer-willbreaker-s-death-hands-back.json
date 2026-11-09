@@ -120,10 +120,7 @@
             "$p2",
             "$p3"
           ],
-          "object": "$assault",
-          "targets": [
-            "$wb"
-          ]
+          "object": "$assault"
         }
       },
       "player": "alice",

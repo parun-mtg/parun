@@ -35,9 +35,9 @@
     ]
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$exhaustion", "targets": ["$bob"], "mana": ["$i1", "$i2", "$i3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$exhaustion", "mana": ["$i1", "$i2", "$i3", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$switcheroo", "targets": ["$giant", "$piker"], "mana": ["$i4", "$i5", "$i6", "$i7", "$i8"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$switcheroo", "mana": ["$i4", "$i5", "$i6", "$i7", "$i8"] } } },
     { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Tapped": { "object": "$giant", "tapped": true } } },
     { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Tapped": { "object": "$forest", "tapped": true } } },
     { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "View": { "of": "Controller", "object": "$giant", "is": "bob" } } },

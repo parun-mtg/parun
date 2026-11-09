@@ -59,9 +59,6 @@
       "do": {
         "Cast": {
           "object": "$bewitching-leechcraft",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

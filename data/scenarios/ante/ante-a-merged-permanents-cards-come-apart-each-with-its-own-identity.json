@@ -101,9 +101,6 @@
       "do": {
         "Cast": {
           "object": "$darkpact",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$s1",
             "$s2",
@@ -158,9 +155,6 @@
       "do": {
         "Cast": {
           "object": "$cub",
-          "targets": [
-            "Grizzly Bears"
-          ],
           "cost": [
             {
               "type": "Generic",
@@ -204,9 +198,6 @@
       "do": {
         "Cast": {
           "object": "$blade",
-          "targets": [
-            "Cubwarden"
-          ],
           "mana": [
             "$s2",
             "$s3"

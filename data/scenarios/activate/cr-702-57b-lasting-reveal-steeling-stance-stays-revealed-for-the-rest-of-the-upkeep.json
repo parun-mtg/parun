@@ -70,9 +70,6 @@
         "Activate": {
           "object": "$stance",
           "ability": 0,
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains"
           ]

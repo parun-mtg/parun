@@ -129,10 +129,7 @@
             "$i3",
             "$i4"
           ],
-          "object": "$cs",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$cs"
         }
       },
       "player": "alice",

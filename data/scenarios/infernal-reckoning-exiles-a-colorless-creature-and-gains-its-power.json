@@ -92,28 +92,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$ir",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$s1"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$ir",
-          "targets": [
-            "$sable"
-          ],
           "mana": [
             "$s1"
           ]

@@ -70,25 +70,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$combust",
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$combust",
-          "targets": [
-            "$cho"
-          ]
+          "object": "$combust"
         }
       }
     },
@@ -104,10 +88,7 @@
       "player": "bob",
       "do": {
         "Cast": {
-          "object": "$counterspell",
-          "targets": [
-            "Combust"
-          ]
+          "object": "$counterspell"
         }
       }
     },

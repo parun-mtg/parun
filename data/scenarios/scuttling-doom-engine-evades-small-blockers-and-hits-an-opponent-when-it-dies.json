@@ -6,8 +6,6 @@
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$engine"]}},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": {"Block": {"$bears": ["$engine"]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$wurm": ["$engine"]}}},
-    {"turn": 1, "step": "CombatDamage", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$alice"]}}},
-    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
     {"turn": 1, "step": "CombatDamage", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Scuttling Doom Engine", "count": 1}}},
     {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Craw Wurm", "count": 1}}},

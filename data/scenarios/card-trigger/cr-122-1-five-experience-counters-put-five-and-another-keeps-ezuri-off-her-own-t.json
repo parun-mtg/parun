@@ -36,30 +36,6 @@
       "turn": 1,
       "step": "BeginningOfCombat",
       "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$ezuri"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$construct"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "do": "Pass"
     },
     {

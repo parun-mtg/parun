@@ -61,9 +61,6 @@
       "do": {
         "Cast": {
           "object": "$stars",
-          "targets": [
-            "$raptor"
-          ],
           "mana": [
             "$i1",
             "$i2",

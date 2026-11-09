@@ -268,40 +268,6 @@
       "step": "PrecombatMain",
       "player": "bob",
       "refuse": {
-        "Cast": {
-          "object": "$terror",
-          "mana": [
-            "$s1",
-            "$s2",
-            null
-          ],
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$unsummon",
-          "mana": [
-            "$i4"
-          ],
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
-      "refuse": {
         "Activate": {
           "object": "$sorcerer",
           "targets": [

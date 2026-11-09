@@ -391,18 +391,6 @@
       "step": "CombatDamage",
       "player": "carol",
       "do": {
-        "ChooseTargets": {
-          "target": [
-            "$garland-1"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 5,
-      "step": "CombatDamage",
-      "player": "carol",
-      "do": {
         "Answer": {
           "prompt": "ChooseLegend",
           "with": "$garland-2"

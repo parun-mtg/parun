@@ -111,10 +111,7 @@
         "Activate": {
           "object": "$tamiyo",
           "ability": 1,
-          "x": 4,
-          "targets": [
-            "$wood"
-          ]
+          "x": 4
         }
       }
     },

@@ -87,9 +87,6 @@
       "do": {
         "Cast": {
           "object": "$elvish-fury",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

@@ -128,24 +128,6 @@
   "description": "Invigorating Surge puts a +1/+1 counter on, then doubles, so 2 becomes 6.",
   "timeline": [
     {
-      "refuse": {
-        "Cast": {
-          "object": "$is",
-          "mana": [
-            "$f1",
-            "$f2",
-            "$f3"
-          ],
-          "targets": [
-            "$bb"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "object": "$is",
@@ -153,9 +135,6 @@
             "$f1",
             "$f2",
             "$f3"
-          ],
-          "targets": [
-            "$bears"
           ]
         }
       },

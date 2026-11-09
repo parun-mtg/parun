@@ -63,25 +63,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$erase",
-          "targets": [
-            "$ornithopter"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$erase",
-          "targets": [
-            "$anthem"
-          ]
+          "object": "$erase"
         }
       }
     },

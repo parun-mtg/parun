@@ -193,10 +193,7 @@
           "modes": [
             0
           ],
-          "object": "$c1",
-          "targets": [
-            "Hill Giant"
-          ]
+          "object": "$c1"
         }
       },
       "player": "alice",
@@ -272,10 +269,7 @@
           "modes": [
             0
           ],
-          "object": "$c2",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$c2"
         }
       },
       "player": "alice",

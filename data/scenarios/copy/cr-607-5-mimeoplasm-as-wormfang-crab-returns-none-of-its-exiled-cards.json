@@ -161,10 +161,7 @@
             "Swamp#7",
             "Swamp#8"
           ],
-          "object": "$murder",
-          "targets": [
-            "Mimeoplasm, Revered One"
-          ]
+          "object": "$murder"
         }
       },
       "player": "alice",

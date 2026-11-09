@@ -103,9 +103,6 @@
         "Activate": {
           "object": "$engine",
           "ability": 0,
-          "targets": [
-            "trigger of $beast"
-          ],
           "mana": [
             "$f1",
             "$f2"

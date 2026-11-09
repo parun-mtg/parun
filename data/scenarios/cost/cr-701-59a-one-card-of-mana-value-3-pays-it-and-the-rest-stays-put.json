@@ -48,9 +48,6 @@
           "costOrder": [
             0,
             1
-          ],
-          "targets": [
-            "$piker"
           ]
         }
       }

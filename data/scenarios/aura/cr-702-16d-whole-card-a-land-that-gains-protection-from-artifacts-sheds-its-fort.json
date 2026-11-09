@@ -131,9 +131,6 @@
         "Activate": {
           "object": "$tower",
           "ability": 1,
-          "targets": [
-            "$arbor"
-          ],
           "mana": [
             "$forest-4",
             null

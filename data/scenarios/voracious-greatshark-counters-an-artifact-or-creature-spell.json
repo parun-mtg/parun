@@ -180,30 +180,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "Lightning Bolt"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "Hill Giant"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

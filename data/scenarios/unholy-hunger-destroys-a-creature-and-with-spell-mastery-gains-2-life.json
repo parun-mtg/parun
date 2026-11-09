@@ -66,10 +66,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$hunger",
-          "targets": [
-            "$ogre"
-          ]
+          "object": "$hunger"
         }
       },
       "player": "alice",

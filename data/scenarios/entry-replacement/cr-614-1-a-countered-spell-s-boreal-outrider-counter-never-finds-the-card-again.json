@@ -160,9 +160,6 @@
       "do": {
         "Cast": {
           "object": "$counterspell",
-          "targets": [
-            "Tomakul Honor Guard"
-          ],
           "mana": [
             "$i1",
             "$i2"
@@ -196,9 +193,6 @@
       "do": {
         "Cast": {
           "object": "$zombify",
-          "targets": [
-            "Tomakul Honor Guard"
-          ],
           "mana": [
             "$swamp",
             "$p1",

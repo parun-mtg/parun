@@ -62,41 +62,12 @@
   "note": "Ajani's loyalty is 3 and its mana value 4, so a mana-value read would deal 4. The mode refuses a creature as its dealer.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "modes": [
-            1
-          ],
-          "object": "$compel",
-          "targetsBySlot": {
-            "prey": [
-              "$baloth"
-            ],
-            "walker": [
-              "$mine"
-            ]
-          }
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "modes": [
             1
           ],
-          "object": "$compel",
-          "targetsBySlot": {
-            "prey": [
-              "$baloth"
-            ],
-            "walker": [
-              "$ajani"
-            ]
-          }
+          "object": "$compel"
         }
       },
       "player": "alice",

@@ -45,9 +45,6 @@
       "do": {
         "Cast": {
           "object": "$animate-dead",
-          "targets": [
-            "$apostle-of-purifying-light"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2"

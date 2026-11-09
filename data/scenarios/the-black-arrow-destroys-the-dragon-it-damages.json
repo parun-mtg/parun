@@ -123,10 +123,7 @@
     {
       "do": {
         "Activate": {
-          "object": "The Black Arrow",
-          "targets": [
-            "$bear"
-          ]
+          "object": "The Black Arrow"
         }
       },
       "player": "alice",

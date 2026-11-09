@@ -55,9 +55,6 @@
       "do": {
         "Cast": {
           "object": "$ojutai-s-command",
-          "targets": [
-            "$goblin-piker"
-          ],
           "modes": [
             0,
             1

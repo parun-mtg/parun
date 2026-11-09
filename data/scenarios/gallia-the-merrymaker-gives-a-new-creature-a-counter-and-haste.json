@@ -92,24 +92,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "mana": [
-            "$m1",
-            "$m2"
-          ],
-          "object": "$gallia",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -117,10 +99,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$gallia",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$gallia"
         }
       },
       "player": "alice",

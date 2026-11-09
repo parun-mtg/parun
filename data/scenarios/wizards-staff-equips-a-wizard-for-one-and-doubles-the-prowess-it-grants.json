@@ -86,23 +86,6 @@
   "note": "Equip Wizard {1} is refused on the Bears and taken on Amphin Pathmage, a non-Human Wizard (3/2). A Shock then triggers the Pathmage's granted prowess twice, making it 5/4, while the unequipped Monastery Swiftspear's own prowess triggers once (2/3) and the Bears stays 2/2. Equip {3} then moves the Staff to the Bears: the Pathmage keeps its pumps but loses prowess, and the second Shock pumps the Bears twice (4/4) and the Swiftspear once (3/4).",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "mana": [
-            "$i1"
-          ],
-          "object": "$staff",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -110,10 +93,7 @@
             "$i1",
             null
           ],
-          "object": "$staff",
-          "targets": [
-            "$mage"
-          ]
+          "object": "$staff"
         }
       },
       "player": "alice",

@@ -65,14 +65,6 @@
       "do": {
         "Cast": {
           "object": "$prey",
-          "targetsBySlot": {
-            "mine": [
-              "$piker"
-            ],
-            "theirs": [
-              "$giant"
-            ]
-          },
           "mana": [
             "$forest"
           ]
@@ -92,9 +84,6 @@
       "do": {
         "Cast": {
           "object": "$ray",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$island-1",
             "$island-2",

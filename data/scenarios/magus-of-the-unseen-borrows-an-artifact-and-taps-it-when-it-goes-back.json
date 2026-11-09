@@ -128,46 +128,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$magus",
-          "targets": [
-            "$own"
-          ],
-          "mana": [
-            "$i1",
-            "$i2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$magus",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$i1",
-            "$i2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$magus",
-          "targets": [
-            "$thopter"
-          ],
           "mana": [
             "$i1",
             "$i2"

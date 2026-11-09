@@ -76,9 +76,6 @@
       "do": {
         "Cast": {
           "object": "$fury",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$r1",
             "$r2",

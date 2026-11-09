@@ -81,10 +81,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$discombobulate",
-          "targets": [
-            "Shock"
-          ]
+          "object": "$discombobulate"
         }
       }
     },

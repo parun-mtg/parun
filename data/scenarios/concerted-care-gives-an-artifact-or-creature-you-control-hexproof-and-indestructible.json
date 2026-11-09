@@ -98,42 +98,6 @@
   "note": "Bob's Hill Giant and alice's own untapped Plains are refused as targets; her Bonesplitter, an artifact that is no creature, is a legal one.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "face": "Concerted Care",
-          "mana": [
-            "$p1",
-            "$p2"
-          ],
-          "object": "$bofur",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "face": "Concerted Care",
-          "mana": [
-            "$p1",
-            "$p2"
-          ],
-          "object": "$bofur",
-          "targets": [
-            "$plains"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "face": "Concerted Care",
@@ -142,10 +106,7 @@
             "$p2",
             null
           ],
-          "object": "$bofur",
-          "targets": [
-            "$split"
-          ]
+          "object": "$bofur"
         }
       },
       "player": "alice",

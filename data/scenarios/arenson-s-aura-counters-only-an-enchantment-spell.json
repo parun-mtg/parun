@@ -126,30 +126,6 @@
           "mana": [
             "$f1",
             null
-          ],
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$aura",
-          "ability": 1,
-          "mana": [
-            "$i1",
-            "$i2",
-            "$i3",
-            "$i4",
-            "$i5"
-          ],
-          "targets": [
-            "Giant Growth"
           ]
         }
       }
@@ -168,9 +144,6 @@
             "$i3",
             "$i4",
             "$i5"
-          ],
-          "targets": [
-            "Bad Moon"
           ]
         }
       }

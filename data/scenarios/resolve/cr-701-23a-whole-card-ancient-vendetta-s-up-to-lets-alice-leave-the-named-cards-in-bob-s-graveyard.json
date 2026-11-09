@@ -31,7 +31,7 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": { "Cast": { "object": "$vendetta", "targets": ["$bob"], "mana": ["$swamp-1", "$swamp-2", "$swamp-3", "$swamp-4"] } }
+      "do": { "Cast": { "object": "$vendetta", "mana": ["$swamp-1", "$swamp-2", "$swamp-3", "$swamp-4"] } }
     },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardName", "with": "Chromatic Star" } } },

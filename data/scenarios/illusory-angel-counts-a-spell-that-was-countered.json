@@ -98,9 +98,6 @@
       "do": {
         "Cast": {
           "object": "$counterspell",
-          "targets": [
-            "Ornithopter"
-          ],
           "mana": [
             "$bi1",
             "$bi2"

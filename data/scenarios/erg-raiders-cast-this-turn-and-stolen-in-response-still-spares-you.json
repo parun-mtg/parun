@@ -153,10 +153,7 @@
             "$i3",
             "$i4"
           ],
-          "object": "$ray",
-          "targets": [
-            "Erg Raiders"
-          ]
+          "object": "$ray"
         }
       },
       "player": "bob",

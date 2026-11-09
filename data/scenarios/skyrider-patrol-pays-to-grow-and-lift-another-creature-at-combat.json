@@ -96,42 +96,6 @@
       "turn": 1,
       "step": "BeginningOfCombat",
       "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$patrol"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "do": "Pass"
     },
     {

@@ -85,28 +85,9 @@
       "turn": 1,
       "step": "DeclareBlockers",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$righteousness",
-          "targets": [
-            "$giant"
-          ],
-          "mana": [
-            "$plains"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$righteousness",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$plains"
           ]

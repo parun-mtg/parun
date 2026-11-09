@@ -87,9 +87,6 @@
       "do": {
         "Cast": {
           "object": "$scatter",
-          "targets": [
-            "Grist, the Hunger Tide"
-          ],
           "mana": [
             "$bi1",
             "$bi2"

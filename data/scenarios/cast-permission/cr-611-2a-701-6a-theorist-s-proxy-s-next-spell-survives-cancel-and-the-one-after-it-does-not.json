@@ -216,10 +216,7 @@
             "$j3",
             null
           ],
-          "object": "$c1",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$c1"
         }
       },
       "player": "bob",
@@ -303,10 +300,7 @@
             "$j5",
             "$j6"
           ],
-          "object": "$c2",
-          "targets": [
-            "Llanowar Elves"
-          ]
+          "object": "$c2"
         }
       },
       "player": "bob",

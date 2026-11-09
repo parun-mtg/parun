@@ -84,9 +84,6 @@
           "mana": [
             "$s",
             null
-          ],
-          "targets": [
-            "$b"
           ]
         }
       }

@@ -60,9 +60,6 @@
       "do": {
         "Activate": {
           "object": "$mythmaker",
-          "targets": [
-            "$aura"
-          ],
           "mana": [
             "$plains"
           ]

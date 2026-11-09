@@ -37,14 +37,14 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": { "Cast": { "object": "$borrowed", "targets": ["$bears"], "mana": ["$p1", "$p2", null]} }
+      "do": { "Cast": { "object": "$borrowed", "mana": ["$p1", "$p2", null]} }
     },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     {
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": { "Cast": { "object": "$birthright", "targets": ["$bears"], "mana": ["$p3", "$p4", null]} }
+      "do": { "Cast": { "object": "$birthright", "mana": ["$p3", "$p4", null]} }
     },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     {
@@ -57,7 +57,7 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": { "Cast": { "object": "$treason", "targets": ["$bears"], "mana": ["$m1", "$m2", "$m3"]} }
+      "do": { "Cast": { "object": "$treason", "mana": ["$m1", "$m2", "$m3"]} }
     },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     {

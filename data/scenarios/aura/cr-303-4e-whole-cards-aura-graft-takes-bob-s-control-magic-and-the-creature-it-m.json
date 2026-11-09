@@ -117,10 +117,7 @@
             "$i1",
             "$i2"
           ],
-          "object": "$graft",
-          "targets": [
-            "$magic"
-          ]
+          "object": "$graft"
         }
       },
       "player": "alice",

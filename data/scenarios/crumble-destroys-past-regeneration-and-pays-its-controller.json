@@ -91,9 +91,6 @@
       "do": {
         "Cast": {
           "object": "$crumble",
-          "targets": [
-            "$statue"
-          ],
           "mana": [
             "$f"
           ]

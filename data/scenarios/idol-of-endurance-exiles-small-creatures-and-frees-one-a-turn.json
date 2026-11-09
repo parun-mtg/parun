@@ -431,9 +431,6 @@
           "mana": [
             "$bp1",
             "$bp2"
-          ],
-          "targets": [
-            "Idol of Endurance"
           ]
         }
       },

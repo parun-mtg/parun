@@ -11,7 +11,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears", "mana": ["$f2", "$f3"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$dash", "targets": ["Grizzly Bears"], "mana": ["$s1", "$s2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$dash", "mana": ["$s1", "$s2", null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Dash Hopes"},
@@ -24,8 +24,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": {"Cast": {"object": "$blade", "targets": ["Grizzly Bears"], "mana": ["$s3", "$s4"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$blade", "targets": ["$giant"], "mana": ["$s3", "$s4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$blade", "mana": ["$s3", "$s4"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}}

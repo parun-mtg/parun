@@ -60,25 +60,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$beacon",
-          "targets": [
-            "$island"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$beacon",
-          "targets": [
-            "$stone"
-          ]
+          "object": "$beacon"
         }
       }
     },

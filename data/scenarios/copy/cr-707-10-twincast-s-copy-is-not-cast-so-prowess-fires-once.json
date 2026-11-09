@@ -26,7 +26,7 @@
   },
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$bolt", "targets": ["$carol"], "mana": ["$mountain"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$twincast", "targets": ["Lightning Bolt"], "mana": ["$island-1", "$island-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$twincast", "mana": ["$island-1", "$island-2"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$carol"] } } },
     { "turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": { "PowerToughness": { "object": "$swiftspear", "power": 2, "toughness": 3 } } },
     { "turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": { "Life": { "player": "carol", "life": 14 } } }

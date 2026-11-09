@@ -59,10 +59,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$anchor",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$anchor"
         }
       },
       "player": "alice",

@@ -232,10 +232,7 @@
             "$p2",
             null
           ],
-          "object": "$g1",
-          "targets": [
-            "Hill Giant"
-          ]
+          "object": "$g1"
         }
       },
       "player": "alice",
@@ -344,10 +341,7 @@
             "$p4",
             null
           ],
-          "object": "$g2",
-          "targets": [
-            "Hill Giant"
-          ]
+          "object": "$g2"
         }
       },
       "player": "alice",

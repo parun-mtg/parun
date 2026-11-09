@@ -32,7 +32,6 @@
       "do": { "Cast": { "object": "$strike", "targets": ["$bouncer"], "mana": ["$swamp1", "$swamp2", "$swamp3", "$swamp4", "$swamp5", "$swamp6"] } }
     },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$giant"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $bouncer"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } }

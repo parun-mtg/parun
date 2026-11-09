@@ -79,9 +79,6 @@
       "do": {
         "Cast": {
           "object": "$cbw",
-          "targets": [
-            "$meren"
-          ],
           "mana": [
             "$s1",
             "$s2",

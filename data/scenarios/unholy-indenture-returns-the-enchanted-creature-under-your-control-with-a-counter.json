@@ -121,10 +121,7 @@
             "$s3",
             null
           ],
-          "object": "$ui",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$ui"
         }
       },
       "player": "alice",

@@ -50,9 +50,6 @@
       "do": {
         "Cast": {
           "object": "$doom-blade",
-          "targets": [
-            "$apostle-of-purifying-light"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2"

@@ -59,10 +59,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$armory",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$armory"
         }
       }
     },

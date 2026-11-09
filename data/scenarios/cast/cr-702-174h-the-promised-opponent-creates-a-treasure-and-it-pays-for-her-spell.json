@@ -76,9 +76,6 @@
       "do": {
         "Cast": {
           "object": "$blast",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$m0",
             "$m1"

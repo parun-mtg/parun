@@ -66,9 +66,6 @@
       "do": {
         "Cast": {
           "object": "$ray-of-command",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

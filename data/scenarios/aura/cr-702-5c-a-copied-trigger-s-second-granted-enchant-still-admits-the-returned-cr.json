@@ -78,10 +78,7 @@
             "$s2",
             null
           ],
-          "object": "$animate",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$animate"
         }
       },
       "player": "alice",
@@ -115,10 +112,7 @@
             "$s3",
             "$s4"
           ],
-          "object": "$engine",
-          "targets": [
-            "trigger of Animate Dead"
-          ]
+          "object": "$engine"
         }
       },
       "player": "alice",

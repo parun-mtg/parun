@@ -75,9 +75,6 @@
       "do": {
         "Activate": {
           "object": "$shrieker",
-          "targets": [
-            "$manifest"
-          ],
           "mana": [
             "$f1",
             "$f2",

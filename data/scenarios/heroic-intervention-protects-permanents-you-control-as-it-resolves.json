@@ -368,9 +368,6 @@
           "mana": [
             "$sw1",
             "$sw2"
-          ],
-          "targets": [
-            "$bears"
           ]
         }
       },

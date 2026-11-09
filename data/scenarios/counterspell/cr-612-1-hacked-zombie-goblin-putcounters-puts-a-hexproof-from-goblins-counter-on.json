@@ -56,9 +56,6 @@
       "do": {
         "Cast": {
           "object": "$spell",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$plains",
             null

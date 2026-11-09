@@ -179,10 +179,7 @@
             "$i1",
             null
           ],
-          "object": "$mc1",
-          "targets": [
-            "Lightning Bolt#2"
-          ]
+          "object": "$mc1"
         }
       },
       "player": "bob",
@@ -269,10 +266,7 @@
             "$i1",
             null
           ],
-          "object": "$mc2",
-          "targets": [
-            "Lightning Bolt#2"
-          ]
+          "object": "$mc2"
         }
       },
       "player": "bob",

@@ -85,9 +85,6 @@
       "do": {
         "Cast": {
           "object": "$terror",
-          "targets": [
-            "$slime"
-          ],
           "mana": [
             "$s1",
             "$s2",

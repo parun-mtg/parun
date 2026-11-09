@@ -135,9 +135,6 @@
       "do": {
         "Cast": {
           "object": "$thirst",
-          "targets": [
-            "$wurm"
-          ],
           "mana": [
             "$s1"
           ]

@@ -77,9 +77,6 @@
         "Activate": {
           "object": "$engine",
           "ability": 0,
-          "targets": [
-            "ability of $cub-a"
-          ],
           "mana": [
             "$m1",
             "$m2"

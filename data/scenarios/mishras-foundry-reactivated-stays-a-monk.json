@@ -23,7 +23,7 @@
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$foundry", "ability": 1, "mana": [null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$fist", "targets": ["$foundry"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$fist" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$foundry", "subtypes": ["AssemblyWorker", "Monk"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$foundry", "ability": 1 } } },

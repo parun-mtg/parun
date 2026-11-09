@@ -132,30 +132,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "bob",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$knight"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$goblin"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": "Pass"
     },
     {

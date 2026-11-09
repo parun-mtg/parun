@@ -78,10 +78,7 @@
             "$i1",
             "$i2"
           ],
-          "object": "$icy",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$icy"
         }
       },
       "player": "alice",

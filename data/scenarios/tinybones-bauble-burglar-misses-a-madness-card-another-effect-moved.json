@@ -128,9 +128,6 @@
       "do": {
         "Cast": {
           "object": "$pull",
-          "targets": [
-            "Arrogant Wurm"
-          ],
           "mana": [
             "$p"
           ]

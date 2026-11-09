@@ -99,9 +99,6 @@
       "do": {
         "Cast": {
           "object": "$cub",
-          "targets": [
-            "$host"
-          ],
           "cost": [
             {
               "type": "Generic",

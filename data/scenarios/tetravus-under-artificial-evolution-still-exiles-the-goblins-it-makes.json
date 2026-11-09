@@ -90,10 +90,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$evo",
-          "targets": [
-            "$tet"
-          ]
+          "object": "$evo"
         }
       },
       "player": "alice",

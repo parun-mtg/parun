@@ -259,29 +259,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$pw",
-          "targets": [
-            "$pw"
-          ],
-          "mana": [
-            "$plains",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$pw",
-          "targets": [
-            "$lions"
-          ],
           "mana": [
             "$plains",
             null
@@ -316,9 +296,6 @@
       "do": {
         "Activate": {
           "object": "$pu",
-          "targets": [
-            "$merfolk"
-          ],
           "mana": [
             "$island",
             null
@@ -353,9 +330,6 @@
       "do": {
         "Activate": {
           "object": "$pb",
-          "targets": [
-            "$corpse"
-          ],
           "mana": [
             "$s1",
             "$s2",
@@ -392,9 +366,6 @@
       "do": {
         "Activate": {
           "object": "$pr",
-          "targets": [
-            "$ogre"
-          ],
           "mana": [
             "$mountain",
             null
@@ -429,9 +400,6 @@
       "do": {
         "Activate": {
           "object": "$pg",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$forest"
           ]

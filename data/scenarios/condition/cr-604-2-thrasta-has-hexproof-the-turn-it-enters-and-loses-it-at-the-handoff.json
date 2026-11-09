@@ -188,24 +188,6 @@
       }
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$blade",
-          "targets": [
-            "Thrasta, Tempest's Roar"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            null
-          ]
-        }
-      }
-    },
-    {
       "turn": 2,
       "step": "PrecombatMain",
       "player": "bob",

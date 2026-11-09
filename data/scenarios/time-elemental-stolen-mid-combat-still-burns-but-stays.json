@@ -113,9 +113,6 @@
       "do": {
         "Cast": {
           "object": "$ray",
-          "targets": [
-            "$te"
-          ],
           "mana": [
             "$i1",
             "$i2",

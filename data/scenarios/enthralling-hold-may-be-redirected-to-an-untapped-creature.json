@@ -86,10 +86,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$hold",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$hold"
         }
       },
       "player": "alice",
@@ -105,10 +102,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$deflection",
-          "targets": [
-            "Enthralling Hold"
-          ]
+          "object": "$deflection"
         }
       },
       "player": "bob",

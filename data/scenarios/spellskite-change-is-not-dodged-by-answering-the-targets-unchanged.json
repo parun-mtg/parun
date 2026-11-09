@@ -12,7 +12,7 @@
   "timeline": [
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$lightning", "targets": ["$bears", "$giant"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$skite", "ability": 0, "targets": ["Jagged Lightning"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$skite", "ability": 0}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "AnnouncePhyrexianPayment", "with": "PaysMana"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"creatures": ["$bears", "$giant"]}}},

@@ -133,10 +133,7 @@
             "$s1",
             "$s2"
           ],
-          "object": "$blade",
-          "targets": [
-            "$inc"
-          ]
+          "object": "$blade"
         }
       },
       "player": "alice",

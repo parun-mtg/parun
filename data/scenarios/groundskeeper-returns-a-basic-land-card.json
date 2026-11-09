@@ -57,25 +57,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$keeper",
-          "targets": [
-            "$wastes"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$keeper",
-          "targets": [
-            "$forest"
-          ]
+          "object": "$keeper"
         }
       }
     },

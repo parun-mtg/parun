@@ -57,32 +57,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$ruin",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            null
-          ],
-          "costOrder": [
-            0,
-            1
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$ruin",
-          "targets": [
-            "$thopter"
-          ],
           "mana": [
             null
           ]

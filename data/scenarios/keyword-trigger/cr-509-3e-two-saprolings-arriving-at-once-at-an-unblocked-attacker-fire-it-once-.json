@@ -74,27 +74,6 @@
     },
     {
       "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Creature",
-                  "$hill-giant"
-                ]
-              ]
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
       "step": "DeclareBlockers",
       "player": "bob",
       "do": {
@@ -108,9 +87,6 @@
       "do": {
         "Cast": {
           "object": "$flash-foliage",
-          "targets": [
-            "$llanowar-elves"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

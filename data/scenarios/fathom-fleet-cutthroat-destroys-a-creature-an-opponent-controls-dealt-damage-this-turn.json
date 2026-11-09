@@ -177,42 +177,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$agiant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$bgiant2"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bgiant"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

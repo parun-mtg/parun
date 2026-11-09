@@ -102,9 +102,6 @@
       "do": {
         "Cast": {
           "object": "$twincast",
-          "targets": [
-            "Desperate Ritual#2"
-          ],
           "mana": [
             "$i0",
             "$i1"

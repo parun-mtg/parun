@@ -146,31 +146,10 @@
   "description": "Tempered Veteran's {W} ability targets only a creature with a +1/+1 counter; its six-mana ability targets any creature.",
   "timeline": [
     {
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "object": "$v1",
-          "targets": [
-            "$plain"
-          ],
-          "mana": [
-            "$p1",
-            null
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
           "object": "$v1",
-          "targets": [
-            "$grown"
-          ],
           "mana": [
             "$p1",
             null

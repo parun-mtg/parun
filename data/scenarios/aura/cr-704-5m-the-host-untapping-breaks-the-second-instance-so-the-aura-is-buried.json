@@ -66,9 +66,6 @@
       "do": {
         "Cast": {
           "object": "$twofold-card",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$plains-1",
             "$plains-2"

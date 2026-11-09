@@ -30,11 +30,10 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$dna", "ability": 0, "targets": ["Bronze Sable"], "mana": ["$island", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$dna", "ability": 0, "mana": ["$island", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Bronze Sable", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$dna", "ability": 1, "targets": ["Grizzly Bears"], "mana": ["$island-2", "$island-3", "$island-4", "$island-5", "$island-6", "$island-7"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$dna", "ability": 1, "targets": ["Bronze Sable"], "mana": ["$island-2", "$island-3", "$island-4", "$island-5", "$island-6", "$island-7"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$dna", "ability": 1, "mana": ["$island-2", "$island-3", "$island-4", "$island-5", "$island-6", "$island-7"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Bronze Sable#2", "power": 6, "toughness": 6 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Types": { "object": "Bronze Sable#2", "types": ["Creature"] } } },

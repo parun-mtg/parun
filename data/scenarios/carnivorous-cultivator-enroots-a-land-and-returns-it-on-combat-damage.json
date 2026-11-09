@@ -185,18 +185,6 @@
       "turn": 3
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "Plains"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "CombatDamage",
-      "turn": 3
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "CombatDamage",

@@ -63,38 +63,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$disentomb",
-          "targets": [
-            "$forest"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$disentomb",
-          "targets": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$disentomb",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$disentomb"
         }
       }
     },

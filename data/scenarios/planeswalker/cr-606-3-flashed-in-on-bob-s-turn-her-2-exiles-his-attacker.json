@@ -81,10 +81,7 @@
       "do": {
         "Activate": {
           "object": "The Wandering Emperor",
-          "ability": 2,
-          "targets": [
-            "$hill-giant"
-          ]
+          "ability": 2
         }
       }
     },

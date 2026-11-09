@@ -147,10 +147,7 @@
             "$i3",
             null
           ],
-          "object": "$t1",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$t1"
         }
       },
       "player": "alice",
@@ -226,10 +223,7 @@
             "$i5",
             "$i6"
           ],
-          "object": "$t2",
-          "targets": [
-            "Hill Giant"
-          ]
+          "object": "$t2"
         }
       },
       "player": "alice",

@@ -403,30 +403,6 @@
       "turn": 7
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$bgiant"
-          ]
-        }
-      },
-      "step": "DeclareAttackers",
-      "turn": 7
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 7
-    },
-    {
       "do": {
         "Block": {}
       },

@@ -46,9 +46,6 @@
       "do": {
         "Cast": {
           "object": "$a1",
-          "targets": [
-            "$stalker"
-          ],
           "mana": [
             "$i1",
             null
@@ -69,9 +66,6 @@
       "do": {
         "Cast": {
           "object": "$a2",
-          "targets": [
-            "$stalker"
-          ],
           "mana": [
             "$i2"
           ]

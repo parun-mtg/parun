@@ -22,7 +22,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$wisps", "targets": ["$bears"], "mana": ["$swamp"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$wisps", "mana": ["$swamp"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$sleight", "targets": ["Aphotic Wisps"], "mana": ["$island"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },

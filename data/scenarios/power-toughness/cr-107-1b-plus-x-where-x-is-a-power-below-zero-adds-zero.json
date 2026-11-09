@@ -97,10 +97,7 @@
             "$mountain-2",
             "$mountain-3"
           ],
-          "object": "$rush-of-blood",
-          "targets": [
-            "$silent-arbiter"
-          ]
+          "object": "$rush-of-blood"
         }
       },
       "player": "alice",

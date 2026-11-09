@@ -84,9 +84,6 @@
       "do": {
         "Activate": {
           "object": "$x",
-          "targets": [
-            "$b"
-          ],
           "mana": [
             "$m1",
             "$m2",

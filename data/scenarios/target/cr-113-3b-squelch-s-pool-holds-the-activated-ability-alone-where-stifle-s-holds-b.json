@@ -203,29 +203,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$squelch",
-          "targets": [
-            "trigger of $flash"
-          ],
-          "mana": [
-            "$i3",
-            "$i4"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$squelch",
-          "targets": [
-            "ability of $sorcerer"
-          ],
           "mana": [
             "$i3",
             "$i4"

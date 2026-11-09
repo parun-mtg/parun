@@ -89,18 +89,6 @@
       "turn": 1,
       "step": "EndStep",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$dreadnought"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
           "of": "Stack",

@@ -49,9 +49,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$ministrant-of-obligation"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

@@ -99,10 +99,7 @@
     {
       "do": {
         "Activate": {
-          "object": "$trashmaster",
-          "targets": [
-            "$ring"
-          ]
+          "object": "$trashmaster"
         }
       },
       "player": "alice",

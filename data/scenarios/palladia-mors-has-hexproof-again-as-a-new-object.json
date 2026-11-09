@@ -236,24 +236,6 @@
       "player": "bob",
       "step": "PrecombatMain",
       "turn": 2
-    },
-    {
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$swamp1",
-            "$swamp2",
-            "$swamp3"
-          ],
-          "object": "$murder",
-          "targets": [
-            "Palladia-Mors, the Ruiner"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
     }
   ]
 }

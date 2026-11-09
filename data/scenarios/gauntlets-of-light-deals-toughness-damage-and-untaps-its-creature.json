@@ -100,10 +100,7 @@
             "$p3",
             null
           ],
-          "object": "$gauntlets",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$gauntlets"
         }
       },
       "player": "alice",

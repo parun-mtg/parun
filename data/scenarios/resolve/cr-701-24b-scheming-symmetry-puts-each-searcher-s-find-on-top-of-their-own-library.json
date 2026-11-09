@@ -26,7 +26,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$symmetry", "targets": ["$alice", "$bob"], "mana": ["$swamp"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$symmetry", "mana": ["$swamp"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Search", "with": ["$bolt"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Search", "with": ["$giant"] } } },

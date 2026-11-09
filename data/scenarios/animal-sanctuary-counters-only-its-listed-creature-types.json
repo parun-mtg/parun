@@ -75,24 +75,6 @@
   "description": "CR 122.1 / 602.2: Animal Sanctuary's {2}, {T} puts a +1/+1 counter on a target Bird, Cat, Dog, Goat, Ox or Snake and refuses a Bear",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$w1",
-            "$w2",
-            null
-          ],
-          "object": "$sanctuary",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
@@ -100,10 +82,7 @@
             "$w2",
             null
           ],
-          "object": "$sanctuary",
-          "targets": [
-            "$lions"
-          ]
+          "object": "$sanctuary"
         }
       },
       "player": "alice",

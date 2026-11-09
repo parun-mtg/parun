@@ -85,28 +85,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$jt",
-          "targets": [
-            "$home"
-          ],
-          "mana": [
-            "$p1"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$jt",
-          "targets": [
-            "$g"
-          ],
           "mana": [
             "$p1"
           ]

@@ -197,54 +197,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$bolt"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$courser"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

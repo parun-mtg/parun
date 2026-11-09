@@ -109,9 +109,6 @@
       "do": {
         "Cast": {
           "object": "$graft",
-          "targets": [
-            "$song"
-          ],
           "mana": [
             "$island",
             "$island-2",
@@ -200,9 +197,6 @@
         "Activate": {
           "object": "$snare",
           "ability": 0,
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$plains"
           ]

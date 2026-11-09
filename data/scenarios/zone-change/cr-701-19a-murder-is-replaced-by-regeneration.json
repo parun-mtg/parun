@@ -101,9 +101,6 @@
       "do": {
         "Cast": {
           "object": "$regen",
-          "targets": [
-            "$victim"
-          ],
           "mana": [
             "$f1",
             "$f2"
@@ -124,9 +121,6 @@
       "do": {
         "Cast": {
           "object": "$spell",
-          "targets": [
-            "$victim"
-          ],
           "mana": [
             "$l1",
             "$l2",

@@ -68,25 +68,9 @@
   "description": "Ali Baba taps a target Wall and no other creature",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$ali",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$ali",
-          "targets": [
-            "$wall"
-          ]
+          "object": "$ali"
         }
       },
       "player": "alice",

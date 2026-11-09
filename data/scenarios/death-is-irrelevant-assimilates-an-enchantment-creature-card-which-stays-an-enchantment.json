@@ -3,7 +3,6 @@
   "note": "\"From a graveyard\" admits alice's own. Fang of Shigeki, an Enchantment Creature -- Ninja Snake, keeps its enchantment type and loses Ninja and Snake (CR 205.1b's \"[creature type] artifact creature\"), and as an artifact creature it has indestructible from Death Is Irrelevant.",
   "board": {"active": "alice", "step": "PostcombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Death Is Irrelevant"}], "graveyard": [{"card": "Fang of Shigeki", "label": "fang"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"ChooseTargets": {"target": ["$fang"]}}},
     {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Controller", "object": "Fang of Shigeki", "is": "alice"}}},
     {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "Fang of Shigeki", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},

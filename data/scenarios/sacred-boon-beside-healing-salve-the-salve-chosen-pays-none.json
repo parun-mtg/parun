@@ -113,10 +113,7 @@
             "$w2",
             null
           ],
-          "object": "$boon",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$boon"
         }
       },
       "player": "alice",

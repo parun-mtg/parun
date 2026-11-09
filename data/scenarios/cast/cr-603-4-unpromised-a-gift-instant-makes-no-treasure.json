@@ -66,9 +66,6 @@
       "do": {
         "Cast": {
           "object": "$blooming-blast",
-          "targets": [
-            "$hill-giant"
-          ],
           "mana": [
             "$mountain",
             "$mountain-2"

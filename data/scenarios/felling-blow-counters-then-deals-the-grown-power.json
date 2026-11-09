@@ -71,15 +71,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$spell",
-          "targetsBySlot": {
-            "target1": [
-              "$bears"
-            ],
-            "target2": [
-              "$giant"
-            ]
-          }
+          "object": "$spell"
         }
       },
       "player": "alice",

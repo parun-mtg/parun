@@ -249,18 +249,6 @@
       "turn": 3
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$g2"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

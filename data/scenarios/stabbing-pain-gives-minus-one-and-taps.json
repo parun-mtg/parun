@@ -55,10 +55,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$pain",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$pain"
         }
       }
     },

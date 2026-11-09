@@ -37,7 +37,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$grapeshot", "targets": ["$bob"], "mana": ["$m2", "$m3", null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$cancel", "targets": ["Grapeshot"], "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$cancel", "mana": ["$i1", "$i2", "$i3"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}}
   ],
   "final": [

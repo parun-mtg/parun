@@ -5,9 +5,7 @@
     {"name": "alice", "manaPool": "BBBBB", "hand": [{"card": "Cruel Revival", "label": "revival"}], "graveyard": [{"card": "Gravedigger", "label": "digger"}, {"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}]},
     {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Walking Corpse", "label": "corpse"}], "library": [{"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$revival", "targetsBySlot": {"victim": ["$corpse"], "zombie": ["$digger"]}}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$revival", "targetsBySlot": {"victim": ["$bears"], "zombie": ["$giant"]}}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$revival", "targetsBySlot": {"victim": ["$bears"], "zombie": ["$digger"]}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$revival", "targetsBySlot": {"zombie": ["$digger"]}}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Gravedigger", "count": 1}}},

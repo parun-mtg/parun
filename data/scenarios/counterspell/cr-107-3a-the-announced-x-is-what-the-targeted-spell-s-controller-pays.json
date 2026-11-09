@@ -97,9 +97,6 @@
       "do": {
         "Cast": {
           "object": "$clash",
-          "targets": [
-            "Goblin Piker"
-          ],
           "x": 2,
           "mana": [
             "$ai1",

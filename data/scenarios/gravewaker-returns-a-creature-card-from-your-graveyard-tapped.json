@@ -18,8 +18,7 @@
     ]
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$waker", "targets": ["$theirs"], "mana": ["$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$waker", "targets": ["$mine"], "mana": ["$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$waker", "mana": ["$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Hill Giant", "tapped": true } } }

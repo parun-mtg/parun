@@ -65,10 +65,7 @@
     {
       "do": {
         "Activate": {
-          "object": "$dart",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$dart"
         }
       },
       "player": "alice",

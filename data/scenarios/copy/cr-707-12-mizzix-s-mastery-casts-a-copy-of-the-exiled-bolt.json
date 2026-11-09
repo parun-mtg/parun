@@ -50,9 +50,6 @@
       "do": {
         "Cast": {
           "object": "$mastery",
-          "targets": [
-            "$bolt"
-          ],
           "mana": [
             "$m1",
             "$m2",

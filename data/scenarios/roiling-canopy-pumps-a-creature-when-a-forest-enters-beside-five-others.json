@@ -30,7 +30,6 @@
     {"check": {"Tapped": {"object": "Roiling Canopy", "tapped": true}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
     {"check": {"View": {"of": "Stack", "is": []}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
     {"do": {"PlayLand": "$forest"}, "player": "alice", "step": "PrecombatMain", "turn": 4},
-    {"do": {"ChooseTargets": {"target": ["$bears"]}}, "player": "alice", "step": "PrecombatMain", "turn": 4},
     {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 4},
     {"check": {"PowerToughness": {"object": "$bears", "power": 5, "toughness": 5}}, "player": "alice", "step": "PrecombatMain", "turn": 4},
     {"do": {"Take": {"action": "ActivateManaAbility Roiling Canopy"}}, "player": "alice", "step": "PrecombatMain", "turn": 4},

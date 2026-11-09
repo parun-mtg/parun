@@ -124,42 +124,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$an"
-          ]
-        }
-      },
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$w"
-          ]
-        }
-      },
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "DeclareAttackers",

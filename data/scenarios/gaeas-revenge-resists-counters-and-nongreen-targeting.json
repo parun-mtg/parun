@@ -106,9 +106,6 @@
       "do": {
         "Cast": {
           "object": "$counterspell",
-          "targets": [
-            "Gaea's Revenge"
-          ],
           "mana": [
             null
           ]
@@ -148,22 +145,6 @@
         "Attack": [
           "Gaea's Revenge"
         ]
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$unsummon",
-          "targets": [
-            "Gaea's Revenge"
-          ],
-          "mana": [
-            "$i1"
-          ]
-        }
       }
     },
     {

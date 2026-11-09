@@ -23,7 +23,7 @@
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$staff", "ability": 0, "x": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$fist", "targets": ["$staff"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$fist" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$staff", "subtypes": ["Construct", "Monk"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$staff", "ability": 0, "x": 3 } } },

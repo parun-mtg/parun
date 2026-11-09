@@ -82,24 +82,6 @@
   "note": "The refused cast names the Bears on the same three Plains. The surveil puts alice's top Hill Giant into her graveyard.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3"
-          ],
-          "object": "$fate",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -107,10 +89,7 @@
             "$p2",
             "$p3"
           ],
-          "object": "$fate",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$fate"
         }
       },
       "player": "alice",

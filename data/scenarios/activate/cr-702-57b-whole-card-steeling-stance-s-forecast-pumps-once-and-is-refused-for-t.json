@@ -66,10 +66,7 @@
             "$plains-1",
             null
           ],
-          "object": "$stance",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$stance"
         }
       },
       "player": "alice",

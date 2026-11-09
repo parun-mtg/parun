@@ -73,9 +73,6 @@
       "do": {
         "Cast": {
           "object": "$crimson-wisps",
-          "targets": [
-            "$typhoid-rats"
-          ],
           "mana": [
             "$mountain",
             null
@@ -122,9 +119,6 @@
       "do": {
         "Cast": {
           "object": "$blade",
-          "targets": [
-            "$typhoid-rats"
-          ],
           "mana": [
             "$blade-swamp",
             "$blade-swamp-2"

@@ -214,9 +214,6 @@
           "mana": [
             "$bi1",
             "$bi2"
-          ],
-          "targets": [
-            "Shock#2"
           ]
         }
       }

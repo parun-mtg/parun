@@ -137,9 +137,6 @@
       "do": {
         "Cast": {
           "object": "$spin-into-myth",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

@@ -3701,16 +3701,17 @@ abilityCeilingSpec s registry = Spec.describe s "AbilityCeilingAndBoundSlot" $ d
 
   -- The bound's other direction, on the same board and the same announcement: a
   -- card the announced X does not reach is not among the recipients the slot
-  -- offers, so an answer naming it names nothing and CR 601.2e reverses the
-  -- activation.
+  -- offers. The Tyrant is then the one legal target and is taken unasked, so the
+  -- answer naming the Giant is never read.
   Spec.it s "CR 601.2c a graveyard card whose mana value exceeds the announced X is not offered" $ do
     (nightmare, srcId, pikerId, _, giantId, g1) <- blightedNightmareBoard s registry "Ogre Sentry"
     giant <- S.printingOf s registry "Hill Giant"
+    tyrant <- S.printingOf s registry "Kalakscion, Hunger Tyrant"
     let act = do Activate.activateAbility S.alice srcId (theAbility nightmare); Stack.resolveTop
         after = snd (Engine.runGamePure (answerBlightXTargeting 3 pikerId giantId) g1 act)
     Spec.assertEqWith s "the mana value 4 card did not come back" (S.countOnBattlefieldByName (S.printingName giant) S.alice after) 0
-    Spec.assertEqWith s "both cards are still in the graveyard" (length (graveyardNames S.alice after)) 2
-    Spec.assertBool s (S.onBattlefield srcId after) "and the activation reversed, the Nightmare staying put"
+    Spec.assertEqWith s "the mana value 3 card did" (S.countOnBattlefieldByName (S.printingName tyrant) S.alice after) 1
+    Spec.assertEqWith s "leaving the Giant alone in the graveyard" (length (graveyardNames S.alice after)) 1
 
 -- The pool's second producer of the same rider, and the one whose EFFECT the
 -- rider gates rather than a ping: Shellfish Scholar (Alchemy: Bloomburrow,

@@ -173,48 +173,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Player",
-                  "bob"
-                ]
-              ]
-            ]
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Player",
-                  "bob"
-                ]
-              ]
-            ]
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "check": {
         "Counters": {
           "count": 2,

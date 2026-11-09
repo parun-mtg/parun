@@ -127,10 +127,7 @@
             "$s5",
             null
           ],
-          "object": "$beacon",
-          "targets": [
-            "$wood"
-          ]
+          "object": "$beacon"
         }
       },
       "player": "alice",

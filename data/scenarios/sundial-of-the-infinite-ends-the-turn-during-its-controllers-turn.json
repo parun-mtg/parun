@@ -72,9 +72,6 @@
       "do": {
         "Cast": {
           "object": "$growth",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             null
           ]

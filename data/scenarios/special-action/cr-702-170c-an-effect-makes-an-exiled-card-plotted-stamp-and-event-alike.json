@@ -105,27 +105,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Creature",
-                  "$goblin-piker"
-                ]
-              ]
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": "Pass"
     },
     {

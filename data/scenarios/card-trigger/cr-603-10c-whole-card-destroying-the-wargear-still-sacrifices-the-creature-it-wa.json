@@ -67,10 +67,7 @@
       "do": {
         "Activate": {
           "object": "$wargear",
-          "ability": 0,
-          "targets": [
-            "$piker"
-          ]
+          "ability": 0
         }
       }
     },

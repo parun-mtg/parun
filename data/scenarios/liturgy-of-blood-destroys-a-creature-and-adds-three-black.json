@@ -65,10 +65,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$liturgy",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$liturgy"
         }
       }
     },

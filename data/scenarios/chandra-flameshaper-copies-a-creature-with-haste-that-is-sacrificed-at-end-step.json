@@ -107,10 +107,7 @@
       "do": {
         "Activate": {
           "object": "$ch",
-          "ability": 1,
-          "targets": [
-            "$hg"
-          ]
+          "ability": 1
         }
       }
     },

@@ -295,9 +295,6 @@
             "$b1",
             "$b2",
             null
-          ],
-          "targets": [
-            "Grizzly Bears"
           ]
         }
       }
@@ -387,30 +384,11 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$unsummon",
-          "mana": [
-            "$b3"
-          ],
-          "targets": [
-            "$elves"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$unsummon",
           "mana": [
             "$b3"
-          ],
-          "targets": [
-            "Grizzly Bears"
           ]
         }
       }

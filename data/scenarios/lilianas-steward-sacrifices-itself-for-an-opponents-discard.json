@@ -88,10 +88,7 @@
     {
       "do": {
         "Activate": {
-          "object": "$steward",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$steward"
         }
       },
       "player": "alice",

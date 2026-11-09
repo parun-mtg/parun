@@ -84,10 +84,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$um",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$um"
         }
       }
     },

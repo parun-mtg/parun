@@ -251,9 +251,6 @@
             "$p3",
             "$p4",
             null
-          ],
-          "targets": [
-            "$anthem"
           ]
         }
       }

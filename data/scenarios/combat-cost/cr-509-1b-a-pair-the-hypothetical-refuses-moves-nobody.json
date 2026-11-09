@@ -74,11 +74,7 @@
       "player": "bob",
       "do": {
         "Activate": {
-          "object": "$general-jarkeld",
-          "targets": [
-            "$bird-maiden",
-            "$goblin-piker"
-          ]
+          "object": "$general-jarkeld"
         }
       }
     },

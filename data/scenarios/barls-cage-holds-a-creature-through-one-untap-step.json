@@ -85,10 +85,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$cage",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$cage"
         }
       }
     },

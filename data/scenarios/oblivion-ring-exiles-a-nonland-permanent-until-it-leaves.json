@@ -104,42 +104,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$forest"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "Oblivion Ring"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": "Pass"
     },
     {
@@ -175,9 +139,6 @@
       "do": {
         "Cast": {
           "object": "$naturalize",
-          "targets": [
-            "Oblivion Ring"
-          ],
           "mana": [
             "$f1",
             "$f2"

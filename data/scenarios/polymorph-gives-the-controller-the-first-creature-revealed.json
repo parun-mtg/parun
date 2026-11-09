@@ -3,7 +3,7 @@
   "note": "Bob reveals an Island and a Forest before his Grizzly Bears; the Bears enters under his control and the two lands, with the Swamp under them, are shuffled back.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "manaPool": "UUUU", "hand": [{"card": "Polymorph", "label": "polymorph"}], "library": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}]}, {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island", "label": "island"}, {"card": "Forest", "label": "forest"}, {"card": "Grizzly Bears"}, {"card": "Swamp", "label": "swamp"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$polymorph", "targets": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$polymorph"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$swamp", "$forest", "$island"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},

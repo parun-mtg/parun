@@ -54,9 +54,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$war-mammoth"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

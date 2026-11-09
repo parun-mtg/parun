@@ -121,18 +121,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$d1"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "EndStep",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "EndStep",
@@ -144,10 +132,7 @@
           "mana": [
             "$s"
           ],
-          "object": "$dis",
-          "targets": [
-            "$al"
-          ]
+          "object": "$dis"
         }
       },
       "player": "bob",

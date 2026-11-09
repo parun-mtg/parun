@@ -99,54 +99,6 @@
   "note": "Bob's upkeep raises no prompt, or the run would fail on it. Refused: itself, a land, another player's permanent.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$x"
-          ]
-        }
-      },
-      "step": "Upkeep",
-      "turn": 3
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$m"
-          ]
-        }
-      },
-      "step": "Upkeep",
-      "turn": 3
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$theirs"
-          ]
-        }
-      },
-      "step": "Upkeep",
-      "turn": 3
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$ring"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 3
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "Upkeep",

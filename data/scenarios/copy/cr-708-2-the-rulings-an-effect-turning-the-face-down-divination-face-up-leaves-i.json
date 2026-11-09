@@ -135,9 +135,6 @@
       "do": {
         "Cast": {
           "object": "$break-open",
-          "targets": [
-            "Divination"
-          ],
           "mana": [
             "$m1",
             "$m2"

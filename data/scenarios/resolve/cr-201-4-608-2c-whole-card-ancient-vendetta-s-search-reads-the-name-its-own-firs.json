@@ -66,9 +66,6 @@
       "do": {
         "Cast": {
           "object": "$vendetta",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$swamp-1",
             "$swamp-2",

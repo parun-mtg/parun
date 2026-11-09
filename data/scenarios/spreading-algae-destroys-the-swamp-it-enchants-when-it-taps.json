@@ -74,28 +74,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$algae",
-          "targets": [
-            "$island"
-          ],
-          "mana": [
-            "$forest"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$algae",
-          "targets": [
-            "$swamp"
-          ],
           "mana": [
             "$forest"
           ]

@@ -91,9 +91,6 @@
       "do": {
         "Cast": {
           "object": "$empyrial-armor",
-          "targets": [
-            "$hill-giant"
-          ],
           "mana": [
             "$plains",
             "$plains-2",
