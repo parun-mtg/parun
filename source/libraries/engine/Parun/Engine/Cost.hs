@@ -217,20 +217,27 @@ insteadOfManaCost mana face =
 -- the face being cast.
 --
 -- A waterbend {X} is that much generic mana plus CR 701.67b's licence scoped to
--- it, the shape a printed waterbend cost takes (CostComponent.WaterbendInstead). X is
+-- it, the shape a printed waterbend cost takes (CostComponent.WaterbendInstead);
+-- a life payment is CR 119.4's, beside an empty mana cost. Either amount is
 -- read off the FACE and not the card, so a split card's half is priced at its
 -- own mana value (CR 202.3d, 709.3b), and X in that face's own cost counts 0
--- (CR 202.3e); the ruling's "the only legal choice for X is 0" is CR 107.3b
--- and falls out, this cost having no variable.
+-- (CR 202.3e); the rulings' "the only legal choice for X is 0" is CR 107.3b
+-- and falls out, neither cost having a variable.
 permissionCost :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword
 permissionCost alternative face = case alternative of
   PermissionCost.InsteadOfManaCost mana -> insteadOfManaCost mana face
   PermissionCost.WaterbendManaValue ->
-    let amount = Integer.toNaturalSaturating (maybe 0 Quantity.manaCostValue (Face.manaCost face))
-     in Cost.MkCost
-          { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic amount | amount > 0]),
-            Cost.components = CostComponent.WaterbendInstead amount : Face.additionalCosts face
-          }
+    Cost.MkCost
+      { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic manaValue | manaValue > 0]),
+        Cost.components = CostComponent.WaterbendInstead manaValue : Face.additionalCosts face
+      }
+  PermissionCost.PayLifeManaValue ->
+    Cost.MkCost
+      { Cost.mana = Just (ManaCost.MkManaCost []),
+        Cost.components = [CostComponent.PayLife (CostAmount.Fixed manaValue) | manaValue > 0] <> Face.additionalCosts face
+      }
+  where
+    manaValue = Integer.toNaturalSaturating (maybe 0 Quantity.manaCostValue (Face.manaCost face))
 
 -- CR 118.9's "without paying its mana cost", which is insteadOfManaCost of an
 -- EMPTY ManaCost -- {0} (CR 118.5a).

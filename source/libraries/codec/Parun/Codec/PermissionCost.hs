@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "InsteadOfManaCost" ManaCost.codec PermissionCost.InsteadOfManaCost (\x -> case x of PermissionCost.InsteadOfManaCost y -> Just y; _ -> Nothing),
-      Arm.nullary "WaterbendManaValue" PermissionCost.WaterbendManaValue
+      Arm.nullary "WaterbendManaValue" PermissionCost.WaterbendManaValue,
+      Arm.nullary "PayLifeManaValue" PermissionCost.PayLifeManaValue
     ]
 
 tagOf :: PermissionCost.PermissionCost -> String
 tagOf x = case x of
   PermissionCost.InsteadOfManaCost {} -> "InsteadOfManaCost"
   PermissionCost.WaterbendManaValue {} -> "WaterbendManaValue"
+  PermissionCost.PayLifeManaValue {} -> "PayLifeManaValue"

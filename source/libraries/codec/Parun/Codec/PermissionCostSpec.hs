@@ -23,4 +23,11 @@ spec s = Spec.describe s "Parun.Codec.PermissionCost" $ do
       PermissionCost.codec
       PermissionCost.WaterbendManaValue
       " {\"type\":\"WaterbendManaValue\"} "
+  -- Nashi, Moon Sage's Scion.
+  Spec.it s "PayLifeManaValue" $
+    Common.assertCodec
+      s
+      PermissionCost.codec
+      PermissionCost.PayLifeManaValue
+      " {\"type\":\"PayLifeManaValue\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PermissionCost.codec
