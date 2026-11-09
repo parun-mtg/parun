@@ -3211,6 +3211,7 @@ rewriteKeyword pairs keyword = case keyword of
   -- structural rather than something a board exercises.
   Keyword.Type.Companion (CompanionCondition.EachCard condition) -> Keyword.Type.Companion (CompanionCondition.EachCard (rewrite pairs condition))
   Keyword.Type.Companion (CompanionCondition.CardsOverMinimum _) -> keyword
+  Keyword.Type.Companion (CompanionCondition.DifferentNames condition) -> Keyword.Type.Companion (CompanionCondition.DifferentNames (rewrite pairs condition))
   -- CR 702.94a states a cost too, so it is reached the same way.
   Keyword.Type.Miracle cost -> Keyword.Type.Miracle (rewriteCost pairs cost)
   Keyword.Type.Ascend -> keyword

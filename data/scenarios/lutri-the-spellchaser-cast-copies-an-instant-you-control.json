@@ -1,0 +1,48 @@
+{
+  "description": "CR 707.10 Lutri, cast, copies the Bolt alice controls and not the one bob does",
+  "note": "Lutri's enters trigger checks that it was cast (CR 603.4) and targets an instant or sorcery spell its controller controls. alice's Bolt and bob's Bolt are both on the stack when Lutri enters, so the Lutri trigger's target being alice's Bolt is the only legal choice and is bound unasked; bob's Bolt at alice is the one it may not copy. bob at 14 is alice's Bolt and its copy; alice at 17 is bob's lone Bolt, uncopied.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "mountain" },
+          { "card": "Island", "label": "island-1" },
+          { "card": "Island", "label": "island-2" },
+          { "card": "Island", "label": "island-3" }
+        ],
+        "hand": [
+          { "card": "Lightning Bolt", "label": "bolt" },
+          { "card": "Lutri, the Spellchaser", "label": "lutri" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Mountain", "label": "bob-mountain" }
+        ],
+        "hand": [
+          { "card": "Lightning Bolt", "label": "bob-bolt" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt", "targets": ["$bob"], "mana": ["$mountain", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$bob-bolt", "targets": ["$alice"], "mana": ["$bob-mountain"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$lutri", "mana": ["$island-1", "$island-2", "$island-3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Lutri, the Spellchaser", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$bob"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 14 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 17 } } }
+  ]
+}

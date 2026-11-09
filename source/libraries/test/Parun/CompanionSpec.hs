@@ -12,7 +12,8 @@
 -- "each permanent card in your starting deck has an activated ability", written
 -- in card data as @Or [Not permanentCard, HasActivatedAbility]@.
 -- Yorion, Sky Nomad is the deck-size condition's, read against
--- Parun.Types.GameSettings' format.
+-- Parun.Types.GameSettings' format, and Lutri, the Spellchaser the
+-- distinct-names condition's.
 --
 -- THE BOARD SHAPE that makes the condition case discriminating. Both decks hold
 -- Mountains, Birds of Paradise and Lightning Bolts; bob's holds one Doomed
@@ -71,6 +72,7 @@ spec s registry = Spec.describe s "Companion" $ do
   startingDeck s registry
   revealing s registry
   deckSize s registry
+  differentNames s registry
   newGames s registry
   mainGameCompanion s registry
   specialAction s registry
@@ -244,6 +246,22 @@ deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
     let deck = mountains yorion mountain 80
     Spec.assertEqWith s "no format: the condition is unmet" (revealed GameSettings.plain deck) Nothing
     Spec.assertBool s (Maybe.isJust (revealed (under RuleFamily.Constructed) deck)) "the same deck under a format reveals it"
+
+-- Lutri, the Spellchaser's "each nonland card in your starting deck has a
+-- different name" (CR 702.139a, 201.2b). Both decks hold twenty Mountains, which
+-- the condition exempts, so a second copy of one nonland card is the only thing
+-- that differs.
+differentNames :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+differentNames s registry = Spec.describe s "CR 702.139a a distinct-names condition" $ do
+  Spec.it s "CR 201.2b one copy of each nonland card reveals Lutri, and a second Bolt does not" $ do
+    lutri <- S.printingOf s registry "Lutri, the Spellchaser"
+    mountain <- S.printingOf s registry "Mountain"
+    birds <- S.printingOf s registry "Birds of Paradise"
+    bolt <- S.printingOf s registry "Lightning Bolt"
+    let shared = [(mountain, 20), (birds, 1)]
+        gs = setup revealingAnswer (deckOf lutri ((bolt, 1) : shared)) (deckOf lutri ((bolt, 2) : shared))
+    Spec.assertEqWith s "CR 702.139a: alice's nonland cards each have their own name, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup lutri (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 201.2b: bob's two Lightning Bolts share a name" (companionOf S.bob gs) Nothing
 
 -- CR 728.1 / 730.2: a restart and a subgame each start a new game following rule
 -- 103, so CR 103.2a's starting deck is taken again from the cards the new game is

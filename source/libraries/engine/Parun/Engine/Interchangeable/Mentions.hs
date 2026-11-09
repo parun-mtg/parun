@@ -2114,6 +2114,7 @@ keywordNames asking x = case x of
   Keyword.Escape cost -> costNames asking (keywordNames asking) cost
   Keyword.Companion (CompanionCondition.EachCard filter_) -> filterNames asking filter_
   Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> mempty
+  Keyword.Companion (CompanionCondition.DifferentNames filter_) -> filterNames asking filter_
   Keyword.Foretell foretellCost -> foretellCostNames asking (keywordNames asking) foretellCost
   Keyword.Demonstrate -> mempty
   Keyword.Daybound -> mempty
