@@ -15,6 +15,11 @@
             "ready": true
           },
           {
+            "card": "Elvish Visionary",
+            "label": "vis",
+            "ready": true
+          },
+          {
             "card": "Forest",
             "label": "f"
           }
@@ -74,7 +79,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 207.2c, 508.1m, 603.2: Wargling's ferocious attack trigger needs a creature you control with power 4 or greater; it gives Wargling +1/+0 and every creature you control trample until end of turn",
-  "note": "Turn 1: alice's Hill Giant is power 3 and bob's Air Elemental power 4 is not hers, so the attack triggers nothing. Turn 3: Giant Growth makes the non-attacking Giant 6/6; the trigger pumps Wargling and grants trample to it and the Giant, but not to bob's Elemental.",
+  "note": "Turn 1: alice's Hill Giant is power 3 and bob's Air Elemental power 4 is not hers, so the attack triggers nothing. Turn 3: Giant Growth makes the non-attacking Elvish Visionary exactly 4/4; the trigger pumps Wargling and grants trample to it and the 3/3 Giant, but not to bob's Elemental.",
   "timeline": [
     {
       "do": {
@@ -147,7 +152,7 @@
           ],
           "object": "$growth",
           "targets": [
-            "$giant"
+            "$vis"
           ]
         }
       },
@@ -164,9 +169,9 @@
     {
       "check": {
         "PowerToughness": {
-          "object": "$giant",
-          "power": 6,
-          "toughness": 6
+          "object": "$vis",
+          "power": 4,
+          "toughness": 4
         }
       },
       "player": "alice",
