@@ -17,17 +17,19 @@
           "effect": {
             "type": "CastAsThoughItHadFlash",
             "value": {
-              "type": "Or",
-              "value": [
-                {
-                  "type": "HasSubtype",
-                  "value": "Aura"
-                },
-                {
-                  "type": "HasSubtype",
-                  "value": "Equipment"
-                }
-              ]
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasSubtype",
+                    "value": "Aura"
+                  },
+                  {
+                    "type": "HasSubtype",
+                    "value": "Equipment"
+                  }
+                ]
+              }
             }
           },
           "scope": {

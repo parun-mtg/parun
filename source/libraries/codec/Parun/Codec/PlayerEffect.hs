@@ -33,6 +33,7 @@ import qualified Parun.Codec.StateBasedAction as StateBasedAction
 import qualified Parun.Codec.StatedFlip as StatedFlip
 import qualified Parun.Codec.TapForMana as TapForMana
 import qualified Parun.Codec.TargetRestriction as TargetRestriction
+import qualified Parun.Codec.TurnScope as TurnScope
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -58,6 +59,12 @@ codec =
           (,)
             <$> Fields.required "life" Common.natural fst
             <*> Fields.required "mana" ManaType.codec snd
+      -- The scope absent is every matching spell, not only a turn's first.
+      flashGrant =
+        Fields.object $
+          (,)
+            <$> Fields.required "matching" filterCodec fst
+            <*> Fields.defaulted "onlyFirst" Nothing (Common.maybe TurnScope.codec) snd
       -- The quality absent is every spell and ability the scope's players control.
       targetingBan =
         Fields.object $
@@ -81,7 +88,7 @@ codec =
           Arm.payload "MayPayLifeForMana" lifeForMana (uncurry PlayerEffect.MayPayLifeForMana) (\x -> case x of PlayerEffect.MayPayLifeForMana life mana -> Just (life, mana); _ -> Nothing),
           Arm.payload "SpendManaAsThough" SpendManaAsThough.codec PlayerEffect.SpendManaAsThough (\x -> case x of PlayerEffect.SpendManaAsThough y -> Just y; _ -> Nothing),
           Arm.payload "CantBeTargetedBy" targetingBan (uncurry PlayerEffect.CantBeTargetedBy) (\x -> case x of PlayerEffect.CantBeTargetedBy y z -> Just (y, z); _ -> Nothing),
-          Arm.payload "CastAsThoughItHadFlash" filterCodec PlayerEffect.CastAsThoughItHadFlash (\x -> case x of PlayerEffect.CastAsThoughItHadFlash y -> Just y; _ -> Nothing),
+          Arm.payload "CastAsThoughItHadFlash" flashGrant (uncurry PlayerEffect.CastAsThoughItHadFlash) (\x -> case x of PlayerEffect.CastAsThoughItHadFlash y z -> Just (y, z); _ -> Nothing),
           Arm.payload "MayPlayAsThoughItHadFlash" filterCodec PlayerEffect.MayPlayAsThoughItHadFlash (\x -> case x of PlayerEffect.MayPlayAsThoughItHadFlash y -> Just y; _ -> Nothing),
           Arm.payload "KeywordRiderGrant" KeywordRiderGrant.codec PlayerEffect.KeywordRiderGrant (\x -> case x of PlayerEffect.KeywordRiderGrant y -> Just y; _ -> Nothing),
           Arm.payload "LoyaltyGrant" LoyaltyGrant.codec PlayerEffect.LoyaltyGrant (\x -> case x of PlayerEffect.LoyaltyGrant y -> Just y; _ -> Nothing),
