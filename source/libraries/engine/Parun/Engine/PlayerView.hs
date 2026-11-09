@@ -14,8 +14,10 @@ import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.Object as Object
@@ -25,6 +27,9 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.SeatView as SeatView
+import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackedAbility as StackedAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
@@ -114,11 +119,26 @@ objectView pid gs oid = do
 
 -- | CR 113.7a / 602.2a: an ability on the stack by its source, where `pid` may
 -- know that object: one in a public zone, one `pid` sees in a hidden zone, or
--- one that has left, which the seat can name only by what it witnessed.
+-- one that has left, which the seat can name only by what it witnessed; and
+-- which ability it is, which the stack shows every seat (CR 400.2).
 abilityView :: PlayerId.PlayerId -> GameState.GameState -> ObjectId.ObjectId -> Maybe AbilityView.AbilityView
-abilityView pid gs oid
-  | Game.isAbility oid gs = Just (AbilityView.MkAbilityView (Game.abilitySourceOf oid gs >>= known))
-  | otherwise = Nothing
+abilityView pid gs oid = do
+  object <- Game.lookupObject oid gs
+  stacked <-
+    if Object.zone object /= Zone.Stack
+      then Nothing
+      else case Object.source object of
+        Source.OfAbility a -> Just (StackedAbility.Activated (ActivatedAbilitySource.ability a))
+        Source.OfTrigger t -> Just (StackedAbility.Triggered (TriggeredAbilitySource.ability t))
+        Source.OfInherentTrigger t -> Just (StackedAbility.Triggered (InherentTriggerSource.ability t))
+        Source.OfCard _ -> Nothing
+        Source.OfMeld _ -> Nothing
+        Source.OfMerge _ -> Nothing
+        Source.OfToken _ -> Nothing
+        Source.OfEmblem _ -> Nothing
+        Source.OfSpellCopy _ -> Nothing
+        Source.OfCardCopy _ -> Nothing
+  pure (AbilityView.MkAbilityView (Game.abilitySourceOf oid gs >>= known) stacked)
   where
     known source = case Game.zoneOf source gs of
       Just zone | Game.isHiddenZone zone && Visibility.sees pid source gs /= Visibility.Type.Visible -> Nothing

@@ -3,6 +3,7 @@ module Parun.Codec.ObjectViewSpec where
 import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
+import qualified Parun.Codec.TriggeredAbilitySourceSpec as TriggeredAbilitySourceSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityView as AbilityView
@@ -12,6 +13,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TapState as TapState
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -29,8 +31,8 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
     Common.assertCodec
       s
       ObjectView.codec
-      (hidden {ObjectView.ability = Just (AbilityView.MkAbilityView (Just (ObjectId.MkObjectId 5)))})
-      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":{\"source\":5},\"targets\":[]}"
+      (hidden {ObjectView.ability = Just (AbilityView.MkAbilityView (Just (ObjectId.MkObjectId 5)) (StackedAbility.Triggered TriggeredAbilitySourceSpec.ability))})
+      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":{\"source\":5,\"ability\":{\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}}},\"targets\":[]}"
   Spec.it s "a spell on the stack with a target" $
     Common.assertCodec
       s
