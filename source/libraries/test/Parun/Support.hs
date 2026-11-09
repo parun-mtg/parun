@@ -20,6 +20,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
+import qualified Data.Unique as Unique
 import Numeric.Natural (Natural)
 import qualified Parun.Cards as Cards
 import qualified Parun.Engine.Card as Card
@@ -448,12 +449,14 @@ fourPlayerGame :: GameState.GameState
 fourPlayerGame = Setup.emptyGame fourPlayers
 
 -- A throwaway directory holding `files` (name, contents), for the cases that
--- need a corpus other than the committed one. The label keeps concurrently
--- running cases in separate directories, since tasty runs them in parallel.
+-- need a corpus other than the committed one. The label names the directory;
+-- the unique suffix keeps cases tasty runs in parallel apart even when two
+-- share a label.
 withCorpusDir :: String -> [(FilePath, Text.Text)] -> (FilePath -> IO a) -> IO a
 withCorpusDir label files action = do
   tmp <- Directory.getTemporaryDirectory
-  let dir = tmp <> "/parun-corpus-" <> label
+  unique <- Unique.newUnique
+  let dir = tmp <> "/parun-corpus-" <> label <> "-" <> show (Unique.hashUnique unique)
   Exception.bracket_
     ( do
         Directory.createDirectoryIfMissing True dir
