@@ -2278,11 +2278,12 @@ rewriteAttackTrigger pairs trigger = case trigger of
           (fmap (rewriteCondition pairs) while_)
       )
   AttackTrigger.Attacked _ -> trigger
-  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers while_) ->
+  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers frequency while_) ->
     AttackTrigger.Declaration
       ( DeclarationTrigger.MkDeclarationTrigger
           player
-          (fmap (\(AttackCount.MkAttackCount n f) -> AttackCount.MkAttackCount n (Filter.rewrite pairs f)) attackers)
+          (fmap (\(AttackCount.MkAttackCount measure n f) -> AttackCount.MkAttackCount measure n (Filter.rewrite pairs f)) attackers)
+          frequency
           (fmap (rewriteCondition pairs) while_)
       )
   AttackTrigger.Unblocked f -> AttackTrigger.Unblocked (Filter.rewrite pairs f)

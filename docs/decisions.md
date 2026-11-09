@@ -1598,3 +1598,21 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.DeckList.printingOf`, through `firstPrintings`. Proved by
   `Parun.DeckList`'s "CR 718.1 a bare name is the card's first printing".
 - **Issue**: #4118.
+
+## What a short attack spends of Desert Were-Worm's first time
+
+- **Question**: "Whenever you attack with creatures with total power 12 or
+  greater for the first time each turn": does an earlier declaration this turn
+  that fell short of 12 spend the first time?
+- **Rules**: CR 508.3c, 508.3d (CR of 2026-11-06); the card's one ruling reads
+  power as declared and says nothing of earlier declarations.
+- **Decision**: No. "For the first time each turn" narrows the trigger event
+  (Parun.Types.TriggerFrequency), and the event is an attack reaching the total,
+  so only an earlier declaration that reached it spends the turn's first time.
+- **Rejected**: The player's first declaration of the turn, reaching the total
+  or not, which reads "for the first time" as qualifying "you attack" alone and
+  leaves the total a condition the ability checks afterwards.
+- **Site**: `Parun.Engine.Event.Match.attacks`, the Declaration arm's
+  FirstTimeEachTurn case. Proved by data/scenarios's
+  cr-508-3c-desert-were-worm-triggers-on-a-later-attack-after-one-short-of-12.
+- **Issue**: #6694.

@@ -709,7 +709,7 @@ activationNames oid entry = case entry of
 -- for phasedOutNames' reason.
 attackedLastTurnNames :: ObjectId -> AttackerDeclared.AttackerDeclared -> Bool
 attackedLastTurnNames oid entry = case entry of
-  AttackerDeclared.MkAttackerDeclared attacker _defender target _count _attackingPlayer ->
+  AttackerDeclared.MkAttackerDeclared attacker _defender target _count _attackingPlayer _power ->
     attacker == oid || attackTargetNames oid target
 
 -- Whether any OTHER object names this one: an Aura or Equipment attached to it,

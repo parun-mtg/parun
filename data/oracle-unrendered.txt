@@ -807,6 +807,7 @@ dermotaxi
 desecrated-tomb
 desecration-demon
 desert
+desert-were-worm
 desertion
 desolation-of-smaug
 desolation-twin

@@ -22,8 +22,9 @@ spec s = Spec.describe s "Parun.Codec.AttackerDeclared" $ do
             AttackerDeclared.defender = PlayerId.MkPlayerId 1,
             AttackerDeclared.target = AttackTarget.OfBattle (ObjectId.MkObjectId 3),
             AttackerDeclared.count = 2,
-            AttackerDeclared.attackingPlayer = PlayerId.MkPlayerId 0
+            AttackerDeclared.attackingPlayer = PlayerId.MkPlayerId 0,
+            AttackerDeclared.power = -1
           }
       )
-      " {\"attacker\":1,\"defender\":1,\"target\":{\"type\":\"OfBattle\",\"value\":3},\"count\":2,\"attackingPlayer\":0} "
+      " {\"attacker\":1,\"defender\":1,\"target\":{\"type\":\"OfBattle\",\"value\":3},\"count\":2,\"attackingPlayer\":0,\"power\":-1} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AttackerDeclared.codec

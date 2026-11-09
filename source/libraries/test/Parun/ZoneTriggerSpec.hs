@@ -43,6 +43,7 @@ import qualified Parun.Types.AttachmentEnd as AttachmentEnd
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCount as AttackCount
+import qualified Parun.Types.AttackMeasure as AttackMeasure
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedSubject as AttackedSubject
@@ -1942,7 +1943,7 @@ representativeEvents cond =
           -- own controller: eventBindings binds this field under `thatPlayer`,
           -- so an arm that bound the attacking side instead would still agree
           -- with eventBindingSlots here if the two coincided.
-          AttackTrigger.Attacker _ -> one (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared departed S.carol (AttackTarget.OfPlayer S.carol) 1 S.alice))
+          AttackTrigger.Attacker _ -> one (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared departed S.carol (AttackTarget.OfPlayer S.carol) 1 S.alice 0))
           -- CR 508.3e's ATTACKED player is bob here and not the carol who
           -- declared, so an arm that bound the attacking side under `thatPlayer`
           -- would disagree with eventBindingSlots on this event. A Source
@@ -2358,13 +2359,14 @@ everyTriggerCondition =
     -- ALL THREE relations, each with and without a count: an eventBindings arm
     -- that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed.
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent Nothing Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer Nothing Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You (Just (AttackCount.MkAttackCount 1 (Filter.Type.And []))) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent (Just (AttackCount.MkAttackCount 1 (Filter.Type.And []))) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer (Just (AttackCount.MkAttackCount 2 (Filter.Type.And []))) Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing (Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))))),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing TriggerFrequency.EveryTime Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent Nothing TriggerFrequency.EveryTime Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer Nothing TriggerFrequency.EveryTime Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))) TriggerFrequency.EveryTime Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))) TriggerFrequency.EveryTime Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 2 (Filter.Type.And []))) TriggerFrequency.EveryTime Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You (Just (AttackCount.MkAttackCount AttackMeasure.TotalPower 12 (Filter.Type.And []))) TriggerFrequency.FirstTimeEachTurn Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing TriggerFrequency.EveryTime (Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))))),
     TriggerCondition.Attacks (AttackTrigger.Unblocked (Filter.Type.And [])),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker (Filter.Type.And []) BlockCount.Once),

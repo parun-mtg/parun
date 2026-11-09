@@ -1,0 +1,88 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Desert Were-Worm",
+            "label": "worm",
+            "ready": true
+          },
+          {
+            "card": "Aurelia, the Warleader",
+            "label": "aurelia",
+            "ready": true
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "life": 40,
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 508.3c desert were worm triggers on a later attack after one short of 12",
+  "note": "docs/decisions.md, \"What a short attack spends of Desert Were-Worm's first time\": Aurelia, the Warleader attacks alone with 3 power and adds the second combat phase, where Six Mountains' 12-power Desert Were-Worm attacks alone. That is the first attack with total power 12, so it untaps and adds a third phase, whose Attack entry is the proof.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$aurelia"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$worm"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$worm",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

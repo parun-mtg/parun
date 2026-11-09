@@ -40,6 +40,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.AttackCount as AttackCount
+import qualified Parun.Types.AttackMeasure as AttackMeasure
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockRole as BlockRole
@@ -95,6 +96,7 @@ import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TypeLine as TypeLine
@@ -302,7 +304,8 @@ theRingLootsOnAttack =
             ( AttackTrigger.Declaration
                 DeclarationTrigger.MkDeclarationTrigger
                   { DeclarationTrigger.player = PlayerRelation.You,
-                    DeclarationTrigger.attackers = Just (AttackCount.MkAttackCount 1 yourRingBearer),
+                    DeclarationTrigger.attackers = Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 yourRingBearer),
+                    DeclarationTrigger.frequency = TriggerFrequency.EveryTime,
                     DeclarationTrigger.while = Nothing
                   }
             )
