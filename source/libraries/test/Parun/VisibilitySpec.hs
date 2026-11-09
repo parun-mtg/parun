@@ -105,8 +105,8 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
     Spec.assertEqWith s "a top card that is new is hidden" (Visibility.sees S.bob top (begunAt second)) Visibility.Type.Obscured
     Spec.assertEqWith s "from its owner too" (Visibility.sees S.alice top (begunAt second)) Visibility.Type.Obscured
     Spec.assertEqWith s "and so is one over a library then empty" (Visibility.sees S.bob top revealed {GameState.announcedTops = Just Map.empty}) Visibility.Type.Obscured
-  -- CR 724.4: a scenario reaches this only through Mindslaver and bob's next
-  -- turn, so the control row is written onto the state directly and the case
+  -- CR 724.4: a scenario reaches this only through a control effect
+  -- (Mindslaver, Construct a Cosmic Cube) and bob's next turn, so the control row is written onto the state directly and the case
   -- pins the look's audience alone.
   Spec.it s "a look while controlled is witnessed by the controller too" $ do
     let bob = (S.playerSetup S.bob) {Seat.library = Seq.fromList [S.aliased "top" (S.cardSetup "Grizzly Bears")]}

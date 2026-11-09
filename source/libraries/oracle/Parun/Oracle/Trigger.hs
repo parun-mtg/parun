@@ -98,7 +98,7 @@ event context creature c = case c of
     -- Free: the entrant is "it" (Aether Flash) or "that creature" (Agent's
     -- Toolkit).
     word <- ["it", that]
-    subject <- also one
+    subject <- also one >>= andOr
     -- Landfall is the ability word (CR 207.2c) Oracle text prints before
     -- this event and no other (Sporemound).
     opening' <- case one of
@@ -261,6 +261,11 @@ recurring = ["Whenever", "When"]
 -- | A filter as the object an event is about, with its article ("a
 -- creature", "another creature"), and the noun "that" names it by afterwards
 -- ("that creature").
+-- | Free: a disjunction of permanent kinds reads "or" or "and/or" (HYDRA
+-- Assault Robot's "another Villain and/or artifact you control").
+andOr :: String -> [String]
+andOr s = s : [Text.unpack (Text.replace (Text.pack " or ") (Text.pack " and/or ") (Text.pack s)) | " or " `List.isInfixOf` s]
+
 described :: Target.Context -> Filter.Type.Filter Keyword.Keyword -> [(String, String)]
 described context f = do
   p <- Filter.phrase f (Target.keyword context)

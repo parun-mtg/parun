@@ -1984,6 +1984,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Confusion in the Ranks", 1), -- its trigger's target slot, relative to the entering permanent's controller
         ("Chandra, Pyromaster", 1), -- its +1's second target slot, Flame Wave's sentence
         ("Soul of Shandalar", 2), -- both abilities' second target slots, Flame Wave's sentence
+        ("Cloak and Dagger, Entwined", 1), -- its trigger's second target slot, Soul of Shandalar's shape
         ("Legion's End", 1), -- its exile's object, relative to the target's controller
         ("Run Away Together", 2) -- both target slots, each relative to the other
       ]
