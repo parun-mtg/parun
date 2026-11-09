@@ -3188,9 +3188,12 @@ attackCompanyNames asking x = case x of
 
 declarationTriggerNames :: (Monoid r) => Asking r -> DeclarationTrigger.DeclarationTrigger -> r
 declarationTriggerNames asking x = case x of
-  DeclarationTrigger.MkDeclarationTrigger _player attackers -> case attackers of
-    Nothing -> mempty
-    Just (AttackCount.MkAttackCount _floor filter_) -> filterNames asking filter_
+  DeclarationTrigger.MkDeclarationTrigger _player attackers while_ ->
+    ( case attackers of
+        Nothing -> mempty
+        Just (AttackCount.MkAttackCount _floor filter_) -> filterNames asking filter_
+    )
+      <> foldMap (conditionNames asking) while_
 
 blockTriggerNames :: (Monoid r) => Asking r -> BlockTrigger.BlockTrigger -> r
 blockTriggerNames asking x = case x of

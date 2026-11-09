@@ -2352,12 +2352,13 @@ everyTriggerCondition =
     -- ALL THREE relations, each with and without a count: an eventBindings arm
     -- that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed.
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer Nothing)),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You (Just (AttackCount.MkAttackCount 1 (Filter.Type.And []))))),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent (Just (AttackCount.MkAttackCount 1 (Filter.Type.And []))))),
-    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer (Just (AttackCount.MkAttackCount 2 (Filter.Type.And []))))),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent Nothing Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer Nothing Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You (Just (AttackCount.MkAttackCount 1 (Filter.Type.And []))) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.Opponent (Just (AttackCount.MkAttackCount 1 (Filter.Type.And []))) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.AnyPlayer (Just (AttackCount.MkAttackCount 2 (Filter.Type.And []))) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger PlayerRelation.You Nothing (Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))))),
     TriggerCondition.Attacks (AttackTrigger.Unblocked (Filter.Type.And [])),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.Type.IsSource BlockCount.Once),
     TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker (Filter.Type.And []) BlockCount.Once),

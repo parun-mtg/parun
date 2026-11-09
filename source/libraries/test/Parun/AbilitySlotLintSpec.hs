@@ -915,7 +915,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- than on the constructor: CR 508.1 lets only the active player declare,
         -- so "whenever YOU attack" can only happen on the controller's turn and
         -- "whenever A PLAYER attacks" can happen on anyone's.
-        attacksWith relation ability = ability {TriggeredAbility.condition = TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing))}
+        attacksWith relation ability = ability {TriggeredAbility.condition = TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing Nothing))}
         youAttack = face {Face.delayedAbilities = fmap (attacksWith PlayerRelation.You) (Face.delayedAbilities face)}
         anyoneAttacks = face {Face.delayedAbilities = fmap (attacksWith PlayerRelation.AnyPlayer) (Face.delayedAbilities face)}
         -- CR 102.1: a damage trigger's turn scope, Fblthp, Impossibly Lost's

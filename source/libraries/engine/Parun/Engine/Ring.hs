@@ -302,7 +302,8 @@ theRingLootsOnAttack =
             ( AttackTrigger.Declaration
                 DeclarationTrigger.MkDeclarationTrigger
                   { DeclarationTrigger.player = PlayerRelation.You,
-                    DeclarationTrigger.attackers = Just (AttackCount.MkAttackCount 1 yourRingBearer)
+                    DeclarationTrigger.attackers = Just (AttackCount.MkAttackCount 1 yourRingBearer),
+                    DeclarationTrigger.while = Nothing
                   }
             )
         )
