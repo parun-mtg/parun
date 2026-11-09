@@ -719,8 +719,8 @@ rewriteEffect pairs effect = case effect of
   -- CR 612.1 / 612.2a: amass's subtype is a printed word of CR 205.3m's family,
   -- and the token's own name follows it. Empower Jace's "Jace" names the keyword
   -- action (CR 701.71a), and stays.
-  Effect.Amass (Amass.MkAmass quantity kind slot) ->
-    Effect.Amass (Amass.MkAmass (rewriteQuantity pairs quantity) (rewriteAmassKind pairs kind) slot)
+  Effect.Amass (Amass.MkAmass player quantity kind slot) ->
+    Effect.Amass (Amass.MkAmass player (rewriteQuantity pairs quantity) (rewriteAmassKind pairs kind) slot)
   -- The COUNT only: a slot name is this card's own namespace and not printed text
   -- CR 612.1 can reach, which is why the Amass arm above carries its slot through
   -- untouched too.

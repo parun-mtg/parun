@@ -1307,26 +1307,30 @@ firebend applyEffectWith runSubgame resolving source controller legal chosen add
   applyEffectWith runSubgame resolving source controller legal chosen (Effect.AddMana addition)
   State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Firebend controller)))
 
--- CR 701.47a / 701.71a: the resolving controller amasses or empowers Jace; the
--- keyword action is Parun.Engine.Amass.amass's, and this arm evaluates only the printed N.
+-- CR 701.47a / 701.71a: each player the PlayerRef names amasses or empowers
+-- Jace, APNAP (CR 101.4); the keyword action is Parun.Engine.Amass.amass's, and
+-- this arm evaluates only the printed N, once (CR 608.2h). A reference naming
+-- nobody (Azog, Moria's Ruin with no target) amasses nothing.
 --
 -- Targetless: no CR 608.2b legality to re-check.
 amass :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Amass.Type.Amass -> Game ()
-amass settle resolving source controller legal (Amass.Type.MkAmass quantity kind mSlot) = do
+amass settle resolving source controller legal (Amass.Type.MkAmass ref quantity kind mSlot) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+      named = playerRefPlayers legal resolving source controller gs ref
+      amassers = filter (`List.elem` named) (Game.apnapOrder gs)
   case Quantity.evaluateFor viewOf context gs resolving source quantity of
     Nothing -> pure () -- unevaluable quantity: no-op (the powerOf posture)
     Just n -> do
-      chose <- Amass.amass settle controller source resolving kind (Integer.toNaturalSaturating n)
+      chose <- Monad.forM amassers $ \pid -> Amass.amass settle pid source resolving kind (Integer.toNaturalSaturating n)
       -- CR 701.47c: "the amassed Army" is the creature chosen, whether or not it
       -- received counters -- so this is bound off the choice and not off the
       -- counters, and an amass whose pool was empty (CR 701.47b) binds nothing.
-      -- Onto `resolving`, which is bindSlot's contract: both resolution loops
+      -- Onto `resolving`, which is bindObjects' contract: both resolution loops
       -- re-read the stack object's bindings before each effect (CR 608.2c), so
       -- the next clause sees it.
-      Monad.forM_ ((,) <$> mSlot <*> chose) $ \(slot, army) -> State.modify' (Common.bindSlot resolving slot army)
+      Common.bindObjects resolving mSlot (Maybe.catMaybes chose)
 
 -- CR 701.68a: each player the PlayerRef names puts N -1/-1 counters on a
 -- creature they control; the keyword action is Parun.Engine.Blight.blight's. A

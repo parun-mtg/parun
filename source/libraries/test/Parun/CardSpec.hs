@@ -76,6 +76,7 @@ import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
+import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -828,6 +829,7 @@ playerRefPositions =
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
         ("scry", Effect.Scry (playerQuantity "sc"), [plantedPlayer "sc"]),
         ("surveil", Effect.Surveil (Surveil.MkSurveil (plantedPlayer "su") one Nothing), [plantedPlayer "su"]),
+        ("amass", Effect.Amass (Amass.MkAmass (plantedPlayer "as") one (AmassKind.Army Subtype.Goblin) Nothing), [plantedPlayer "as"]),
         ("fateseal", Effect.Fateseal (playerQuantity "fs"), [plantedPlayer "fs"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (plantedPlayer "lk")), [plantedPlayer "lk"]),
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = plantedPlayer "gu", Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedPlayer "gu"]),
@@ -1309,7 +1311,7 @@ ownCounts effect = case effect of
   Effect.Bolster quantity -> quantityCounts quantity
   -- Amass's N is a Quantity like the Search's above, so its Counts are reachable
   -- from here.
-  Effect.Amass (Amass.MkAmass quantity _ _) -> quantityCounts quantity
+  Effect.Amass (Amass.MkAmass _ quantity _ _) -> quantityCounts quantity
   -- Blight's N is a Quantity like bolster's above, so its Counts are reachable
   -- from here.
   Effect.Blight (Blight.MkBlight _ quantity _) -> quantityCounts quantity
@@ -5994,7 +5996,7 @@ effectFilters effect = case effect of
   Effect.Bolster quantity -> frame Unframed (quantityFilters quantity)
   -- Only the count's Filters: rule 701.47a describes the candidate pool, so no
   -- Filter on the card names it.
-  Effect.Amass (Amass.MkAmass quantity _ _) -> frame Unframed (quantityFilters quantity)
+  Effect.Amass (Amass.MkAmass _ quantity _ _) -> frame Unframed (quantityFilters quantity)
   -- Only the count's Filters: rule 701.68a describes the candidate pool, so no
   -- Filter on the card names it, and a PlayerRef carries none either -- Draw's
   -- arm below answers the same way.

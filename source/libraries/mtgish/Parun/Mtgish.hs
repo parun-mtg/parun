@@ -1245,7 +1245,7 @@ effects context n = case Node.tag n of
   -- CR 701.71a.
   "EmpowerJace" -> do
     q <- Node.argument n >>= quantity context
-    pure [Effect.Amass Amass.MkAmass {Amass.quantity = q, Amass.kind = AmassKind.EmpowerJace, Amass.slot = Nothing}]
+    pure [Effect.Amass Amass.MkAmass {Amass.player = PlayerRef.Relative PlayerRelation.You, Amass.quantity = q, Amass.kind = AmassKind.EmpowerJace, Amass.slot = Nothing}]
   _ -> playerEffects context (PlayerRef.Relative PlayerRelation.You) n
   where
     damage dealer amount recipient = do

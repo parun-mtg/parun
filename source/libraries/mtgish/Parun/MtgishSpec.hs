@@ -209,7 +209,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   -- instruction of "you" in a sentence of its own.
   Spec.it s "reads empowering Jace as an amass of a Jace" $ do
     Spec.assertEq s (Right ()) (accepts protegesAwakening)
-    Spec.assertEq s [Amass.MkAmass (Quantity.Literal 6) AmassKind.EmpowerJace Nothing] [a | Effect.Amass a <- spellEffects (translated protegesAwakening)]
+    Spec.assertEq s [Amass.MkAmass (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 6) AmassKind.EmpowerJace Nothing] [a | Effect.Amass a <- spellEffects (translated protegesAwakening)]
 
   -- CR 601.2i / 112.2: the caster of a spell is its controller, which a
   -- cast trigger's filter names; "a player" names none.

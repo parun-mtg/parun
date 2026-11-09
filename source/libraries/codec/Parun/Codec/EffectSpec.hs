@@ -2519,7 +2519,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Amass (Amass.MkAmass (Quantity.Literal 3) (AmassKind.Army Subtype.Zombie) Nothing))
+      (Effect.Amass (Amass.MkAmass (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) (AmassKind.Army Subtype.Zombie) Nothing))
       " {\"type\":\"Amass\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":3},\"kind\":{\"type\":\"Army\",\"value\":\"Zombie\"}}} "
   -- CR 701.47c: Surrounded by Orcs names the Army it amassed in its next clause.
   Spec.it s "Amass, binding the amassed Army" $
@@ -2527,15 +2527,23 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Amass (Amass.MkAmass (Quantity.Literal 3) (AmassKind.Army Subtype.Orc) (Just (SlotName.MkSlotName (Text.pack "army")))))
+      (Effect.Amass (Amass.MkAmass (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) (AmassKind.Army Subtype.Orc) (Just (SlotName.MkSlotName (Text.pack "army")))))
       " {\"type\":\"Amass\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":3},\"kind\":{\"type\":\"Army\",\"value\":\"Orc\"},\"slot\":\"army\"}} "
+  -- CR 701.47a: Azog, Moria's Ruin has the destroyed creature's controller amass.
+  Spec.it s "Amass, by another player" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Amass (Amass.MkAmass (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 2) (AmassKind.Army Subtype.Goblin) Nothing))
+      " {\"type\":\"Amass\",\"value\":{\"player\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"target\"}},\"quantity\":{\"type\":\"Literal\",\"value\":2},\"kind\":{\"type\":\"Army\",\"value\":\"Goblin\"}}} "
   -- CR 701.71a: empower Jace N prints only the count.
   Spec.it s "Amass, empowering Jace" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.Amass (Amass.MkAmass (Quantity.Literal 2) AmassKind.EmpowerJace Nothing))
+      (Effect.Amass (Amass.MkAmass (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) AmassKind.EmpowerJace Nothing))
       " {\"type\":\"Amass\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":2},\"kind\":{\"type\":\"EmpowerJace\"}}} "
   -- CR 701.68a: who and how many, Draw's shape -- rule 701.68a fixes the kind of
   -- counter and the candidate pool, leaving an author the blighter and N.

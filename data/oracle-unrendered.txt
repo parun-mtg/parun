@@ -231,6 +231,7 @@ awaken-the-inferno
 awakener-druid
 ayli-eternal-pilgrim
 aysen-bureaucrats
+azog-morias-ruin
 azorius-arrester
 azusa-lost-but-seeking
 baaallerina
