@@ -68,8 +68,8 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
     matchup <- BotSpec.bears s registry
     let orders = Map.fromList [(S.alice, GraveyardOrder.Matters), (S.bob, GraveyardOrder.Matters)]
-        -- Seed 5's game puts cards into a graveyard together twice.
-        (outcome, (timeline, _)) = watched 5 Nothing bots orders matchup
+        -- Seed 1's game puts cards into a graveyard together twice.
+        (outcome, (timeline, _)) = watched 1 Nothing bots orders matchup
         arranged = Seq.filter ((== Just (Text.pack "ArrangeGraveyardArrivals")) . answered) timeline
     Spec.assertBool s (not (Seq.null arranged)) "a seat arranged a batch"
     replayed <- Scenario.run registry (savedWith orders matchup timeline)

@@ -63,6 +63,7 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -1600,6 +1601,23 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
     Spec.assertEqWith s "the same record, with nothing naming either" (alike moved plain twin) (Just True)
     Spec.assertEqWith s "a counter on the record tells them apart" (alike moved plain grown) (Just False)
     Spec.assertEqWith s "the same record, with a slot naming one's earlier id" (alike naming plain twin) (Just False)
+
+  -- CR 702.30a's window is read only by echo's own trigger, so it parts two
+  -- Goblin Patrols and leaves two Swamps alike. The scenarios under
+  -- data/scenarios/mana/ named for CR 601.2g's Swamps are the Swamps' gameplay
+  -- half (#6721).
+  Spec.it s "CR 702.30a the control clock parts two permanents with echo and no others" $ do
+    patrol <- S.printingOf s registry "Goblin Patrol"
+    swamp <- S.printingOf s registry "Swamp"
+    let alike clock printing =
+          let (older, g1) = S.addPermanent printing S.alice (Setup.emptyGame S.bothPlayers)
+              (newer, board) = S.addPermanent printing S.alice g1
+              clocked = board {GameState.objects = Map.adjust (\o -> o {Object.controlClock = clock}) newer (GameState.objects board)}
+           in Interchangeable.objects (Projection.projectAll clocked) clocked older newer
+        opened = Map.singleton S.alice ControlClock.Gained
+    Spec.assertEqWith s "two Goblin Patrols, neither in its window" (alike Map.empty patrol) True
+    Spec.assertEqWith s "two Goblin Patrols, one in its window" (alike opened patrol) False
+    Spec.assertEqWith s "two Swamps, one in the window" (alike opened swamp) True
 
   -- The owner's minimal falsifier for collapsing by printed card: what the
   -- elision must not do is answer "which Elf" for a player whose Elves are a 3/1

@@ -22,6 +22,7 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter.Engine
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Interchangeable.Mentions as Mentions
+import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
@@ -58,6 +59,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.MeldSource as MeldSource
@@ -92,13 +94,15 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- player's choice for them.
 --
 --   * The objects are compared WHOLE, by Object's derived Eq over every field
---     but the timestamp and an identity's serial. A field added to that record
+--     but the timestamp, an identity's serial and, on a pair without echo, the
+--     control clock. A field added to that record
 --     is therefore compared by default, and can only ever make this answer
 --     False -- the opposite posture to a hand-kept list of fields that must
 --     agree, which a new field would leave unread. The timestamp and the serial
 --     are the two fields two distinct objects never share; what reads the
 --     timestamp is layeredBetween's question below, and what reads the serial
---     is the commander designation, compared beside them.
+--     is the commander designation, compared beside them. The clock's one
+--     reader is echo's own trigger (sameClock).
 --   * The projections must agree, which is what an Equipment or an Aura shows up
 --     in -- Bonesplitter's +2/+0 makes one Llanowar Elves a 3/1 and the other a
 --     1/1. So must what their two Filter views read off the turn's log (CR
@@ -125,7 +129,7 @@ objects pcs gs a b =
         -- Object.exposed is bookkeeping too: whether an id reached a seat
         -- changes no rule's answer, only which ids a shuffle re-mints.
         (Just x, Just y) ->
-          withoutSerials x {Object.timestamp = Object.timestamp y, Object.exposed = Object.exposed y} == withoutSerials y
+          withoutSerials x {Object.timestamp = Object.timestamp y, Object.exposed = Object.exposed y, Object.controlClock = if sameClock then Object.controlClock x else Object.controlClock y} == withoutSerials y
             && fmap snd (Commander.commanderCardOf a gs) == fmap snd (Commander.commanderCardOf b gs)
         _ -> False
       unserial identity = identity {CardIdentity.serial = 0}
@@ -146,6 +150,14 @@ objects pcs gs a b =
         Source.OfSpellCopy _ -> source
         Source.OfCardCopy _ -> source
         Source.OfInherentTrigger _ -> source
+      -- CR 702.30a's window (Object.controlClock) is read only by
+      -- Quantity.ControlGained's SinceLastUpkeep arm, which only echo's
+      -- trigger asks, of its own source (Keyword.echo). The projections are
+      -- compared below, so neither of a pair without echo has a reader, and a
+      -- land played this turn cycle is the older one's twin. A new reader owes a
+      -- line here. Compared where the projection is missing, which cannot make
+      -- a player's choice.
+      sameClock = maybe True (any ((== Just KeywordFamily.Echo) . Keyword.Engine.familyOf) . Map.keys . PC.keywords) (Map.lookup a pcs)
       withoutSerials obj = obj {Object.identity = fmap unserial (Object.identity obj), Object.source = unserialSource (Object.source obj)}
       grants = Projection.View.controlGrants gs
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs
@@ -181,8 +193,12 @@ objects pcs gs a b =
       -- searched: a host's entry may name one of the two and not the other.
       sameSample m = Map.lookup a m == Map.lookup b m
       namesOne candidate = Set.member a (BattlefieldCandidate.attached candidate) == Set.member b (BattlefieldCandidate.attached candidate)
+      -- CR 305.1's GameState.cardsPlayed is never cleared, so it keys every
+      -- permanent a play made; its one reader (Quantity.PlayedBy) asks only
+      -- WHO played the object, so it is compared rather than searched too.
       sameSamples =
         sameSample (GameState.controlSample gs)
+          && sameSample (GameState.cardsPlayed gs)
           && all (\m -> sameSample m && all namesOne m) (Map.elems (GameState.battlefieldWhenTriggered gs))
    in a == b
         || ( quiet gs
@@ -274,9 +290,10 @@ representatives pcs gs candidates =
 --     activations of GameState.activatedThisTurn and Object.activatedOnce.
 --     GameState.couldAttackThisTurn and GameState.damageBeforeThisTurn are
 --     read through the same two views, and the latter through actedOnBy too.
---     GameState.controlSample (CR 603.2's control diff) and
---     GameState.battlefieldWhenTriggered (CR 603.10's look-back) are keyed by
---     every permanent alike, so objects COMPARES the two entries in each
+--     GameState.controlSample (CR 603.2's control diff),
+--     GameState.battlefieldWhenTriggered (CR 603.10's look-back) and
+--     GameState.cardsPlayed (CR 305.1, every permanent a play made) are keyed
+--     by permanents alike, so objects COMPARES the two entries in each
 --     rather than searching for the ids, and searches only a sample's
 --     attachers.
 --   * GameState.parkedTurns holds each parked Grand Melee turn's copy of the
@@ -604,8 +621,6 @@ namedByRelation oid gs =
         || relates pileNames (GameState.exilePiles gs)
         || relates (Set.map EntryLink.source) (GameState.enteredWith gs)
         || relates (Set.map CounterLink.source) (GameState.counteredWith gs)
-        -- CR 305.1 / 601.2a: keyed by the spell or permanent a play made, too.
-        || keyed (GameState.cardsPlayed gs)
         || keyed (GameState.activatedThisTurn gs)
         -- CR 610.3a: keyed by a stack object, which is never a candidate.
         || keyed (GameState.stackedIn gs)
