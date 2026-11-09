@@ -24,6 +24,7 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.MatchOptions as MatchOptions
@@ -45,8 +46,8 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Right options -> do
       registry <- Registry.defaultRegistry
       lists <- (,) <$> Command.load registry one <*> Command.load registry two
-      Command.refuse Nothing [(one, fst lists), (two, snd lists)]
-      match options registry (Bifunctor.bimap DeckList.deck DeckList.deck lists)
+      format <- Command.settle Nothing [(one, fst lists), (two, snd lists)]
+      match options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions)]
@@ -62,10 +63,10 @@ usage problems = do
   IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun match [OPTION...] DECK DECK" flags)
   Exit.exitFailure
 
--- | Plays the games one after another, saying how each ended on standard
--- error, then the tally on standard output.
-match :: MatchOptions.MatchOptions -> Registry.Registry Identity.Identity -> (Deck.Deck, Deck.Deck) -> IO ()
-match options registry decks = do
+-- | Plays the games one after another under `format`, saying how each ended
+-- on standard error, then the tally on standard output.
+match :: MatchOptions.MatchOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
+match options registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   seed <- maybe (fmap (SplitMix.Play.fromClock . Command.nanoseconds) Clock.getSystemTime) pure (MatchOptions.seed options)
   IO.hPutStrLn IO.stderr ("Seed " <> show seed <> ".")
@@ -74,23 +75,23 @@ match options registry decks = do
   tally <-
     Monad.foldM
       ( \tally index -> do
-          let (outcome, timeline) = Identity.runIdentity (game registry seed index decks)
+          let (outcome, timeline) = Identity.runIdentity (game registry format seed index decks)
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) Nothing Map.empty (Command.seated (firstAt index) decks) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) decks) timeline)
           pure (tallied outcome tally)
       )
       Tally.empty
       (takeWhile (< count) [0 ..])
   mapM_ TextIO.putStrLn (summary count tally)
 
--- | Game `index`, from zero, of a match from `seed`: seeded 'seedAt', seat
--- 'firstAt' playing first, the random bot in both seats; with the entry each
--- answer replays as (Record.recording). It is the game `parun play --bot 1
--- --bot 2` plays at that seed and `--first`.
-game :: (Monad m) => Registry.Registry m -> Word.Word64 -> Natural -> (Deck.Deck, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
-game registry seed index decks =
-  State.runStateT (Game.run (lifted registry) Nothing [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+-- | Game `index`, from zero, of a match from `seed` under `format`: seeded
+-- 'seedAt', seat 'firstAt' playing first, the random bot in both seats; with
+-- the entry each answer replays as (Record.recording). It is the game `parun
+-- play --bot 1 --bot 2` plays at that seed and `--first`.
+game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Word.Word64 -> Natural -> (Deck.Deck, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
+game registry format seed index decks =
+  State.runStateT (Game.run (lifted registry) format [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | The registry, beneath the entries kept so far.
 lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed) m)

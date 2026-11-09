@@ -34,13 +34,13 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Match" $ do
   Spec.it s "the decks take turns playing first, game by game" $ do
     decks <- pair <$> BotSpec.bears s registry
-    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) 7 index decks) [0, 1, 2, 3]
+    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing 7 index decks) [0, 1, 2, 3]
     Spec.assertEqWith s "first to act on turn 1" starts (fmap (Just . Label.MkLabel . Text.pack) ["player1", "player2", "player1", "player2"])
 
   Spec.it s "each game of a match replays clean to its result" $ do
     decks <- pair <$> BotSpec.bears s registry
     Foldable.for_ [0, 1, 2, 3] $ \index -> do
-      (outcome, timeline) <- Match.game (S.fixtureRegistry []) 7 index decks
+      (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing 7 index decks
       let matchup = Command.seated (Match.firstAt index) decks
       replayed <- Scenario.run registry (saved matchup timeline)
       case (outcome, replayed) of
@@ -50,8 +50,8 @@ spec s registry = Spec.describe s "Match" $ do
 
   Spec.it s "a game's seed is the match's plus its index" $ do
     decks <- pair <$> BotSpec.bears s registry
-    late <- Match.game (S.fixtureRegistry []) 7 2 decks
-    early <- Match.game (S.fixtureRegistry []) 9 0 decks
+    late <- Match.game (S.fixtureRegistry []) Nothing 7 2 decks
+    early <- Match.game (S.fixtureRegistry []) Nothing 9 0 decks
     Spec.assertEqWith s "result" (fmap fst (fst late)) (fmap fst (fst early))
     Spec.assertEqWith s "timeline" (snd late) (snd early)
 

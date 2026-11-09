@@ -57,8 +57,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Right options -> do
       registry <- Registry.defaultRegistry
       lists <- (,) <$> load registry one <*> load registry two
-      refuse (PlayOptions.format options) [(one, fst lists), (two, snd lists)]
-      format <- traverse (Legality.shipped Monad.>=> either (failWith . Text.unpack) pure) (PlayOptions.format options)
+      format <- settle (PlayOptions.format options) [(one, fst lists), (two, snd lists)]
       play options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
@@ -97,6 +96,29 @@ load registry path = do
         Exit.exitFailure
       Right _ -> pure listed
 
+-- | The format a game between these lists is under, by name: the one asked
+-- for, else the one their headers name, checking every deck against it; or
+-- stops before the game when two headers name different formats and none is
+-- asked for (see docs/decisions.md, "The format of a game whose lists' headers
+-- disagree").
+settle :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO (Maybe Format.Format)
+settle asked lists = do
+  name <- either (failWith . Text.unpack) pure (gameFormat asked lists)
+  refuse name lists
+  traverse (Legality.shipped Monad.>=> either (failWith . Text.unpack) pure) name
+
+-- | The name of the format a game between these lists is under: the one asked
+-- for, else the one their headers name; or why there is none.
+gameFormat :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> Either Text.Text (Maybe Text.Text)
+gameFormat asked lists = case (asked, headers) of
+  (Just _, _) -> Right asked
+  (Nothing, []) -> Right Nothing
+  (Nothing, (_, named) : rest)
+    | all ((== named) . snd) rest -> Right (Just named)
+    | otherwise -> Left (Text.intercalate (Text.pack ", ") [Text.pack (path <> " names ") <> name | (path, name) <- headers] <> Text.pack "; name one with --format")
+  where
+    headers = [(path, name) | (path, listed) <- lists, Just (_, name) <- [DeckList.format listed]]
+
 -- | Stops before the game when a list's header names a format other than the
 -- one asked for, or its deck breaks the rules or pool of the format asked for
 -- or its header names, in a game not for ante, naming every violation of
@@ -113,7 +135,7 @@ refuse format lists = do
 nanoseconds :: Clock.SystemTime -> Natural
 nanoseconds t = Integer.toNaturalSaturating (toInteger (Clock.systemSeconds t) * 1000000000 + toInteger (Clock.systemNanoseconds t))
 
--- | A game between the two decks under `format`, the one --format names
+-- | A game between the two decks under `format`, the one 'settle' names
 -- (CR 100.2).
 play :: PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
 play options registry format (one, two) = do

@@ -32,6 +32,21 @@ Each entry gives:
 
 Entries are ordered by the first rule each cites.
 
+## The format of a game whose lists' headers disagree
+
+- **Question**: With no format asked for, a game between two deck lists is
+  under the format their "Format:" headers name. Which, when they name two?
+- **Rules**: CR 100.2, 100.2a, 100.2b; CR of 2026-11-06.
+- **Decision**: Neither: the game is refused before it starts, naming each
+  list's format, until one is asked for. A list with no header is checked
+  against the format the other's names.
+- **Rejected**: Either list's, which picks the construction rules for both
+  players on one's say; no format, which silently drops a companion condition
+  both decks were built for (Yorion, Sky Nomad).
+- **Site**: `Parun.Play.Command.gameFormat`. Proved by `Parun.LegalitySpec`'s
+  "parun play refuses lists whose headers name different formats".
+- **Issue**: #6724.
+
 ## A deck-size companion in a game under no format
 
 - **Question**: Yorion, Sky Nomad's condition counts the starting deck against
