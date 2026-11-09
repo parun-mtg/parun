@@ -240,6 +240,8 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
       && case DeclarationTrigger.attackers t of
         Nothing -> True
         Just count -> Natural.length (admittedAttackers gs bearer you (AttackCount.filter count) attacker) >= AttackCount.floor count
+      -- As the Attacker arm's: asked of the live board, never re-checked (CR 603.4).
+      && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) context gs bearer) (DeclarationTrigger.while t)
   -- CR 508.3f / 509.1h: the event alone answers it. Combat.blockers would
   -- answer for the board at scan time, and rule 509.1h's last sentence keeps
   -- an attacker whose blockers all left combat blocked. The attacker is read

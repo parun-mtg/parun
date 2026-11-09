@@ -1201,8 +1201,10 @@ triggerConditionCounts triggerCondition = case triggerCondition of
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
   TriggerCondition.PlayerTookInitiative -> []
   -- CR 508.3's Filters hold no Count for a Matching Enters' reason, and CR
-  -- 508.3c's floor is a bare Natural; only the attacker's state can.
+  -- 508.3c's floor is a bare Natural; only the attacker's or the attacking
+  -- player's state can.
   TriggerCondition.Attacks (AttackTrigger.Attacker t) -> foldMap conditionCounts (AttackerTrigger.while t)
+  TriggerCondition.Attacks (AttackTrigger.Declaration t) -> foldMap conditionCounts (DeclarationTrigger.while t)
   TriggerCondition.Attacks _ -> []
   -- CR 509.3's Filters are predicates over the creatures of a block, holding no
   -- Count for a Matching Enters' reason, and CR 509.3e's floor is a bare Natural.
@@ -3341,6 +3343,9 @@ namedTokens =
       -- Preston Garvey, Minuteman's "create a green Aura enchantment token named
       -- Settlement attached to up to one target land you control".
       CardName.MkCardName (Text.pack "Settlement"),
+      -- Stone-Giant of High Pass's "a 3/1 colorless Wall artifact creature token
+      -- with defender named Stone Boulder".
+      CardName.MkCardName (Text.pack "Stone Boulder"),
       -- The Hive's "a 1/1 colorless Insect artifact creature token with flying
       -- named Wasp".
       CardName.MkCardName (Text.pack "Wasp"),
@@ -4676,9 +4681,9 @@ triggerConditionFilters triggerCondition = case triggerCondition of
         )
         <> foldMap (frame Unframed . conditionFilters) while_
     AttackTrigger.Attacked _ -> []
-    AttackTrigger.Declaration t -> case DeclarationTrigger.attackers t of
-      Nothing -> []
-      Just count -> unframed [AttackCount.filter count]
+    AttackTrigger.Declaration t ->
+      unframed [AttackCount.filter count | Just count <- [DeclarationTrigger.attackers t]]
+        <> foldMap (frame Unframed . conditionFilters) (DeclarationTrigger.while t)
     AttackTrigger.Unblocked f -> unframed [f]
   -- CR 509.3 names a quality of the creature that blocks or becomes blocked
   -- (Venom's "enchanted creature", CR 701.54c's "your Ring-bearer") and of the

@@ -2277,8 +2277,13 @@ rewriteAttackTrigger pairs trigger = case trigger of
           (fmap (rewriteCondition pairs) while_)
       )
   AttackTrigger.Attacked _ -> trigger
-  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers) ->
-    AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player (fmap (\(AttackCount.MkAttackCount n f) -> AttackCount.MkAttackCount n (Filter.rewrite pairs f)) attackers))
+  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers while_) ->
+    AttackTrigger.Declaration
+      ( DeclarationTrigger.MkDeclarationTrigger
+          player
+          (fmap (\(AttackCount.MkAttackCount n f) -> AttackCount.MkAttackCount n (Filter.rewrite pairs f)) attackers)
+          (fmap (rewriteCondition pairs) while_)
+      )
   AttackTrigger.Unblocked f -> AttackTrigger.Unblocked (Filter.rewrite pairs f)
 
 rewriteBlockTrigger :: [(TextWord.TextWord, TextWord.TextWord)] -> BlockTrigger.BlockTrigger -> BlockTrigger.BlockTrigger

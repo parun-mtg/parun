@@ -1,0 +1,30 @@
+{
+  "description": "CR 603.4 / 707.2 / 707.9b / 111.1 / 704.5j / 106.4: The Notary Hobbits entering as a nontoken creates two nonlegendary token copies, whose own entering creates none; each taps for {C} per Halfling its controller controls",
+  "note": "The legend rule would prompt (and fail the run) were the tokens legendary; a third and fourth token would appear were the copies' trigger not confined to a nontoken. On turn 3 a token taps: alice controls three Hobbits and a Delighted Halfling, so four {C}; bob's Delighted Halfling and alice's Grizzly Bears are not counted. The Forest alice plays first, a nontoken permanent but not the Hobbits, makes no copies.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "hand": [{"card": "The Notary Hobbits", "label": "notary"}, {"card": "Forest", "label": "f6"}],
+     "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}, {"card": "Forest", "label": "f5"}, {"card": "Delighted Halfling"}, {"card": "Grizzly Bears"}],
+     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Delighted Halfling"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$notary", "mana": ["$f1", "$f2", "$f3", "$f4", "$f5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of The Notary Hobbits"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "The Notary Hobbits", "player": "alice", "zone": "Battlefield", "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "The Notary Hobbits", "is": ["Legendary"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "The Notary Hobbits#2", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "The Notary Hobbits#3", "is": []}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$f6"}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "The Notary Hobbits", "player": "alice", "zone": "Battlefield", "count": 3}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility The Notary Hobbits#2"}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [
+      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colorless"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+  ]
+}
