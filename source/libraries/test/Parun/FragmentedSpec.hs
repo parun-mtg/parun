@@ -51,6 +51,8 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
@@ -59,6 +61,7 @@ import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Expiry as Expiry
+import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Mana as Mana.Type
@@ -121,6 +124,21 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     -- can tell the recurring state from the first, and the answerer's budget
     -- is what stops her.
     Spec.assertEqWith s "CR 733.3 Ashling keeps every offer" (offers (loopBoard tapper rouser (Just ashling) False)) (replicate (budget + 1) True)
+
+  Spec.it s "a first-time-each-turn declaration trigger reads the attacks a lap appends" $ do
+    worm <- S.printingOf s registry "Desert Were-Worm"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    -- A lap that declares alice's Grizzly Bears attacking appends one
+    -- declaration to the log. Desert Were-Worm, in her library, asks of that
+    -- log whether a 12-power attack is the turn's first (CR 508.3c), so the
+    -- lap is read; without it, nothing reads the attacks.
+    let lap reader =
+          let (bearsId, gs1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+              gs2 = maybe gs1 (\printing -> snd (S.addLibraryCard printing S.alice gs1)) reader
+              declared = AttackerDeclared.MkAttackerDeclared bearsId S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice 2
+           in Fragmented.lapIsRead (Fragmented.digest gs2) (S.withEvents [GameEvent.AttackerDeclared declared] gs2)
+    Spec.assertEqWith s "CR 733.3 Desert Were-Worm reads the lap's attack" (lap (Just worm)) True
+    Spec.assertEqWith s "CR 733.3 with no reader the lap's attack is unread" (lap Nothing) False
 
   Spec.it s "an activation is refused as announced, not as a whole" $ do
     poppet <- S.printingOf s registry "Grim Poppet"

@@ -1,0 +1,129 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Desert Were-Worm",
+            "label": "worm",
+            "ready": true
+          },
+          {
+            "card": "Aurelia, the Warleader",
+            "label": "aurelia",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Giant Growth",
+            "label": "growth"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "life": 40,
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 508.3c desert were worm counts an earlier attack at the power it attacked with",
+  "note": "Desert Were-Worm's 2026-06-29 ruling: Four Mountains' 8-power Were-Worm and Aurelia, the Warleader attack for 11, and Aurelia adds a second combat phase. Giant Growth then makes the Were-Worm 11 power, and both attack for 14: the first declaration still counts its 11, so this is the first with total power 12, and the Were-Worm untaps and adds a third phase, whose Attack entry is the proof. Read at its live power, the first would count 14, and no third phase would come.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$worm",
+          "$aurelia"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f",
+            null
+          ],
+          "object": "$growth",
+          "targets": [
+            "$worm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$worm",
+          "$aurelia"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$worm",
+          "power": 11,
+          "toughness": 8
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$worm",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}
