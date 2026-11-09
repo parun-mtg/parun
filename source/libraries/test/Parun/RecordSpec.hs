@@ -14,6 +14,7 @@ import qualified Data.Word as Word
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.ClientSpec as ClientSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
+import qualified Parun.CompanionSpec as CompanionSpec
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Record as Record
@@ -26,6 +27,7 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Entry as Entry
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
@@ -36,6 +38,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Terminal as Terminal
@@ -55,7 +58,7 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "a game cut short replays to where it stopped" $ do
     matchup <- BotSpec.bears s registry
     let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (lifted (ClientSpec.screen 40 ClientSpec.plays)) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
-        (outcome, (timeline, cut)) = watched 1 seats Map.empty matchup
+        (outcome, (timeline, cut)) = watched 1 Nothing seats Map.empty matchup
     replayed <- Scenario.run registry (saved matchup timeline)
     Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "end of input"))
     case replayed of
@@ -66,7 +69,7 @@ spec s registry = Spec.describe s "Record" $ do
     matchup <- BotSpec.bears s registry
     let orders = Map.fromList [(S.alice, GraveyardOrder.Matters), (S.bob, GraveyardOrder.Matters)]
         -- Seed 5's game puts cards into a graveyard together twice.
-        (outcome, (timeline, _)) = watched 5 bots orders matchup
+        (outcome, (timeline, _)) = watched 5 Nothing bots orders matchup
         arranged = Seq.filter ((== Just (Text.pack "ArrangeGraveyardArrivals")) . answered) timeline
     Spec.assertBool s (not (Seq.null arranged)) "a seat arranged a batch"
     replayed <- Scenario.run registry (savedWith orders matchup timeline)
@@ -82,6 +85,25 @@ spec s registry = Spec.describe s "Record" $ do
     replayed <- Scenario.run registry (saved matchup timeline)
     case (outcome, replayed) of
       (Right (result, _), Right final) -> Spec.assertEqWith s "same result" (GameState.result final) (Just result)
+      (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
+      (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+
+  -- CR 702.139a: Yorion, Sky Nomad's condition reads the game's format, which
+  -- `parun play --format` names and its saved game carries. CR 100.2b: sixty
+  -- cards are twenty over limited's forty.
+  Spec.it s "CR 100.2 a game played under a format offers Yorion, and replays under it" $ do
+    matchup <- yorions s registry
+    let limited = Just (Format.MkFormat RuleFamily.Limited Nothing)
+        (outcome, (timeline, _)) = watched 1 limited bots Map.empty matchup
+        (_, (unformatted, _)) = watched 1 Nothing bots Map.empty matchup
+        offers = Seq.length . Seq.filter ((== Just (Text.pack "ChooseCompanion")) . answered)
+    Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" (offers timeline) 2
+    Spec.assertEqWith s "CR 100.2: under no format, neither is" (offers unformatted) 0
+    replayed <- Scenario.run registry (savedUnder limited Map.empty matchup timeline)
+    case (outcome, replayed) of
+      (Right (result, played), Right final) -> do
+        Spec.assertEqWith s "same result" (GameState.result final) (Just result)
+        Spec.assertEqWith s "same companions" (fmap (`CompanionSpec.companionOf` final) [S.alice, S.bob]) (fmap (`CompanionSpec.companionOf` played) [S.alice, S.bob])
       (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
       (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
 
@@ -118,6 +140,16 @@ stifles s registry = do
   let deck = Deck.fromCards (Map.fromList [(council, 8), (stifle, 8), (island, 8)])
   pure ((S.alice, deck) NonEmpty.:| [(S.bob, deck)])
 
+-- Two seats of Grizzly Bears and Forests, sixty cards with Yorion, Sky Nomad
+-- in the sideboard.
+yorions :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
+yorions s registry = do
+  yorion <- S.printingOf s registry "Yorion, Sky Nomad"
+  bear <- S.printingOf s registry "Grizzly Bears"
+  forest <- S.printingOf s registry "Forest"
+  let deck = CompanionSpec.deckOf yorion [(bear, 36), (forest, 24)]
+  pure ((S.alice, deck) NonEmpty.:| [(S.bob, deck)])
+
 -- The prompt an entry answers, if it answers one.
 answered :: Timed.Timed -> Maybe Text.Text
 answered timed = case Timed.entry timed of
@@ -137,12 +169,13 @@ type Base = State.StateT (Seq.Seq Timed.Timed, Maybe GameState.GameState) (State
 -- A game seeded 1 between these seats, and every entry its answers recorded,
 -- however it ended.
 recorded :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
-recorded seats matchup = fmap fst (watched 1 seats Map.empty matchup)
+recorded seats matchup = fmap fst (watched 1 Nothing seats Map.empty matchup)
 
--- recorded's game at a seed, each seat at its graveyard order in `orders`.
-watched :: Word.Word64 -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
-watched seed seats orders matchup =
-  let played = Game.run (S.fixtureRegistry []) [Record.recording labels sink, lastAsked] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix seed) orders matchup
+-- recorded's game at a seed under a format, each seat at its graveyard order
+-- in `orders`.
+watched :: Word.Word64 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
+watched seed format seats orders matchup =
+  let played = Game.run (S.fixtureRegistry []) format [Record.recording labels sink, lastAsked] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix seed) orders matchup
    in State.evalState (State.runStateT played (Seq.empty, Nothing)) ClientSpec.blank
 
 lastAsked :: Observer.Observer (Game.Play Base)
@@ -167,8 +200,12 @@ saved = savedWith Map.empty
 
 -- The scenario a game recorded at these graveyard orders saves as, read back.
 savedWith :: Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-savedWith orders matchup timeline =
-  let scenario = Record.scenario PrintingTable.empty Text.empty (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
+savedWith = savedUnder Nothing
+
+-- savedWith's scenario of a game played under a format.
+savedUnder :: Maybe Format.Format -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
+savedUnder format orders matchup timeline =
+  let scenario = Record.scenario PrintingTable.empty Text.empty format (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup) timeline
    in Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec scenario))
 
 labels :: Map.Map PlayerId.PlayerId Label.Label

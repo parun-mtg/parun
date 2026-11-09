@@ -34,6 +34,7 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
@@ -57,7 +58,8 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
       registry <- Registry.defaultRegistry
       lists <- (,) <$> load registry one <*> load registry two
       refuse (PlayOptions.format options) [(one, fst lists), (two, snd lists)]
-      play options registry (Bifunctor.bimap DeckList.deck DeckList.deck lists)
+      format <- traverse (Legality.shipped Monad.>=> either (failWith . Text.unpack) pure) (PlayOptions.format options)
+      play options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
 flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.PlayOptions)]
@@ -69,7 +71,7 @@ flags =
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.save = Just s}) "FILE") "save the game as a scenario, even one cut short",
     GetOpt.Option [] ["no-auto-pass"] (GetOpt.NoArg (\o -> Right o {PlayOptions.autoPass = False})) "ask at every priority, even when passing and mana abilities are all there is",
     GetOpt.Option [] ["arrange-graveyard"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.arrangesGraveyard = Set.insert n (PlayOptions.arrangesGraveyard o)}) (seat s)) "1|2") "a seat asked to order cards put into its graveyard at the same time",
-    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "refuse a deck that is not legal in this format: constructed, limited, or one with a pool, such as vintage"
+    GetOpt.Option [] ["format"] (GetOpt.ReqArg (\s o -> Right o {PlayOptions.format = Just (Text.pack s)}) "FORMAT") "play under this format, refusing a deck not legal in it: constructed, limited, or one with a pool, such as vintage"
   ]
   where
     seat s = case Read.readMaybe s of
@@ -111,8 +113,10 @@ refuse format lists = do
 nanoseconds :: Clock.SystemTime -> Natural
 nanoseconds t = Integer.toNaturalSaturating (toInteger (Clock.systemSeconds t) * 1000000000 + toInteger (Clock.systemNanoseconds t))
 
-play :: PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> (Deck.Deck, Deck.Deck) -> IO ()
-play options registry (one, two) = do
+-- | A game between the two decks under `format`, the one --format names
+-- (CR 100.2).
+play :: PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
+play options registry format (one, two) = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
@@ -142,10 +146,10 @@ play options registry (one, two) = do
         Exception.UserInterrupt -> pure (Left (Text.pack "interrupted"))
         _ -> Exception.throwIO e
       finish = if PlayOptions.json options then const (pure ()) else Client.ending terminal (fmap idOf people)
-  outcome <- Exception.catch (Game.run reference observers seats finish hotseat generator orders matchup) interrupted
+  outcome <- Exception.catch (Game.run reference format observers seats finish hotseat generator orders matchup) interrupted
   Monad.forM_ (PlayOptions.save options) $ \path -> do
     timeline <- IORef.readIORef entries
-    save path (saved (Registry.printings registry) (Text.pack ("Played with parun play, seed " <> show seed <> ".")) orders matchup timeline)
+    save path (saved (Registry.printings registry) (Text.pack ("Played with parun play, seed " <> show seed <> ".")) format orders matchup timeline)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Render.result result)
     Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
@@ -164,11 +168,11 @@ seated first (one, two)
 labels :: Map.Map PlayerId.PlayerId Label.Label
 labels = Map.fromList [(idOf n, Label.MkLabel (Text.pack ("player" <> show n))) | n <- [1, 2 :: Natural]]
 
--- | The scenario a game played from this matchup, each seat at its graveyard
--- order in `orders` and its answers' entries recorded in `timeline`, replays
--- as.
-saved :: PrintingTable.PrintingTable -> Text.Text -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
-saved table description orders matchup = Record.scenario table description (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
+-- | The scenario a game played from this matchup under `format`, each seat at
+-- its graveyard order in `orders` and its answers' entries recorded in
+-- `timeline`, replays as.
+saved :: PrintingTable.PrintingTable -> Text.Text -> Maybe Format.Format -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Scenario
+saved table description format orders matchup = Record.scenario table description format (fmap (\(pid, deck) -> (Record.labelOf labels pid, Map.findWithDefault GraveyardOrder.Indifferent pid orders, deck)) matchup)
 
 -- | Writes a scenario to `path`.
 save :: FilePath -> Scenario.Scenario -> IO ()

@@ -370,14 +370,22 @@ explain violation = Text.pack $ case violation of
 -- a pool.
 named :: Text.Text -> IO (Either Text.Text (GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]))
 named name = do
-  root <- formatsRoot
-  found <- loadFormat root name
+  found <- shipped name
   case found of
-    Nothing -> pure (Left (Text.pack "not a format: " <> name))
-    Just (Left problem) -> pure (Left (name <> Text.pack ": " <> problem))
-    Just (Right format) -> do
+    Left problem -> pure (Left problem)
+    Right format -> do
       table <- tablePath >>= loadTable
       pure (fmap (\loaded settings -> check loaded settings format) table)
+
+-- | The shipped format a name means, or why there is none.
+shipped :: Text.Text -> IO (Either Text.Text Format.Format)
+shipped name = do
+  root <- formatsRoot
+  found <- loadFormat root name
+  pure $ case found of
+    Nothing -> Left (Text.pack "not a format: " <> name)
+    Just (Left problem) -> Left (name <> Text.pack ": " <> problem)
+    Just (Right format) -> Right format
 
 -- | Where the shipped legality table is.
 tablePath :: IO FilePath
