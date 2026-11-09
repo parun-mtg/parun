@@ -5,6 +5,7 @@ import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
@@ -28,4 +29,10 @@ spec s = Spec.describe s "Parun.Codec.CompanionCondition" $ do
       codec
       (CompanionCondition.CardsOverMinimum 20)
       " {\"type\":\"CardsOverMinimum\",\"value\":20} "
+  Spec.it s "DifferentNames" $
+    Common.assertCodec
+      s
+      codec
+      (CompanionCondition.DifferentNames (Filter.Not (Filter.HasCardType CardType.Land)))
+      " {\"type\":\"DifferentNames\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

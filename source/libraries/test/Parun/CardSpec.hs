@@ -3654,6 +3654,7 @@ keywordPayloadFilters keyword = case keyword of
   -- face through a bare Context, so no slot is in scope.
   Keyword.Companion (CompanionCondition.EachCard predicate) -> [predicate]
   Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> []
+  Keyword.Companion (CompanionCondition.DifferentNames predicate) -> [predicate]
   -- CR 702.21a's cost, and rule 702.21b's perEach as mobilize's N.
   Keyword.Ward w -> costFilters (Ward.cost w) <> foldMap keywordCountFilters (Ward.perEach w)
   -- CR 702.94a's payload is a Cost too, so its filters are reached the same way.

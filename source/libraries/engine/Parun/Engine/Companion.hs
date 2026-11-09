@@ -23,7 +23,9 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Parun.Engine.Ante as Ante
+import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
@@ -32,6 +34,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.RuleFamily as RuleFamily
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
@@ -91,6 +94,12 @@ conditionOf printingId gs = do
 -- to state a condition written "each [subject] card ... [requirement]" -- the
 -- implication is an @Or@.
 --
+-- DifferentNames: the cards the Filter matches have different names (CR
+-- 201.2b), counting a printing held twice as two cards and comparing CR
+-- 709.4a's names (Card.combinedNames), so a split card shares a name with a
+-- card named for either half. Lutri, the Spellchaser's "each nonland card ... has a
+-- different name" is @DifferentNames (Not (HasCardType Land))@.
+--
 -- CardsOverMinimum: the deck's size against the minimum of the game's format
 -- (CR 100.2), and never met in a game under no format, which has no minimum to
 -- count from (docs/decisions.md, "A deck-size companion in a game under no
@@ -119,6 +128,12 @@ fulfilled condition pid gs =
         Just card -> Filter.matches context (Projection.viewOfCard (Game.resolveFaceFor Nothing card)) predicate
    in case condition of
         CompanionCondition.EachCard predicate -> all (admits predicate . fst) deck
+        CompanionCondition.DifferentNames predicate ->
+          let named = concat [replicate (Natural.toIntSaturating n) (Card.combinedNames card) | (printingId, n) <- deck, admits predicate printingId, Just card <- [Game.cardOfPrinting printingId gs]]
+              go seen names = case names of
+                [] -> True
+                these : rest -> not (Set.null these) && Set.disjoint seen these && go (Set.union seen these) rest
+           in go Set.empty named
         CompanionCondition.CardsOverMinimum extra -> case GameSettings.format (GameState.settings gs) of
           Nothing -> False
           Just format -> sum (fmap snd deck) >= RuleFamily.minimumDeckSize (Format.rules format) + extra
