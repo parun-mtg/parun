@@ -308,6 +308,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.HasChosenSubtype
       " {\"type\":\"HasChosenSubtype\"} "
+  Spec.it s "HasChosenCardType" $
+    Common.assertCodec
+      s
+      codec
+      Filter.HasChosenCardType
+      " {\"type\":\"HasChosenCardType\"} "
   Spec.it s "IsExiledWithSource" $
     Common.assertCodec
       s

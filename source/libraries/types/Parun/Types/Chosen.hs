@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
@@ -19,6 +20,8 @@ data Chosen a where
   Colors :: Chosen (Set.Set Color.Color)
   -- | CR 205.3: the chosen subtype (Object.chosenSubtype).
   Subtype :: Chosen Subtype.Subtype
+  -- | CR 205.2a: the chosen card type (Object.chosenCardType).
+  CardType :: Chosen CardType.CardType
   -- | CR 201.4: the chosen card names, by chooser (Object.chosenNames).
   Names :: Chosen (Map.Map PlayerId.PlayerId CardName.CardName)
   -- | CR 614.1c / 702.174a: the chosen players, by choice (Object.chosenPlayers).

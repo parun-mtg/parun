@@ -8,6 +8,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlClock as ControlClock
@@ -163,6 +164,9 @@ data LastKnown = MkLastKnown
     -- | The subtype chosen for it as it entered, `chosenColors`'s sibling for
     -- Object.chosenSubtype.
     chosenSubtype :: !(Map.Map Acquisition.Acquisition Subtype.Subtype),
+    -- | The card type chosen for it as it entered, `chosenColors`'s sibling for
+    -- Object.chosenCardType.
+    chosenCardType :: !(Map.Map Acquisition.Acquisition CardType.CardType),
     -- | The number last chosen for it, `chosenColors`'s sibling for
     -- Object.chosenNumber.
     chosenNumber :: !(Map.Map Acquisition.Acquisition Natural.Natural),

@@ -3410,6 +3410,7 @@ tyvar-the-bellicose
 ugin-the-spirit-dragon
 uldaros-theorix
 ultima
+umori-the-collector
 unbury
 uncharted-haven
 uncharted-voyage

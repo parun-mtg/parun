@@ -227,6 +227,10 @@ data Filter keyword
     -- off the source instead of written on the card, and vacuously False where the
     -- source has chosen none.
     HasChosenSubtype
+  | -- | CR 205.2a: the candidate's card types include the one the SOURCE chose
+    -- as it entered (CR 614.1c, 607.2d; Umori, the Collector's "spells you cast
+    -- of the chosen type"). Vacuously False where the source has chosen none.
+    HasChosenCardType
   | -- | CR 607.2a / 607.2b: the candidate is a card in exile in one of the
     -- source's linked piles (Mimeoplasm, Revered One's "target creature card
     -- exiled with it").

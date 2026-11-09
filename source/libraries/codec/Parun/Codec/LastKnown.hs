@@ -9,6 +9,7 @@ import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.AttackTarget as AttackTarget
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.ControlClock as ControlClock
@@ -50,6 +51,7 @@ codec = Fields.object $ do
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) LastKnown.chosenPlayers
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) LastKnown.chosenColors
   chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) LastKnown.chosenSubtype
+  chosenCardType <- Fields.defaulted "chosenCardType" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec CardType.codec)) LastKnown.chosenCardType
   chosenNumber <- Fields.defaulted "chosenNumber" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Common.natural)) LastKnown.chosenNumber
   acquisition <- Fields.defaulted "acquisition" Acquisition.Own Acquisition.codec LastKnown.acquisition
   attacking <- Fields.required "attacking" Common.boolean LastKnown.attacking
@@ -81,6 +83,7 @@ codec = Fields.object $ do
         LastKnown.chosenPlayers = chosenPlayers,
         LastKnown.chosenColors = chosenColors,
         LastKnown.chosenSubtype = chosenSubtype,
+        LastKnown.chosenCardType = chosenCardType,
         LastKnown.chosenNumber = chosenNumber,
         LastKnown.acquisition = acquisition,
         LastKnown.attacking = attacking,

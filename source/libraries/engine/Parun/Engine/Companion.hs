@@ -100,6 +100,11 @@ conditionOf printingId gs = do
 -- card named for either half. Lutri, the Spellchaser's "each nonland card ... has a
 -- different name" is @DifferentNames (Not (HasCardType Land))@.
 --
+-- SharedCardType: some one card type (CR 205.2a) is on every card the Filter
+-- matches, vacuously so where it matches none. Umori, the Collector's "each
+-- nonland card ... shares a card type" is @SharedCardType (Not (HasCardType
+-- Land))@; its ruling's artifact creature, artifact and creature share none.
+--
 -- CardsOverMinimum: the deck's size against the minimum of the game's format
 -- (CR 100.2), and never met in a game under no format, which has no minimum to
 -- count from (docs/decisions.md, "A deck-size companion in a game under no
@@ -123,9 +128,8 @@ fulfilled :: CompanionCondition.CompanionCondition Keyword -> PlayerId -> GameSt
 fulfilled condition pid gs =
   let context = Filter.contextIn gs (Just pid) Nothing
       deck = filter (\(_, n) -> n > 0) (Map.toAscList (maybe Map.empty Player.startingDeck (Map.lookup pid (GameState.players gs))))
-      admits predicate printingId = case Game.cardOfPrinting printingId gs of
-        Nothing -> False
-        Just card -> Filter.matches context (Projection.viewOfCard (Game.resolveFaceFor Nothing card)) predicate
+      viewOf printingId = fmap (Projection.viewOfCard . Game.resolveFaceFor Nothing) (Game.cardOfPrinting printingId gs)
+      admits predicate printingId = maybe False (\view -> Filter.matches context view predicate) (viewOf printingId)
    in case condition of
         CompanionCondition.EachCard predicate -> all (admits predicate . fst) deck
         CompanionCondition.DifferentNames predicate ->
@@ -134,6 +138,10 @@ fulfilled condition pid gs =
                 [] -> True
                 these : rest -> not (Set.null these) && Set.disjoint seen these && go (Set.union seen these) rest
            in go Set.empty named
+        CompanionCondition.SharedCardType predicate ->
+          case [Filter.cardTypes view | (printingId, _) <- deck, Just view <- [viewOf printingId], Filter.matches context view predicate] of
+            [] -> True
+            first : rest -> not (Set.null (List.foldl' Set.intersection first rest))
         CompanionCondition.CardsOverMinimum extra -> case GameSettings.format (GameState.settings gs) of
           Nothing -> False
           Just format -> sum (fmap snd deck) >= RuleFamily.minimumDeckSize (Format.rules format) + extra

@@ -2797,7 +2797,7 @@ placesCounters effect = case effect of
 
 -- Whether a row's whole work is a choice its entering object's controller alone
 -- makes and the object records (Object.chosenColors, chosenSubtype,
--- chosenPlayers, chosenNames, chosenNumber) -- `oneSentenceOfChoices`' question.
+-- chosenCardType, chosenPlayers, chosenNames, chosenNumber) -- `oneSentenceOfChoices`' question.
 recordsAChoice :: ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Bool
 recordsAChoice effect = case effect of
   ReplacementEffect.EntryR (EntryR.MkEntryR _ rewrite) -> case rewrite of

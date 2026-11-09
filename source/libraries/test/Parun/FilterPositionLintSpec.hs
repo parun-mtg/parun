@@ -317,6 +317,7 @@ filterAtomsOf leaf predicate = case predicate of
   Filter.Type.HasChosenName {} -> leaf predicate
   Filter.Type.HasChosenColor -> leaf predicate
   Filter.Type.HasChosenSubtype -> leaf predicate
+  Filter.Type.HasChosenCardType -> leaf predicate
   Filter.Type.IsExiledWithSource _ -> leaf predicate
   Filter.Type.IsLastExiledWithSource -> leaf predicate
   Filter.Type.OfChosenPlayer -> leaf predicate
@@ -920,6 +921,9 @@ hasChosenColorTag = Text.pack "HasChosenColor"
 hasChosenSubtypeTag :: Text.Text
 hasChosenSubtypeTag = Text.pack "HasChosenSubtype"
 
+hasChosenCardTypeTag :: Text.Text
+hasChosenCardTypeTag = Text.pack "HasChosenCardType"
+
 -- How many atoms carrying `tag` this card holds in one of the `admitted`
 -- positions, and how many anywhere else. The second number is the offence.
 --
@@ -974,6 +978,7 @@ writesColors quality = case quality of
   ChosenQuality.Colors _ -> True
   ChosenQuality.BasicLandType -> False
   ChosenQuality.CreatureType -> False
+  ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
 
@@ -983,6 +988,17 @@ writesSubtype quality = case quality of
   ChosenQuality.Colors _ -> False
   ChosenQuality.BasicLandType -> True
   ChosenQuality.CreatureType -> True
+  ChosenQuality.CardType -> False
+  ChosenQuality.Number _ -> False
+  ChosenQuality.Parity -> False
+
+-- Whether a choice of this quality answers HasChosenCardType, writesColors' twin.
+writesCardType :: ChosenQuality.ChosenQuality -> Bool
+writesCardType quality = case quality of
+  ChosenQuality.Colors _ -> False
+  ChosenQuality.BasicLandType -> False
+  ChosenQuality.CreatureType -> False
+  ChosenQuality.CardType -> True
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
 
@@ -1018,6 +1034,12 @@ grantedChosenColors card =
 -- Origins). The colour has no such reading, so the two lists differ.
 hasChosenSubtypeCounts :: Face.Face Card.Type.Card -> (Int, Int)
 hasChosenSubtypeCounts = chosenValueCounts (\framing -> framing == ManaRestrictionFramed || sourceFramed framing) writesSubtype hasChosenSubtypeTag
+
+-- CR 205.2a's chosen card type in the source-framed positions alone: no mana
+-- unit bakes it (Parun.Engine.Mana.sourceChoicesOf), so a restriction cannot
+-- answer it.
+hasChosenCardTypeCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hasChosenCardTypeCounts = chosenValueCounts sourceFramed writesCardType hasChosenCardTypeTag
 
 -- CR 607.2a's last-exiled atom, spelled once: IsLastExiledWithSource's tag.
 isLastExiledWithSourceTag :: Text.Text
@@ -3706,11 +3728,12 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- asking ability's SOURCE supplies its choice, and a silent False elsewhere.
   -- See chosenValueCounts for the positions and chosenValueOffends for the two
   -- offences.
-  Spec.it s "CR 607.2d no card asks HasChosenColor or HasChosenSubtype outside an admitted position" $ do
+  Spec.it s "CR 607.2d no card asks HasChosenColor, HasChosenSubtype or HasChosenCardType outside an admitted position" $ do
     ps <- S.allPrintings s corpus
     let offends card =
           anyFace (chosenValueOffends hasChosenColorCounts hasChosenColorTag) card
             || anyFace (chosenValueOffends hasChosenSubtypeCounts hasChosenSubtypeTag) card
+            || anyFace (chosenValueOffends hasChosenCardTypeCounts hasChosenCardTypeTag) card
     Spec.assertEqWith s "the atoms sit only where the source's choice is supplied" (fmap (S.nameOf . Printing.card) (filter (offends . Printing.card) ps)) []
     -- NOT vacuous: a card per admitted position is ACCEPTED rather than skipped,
     -- so a framing that stopped marking one would redden.
@@ -3724,6 +3747,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Kindred Boon", hasChosenSubtypeCounts, "an activated ability's target slot", (1, 0)),
         ("Etchings of the Chosen", hasChosenSubtypeCounts, "an affected set and an activated ability's cost", (2, 0)),
         ("Pillar of Origins", hasChosenSubtypeCounts, "a mana restriction", (1, 0)),
+        ("Umori, the Collector", hasChosenCardTypeCounts, "a player effect's cost change", (1, 0)),
         ("Throne of Eldraine", hasChosenColorCounts, "a mana restriction", (1, 0)),
         ("Kindred Discovery", hasChosenSubtypeCounts, "two trigger conditions", (2, 0)),
         ("Brass Herald", hasChosenSubtypeCounts, "an affected set and a resolution's own filter", (2, 0)),
@@ -3738,7 +3762,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- The rejecting direction, for both atoms: each buried under all three
   -- combinators and planted in a spell's positions, which cannot answer, then
   -- in source-framed ones, which can.
-  Spec.it s "the lint itself catches HasChosenColor and HasChosenSubtype outside an admitted position" $ do
+  Spec.it s "the lint itself catches HasChosenColor, HasChosenSubtype and HasChosenCardType outside an admitted position" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     let base = S.combinedFace piker
@@ -3782,7 +3806,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
-        (Filter.Type.HasChosenSubtype, ChosenQuality.BasicLandType, hasChosenSubtypeCounts, hasChosenSubtypeTag)
+        (Filter.Type.HasChosenSubtype, ChosenQuality.BasicLandType, hasChosenSubtypeCounts, hasChosenSubtypeTag),
+        (Filter.Type.HasChosenCardType, ChosenQuality.CardType, hasChosenCardTypeCounts, hasChosenCardTypeTag)
       ]
       $ \(atom, quality, counts, tag) -> do
         let buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not atom]]

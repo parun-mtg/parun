@@ -76,6 +76,7 @@ choicesOf acquisition source gs =
     { SourceChoices.names = Maybe.fromMaybe Map.empty (Game.choiceWithLastKnown Chosen.Names acquisition source gs),
       SourceChoices.colors = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition source gs),
       SourceChoices.subtype = Game.choiceWithLastKnown Chosen.Subtype acquisition source gs,
+      SourceChoices.cardType = Game.choiceWithLastKnown Chosen.CardType acquisition source gs,
       SourceChoices.number = Game.choiceWithLastKnown Chosen.Number acquisition source gs,
       SourceChoices.acquisition = acquisition
     }
@@ -88,6 +89,7 @@ withChoices choices context =
   context
     { Filter.sourceChosenColors = SourceChoices.colors choices,
       Filter.sourceChosenSubtype = SourceChoices.subtype choices,
+      Filter.sourceChosenCardType = SourceChoices.cardType choices,
       Filter.sourceChosenNumber = SourceChoices.number choices,
       Filter.sourceChosenNames = SourceChoices.names choices,
       Filter.sourceAcquisition = Just (SourceChoices.acquisition choices)
