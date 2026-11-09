@@ -765,7 +765,9 @@ dandan
 danitha-benalias-hope
 danitha-spear-of-agony
 danitha-sword-of-hope
+daredevil-man-without-fear
 dark-dweller-oracle
+dark-fortress
 dark-matter-manipulator
 dark-maze
 dark-tutelage
@@ -788,6 +790,7 @@ deadly-complication
 death-baron
 death-is-irrelevant
 death-pit-offering
+death-to-our-enemies
 death-wish
 deathcoil-wurm
 deathgazer
@@ -824,6 +827,7 @@ dense-foliage
 denying-wind
 denzilore-fatehold
 departed-deckhand
+depower
 dermotaxi
 desecrated-tomb
 desecration-demon
@@ -881,12 +885,15 @@ diviners-portent
 djinn-of-wishes
 djinni-windseer
 do-or-die
+doc-samson-super-psychiatrist
+doctor-doom
 dog-walker
 domestication
 domineering-will
 dong-zhou-the-tyrant
 dont-make-a-sound
 doom-cannon
+doom-reigns-supreme
 doomsday
 door-of-destinies
 dori-bearer-of-friends
@@ -967,6 +974,7 @@ eardrum-rattler
 early-harvest
 earthbending-lesson
 earthbind
+earths-mightiest-heroes
 eaten-alive
 eaten-by-piranhas
 eater-of-days
@@ -974,6 +982,7 @@ ebon-dragon
 ebony-horse
 eccentric-farmer
 echo-of-eons
+echo-perceptive-prodigy
 edgar-king-of-figaro
 edgar-moonlit-sovereign
 edgewalker
@@ -982,6 +991,7 @@ elbrus-the-binding-blade-withengar-unbound
 elder-deep-fiend
 elderscale-wurm
 electroduplicate
+elektra-daughter-of-the-hand
 elemental-augury
 elemental-bond
 elemental-mastery
@@ -1046,6 +1056,7 @@ enthralling-hold
 enthralling-victor
 entourage-of-trest
 eon-hub
+epic-fight
 epicure-of-blood
 ereboss-titan
 erg-raiders
@@ -1071,6 +1082,7 @@ ever-watching-threshold
 everbark-shaman
 evidence-examiner
 evil-presence
+evils-thrall
 evolutionary-leap
 evra-halcyon-witness
 exalted-dragon
@@ -1116,7 +1128,9 @@ faerie-squadron
 faiths-fetters
 faiths-reward
 fake-your-own-death
+falcon-winged-wonder
 falconer-adept
+falcons-wing-harness
 falkenrath-gorger
 fall-of-the-impostor
 fall-of-the-thran
@@ -1171,6 +1185,7 @@ fiery-encore
 fiery-impulse
 fight-or-flight
 fili-the-pathfinder
+fin-fang-foom
 final-fortune
 final-punishment
 final-strike
@@ -1254,6 +1269,7 @@ frontier-mastodon
 frost-breath
 frost-lynx
 frost-titan
+frozen-in-ice
 fry
 fulgent-distraction
 full-steam-ahead
@@ -1313,6 +1329,7 @@ gatekeeper-of-malakir
 gather-specimens
 gather-the-pack
 gathering-of-darkness
+gathering-place
 gauntlet-of-might
 gauntlet-of-power
 gauntlets-of-chaos
