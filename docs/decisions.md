@@ -1620,10 +1620,11 @@ Entries are ordered by the first rule each cites.
 ## Whether copying an activation that never reached the stack copies anything
 
 - **Question**: Goblin Bookie's reroll is activated and resolved inside a die
-  roll's window (`What Goblin Bookie's reflip is`) and never becomes an object
-  on the stack. Rings of Brighthearth's "copy that ability" triggers on it. Does
-  the copy put Bookie's ability on the stack, as a copy of an ability countered
-  while the trigger waits is made from its last known information?
+  roll's window and never becomes an object on the stack
+  (`Parun.Engine.Resolve.Effect.activateWhileRolling`). Rings of Brighthearth's
+  "copy that ability" triggers on it. Does the copy put Bookie's ability on the
+  stack, as a copy of an ability countered while the trigger waits is made from
+  its last known information?
 - **Rules**: CR 113.7a, 602.2b, 605.3b, 608.2h, 707.10 (CR of 2026-11-06); the
   cards have no rulings on it.
 - **Decision**: No. "That ability" names no object, so the copy copies nothing;
@@ -1631,7 +1632,7 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: A copy made from the ability's printed text: CR 707.10 copies
   an ability's characteristics and the decisions made for it, and CR 608.2h's
   last known information is of an object that existed, which this never was.
-- **Site**: `Parun.Engine.Event.Binding.eventBindings`' AbilityActivated arm,
+- **Site**: `Parun.Engine.Event.Binding.eventBindingsOver`' AbilityActivated arm,
   leaving `Binding.activatedAbility` unbound. Proved by the scenario
   `rings-of-brighthearth-copies-nothing-of-a-goblin-bookie-reflip`.
 - **Issue**: #5733.

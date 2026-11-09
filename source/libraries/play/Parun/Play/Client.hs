@@ -44,6 +44,8 @@ import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
@@ -132,7 +134,7 @@ attempt seat view question reply = case reply of
 
 -- | CR 734.1: at the seat's priority after a cast or an activation it chose,
 -- a line of news saying it was undone when its view has logged no spell cast
--- and no ability activated since, and why where the view says
+-- and no non-mana ability activated since, and why where the view says
 -- (PlayerView.undone).
 undone :: (Monad m) => PlayerId.PlayerId -> PlayerView.PlayerView -> Client m ()
 undone seat view = do
@@ -148,7 +150,9 @@ undone seat view = do
   where
     completes e = case e of
       GameEvent.SpellCast {} -> True
-      GameEvent.AbilityActivated {} -> True
+      -- CR 734.1: a mana ability paid toward an undone action and kept is
+      -- logged too, and is not the action completing.
+      GameEvent.AbilityActivated a -> AbilityWasActivated.kind a /= AbilityKind.ManaAbility
       _ -> False
 
 -- | CR 734.1 with CR 508.1 / 509.1's preambles: at a declaration of attackers
