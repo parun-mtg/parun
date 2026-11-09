@@ -1,0 +1,88 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Hex Magic",
+      "oracleText": "Exile all the cards from your hand, then draw that many cards. Until the end of your next turn, you may play cards exiled this way.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "EachCardInYourHand"
+                      },
+                      "slot": "exiled",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Members"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "scope": {
+                            "type": "OverBound",
+                            "value": "exiled"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "GrantPlayFromExile",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfYourNextTurn"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "exiled"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Arcane"
+        ],
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
