@@ -1,6 +1,6 @@
 {
   "description": "CR 614.12 / 601.2f Umori, choosing creature, makes Grizzly Bears cost {1} less and leaves Mind Stone at {2}",
-  "note": "Umori's as-enters choice (CR 614.1c) is answered Creature. Grizzly Bears is then cast off one Forest, its {1} reduced away; Mind Stone, an artifact, still takes both of the two Forests left.",
+  "note": "Umori's as-enters choice (CR 614.1c) is answered Creature. Grizzly Bears is then cast off one Forest, its {1} reduced away; Mind Stone, an artifact, still spends both of the two Forests left, floating nothing.",
   "board": {
     "seats": [
       {
@@ -29,15 +29,16 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$umori", "mana": ["$f1", "$f2", "$f3", "$f4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$umori", "mana": ["$f1", "$f2", "$f3", "$f4", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardType", "with": "Creature" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Umori, the Collector", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$f5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$f5", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$f6", "tapped": false } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$stone", "mana": ["$f6", "$f7"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Mind Stone", "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$f7", "tapped": true } } }
