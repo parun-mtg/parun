@@ -117,15 +117,23 @@ withSheets s registry family main sheets = do
 -- The violations a deck bringing these supplementary decks and this vanguard
 -- raises under a rule family with no pool, in a game with these settings.
 withSideDecks :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> GameSettings.GameSettings -> Deck.Deck -> [(SideDeck.SideDeck, [(String, Natural.Natural)])] -> Maybe String -> IO [Violation.Violation]
-withSideDecks s registry family settings deck piles vanguard = do
+withSideDecks s registry family settings deck piles vanguard = fmap (Legality.check noTable settings (Format.MkFormat family Nothing)) (supplied s registry deck piles vanguard)
+
+-- A deck bringing the supplementary decks and the vanguard named.
+supplied :: Spec.Spec IO n -> Registry.Registry IO -> Deck.Deck -> [(SideDeck.SideDeck, [(String, Natural.Natural)])] -> Maybe String -> IO Deck.Deck
+supplied s registry deck piles vanguard = do
   let section entries = fmap (Map.fromListWith (+)) (traverse (\(name, count) -> fmap (\p -> (p, count)) (S.printingOf s registry name)) entries)
   held <- traverse (traverse section) piles
   brought <- traverse (S.printingOf s registry) vanguard
-  pure (Legality.check noTable settings (Format.MkFormat family Nothing) deck {Deck.sideDecks = Map.fromList held, Deck.vanguard = brought})
+  pure deck {Deck.sideDecks = Map.fromList held, Deck.vanguard = brought}
 
 -- Ten planes of different names.
 tenPlanes :: [(String, Natural.Natural)]
 tenPlanes = fmap (\name -> (name, 1)) ["Academy at Tolaria West", "Agyrem", "Akoum", "Astral Arena", "Celestine Reef", "Eloren Wilds", "Fields of Summer", "Naya", "Orzhova", "Panopticon"]
+
+-- Ten planes of different names, none of tenPlanes'.
+otherTen :: [(String, Natural.Natural)]
+otherTen = fmap (\name -> (name, 1)) ["Inys Haen", "Prime Minister's Cabinet Room", "Raiders' Allegiance", "Sanctum of Serra", "Strixhaven", "Tazeem", "The Caldaia", "The Dining Car", "The Lux Foundation Library", "The Moonbase"]
 
 copies :: String -> Natural.Natural -> Violation.Violation
 copies name count = Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack name)) count 4
@@ -235,11 +243,42 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     Spec.assertEqWith s "three phenomena" three [Violation.TooManyCopies (Just SideDeck.Planar) (nameOf "Fixed Point in Time") 2 1, Violation.TooManyPhenomena 3 2]
     Spec.assertEqWith s "explained" (fmap Legality.explain (nine <> twoReefs <> three)) (fmap Text.pack ["9 cards in the planar deck, fewer than 10", "2 copies of Celestine Reef in the planar deck, more than 1", "2 copies of Fixed Point in Time in the planar deck, more than 1", "3 phenomena in the planar deck, more than 2"])
 
-  -- CR 901.15a's communal deck is every seat's cards together (#6705).
+  -- CR 901.15a's communal deck is every seat's cards together, which
+  -- Legality.checkGame sizes.
   Spec.it s "CR 901.15a: a share of a communal planar deck is not sized alone" $ do
     deck <- deckOf s registry [("Mountain", 60)] []
     found <- withSideDecks s registry RuleFamily.Constructed GameSettings.plain {GameSettings.singlePlanarDeck = True} deck [(SideDeck.Planar, [("Celestine Reef", 1), ("All in Good Time", 1)])] Nothing
     Spec.assertEqWith s "only the scheme refused" found [Violation.MisplacedCard SideDeck.Planar (nameOf "All in Good Time")]
+
+  Spec.it s "CR 901.15a: a communal planar deck holds ten a player, at most two phenomena a player, all names different" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    let communal = GameSettings.plain {GameSettings.singlePlanarDeck = True}
+        seats shares = fmap (Legality.checkGame communal) (traverse (\share -> supplied s registry deck [(SideDeck.Planar, share)] Nothing) shares)
+    twenty <- seats [tenPlanes, otherTen]
+    Spec.assertEqWith s "twenty names" twenty []
+    shared <- seats [tenPlanes, ("Celestine Reef", 1) : drop 1 otherTen]
+    Spec.assertEqWith s "Celestine Reef in both" shared [Violation.TooManyCopies (Just SideDeck.Planar) (nameOf "Celestine Reef") 2 1]
+    nineteen <- seats [tenPlanes, drop 1 otherTen]
+    Spec.assertEqWith s "nineteen for two" nineteen [Violation.TooFewCards (Just SideDeck.Planar) 19 20]
+    six <- seats [take 5 tenPlanes, drop 5 tenPlanes, take 5 otherTen, drop 5 otherTen, [("Fixed Point in Time", 1), ("Mutual Epiphany", 1)], []]
+    Spec.assertEqWith s "forty for six" six [Violation.TooFewCards (Just SideDeck.Planar) 22 40]
+    phenomena <- seats [tenPlanes <> [("Fixed Point in Time", 1)], otherTen <> [("Mutual Epiphany", 1)]]
+    Spec.assertEqWith s "two phenomena for two" phenomena []
+    five <- seats [tenPlanes <> [("Fixed Point in Time", 2), ("Mutual Epiphany", 1)], otherTen <> [("Mutual Epiphany", 2)]]
+    Spec.assertEqWith s "five phenomena for two" five [Violation.TooManyCopies (Just SideDeck.Planar) (nameOf "Fixed Point in Time") 2 1, Violation.TooManyCopies (Just SideDeck.Planar) (nameOf "Mutual Epiphany") 3 1, Violation.TooManyPhenomena 5 4]
+    separate <- fmap (Legality.checkGame GameSettings.plain) (traverse (\share -> supplied s registry deck [(SideDeck.Planar, share)] Nothing) [tenPlanes, tenPlanes])
+    Spec.assertEqWith s "own decks are not pooled" separate []
+
+  Spec.it s "CR 902.3: each player in a Vanguard game brings a vanguard card" $ do
+    deck <- deckOf s registry [("Mountain", 60)] []
+    let seats vanguards = fmap (Legality.checkGame GameSettings.plain) (traverse (supplied s registry deck []) vanguards)
+    one <- seats [Just "Barrin", Nothing]
+    Spec.assertEqWith s "Barrin and none" one [Violation.MissingVanguard 1 2]
+    both <- seats [Just "Barrin", Just "Selenia"]
+    Spec.assertEqWith s "Barrin and Selenia" both []
+    neither <- seats [Nothing, Nothing]
+    Spec.assertEqWith s "no Vanguard game" neither []
+    Spec.assertEqWith s "explained" (fmap Legality.explain one) [Text.pack "1 of 2 players without a vanguard card"]
 
   Spec.it s "CR 904.3: a scheme deck holds twenty schemes, at most two of a name" $ do
     deck <- deckOf s registry [("Mountain", 60)] []
