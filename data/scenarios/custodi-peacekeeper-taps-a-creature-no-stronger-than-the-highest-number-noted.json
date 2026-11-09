@@ -1,0 +1,19 @@
+{
+  "description": "CR 905.2b / 115.1: Custodi Peacekeeper taps target creature with power at most the highest number its controller noted for cards named Custodi Peacekeeper",
+  "note": "Alice noted 1 and 3. Bob's 4/4 Rumbling Baloth is refused: their sum, 4, would allow it. His 3/3 Hill Giant is tapped: power equal to the highest is allowed, and the first number, 1, would refuse it.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "draftNotes": [{"key": "Custodi Peacekeeper", "value": [1, 3]}], "battlefield": [{"card": "Custodi Peacekeeper", "label": "peacekeeper", "ready": true}, {"card": "Plains", "label": "plains"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Rumbling Baloth", "label": "baloth"}, {"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$peacekeeper", "targets": ["$baloth"], "mana": ["$plains"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$peacekeeper", "targets": ["$giant"], "mana": ["$plains"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$baloth", "tapped": false}}}
+  ]
+}

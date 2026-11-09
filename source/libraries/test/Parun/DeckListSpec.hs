@@ -8,6 +8,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
@@ -329,6 +330,28 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       Spec.assertBool s (Text.isInfixOf (Text.pack "\nStickers\n2 Eldrazi Guacamole Tightrope\n1 Slimy Burrito Illusion\n1 Eldrazi Guacamole Tightrope\n") text) ("in order: " <> show text)
       again <- deckOf s "stickers-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
+
+  -- CR 905.2b: one number per copy noted for, in the order written, so a zero
+  -- is kept and a repeated name appends rather than adds up; a rendered list
+  -- writes each back on a line of its own.
+  Spec.it s "CR 905.2b a Draft Notes section notes a number per line, and a rendered list writes it back"
+    . withPool "draft-notes"
+    $ \registry -> do
+      deck <- deckOf s "draft-notes" registry "4 Goblin Piker\n\nDraft Notes\n3 Goblin Piker\n0 Goblin Piker\n"
+      Spec.assertEqWith s "the notes, in order" (Deck.draftNotes deck) (Map.singleton (CardName.MkCardName (Text.pack "Goblin Piker")) (Seq.fromList [3, 0]))
+      Spec.assertEqWith s "and the deck" (entriesOf (Deck.cards deck)) [(Text.pack "Goblin Piker", 4)]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\nDraft Notes\n3 Goblin Piker\n0 Goblin Piker\n") text) ("in order: " <> show text)
+      again <- deckOf s "draft-notes-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- A note is a number, so a bare name says none; it is for a card, so a name
+  -- no card has is a problem.
+  Spec.it s "CR 905.2b a note without a number, or for no card, is a problem"
+    . withPool "bad-draft-notes"
+    $ \registry -> do
+      problems <- problemsOf s "bad-draft-notes" registry "Draft Notes\nGoblin Piker\n2 Goblin Pikr\n"
+      Spec.assertEqWith s "each line" problems [DeckList.Unreadable 2 (Text.pack "Goblin Piker"), DeckList.NoSuchCard 3 (CardName.MkCardName (Text.pack "Goblin Pikr"))]
 
   -- A sheet is not a card and a card is not a sheet, so each section reads only
   -- its own names; a sheet has one printing, so a suffix is part of the name.

@@ -172,11 +172,13 @@ data Section
     Vanguard
   | -- | CR 123.2: Deck.stickerSheets.
     Stickers
+  | -- | CR 905.2b: Deck.draftNotes.
+    DraftNotes
   deriving (Eq, Ord, Show)
 
 -- | Every section, in the order `render` writes them.
 sections :: [Section]
-sections = [Main, Side, Companion, Commander] <> fmap Supplementary [minBound .. maxBound] <> [Conspiracies, Dungeons, Vanguard, Stickers]
+sections = [Main, Side, Companion, Commander] <> fmap Supplementary [minBound .. maxBound] <> [Conspiracies, Dungeons, Vanguard, Stickers, DraftNotes]
 
 -- | The header a section is written under.
 heading :: Section -> Text.Text
@@ -190,6 +192,7 @@ heading section = Text.pack $ case section of
   Dungeons -> "Dungeons"
   Vanguard -> "Vanguard"
   Stickers -> "Stickers"
+  DraftNotes -> "Draft Notes"
 
 -- | What a deck list says: the deck its good lines describe, the format its
 -- header names, and every line that did not become part of either. A list with
@@ -231,26 +234,30 @@ data Line
     Entry Natural.Natural CardName.CardName Printing.Printing
   | -- | A count and the sticker sheet it names.
     Sheet Natural.Natural StickerSheet.StickerSheet
+  | -- | A number noted during the draft and the name of the card it was noted for.
+    Note Natural.Natural CardName.CardName
 
 -- The deck the lines' meanings add up to, the format the first header names,
 -- and every line that is neither.
 assemble :: [(Natural.Natural, Either Problem Line)] -> Listed
 assemble results =
-  let step (section, entries, sheets, named, bad) (number, result) = case result of
-        Left problem -> (section, entries, sheets, named, problem : bad)
-        Right Blank -> (section, entries, sheets, named, bad)
-        Right (Header next) -> (next, entries, sheets, named, bad)
+  let step (section, entries, sheets, notes, named, bad) (number, result) = case result of
+        Left problem -> (section, entries, sheets, notes, named, problem : bad)
+        Right Blank -> (section, entries, sheets, notes, named, bad)
+        Right (Header next) -> (next, entries, sheets, notes, named, bad)
         Right (Named name) -> case named of
-          Nothing -> (section, entries, sheets, Just (number, name), bad)
-          Just _ -> (section, entries, sheets, named, FormatRepeated number name : bad)
+          Nothing -> (section, entries, sheets, notes, Just (number, name), bad)
+          Just _ -> (section, entries, sheets, notes, named, FormatRepeated number name : bad)
         Right (Entry count name printing)
-          | count == 0 -> (section, entries, sheets, named, bad)
-          | section == Vanguard && (count > 1 || any (\(s, _, _) -> s == Vanguard) entries) -> (section, entries, sheets, named, VanguardRepeated number name : bad)
-          | otherwise -> (section, (section, printing, count) : entries, sheets, named, bad)
+          | count == 0 -> (section, entries, sheets, notes, named, bad)
+          | section == Vanguard && (count > 1 || any (\(s, _, _) -> s == Vanguard) entries) -> (section, entries, sheets, notes, named, VanguardRepeated number name : bad)
+          | otherwise -> (section, (section, printing, count) : entries, sheets, notes, named, bad)
         -- In the order written: a player's sheets are told apart by position
         -- (Parun.Types.StickerRef, CR 123.3a).
-        Right (Sheet count sheet) -> (section, entries, sheets <> Seq.replicate (Natural.toIntSaturating count) sheet, named, bad)
-      (_, found, brought, header, reported) = List.foldl' step (Main, [], Seq.empty, Nothing, []) results
+        Right (Sheet count sheet) -> (section, entries, sheets <> Seq.replicate (Natural.toIntSaturating count) sheet, notes, named, bad)
+        -- One number per copy, so a zero is kept and a repeated name appends.
+        Right (Note noted name) -> (section, entries, sheets, Map.insertWith (flip (<>)) name (Seq.singleton noted) notes, named, bad)
+      (_, found, brought, noted, header, reported) = List.foldl' step (Main, [], Seq.empty, Map.empty, Nothing, []) results
       gather want = Map.fromListWith (+) [(printing, count) | (section, printing, count) <- found, section `elem` want]
       once want = Map.keysSet (gather [want])
       sideDecks = Map.filter (not . Map.null) (Map.fromList [(sideDeck, gather [Supplementary sideDeck]) | sideDeck <- [minBound .. maxBound]])
@@ -263,7 +270,8 @@ assemble results =
                 Deck.conspiracies = gather [Conspiracies],
                 Deck.dungeons = once Dungeons,
                 Deck.vanguard = Set.lookupMin (once Vanguard),
-                Deck.stickerSheets = brought
+                Deck.stickerSheets = brought,
+                Deck.draftNotes = noted
               },
           format = header,
           problems = List.reverse reported
@@ -287,7 +295,9 @@ formatFor asked listed = case (asked, format listed) of
 
 -- What one line, read in a section, means: nothing (blank), the section the
 -- lines after it belong to, the format the list is for, or a count and the
--- printing -- or, in the Stickers section, the sticker sheet -- it names.
+-- printing -- or, in the Stickers section, the sticker sheet -- it names. In
+-- the Draft Notes section the count is the number noted, which a bare name
+-- would leave unsaid, and the name is the card's (CR 905.2b).
 lineOf :: (Monad m) => Registry.Registry m -> Map.Map Text.Text PrintingEntry.PrintingEntry -> (Natural.Natural, Section, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
 lineOf registry first (number, within, raw) =
   let trimmed = Text.strip raw
@@ -297,6 +307,9 @@ lineOf registry first (number, within, raw) =
           (Just section, _) -> pure (Right (number, Right (Header section)))
           (_, Just named) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
           _ | within == Stickers -> pure (Right (number, sheetOf (Registry.stickerSheets registry) number trimmed))
+          _ | within == DraftNotes -> case countOf trimmed of
+            Just (noted, name) | Char.isDigit (Text.head trimmed) -> fmap (fmap ((,) number . fmap (Note noted . CardName.MkCardName . written))) (resolve registry number (CardName.MkCardName name))
+            _ -> pure (Right (number, Left (Unreadable number trimmed)))
           _ -> case entryOf trimmed of
             Nothing -> pure (Right (number, Left (Unreadable number trimmed)))
             Just (count, name, at, notes) ->
@@ -504,7 +517,8 @@ halvesOf name =
 --
 -- Sorted by the line written, so the text is a fact about the deck rather than
 -- about the order a Map enumerates its structural keys in. Sticker sheets are
--- the exception, written in their order (`assemble`).
+-- the exception, written in their order (`assemble`), and so are a name's
+-- draft notes, one line per number.
 render :: PrintingTable.PrintingTable -> Maybe Text.Text -> Deck.Deck -> Text.Text
 render table header listed =
   let entries m = fmap line (List.sortOn snd [(count, writtenAt printing) | (printing, count) <- Map.toList m])
@@ -521,6 +535,7 @@ render table header listed =
         Dungeons -> entries (once (Deck.dungeons listed))
         Vanguard -> entries (once (Set.fromList (Maybe.maybeToList (Deck.vanguard listed))))
         Stickers -> fmap (\run -> line (Natural.length run, StickerSheet.name (NonEmpty.head run))) (NonEmpty.group (Deck.stickerSheets listed))
+        DraftNotes -> [line (noted, CardName.unwrap name) | (name, notes) <- Map.toAscList (Deck.draftNotes listed), noted <- Foldable.toList notes]
       block section = case contents section of
         [] -> []
         written' -> Text.empty : heading section : written'

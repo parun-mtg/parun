@@ -60,6 +60,7 @@ viewFor pid gs =
 -- | CR 400.2: a hidden zone by its size and the members `pid` may see; a public
 -- one in full. A library card whose id reached a seat is re-minted when
 -- shuffled (Parun.Engine.Event.forgetShown), so no seat follows it through.
+-- The draft notes go to every seat (CR 905.2b).
 seatView :: PlayerId.PlayerId -> GameState.GameState -> PlayerId.PlayerId -> Maybe SeatView.SeatView
 seatView pid gs seat = do
   player <- Map.lookup seat (GameState.players gs)
@@ -77,7 +78,8 @@ seatView pid gs seat = do
         SeatView.library = hidden Zone.Library,
         SeatView.graveyard = public Zone.Graveyard,
         SeatView.exile = public Zone.Exile,
-        SeatView.manaPool = Map.findWithDefault (Mana.MkMana []) seat (GameState.manaPool gs)
+        SeatView.manaPool = Map.findWithDefault (Mana.MkMana []) seat (GameState.manaPool gs),
+        SeatView.draftNotes = Player.draftNotes player
       }
 
 -- | CR 110.5: an object's status for anyone; its characteristics (as projected,
