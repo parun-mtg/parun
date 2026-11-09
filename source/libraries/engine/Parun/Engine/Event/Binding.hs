@@ -471,9 +471,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
     Binding.setTriggerPlayer copier (Binding.setCastSpell copy Map.empty)
   -- CR 602.2b's "that ability" and "that player": the ability on the stack and
-  -- its activator (CR 602.2a). Unconditional given a match.
+  -- its activator (CR 602.2a). Unconditional given a match. An activation that
+  -- put nothing on the stack leaves "that ability" unbound, so a copy of it
+  -- copies nothing.
   (TriggerCondition.AbilityActivated _, GameEvent.AbilityActivated activated) ->
-    Binding.setTriggerPlayer (AbilityWasActivated.player activated) (Binding.setActivatedAbility (AbilityWasActivated.ability activated) Map.empty)
+    Binding.setTriggerPlayer (AbilityWasActivated.player activated) (maybe id Binding.setActivatedAbility (AbilityWasActivated.ability activated) Map.empty)
   -- CR 603.2's "that player": the player who acted, Ob Nixilis, Unshackled's
   -- searcher. Unconditional given a match.
   (TriggerCondition.PlayerActs _, GameEvent.PlayerActed acted) ->

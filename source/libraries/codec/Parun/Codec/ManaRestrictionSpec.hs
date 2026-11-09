@@ -81,4 +81,15 @@ spec s = Spec.describe s "Parun.Codec.ManaRestriction" $ do
           ManaRestriction.prohibits = True
         }
       " {\"casts\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}},\"prohibits\":true} "
+  -- Jegantha, the Wellspring's "can't be spent to pay generic mana costs": a
+  -- prohibition naming no payment, barring only the generic symbols.
+  Spec.it s "no generic mana" $
+    Common.assertCodec
+      s
+      ManaRestriction.codec
+      ManaRestriction.none
+        { ManaRestriction.prohibits = True,
+          ManaRestriction.paysGeneric = False
+        }
+      " {\"prohibits\":true,\"paysGeneric\":false} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ManaRestriction.codec

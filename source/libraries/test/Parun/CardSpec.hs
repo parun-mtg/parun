@@ -56,6 +56,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -3657,6 +3658,7 @@ keywordPayloadFilters keyword = case keyword of
   Keyword.Companion (CompanionCondition.EachCard predicate) -> [predicate]
   Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> []
   Keyword.Companion (CompanionCondition.DifferentNames predicate) -> [predicate]
+  Keyword.Companion (CompanionCondition.SharedCardType predicate) -> [predicate]
   -- CR 702.21a's cost, and rule 702.21b's perEach as mobilize's N.
   Keyword.Ward w -> costFilters (Ward.cost w) <> foldMap keywordCountFilters (Ward.perEach w)
   -- CR 702.94a's payload is a Cost too, so its filters are reached the same way.
@@ -4766,7 +4768,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- the spell rather than over a permanent; "this spell" names the bearer and
   -- needs no Filter to say so.
   TriggerCondition.SpellCast c -> actingFilters (SpellCast.spell c)
-  TriggerCondition.AbilityActivated f -> unframed [f]
+  TriggerCondition.AbilityActivated t -> unframed [AbilityActivatedTrigger.filter t]
   -- Rule 702.21a's Self subject names the bearer and a You subject CR 109.5's
   -- "you", and neither carries a Filter; a Matching one's is card text like any
   -- other: Professor Hojo's "creatures you control".

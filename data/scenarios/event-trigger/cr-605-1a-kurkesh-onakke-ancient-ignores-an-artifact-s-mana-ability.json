@@ -1,6 +1,6 @@
 {
   "description": "CR 605.1a a mana ability paying for Rod of Ruin adds no second Kurkesh trigger",
-  "note": "A guard, not a proof of Kurkesh's 'if it isn't a mana ability': mana abilities record no activation at all (#5733), so Mind Stone's {T}: Add {C}, paying part of the Rod's {3}, cannot fire Kurkesh, and the Rod alone puts one trigger on the stack. No card here encodes the exclusion; it holds because nothing is recorded.",
+  "note": "Kurkesh's 'if it isn't a mana ability': Mind Stone's {T}: Add {C}, paying part of the Rod's {3}, is an activation of an artifact's ability but a mana one, so only the Rod puts a trigger on the stack.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

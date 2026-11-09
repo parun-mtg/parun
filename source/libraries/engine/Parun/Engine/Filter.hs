@@ -1674,6 +1674,10 @@ data Context = MkContext
     -- Vacuously False everywhere else, sourceChosenColors's posture, and fenced by
     -- the same lint's subtype twin.
     sourceChosenSubtype :: Maybe Subtype.Subtype,
+    -- CR 205.2a: the card type the SOURCE chose as it entered (CR 614.1c), for
+    -- HasChosenCardType. Filled where sourceChosenColors above is, and Nothing
+    -- everywhere else, so the atom is vacuously False there.
+    sourceChosenCardType :: Maybe CardType.CardType,
     -- CR 607.2d: the number the SOURCE last chose, for Quantity.ChosenNumber.
     -- Filled where sourceChosenColors above is.
     sourceChosenNumber :: Maybe Natural.Natural,
@@ -1783,7 +1787,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
 
 -- contextFor over a game: its teams (CR 102.4) and its active players (CR 102.1,
 -- 805.4a) filled from the state, the two facts about the table a match may ask.
@@ -2056,6 +2060,13 @@ matches context view predicate = case predicate of
           ParityOperand.Printed parity -> Just parity
           ParityOperand.ChosenParity -> fmap (parityOf . toInteger) (sourceChosenNumber context)
      in Maybe.fromMaybe False ((==) <$> fmap parityOf (manaValue view) <*> wanted)
+  -- CR 107.4 / 202.1, exact symbols ({X}{X}{R} repeats {X}, {R/G}{R/G} the
+  -- hybrid). A split card's combined cost is its halves' symbols side by side
+  -- (CR 709.4b's last sentence), so Crime // Punishment repeats {B}. No mana
+  -- cost at all repeats nothing.
+  Filter.ManaCostRepeatsSymbol ->
+    let symbols = foldMap ManaCost.unwrap (manaCost view)
+     in length (ListUtils.nubOrd symbols) < length symbols
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -2232,6 +2243,8 @@ matches context view predicate = case predicate of
   -- wearing is what CR 607.2d's link is compared against. A source that has
   -- chosen none matches nothing.
   Filter.HasChosenSubtype -> maybe False (`Set.member` subtypes view) (sourceChosenSubtype context)
+  -- CR 205.2a, HasChosenSubtype's arm one characteristic over.
+  Filter.HasChosenCardType -> maybe False (`Set.member` cardTypes view) (sourceChosenCardType context)
   -- CR 607.2a off the Context: the candidate's link to the source, judged as
   -- the reading ability reads it (Binding.isLinkedExile). A candidate outside
   -- that pile matches nothing. The reader is a REGRESSION FENCE: the one
@@ -2701,6 +2714,7 @@ rewrite pairs predicate = case predicate of
   -- swap -- nor in a slot name it may carry.
   Filter.Measures _ -> predicate
   Filter.ManaValueParity _ -> predicate
+  Filter.ManaCostRepeatsSymbol -> predicate
   -- Untouched: CR 612.1 swaps a WORD in the text, and this atom names a player
   -- relation rather than a subtype.
   Filter.ControllerIsOwner -> predicate
@@ -2731,6 +2745,7 @@ rewrite pairs predicate = case predicate of
   Filter.HasChosenName {} -> predicate
   Filter.HasChosenColor -> predicate
   Filter.HasChosenSubtype -> predicate
+  Filter.HasChosenCardType -> predicate
   Filter.IsExiledWithSource _ -> predicate
   Filter.IsLastExiledWithSource -> predicate
   Filter.OfChosenPlayer -> predicate
@@ -3225,6 +3240,7 @@ rewriteKeyword pairs keyword = case keyword of
   Keyword.Type.Companion (CompanionCondition.EachCard condition) -> Keyword.Type.Companion (CompanionCondition.EachCard (rewrite pairs condition))
   Keyword.Type.Companion (CompanionCondition.CardsOverMinimum _) -> keyword
   Keyword.Type.Companion (CompanionCondition.DifferentNames condition) -> Keyword.Type.Companion (CompanionCondition.DifferentNames (rewrite pairs condition))
+  Keyword.Type.Companion (CompanionCondition.SharedCardType condition) -> Keyword.Type.Companion (CompanionCondition.SharedCardType (rewrite pairs condition))
   -- CR 702.94a states a cost too, so it is reached the same way.
   Keyword.Type.Miracle cost -> Keyword.Type.Miracle (rewriteCost pairs cost)
   Keyword.Type.Ascend -> keyword
@@ -3479,6 +3495,7 @@ bakeBound players objects controllers predicate = case predicate of
   -- making it.
   Filter.Measures _ -> predicate
   Filter.ManaValueParity _ -> predicate
+  Filter.ManaCostRepeatsSymbol -> predicate
   Filter.ControllerIsOwner -> predicate
   Filter.HeldBy _ _ -> predicate
   Filter.ControlledByRole _ -> predicate
@@ -3510,6 +3527,7 @@ bakeBound players objects controllers predicate = case predicate of
   Filter.HasChosenName {} -> predicate
   Filter.HasChosenColor -> predicate
   Filter.HasChosenSubtype -> predicate
+  Filter.HasChosenCardType -> predicate
   Filter.IsExiledWithSource _ -> predicate
   Filter.IsLastExiledWithSource -> predicate
   Filter.OfChosenPlayer -> predicate
@@ -3660,6 +3678,7 @@ manaValueThresholds predicate = case predicate of
   -- Reads the mana value and compares it against NO literal, so it bounds
   -- nothing: parity is what the sample's two-past-the-greatest tail is for.
   Filter.ManaValueParity _ -> []
+  Filter.ManaCostRepeatsSymbol -> []
   Filter.HasCardType _ -> []
   Filter.HasSupertype _ -> []
   Filter.HasColor _ -> []
@@ -3691,6 +3710,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasChosenName {} -> []
   Filter.HasChosenColor -> []
   Filter.HasChosenSubtype -> []
+  Filter.HasChosenCardType -> []
   Filter.IsExiledWithSource _ -> []
   Filter.IsLastExiledWithSource -> []
   Filter.OfChosenPlayer -> []
@@ -3816,6 +3836,7 @@ statesAQuality predicate = case predicate of
   -- printed.
   Filter.Measures _ -> True
   Filter.ManaValueParity _ -> True
+  Filter.ManaCostRepeatsSymbol -> True
   Filter.HasCardType _ -> True
   Filter.HasSupertype _ -> True
   Filter.HasColor _ -> True
@@ -3859,6 +3880,8 @@ statesAQuality predicate = case predicate of
   -- The arm above one characteristic over: a subtype is a stated quality whichever
   -- way the card arrived at it.
   Filter.HasChosenSubtype -> True
+  -- And a card type, one characteristic further.
+  Filter.HasChosenCardType -> True
   -- IsObject's posture: the candidate is named by identity.
   Filter.IsExiledWithSource _ -> True
   Filter.IsLastExiledWithSource -> True
@@ -3988,6 +4011,7 @@ readsSourceValues predicate = case predicate of
   Filter.ManaValueParity operand -> case operand of
     ParityOperand.Printed _ -> False
     ParityOperand.ChosenParity -> True
+  Filter.ManaCostRepeatsSymbol -> False
   Filter.HasCardType _ -> False
   Filter.HasSupertype _ -> False
   Filter.HasColor _ -> False
@@ -4034,6 +4058,7 @@ readsSourceValues predicate = case predicate of
   Filter.HasChosenName {} -> True
   Filter.HasChosenColor -> True
   Filter.HasChosenSubtype -> True
+  Filter.HasChosenCardType -> True
   Filter.IsExiledWithSource _ -> False
   Filter.IsLastExiledWithSource -> False
   Filter.OfChosenPlayer -> False
@@ -4162,6 +4187,7 @@ overBoundSlotsWith f predicate = case predicate of
           Operand.EnclosingAmount -> pure predicate
           Operand.OfEachOtherCandidate _ -> pure predicate
   Filter.ManaValueParity _ -> pure predicate
+  Filter.ManaCostRepeatsSymbol -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControlledByRole _ -> pure predicate
@@ -4197,6 +4223,7 @@ overBoundSlotsWith f predicate = case predicate of
   Filter.HasChosenColor -> pure predicate
   -- Reads no slot either: CR 205.3's subtype arrives on Filter.Context.
   Filter.HasChosenSubtype -> pure predicate
+  Filter.HasChosenCardType -> pure predicate
   Filter.IsExiledWithSource _ -> pure predicate
   Filter.IsLastExiledWithSource -> pure predicate
   -- Reads no slot at all: rule 702.16k's player arrives on Filter.Context.

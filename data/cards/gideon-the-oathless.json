@@ -118,20 +118,22 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "Opponent"
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "Opponent"
+                    }
+                  },
+                  {
+                    "type": "IsActivatedAbility",
+                    "value": "LoyaltyAbility"
                   }
-                },
-                {
-                  "type": "IsActivatedAbility",
-                  "value": "LoyaltyAbility"
-                }
-              ]
+                ]
+              }
             }
           },
           "modal": {

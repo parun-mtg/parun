@@ -5,6 +5,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Subtype as Subtype
@@ -18,6 +19,8 @@ data SourceChoices = MkSourceChoices
     colors :: Set.Set Color.Color,
     -- | CR 205.3: the chosen subtype.
     subtype :: Maybe Subtype.Subtype,
+    -- | CR 205.2a: the chosen card type.
+    cardType :: Maybe CardType.CardType,
     -- | CR 607.2d: the last chosen number.
     number :: Maybe Natural.Natural,
     -- | CR 607.5: the acquisition of the source's abilities these belong to,

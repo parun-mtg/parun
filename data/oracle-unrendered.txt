@@ -975,6 +975,7 @@ elixir-of-immortality
 elkin-bottle
 elkin-lair
 eloren-wilds
+elrond-moon-reader
 elspeth-suns-champion
 elspeths-smite
 elven-passage
@@ -1706,6 +1707,7 @@ jarad-golgari-lich-lord
 jared-carthalion-true-heir
 jazal-goldmane
 jeering-homunculus
+jegantha-the-wellspring
 jesters-cap
 jet-medallion
 jeweled-bird
@@ -3410,6 +3412,7 @@ tyvar-the-bellicose
 ugin-the-spirit-dragon
 uldaros-theorix
 ultima
+umori-the-collector
 unbury
 uncharted-haven
 uncharted-voyage

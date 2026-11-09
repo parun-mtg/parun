@@ -89,6 +89,7 @@ codec keywordCodec =
       Arm.payload "HeldByRecipient" Holder.codec Filter.HeldByRecipient (\x -> case x of Filter.HeldByRecipient y -> Just y; _ -> Nothing),
       Arm.payload "Shares" (shares (codec keywordCodec)) (uncurry Filter.Shares) (\x -> case x of Filter.Shares t a -> Just (t, a); _ -> Nothing),
       Arm.payload "ManaValueParity" ParityOperand.codec Filter.ManaValueParity (\x -> case x of Filter.ManaValueParity y -> Just y; _ -> Nothing),
+      Arm.nullary "ManaCostRepeatsSymbol" Filter.ManaCostRepeatsSymbol,
       Arm.nullary "ControllerIsOwner" Filter.ControllerIsOwner,
       Arm.payload "HeldBy" heldBy (uncurry Filter.HeldBy) (\x -> case x of Filter.HeldBy h r -> Just (h, r); _ -> Nothing),
       Arm.payload "IsPlayer" PlayerRelation.codec Filter.IsPlayer (\x -> case x of Filter.IsPlayer y -> Just y; _ -> Nothing),
@@ -114,6 +115,7 @@ codec keywordCodec =
       Arm.payload "HasChosenName" NameChooser.codec Filter.HasChosenName (\x -> case x of Filter.HasChosenName y -> Just y; _ -> Nothing),
       Arm.nullary "HasChosenColor" Filter.HasChosenColor,
       Arm.nullary "HasChosenSubtype" Filter.HasChosenSubtype,
+      Arm.nullary "HasChosenCardType" Filter.HasChosenCardType,
       Arm.payload "IsExiledWithSource" ExiledPile.codec Filter.IsExiledWithSource (\x -> case x of Filter.IsExiledWithSource y -> Just y; _ -> Nothing),
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,
       Arm.nullary "OfChosenPlayer" Filter.OfChosenPlayer,
@@ -273,6 +275,7 @@ tagOf x = case x of
   Filter.HeldByRecipient {} -> "HeldByRecipient"
   Filter.Shares {} -> "Shares"
   Filter.ManaValueParity {} -> "ManaValueParity"
+  Filter.ManaCostRepeatsSymbol -> "ManaCostRepeatsSymbol"
   Filter.ControllerIsOwner {} -> "ControllerIsOwner"
   Filter.HeldBy {} -> "HeldBy"
   Filter.IsPlayer {} -> "IsPlayer"
@@ -293,6 +296,7 @@ tagOf x = case x of
   Filter.HasChosenName {} -> "HasChosenName"
   Filter.HasChosenColor {} -> "HasChosenColor"
   Filter.HasChosenSubtype {} -> "HasChosenSubtype"
+  Filter.HasChosenCardType {} -> "HasChosenCardType"
   Filter.IsExiledWithSource {} -> "IsExiledWithSource"
   Filter.IsLastExiledWithSource -> "IsLastExiledWithSource"
   Filter.OfChosenPlayer {} -> "OfChosenPlayer"

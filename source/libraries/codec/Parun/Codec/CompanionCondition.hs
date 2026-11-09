@@ -14,7 +14,8 @@ codec keywordCodec =
     tagOf
     [ Arm.payload "EachCard" (Filter.codec keywordCodec) CompanionCondition.EachCard (\x -> case x of CompanionCondition.EachCard y -> Just y; _ -> Nothing),
       Arm.payload "CardsOverMinimum" Common.natural CompanionCondition.CardsOverMinimum (\x -> case x of CompanionCondition.CardsOverMinimum y -> Just y; _ -> Nothing),
-      Arm.payload "DifferentNames" (Filter.codec keywordCodec) CompanionCondition.DifferentNames (\x -> case x of CompanionCondition.DifferentNames y -> Just y; _ -> Nothing)
+      Arm.payload "DifferentNames" (Filter.codec keywordCodec) CompanionCondition.DifferentNames (\x -> case x of CompanionCondition.DifferentNames y -> Just y; _ -> Nothing),
+      Arm.payload "SharedCardType" (Filter.codec keywordCodec) CompanionCondition.SharedCardType (\x -> case x of CompanionCondition.SharedCardType y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: CompanionCondition.CompanionCondition keyword -> String
@@ -22,3 +23,4 @@ tagOf x = case x of
   CompanionCondition.EachCard {} -> "EachCard"
   CompanionCondition.CardsOverMinimum {} -> "CardsOverMinimum"
   CompanionCondition.DifferentNames {} -> "DifferentNames"
+  CompanionCondition.SharedCardType {} -> "SharedCardType"

@@ -69,7 +69,12 @@ data ManaRestriction = MkManaRestriction
     turnsFaceUp :: Maybe (Filter.Filter Keyword.Keyword),
     -- | CR 106.6: the fields name the payments this mana can't be spent on,
     -- rather than the only ones it can (Hydraulic Helper).
-    prohibits :: Bool
+    prohibits :: Bool,
+    -- | CR 106.6 / 107.4b: the mana may pay a cost's generic mana. False for
+    -- Jegantha, the Wellspring's "can't be spent to pay generic mana costs",
+    -- written with prohibits set and no payment named, so every payment admits
+    -- it and only its generic symbols refuse it.
+    paysGeneric :: Bool
   }
   deriving (Eq, Ord, Show)
 
@@ -84,7 +89,8 @@ none =
       keywordActivations = Nothing,
       unlocks = Nothing,
       turnsFaceUp = Nothing,
-      prohibits = False
+      prohibits = False,
+      paysGeneric = True
     }
 
 -- | The CR 106.6 clause permitting only casts that match this filter, which is

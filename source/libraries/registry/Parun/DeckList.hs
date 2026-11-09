@@ -258,7 +258,7 @@ assemble results =
         { deck =
             (Deck.fromCards (gather [Main]))
               { Deck.sideboard = gather [Side, Companion],
-                Deck.commander = once Commander,
+                Deck.commander = gather [Commander],
                 Deck.sideDecks = sideDecks,
                 Deck.conspiracies = gather [Conspiracies],
                 Deck.dungeons = once Dungeons,
@@ -515,7 +515,7 @@ render table header listed =
         Main -> entries (Deck.cards listed)
         Side -> entries (Deck.sideboard listed)
         Companion -> []
-        Commander -> entries (once (Deck.commander listed))
+        Commander -> entries (Deck.commander listed)
         Supplementary sideDeck -> entries (Map.findWithDefault Map.empty sideDeck (Deck.sideDecks listed))
         Conspiracies -> entries (Deck.conspiracies listed)
         Dungeons -> entries (once (Deck.dungeons listed))

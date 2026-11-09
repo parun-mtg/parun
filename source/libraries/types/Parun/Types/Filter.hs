@@ -102,6 +102,9 @@ data Filter keyword
     -- the stack, where an {X} in a cost counts as zero. The operand is that
     -- printed parity or the source's chosen one (Gollum, Riddle Master).
     ManaValueParity ParityOperand.ParityOperand
+  | -- | CR 107.4 / 202.1: some mana symbol appears more than once in the
+    -- candidate's mana cost (Jegantha, the Wellspring).
+    ManaCostRepeatsSymbol
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
     -- perspective; False where it has none (CR 108.4, 109.1).
     HeldBy Holder.Holder PlayerRelation.PlayerRelation
@@ -227,6 +230,10 @@ data Filter keyword
     -- off the source instead of written on the card, and vacuously False where the
     -- source has chosen none.
     HasChosenSubtype
+  | -- | CR 205.2a: the candidate's card types include the one the SOURCE chose
+    -- as it entered (CR 614.1c, 607.2d; Umori, the Collector's "spells you cast
+    -- of the chosen type"). Vacuously False where the source has chosen none.
+    HasChosenCardType
   | -- | CR 607.2a / 607.2b: the candidate is a card in exile in one of the
     -- source's linked piles (Mimeoplasm, Revered One's "target creature card
     -- exiled with it").

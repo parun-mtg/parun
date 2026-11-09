@@ -167,6 +167,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.ControllerIsOwner
       " {\"type\":\"ControllerIsOwner\"} "
+  Spec.it s "ManaCostRepeatsSymbol" $
+    Common.assertCodec
+      s
+      codec
+      Filter.ManaCostRepeatsSymbol
+      " {\"type\":\"ManaCostRepeatsSymbol\"} "
   Spec.it s "ManaValueParity" $
     Common.assertCodec
       s
@@ -308,6 +314,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.HasChosenSubtype
       " {\"type\":\"HasChosenSubtype\"} "
+  Spec.it s "HasChosenCardType" $
+    Common.assertCodec
+      s
+      codec
+      Filter.HasChosenCardType
+      " {\"type\":\"HasChosenCardType\"} "
   Spec.it s "IsExiledWithSource" $
     Common.assertCodec
       s

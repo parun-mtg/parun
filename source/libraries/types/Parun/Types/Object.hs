@@ -10,6 +10,7 @@ import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlClock as ControlClock
@@ -234,12 +235,12 @@ data Object = MkObject
     -- and makes its own new choice (CR 707.5, CR 707.6).
     -- Per-incarnation: reset by newIncarnation (CR 400.7).
     --
-    -- One of FIVE `chosen` fields -- chosenSubtype, chosenNames, chosenPlayers and
-    -- chosenNumber below are the others -- whose shared property is that each is read back OFF
+    -- One of SIX `chosen` fields -- chosenSubtype, chosenCardType, chosenNames,
+    -- chosenPlayers and chosenNumber below are the others -- whose shared property is that each is read back OFF
     -- THE EFFECT'S SOURCE. `protector` below is chosen as the object enters too
     -- and is not one of them, being a designation rule 310 reads directly.
     --
-    -- All five are KEYED BY THE ACQUISITION of the choosing ability, as
+    -- All six are KEYED BY THE ACQUISITION of the choosing ability, as
     -- `storedResults` is (CR 607.5): a pair of linked abilities a copy effect
     -- brings never made the choice its reading ability asks after, so that
     -- reference is undefined (CR 607.5a) until the copy ends. An absent key is
@@ -255,6 +256,11 @@ data Object = MkObject
     -- choice map, whose sum-typed value every reader would have to re-narrow. Not
     -- a copiable value and per-incarnation, for that field's reasons.
     chosenSubtype :: Map.Map Acquisition.Acquisition Subtype.Subtype,
+    -- | CR 614.1c: the card type this object's controller chose as it entered
+    -- (Umori, the Collector). Read by Filter.HasChosenCardType off the effect's
+    -- SOURCE. Not a copiable value and per-incarnation, for chosenColors's
+    -- reasons.
+    chosenCardType :: Map.Map Acquisition.Acquisition CardType.CardType,
     -- | CR 201.4: the card names chosen for this object, keyed by who chose each. THREE moments
     -- write it -- CR 614.1c's as-enters choice (Null Chamber), CR 608.2d's
     -- on-resolution one (Ancient Vendetta) and CR 702.106a's hidden agenda
@@ -1004,6 +1010,7 @@ new o s z t =
       enteredUnder = Nothing,
       chosenColors = Map.empty,
       chosenSubtype = Map.empty,
+      chosenCardType = Map.empty,
       chosenNames = Map.empty,
       chosenPlayers = Map.empty,
       chosenNumber = Map.empty,

@@ -13,6 +13,8 @@ data ChosenQuality
     BasicLandType
   | -- | CR 205.3m: one creature type, written to Object.chosenSubtype (Pillar of Origins).
     CreatureType
+  | -- | CR 205.2a: one card type, written to Object.chosenCardType (Umori, the Collector).
+    CardType
   | -- | CR 607.2d: one number in the range, replacing the last, written to Object.chosenNumber (Shapeshifter).
     Number ChooseBetween.ChooseBetween
   | -- | CR 607.2d: odd or even, written to Object.chosenNumber as 0 or 1 for Filter.ManaValueParity to read (Gollum, Riddle Master).

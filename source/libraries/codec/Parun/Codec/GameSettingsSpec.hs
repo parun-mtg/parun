@@ -1,6 +1,7 @@
 module Parun.Codec.GameSettingsSpec where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Parun.Codec.GameSettings as GameSettings
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -143,7 +144,7 @@ spec s = Spec.describe s "Parun.Codec.GameSettings" $ do
     Common.assertCodec
       s
       GameSettings.codec
-      GameSettings.plain {GameSettings.format = Just (Format.MkFormat RuleFamily.Limited Nothing)}
+      GameSettings.plain {GameSettings.format = Just (Format.MkFormat RuleFamily.Limited Nothing Set.empty)}
       " {\"brawl\":false,\"attackOption\":\"MultiplePlayers\",\"teams\":{},\"sharedTeamTurns\":false,\"sharedTeamLife\":false,\"rangeOfInfluence\":{},\"deployCreatures\":false,\"emperors\":{},\"twoHeadedGiant\":false,\"alternatingTeams\":false,\"grandMelee\":false,\"ante\":false,\"singlePlanarDeck\":false,\"format\":{\"rules\":\"Limited\"}} "
   -- CR 807: the same record with the Grand Melee variant turned on.
   Spec.it s "a Grand Melee game" $

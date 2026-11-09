@@ -5520,7 +5520,8 @@ chooseQualityAs candidate quality oid = do
 -- 305.6's basic land types and CR 205.3m's creature types are always all legal
 -- and distinguishable, so there is no one-option case to elide. Both types
 -- write Object.chosenSubtype: no printing makes both choices, and CR 607.2d
--- links each to the ability that reads it. A parity is written to
+-- links each to the ability that reads it. A card type is any of CR 205.2a's,
+-- and every one is offered. A parity is written to
 -- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is.
 chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Acquisition.Acquisition -> ObjectId -> Game ()
 chooseQuality quality chooser acquisition oid = case quality of
@@ -5541,6 +5542,10 @@ chooseQuality quality chooser acquisition oid = case quality of
     State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid)
   ChosenQuality.BasicLandType -> subtype Prompt.ChooseBasicLandType
   ChosenQuality.CreatureType -> subtype Prompt.ChooseCreatureType
+  ChosenQuality.CardType -> do
+    gs <- State.get
+    picked <- Game.choose (Prompt.ChooseCardType (Decide.deciderFor chooser gs) chooser oid (minBound NonEmpty.:| [succ minBound .. maxBound]))
+    State.modify' (Game.recordChoice Chosen.CardType acquisition (const (Just picked)) oid)
   ChosenQuality.Number range -> do
     gs <- State.get
     let least = ChooseBetween.least range
@@ -10867,6 +10872,7 @@ lastKnownFrom gs oid obj =
     (Object.chosenPlayers obj)
     (Object.chosenColors obj)
     (Object.chosenSubtype obj)
+    (Object.chosenCardType obj)
     (Object.chosenNumber obj)
     -- CR 607.5: which of its abilities' links a leave trigger reads.
     (Game.acquisitionOf oid gs)

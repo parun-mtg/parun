@@ -900,6 +900,7 @@ objectChoices :: Chosen.Chosen a -> Object -> Map.Map Acquisition.Acquisition a
 objectChoices field = case field of
   Chosen.Colors -> Object.chosenColors
   Chosen.Subtype -> Object.chosenSubtype
+  Chosen.CardType -> Object.chosenCardType
   Chosen.Names -> Object.chosenNames
   Chosen.Players -> Object.chosenPlayers
   Chosen.Number -> Object.chosenNumber
@@ -909,6 +910,7 @@ overObjectChoices :: Chosen.Chosen a -> (Map.Map Acquisition.Acquisition a -> Ma
 overObjectChoices field f o = case field of
   Chosen.Colors -> o {Object.chosenColors = f (Object.chosenColors o)}
   Chosen.Subtype -> o {Object.chosenSubtype = f (Object.chosenSubtype o)}
+  Chosen.CardType -> o {Object.chosenCardType = f (Object.chosenCardType o)}
   Chosen.Names -> o {Object.chosenNames = f (Object.chosenNames o)}
   Chosen.Players -> o {Object.chosenPlayers = f (Object.chosenPlayers o)}
   Chosen.Number -> o {Object.chosenNumber = f (Object.chosenNumber o)}
@@ -918,6 +920,7 @@ lastKnownChoices :: Chosen.Chosen a -> LastKnown.LastKnown -> Map.Map Acquisitio
 lastKnownChoices field = case field of
   Chosen.Colors -> LastKnown.chosenColors
   Chosen.Subtype -> LastKnown.chosenSubtype
+  Chosen.CardType -> LastKnown.chosenCardType
   Chosen.Names -> LastKnown.chosenNames
   Chosen.Players -> LastKnown.chosenPlayers
   Chosen.Number -> LastKnown.chosenNumber
@@ -927,6 +930,7 @@ overLastKnownChoices :: Chosen.Chosen a -> (Map.Map Acquisition.Acquisition a ->
 overLastKnownChoices field f lk = case field of
   Chosen.Colors -> lk {LastKnown.chosenColors = f (LastKnown.chosenColors lk)}
   Chosen.Subtype -> lk {LastKnown.chosenSubtype = f (LastKnown.chosenSubtype lk)}
+  Chosen.CardType -> lk {LastKnown.chosenCardType = f (LastKnown.chosenCardType lk)}
   Chosen.Names -> lk {LastKnown.chosenNames = f (LastKnown.chosenNames lk)}
   Chosen.Players -> lk {LastKnown.chosenPlayers = f (LastKnown.chosenPlayers lk)}
   Chosen.Number -> lk {LastKnown.chosenNumber = f (LastKnown.chosenNumber lk)}

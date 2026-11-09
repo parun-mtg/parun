@@ -85,40 +85,42 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "IsActivatedAbility",
+                    "value": "LoyaltyAbility"
+                  },
+                  {
+                    "type": "FromSource",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Chandra"
+                        },
+                        {
+                          "type": "IsInZone",
+                          "value": "Battlefield"
+                        }
+                      ]
+                    }
                   }
-                },
-                {
-                  "type": "IsActivatedAbility",
-                  "value": "LoyaltyAbility"
-                },
-                {
-                  "type": "FromSource",
-                  "value": {
-                    "type": "And",
-                    "value": [
-                      {
-                        "type": "HasCardType",
-                        "value": "Planeswalker"
-                      },
-                      {
-                        "type": "HasSubtype",
-                        "value": "Chandra"
-                      },
-                      {
-                        "type": "IsInZone",
-                        "value": "Battlefield"
-                      }
-                    ]
-                  }
-                }
-              ]
+                ]
+              }
             }
           },
           "modal": {

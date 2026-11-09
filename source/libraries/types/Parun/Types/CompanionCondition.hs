@@ -8,9 +8,6 @@ import qualified Parun.Types.Filter as Filter
 --
 -- PARAMETRIC in the keyword for Parun.Types.ForetellCost's reason. Only
 -- @CompanionCondition Keyword.Keyword@ is ever written.
---
--- Not implemented: Umori, the Collector's shared card type and Jegantha, the
--- Wellspring's repeated mana symbol (#3261).
 data CompanionCondition keyword
   = -- | CR 702.139a: every card in the starting deck matches the Filter.
     EachCard (Filter.Filter keyword)
@@ -20,4 +17,7 @@ data CompanionCondition keyword
   | -- | CR 702.139a / 201.2b: the cards in the starting deck that match the
     -- Filter have different names.
     DifferentNames (Filter.Filter keyword)
+  | -- | CR 702.139a / 205.2a: some one card type is shared by every card in the
+    -- starting deck that matches the Filter.
+    SharedCardType (Filter.Filter keyword)
   deriving (Eq, Ord, Show)

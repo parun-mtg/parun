@@ -33,6 +33,7 @@ import qualified Parun.ClassSpec
 import qualified Parun.ClientSpec
 import qualified Parun.CloakSpec
 import qualified Parun.Codec.AbilityActSpec
+import qualified Parun.Codec.AbilityActivatedTriggerSpec
 import qualified Parun.Codec.AbilityAddsManaSpec
 import qualified Parun.Codec.AbilityKindSpec
 import qualified Parun.Codec.AbilityNameSpec
@@ -327,6 +328,7 @@ import qualified Parun.Codec.DiscardedSpec
 import qualified Parun.Codec.DistinctOfSpec
 import qualified Parun.Codec.DivideSpec
 import qualified Parun.Codec.DoesNotUntapNextSpec
+import qualified Parun.Codec.DraftBoosterSpec
 import qualified Parun.Codec.DrawCountRSpec
 import qualified Parun.Codec.DrawCountRewriteSpec
 import qualified Parun.Codec.DrawRSpec
@@ -1075,6 +1077,7 @@ spec s registry corpus = do
   Parun.ClassSpec.spec s registry
   Parun.CloakSpec.spec s registry
   Parun.Codec.AbilityActSpec.spec s
+  Parun.Codec.AbilityActivatedTriggerSpec.spec s
   Parun.Codec.AbilityAddsManaSpec.spec s
   Parun.Codec.AbilityKindSpec.spec s
   Parun.Codec.AbilityNameSpec.spec s
@@ -1343,6 +1346,7 @@ spec s registry corpus = do
   Parun.Codec.DealDamageSpec.spec s
   Parun.Codec.DeciderSpec.spec s
   Parun.Codec.DeckLimitSpec.spec s
+  Parun.Codec.DraftBoosterSpec.spec s
   Parun.Codec.FormatSpec.spec s
   Parun.Codec.LegalitySpec.spec s
   Parun.Codec.LegalityTableSpec.spec s

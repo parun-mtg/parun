@@ -272,7 +272,7 @@ canonicalStamps gs =
         Just rank -> Timestamp.MkTimestamp (Timestamp.unwrap floor_ + 1 + Int.toNaturalSaturating rank)
         Nothing -> ts
    in ( fmap (\row -> row {ContinuousEffect.timestamp = restamp (ContinuousEffect.timestamp row)}) kept,
-        fmap (\obj -> obj {Object.counterTimestamps = fmap restamp (Object.counterTimestamps obj), Object.acquisition = reacquire (Object.acquisition obj), Object.storedResults = Map.mapKeysWith (Map.unionWith (+)) reacquire (Object.storedResults obj), Object.chosenColors = Map.mapKeys reacquire (Object.chosenColors obj), Object.chosenSubtype = Map.mapKeys reacquire (Object.chosenSubtype obj), Object.chosenNames = Map.mapKeys reacquire (Object.chosenNames obj), Object.chosenPlayers = Map.mapKeys reacquire (Object.chosenPlayers obj), Object.chosenNumber = Map.mapKeys reacquire (Object.chosenNumber obj)}) objects,
+        fmap (\obj -> obj {Object.counterTimestamps = fmap restamp (Object.counterTimestamps obj), Object.acquisition = reacquire (Object.acquisition obj), Object.storedResults = Map.mapKeysWith (Map.unionWith (+)) reacquire (Object.storedResults obj), Object.chosenColors = Map.mapKeys reacquire (Object.chosenColors obj), Object.chosenSubtype = Map.mapKeys reacquire (Object.chosenSubtype obj), Object.chosenCardType = Map.mapKeys reacquire (Object.chosenCardType obj), Object.chosenNames = Map.mapKeys reacquire (Object.chosenNames obj), Object.chosenPlayers = Map.mapKeys reacquire (Object.chosenPlayers obj), Object.chosenNumber = Map.mapKeys reacquire (Object.chosenNumber obj)}) objects,
         reacquire
       )
 

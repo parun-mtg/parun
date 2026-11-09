@@ -35,4 +35,10 @@ spec s = Spec.describe s "Parun.Codec.CompanionCondition" $ do
       codec
       (CompanionCondition.DifferentNames (Filter.Not (Filter.HasCardType CardType.Land)))
       " {\"type\":\"DifferentNames\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}} "
+  Spec.it s "SharedCardType" $
+    Common.assertCodec
+      s
+      codec
+      (CompanionCondition.SharedCardType (Filter.Not (Filter.HasCardType CardType.Land)))
+      " {\"type\":\"SharedCardType\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

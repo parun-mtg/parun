@@ -95,6 +95,8 @@ library codec
   -- cabal-gild: discover source/libraries/codec
   exposed-modules:
     Parun.Codec.AbilityAct
+    Parun.Codec.AbilityActivatedTrigger
+    Parun.Codec.AbilityActivatedTriggerSpec
     Parun.Codec.AbilityActSpec
     Parun.Codec.AbilityAddsMana
     Parun.Codec.AbilityAddsManaSpec
@@ -707,6 +709,8 @@ library codec
     Parun.Codec.DivideSpec
     Parun.Codec.DoesNotUntapNext
     Parun.Codec.DoesNotUntapNextSpec
+    Parun.Codec.DraftBooster
+    Parun.Codec.DraftBoosterSpec
     Parun.Codec.Draw
     Parun.Codec.DrawCountR
     Parun.Codec.DrawCountRewrite
@@ -2536,6 +2540,7 @@ library types
   -- cabal-gild: discover source/libraries/types
   exposed-modules:
     Parun.Types.AbilityAct
+    Parun.Types.AbilityActivatedTrigger
     Parun.Types.AbilityAddsMana
     Parun.Types.AbilityKind
     Parun.Types.AbilityName
@@ -2880,6 +2885,7 @@ library types
     Parun.Types.Divide
     Parun.Types.Dividing
     Parun.Types.DoesNotUntapNext
+    Parun.Types.DraftBooster
     Parun.Types.Draw
     Parun.Types.DrawCountR
     Parun.Types.DrawCountRewrite

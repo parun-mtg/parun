@@ -12,8 +12,9 @@
 -- "each permanent card in your starting deck has an activated ability", written
 -- in card data as @Or [Not permanentCard, HasActivatedAbility]@.
 -- Yorion, Sky Nomad is the deck-size condition's, read against
--- Parun.Types.GameSettings' format, and Lutri, the Spellchaser the
--- distinct-names condition's.
+-- Parun.Types.GameSettings' format, Lutri, the Spellchaser the
+-- distinct-names condition's, Umori, the Collector the shared-card-type
+-- condition's, and Jegantha, the Wellspring the repeated-symbol one.
 --
 -- THE BOARD SHAPE that makes the condition case discriminating. Both decks hold
 -- Mountains, Birds of Paradise and Lightning Bolts; bob's holds one Doomed
@@ -73,6 +74,8 @@ spec s registry = Spec.describe s "Companion" $ do
   revealing s registry
   deckSize s registry
   differentNames s registry
+  sharedCardType s registry
+  repeatedSymbols s registry
   newGames s registry
   mainGameCompanion s registry
   specialAction s registry
@@ -155,7 +158,7 @@ startingDeck s registry = Spec.describe s "CR 103.2a the starting deck" $ do
   Spec.it s "CR 702.139b counts the commander, which never reached the library" $ do
     (zirda, aliceDeck, _) <- decks s registry
     birds <- S.printingOf s registry "Birds of Paradise"
-    let commanderDeck = aliceDeck {Deck.commander = Set.singleton birds}
+    let commanderDeck = aliceDeck {Deck.commander = Map.singleton birds 1}
         gs = setup S.identityAnswer commanderDeck aliceDeck
         idOf printing = Map.lookup printing (GameState.printingIds gs)
         recorded = startingDeckOf S.alice gs
@@ -209,7 +212,7 @@ revealing s registry = Spec.describe s "CR 103.2b the reveal" $ do
 -- the sideboard, so the count is the only thing that differs.
 deckSize :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
-  let under family = GameSettings.plain {GameSettings.format = Just (Format.MkFormat family Nothing)}
+  let under family = GameSettings.plain {GameSettings.format = Just (Format.MkFormat family Nothing Set.empty)}
       mountains yorion mountain n = deckOf yorion [(mountain, n)]
       revealed settings deck = companionOf S.alice (setupWith settings revealingAnswer deck deck)
   -- CR 100.2a: sixty, so eighty is enough and seventy-nine is not.
@@ -234,7 +237,7 @@ deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
     yorion <- S.printingOf s registry "Yorion, Sky Nomad"
     mountain <- S.printingOf s registry "Mountain"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let commanded n = (mountains yorion mountain n) {Deck.commander = Set.singleton shimatsu}
+    let commanded n = (mountains yorion mountain n) {Deck.commander = Map.singleton shimatsu 1}
         gs = setupWith (under RuleFamily.Commander) revealingAnswer (commanded 119) (commanded 118)
     Spec.assertBool s (Maybe.isJust (companionOf S.alice gs)) "CR 903.5a: 119 and the commander are twenty over 100"
     Spec.assertEqWith s "CR 702.139b: 118 and the commander are one short" (companionOf S.bob gs) Nothing
@@ -262,6 +265,58 @@ differentNames s registry = Spec.describe s "CR 702.139a a distinct-names condit
         gs = setup revealingAnswer (deckOf lutri ((bolt, 1) : shared)) (deckOf lutri ((bolt, 2) : shared))
     Spec.assertEqWith s "CR 702.139a: alice's nonland cards each have their own name, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup lutri (GameState.printingIds gs)))
     Spec.assertEqWith s "CR 201.2b: bob's two Lightning Bolts share a name" (companionOf S.bob gs) Nothing
+
+-- Umori, the Collector's "each nonland card in your starting deck shares a card
+-- type" (CR 702.139a, 205.2a), on its ruling's example: artifact creature and
+-- creature share Creature, and adding a bare artifact leaves no type on all.
+sharedCardType :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+sharedCardType s registry = Spec.describe s "CR 702.139a a shared-card-type condition" $ do
+  Spec.it s "CR 205.2a an artifact creature and a creature reveal Umori, and an artifact beside them does not" $ do
+    umori <- S.printingOf s registry "Umori, the Collector"
+    mountain <- S.printingOf s registry "Mountain"
+    birds <- S.printingOf s registry "Birds of Paradise"
+    ornithopter <- S.printingOf s registry "Ornithopter"
+    stone <- S.printingOf s registry "Mind Stone"
+    let shared = [(mountain, 20), (birds, 2), (ornithopter, 2)]
+        gs = setup revealingAnswer (deckOf umori shared) (deckOf umori ((stone, 1) : shared))
+    Spec.assertEqWith s "CR 702.139a: alice's nonland cards are all creatures, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup umori (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 205.2a: bob's Mind Stone is no creature, and his Birds no artifact" (companionOf S.bob gs) Nothing
+
+-- Jegantha, the Wellspring's "no card in your starting deck has more than one of
+-- the same mana symbol in its mana cost" (CR 702.139a, 107.4). Both decks hold
+-- twenty Mountains, Birds of Paradise and Lightning Bolts, none repeating a
+-- symbol; each case adds one card to bob's.
+repeatedSymbols :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+repeatedSymbols s registry = Spec.describe s "CR 702.139a a repeated-symbol condition" $ do
+  let against extra = do
+        jegantha <- S.printingOf s registry "Jegantha, the Wellspring"
+        mountain <- S.printingOf s registry "Mountain"
+        birds <- S.printingOf s registry "Birds of Paradise"
+        bolt <- S.printingOf s registry "Lightning Bolt"
+        added <- S.printingOf s registry extra
+        let shared = [(mountain, 20), (birds, 2), (bolt, 2)]
+            gs = setup revealingAnswer (deckOf jegantha shared) (deckOf jegantha ((added, 1) : shared))
+        Spec.assertEqWith s "CR 702.139a: no card of alice's repeats a symbol" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup jegantha (GameState.printingIds gs)))
+        pure (companionOf S.bob gs)
+  Spec.it s "CR 107.4 Ball Lightning's {R}{R}{R} keeps Jegantha back" $ do
+    bob <- against "Ball Lightning"
+    Spec.assertEqWith s "CR 107.4a: {R} three times" bob Nothing
+
+  -- The ruling's {(r/g)}{(r/g)}: the exact symbol, hybrid as much as any.
+  Spec.it s "CR 107.4e Umori's two {B/G} keep Jegantha back" $ do
+    bob <- against "Umori, the Collector"
+    Spec.assertEqWith s "CR 107.4e: {B/G} twice" bob Nothing
+
+  -- CR 709.4b: the combined cost's separate symbols, {3}{W}{B} beside {X}{B}{G}.
+  Spec.it s "CR 709.4b Crime // Punishment's halves together repeat {B}" $ do
+    bob <- against "Crime"
+    Spec.assertEqWith s "CR 709.4b: {B} in each half" bob Nothing
+
+  -- The control for the three above: a card adding symbols none of the shared
+  -- cards hold twice.
+  Spec.it s "CR 107.4 Grizzly Bears' {1}{G} repeats nothing" $ do
+    bob <- against "Grizzly Bears"
+    Spec.assertBool s (Maybe.isJust bob) "CR 702.139a: {1} and {G} once each"
 
 -- CR 728.1 / 730.2: a restart and a subgame each start a new game following rule
 -- 103, so CR 103.2a's starting deck is taken again from the cards the new game is
@@ -294,7 +349,7 @@ newGames s registry = Spec.describe s "CR 728.1 / 730.2 a new game" $ do
   Spec.it s "CR 702.139b a restart's starting deck counts the commander" $ do
     (_, aliceDeck, _) <- decks s registry
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let built = setup S.identityAnswer (aliceDeck {Deck.commander = Set.singleton shimatsu}) aliceDeck
+    let built = setup S.identityAnswer (aliceDeck {Deck.commander = Map.singleton shimatsu 1}) aliceDeck
         restarted = S.runPure S.identityAnswer built (Setup.restartGame S.performer Set.empty S.alice)
         idOf printing = Map.lookup printing (GameState.printingIds restarted)
     Spec.assertEqWith s "CR 702.139b: Shimatsu is in the new starting deck" (idOf shimatsu >>= \i -> Map.lookup i (startingDeckOf S.alice restarted)) (Just 1)
@@ -433,7 +488,7 @@ specialAction s registry = Spec.describe s "CR 116.2g the special action" $ do
 -- which createDeck refilled from the deck's empty sideboard.
 commandedBoard :: Printing.Printing -> PrintingId.PrintingId -> GameState.GameState -> GameState.GameState
 commandedBoard shimatsu zirdaId gs =
-  let built = S.runPure S.identityAnswer gs (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Set.singleton shimatsu}))
+  let built = S.runPure S.identityAnswer gs (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Map.singleton shimatsu 1}))
       restock p = p {Player.outsideTheGame = Map.singleton zirdaId 2}
    in built {GameState.players = Map.adjust restock S.alice (GameState.players built)}
 
@@ -450,7 +505,7 @@ commanderGame s registry = Spec.describe s "CR 903.11a a Commander game" $ do
           let built = setup revealingAnswer deck aliceDeck
               withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) built [1 :: Int, 2, 3]
            in withLands {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
-        commanded = ready (aliceDeck {Deck.commander = Set.singleton zirda})
+        commanded = ready (aliceDeck {Deck.commander = Map.singleton zirda 1})
         plain = ready aliceDeck
     Spec.assertBool s (Maybe.isJust (companionOf S.alice commanded)) "CR 103.2b: she reveals the companion"
     Spec.assertBool s (List.notElem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice commanded)) "CR 903.11a: but may not take it"

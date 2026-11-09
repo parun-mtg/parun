@@ -33,6 +33,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Monoid as Monoid
 import qualified Parun.Engine.Binding as Binding.Engine
 import qualified Parun.Types.AbilityAct as AbilityAct
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
@@ -623,6 +624,7 @@ filterNames asking criterion = case criterion of
   Filter.HasKeywordFamily _family -> mempty
   Filter.Measures measures -> measuresNames asking measures
   Filter.ManaValueParity _operand -> mempty
+  Filter.ManaCostRepeatsSymbol -> mempty
   Filter.ControllerIsOwner -> mempty
   Filter.HeldBy _holder _relation -> mempty
   Filter.ControlledByRole _ -> mempty
@@ -642,6 +644,7 @@ filterNames asking criterion = case criterion of
   Filter.HasChosenName {} -> mempty
   Filter.HasChosenColor -> mempty
   Filter.HasChosenSubtype -> mempty
+  Filter.HasChosenCardType -> mempty
   Filter.IsExiledWithSource _ -> mempty
   Filter.IsLastExiledWithSource -> mempty
   Filter.OfChosenPlayer -> mempty
@@ -2115,6 +2118,7 @@ keywordNames asking x = case x of
   Keyword.Companion (CompanionCondition.EachCard filter_) -> filterNames asking filter_
   Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> mempty
   Keyword.Companion (CompanionCondition.DifferentNames filter_) -> filterNames asking filter_
+  Keyword.Companion (CompanionCondition.SharedCardType filter_) -> filterNames asking filter_
   Keyword.Foretell foretellCost -> foretellCostNames asking (keywordNames asking) foretellCost
   Keyword.Demonstrate -> mempty
   Keyword.Daybound -> mempty
@@ -2272,7 +2276,7 @@ tapForManaNames asking x = case x of
 
 manaRestrictionNames :: (Monoid r) => Asking r -> ManaRestriction.ManaRestriction -> r
 manaRestrictionNames asking x = case x of
-  ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp _prohibits -> foldMap (filterNames asking) casts <> foldMap (filterNames asking) activations <> foldMap (keywordDesignatorNames asking) keywordActivations <> foldMap (filterNames asking) unlocks <> foldMap (filterNames asking) turnsFaceUp
+  ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp _prohibits _paysGeneric -> foldMap (filterNames asking) casts <> foldMap (filterNames asking) activations <> foldMap (keywordDesignatorNames asking) keywordActivations <> foldMap (filterNames asking) unlocks <> foldMap (filterNames asking) turnsFaceUp
 
 manaRiderNames :: (Monoid r) => Asking r -> ManaRider.ManaRider -> r
 manaRiderNames asking x = case x of
@@ -3238,7 +3242,7 @@ triggerConditionNames asking x = case x of
   TriggerCondition.CountersChange counterTrigger -> counterTriggerNames asking counterTrigger
   TriggerCondition.SelfBecomesClassLevel _classLevel -> mempty
   TriggerCondition.SpellCast spellCast -> spellCastNames asking spellCast
-  TriggerCondition.AbilityActivated filter_ -> filterNames asking filter_
+  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ _kind) -> filterNames asking filter_
   TriggerCondition.BecomesTargeted becomesTargetedTrigger -> becomesTargetedTriggerNames asking becomesTargetedTrigger
   TriggerCondition.SelfHalfUnlocked _cardName -> mempty
   TriggerCondition.RoomFullyUnlocked _playerRelation -> mempty

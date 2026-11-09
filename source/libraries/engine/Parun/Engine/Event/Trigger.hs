@@ -793,7 +793,7 @@ participants event =
         GameEvent.AbilityCountered c -> ([Countering.countered c, Countering.source c], [])
         GameEvent.LifeLost c -> player (LifeChange.player c)
         GameEvent.LifeGained c -> player (LifeChange.player c)
-        GameEvent.AbilityActivated a -> ([AbilityWasActivated.ability a, AbilityWasActivated.source a], [AbilityWasActivated.player a])
+        GameEvent.AbilityActivated a -> (Maybe.maybeToList (AbilityWasActivated.ability a) <> [AbilityWasActivated.source a], [AbilityWasActivated.player a])
         GameEvent.CountersPut c -> one (CountersPlaced.object c)
         GameEvent.CountersRemoved c -> one (CounterChange.object c)
         GameEvent.HalfUnlocked h -> ([HalfUnlocked.object h], [HalfUnlocked.actor h])

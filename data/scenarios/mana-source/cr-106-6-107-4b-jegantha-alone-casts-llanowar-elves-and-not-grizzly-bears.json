@@ -1,0 +1,27 @@
+{
+  "description": "CR 106.6 / 107.4b Jegantha alone casts Llanowar Elves and not Grizzly Bears",
+  "note": "Five mana and a two-mana spell: only Grizzly Bears' {1} stands in the way, so the refusal is the gate reading the restriction, and Llanowar Elves' {G} is the control.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Jegantha, the Wellspring", "label": "jegantha", "ready": true }],
+        "hand": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Llanowar Elves", "label": "elves" }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$bears", "mana": ["$jegantha", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$elves", "mana": ["$jegantha"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["Llanowar Elves"] } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } }
+  ]
+}

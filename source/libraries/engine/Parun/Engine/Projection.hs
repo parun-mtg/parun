@@ -32,7 +32,7 @@ import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
-import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
+import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, lastZoned, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
 import qualified Parun.Engine.Saga as Saga
@@ -101,6 +101,7 @@ import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Measure as Measure
@@ -1240,6 +1241,22 @@ viewOfObjectGiven pcs grants oid gs =
 -- Characteristics come from the live projection, which is CR 601.2i's own order.
 viewOfSpell :: PlayerId.PlayerId -> ObjectId -> GameState -> Filter.View
 viewOfSpell caster oid gs = viewOfCharacteristics (fullView gs) oid (project oid gs) (Just caster) (countersOf oid gs) gs
+
+-- CR 605.3b: the view of an activated ability that put nothing on the stack --
+-- a mana ability, or one activated inside a die roll's window -- read as
+-- viewOfSpell reads an ability that did: no characteristics, the activator its
+-- controller (CR 602.2a), CR 606.2's kind, and its source through CR 113.7a's
+-- last known information, as viewOfCharacteristics' abilitySource. The record
+-- is playerView's with no player behind it.
+viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> LoyaltyKind.LoyaltyKind -> GameState -> Filter.View
+viewOfUnstackedAbility activator source kind gs =
+  (Filter.playerView activator)
+    { Filter.playerIdentity = Nothing,
+      Filter.controller = Just activator,
+      Filter.activatedAbility = Just kind,
+      Filter.ability = True,
+      Filter.abilitySource = fmap (lastZoned gs source) (Count.orLastKnown (fullView gs) gs source)
+    }
 
 -- The ViewOf for callers OUTSIDE the CR 613 layer fold; `viewUpTo` below is the
 -- bounded counterpart for callers INSIDE it. Both are Count.ViewOf, so picking
@@ -4006,6 +4023,8 @@ filterReads f = case f of
   -- Reads the candidate's SUBTYPES, HasSubtype's answer: the chosen half arrives
   -- on the Context baked at production, and CR 613.1d's layer writes the other.
   Filter.Type.HasChosenSubtype -> Set.singleton Subtypes
+  -- HasCardType's answer, the chosen half arriving on the Context.
+  Filter.Type.HasChosenCardType -> Set.singleton Types
   Filter.Type.IsExiledWithSource _ -> Set.empty
   Filter.Type.IsLastExiledWithSource -> Set.empty
   -- Reads the candidate's CONTROLLER, ControllerRelatesToBound's answer above: rule
@@ -4228,6 +4247,7 @@ filterReads f = case f of
   -- CR 202.3 reads the mana cost, which layer 1 alone sets (CR 707.2) and no
   -- Modification writes.
   Filter.Type.ManaValueParity _ -> Set.empty
+  Filter.Type.ManaCostRepeatsSymbol -> Set.empty
   Filter.Type.And fs -> foldMap filterReads fs
   Filter.Type.Or fs -> foldMap filterReads fs
   Filter.Type.Not g -> filterReads g
@@ -4346,6 +4366,7 @@ filterReadsPeers f = case f of
   -- at production; the candidate's own subtypes come from its partial, so no PEER
   -- is projected.
   Filter.Type.HasChosenSubtype -> False
+  Filter.Type.HasChosenCardType -> False
   Filter.Type.IsExiledWithSource _ -> False
   Filter.Type.IsLastExiledWithSource -> False
   -- The carrier's chosen player arrives on the Context; the candidate's own
@@ -4408,6 +4429,7 @@ filterReadsPeers f = case f of
   Filter.Type.HasSticker _ -> False
   Filter.Type.Stickered -> False
   Filter.Type.ManaValueParity _ -> False
+  Filter.Type.ManaCostRepeatsSymbol -> False
 
 -- filterReadsPeers through an affected set. TheseObjects names ids (CR 611.2c)
 -- and Attached reads its source's attachment (CR 303.4m); neither builds a view.

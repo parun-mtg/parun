@@ -472,6 +472,7 @@ bakePerspective viewOf context gs candidate predicate =
         Filter.Type.HasKeywordFamily _ -> predicate
         Filter.Type.Measures _ -> predicate
         Filter.Type.ManaValueParity _ -> predicate
+        Filter.Type.ManaCostRepeatsSymbol -> predicate
         Filter.Type.ControllerIsOwner -> predicate
         Filter.Type.HeldBy _ _ -> predicate
         Filter.Type.ControlledByRole _ -> predicate
@@ -496,6 +497,7 @@ bakePerspective viewOf context gs candidate predicate =
         Filter.Type.HasChosenName {} -> predicate
         Filter.Type.HasChosenColor -> predicate
         Filter.Type.HasChosenSubtype -> predicate
+        Filter.Type.HasChosenCardType -> predicate
         Filter.Type.IsExiledWithSource _ -> predicate
         Filter.Type.IsLastExiledWithSource -> predicate
         Filter.Type.OfChosenPlayer -> predicate
