@@ -1,1 +1,327 @@
-{"board": {"active": "bob", "seats": [{"name": "alice", "battlefield": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Island", "label": "i6"}, {"card": "Island", "label": "i7"}, {"card": "Island", "label": "i8"}, {"card": "Island", "label": "i9"}, {"card": "Island", "label": "i10"}, {"card": "Island", "label": "i11"}, {"card": "Island", "label": "i12"}], "hand": [{"card": "Thranduil's Decree", "label": "d1"}, {"card": "Thranduil's Decree", "label": "d2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Mountain", "label": "m1"}], "hand": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Shock", "label": "shock"}], "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}], "step": "PrecombatMain"}, "description": "CR 701.6a, 118.9: Thranduil's Decree exiles a countered permanent spell, which its caster may then cast without paying its mana cost, and leaves a countered instant in the graveyard", "note": "alice counters bob's Grizzly Bears, which goes to exile, and bob's Shock, which goes to his graveyard. On her own turn alice, holding only Islands, casts the exiled Bears with no mana, and it enters under her control.", "timeline": [{"do": {"Cast": {"mana": ["$f1", "$f2", null], "object": "$bears"}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"do": "Pass", "player": "bob", "step": "PrecombatMain", "turn": 1}, {"do": {"Cast": {"mana": ["$i1", "$i2", "$i3", "$i4", "$i5", "$i6", null], "object": "$d1", "targets": ["Grizzly Bears"]}}, "player": "alice", "step": "PrecombatMain", "turn": 1}, {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1}, {"do": "Pass", "player": "bob", "step": "PrecombatMain", "turn": 1}, {"check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "bob", "zone": "Exile"}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"check": {"Count": {"card": "Grizzly Bears", "count": 0, "player": "bob", "zone": "Graveyard"}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"do": {"Cast": {"mana": ["$m1"], "object": "$shock", "targets": ["$alice"]}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"do": "Pass", "player": "bob", "step": "PrecombatMain", "turn": 1}, {"do": {"Cast": {"mana": ["$i7", "$i8", "$i9", "$i10", "$i11", "$i12", null], "object": "$d2", "targets": ["Shock"]}}, "player": "alice", "step": "PrecombatMain", "turn": 1}, {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1}, {"do": "Pass", "player": "bob", "step": "PrecombatMain", "turn": 1}, {"check": {"Count": {"card": "Shock", "count": 1, "player": "bob", "zone": "Graveyard"}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"check": {"Count": {"card": "Shock", "count": 0, "player": "bob", "zone": "Exile"}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"check": {"Life": {"life": 20, "player": "alice"}}, "player": "bob", "step": "PrecombatMain", "turn": 1}, {"do": {"Cast": {"mana": [], "object": "Grizzly Bears"}}, "player": "alice", "step": "PrecombatMain", "turn": 2}, {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 2}, {"check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Battlefield"}}, "player": "alice", "step": "PrecombatMain", "turn": 2}]}
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          },
+          {
+            "card": "Island",
+            "label": "i7"
+          },
+          {
+            "card": "Island",
+            "label": "i8"
+          },
+          {
+            "card": "Island",
+            "label": "i9"
+          },
+          {
+            "card": "Island",
+            "label": "i10"
+          },
+          {
+            "card": "Island",
+            "label": "i11"
+          },
+          {
+            "card": "Island",
+            "label": "i12"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Thranduil's Decree",
+            "label": "d1"
+          },
+          {
+            "card": "Thranduil's Decree",
+            "label": "d2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.6a, 118.9: Thranduil's Decree exiles a countered permanent spell, which its caster may then cast without paying its mana cost, and leaves a countered instant in the graveyard",
+  "note": "alice counters bob's Grizzly Bears, which goes to exile, and bob's Shock, which goes to his graveyard. On her own turn alice, holding only Islands, casts the exiled Bears with no mana, and it enters under her control.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
+          "object": "$bears"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5",
+            "$i6",
+            null
+          ],
+          "object": "$d1",
+          "targets": [
+            "Grizzly Bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 0,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i7",
+            "$i8",
+            "$i9",
+            "$i10",
+            "$i11",
+            "$i12"
+          ],
+          "object": "$d2",
+          "targets": [
+            "Shock"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 0,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Grizzly Bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

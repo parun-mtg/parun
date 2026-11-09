@@ -1,29 +1,8 @@
 {
-  "description": "CR 601.2c, 716.3d: Gaze in Wonder taps one or two target creatures and goes on an adventure; Velvetwing Butterflies is then cast from exile as a 2/2 flier",
-  "note": "Of bob's three Bears, the two targeted are tapped and the third stays untapped.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Plains",
@@ -51,10 +30,7 @@
             "card": "Velvetwing Butterflies",
             "label": "vb"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -72,6 +48,9 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -85,129 +64,150 @@
             "card": "Grizzly Bears",
             "label": "b3"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 601.2c, 716.3d: Gaze in Wonder taps one or two target creatures and goes on an adventure; Velvetwing Butterflies is then cast from exile as a 2/2 flier",
+  "note": "Of bob's three Bears, the two targeted are tapped and the third stays untapped.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$vb",
           "face": "Gaze in Wonder",
-          "targets": [
-            "$b1",
-            "$b2"
-          ],
           "mana": [
             "$p1",
             "$p2",
             null
+          ],
+          "object": "$vb",
+          "targets": [
+            "$b1",
+            "$b2"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$b1",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$b2",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$b3",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Exile",
           "card": "Velvetwing Butterflies",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "Velvetwing Butterflies",
           "mana": [
             "$p3",
             "$p4",
             "$p5"
-          ]
+          ],
+          "object": "Velvetwing Butterflies"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Velvetwing Butterflies",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "Velvetwing Butterflies"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Velvetwing Butterflies",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

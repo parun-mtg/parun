@@ -7,6 +7,10 @@
           {
             "card": "Grizzly Bears",
             "label": "bears"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
           }
         ],
         "hand": [
@@ -31,6 +35,10 @@
           {
             "card": "Hill Giant",
             "label": "giant"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
           }
         ],
         "library": [
@@ -47,7 +55,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.14a: Troll Negotiations puts two +1/+1 counters on a creature you control, then it fights a creature an opponent controls",
-  "note": "Grizzly Bears become 4/4 and fight bob's 3/3 Hill Giant: the Giant dies and the Bears survive three damage, which one counter or none would not. The slots refuse a swapped pair.",
+  "note": "Grizzly Bears become 4/4 and fight bob's 3/3 Hill Giant: the Giant dies and the Bears survive three damage, which one counter or none would not. The first slot refuses bob's Giant and the second alice's Elves, each beside a legal other target.",
   "timeline": [
     {
       "player": "alice",
@@ -59,7 +67,25 @@
               "$giant"
             ],
             "theirs": [
+              "$ogre"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$tn",
+          "targetsBySlot": {
+            "mine": [
               "$bears"
+            ],
+            "theirs": [
+              "$elves"
             ]
           }
         }
@@ -87,6 +113,19 @@
     },
     {
       "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
@@ -123,19 +162,6 @@
           "count": 1,
           "player": "bob",
           "zone": "Graveyard"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Count": {
-          "card": "Grizzly Bears",
-          "count": 1,
-          "player": "alice",
-          "zone": "Battlefield"
         }
       },
       "player": "alice",

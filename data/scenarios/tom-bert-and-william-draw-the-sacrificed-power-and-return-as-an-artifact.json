@@ -146,6 +146,19 @@
     {
       "check": {
         "Count": {
+          "card": "Murder",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
           "card": "Gray Ogre",
           "count": 1,
           "player": "alice",
@@ -285,7 +298,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 1
     },
     {
@@ -298,7 +311,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 1
     },
     {

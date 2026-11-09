@@ -1,29 +1,8 @@
 {
-  "description": "CR 207.2c, 508.1m, 603.2: Wilderland Scrounger's ferocious attack trigger needs a creature you control with power 4 or greater and puts a +1/+1 counter on each creature you control",
-  "note": "Turn 1: the 3/6 Scrounger and the 3/3 Hill Giant are power 3 and bob's Air Elemental is not alice's, so nothing triggers. Turn 3: Giant Growth makes the Giant 6/6; the trigger counters the Scrounger, the Giant and the untapped Llanowar Elves, not bob's Elemental.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Wilderland Scrounger",
@@ -50,10 +29,7 @@
             "card": "Giant Growth",
             "label": "growth"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -71,188 +47,212 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Air Elemental",
             "label": "elemental"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 207.2c, 508.1m, 603.2: Wilderland Scrounger's ferocious attack trigger needs a creature you control with power 4 or greater and puts a +1/+1 counter on each creature you control",
+  "note": "Turn 1: the 3/6 Scrounger and the 3/3 Hill Giant are power 3 and bob's Air Elemental is not alice's, so nothing triggers. Turn 3: Giant Growth makes the Giant 6/6; the trigger counters the Scrounger, the Giant and the untapped Llanowar Elves, not bob's Elemental.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$scr"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Block": {}
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$scr",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$scr"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Attack": []
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$growth",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$f",
             null
+          ],
+          "object": "$growth",
+          "targets": [
+            "$giant"
           ]
         }
-      }
-    },
-    {
-      "turn": 3,
+      },
+      "player": "alice",
       "step": "PrecombatMain",
-      "player": "alice",
-      "do": "Pass"
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareAttackers",
+      "do": "Pass",
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
       "do": {
         "Attack": [
           "$scr"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $scr"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Block": {}
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$scr",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$scr"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$giant",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$elf",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$elf"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$elemental",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$elemental"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$elf",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
     }
   ]
 }

@@ -1,29 +1,8 @@
 {
-  "description": "CR 700.2a, 702.11b, 702.19a: Warg Tactics' first mode destroys only a creature with flying; its second puts a +1/+1 counter on a creature you control and gives it trample and hexproof until end of turn",
-  "note": "Each mode is first refused on bob's Grizzly Bears (no flying; not alice's), then cast with the same Forests. Bob's Shock is refused on the hexproof Bears and lands on his own.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -55,10 +34,7 @@
             "card": "Warg Tactics",
             "label": "wt2"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -76,10 +52,17 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Air Elemental",
             "label": "elemental"
+          },
+          {
+            "card": "Wind Drake",
+            "label": "drake"
           },
           {
             "card": "Grizzly Bears",
@@ -95,217 +78,230 @@
             "card": "Shock",
             "label": "shock"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 700.2a, 702.11b, 702.19a: Warg Tactics' first mode destroys only a creature with flying; its second puts a +1/+1 counter on a creature you control and gives it trample and hexproof until end of turn",
+  "note": "Each mode is first refused on bob's Grizzly Bears (no flying; not alice's), then cast with the same Forests. Bob's Wind Drake keeps the first mode legal for the second cast, so its mode is still chosen. At the beginning of combat bob's Shock is refused on the hexproof Bears and lands on his own.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$wt1",
-          "modes": [
-            0
-          ],
-          "targets": [
-            "$bbears"
-          ],
           "mana": [
             "$f1",
             "$f2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
-          "object": "$wt1",
+          ],
           "modes": [
             0
           ],
+          "object": "$wt1",
           "targets": [
-            "$elemental"
-          ],
+            "$bbears"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
           "mana": [
             "$f1",
             "$f2",
             null
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$wt1",
+          "targets": [
+            "$elemental"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Graveyard",
           "card": "Air Elemental",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$wt2",
-          "modes": [
-            1
-          ],
-          "targets": [
-            "$bbears"
-          ],
           "mana": [
             "$f3",
             "$f4"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
-          "object": "$wt2",
+          ],
           "modes": [
             1
           ],
+          "object": "$wt2",
           "targets": [
-            "$abears"
-          ],
-          "mana": [
-            "$f3",
-            "$f4",
-            null
+            "$bbears"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f3",
+            "$f4"
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$wt2",
+          "targets": [
+            "$abears"
+          ]
+        }
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
         "Counters": {
-          "object": "$abears",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$abears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$abears",
+          "count": 1,
           "keyword": {
             "type": "Trample"
           },
-          "count": 1
+          "object": "$abears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$abears",
+          "count": 1,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 1
+          "object": "$abears"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "bob",
       "refuse": {
         "Cast": {
+          "mana": [
+            "$m"
+          ],
           "object": "$shock",
           "targets": [
             "$abears"
-          ],
-          "mana": [
-            "$m"
           ]
         }
-      }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
+          "mana": [
+            "$m"
+          ],
           "object": "$shock",
           "targets": [
             "$bbears"
-          ],
-          "mana": [
-            "$m",
-            null
           ]
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "bob",
-      "do": "Pass"
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
+      "do": "Pass",
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Graveyard",
           "card": "Grizzly Bears",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     }
   ]
 }

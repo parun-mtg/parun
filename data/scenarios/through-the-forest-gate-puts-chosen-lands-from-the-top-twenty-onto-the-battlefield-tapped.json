@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -129,10 +128,10 @@
             "card": "Plains",
             "label": "lp"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -143,7 +142,8 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
     "step": "PrecombatMain"
@@ -152,9 +152,6 @@
   "note": "The Plains is the twenty-first card and is refused; Grizzly Bears is no land and is refused; alice takes the Forest and Island but leaves the Mountain, so the pick is a choice and not all lands.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -169,18 +166,19 @@
           ],
           "object": "$gate"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
-    },
-    {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -188,12 +186,12 @@
             "$lp"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -201,12 +199,11 @@
             "$lb"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
@@ -215,23 +212,23 @@
             "$li"
           ]
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "OrderTimestamps": [
           "Forest#9",
           "Island#4"
         ]
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -257,34 +254,34 @@
             "$lp"
           ]
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Tapped": {
           "object": "Forest#9",
           "tapped": true
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Tapped": {
           "object": "Island#4",
           "tapped": true
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Forest",
@@ -292,12 +289,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Island",
@@ -305,12 +302,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Mountain",
@@ -318,12 +315,12 @@
           "player": "alice",
           "zone": "Library"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Plains",
@@ -331,18 +328,21 @@
           "player": "alice",
           "zone": "Library"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Life": {
           "life": 28,
           "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

@@ -1,29 +1,8 @@
 {
-  "description": "CR 608.2c, 701.3a, 701.26b: Vow to Erebor untaps target creature you control and gives it +2/+2; only a Dwarf may then have an Equipment you control attached to it",
-  "note": "Refused first on bob's Dwarf, then cast on alice's tapped Dwarven Trader, which takes the Short Sword of the two Equipment she controls (bob's Bonesplitter is not offered). The second Vow on her tapped Grizzly Bears untaps and pumps them but asks nothing.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Dwarven Trader",
@@ -69,10 +48,7 @@
             "card": "Vow to Erebor",
             "label": "vow2"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -90,6 +66,9 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Dwarven Trader",
@@ -99,166 +78,207 @@
             "card": "Bonesplitter",
             "label": "bsplit"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 608.2c, 701.3a, 701.26b: Vow to Erebor untaps target creature you control and gives it +2/+2; only a Dwarf may then have an Equipment you control attached to it",
+  "note": "Refused first on bob's Dwarf, then cast on alice's tapped Dwarven Trader, which takes the Short Sword of the two Equipment she controls (bob's Bonesplitter is not offered). The second Vow on her tapped Grizzly Bears untaps and pumps them but asks nothing.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$vow1",
-          "targets": [
-            "$bdwarf"
-          ],
           "mana": [
             "$p1",
             "$p2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Cast": {
+          ],
           "object": "$vow1",
           "targets": [
-            "$dwarf"
-          ],
+            "$bdwarf"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
           "mana": [
             "$p1",
             "$p2",
             null
+          ],
+          "object": "$vow1",
+          "targets": [
+            "$dwarf"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "source": "Vow to Erebor",
       "do": {
         "ChooseOptional": "Exercises"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$bsplit"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePermanent",
+          "with": "$sword"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
         "Tapped": {
           "object": "$dwarf",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": "$dwarf",
           "object": "$sword",
-          "is": "$dwarf"
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": null,
           "object": "$split",
-          "is": null
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$dwarf",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$p3",
+            "$p4"
+          ],
           "object": "$vow2",
           "targets": [
             "$bears"
-          ],
-          "mana": [
-            "$p3",
-            "$p4",
-            null
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$bears",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": null,
           "object": "$split",
-          "is": null
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

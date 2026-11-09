@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Thranduil, Sindarin Liege",
@@ -67,10 +66,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Llanowar Elves",
@@ -87,7 +86,8 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
     "step": "PrecombatMain"
@@ -96,71 +96,68 @@
   "note": "Bob's Llanowar Elves and alice's Grizzly Bears stay unpumped. Silvan Rally mills Mountain, Llanowar Elves, Plains and Swamp: the milled Elf and a third land are refused, two lands go to hand, and the Island below the four is untouched.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "check": {
         "PowerToughness": {
           "object": "$aelf",
           "power": 2,
           "toughness": 2
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "$abear",
           "power": 2,
           "toughness": 2
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "$belf",
           "power": 1,
           "toughness": 1
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "$thr",
           "power": 2,
           "toughness": 3
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "PlayLand": "$l1"
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Elf Token",
@@ -168,88 +165,117 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "Elf Token",
           "power": 2,
           "toughness": 2
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
           "face": "Silvan Rally",
           "mana": [
             "$f1",
             "$f2",
-            "$i1"
+            "$i1",
+            null
           ],
           "object": "$rally"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceHybridHalf",
+          "with": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceHybridHalf",
+          "with": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
-    },
-    {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
           "with": [
-            "$lelf"
+            "Llanowar Elves#3"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
           "with": [
-            "$lm",
-            "$lp",
-            "$ls"
+            "Mountain",
+            "Plains",
+            "Swamp"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Answer": {
           "prompt": "ChooseCardsFromAmong",
           "with": [
-            "$lm",
-            "$ls"
+            "Mountain",
+            "Swamp"
           ]
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Mountain",
@@ -257,12 +283,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Swamp",
@@ -270,12 +296,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Plains",
@@ -283,12 +309,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Llanowar Elves",
@@ -296,12 +322,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Thranduil, Sindarin Liege",
@@ -309,12 +335,12 @@
           "player": "alice",
           "zone": "Exile"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Island",
@@ -322,7 +348,10 @@
           "player": "alice",
           "zone": "Library"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
