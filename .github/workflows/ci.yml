@@ -45,6 +45,43 @@ jobs:
             ~/.local/state/cabal
             dist-newstyle
           key: ${{ steps.cache.outputs.cache-primary-key }}
+  # Nix covers Linux only, so the other platforms get GHC from ghcup.
+  portable:
+    name: Build ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: haskell
+        uses: haskell-actions/setup@v2
+        with:
+          # Track the GHC that nixpkgs' default package set uses.
+          ghc-version: 9.10.3
+      - id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ${{ steps.haskell.outputs.cabal-store }}
+            dist-newstyle
+          key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.haskell.outputs.ghc-version }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-${{ steps.haskell.outputs.ghc-version }}-
+      - run: cabal update
+      - run: cabal configure --flags=pedantic --jobs --semaphore
+      - run: cabal build all
+      - if: github.event_name != 'push'
+        run: cabal run parun -- test --timeout=120s
+      - if: github.event_name != 'merge_group' && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ steps.haskell.outputs.cabal-store }}
+            dist-newstyle
+          key: ${{ steps.cache.outputs.cache-primary-key }}
   cabal:
     name: Cabal
     if: github.event_name != 'push'
