@@ -47,6 +47,9 @@ data Seat = MkSeat
     sideDecks :: Map.Map SideDeck.SideDeck (Seq.Seq Placement.Placement),
     -- | CR 103.2a: the player's starting deck, counted by name, which no zone
     -- above records once the game has begun.
-    startingDeck :: Map.Map CardName.CardName Natural
+    startingDeck :: Map.Map CardName.CardName Natural,
+    -- | CR 905.2b: the numbers the player recorded during the draft, by card
+    -- name (Player.draftNotes).
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq Natural)
   }
   deriving (Eq, Ord, Show)

@@ -54,6 +54,7 @@ codec = Fields.object $ do
   chosenStickerSheets <- Fields.defaulted "chosenStickerSheets" Set.empty (Common.set Common.natural) Player.chosenStickerSheets
   completedDungeons <- Fields.defaulted "completedDungeons" 0 Common.natural Player.completedDungeons
   completedDungeonNames <- Fields.defaulted "completedDungeonNames" Set.empty (Common.set CardName.codec) Player.completedDungeonNames
+  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq Common.natural))) Player.draftNotes
   startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.naturalMap PrintingId.codec Common.natural) Player.startingDeck
   companion <- Fields.defaulted "companion" Nothing (Common.maybe OutsideCard.codec) Player.companion
   companionTaken <- Fields.defaulted "companionTaken" False Common.boolean Player.companionTaken
@@ -77,6 +78,7 @@ codec = Fields.object $ do
         Player.chosenStickerSheets = chosenStickerSheets,
         Player.completedDungeons = completedDungeons,
         Player.completedDungeonNames = completedDungeonNames,
+        Player.draftNotes = draftNotes,
         Player.startingDeck = startingDeck,
         Player.companion = companion,
         Player.companionTaken = companionTaken,

@@ -146,7 +146,7 @@ import qualified Parun.Types.Zone as Zone
 -- zone are what this file is about.
 commanderBoard :: Printing.Printing -> Printing.Printing -> Int -> GameState.GameState
 commanderBoard mountain shimatsu lands =
-  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
       -- A precombat main phase with alice holding priority and an empty stack,
       -- which is Support.handOne's shape. CR 302.1 -- a creature card is cast
       -- "during a main phase of their turn when the stack is empty" -- is a
@@ -294,7 +294,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     mountain <- S.printingOf s registry "Mountain"
     cid <- S.printingOf s registry "Cid, Timeless Artificer"
     ornithopter <- S.printingOf s registry "Ornithopter"
-    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 1), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 1), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         cidsIn ids gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName cid)) ids
         intoPlay' oid gs = S.runPureWith S.identityAnswer gs (Event.changeZoneReturning (pure ()) oid Zone.Battlefield)
@@ -320,7 +320,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
   Spec.it s "CR 903.3 a commander is not interchangeable with another copy of its card" $ do
     mountain <- S.printingOf s registry "Mountain"
     cid <- S.printingOf s registry "Cid, Timeless Artificer"
-    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 2), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 2), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         named gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName cid))
         cids = named built (Game.zoneMembers Zone.Library S.alice built <> inCommandZone built)
@@ -376,7 +376,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
   -- IS the commander is one card, not zero.
   Spec.it s "CR 903.5 the commander counts toward the deck's size" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
     Spec.assertEqWith s "one card" (Setup.deckSize deck) 1
     Spec.assertEqWith s "and none without a commander" (Setup.deckSize (Deck.fromCards Map.empty)) 0
   -- CR 113.6: rule 113.6p functions an EMBLEM's and a VANGUARD card's abilities in
@@ -419,7 +419,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     grist <- S.printingOf s registry "Grist, the Hunger Tide"
     walls <- S.printingOf s registry "The Walls of Ba Sing Se"
     piker <- S.printingOf s registry "Goblin Piker"
-    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton c 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton c 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         seated = S.runPure S.identityAnswer (commanderBoard mountain grist 0) (Setup.createDeck S.bob (deckFor walls))
         (pikerId, board) = S.addPermanent piker S.bob seated
         (_, played) = S.addPermanent walls S.bob board
@@ -474,7 +474,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     anafenza <- S.printingOf s registry "Anafenza, the Foremost"
     walls <- S.printingOf s registry "The Walls of Ba Sing Se"
     piker <- S.printingOf s registry "Goblin Piker"
-    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton c 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton c 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         stating = S.runPure S.identityAnswer (commanderBoard mountain warden 0) (Setup.createDeck S.bob (deckFor walls))
         unstated = S.runPure S.identityAnswer (commanderBoard mountain walls 0) (Setup.createDeck S.bob (deckFor anafenza))
         binned base =
@@ -569,7 +569,7 @@ taxSpec s registry = Spec.describe s "Tax" $ do
 -- taps every Mountain on the way to a Plains, taxed or not.
 partnerBoard :: Maybe Format.Format -> Printing.Printing -> Printing.Printing -> Int -> [Printing.Printing] -> GameState.GameState
 partnerBoard format mountain plains lands commanders =
-  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.fromListWith (+) [(printing, 1) | printing <- commanders], Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.fromListWith (+) [(printing, 1) | printing <- commanders], Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
       board =
         (S.landsFor plains S.alice lands (S.landsInPlay mountain lands))
           { GameState.phase = Phase.PrecombatMain,
@@ -1241,7 +1241,7 @@ ninjutsuSpec s registry = Spec.describe s "Commander ninjutsu" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     piker <- S.printingOf s registry "Goblin Piker"
     board <- ninjutsuAttack s registry
-    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton yuriko 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton yuriko 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         seated = S.runPure S.identityAnswer board (Setup.createDeck S.alice deck)
         (_, stocked) = S.addLibraryCard shimatsu S.alice seated
         gs = declaredAttack stocked
@@ -1318,7 +1318,7 @@ designating :: [(PlayerId.PlayerId, Printing.Printing)] -> GameState.GameState -
 designating seats gs0 =
   let one g (pid, printing) =
         S.runPure S.identityAnswer g $
-          Setup.createDeck pid Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton printing 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+          Setup.createDeck pid Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton printing 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
    in List.foldl' one gs0 seats
 
 -- Move a player's commander out of the command zone onto the battlefield through
@@ -1393,7 +1393,7 @@ commanderDamageSpec s registry = Spec.describe s "CommanderDamage" $ do
 brawlDesignating :: Printing.Printing -> GameState.GameState
 brawlDesignating commander =
   let brawling = Setup.gameWith GameSettings.plain {GameSettings.brawl = True} S.bothPlayers
-      deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton commander 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+      deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton commander 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
    in S.runPure S.identityAnswer brawling (Setup.createDeck S.alice deck)
 
 brawlSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -1424,7 +1424,7 @@ reclaiming p = case p of
 -- from the command zone, and give the parent non-library survivors besides.
 subgameParent :: Printing.Printing -> Printing.Printing -> GameState.GameState
 subgameParent mountain shimatsu =
-  let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 5, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+  let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 5, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
    in S.runPure S.identityAnswer (S.landsInPlay mountain 2) (Setup.createDeck S.alice deck)
 
 -- The subgame as playSubgame builds it: CR 730.2 / 730.2c's move in, then CR

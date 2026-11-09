@@ -2525,6 +2525,7 @@ rewriteQuantity pairs quantity = case quantity of
   -- colour words for CR 612.2 to swap (Commander's Plate).
   Quantity.Type.CommanderColors _ -> quantity
   Quantity.Type.CompletedDungeon {} -> quantity
+  Quantity.Type.DraftNotes {} -> quantity
   Quantity.Type.EnteredThisTurn -> quantity
   Quantity.Type.EnteredFrom _ -> quantity
   Quantity.Type.WasCastFrom _ -> quantity

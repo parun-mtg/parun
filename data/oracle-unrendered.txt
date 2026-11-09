@@ -606,6 +606,7 @@ coat-of-arms
 cockatrice
 codie-ravenous-codex
 coercion
+cogwork-grinder
 coldsteel-heart
 collective-restraint
 colonel-autumn
@@ -1268,6 +1269,7 @@ game-of-chaos
 gandalf-goblins-bane-flameshape
 gandalf-wandering-wizard
 gang-of-elk
+garbage-fire
 gardenize
 gargos-vicious-watcher
 garland-royal-kidnapper
@@ -1935,6 +1937,7 @@ luminous-rebuke
 lunar-insight
 lunar-rejection
 lure
+lurking-automaton
 lurking-evil
 lurking-predators
 lutri-the-spellchaser
@@ -2481,6 +2484,7 @@ purging-scythe
 pursued-whale
 pyramids
 pyre-rhymer-molten-tide
+pyretic-hunter
 pyroblast
 pyromancers-gauntlet
 pyromancers-goggles

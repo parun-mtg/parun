@@ -17,6 +17,7 @@ import qualified Parun.Codec.DamageTally as DamageTally
 import qualified Parun.Codec.DealtDamage as DealtDamage
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.Devotion as Devotion
+import qualified Parun.Codec.DraftNoteTally as DraftNoteTally
 import qualified Parun.Codec.InZone as InZone
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
@@ -228,6 +229,7 @@ codec =
       -- wire together -- PlayerCounters' payload shape. The threshold that turns
       -- the 0\/1 into "you haven't completed it" is the Comparison's.
       Arm.payload "CompletedDungeon" CompletedDungeon.codec Quantity.CompletedDungeon (\x -> case x of Quantity.CompletedDungeon y -> Just y; _ -> Nothing),
+      Arm.payload "DraftNotes" DraftNoteTally.codec Quantity.DraftNotes (\x -> case x of Quantity.DraftNotes y -> Just y; _ -> Nothing),
       -- CR 400.7's entry read against the object the quantity is aimed at, so
       -- there is nothing on the wire: the turn is the log's extent rather than a
       -- window a card could state, as for CardsDiscardedThisTurn above.
@@ -346,6 +348,7 @@ tagOf x = case x of
   Quantity.CommanderCasts {} -> "CommanderCasts"
   Quantity.CommanderColors {} -> "CommanderColors"
   Quantity.CompletedDungeon {} -> "CompletedDungeon"
+  Quantity.DraftNotes {} -> "DraftNotes"
   Quantity.EnteredThisTurn {} -> "EnteredThisTurn"
   Quantity.EnteredFrom {} -> "EnteredFrom"
   Quantity.WasCastFrom {} -> "WasCastFrom"

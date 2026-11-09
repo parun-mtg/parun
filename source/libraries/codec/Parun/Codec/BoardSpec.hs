@@ -158,5 +158,6 @@ seat name =
       Seat.Type.command = Seq.empty,
       Seat.Type.ante = Seq.empty,
       Seat.Type.sideDecks = Map.empty,
-      Seat.Type.startingDeck = Map.empty
+      Seat.Type.startingDeck = Map.empty,
+      Seat.Type.draftNotes = Map.empty
     }

@@ -285,10 +285,22 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     let build commander =
           S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) $
-            Setup.createDeck S.alice Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = commander, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+            Setup.createDeck S.alice Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = commander, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
     Spec.assertEqWith s "forty with a commander" (S.lifeOf S.alice (build (Map.singleton shimatsu 1))) (Just 40)
     Spec.assertEqWith s "twenty without" (S.lifeOf S.alice (build Map.empty)) (Just 20)
     Spec.assertEqWith s "and bob, whose deck was never built, keeps CR 103.4's twenty" (S.lifeOf S.bob (build (Map.singleton shimatsu 1))) (Just 20)
+
+  -- CR 905.2b: the numbers a player noted during the draft arrive with their
+  -- deck. CR 728's restart and CR 730's subgame both reset the player through
+  -- Setup.resetPlayers, so the subgame stands for both (docs/decisions.md,
+  -- "Whether a restart or a subgame keeps what was noted during the draft").
+  Spec.it s "CR 905.2b createDeck records the draft notes, and a subgame keeps them" $ do
+    let notes = Map.singleton (CardName.MkCardName (Text.pack "Lurking Automaton")) (Seq.fromList [4, 9 :: Natural])
+        built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice (Deck.fromCards Map.empty) {Deck.draftNotes = notes})
+        notesOf pid gs = fmap Player.draftNotes (Map.lookup pid (GameState.players gs))
+    Spec.assertEqWith s "alice's notes are on alice" (notesOf S.alice built) (Just notes)
+    Spec.assertEqWith s "bob noted nothing" (notesOf S.bob built) (Just Map.empty)
+    Spec.assertEqWith s "a subgame keeps alice's notes" (notesOf S.alice (Setup.subgameStateFrom S.alice built)) (Just notes)
 
   -- CR 903.12f against CR 903.7, on ONE deck built four ways. The Brawl option
   -- and the seat count are varied independently, so neither can be mistaken for
@@ -298,7 +310,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     let build seats brawl =
           S.runPure S.identityAnswer (Setup.gameWith (settingsOf brawl) seats) $
-            Setup.createDeck S.alice Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+            Setup.createDeck S.alice Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
     Spec.assertEqWith s "two-player Brawl: 25" (S.lifeOf S.alice (build S.bothPlayers True)) (Just 25)
     Spec.assertEqWith s "multiplayer Brawl: 30" (S.lifeOf S.alice (build S.threePlayers True)) (Just 30)
     Spec.assertEqWith s "the same deck outside Brawl: CR 903.7's forty" (S.lifeOf S.alice (build S.bothPlayers False)) (Just 40)
@@ -310,7 +322,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   Spec.it s "CR 810.4 a team sharing a life total starts at 30, and CR 810.11 at 45 with three members" $ do
     let build teams shared =
           S.runPure S.identityAnswer (S.inTeams teams (Setup.gameWith GameSettings.plain {GameSettings.sharedTeamLife = shared} S.fourPlayers)) $
-            Setup.createDeck S.alice Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.empty, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+            Setup.createDeck S.alice Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.empty, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
     Spec.assertEqWith s "CR 810.4 two heads: 30" (S.lifeOf S.alice (build [[S.alice, S.bob], [S.carol, S.dave]] True)) (Just 30)
     Spec.assertEqWith s "CR 810.11 three heads: 45" (S.lifeOf S.alice (build [[S.alice, S.bob, S.carol], [S.dave]] True)) (Just 45)
     Spec.assertEqWith s "the same teams without the option: CR 103.4's twenty" (S.lifeOf S.alice (build [[S.alice, S.bob], [S.carol, S.dave]] False)) (Just 20)
@@ -324,7 +336,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   Spec.it s "CR 728.1 / 730.2 a rebuilt Brawl game is still a Brawl game" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     mountain <- S.printingOf s registry "Mountain"
-    let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 10, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 10, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         built brawl =
           S.runPure S.identityAnswer (Setup.gameWith (settingsOf brawl) S.bothPlayers) $
             Setup.createDeck S.alice deck
@@ -341,7 +353,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   Spec.it s "CR 103.4 the starting life total is recorded by setup, a restart and a subgame" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     mountain <- S.printingOf s registry "Mountain"
-    let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 10, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 10, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
         built = S.runPure S.identityAnswer (Setup.gameWith (settingsOf True) S.bothPlayers) (Setup.createDeck S.alice deck)
         knocked = built {GameState.players = Map.adjust (\p -> p {Player.life = 7, Player.startingLife = 99}) S.alice (GameState.players built)}
         restarted = S.runPure S.identityAnswer knocked (Setup.restartGame S.performer Set.empty S.alice)

@@ -1,0 +1,18 @@
+{
+  "description": "CR 905.2b / 614.1c: Cogwork Grinder enters with X +1/+1 counters, X the cards its controller removed from the draft with every card named Cogwork Grinder",
+  "note": "Alice's two Grinders removed 2 and 3 cards, so the Grinder enters with 5 counters: their sum, not the greater, 3.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "CCCCCC", "draftNotes": [{"key": "Cogwork Grinder", "value": [2, 3]}], "hand": [{"card": "Cogwork Grinder", "label": "grinder"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$grinder"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Cogwork Grinder", "kind": {"type": "PlusOnePlusOne"}, "count": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Cogwork Grinder", "power": 5, "toughness": 5}}}
+  ]
+}

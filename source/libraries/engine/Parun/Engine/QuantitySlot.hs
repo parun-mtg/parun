@@ -32,6 +32,7 @@ import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.ManaCount as ManaCount.Type
@@ -213,6 +214,7 @@ overSlots f quantity =
         -- name rather than anything a slot could bind.
         Quantity.DungeonsCompleted _ -> pure quantity
         Quantity.CompletedDungeon {} -> pure quantity
+        Quantity.DraftNotes {} -> pure quantity
         -- And CR 903.8's cast tally, a PlayerRef with nothing beside it.
         Quantity.CommanderCasts _ -> pure quantity
         Quantity.CommanderColors _ -> pure quantity
@@ -391,6 +393,7 @@ nestedRefs quantity = case quantity of
   Quantity.CommanderCasts ref -> Set.singleton (Left ref)
   Quantity.CommanderColors c -> Set.singleton (Left (CommanderColors.player c))
   Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref _) -> Set.singleton (Left ref)
+  Quantity.DraftNotes tally -> Set.singleton (Left (DraftNoteTally.player tally))
   Quantity.EnteredThisTurn -> Set.empty
   Quantity.EnteredFrom inZone -> Set.singleton (Left (InZone.player inZone))
   -- BOTH references, CR 601.2a's caster beside CR 400.1's zone: a walk that
@@ -516,6 +519,7 @@ nestedCounts quantity = case quantity of
   Quantity.CommanderCasts _ -> []
   Quantity.CommanderColors _ -> []
   Quantity.CompletedDungeon {} -> []
+  Quantity.DraftNotes {} -> []
   Quantity.EnteredThisTurn -> []
   -- CR 400.7's logged origin zone and CR 601.2a's logged cast: player references
   -- and nothing else. The shared-zone pairing either InZone could state is
@@ -668,6 +672,7 @@ mapPlayerRefs f intoCount quantity =
         Quantity.CommanderCasts ref -> Quantity.CommanderCasts (f ref)
         Quantity.CommanderColors c -> Quantity.CommanderColors c {CommanderColors.player = f (CommanderColors.player c)}
         Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref name) -> Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon (f ref) name)
+        Quantity.DraftNotes tally -> Quantity.DraftNotes tally {DraftNoteTally.player = f (DraftNoteTally.player tally)}
         Quantity.EnteredFrom z -> Quantity.EnteredFrom z {InZone.player = f (InZone.player z)}
         Quantity.WasCastFrom c ->
           Quantity.WasCastFrom

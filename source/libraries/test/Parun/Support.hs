@@ -232,7 +232,8 @@ playerSetup pid =
       Seat.command = Seq.empty,
       Seat.ante = Seq.empty,
       Seat.sideDecks = Map.empty,
-      Seat.startingDeck = Map.empty
+      Seat.startingDeck = Map.empty,
+      Seat.draftNotes = Map.empty
     }
 
 battlefield :: PlayerId.PlayerId -> [Placement.Placement] -> Seat.Seat

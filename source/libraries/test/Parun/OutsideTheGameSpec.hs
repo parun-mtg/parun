@@ -428,7 +428,8 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
               Deck.sideboard = Map.fromList [(signInBlood, 2), (dragon, 1)],
               Deck.conspiracies = Map.empty,
               Deck.sideDecks = Map.empty,
-              Deck.stickerSheets = Seq.empty
+              Deck.stickerSheets = Seq.empty,
+              Deck.draftNotes = Map.empty
             }
         after = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         heldBy pid = traverse (\(i, n) -> fmap (\p -> (p, n)) (Game.printingOf i after)) (Map.toList (poolOf pid after))

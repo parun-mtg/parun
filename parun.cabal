@@ -717,6 +717,8 @@ library codec
     Parun.Codec.DoesNotUntapNextSpec
     Parun.Codec.DraftBooster
     Parun.Codec.DraftBoosterSpec
+    Parun.Codec.DraftNoteTally
+    Parun.Codec.DraftNoteTallySpec
     Parun.Codec.Draw
     Parun.Codec.DrawCountR
     Parun.Codec.DrawCountRewrite
@@ -1178,6 +1180,8 @@ library codec
     Parun.Codec.NinjutsuSpec
     Parun.Codec.NinjutsuVariant
     Parun.Codec.NinjutsuVariantSpec
+    Parun.Codec.NoteFold
+    Parun.Codec.NoteFoldSpec
     Parun.Codec.NumberFloor
     Parun.Codec.NumberFloorSpec
     Parun.Codec.Object
@@ -2893,6 +2897,7 @@ library types
     Parun.Types.Dividing
     Parun.Types.DoesNotUntapNext
     Parun.Types.DraftBooster
+    Parun.Types.DraftNoteTally
     Parun.Types.Draw
     Parun.Types.DrawCountR
     Parun.Types.DrawCountRewrite
@@ -3159,6 +3164,7 @@ library types
     Parun.Types.NextStepOf
     Parun.Types.Ninjutsu
     Parun.Types.NinjutsuVariant
+    Parun.Types.NoteFold
     Parun.Types.NumberFloor
     Parun.Types.Object
     Parun.Types.ObjectCount

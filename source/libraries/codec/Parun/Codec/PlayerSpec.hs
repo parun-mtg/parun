@@ -52,6 +52,7 @@ spec s = Spec.describe s "Parun.Codec.Player" $ do
           Player.chosenStickerSheets = Set.empty,
           Player.completedDungeons = 0,
           Player.completedDungeonNames = Set.empty,
+          Player.draftNotes = Map.empty,
           Player.startingDeck = Map.empty,
           Player.companion = Nothing,
           Player.companionTaken = False,
@@ -92,6 +93,7 @@ spec s = Spec.describe s "Parun.Codec.Player" $ do
           Player.chosenStickerSheets = Set.fromList [0, 2],
           Player.completedDungeons = 10,
           Player.completedDungeonNames = Set.fromList [CardName.MkCardName (Text.pack "Tomb of Annihilation"), CardName.MkCardName (Text.pack "Undercity")],
+          Player.draftNotes = Map.singleton (CardName.MkCardName (Text.pack "Lurking Automaton")) (Seq.fromList [4, 9]),
           Player.startingDeck = Map.singleton (PrintingId.MkPrintingId 14) 15,
           Player.companion = Just (OutsideCard.InPool (PrintingId.MkPrintingId 16)),
           Player.companionTaken = True,
@@ -105,6 +107,7 @@ spec s = Spec.describe s "Parun.Codec.Player" $ do
           <> ",\"designations\":[\"CitysBlessing\",\"EnduringStory\"]"
           <> ",\"commander\":[{\"serial\":20,\"startingOwner\":1},{\"serial\":21,\"startingOwner\":1}],\"commanderCasts\":[{\"key\":{\"serial\":20,\"startingOwner\":1},\"value\":6},{\"key\":{\"serial\":21,\"startingOwner\":1},\"value\":19}]"
           <> ",\"commanderDamage\":[{\"key\":{\"serial\":22,\"startingOwner\":2},\"value\":8}],\"dungeons\":[9,11],\"outsideTheGame\":{\"12\":13},\"chosenStickerSheets\":[0,2],\"completedDungeons\":10,\"completedDungeonNames\":[\"Tomb of Annihilation\",\"Undercity\"]"
+          <> ",\"draftNotes\":[{\"key\":\"Lurking Automaton\",\"value\":[4,9]}]"
           <> ",\"startingDeck\":{\"14\":15},\"companion\":{\"type\":\"InPool\",\"value\":16},\"companionTaken\":true"
           <> ",\"graveyardOrder\":\"Matters\",\"crankCounter\":\"Sprocket1\"} "
       )

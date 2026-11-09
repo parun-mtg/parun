@@ -580,6 +580,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.CommanderCasts {} -> False
   Quantity.Type.CommanderColors {} -> False
   Quantity.Type.CompletedDungeon {} -> False
+  Quantity.Type.DraftNotes {} -> False
   Quantity.Type.EnteredThisTurn -> False
   Quantity.Type.EnteredFrom {} -> False
   Quantity.Type.WasCastFrom {} -> False
