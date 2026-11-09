@@ -33,6 +33,7 @@ import qualified Parun.ClassSpec
 import qualified Parun.ClientSpec
 import qualified Parun.CloakSpec
 import qualified Parun.Codec.AbilityActSpec
+import qualified Parun.Codec.AbilityActivatedTriggerSpec
 import qualified Parun.Codec.AbilityAddsManaSpec
 import qualified Parun.Codec.AbilityKindSpec
 import qualified Parun.Codec.AbilityNameSpec
@@ -1075,6 +1076,7 @@ spec s registry corpus = do
   Parun.ClassSpec.spec s registry
   Parun.CloakSpec.spec s registry
   Parun.Codec.AbilityActSpec.spec s
+  Parun.Codec.AbilityActivatedTriggerSpec.spec s
   Parun.Codec.AbilityAddsManaSpec.spec s
   Parun.Codec.AbilityKindSpec.spec s
   Parun.Codec.AbilityNameSpec.spec s

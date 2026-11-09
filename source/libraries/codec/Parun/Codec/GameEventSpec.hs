@@ -11,6 +11,7 @@ import qualified Parun.Codec.TriggeredAbilitySourceSpec as TriggeredAbilitySourc
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
@@ -308,8 +309,8 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 8) (ObjectId.MkObjectId 7) True))
-      " {\"type\":\"AbilityActivated\",\"value\":{\"player\":1,\"ability\":8,\"source\":7,\"loyalty\":true}} "
+      (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated (PlayerId.MkPlayerId 1) (Just (ObjectId.MkObjectId 8)) (ObjectId.MkObjectId 7) True AbilityKind.NonManaAbility))
+      " {\"type\":\"AbilityActivated\",\"value\":{\"player\":1,\"ability\":8,\"source\":7,\"loyalty\":true,\"kind\":\"NonManaAbility\"}} "
   Spec.it s "LifeLost" $
     Common.assertCodec
       s

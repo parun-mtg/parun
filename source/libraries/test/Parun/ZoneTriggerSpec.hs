@@ -33,7 +33,9 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -2069,7 +2071,7 @@ representativeEvents cond =
           noTable (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice arrived S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty))
             NonEmpty.:| [noTable (GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied S.alice arrived)) | copies]
         -- CR 602.2b's activation, binding the ability and its activator.
-        TriggerCondition.AbilityActivated _ -> one (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated S.alice arrived departed False))
+        TriggerCondition.AbilityActivated _ -> one (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated S.alice (Just arrived) departed False AbilityKind.NonManaAbility))
         -- CR 601.2c's event. Under a Self subject, the bearer is the targeted
         -- object and alice the targeting object's controller -- an event BOTH
         -- relations admit, since matchesTrigger reads `you` from the bearer's
@@ -2450,7 +2452,7 @@ everyTriggerCondition =
     -- And magecraft's "or copy", whose second event binds the same pair.
     TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching Filter.Type.IsSource) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing True),
     TriggerCondition.SpellCast SpellCast.self,
-    TriggerCondition.AbilityActivated (Filter.Type.And []),
+    TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger (Filter.Type.And []) Nothing),
     -- BOTH relations, for the SpellCast pair's reason just above: the arm cases
     -- on the relation, and one that stamped nothing under the other half would go
     -- unseen if only rule 702.21a's own Opponent were listed.

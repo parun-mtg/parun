@@ -12,6 +12,7 @@ import qualified Data.Text as Text
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.TextWord as TextWord.Engine
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
@@ -2163,7 +2164,7 @@ rewriteTriggerCondition pairs condition = case condition of
   TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger subject way batching) -> case subject of
     DiscardSubject.Self -> condition
     DiscardSubject.Discarder payload -> TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder payload {PlayerActsOn.filter = Filter.rewrite pairs (PlayerActsOn.filter payload)}) way batching)
-  TriggerCondition.AbilityActivated f -> TriggerCondition.AbilityActivated (Filter.rewrite pairs f)
+  TriggerCondition.AbilityActivated t -> TriggerCondition.AbilityActivated t {AbilityActivatedTrigger.filter = Filter.rewrite pairs (AbilityActivatedTrigger.filter t)}
   TriggerCondition.BecomesTargeted c ->
     TriggerCondition.BecomesTargeted
       c

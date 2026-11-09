@@ -26,6 +26,7 @@ import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
@@ -120,6 +121,7 @@ import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LostPermanent as LostPermanent
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaAbilityResolved as ManaAbilityResolved
 import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManaSpecification as ManaSpecification
@@ -1525,11 +1527,18 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- the activation is the last thing Activate.activateAbilityWith does, so the
   -- ability is still on the stack -- and its source through CR 113.7a's last
   -- known information (Filter.FromSource), so a source sacrificed to pay the
-  -- cost still answers.
-  TriggerCondition.AbilityActivated f -> case event of
+  -- cost still answers. An activation that put nothing on the stack (CR
+  -- 605.3b) is read off Projection.viewOfUnstackedAbility instead, and CR
+  -- 605.1a's kind off the event. The scenarios named elrond-moon-reader prove
+  -- the mana road.
+  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger f kind) -> case event of
     GameEvent.AbilityActivated activated ->
-      Maybe.isJust (Game.lookupObject (AbilityWasActivated.ability activated) gs)
-        && Filter.matches bearerContext (Projection.viewOfSpell (AbilityWasActivated.player activated) (AbilityWasActivated.ability activated) gs) f
+      let activator = AbilityWasActivated.player activated
+          loyaltyKind = if AbilityWasActivated.loyalty activated then LoyaltyKind.LoyaltyAbility else LoyaltyKind.NonLoyaltyAbility
+       in all (== AbilityWasActivated.kind activated) kind
+            && case AbilityWasActivated.ability activated of
+              Just abilId -> Maybe.isJust (Game.lookupObject abilId gs) && Filter.matches bearerContext (Projection.viewOfSpell activator abilId gs) f
+              Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) loyaltyKind gs) f
     _ -> False
   -- CR 601.2c / 603.2c: a permanent or a player became the target of a spell or
   -- ability. A Self subject is the bearer, a bare comparison of ids in a Self

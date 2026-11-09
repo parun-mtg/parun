@@ -1,5 +1,6 @@
 module Parun.Codec.TriggerCondition where
 
+import qualified Parun.Codec.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Codec.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Codec.ActingPermanent as ActingPermanent
 import qualified Parun.Codec.AttachmentTrigger as AttachmentTrigger
@@ -92,7 +93,7 @@ codec =
           Arm.payload "CountersChange" CounterTrigger.codec TriggerCondition.CountersChange (\x -> case x of TriggerCondition.CountersChange y -> Just y; _ -> Nothing),
           Arm.payload "SelfBecomesClassLevel" ClassLevel.codec TriggerCondition.SelfBecomesClassLevel (\x -> case x of TriggerCondition.SelfBecomesClassLevel y -> Just y; _ -> Nothing),
           Arm.payload "SpellCast" SpellCast.codec TriggerCondition.SpellCast (\x -> case x of TriggerCondition.SpellCast y -> Just y; _ -> Nothing),
-          Arm.payload "AbilityActivated" filterCodec TriggerCondition.AbilityActivated (\x -> case x of TriggerCondition.AbilityActivated y -> Just y; _ -> Nothing),
+          Arm.payload "AbilityActivated" AbilityActivatedTrigger.codec TriggerCondition.AbilityActivated (\x -> case x of TriggerCondition.AbilityActivated y -> Just y; _ -> Nothing),
           Arm.payload "BecomesTargeted" BecomesTargetedTrigger.codec TriggerCondition.BecomesTargeted (\x -> case x of TriggerCondition.BecomesTargeted y -> Just y; _ -> Nothing),
           Arm.payload "SelfHalfUnlocked" CardName.codec TriggerCondition.SelfHalfUnlocked (\x -> case x of TriggerCondition.SelfHalfUnlocked y -> Just y; _ -> Nothing),
           Arm.payload "RoomFullyUnlocked" PlayerRelation.codec TriggerCondition.RoomFullyUnlocked (\x -> case x of TriggerCondition.RoomFullyUnlocked y -> Just y; _ -> Nothing),

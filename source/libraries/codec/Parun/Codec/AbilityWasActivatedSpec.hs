@@ -3,6 +3,7 @@ module Parun.Codec.AbilityWasActivatedSpec where
 import qualified Parun.Codec.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
@@ -15,10 +16,25 @@ spec s = Spec.describe s "Parun.Codec.AbilityWasActivated" $ do
       AbilityWasActivated.codec
       ( AbilityWasActivated.MkAbilityWasActivated
           { AbilityWasActivated.player = PlayerId.MkPlayerId 1,
-            AbilityWasActivated.ability = ObjectId.MkObjectId 2,
+            AbilityWasActivated.ability = Just (ObjectId.MkObjectId 2),
             AbilityWasActivated.source = ObjectId.MkObjectId 3,
-            AbilityWasActivated.loyalty = True
+            AbilityWasActivated.loyalty = True,
+            AbilityWasActivated.kind = AbilityKind.NonManaAbility
           }
       )
-      " {\"player\":1,\"ability\":2,\"source\":3,\"loyalty\":true} "
+      " {\"player\":1,\"ability\":2,\"source\":3,\"loyalty\":true,\"kind\":\"NonManaAbility\"} "
+  -- CR 605.3b: a mana ability puts nothing on the stack, so no ability key.
+  Spec.it s "MkAbilityWasActivated, no stack object" $
+    Common.assertCodec
+      s
+      AbilityWasActivated.codec
+      ( AbilityWasActivated.MkAbilityWasActivated
+          { AbilityWasActivated.player = PlayerId.MkPlayerId 1,
+            AbilityWasActivated.ability = Nothing,
+            AbilityWasActivated.source = ObjectId.MkObjectId 3,
+            AbilityWasActivated.loyalty = False,
+            AbilityWasActivated.kind = AbilityKind.ManaAbility
+          }
+      )
+      " {\"player\":1,\"source\":3,\"loyalty\":false,\"kind\":\"ManaAbility\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s AbilityWasActivated.codec

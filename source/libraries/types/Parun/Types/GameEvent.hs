@@ -280,11 +280,9 @@ data GameEvent
     -- 606.3's once-per-permanent-per-turn limit is read out of these records, a
     -- look-back read of the log rather than a stamp on the object, so a skipped
     -- untap step (CR 500.11) cannot strand it; the source is the PERMANENT's id,
-    -- so CR 400.7's flickered planeswalker may activate again.
-    --
-    -- Not implemented: an ability that never reaches the stack -- a CR 605
-    -- mana ability, or one activated inside a die roll's window (Goblin Bookie)
-    -- -- records none (#5733).
+    -- so CR 400.7's flickered planeswalker may activate again. Recorded for
+    -- an ability that never reaches the stack too: a CR 605.3b mana ability,
+    -- or one activated inside a die roll's window (Goblin Bookie).
     AbilityActivated AbilityWasActivated.AbilityWasActivated
   | -- | CR 122.6: one or more counters were PUT onto an object -- who put them (CR
     -- 122.6a), the object, the kind, and the counts of that kind on it BEFORE and

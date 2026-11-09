@@ -33,6 +33,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Monoid as Monoid
 import qualified Parun.Engine.Binding as Binding.Engine
 import qualified Parun.Types.AbilityAct as AbilityAct
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
@@ -3238,7 +3239,7 @@ triggerConditionNames asking x = case x of
   TriggerCondition.CountersChange counterTrigger -> counterTriggerNames asking counterTrigger
   TriggerCondition.SelfBecomesClassLevel _classLevel -> mempty
   TriggerCondition.SpellCast spellCast -> spellCastNames asking spellCast
-  TriggerCondition.AbilityActivated filter_ -> filterNames asking filter_
+  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ _kind) -> filterNames asking filter_
   TriggerCondition.BecomesTargeted becomesTargetedTrigger -> becomesTargetedTriggerNames asking becomesTargetedTrigger
   TriggerCondition.SelfHalfUnlocked _cardName -> mempty
   TriggerCondition.RoomFullyUnlocked _playerRelation -> mempty
