@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Thranduil's Company",
@@ -42,10 +41,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -66,7 +65,8 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
     "step": "PrecombatMain"
@@ -75,95 +75,92 @@
   "note": "Alone but for bob's Elvish Warrior, the Company allows one land: the second Forest is refused. Once Llanowar Elves is out the second is played and a third refused. Each landfall trigger refuses bob's Grizzly Bears as its target.",
   "timeline": [
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "PlayLand": "$l1"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "ChooseTargets": {
           "target": [
             "$bbear"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "ChooseTargets": {
           "target": [
             "$co"
           ]
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Counters": {
+          "count": 2,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 2,
           "object": "$co"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "$co",
           "power": 5,
           "toughness": 6
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
+          "count": 1,
           "keyword": {
             "type": "Vigilance"
           },
-          "count": 1,
           "object": "$co"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "PlayLand": "$l2"
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -172,104 +169,104 @@
           ],
           "object": "$elves"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "do": {
         "PlayLand": "$l2"
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "ChooseTargets": {
           "target": [
             "$bbear"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "do": {
         "ChooseTargets": {
           "target": [
             "Llanowar Elves"
           ]
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
-      "do": "Pass"
+      "turn": 1
     },
     {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "PowerToughness": {
           "object": "Llanowar Elves",
           "power": 3,
           "toughness": 3
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
+          "count": 1,
           "keyword": {
             "type": "Vigilance"
           },
-          "count": 1,
           "object": "Llanowar Elves"
         }
-      }
-    },
-    {
+      },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1,
+      "turn": 1
+    },
+    {
       "check": {
         "Keywords": {
+          "count": 0,
           "keyword": {
             "type": "Vigilance"
           },
-          "count": 0,
           "object": "$bbear"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "refuse": {
         "PlayLand": "$l3"
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1,
       "check": {
         "Count": {
           "card": "Forest",
@@ -277,7 +274,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
