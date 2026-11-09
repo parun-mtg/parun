@@ -4,6 +4,7 @@ module Parun.Codec.GameSettings where
 
 import qualified Parun.Codec.AttackOption as AttackOption
 import qualified Parun.Codec.Emperors as Emperors
+import qualified Parun.Codec.Format as Format
 import qualified Parun.Codec.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Codec.Teams as Teams
 import qualified Parun.JsonCodec.Codec as Codec
@@ -34,6 +35,7 @@ codec = Fields.object $ do
   grandMelee <- Fields.required "grandMelee" Common.boolean GameSettings.grandMelee
   ante <- Fields.required "ante" Common.boolean GameSettings.ante
   singlePlanarDeck <- Fields.required "singlePlanarDeck" Common.boolean GameSettings.singlePlanarDeck
+  format <- Fields.required "format" (Common.maybe Format.codec) GameSettings.format
   pure
     GameSettings.MkGameSettings
       { GameSettings.brawl = brawl,
@@ -48,5 +50,6 @@ codec = Fields.object $ do
         GameSettings.alternatingTeams = alternatingTeams,
         GameSettings.grandMelee = grandMelee,
         GameSettings.ante = ante,
-        GameSettings.singlePlanarDeck = singlePlanarDeck
+        GameSettings.singlePlanarDeck = singlePlanarDeck,
+        GameSettings.format = format
       }

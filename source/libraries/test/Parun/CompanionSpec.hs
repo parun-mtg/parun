@@ -8,9 +8,11 @@
 -- Parun.Types.Action's PutCompanionIntoHand with Parun.Engine.Action's offer and
 -- Parun.Engine.Engine's arm for it.
 --
--- Zirda, the Dawnwaker (M20 companion cycle) is the fixture: its condition is
+-- Zirda, the Dawnwaker (IKO companion cycle) is the fixture: its condition is
 -- "each permanent card in your starting deck has an activated ability", written
 -- in card data as @Or [Not permanentCard, HasActivatedAbility]@.
+-- Yorion, Sky Nomad is the deck-size condition's, read against
+-- Parun.Types.GameSettings' format.
 --
 -- THE BOARD SHAPE that makes the condition case discriminating. Both decks hold
 -- Mountains, Birds of Paradise and Lightning Bolts; bob's holds one Doomed
@@ -50,6 +52,8 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.OutsideCard as OutsideCard
@@ -59,12 +63,14 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Companion" $ do
   startingDeck s registry
   revealing s registry
+  deckSize s registry
   newGames s registry
   mainGameCompanion s registry
   specialAction s registry
@@ -92,11 +98,15 @@ deckOf zirda cards =
 -- The whole of CR 103, run for real: two decks, the sideboard set aside, the
 -- reveal round, and CR 103.5's opening hands.
 setup :: (forall r. Prompt.Prompt r -> r) -> Deck.Deck -> Deck.Deck -> GameState.GameState
-setup answer aliceDeck bobDeck =
+setup = setupWith GameSettings.plain
+
+-- `setup` in a game started with these settings.
+setupWith :: GameSettings.GameSettings -> (forall r. Prompt.Prompt r -> r) -> Deck.Deck -> Deck.Deck -> GameState.GameState
+setupWith settings answer aliceDeck bobDeck =
   snd
     ( Engine.runGamePure
         answer
-        (Setup.emptyGame S.bothPlayers)
+        (Setup.gameWith settings S.bothPlayers)
         (Setup.newGame S.performer ((S.alice, aliceDeck) NonEmpty.:| [(S.bob, bobDeck)]))
     )
 
@@ -190,6 +200,50 @@ revealing s registry = Spec.describe s "CR 103.2b the reveal" $ do
         declined = setup S.identityAnswer aliceDeck aliceDeck
     Spec.assertBool s (Maybe.isJust (companionOf S.alice revealed)) "the same deck can reveal"
     Spec.assertEqWith s "CR 103.2b: and declining is an answer" (companionOf S.alice declined) Nothing
+
+-- Yorion, Sky Nomad's "your starting deck contains at least twenty cards more
+-- than the minimum deck size" (CR 702.139a), the minimum being the game's
+-- format's (CR 100.2a, 100.2b, 903.5a). Every deck is Mountains with Yorion in
+-- the sideboard, so the count is the only thing that differs.
+deckSize :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
+  let under family = GameSettings.plain {GameSettings.format = Just (Format.MkFormat family Nothing)}
+      mountains yorion mountain n = deckOf yorion [(mountain, n)]
+      revealed settings deck = companionOf S.alice (setupWith settings revealingAnswer deck deck)
+  -- CR 100.2a: sixty, so eighty is enough and seventy-nine is not.
+  Spec.it s "CR 100.2a a constructed deck reveals Yorion at eighty cards and not at seventy-nine" $ do
+    yorion <- S.printingOf s registry "Yorion, Sky Nomad"
+    mountain <- S.printingOf s registry "Mountain"
+    let gs = setupWith (under RuleFamily.Constructed) revealingAnswer (mountains yorion mountain 80) (mountains yorion mountain 79)
+    Spec.assertEqWith s "CR 702.139a: alice's eighty cards are twenty over sixty" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup yorion (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 702.139a: bob's seventy-nine are one short" (companionOf S.bob gs) Nothing
+
+  -- CR 100.2b: the same sixty cards meet a limited minimum of forty.
+  Spec.it s "CR 100.2b a limited deck of sixty reveals Yorion, and a constructed one does not" $ do
+    yorion <- S.printingOf s registry "Yorion, Sky Nomad"
+    mountain <- S.printingOf s registry "Mountain"
+    let deck = mountains yorion mountain 60
+    Spec.assertBool s (Maybe.isJust (revealed (under RuleFamily.Limited) deck)) "CR 100.2b: twenty over forty"
+    Spec.assertEqWith s "CR 100.2a: none over sixty" (revealed (under RuleFamily.Constructed) deck) Nothing
+
+  -- CR 702.139b counts the commander: 119 Mountains and it make 120, twenty
+  -- over CR 903.5a's 100, and 118 and it make one short.
+  Spec.it s "CR 702.139b a Commander deck counts its commander toward 120" $ do
+    yorion <- S.printingOf s registry "Yorion, Sky Nomad"
+    mountain <- S.printingOf s registry "Mountain"
+    shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
+    let commanded n = (mountains yorion mountain n) {Deck.commander = Set.singleton shimatsu}
+        gs = setupWith (under RuleFamily.Commander) revealingAnswer (commanded 119) (commanded 118)
+    Spec.assertBool s (Maybe.isJust (companionOf S.alice gs)) "CR 903.5a: 119 and the commander are twenty over 100"
+    Spec.assertEqWith s "CR 702.139b: 118 and the commander are one short" (companionOf S.bob gs) Nothing
+
+  -- docs/decisions.md, "A deck-size companion in a game under no format".
+  Spec.it s "CR 100.2 a game under no format has no minimum, so Yorion is never revealed" $ do
+    yorion <- S.printingOf s registry "Yorion, Sky Nomad"
+    mountain <- S.printingOf s registry "Mountain"
+    let deck = mountains yorion mountain 80
+    Spec.assertEqWith s "no format: the condition is unmet" (revealed GameSettings.plain deck) Nothing
+    Spec.assertBool s (Maybe.isJust (revealed (under RuleFamily.Constructed) deck)) "the same deck under a format reveals it"
 
 -- CR 728.1 / 730.2: a restart and a subgame each start a new game following rule
 -- 103, so CR 103.2a's starting deck is taken again from the cards the new game is

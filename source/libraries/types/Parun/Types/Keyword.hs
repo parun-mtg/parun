@@ -4,6 +4,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ClassLevel as ClassLevel
+import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Cycling as Cycling
@@ -649,17 +650,8 @@ data Keyword
   | -- | 702.139a: "Companion--[Condition]" -- reveal this card from outside the
     -- game before the game begins if your starting deck fulfills the condition
     -- (CR 103.2b), then once during the game pay {3} to put it into your hand (CR
-    -- 116.2g). The Filter is the condition, and EVERY card in the starting deck
-    -- must match it: Zirda, the Dawnwaker's "each permanent card in your starting
-    -- deck has an activated ability" is `Or [Not permanentCard, HasActivatedAbility]`.
-    --
-    -- A PER-CARD predicate, which is what makes one Filter enough: rule 702.139a
-    -- fixes no shape, and the subject/requirement pair every printed companion but
-    -- four writes collapses into an implication a single Filter states. Not
-    -- implemented: the four whose condition is not per-card -- Yorion, Sky Nomad's
-    -- deck size, Lutri, the Spellchaser's singleton, Umori, the Collector's shared
-    -- card type, and Jegantha, the Wellspring's repeated mana symbol (#3261).
-    Companion (Filter.Filter Keyword)
+    -- 116.2g).
+    Companion (CompanionCondition.CompanionCondition Keyword)
   | -- | 702.143a: foretell [cost] -- exile this card from hand face down for {2}
     -- (CR 116.2h's special action), then cast it later for [cost]. The payload
     -- is the CAST's cost.

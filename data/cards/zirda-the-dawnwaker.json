@@ -57,44 +57,47 @@
         {
           "type": "Companion",
           "value": {
-            "type": "Or",
-            "value": [
-              {
-                "type": "Not",
-                "value": {
-                  "type": "Or",
-                  "value": [
-                    {
-                      "type": "HasCardType",
-                      "value": "Artifact"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Battle"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Creature"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Enchantment"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Land"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Planeswalker"
-                    }
-                  ]
+            "type": "EachCard",
+            "value": {
+              "type": "Or",
+              "value": [
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Artifact"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Battle"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Enchantment"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Land"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Planeswalker"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "HasActivatedAbility"
                 }
-              },
-              {
-                "type": "HasActivatedAbility"
-              }
-            ]
+              ]
+            }
           }
         }
       ],

@@ -2,6 +2,7 @@ module Parun.Types.GameSettings where
 
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.Emperors as Emperors
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Teams as Teams
 
@@ -114,7 +115,11 @@ data GameSettings = MkGameSettings
     --
     -- Not implemented: CR 901.15a's deck construction (size, phenomena,
     -- names) (#6705).
-    singlePlanarDeck :: Bool
+    singlePlanarDeck :: Bool,
+    -- | CR 100.2: the format the decks were built for, or Nothing for a game
+    -- under no format's construction rules. Nothing by default ('plain'); read
+    -- by Parun.Engine.Companion for CR 702.139a's minimum deck size.
+    format :: Maybe Format.Format
   }
   deriving (Eq, Ord, Show)
 
@@ -139,5 +144,6 @@ plain =
       alternatingTeams = False,
       grandMelee = False,
       ante = False,
-      singlePlanarDeck = False
+      singlePlanarDeck = False,
+      format = Nothing
     }

@@ -448,6 +448,8 @@ library codec
     Parun.Codec.CommanderColorsSpec
     Parun.Codec.CommanderDeckRule
     Parun.Codec.CommanderDeckRuleSpec
+    Parun.Codec.CompanionCondition
+    Parun.Codec.CompanionConditionSpec
     Parun.Codec.CompanyCount
     Parun.Codec.CompanyCountSpec
     Parun.Codec.Compares
@@ -1918,6 +1920,7 @@ library engine
     Parun.Engine.Ring
     Parun.Engine.Room
     Parun.Engine.RuleAbilities
+    Parun.Engine.RuleFamily
     Parun.Engine.SacrificeRestriction
     Parun.Engine.Saga
     Parun.Engine.Sba
@@ -2725,6 +2728,7 @@ library types
     Parun.Types.CommanderColors
     Parun.Types.CommanderDeckRule
     Parun.Types.CommandZoneDecision
+    Parun.Types.CompanionCondition
     Parun.Types.CompanyCount
     Parun.Types.Compares
     Parun.Types.Comparison

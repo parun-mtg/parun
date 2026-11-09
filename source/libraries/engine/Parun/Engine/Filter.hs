@@ -27,6 +27,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
@@ -3208,7 +3209,8 @@ rewriteKeyword pairs keyword = case keyword of
   -- as landwalk's criterion is reached. No text-changing effect can be in play
   -- when it is read (CR 103.2b runs before the game begins), so this descent is
   -- structural rather than something a board exercises.
-  Keyword.Type.Companion condition -> Keyword.Type.Companion (rewrite pairs condition)
+  Keyword.Type.Companion (CompanionCondition.EachCard condition) -> Keyword.Type.Companion (CompanionCondition.EachCard (rewrite pairs condition))
+  Keyword.Type.Companion (CompanionCondition.CardsOverMinimum _) -> keyword
   -- CR 702.94a states a cost too, so it is reached the same way.
   Keyword.Type.Miracle cost -> Keyword.Type.Miracle (rewriteCost pairs cost)
   Keyword.Type.Ascend -> keyword

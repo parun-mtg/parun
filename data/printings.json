@@ -16974,6 +16974,8 @@
       "320": {"card":"Voracious Greatshark"},
       "70": {"card":"Voracious Greatshark"},
       "258": {"card":"Wind-Scarred Crag"},
+      "232": {"card":"Yorion, Sky Nomad"},
+      "359": {"card":"Yorion, Sky Nomad"},
       "233": {"card":"Zirda, the Dawnwaker"},
       "360": {"card":"Zirda, the Dawnwaker"}
     },
@@ -22873,6 +22875,7 @@
       "75": {"card":"Veil of Summer"},
       "201": {"card":"Winds of Change"},
       "51": {"card":"Wishclaw Talisman"},
+      "94": {"card":"Yorion, Sky Nomad"},
       "188": {"card":"Zombie Master"}
     },
     "MBC": {
@@ -24983,6 +24986,10 @@
       "160z": {"card":"Yedora, Grave Gardener"},
       "30": {"card":"Yedora, Grave Gardener"},
       "95": {"card":"Yedora, Grave Gardener"},
+      "129": {"card":"Yorion, Sky Nomad"},
+      "194": {"card":"Yorion, Sky Nomad"},
+      "194z": {"card":"Yorion, Sky Nomad"},
+      "64": {"card":"Yorion, Sky Nomad"},
       "155": {"card":"Zada, Hedron Grinder"},
       "155z": {"card":"Zada, Hedron Grinder"},
       "25": {"card":"Zada, Hedron Grinder"},
@@ -27636,6 +27643,8 @@
       "11s": {"card":"Drannith Magistrate"},
       "70p": {"card":"Voracious Greatshark"},
       "70s": {"card":"Voracious Greatshark"},
+      "232p": {"card":"Yorion, Sky Nomad"},
+      "232s": {"card":"Yorion, Sky Nomad"},
       "233p": {"card":"Zirda, the Dawnwaker"},
       "233s": {"card":"Zirda, the Dawnwaker"}
     },
@@ -32006,6 +32015,7 @@
       "35080": {"card":"Yawgmoth's Will"},
       "90142": {"card":"Yedora, Grave Gardener"},
       "36068": {"card":"Yixlid Jailer"},
+      "80865": {"card":"Yorion, Sky Nomad"},
       "102259": {"card":"Young Pyromancer"},
       "86214": {"card":"Yuriko, the Tiger's Shadow"},
       "86352": {"card":"Yurlok of Scorch Thrash"},

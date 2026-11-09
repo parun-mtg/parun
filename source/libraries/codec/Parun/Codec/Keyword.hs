@@ -3,6 +3,7 @@ module Parun.Codec.Keyword where
 import qualified Parun.Codec.Backup as Backup
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.ClassLevel as ClassLevel
+import qualified Parun.Codec.CompanionCondition as CompanionCondition
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.Craft as Craft
 import qualified Parun.Codec.Cycling as Cycling
@@ -222,7 +223,7 @@ codec =
       Arm.payload "Foretell" (ForetellCost.codec codec) Keyword.Foretell (\x -> case x of Keyword.Foretell y -> Just y; _ -> Nothing),
       Arm.nullary "Demonstrate" Keyword.Demonstrate,
       Arm.payload "Escape" (Cost.codec codec) Keyword.Escape (\x -> case x of Keyword.Escape y -> Just y; _ -> Nothing),
-      Arm.payload "Companion" (Filter.codec codec) Keyword.Companion (\x -> case x of Keyword.Companion y -> Just y; _ -> Nothing),
+      Arm.payload "Companion" (CompanionCondition.codec codec) Keyword.Companion (\x -> case x of Keyword.Companion y -> Just y; _ -> Nothing),
       Arm.nullary "Ascend" Keyword.Ascend,
       Arm.nullary "Assist" Keyword.Assist,
       Arm.nullary "Storied" Keyword.Storied,
