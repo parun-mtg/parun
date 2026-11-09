@@ -1,0 +1,29 @@
+{
+  "description": "CR 119.4 at 3 life, Nashi's permission offers the Raging Goblin for 1 life and not the Hill Giant for 4",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 3,
+        "battlefield": [{ "card": "Nashi, Moon Sage's Scion", "label": "nashi", "ready": true }],
+        "library": [{ "card": "Raging Goblin" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Hill Giant" }, { "card": "Plains" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$nashi"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast Raging Goblin"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "Raging Goblin" } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Raging Goblin", "count": 1 } },
+    { "Life": { "player": "alice", "life": 2 } }
+  ]
+}
