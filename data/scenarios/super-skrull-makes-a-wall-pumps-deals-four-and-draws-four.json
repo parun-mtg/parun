@@ -1,0 +1,348 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Super-Skrull",
+            "label": "skrull"
+          },
+          {
+            "card": "Plains",
+            "label": "w0",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "g0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "g1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "g2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "g3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "r0",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "r1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "r2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "r3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "r4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u0",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u5",
+            "ready": true
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Enormous Baloth",
+            "label": "baloth"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.2, 111.1, 120.3e: Super-Skrull's four activated abilities make a 0/4 defender Wall, give Super-Skrull +4/+4, deal 4 damage to a creature and make a target player draw four",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "Activate $skrull 0",
+          "mana": [
+            "$w0",
+            "$w1",
+            "$w2",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wall Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Wall Token",
+          "power": 0,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Defender"
+          },
+          "object": "Wall Token"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Activate $skrull 1",
+          "mana": [
+            "$g0",
+            "$g1",
+            "$g2",
+            "$g3",
+            null
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$skrull",
+          "power": 8,
+          "toughness": 9
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Activate $skrull 2",
+          "mana": [
+            "$r0",
+            "$r1",
+            "$r2",
+            "$r3",
+            "$r4",
+            null
+          ],
+          "targets": [
+            "$baloth"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 4,
+          "object": "$baloth"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Activate $skrull",
+          "mana": [
+            "$u0",
+            "$u1",
+            "$u2",
+            "$u3",
+            "$u4",
+            "$u5"
+          ],
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 4,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
