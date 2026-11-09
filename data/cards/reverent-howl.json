@@ -27,7 +27,7 @@
                     "value": {
                       "player": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "player"
                       },
                       "quantity": {
                         "type": "Literal",
@@ -40,7 +40,7 @@
                     "value": {
                       "player": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "player"
                       },
                       "quantity": {
                         "type": "Literal",
@@ -52,7 +52,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "player": {
                 "pool": {
                   "type": "Players"
                 }
@@ -84,7 +84,7 @@
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "creature"
                       }
                     }
                   },
@@ -102,7 +102,7 @@
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "creature"
                       }
                     }
                   }
@@ -110,7 +110,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "creature": {
                 "pool": {
                   "type": "Creatures"
                 }

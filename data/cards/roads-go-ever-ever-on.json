@@ -238,10 +238,6 @@
                           "ref": {
                             "type": "ChosenPermanents",
                             "value": {
-                              "chooser": {
-                                "type": "Relative",
-                                "value": "You"
-                              },
                               "filter": {
                                 "type": "IsExiledWithSource",
                                 "value": {
@@ -287,10 +283,6 @@
                           "ref": {
                             "type": "ChosenPermanents",
                             "value": {
-                              "chooser": {
-                                "type": "Relative",
-                                "value": "You"
-                              },
                               "filter": {
                                 "type": "IsExiledWithSource",
                                 "value": {

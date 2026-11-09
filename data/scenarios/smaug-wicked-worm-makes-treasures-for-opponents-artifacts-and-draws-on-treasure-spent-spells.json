@@ -154,7 +154,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.4, 601.2h: Smaug, Wicked Worm makes a tapped Treasure for each artifact its controller's opponents control, then draws and drains its controller for each spell they cast with Treasure mana",
+  "description": "CR 603.4, 601.2h: Smaug, Wicked Worm makes a tapped Treasure for each artifact its controller's opponents control, then its controller draws a card and loses 1 life for each spell they cast with Treasure mana",
   "note": "Opponents control three artifacts between them and alice one (Sol Ring), so X counts only opponents' artifacts; the first Goblin is paid from a Mountain and triggers nothing.",
   "timeline": [
     {

@@ -2276,6 +2276,7 @@ path-of-peril
 path-of-the-enigma
 path-to-the-festival
 pathrazer-of-ulamog
+patient-instructor
 patient-rebuilding
 patriars-humiliation
 patrician-geist
@@ -2332,6 +2333,7 @@ pillar-of-light
 pillar-of-origins
 pin-collection
 pine-walker
+pinecone-strike
 pir-imaginative-rascal
 piracy
 pirate-ship
@@ -2347,6 +2349,7 @@ planeswalkers-mischief
 platinum-angel
 platinum-emperion
 plea-for-power
+plunder-the-trollshaws
 poison-the-cup
 pokey-the-scallywagg
 pollen-remedy
@@ -2461,6 +2464,8 @@ radiating-lightning
 raffine-scheming-seer
 raffines-informant
 rag-man
+rage-into-the-valley
+ragged-short-spear
 raging-river
 raiders-allegiance
 rain-of-daggers
@@ -2487,6 +2492,8 @@ rat-out
 ratchet-bomb
 ratchet-field-medic-ratchet-rescue-racer
 ravaging-blaze
+ravenhill-flock
+ravening-warg
 ravenous-amulet
 ray-of-command
 ray-of-frost
@@ -2572,6 +2579,7 @@ rhystic-circle
 rhythm-of-the-wild
 richlau-headmaster
 riddleform
+riddles-in-the-dark
 rienne-angel-of-rebirth
 riftmarked-knight
 riftsweeper
@@ -2601,6 +2609,7 @@ ritual-of-subdual
 rivers-rebuke
 riveteers-charm
 riveteers-requisitioner
+roads-go-ever-ever-on
 roaring-furnace-steaming-sauna
 rocco-street-chef
 rock-hydra
@@ -2609,6 +2618,7 @@ rocksteady-crash-courser
 rod-of-absorption
 rogues-gloves
 roiling-horror
+roll-roll-roll-roll
 rolling-stones
 rooftop-nuisance
 room-of-refuge
@@ -2776,6 +2786,7 @@ serra-the-benevolent
 serras-hymn
 serum-powder
 setons-desire
+settle-the-wreckage
 shacklegeist
 shadow-in-the-warp
 shadow-prophecy
@@ -2818,6 +2829,7 @@ sigiled-sword-of-valeron
 silence
 silence-the-echo
 silent-arbiter
+silvan-reveler
 silverquill-the-disputant
 silversmote-ghoul
 simic-guildmage
@@ -2857,12 +2869,16 @@ slumbering-cerberus
 slumbering-dragon
 smallpox
 smash-to-smithereens
+smaug-the-great-calamity-spew-flame
+smaug-the-magnificent
+smaug-wicked-worm
 smog-smasher
 smoke
 smoke-teller
 snake-basket
 snake-of-the-golden-grove
 sneaky-homunculus
+snowslope-hunter
 sokka-swordmaster
 solarium-sentry
 soldevi-adnate
@@ -2898,6 +2914,7 @@ soul-summons
 soulblast
 soulfire-eruption
 soulstone-sanctuary
+sound-the-trumpets
 south-pole-voyager
 sovereigns-of-lost-alara
 sower-of-chaos

@@ -184,8 +184,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elf",
-          "Citizen"
+          "Citizen",
+          "Elf"
         ],
         "types": [
           "Creature"
