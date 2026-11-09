@@ -1,6 +1,6 @@
 {
   "description": "CR 702.140a a Human, and a creature another player owns, are not legal mutate targets",
-  "note": "Each refused Cast aims Cubwarden's mutate at a creature CR 702.140a's target does not admit, the Human Cabal Evangel alice owns and the Goblin Piker bob owns, and must be reversed; the same cast at alice's non-Human Falcon Abomination then merges.",
+  "note": "CR 702.140a's target does not admit the Human Cabal Evangel alice owns or the Goblin Piker bob owns, so Cubwarden's mutate offers neither, takes alice's non-Human Falcon Abomination unasked and merges.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

@@ -1,6 +1,6 @@
 {
   "description": "Nicol Bolas, the Arisen puts a creature or planeswalker card from any graveyard onto the battlefield under its controller's control, and exiles all but the bottom card of a library",
-  "note": "An Arisen at 16 loyalty. Its -4 takes bob's Craw Wurm from his graveyard (his Shock there is refused); two turns later, after bob has drawn one of his four cards, its -12 exiles both Islands left above his bottom card, a Gray Ogre.",
+  "note": "An Arisen at 16 loyalty. Its -4 takes bob's Craw Wurm from his graveyard (his Shock there is not offered, so the Wurm is taken unasked); two turns later, after bob has drawn one of his four cards, its -12 exiles both Islands left above his bottom card, a Gray Ogre.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

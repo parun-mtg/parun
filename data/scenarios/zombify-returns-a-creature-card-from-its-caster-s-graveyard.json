@@ -1,6 +1,6 @@
 {
   "description": "CR 115.1 / 400.7 whole card: Zombify returns target creature card from its caster's graveyard to the battlefield",
-  "note": "Bob's Gray Ogre in his graveyard and alice's own Lightning Bolt are refused as targets; her Hill Giant returns.",
+  "note": "Bob's Gray Ogre in his graveyard and alice's own Lightning Bolt are not offered as targets, so her Hill Giant is taken unasked and returns.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

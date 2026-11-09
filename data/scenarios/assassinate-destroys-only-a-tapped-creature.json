@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a / 115.1 whole card: Assassinate destroys target tapped creature, and can't target an untapped one",
-  "note": "Bob has a tapped Hill Giant and an untapped Grizzly Bears: the cast at the Bears is refused, and the Giant is destroyed.",
+  "note": "Bob has a tapped Hill Giant and an untapped Grizzly Bears: the Bears are not offered as a target, so the Giant is taken unasked and destroyed.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

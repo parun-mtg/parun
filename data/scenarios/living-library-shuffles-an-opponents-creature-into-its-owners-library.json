@@ -1,6 +1,6 @@
 {
   "description": "CR 701.24 / 108.3 Living Library sacrifices itself for {6} to shuffle a creature or planeswalker an opponent controls into its owner's library",
-  "note": "bob controls a Hill Giant that carol owns: it goes into carol's library, not bob's. The target refuses alice's own Grizzly Bears and bob's Forest, which is neither a creature nor a planeswalker.",
+  "note": "bob controls a Hill Giant that carol owns: it goes into carol's library, not bob's. The target offers neither alice's own Grizzly Bears nor bob's Forest, which is neither a creature nor a planeswalker, so the Giant is taken unasked.",
   "board": {
     "seats": [
       {

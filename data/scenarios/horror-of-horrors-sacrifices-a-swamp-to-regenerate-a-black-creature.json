@@ -1,6 +1,6 @@
 {
   "description": "CR 701.19a whole card: Horror of Horrors sacrifices a Swamp to regenerate target black creature",
-  "note": "Grizzly Bears, not black, is refused as the target. The regenerated Scathe Zombies survive Lightning Bolt tapped, and the Swamp is gone.",
+  "note": "Grizzly Bears, not black, is not offered as the target, so the Scathe Zombies are taken unasked. Regenerated, they survive Lightning Bolt tapped, and the Swamp is gone.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

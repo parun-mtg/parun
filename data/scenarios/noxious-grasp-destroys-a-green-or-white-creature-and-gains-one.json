@@ -102,7 +102,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 115.1: Noxious Grasp targets only a creature or planeswalker that's green or white, destroys it, and gains its caster 1 life",
-  "note": "bob's Hill Giant is red, so a cast at it is refused; the Grizzly Bears is green.",
+  "note": "bob's Hill Giant is red, so it is not offered and the green Grizzly Bears is taken unasked.",
   "timeline": [
     {
       "do": {

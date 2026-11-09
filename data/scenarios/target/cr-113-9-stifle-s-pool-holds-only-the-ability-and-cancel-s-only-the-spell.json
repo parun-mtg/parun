@@ -1,6 +1,6 @@
 {
   "description": "CR 113.9 Stifle's pool holds only the ability and Cancel's only the spell",
-  "note": "alice's Goblin Piker spell and her Prodigal Sorcerer's ping above it are on the stack. bob's Cancel aimed at the ping and his Stifle aimed at the Piker are refused; Cancel at the Piker and Stifle at the ping are taken, and both counter.",
+  "note": "alice's Goblin Piker spell and her Prodigal Sorcerer's ping above it are on the stack. bob's Cancel does not offer the ping, nor his Stifle the Piker, so Cancel takes the Piker and Stifle the ping unasked, and both counter.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

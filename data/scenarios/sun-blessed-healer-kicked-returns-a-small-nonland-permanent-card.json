@@ -1,5 +1,5 @@
 {
-  "description": "Kicked, it returns a nonland permanent card of mana value 2 or less from your graveyard; a land, a spell, a bigger card and another's are refused.",
+  "description": "Kicked, it returns a nonland permanent card of mana value 2 or less from your graveyard; a land, a spell, a bigger card and another's are not offered.",
   "board": {
     "seats": [
       {

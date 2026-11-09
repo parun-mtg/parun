@@ -82,7 +82,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 301.5, 603.3d, 702.21a: Dwarven Mattock's enters trigger attaches it to a Dwarf you control, which gets +2/+2 and ward {1}",
-  "note": "Grizzly Bears is a creature alice controls but no Dwarf, and bob's Dwarven Mauler is a Dwarf she does not control, so the trigger refuses both and takes her Dwarven Mauler; its 2/1 becomes 4/3 with one ward {1}, and the Bears keep 2/2.",
+  "note": "Grizzly Bears is a creature alice controls but no Dwarf, and bob's Dwarven Mauler is a Dwarf she does not control, so the trigger offers neither and takes her Dwarven Mauler unasked; its 2/1 becomes 4/3 with one ward {1}, and the Bears keep 2/2.",
   "timeline": [
     {
       "do": {

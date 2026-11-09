@@ -1,6 +1,6 @@
 {
   "description": "CR 702.122c a creature tapped for another reason crewed nothing",
-  "note": "The Hill Giant is tapped where it stands and only the Piker crews the attacking Schooner, so the Giant is refused as the trigger's target and the Piker explores.",
+  "note": "The Hill Giant is tapped where it stands and only the Piker crews the attacking Schooner, so the Giant is not offered as the trigger's target and the Piker, taken unasked, explores.",
   "board": {
     "seats": [
       {

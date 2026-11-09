@@ -102,7 +102,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 700.2a, 702.11b, 702.19a: Warg Tactics' first mode destroys only a creature with flying; its second puts a +1/+1 counter on a creature you control and gives it trample and hexproof until end of turn",
-  "note": "Each mode is first refused on bob's Grizzly Bears (no flying; not alice's), then cast with the same Forests. Bob's Wind Drake keeps the first mode legal for the second cast, so its mode is still chosen. At the beginning of combat bob's Shock is refused on the hexproof Bears and lands on his own.",
+  "note": "The first mode is refused on bob's Grizzly Bears (no flying), then cast with the same Forests; the second does not offer them (not alice's) and takes its target unasked. Bob's Wind Drake keeps the first mode legal for the second cast, so its mode is still chosen. At the beginning of combat bob's Shock is refused on the hexproof Bears and lands on his own.",
   "timeline": [
     {
       "player": "alice",

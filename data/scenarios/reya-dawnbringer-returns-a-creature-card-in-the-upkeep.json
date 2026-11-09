@@ -1,6 +1,6 @@
 {
   "description": "CR 503.1 / 603.5 whole card: at the beginning of its controller's upkeep, Reya Dawnbringer may return target creature card from their graveyard to the battlefield",
-  "note": "Bob's graveyard Hill Giant is refused as the target; alice returns her own Grizzly Bears.",
+  "note": "Bob's graveyard Hill Giant is not offered as the target, so alice's own Grizzly Bears is taken unasked and returns.",
   "board": {
     "active": "bob",
     "step": "EndStep",

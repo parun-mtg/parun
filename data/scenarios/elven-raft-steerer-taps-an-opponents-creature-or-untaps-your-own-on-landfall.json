@@ -85,7 +85,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 207.2c, 700.2b, 601.2c, 603.3d: Elven Raft-Steerer's landfall taps a creature an opponent controls or untaps one you control, each mode admitting only its own side's creatures",
-  "note": "Turn 1's first mode refuses alice's tapped Bears and taps bob's Hill Giant. On turn 3 the Bears attack and tap; the postcombat land's second mode refuses the Giant and untaps the Bears. Bob's own land on turn 2 triggers nothing.",
+  "note": "Turn 1's first mode does not offer alice's tapped Bears and taps bob's Hill Giant unasked. On turn 3 the Bears attack and tap; the postcombat land's second mode refuses the Giant and untaps the Bears. Bob's own land on turn 2 triggers nothing.",
   "timeline": [
     {
       "do": {

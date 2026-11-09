@@ -147,7 +147,7 @@
       }
     }
   ],
-  "note": "Three seats, so the targets are an opponent's and not the next player's: chapter I refuses alice's Hill Giant and hits carol's 6/7 Axebane Stag, which survives to show 6 damage; chapter II refuses alice's own Sol Ring and bob's nonartifact Grizzly Bears and destroys bob's Sol Ring. Chapters III and IV each go on the stack before adding {R} (a chapter is no mana ability), and that {R} alone casts a Raging Goblin. The Saga stays until its chapter IV ability has left the stack.",
+  "note": "Three seats, so the targets are an opponent's and not the next player's: chapter I refuses alice's Hill Giant and hits carol's 6/7 Axebane Stag, which survives to show 6 damage; chapter II offers neither alice's own Sol Ring nor bob's nonartifact Grizzly Bears, so it takes bob's Sol Ring unasked and destroys it. Chapters III and IV each go on the stack before adding {R} (a chapter is no mana ability), and that {R} alone casts a Raging Goblin. The Saga stays until its chapter IV ability has left the stack.",
   "timeline": [
     {
       "do": {

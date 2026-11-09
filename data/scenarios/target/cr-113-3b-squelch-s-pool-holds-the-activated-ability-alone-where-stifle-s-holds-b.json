@@ -1,6 +1,6 @@
 {
   "description": "CR 113.3b Squelch's pool holds the activated ability alone where Stifle's holds both",
-  "note": "One ability of each kind on the stack: Aether Flash's trigger for the entering Piker and bob's Prodigal Sorcerer ping at alice. One Stifle is cast at each, so Stifle's pool holds both; a Squelch aimed at the trigger is refused and aimed at the ping is taken. Squelch counters the ping, the second Stifle the trigger, and the first Stifle finds its target gone.",
+  "note": "One ability of each kind on the stack: Aether Flash's trigger for the entering Piker and bob's Prodigal Sorcerer ping at alice. One Stifle is cast at each, so Stifle's pool holds both; Squelch does not offer the trigger and takes the ping unasked. Squelch counters the ping, the second Stifle the trigger, and the first Stifle finds its target gone.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

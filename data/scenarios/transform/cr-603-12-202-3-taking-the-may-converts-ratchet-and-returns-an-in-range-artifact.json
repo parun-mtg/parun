@@ -1,6 +1,6 @@
 {
   "description": "CR 603.12 / 202.3 taking the may converts Ratchet and returns an in-range artifact tapped",
-  "note": "alice gains 2 life from Blossoming Calm, takes Ratchet's one may, and Ratchet converts. The reflexive's slot refuses the Jade Statue (mana value 4, above the 2 gained) and the Lightning Bolt (no artifact), and takes Arcum's Weathervane (mana value 2), which returns tapped.",
+  "note": "alice gains 2 life from Blossoming Calm, takes Ratchet's one may, and Ratchet converts. The reflexive's slot offers neither the Jade Statue (mana value 4, above the 2 gained) nor the Lightning Bolt (no artifact), and takes Arcum's Weathervane (mana value 2) unasked, which returns tapped.",
   "board": {
     "seats": [
       {

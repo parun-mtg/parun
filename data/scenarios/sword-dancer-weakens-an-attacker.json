@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 / 611.2a whole card: Sword Dancer pays {W}{W} to give target attacking creature -1/-0 until end of turn",
-  "note": "Bob attacks with the Hill Giant and keeps his bears home: targeting the bears is refused, and the Giant becomes 2/3.",
+  "note": "Bob attacks with the Hill Giant and keeps his bears home: the bears are not offered as a target, so the Giant is taken unasked and becomes 2/3.",
   "board": {
     "active": "bob",
     "step": "BeginningOfCombat",

@@ -1,6 +1,6 @@
 {
   "description": "CR 700.2 Konstrari Charm deals 6 to a creature with flying, puts two +1/+1 counters on a creature and gives it trample, or adds {C}{C}{C}",
-  "note": "The first mode refuses bob's Hill Giant, which lacks flying, and kills his 4/4 Serra Angel. The second makes alice's Grizzly Bears 4/4 with trample. The third leaves exactly three colorless in alice's pool once all six of her coloured mana are spent.",
+  "note": "The first mode does not offer bob's Hill Giant, which lacks flying, so it takes his 4/4 Serra Angel unasked and kills it. The second makes alice's Grizzly Bears 4/4 with trample. The third leaves exactly three colorless in alice's pool once all six of her coloured mana are spent.",
   "board": {
     "seats": [
       {

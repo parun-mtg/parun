@@ -1,6 +1,6 @@
 {
   "description": "CR 603.3d / 113.7a Veil of Summer with three seats: a dead Black Cat's trigger can't target alice, so carol, bob's other opponent, discards",
-  "note": "The refused alice is the slot's cut; carol's Hill Giant going proves the trigger stayed on the stack.",
+  "note": "The slot cuts alice, so its target is taken unasked; carol's Hill Giant going proves the trigger stayed on the stack.",
   "board": {
     "active": "alice",
     "seats": [

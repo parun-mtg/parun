@@ -99,7 +99,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.4, 506.1, 121.2: Lake-town Toymaker's beginning-of-combat trigger, if its controller drew two or more cards this turn, gives another target creature she controls +3/+0 and first strike",
-  "note": "On turn 1 alice draws two with Divination and the trigger pumps her Bears, refusing the Toymaker itself and bob's Bears. On turn 3 she has drawn only her draw step's card, and nothing triggers.",
+  "note": "On turn 1 alice draws two with Divination and the trigger pumps her Bears unasked, offering neither the Toymaker itself nor bob's Bears. On turn 3 she has drawn only her draw step's card, and nothing triggers.",
   "timeline": [
     {
       "do": {

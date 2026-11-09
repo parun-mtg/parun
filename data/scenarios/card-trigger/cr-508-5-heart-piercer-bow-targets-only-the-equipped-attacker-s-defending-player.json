@@ -86,7 +86,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 508.5 / 802.2a: Heart-Piercer Bow targets a creature of the player the EQUIPPED creature attacks",
-  "note": "Three seats: the equipped Hill Giant attacks bob while unequipped Grizzly Bears attack carol, so both are defending players; carol's Goblin Piker is refused and bob's Llanowar Elves takes 1 and dies.",
+  "note": "Three seats: the equipped Hill Giant attacks bob while unequipped Grizzly Bears attack carol, so both are defending players; carol's Goblin Piker is not offered, so bob's Llanowar Elves is taken unasked, takes 1 and dies.",
   "timeline": [
     {
       "do": {

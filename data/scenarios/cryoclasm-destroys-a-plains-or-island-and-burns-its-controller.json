@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a / 608.2h whole card: Cryoclasm destroys target Plains or Island and deals 3 damage to that land's controller",
-  "note": "Bob's Mountain is refused as the target; his Island is destroyed and he takes 3.",
+  "note": "Bob's Mountain is not offered as the target, so his Island is taken unasked and destroyed and he takes 3.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

@@ -1,6 +1,6 @@
 {
   "description": "CR 110.5 a face-up creature the opponent controls is not a legal target",
-  "note": "Break Open aimed at bob's face-up Hill Giant is refused; aimed at his manifested Thragtusk it turns that over, and the Giant and alice's own manifested Ainok Tracker are as they were. Names read which way each faces (CR 708.2a).",
+  "note": "Break Open does not offer bob's face-up Hill Giant, so it takes his manifested Thragtusk unasked and turns that over, and the Giant and alice's own manifested Ainok Tracker are as they were. Names read which way each faces (CR 708.2a).",
   "board": {
     "seats": [
       {

@@ -95,7 +95,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Restoration Seminar returns a nonland permanent card from your graveyard; an artifact land and a land creature are refused.",
+  "description": "Restoration Seminar returns a nonland permanent card from your graveyard; an artifact land and a land creature are not offered.",
   "note": "CR 110.4a: nonland excludes every land, whatever else it is, so a disjunction of the five other permanent types does not stand in for it.",
   "timeline": [
     {

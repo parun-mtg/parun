@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a whole card: Northern Paladin pays {W}{W} and taps to destroy target black permanent",
-  "note": "Bob's Crusade is refused as a target; his black Pestilence is destroyed.",
+  "note": "Bob's Crusade is not offered as a target, so his black Pestilence is taken unasked and destroyed.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "manaPool": "WW", "battlefield": [{"card": "Northern Paladin", "label": "paladin", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Pestilence", "label": "pestilence"}, {"card": "Crusade", "label": "crusade"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$paladin"}}},

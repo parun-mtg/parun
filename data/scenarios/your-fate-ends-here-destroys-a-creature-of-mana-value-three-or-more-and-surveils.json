@@ -79,7 +79,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.25a whole card: Your Fate Ends Here destroys bob's Hill Giant (mana value 4), not his Grizzly Bears (mana value 2), then alice surveils 1",
-  "note": "The refused cast names the Bears on the same three Plains. The surveil puts alice's top Hill Giant into her graveyard.",
+  "note": "The Bears are not offered, so the target is taken unasked. The surveil puts alice's top Hill Giant into her graveyard.",
   "timeline": [
     {
       "do": {

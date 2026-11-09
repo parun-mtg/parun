@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a whole card: Dwarven Demolition Team taps to destroy target Wall",
-  "note": "Bob's Grizzly Bears is refused as a target; his Wall of Wood is destroyed.",
+  "note": "Bob's Grizzly Bears is not offered as a target, so his Wall of Wood is taken unasked and destroyed.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

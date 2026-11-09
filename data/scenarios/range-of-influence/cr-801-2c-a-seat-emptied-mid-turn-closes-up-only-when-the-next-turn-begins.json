@@ -1,6 +1,6 @@
 {
   "description": "CR 801.2c a seat emptied mid-turn closes up only when the next turn begins",
-  "note": "Every seat has range 1. bob concedes in alice's precombat main phase. Each Ravenous Rats trigger is a probe of its target opponent slot: a refused target is one the slot does not offer, and a target taken is shown offered by that player's one card being discarded. On alice's turn carol, across bob's emptied seat, is refused and dave is taken; on carol's turn alice and dave are both taken.",
+  "note": "Every seat has range 1. bob concedes in alice's precombat main phase. Each Ravenous Rats trigger is a probe of its target opponent slot: a target taken unasked is the only one the slot offers, and a target taken is shown offered by that player's one card being discarded. On alice's turn carol, across bob's emptied seat, is not offered and dave is taken unasked; on carol's turn alice and dave are both taken.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

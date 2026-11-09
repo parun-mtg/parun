@@ -59,7 +59,7 @@
     "step": "PrecombatMain"
   },
   "description": "Compel Brutality's second mode has a planeswalker alice controls deal damage equal to its loyalty to a creature an opponent controls",
-  "note": "Ajani's loyalty is 3 and its mana value 4, so a mana-value read would deal 4. The mode refuses a creature as its dealer.",
+  "note": "Ajani's loyalty is 3 and its mana value 4, so a mana-value read would deal 4. The mode does not offer a creature as its dealer, so Ajani is taken unasked.",
   "timeline": [
     {
       "do": {

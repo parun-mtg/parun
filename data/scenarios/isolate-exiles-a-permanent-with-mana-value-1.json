@@ -1,6 +1,6 @@
 {
   "description": "Isolate exiles target permanent with mana value exactly 1",
-  "note": "bob's Grizzly Bears (mana value 2) and Forest (0) are refused; his Merfolk of the Pearl Trident (1) is exiled.",
+  "note": "bob's Grizzly Bears (mana value 2) and Forest (0) are not offered, so his Merfolk of the Pearl Trident (1) is taken unasked and exiled.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

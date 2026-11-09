@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 / 400.7 whole card: Doomed Necromancer sacrifices itself to return target creature card from its controller's graveyard to the battlefield",
-  "note": "The Shock in alice's graveyard is refused as the target; her Hill Giant comes back and the Necromancer is in her graveyard.",
+  "note": "The Shock in alice's graveyard is not offered as the target, so her Hill Giant is taken unasked and comes back, and the Necromancer is in her graveyard.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

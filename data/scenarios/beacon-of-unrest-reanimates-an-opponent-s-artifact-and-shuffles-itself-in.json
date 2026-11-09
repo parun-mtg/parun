@@ -1,6 +1,6 @@
 {
   "description": "CR 110.2a / 701.24a whole card: Beacon of Unrest puts target artifact or creature card from a graveyard onto the battlefield under its caster's control, then is shuffled into its owner's library",
-  "note": "Bob's Island is refused as a target; his Mind Stone, an artifact that is no creature, comes back under alice's control.",
+  "note": "Bob's Island is not offered as a target, so his Mind Stone, an artifact that is no creature, is taken unasked and comes back under alice's control.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

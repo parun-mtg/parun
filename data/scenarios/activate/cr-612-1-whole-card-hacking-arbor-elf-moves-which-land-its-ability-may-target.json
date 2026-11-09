@@ -1,6 +1,6 @@
 {
   "description": "CR 612.1 whole card: hacking Arbor Elf moves which land its ability may target",
-  "note": "Arbor Elf's \"{T}: Untap target Forest.\" under a Magical Hack swapping Forest for Island. Both lands start tapped, so the refused aim at the Forest and the Island waking up are distinct states; Seat of the Synod, neither type, pays the Hack.",
+  "note": "Arbor Elf's \"{T}: Untap target Forest.\" under a Magical Hack swapping Forest for Island. Both lands start tapped, so the Forest left unoffered and the Island, taken unasked, waking up are distinct states; Seat of the Synod, neither type, pays the Hack.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

@@ -112,7 +112,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.6c: Driver of the Dead's death returns a creature card of mana value 2 or less from your graveyard",
-  "note": "The trigger's refused targets are a mana value 4 creature card, a land of mana value 0 and another player's graveyard card.",
+  "note": "The trigger does not offer a mana value 4 creature card, a land of mana value 0 or another player's graveyard card, so its target is taken unasked.",
   "timeline": [
     {
       "do": {

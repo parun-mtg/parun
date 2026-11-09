@@ -69,7 +69,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 602.5b: Rescue Girl, First Responder's ability returns another target permanent its controller controls to its owner's hand, and only during their turn",
-  "note": "On bob's turn the activation is refused; on alice's turn she returns her Grizzly Bears. Rescue Girl herself and bob's Hill Giant are refused as targets.",
+  "note": "On bob's turn the activation is refused; on alice's turn she returns her Grizzly Bears. Rescue Girl herself and bob's Hill Giant are not offered as targets, so the Bears are taken unasked.",
   "timeline": [
     {
       "player": "alice",

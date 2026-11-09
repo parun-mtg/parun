@@ -1,6 +1,6 @@
 {
   "description": "CR 612.2 a Sleight of Mind turns the Paladin's protection from black into protection from green, so Terror kills it, but a Clone of it keeps protection from black (CR 707.2)",
-  "note": "Paladin en-Vec has protection from black and from red, so alice's black Terror cannot target it. Sleight of Mind swaps black for green in its text: the protection is now from green, and Terror can. The Clone entering afterwards copies the Paladin's copiable values, which a text change does not touch, so it still has protection from black and the same Terror cannot target it. The refused cast comes first, with the Swamps that then pay for the legal one.",
+  "note": "Paladin en-Vec has protection from black and from red, so alice's black Terror cannot target it. Sleight of Mind swaps black for green in its text: the protection is now from green, and Terror can. The Clone entering afterwards copies the Paladin's copiable values, which a text change does not touch, so it still has protection from black and the same Terror cannot target it. The Clone is not offered, so that Terror takes the Paladin unasked.",
   "board": {
     "seats": [
       {

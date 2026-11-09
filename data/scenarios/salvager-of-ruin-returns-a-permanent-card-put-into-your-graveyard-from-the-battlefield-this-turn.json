@@ -99,7 +99,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 602.2 / 400.7: Salvager of Ruin returns only a permanent card put into your graveyard from the battlefield this turn",
-  "note": "The Grizzly Bears alice bolts this turn qualifies; the Hill Giant already in her graveyard when the game began does not, so targeting it is refused.",
+  "note": "The Grizzly Bears alice bolts this turn qualifies; the Hill Giant already in her graveyard when the game began does not, so it is not offered and the Bears are taken unasked.",
   "timeline": [
     {
       "do": {

@@ -80,7 +80,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 303.4a / 603.10a: Murder Investigation enchants only a creature you control, and when it dies creates X 1/1 white Soldier tokens, X its last-known power",
-  "note": "Bob's Hill Giant is refused as the Aura's target; Giant Growth makes alice's Craw Wurm 9/7 before Doom Blade kills it, so nine Soldiers come: its last-known power, not its printed 6 or its toughness.",
+  "note": "Bob's Hill Giant is not offered as the Aura's target, so alice's Craw Wurm takes it unasked; Giant Growth makes alice's Craw Wurm 9/7 before Doom Blade kills it, so nine Soldiers come: its last-known power, not its printed 6 or its toughness.",
   "timeline": [
     {
       "do": {

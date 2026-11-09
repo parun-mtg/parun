@@ -1,6 +1,6 @@
 {
   "description": "Hieromancer's Cage exiles target nonland permanent an opponent controls until the Cage leaves the battlefield",
-  "note": "bob's Forest (a land) and alice's own Grizzly Bears are refused as targets; bob's Gray Ogre is exiled, and returns when alice's Naturalize destroys the Cage.",
+  "note": "bob's Forest (a land) and alice's own Grizzly Bears are not offered as targets, so bob's Gray Ogre is taken unasked and exiled, and returns when alice's Naturalize destroys the Cage.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

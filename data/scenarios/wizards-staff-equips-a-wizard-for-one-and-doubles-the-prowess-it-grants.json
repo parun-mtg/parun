@@ -83,7 +83,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 702.6a, 702.108a, 603.2d: Wizard's Staff equips a Wizard for {1} and anything else for {3}, and the prowess it grants triggers twice for its equipped creature",
-  "note": "Equip Wizard {1} is refused on the Bears and taken on Amphin Pathmage, a non-Human Wizard (3/2). A Shock then triggers the Pathmage's granted prowess twice, making it 5/4, while the unequipped Monastery Swiftspear's own prowess triggers once (2/3) and the Bears stays 2/2. Equip {3} then moves the Staff to the Bears: the Pathmage keeps its pumps but loses prowess, and the second Shock pumps the Bears twice (4/4) and the Swiftspear once (3/4).",
+  "note": "Equip Wizard {1} does not offer the Bears and takes Amphin Pathmage unasked, a non-Human Wizard (3/2). A Shock then triggers the Pathmage's granted prowess twice, making it 5/4, while the unequipped Monastery Swiftspear's own prowess triggers once (2/3) and the Bears stays 2/2. Equip {3} then moves the Staff to the Bears: the Pathmage keeps its pumps but loses prowess, and the second Shock pumps the Bears twice (4/4) and the Swiftspear once (3/4).",
   "timeline": [
     {
       "do": {

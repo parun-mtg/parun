@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 / 115.1 whole card: Skull of Orm pays {5} and taps to return target enchantment card from its controller's graveyard to her hand",
-  "note": "The Grizzly Bears in her graveyard is refused as a target; the Pacifism comes back.",
+  "note": "The Grizzly Bears in her graveyard is not offered as a target, so the Pacifism is taken unasked and comes back.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

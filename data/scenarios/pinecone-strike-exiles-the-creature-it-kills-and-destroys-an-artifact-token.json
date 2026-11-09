@@ -70,7 +70,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 700.2a whole card: Pinecone Strike's chosen modes exile the 3-damaged creature in place of its death and destroy only an artifact token",
-  "note": "Sol Ring (an artifact, not a token) and a Grizzly Bears token (a token, not an artifact) are each refused for the second mode with the same mana; the Hill Giant's 3 toughness dies to exactly 3 damage.",
+  "note": "Sol Ring (an artifact, not a token) and a Grizzly Bears token (a token, not an artifact) are not offered by the second mode; the Hill Giant's 3 toughness dies to exactly 3 damage.",
   "timeline": [
     {
       "do": {

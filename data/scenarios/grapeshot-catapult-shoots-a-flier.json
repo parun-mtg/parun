@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 whole card: Grapeshot Catapult taps to deal 1 damage to target creature with flying",
-  "note": "Bob's ground Llanowar Elves is refused as a target; his Mesa Falcon dies.",
+  "note": "Bob's ground Llanowar Elves is not offered as a target, so his Mesa Falcon is taken unasked and dies.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Grapeshot Catapult", "label": "catapult", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Mesa Falcon", "label": "falcon"}, {"card": "Llanowar Elves", "label": "elves"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$catapult"}}},

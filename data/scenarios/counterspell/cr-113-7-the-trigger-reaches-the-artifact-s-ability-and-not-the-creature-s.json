@@ -1,6 +1,6 @@
 {
   "description": "CR 113.7 the trigger reaches the artifact's ability and not the creature's, and the artifact is destroyed",
-  "note": "bob's Prodigal Sorcerer pings alice and his Crystal Ball's scry goes on top; alice flashes in Green Slime, whose trigger counters an ability from an artifact or enchantment source and destroys that permanent. Aimed at the creature's ping it is refused; aimed at the Ball's ability it counters it, the Ball is destroyed, and the ping still lands.",
+  "note": "bob's Prodigal Sorcerer pings alice and his Crystal Ball's scry goes on top; alice flashes in Green Slime, whose trigger counters an ability from an artifact or enchantment source and destroys that permanent. The creature's ping is not offered, so it takes the Ball's ability unasked and counters it, the Ball is destroyed, and the ping still lands.",
   "board": {
     "active": "bob",
     "step": "PrecombatMain",

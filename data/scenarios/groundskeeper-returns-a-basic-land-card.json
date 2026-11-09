@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 / 205.4c whole card: Groundskeeper returns target basic land card from its controller's graveyard to their hand",
-  "note": "Adarkar Wastes, a nonbasic land card, is refused as the target; the Forest comes back.",
+  "note": "Adarkar Wastes, a nonbasic land card, is not offered as the target, so the Forest is taken unasked and comes back.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

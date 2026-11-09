@@ -1,6 +1,6 @@
 {
   "description": "CR 607.5: the Dino DNA copy ability Myr Welder acquired may target only a card the acquired Imprint exiled, so it copies Grizzly Bears and not the Bronze Sable the Welder's own Imprint exiled",
-  "note": "The Welder imprints Dino DNA, uses the acquired Imprint on Grizzly Bears, then its own Imprint on Bronze Sable. The acquired \"target creature card exiled with this artifact\" is linked to the acquired Imprint alone (CR 607.5), so the Sable is refused at CR 601.2c and the Bears are copied. Read as the Welder's own, the Sable would be the legal target and the Bears not.",
+  "note": "The Welder imprints Dino DNA, uses the acquired Imprint on Grizzly Bears, then its own Imprint on Bronze Sable. The acquired \"target creature card exiled with this artifact\" is linked to the acquired Imprint alone (CR 607.5), so the Sable is not offered at CR 601.2c and the Bears are taken unasked and copied. Read as the Welder's own, the Sable would be the legal target and the Bears not.",
   "board": {
     "seats": [
       {

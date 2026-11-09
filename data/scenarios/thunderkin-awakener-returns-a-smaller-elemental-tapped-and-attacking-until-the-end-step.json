@@ -97,7 +97,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 508.4 / 603.7: Thunderkin Awakener returns an Elemental creature card with toughness less than its own tapped and attacking, and sacrifices it at the next end step",
-  "note": "Cobblebrute is an Elemental of equal toughness and Raging Goblin a smaller non-Elemental, so each half of the filter refuses one.",
+  "note": "Cobblebrute is an Elemental of equal toughness and Raging Goblin a smaller non-Elemental, so each half of the filter keeps one from being offered.",
   "timeline": [
     {
       "do": {

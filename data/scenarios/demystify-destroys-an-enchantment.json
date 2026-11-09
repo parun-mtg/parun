@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a whole card: Demystify destroys target enchantment",
-  "note": "Bob's Grizzly Bears is refused as a target; his Glorious Anthem is destroyed.",
+  "note": "Bob's Grizzly Bears is not offered as a target, so his Glorious Anthem is taken unasked and destroyed.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

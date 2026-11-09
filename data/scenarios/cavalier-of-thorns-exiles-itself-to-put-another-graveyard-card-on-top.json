@@ -74,7 +74,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 608.2c: when Cavalier of Thorns dies, its controller may exile it; if they do, another target card from their graveyard goes on top of their library",
-  "note": "The Cavalier's own card in the graveyard is refused as the target (\"another\"); exiling it stacks the Hill Giant on top.",
+  "note": "The Cavalier's own card in the graveyard is not offered as the target (\"another\"), so the Hill Giant is taken unasked; exiling the Cavalier stacks the Giant on top.",
   "timeline": [
     {
       "do": {

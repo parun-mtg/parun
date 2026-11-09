@@ -69,7 +69,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.8a / 115.1: Terminal Criticism destroys target blue or red creature or planeswalker and gains its controller 1 life",
-  "note": "bob's green Grizzly Bears is refused; his red Goblin Piker is destroyed and alice goes 20 to 21.",
+  "note": "bob's green Grizzly Bears is not offered, so his red Goblin Piker is taken unasked and destroyed and alice goes 20 to 21.",
   "timeline": [
     {
       "do": {

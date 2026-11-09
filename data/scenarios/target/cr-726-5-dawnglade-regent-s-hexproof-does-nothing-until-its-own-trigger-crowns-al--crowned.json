@@ -1,6 +1,6 @@
 {
   "description": "CR 726.5 Dawnglade Regent's hexproof does nothing until its own trigger crowns alice",
-  "note": "One resolution after the window: the trigger has crowned alice, so permanents she controls have hexproof. bob's Doom Blade at the Regent and at her Piker is refused and is taken at his own Piker; alice's own Doom Blade still reaches her Regent, CR 702.11b's opponents-only scope.",
+  "note": "One resolution after the window: the trigger has crowned alice, so permanents she controls have hexproof. bob's Doom Blade offers neither the Regent nor her Piker and takes his own Piker unasked; alice's own Doom Blade still reaches her Regent, CR 702.11b's opponents-only scope.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

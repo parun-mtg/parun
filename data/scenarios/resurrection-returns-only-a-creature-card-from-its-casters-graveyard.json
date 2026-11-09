@@ -104,7 +104,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 115.1 / 400.7 whole card: Resurrection returns target creature card from your graveyard to the battlefield; bob's creature and alice's land are no target",
-  "note": "The refused casts name a creature card in the wrong graveyard and a noncreature card in the right one.",
+  "note": "A creature card in the wrong graveyard and a noncreature card in the right one are not offered, so the target is taken unasked.",
   "timeline": [
     {
       "do": {

@@ -1,6 +1,6 @@
 {
   "description": "Isareth the Awakener pays X when it attacks to return a creature card with mana value X with a corpse counter, exiled if it would leave",
-  "note": "alice pays X=2: her Hill Giant (mana value 4) and Merfolk of the Pearl Trident (1) are refused, her Grizzly Bears returns with a corpse counter, and her Lightning Bolt on it afterwards exiles it rather than putting it in her graveyard.",
+  "note": "alice pays X=2: her Hill Giant (mana value 4) and Merfolk of the Pearl Trident (1) are not offered, so her Grizzly Bears is taken unasked and returns with a corpse counter, and her Lightning Bolt on it afterwards exiles it rather than putting it in her graveyard.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

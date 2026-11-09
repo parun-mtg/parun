@@ -56,7 +56,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.2 / 115.1: Mabel, Valley Hero triggers when a creature alice controls enters and puts a +1/+1 counter on target creature that entered this turn",
-  "note": "Alice's Grizzly Bears enters and Mabel triggers; bob's Hill Giant, on the battlefield since before the turn, is refused, and the Bears gets the counter. On his turn bob's Ambush Viper, the only creature that entered that turn, enters under his control and Mabel does not trigger.",
+  "note": "Alice's Grizzly Bears enters and Mabel triggers; bob's Hill Giant, on the battlefield since before the turn, is not offered, so the Bears is taken unasked and gets the counter. On his turn bob's Ambush Viper, the only creature that entered that turn, enters under his control and Mabel does not trigger.",
   "timeline": [
     {
       "do": {

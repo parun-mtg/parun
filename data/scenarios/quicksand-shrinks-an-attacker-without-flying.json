@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 / 613.4c whole card: Quicksand sacrifices itself to give target attacking creature without flying -1/-2 until end of turn",
-  "note": "Bob attacks with Wind Drake and Hill Giant: the flying Drake is refused as the target, and the Giant becomes 2/1.",
+  "note": "Bob attacks with Wind Drake and Hill Giant: the flying Drake is not offered as the target, so the Giant is taken unasked and becomes 2/1.",
   "board": {
     "active": "bob",
     "step": "BeginningOfCombat",

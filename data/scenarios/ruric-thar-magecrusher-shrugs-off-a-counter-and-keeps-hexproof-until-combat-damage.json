@@ -118,7 +118,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 113.6g / 702.11b / 510.2: Ruric Thar, Magecrusher resolves through Counterspell, keeps hexproof after dealing fight damage, and loses it once it deals combat damage",
-  "note": "Prey Upon makes Ruric Thar deal noncombat damage first, so only the combat qualifier keeps hexproof on turn 2. Bob's Hill Giant gives Murder a legal target, so the refused cast is refused for Ruric Thar's hexproof.",
+  "note": "Prey Upon makes Ruric Thar deal noncombat damage first, so only the combat qualifier keeps hexproof on turn 2.",
   "timeline": [
     {
       "do": {

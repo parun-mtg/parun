@@ -1,6 +1,6 @@
 {
   "description": "CR 109.5 alice's own face-down creature is not a legal target",
-  "note": "Break Open aimed at alice's own manifested Ainok Tracker is refused; aimed at bob's manifested Thragtusk it turns that over instead. Names read which way each faces (CR 708.2a).",
+  "note": "Break Open does not offer alice's own manifested Ainok Tracker, so it takes bob's manifested Thragtusk unasked and turns that over instead. Names read which way each faces (CR 708.2a).",
   "board": {
     "seats": [
       {

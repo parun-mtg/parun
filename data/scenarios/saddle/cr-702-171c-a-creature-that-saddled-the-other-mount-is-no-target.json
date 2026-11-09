@@ -1,6 +1,6 @@
 {
   "description": "CR 702.171c a creature that saddled the other Mount is no target",
-  "note": "Jedit Ojanen saddles the attacking Giant Beaver and the Hill Giant the other one. The refused target proves the trigger does not offer the Giant: had it saddled the attacker, the refusal would stand.",
+  "note": "Jedit Ojanen saddles the attacking Giant Beaver and the Hill Giant the other one. The trigger takes its target unasked, so it does not offer the Giant: had it saddled the attacker, it would be offered and prompted for.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
