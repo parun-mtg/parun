@@ -1400,6 +1400,7 @@ goldmane-griffin
 goldvein-pick
 golem-skin-gauntlets
 golgothian-sylex
+gollum-riddle-master
 gollum-silent-slinker-meager-meal
 golos-tireless-pilgrim
 goreclaw-terror-of-qal-sisma

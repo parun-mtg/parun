@@ -67,6 +67,7 @@ import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PhyrexianPayment as PhyrexianPayment
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
@@ -407,6 +408,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseEntwine {} -> named [EntwineDecision.Declines, EntwineDecision.Entwines]
   Prompt.ChooseMutateSide {} -> named [MutateSide.Over, MutateSide.Under]
   Prompt.ChooseForage {} -> named [ForageMode.ExileCards, ForageMode.SacrificeFood]
+  Prompt.ChooseParity {} -> named [Parity.Odd, Parity.Even]
   Prompt.ChooseLearn _ _ _ offered -> maybeOf (indexed (NonEmpty.toList offered))
   Prompt.ChooseTimeTravel {} -> mapOf object (named [TimeTravelChoice.Add, TimeTravelChoice.Remove])
   Prompt.ChooseClash {} -> viaCodec Codec.LibraryPosition.codec

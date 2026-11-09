@@ -44,6 +44,7 @@ import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MutateSide as MutateSide
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Program as Program
 import Parun.Types.Prompt (Prompt)
@@ -223,6 +224,7 @@ encode p answer = case p of
   Prompt.ChooseActivePlayer {} -> Response.ChoseActivePlayer answer
   Prompt.ChooseBasicLandType {} -> Response.ChoseBasicLandType answer
   Prompt.ChooseCreatureType {} -> Response.ChoseCreatureType answer
+  Prompt.ChooseParity {} -> Response.ChoseParity answer
   Prompt.OrderTriggers {} -> Response.OrderedTriggers answer
   Prompt.OrderDamage {} -> Response.OrderedDamage answer
   Prompt.AllocateDamage {} -> Response.AllocatedDamage answer
@@ -629,6 +631,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.ChooseCreatureType {} -> case response of
     Response.ChoseCreatureType t -> Just t
+    _ -> Nothing
+  Prompt.ChooseParity {} -> case response of
+    Response.ChoseParity parity -> Just parity
     _ -> Nothing
   Prompt.OrderTriggers {} -> case response of
     Response.OrderedTriggers order -> Just order
@@ -1242,6 +1247,9 @@ defaultAnswer p = case p of
   -- CR 205.3m: any creature type is legal, and Goblin is one -- the arm above's
   -- posture, conjuring a type the prompt offered no list of.
   Prompt.ChooseCreatureType {} -> Subtype.Goblin
+  -- CR 607.2d: odd and even are both legal; a short transcript takes the one
+  -- the card names first.
+  Prompt.ChooseParity {} -> Parity.Odd
   -- CR 603.3b: the canonical order is always a legal answer.
   Prompt.OrderTriggers _ _ entries -> zipWith const [0 ..] entries
   -- CR 122.1c: likewise, and it is the order the batch was gathered in.

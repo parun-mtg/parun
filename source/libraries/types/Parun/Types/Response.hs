@@ -45,6 +45,7 @@ import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PhyrexianPayment as PhyrexianPayment
 import qualified Parun.Types.PlayerId as PlayerId
@@ -852,6 +853,8 @@ data Response
     ChoseMutateSide MutateSide.MutateSide
   | -- | CR 701.61a's answer: which half of forage the forager took.
     ChoseForage ForageMode.ForageMode
+  | -- | CR 607.2d's answer to Prompt.ChooseParity: odd or even.
+    ChoseParity Parity.Parity
   | -- | CR 701.48a's answer: which branch of learning the learner took, or
     -- Nothing for neither.
     ChoseLearn (Maybe LearnMode.LearnMode)

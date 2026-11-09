@@ -40,6 +40,7 @@ import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -166,12 +167,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.ControllerIsOwner
       " {\"type\":\"ControllerIsOwner\"} "
-  Spec.it s "ManaValueIsEven" $
+  Spec.it s "ManaValueParity" $
     Common.assertCodec
       s
       codec
-      Filter.ManaValueIsEven
-      " {\"type\":\"ManaValueIsEven\"} "
+      (Filter.ManaValueParity ParityOperand.ChosenParity)
+      " {\"type\":\"ManaValueParity\",\"value\":{\"type\":\"ChosenParity\"}} "
   Spec.it s "HeldBy" $
     Common.assertCodec
       s

@@ -64,6 +64,7 @@ import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
@@ -493,6 +494,9 @@ data Prompt r where
   -- written to Object.chosenSubtype; no candidate list (CR 205.3m), the arm
   -- above's posture.
   ChooseCreatureType :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Subtype.Subtype
+  -- | CR 607.2d: odd or even, for the object the ObjectId names
+  -- (ChosenQuality.Parity, Gollum, Riddle Master). Both are always legal.
+  ChooseParity :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Parity.Parity
   -- | The printed "and/or" of a multi-place search: which of the offered places
   -- (CR 701.23a's zones, CR 701.23j's outside the game) this searcher looks
   -- through, a nonempty subset (Boonweaver Giant's "may" is why nonempty).

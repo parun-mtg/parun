@@ -44,6 +44,8 @@ import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.Parity as Parity
+import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -699,15 +701,27 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   -- CR 202.3 read for parity: Void Winnower's "spells with even mana values",
   -- whose reminder text settles the boundary -- "(Zero is even.)"
-  Spec.it s "ManaValueIsEven splits the mana values by parity" $ do
+  Spec.it s "ManaValueParity splits the mana values by parity" $ do
     let at n = blackCreature {Filter.manaValue = Just n}
-    Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.ManaValueIsEven)) "mana value 3 is odd"
-    Spec.assertBool s (Filter.matches self (at 2) Filter.Type.ManaValueIsEven) "2 is even"
-    Spec.assertBool s (Filter.matches self (at 0) Filter.Type.ManaValueIsEven) "and zero is even"
+    Spec.assertBool s (not (Filter.matches self blackCreature evenManaValue)) "mana value 3 is odd"
+    Spec.assertBool s (Filter.matches self (at 2) evenManaValue) "2 is even"
+    Spec.assertBool s (Filter.matches self (at 0) evenManaValue) "and zero is even"
+    Spec.assertBool s (Filter.matches self blackCreature (Filter.Type.ManaValueParity (ParityOperand.Printed Parity.Odd))) "and 3 is odd"
 
-  Spec.it s "ManaValueIsEven is False when there is no mana value at all" $ do
-    Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.manaValue = Nothing}) Filter.Type.ManaValueIsEven)) "no mana value"
-    Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.ManaValueIsEven)) "player"
+  Spec.it s "ManaValueParity is False when there is no mana value at all" $ do
+    Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.manaValue = Nothing}) evenManaValue)) "no mana value"
+    Spec.assertBool s (not (Filter.matches self aPlayer evenManaValue)) "player"
+
+  -- CR 607.2d: Gollum, Riddle Master's "the chosen quality", the parity of the
+  -- number the source chose (Event.chooseQuality writes 0 or 1).
+  Spec.it s "ManaValueParity ChosenParity reads the parity of the source's chosen number" $ do
+    let chose n = self {Filter.sourceChosenNumber = Just n}
+        chosen = Filter.Type.ManaValueParity ParityOperand.ChosenParity
+        at n = blackCreature {Filter.manaValue = Just n}
+    Spec.assertBool s (Filter.matches (chose 1) blackCreature chosen) "odd chosen, mana value 3"
+    Spec.assertBool s (not (Filter.matches (chose 0) blackCreature chosen)) "even chosen, mana value 3"
+    Spec.assertBool s (Filter.matches (chose 0) (at 0) chosen) "even chosen, mana value 0"
+    Spec.assertBool s (not (Filter.matches self (at 0) chosen)) "nothing chosen"
 
   -- CR 601.3a's bound (Parun.Engine.PlayerEffect.choiceCouldEscape): the literals
   -- the criterion compares against, and nothing else. A parity atom contributes
@@ -716,12 +730,12 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.assertEqWith
       s
       "both bounds, from inside an Or under a Not"
-      (Filter.manaValueThresholds (Filter.Type.Not (Filter.Type.Or [Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost (Operand.Literal 5)), Filter.Type.And [Filter.Type.ManaValueIsEven, Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost (Operand.Literal 2))]])))
+      (Filter.manaValueThresholds (Filter.Type.Not (Filter.Type.Or [Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost (Operand.Literal 5)), Filter.Type.And [evenManaValue, Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost (Operand.Literal 2))]])))
       [5, 2]
     Spec.assertEqWith
       s
       "and none from a criterion with no literal in it"
-      (Filter.manaValueThresholds Filter.Type.ManaValueIsEven)
+      (Filter.manaValueThresholds evenManaValue)
       []
     -- Every comparison against a mana value literal bounds the search, and a
     -- literal against power bounds nothing.
@@ -2593,3 +2607,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 109.1: a player is not an object and has no abilities.
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (any (asks aPlayer) [Nothing, Just AbilityKind.ManaAbility, Just AbilityKind.NonManaAbility])) "player"
+
+-- Void Winnower's "even mana values".
+evenManaValue :: Filter.Type.Filter keyword
+evenManaValue = Filter.Type.ManaValueParity (ParityOperand.Printed Parity.Even)

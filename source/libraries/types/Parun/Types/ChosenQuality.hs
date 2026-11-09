@@ -15,4 +15,6 @@ data ChosenQuality
     CreatureType
   | -- | CR 607.2d: one number in the range, replacing the last, written to Object.chosenNumber (Shapeshifter).
     Number ChooseBetween.ChooseBetween
+  | -- | CR 607.2d: odd or even, written to Object.chosenNumber as 0 or 1 for Filter.ManaValueParity to read (Gollum, Riddle Master).
+    Parity
   deriving (Eq, Ord, Show)

@@ -12,7 +12,8 @@ codec =
     [ Arm.payload "Colors" ChooseBetween.codec ChosenQuality.Colors (\x -> case x of ChosenQuality.Colors y -> Just y; _ -> Nothing),
       Arm.nullary "BasicLandType" ChosenQuality.BasicLandType,
       Arm.nullary "CreatureType" ChosenQuality.CreatureType,
-      Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing)
+      Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing),
+      Arm.nullary "Parity" ChosenQuality.Parity
     ]
 
 tagOf :: ChosenQuality.ChosenQuality -> String
@@ -21,3 +22,4 @@ tagOf x = case x of
   ChosenQuality.BasicLandType -> "BasicLandType"
   ChosenQuality.Number {} -> "Number"
   ChosenQuality.CreatureType -> "CreatureType"
+  ChosenQuality.Parity -> "Parity"

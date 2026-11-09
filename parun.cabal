@@ -1206,6 +1206,10 @@ library codec
     Parun.Codec.PaidExpirySpec
     Parun.Codec.Pairing
     Parun.Codec.PairingSpec
+    Parun.Codec.Parity
+    Parun.Codec.ParityOperand
+    Parun.Codec.ParityOperandSpec
+    Parun.Codec.ParitySpec
     Parun.Codec.PartnerText
     Parun.Codec.PartnerTextSpec
     Parun.Codec.PastActivation
@@ -3161,6 +3165,8 @@ library types
     Parun.Types.OwnershipChange
     Parun.Types.PaidExpiry
     Parun.Types.Pairing
+    Parun.Types.Parity
+    Parun.Types.ParityOperand
     Parun.Types.PartnerText
     Parun.Types.PastActivation
     Parun.Types.PayBranch
