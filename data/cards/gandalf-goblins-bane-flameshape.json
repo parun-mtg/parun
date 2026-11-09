@@ -149,7 +149,7 @@
         }
       ],
       "name": "Flameshape",
-      "oracleText": "Look at the top two cards of your library and exile them face down. For as long as they remain exiled, you may play them if you control a Wizard. (Then exile this card. You may cast the creature later from exile.)",
+      "oracleText": "Look at the top two cards of your library and exile them face down. For as long as they remain exiled, you may play them if you control a Wizard.",
       "spell": {
         "modes": [
           {
@@ -214,10 +214,6 @@
                               "filter": {
                                 "type": "And",
                                 "value": [
-                                  {
-                                    "type": "HasCardType",
-                                    "value": "Creature"
-                                  },
                                   {
                                     "type": "HasSubtype",
                                     "value": "Wizard"
