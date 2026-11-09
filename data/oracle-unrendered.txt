@@ -4,6 +4,8 @@ _-bird-gets-the-worm
 _-goblin
 _-o-saurus
 a-good-day-to-pie
+a-i-m-scientists
+a-i-m-synthoids
 a-realm-reborn
 aang-at-the-crossroads-aang-destined-savior
 aarakocra-sneak
@@ -12,7 +14,9 @@ abduction
 abnormal-endurance
 abomination
 abomination-of-llanowar
+abomination-terrifying-titan
 absolute-virtue
+absorbing-man
 abundance
 abyssal-harvester
 abyssal-persecutor
@@ -30,6 +34,7 @@ advancing-the-spirit
 aegis-angel
 aegis-of-the-legion
 aeon-chronicler
+aerial-doombot
 aerid-konstrari
 aether-gust
 aether-hub
@@ -42,7 +47,9 @@ aethersnatch
 aetherspouts
 affectionate-indrik
 afterlife-from-the-loam
+agent-13-sharon-carter
 agent-of-treachery
+agents-of-s-h-i-e-l-d
 agents-toolkit
 aggravated-assault
 aggressive-mining
@@ -76,6 +83,7 @@ alchemists-vial
 alesha-who-laughs-at-fate
 alhammarret-high-arbiter
 alhammarrets-archive
+alien-invasion
 all-in-good-time
 all-is-dust
 alluring-scent
@@ -133,6 +141,8 @@ animists-awakening
 ankh-of-mishra
 annex
 anointed-procession
+ant-man-colony-commander
+ant-mans-army
 anti-magic-aura
 anticipate
 apex-of-power
@@ -169,13 +179,16 @@ archons-glory
 archpriest-of-shadows
 arcums-weathervane
 arcums-whistle
+ares-god-of-war
 armageddon-clock
 armasaur-guide
 armed-with-proof
+armor-wars
 armored-galleon
 armory-automaton
 arms-depot
 arni-renowned-champion
+arnim-zola-bio-fanatic
 arrest
 artificers-hex
 artificial-evolution
@@ -195,6 +208,7 @@ assassins-blade
 assassins-strike
 astral-arena
 atemsis-all-seeing
+atlantean-cavalry
 augur-of-bolas
 auntie-ool-cursewretch
 aura-graft
@@ -225,6 +239,9 @@ aven-trailblazer
 aven-windreader
 avenge
 avenger-of-the-fallen
+avengers-disassembled
+avengers-tower
+avengers-under-siege
 averna-the-chaos-bloom
 awaken-the-ancient
 awaken-the-inferno
@@ -284,6 +301,7 @@ battle-rattle-shaman
 battlefield-improvisation
 battlefield-thaumaturge
 battlefront-krushok
+baxter-building
 beacon-of-destruction
 beacon-of-immortality
 beacon-of-unrest
@@ -327,6 +345,7 @@ black-mana-battery
 black-panther-wakandan-king
 black-vise
 black-ward
+black-widow-double-agent
 black-widow-super-spy
 blackmail
 blasphemous-edict
