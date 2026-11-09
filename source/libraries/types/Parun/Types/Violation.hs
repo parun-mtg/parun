@@ -14,10 +14,10 @@ data Violation
   | -- | CR 903.5a / 903.12d: more cards in the deck than the maximum; the
     -- deck's size, then the maximum.
     TooManyCards Natural.Natural Natural.Natural
-  | -- | CR 100.2a / 100.4a / 718.2a / 901.3 / 901.15a / 904.3: more cards of
-    -- one English name across deck and sideboard, or in the supplementary deck
-    -- named, than the limit, a restricted card's one included; the name, the
-    -- count, then the limit.
+  | -- | CR 100.2a / 100.2b / 100.4a / 718.2a / 901.3 / 901.15a / 904.3: more
+    -- cards of one English name across deck and sideboard, or in the
+    -- supplementary deck named, than the limit, a restricted card's one or a
+    -- card pool's count included; the name, the count, then the limit.
     TooManyCopies (Maybe SideDeck.SideDeck) CardName.CardName Natural.Natural Natural.Natural
   | -- | CR 100.4a: more cards in the sideboard than the maximum; its size, then
     -- the maximum.
@@ -55,6 +55,9 @@ data Violation
   | -- | CR 718.2a / 901.3 / 904.3 and the Unstable FAQ: a card in a
     -- supplementary deck that is not of the kind the deck holds.
     MisplacedCard SideDeck.SideDeck CardName.CardName
+  | -- | CR 100.2b: a card a limited deck holds that is neither a basic land
+    -- card nor in its card pool.
+    NotInCardPool CardName.CardName
   | -- | CR 902.3: a vanguard designation that is not a vanguard card.
     NotVanguardCard CardName.CardName
   | -- | CR 902.3: players without a vanguard card in a game where another
