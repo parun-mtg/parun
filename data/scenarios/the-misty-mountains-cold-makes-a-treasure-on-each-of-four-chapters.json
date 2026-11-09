@@ -130,10 +130,6 @@
       "do": {
         "Take": {
           "action": "ActivateManaAbility Treasure Token",
-          "costOrder": [
-            0,
-            1
-          ],
           "yields": [
             [
               {
@@ -181,10 +177,6 @@
       "do": {
         "Take": {
           "action": "ActivateManaAbility Treasure Token",
-          "costOrder": [
-            0,
-            1
-          ],
           "yields": [
             [
               {
@@ -246,10 +238,6 @@
       "do": {
         "Take": {
           "action": "ActivateManaAbility Treasure Token",
-          "costOrder": [
-            0,
-            1
-          ],
           "yields": [
             [
               {

@@ -75,10 +75,6 @@
           "targets": [
             "$goblin-piker"
           ],
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$mountain",
             null

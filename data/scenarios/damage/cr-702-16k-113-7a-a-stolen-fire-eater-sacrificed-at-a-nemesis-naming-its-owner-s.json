@@ -195,10 +195,6 @@
           "ability": 0,
           "targets": [
             "True-Name Nemesis"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

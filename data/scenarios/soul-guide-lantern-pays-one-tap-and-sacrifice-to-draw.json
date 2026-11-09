@@ -68,10 +68,6 @@
           "ability": 1,
           "mana": [
             "$i1"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

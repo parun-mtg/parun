@@ -173,10 +173,6 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$f1",
             "$f2"

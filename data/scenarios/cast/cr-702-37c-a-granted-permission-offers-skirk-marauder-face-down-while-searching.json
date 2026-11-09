@@ -54,11 +54,7 @@
       "do": {
         "Activate": {
           "object": "$ew",
-          "ability": 0,
-          "costOrder": [
-            0,
-            1
-          ]
+          "ability": 0
         }
       }
     },

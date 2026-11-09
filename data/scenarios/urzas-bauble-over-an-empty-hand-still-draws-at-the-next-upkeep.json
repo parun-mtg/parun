@@ -109,10 +109,6 @@
           "ability": 0,
           "targets": [
             "$bob"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

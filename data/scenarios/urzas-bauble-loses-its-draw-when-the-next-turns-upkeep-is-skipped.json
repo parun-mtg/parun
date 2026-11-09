@@ -97,10 +97,6 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "costOrder": [
-            0,
-            1
-          ],
           "object": "$bauble",
           "targets": [
             "$bob"

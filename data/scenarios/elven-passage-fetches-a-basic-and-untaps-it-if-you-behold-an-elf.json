@@ -75,11 +75,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1,
-            2
-          ],
           "object": "$pa"
         }
       },
@@ -190,11 +185,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1,
-            2
-          ],
           "object": "$pb"
         }
       },

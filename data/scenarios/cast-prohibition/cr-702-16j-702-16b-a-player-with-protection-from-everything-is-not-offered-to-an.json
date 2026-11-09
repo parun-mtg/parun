@@ -73,10 +73,6 @@
           "mana": [
             "$plains",
             "$plains-2"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

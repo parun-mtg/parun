@@ -7,7 +7,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bomb", "kind": {"type": "Named", "value": "charge"}, "count": 2}}},
     {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$bomb", "ability": 1, "costOrder": [0, 1]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$bomb", "ability": 1}}},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Ratchet Bomb", "count": 1}}},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Coral Merfolk", "count": 0}}},

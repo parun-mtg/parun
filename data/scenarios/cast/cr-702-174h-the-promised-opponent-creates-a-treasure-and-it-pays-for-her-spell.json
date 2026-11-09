@@ -169,10 +169,6 @@
           "mana": [
             "Treasure Token"
           ],
-          "costOrder": [
-            0,
-            1
-          ],
           "yields": [
             [
               {

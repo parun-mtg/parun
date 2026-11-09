@@ -128,10 +128,6 @@
           "mana": [
             "$plains",
             null
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

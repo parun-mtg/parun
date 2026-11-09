@@ -66,10 +66,6 @@
         "Activate": {
           "object": "$stone",
           "ability": 1,
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$m1",
             null

@@ -130,10 +130,6 @@
           "ability": 0,
           "targets": [
             "$wurm"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

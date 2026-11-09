@@ -57,10 +57,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "object": "$fb",
           "targets": [
             "$bob"

@@ -173,10 +173,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$s5",
             "$s6"
