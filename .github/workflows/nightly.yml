@@ -14,11 +14,11 @@ jobs:
           nix_conf: max-jobs = auto
       - run: nix build --print-build-logs
       - run: nix build --print-build-logs --out-link benchmark .#benchmark
-      - run: cp benchmark/bench.csv .
+      - run: cp benchmark/bench.json .
       - uses: actions/upload-artifact@v7
         with:
           name: parun-${{ github.sha }}-bench
-          path: bench.csv
+          path: bench.json
   # Nix covers Linux only, so the other platforms get GHC from ghcup.
   portable:
     name: Build ${{ matrix.os }}
