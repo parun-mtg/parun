@@ -2,6 +2,7 @@
 
 module Parun.Codec.ChosenCardFromAmong where
 
+import qualified Parun.Codec.CardSelection as CardSelection
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
@@ -10,6 +11,7 @@ import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.CardSelection as CardSelection.Type
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -22,7 +24,8 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- singular addressed to the resolving controller -- which is every "from among
 -- them" but Ancestral Memories', Animal Magnetism's and the "up to" ones --
 -- writes neither. @pileChooser@ is elided rather than written null, and
--- @faceUpPile@ rather than written false.
+-- @faceUpPile@ rather than written false, and @selection@ rather than written
+-- ByChoice.
 codec :: Codec.Codec ChosenCardFromAmong.ChosenCardFromAmong
 codec = Fields.object $ do
   slot <- Fields.required "slot" SlotName.codec ChosenCardFromAmong.slot
@@ -31,6 +34,7 @@ codec = Fields.object $ do
   chooser <- Fields.defaulted "chooser" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec ChosenCardFromAmong.chooser
   pileChooser <- Fields.defaulted "pileChooser" Nothing (Common.maybe PlayerRef.codec) ChosenCardFromAmong.pileChooser
   faceUpPile <- Fields.defaulted "faceUpPile" False Common.boolean ChosenCardFromAmong.faceUpPile
+  selection <- Fields.defaulted "selection" CardSelection.Type.ByChoice CardSelection.codec ChosenCardFromAmong.selection
   pure
     ChosenCardFromAmong.MkChosenCardFromAmong
       { ChosenCardFromAmong.slot = slot,
@@ -38,5 +42,6 @@ codec = Fields.object $ do
         ChosenCardFromAmong.count = count,
         ChosenCardFromAmong.chooser = chooser,
         ChosenCardFromAmong.pileChooser = pileChooser,
-        ChosenCardFromAmong.faceUpPile = faceUpPile
+        ChosenCardFromAmong.faceUpPile = faceUpPile,
+        ChosenCardFromAmong.selection = selection
       }
