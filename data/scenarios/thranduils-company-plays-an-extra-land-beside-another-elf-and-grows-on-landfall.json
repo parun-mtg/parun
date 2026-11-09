@@ -49,6 +49,10 @@
           {
             "card": "Grizzly Bears",
             "label": "bbear"
+          },
+          {
+            "card": "Elvish Warrior",
+            "label": "bwar"
           }
         ],
         "library": [
@@ -68,7 +72,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 305.2, 604.2, 207.2c: Thranduil's Company lets you play one additional land only while you control another Elf, and each landfall puts two +1/+1 counters on target creature you control, which gains vigilance",
-  "note": "Alone, the Company allows one land: the second Forest is refused. Once Llanowar Elves is out the second is played and a third refused. Each landfall trigger refuses bob's Grizzly Bears as its target.",
+  "note": "Alone but for bob's Elvish Warrior, the Company allows one land: the second Forest is refused. Once Llanowar Elves is out the second is played and a third refused. Each landfall trigger refuses bob's Grizzly Bears as its target.",
   "timeline": [
     {
       "do": {

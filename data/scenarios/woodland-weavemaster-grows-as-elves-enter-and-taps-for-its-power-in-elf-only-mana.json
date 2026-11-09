@@ -3,6 +3,7 @@
     "active": "alice",
     "seats": [
       {
+        "name": "alice",
         "battlefield": [
           {
             "card": "Woodland Weavemaster",
@@ -50,10 +51,10 @@
           {
             "card": "Island"
           }
-        ],
-        "name": "alice"
+        ]
       },
       {
+        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -64,8 +65,7 @@
           {
             "card": "Island"
           }
-        ],
-        "name": "bob"
+        ]
       }
     ],
     "step": "PrecombatMain"
@@ -74,6 +74,9 @@
   "note": "Grizzly Bears entering leaves the Weavemaster 1/2; Llanowar Elves makes it 2/3. Its two mana cannot cast a second Grizzly Bears but casts Elvish Warrior's {G}{G}, whose entry makes it 3/4.",
   "timeline": [
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -83,30 +86,30 @@
           ],
           "object": "$b1"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1
+      "turn": 1,
+      "do": "Pass"
     },
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "check": {
         "PowerToughness": {
           "object": "$wm",
           "power": 1,
           "toughness": 2
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -115,37 +118,36 @@
           ],
           "object": "$elves"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1
+      "turn": 1,
+      "do": "Pass"
     },
     {
-      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1
+      "turn": 1,
+      "do": "Pass"
     },
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "check": {
         "PowerToughness": {
           "object": "$wm",
           "power": 2,
           "toughness": 3
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "refuse": {
         "Cast": {
           "mana": [
@@ -159,6 +161,8 @@
                   "type": "Colored",
                   "value": "Green"
                 },
+                "tags": [],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "HasSubtype",
@@ -169,16 +173,16 @@
                     "value": "Elf"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
+                "tags": [],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "HasSubtype",
@@ -189,19 +193,18 @@
                     "value": "Elf"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]
         }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "do": {
         "Cast": {
           "mana": [
@@ -215,6 +218,8 @@
                   "type": "Colored",
                   "value": "Green"
                 },
+                "tags": [],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "HasSubtype",
@@ -225,16 +230,16 @@
                     "value": "Elf"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               },
               {
                 "manaType": {
                   "type": "Colored",
                   "value": "Green"
                 },
+                "tags": [],
+                "retention": "Ordinary",
                 "restriction": {
                   "activations": {
                     "type": "HasSubtype",
@@ -245,26 +250,24 @@
                     "value": "Elf"
                   }
                 },
-                "retention": "Ordinary",
                 "rider": null,
-                "sourceChoices": null,
-                "tags": []
+                "sourceChoices": null
               }
             ]
           ]
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1
+      "turn": 1,
+      "do": "Pass"
     },
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "check": {
         "Count": {
           "card": "Elvish Warrior",
@@ -272,28 +275,25 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     },
     {
-      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 1
+      "turn": 1,
+      "do": "Pass"
     },
     {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
       "check": {
         "PowerToughness": {
           "object": "$wm",
           "power": 3,
           "toughness": 4
         }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
+      }
     }
   ]
 }
