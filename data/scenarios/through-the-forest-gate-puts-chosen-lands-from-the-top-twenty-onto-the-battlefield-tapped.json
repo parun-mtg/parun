@@ -1,0 +1,362 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "g0"
+          },
+          {
+            "card": "Forest",
+            "label": "g1"
+          },
+          {
+            "card": "Forest",
+            "label": "g2"
+          },
+          {
+            "card": "Forest",
+            "label": "g3"
+          },
+          {
+            "card": "Forest",
+            "label": "g4"
+          },
+          {
+            "card": "Forest",
+            "label": "g5"
+          },
+          {
+            "card": "Forest",
+            "label": "g6"
+          },
+          {
+            "card": "Forest",
+            "label": "g7"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Through the Forest Gate",
+            "label": "gate"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "lf"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "lb"
+          },
+          {
+            "card": "Island",
+            "label": "li"
+          },
+          {
+            "card": "Mountain",
+            "label": "lm"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e0"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e1"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e2"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e3"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e4"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e5"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e6"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e7"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e8"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e9"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e10"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e11"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e12"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e13"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e14"
+          },
+          {
+            "card": "Swamp",
+            "label": "lsw"
+          },
+          {
+            "card": "Plains",
+            "label": "lp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2c, 701.24a, 119.3: Through the Forest Gate looks at the top twenty cards, puts any number of land cards among them onto the battlefield tapped, shuffles and gains 8 life",
+  "note": "The Plains is the twenty-first card and is refused; Grizzly Bears is no land and is refused; alice takes the twentieth, a Swamp, with the Forest and the Island but leaves the Mountain, so the pick is a choice and not all lands.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$g0",
+            "$g1",
+            "$g2",
+            "$g3",
+            "$g4",
+            "$g5",
+            "$g6",
+            "$g7"
+          ],
+          "object": "$gate"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$lp"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$lb"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$lf",
+            "$li",
+            "$lsw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Forest#9",
+          "Island#4",
+          "Swamp"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$lm",
+            "$lb",
+            "$e0",
+            "$e1",
+            "$e2",
+            "$e3",
+            "$e4",
+            "$e5",
+            "$e6",
+            "$e7",
+            "$e8",
+            "$e9",
+            "$e10",
+            "$e11",
+            "$e12",
+            "$e13",
+            "$e14",
+            "$lp"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Forest#9",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Island#4",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 9,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 28,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
