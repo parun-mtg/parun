@@ -1,0 +1,154 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Hulkling, Burgeoning Bruiser",
+      "oracleText": "Vigilance\nWhenever another creature you control enters, if it has greater power or toughness than Hulkling, put a +1/+1 counter on Hulkling.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Any",
+            "value": [
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "GreaterThan",
+                  "measured": {
+                    "type": "AgainstSlot",
+                    "value": {
+                      "quantity": {
+                        "type": "Measure",
+                        "value": "Power"
+                      },
+                      "slot": "became"
+                    }
+                  },
+                  "threshold": {
+                    "type": "Measure",
+                    "value": "Power"
+                  }
+                }
+              },
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "GreaterThan",
+                  "measured": {
+                    "type": "AgainstSlot",
+                    "value": {
+                      "quantity": {
+                        "type": "Measure",
+                        "value": "Toughness"
+                      },
+                      "slot": "became"
+                    }
+                  },
+                  "threshold": {
+                    "type": "Measure",
+                    "value": "Toughness"
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Hero",
+          "Kree",
+          "Skrull"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

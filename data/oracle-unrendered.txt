@@ -346,6 +346,7 @@ black-panther-wakandan-king
 black-vise
 black-ward
 black-widow-double-agent
+black-widow-super-spy
 blackmail
 blasphemous-edict
 blastfire-bolt
@@ -391,6 +392,7 @@ blue-ward
 blurred-mongoose
 bofur-reliable-guardian-concerted-care
 bogbrew-witch
+bold-biochemist
 bolg-of-the-north
 bolt-bend
 bombur-gentle-dreamer
@@ -407,6 +409,7 @@ boreal-elemental
 boreal-outrider
 borg-queen-perfection-manifest
 boros-battleshaper
+borough-backup
 boseiju-who-shelters-all
 bothersome-noisemaker
 bottomless-vault
@@ -422,6 +425,7 @@ brass-herald
 brass-man
 brassclaw-orcs
 brasss-bounty
+brave-brawler
 brave-the-elements
 brazen-cannonade
 break-open
@@ -447,6 +451,7 @@ brood-keeper
 brought-back
 browbeat
 browse
+bruce-banner-the-incredible-hulk
 bruenor-battlehammer
 bruna-light-of-alabaster
 brutal-hordechief
@@ -488,6 +493,11 @@ canopy-stalker
 cant-stay-away
 cantankerous-keepers
 capricious-efreet
+captain-america-super-soldier
+captain-america-wings-of-freedom
+captain-americas-shield
+captain-mar-vell-space-born
+captain-marvel-earths-protector
 captains-maneuver
 captivating-vampire
 captive-audience
@@ -503,6 +513,7 @@ carth-the-lion
 case-of-the-gorgons-kiss
 case-of-the-pilfered-proof
 case-of-the-ransacked-lab
+castle-doom
 cat-collector
 cathartic-reunion
 caustic-exhale
@@ -595,6 +606,7 @@ circuitous-route
 citanul-flute
 city-in-a-bottle
 city-of-brass
+claim-the-kingdom
 clam-i-am
 clara-oswald
 clarion-spirit
@@ -608,6 +620,7 @@ cleric-of-the-forward-order
 clever-concealment
 clever-impersonator
 clinquant-skymage
+cloak-and-dagger-entwined
 cloak-of-confusion
 clockwork-avian
 clockwork-beast
@@ -628,6 +641,7 @@ coercion
 cogwork-grinder
 coldsteel-heart
 collective-restraint
+colleen-wing-street-samurai
 colonel-autumn
 colossal-majesty
 colossal-whale
@@ -658,6 +672,7 @@ consecrate-land
 consecrated-by-blood
 conspicuous-snoop
 constricting-sliver
+construct-a-cosmic-cube
 consuls-lieutenant
 consume-spirit
 consumed-by-greed
@@ -679,6 +694,7 @@ corpseberry-cultivator
 corpsejack-menace
 corrupt
 corsair-captain
+cosmic-cube
 cosmic-horror
 cosmogoyf
 council-guardian
@@ -702,12 +718,15 @@ creature-bond
 creeping-peeper
 crime-punishment
 crimson-hellkite
+crimson-operative
 crimson-wisps
 croakid-amphibonaut
+crossbones-malicious-mercenary
 crown-of-empires
 crown-of-the-ages
 crucible-of-worlds
 crude-bent-blade
+cruel-alliance
 cruel-bargain
 cruel-calculations
 cruel-edict
@@ -1370,6 +1389,7 @@ glamer-spinners
 glamerdye
 glasses-of-urza
 gleaming-barrier
+gleaming-bastion
 gleaming-splendor
 glen-elendras-answer
 gliding-licid
@@ -1463,6 +1483,7 @@ griffin-aerie
 grifters-blade
 grim-hireling
 grim-poppet
+grim-reaper-lethal-legionnaire
 grim-reminder
 grim-repriser
 grim-return
@@ -1479,6 +1500,7 @@ guan-yu-sainted-warrior
 guardian-angel
 guardian-of-the-ages
 guardian-seraph
+guerrilla-gorilla
 guerrilla-tactics
 guiding-hydra
 guiding-spirit
@@ -1487,6 +1509,7 @@ gundabad-opportunist
 gush
 gutless-plunderer
 gyox-brutal-carnivora
+h-e-r-b-i-e-scout-unit
 hag-of-inner-weakness
 hakbal-of-the-surging-soul
 halana-and-alena-partners
@@ -1528,6 +1551,7 @@ haunting-echoes
 hauntwoods-shrieker
 havoc-jester
 hawkeye-avenging-archer
+hawkeyes-bow
 head-banger
 head-games
 head-of-the-hunt
@@ -1544,21 +1568,27 @@ heavenly-blademaster
 heavy-fog
 hei-bai-forest-guardian
 heirloom-blade
+helicarrier-strike
 heliod-sun-crowned
+hellcat-undying-vigilante
 henry-wu-ingen-geneticist
 henzie-toolbox-torre
 herald-of-eternal-dawn
 herald-of-the-pantheon
 herald-of-war
 heraldic-banner
+hercules-prince-of-power
 hermes-overseer-of-elpis
 hero-of-bladehold
 heroes-bane
+heroic-feast
 hewed-stone-retainers
+hex-magic
 hexhaven-battalion
 hexhaven-dueling-arena
 hexhaven-invigorator
 hickory-woodlot
+hidden-lair
 hidetsugus-second-rite
 hieromancers-cage
 high-fae-trickster
@@ -1585,10 +1615,13 @@ hooded-blightfang
 hornet-nest
 hostage-taker
 hot-soup
+hour-of-defeat
 hour-of-glory
 howlpack-piper-wildsong-howler
 huang-zhong-shu-general
 hulk-gamma-goliath
+hulkling-burgeoning-bruiser
+human-torch-johnny-storm
 humility
 hungering-hydra
 hungering-puppetbeast
@@ -1604,6 +1637,8 @@ hurr-jackal
 hushwing-gryff
 hustle-bustle
 hydra-broodmaster
+hydra-infiltration
+hydra-troopers
 hydraulic-helper
 hydroblast
 icatian-store
