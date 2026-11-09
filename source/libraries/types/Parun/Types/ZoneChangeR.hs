@@ -1,5 +1,6 @@
 module Parun.Types.ZoneChangeR where
 
+import qualified Data.Sequence as Seq
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
@@ -12,7 +13,9 @@ import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 -- `riders` posture: a redirect that only names a destination is the common
 -- shape. `position` defaults to LibraryPosition.defaultValue and `optional` to
 -- False the same way.
-data ZoneChangeR = MkZoneChangeR
+--
+-- Parametric in the EFFECT for `whenYouDo`, Parun.Types.DamageR's reason.
+data ZoneChangeR effect = MkZoneChangeR
   { matching :: ZoneChangePattern.ZoneChangePattern,
     destination :: Zone.Zone,
     -- | CR 701.20a: show the moving card to all players, as Nexus of Fate's
@@ -29,6 +32,10 @@ data ZoneChangeR = MkZoneChangeR
     position :: LibraryPosition.LibraryPosition,
     -- | CR 614.1a's "you MAY ... instead": the row's controller is asked as it
     -- applies, and declining leaves the event standing.
-    optional :: Bool
+    optional :: Bool,
+    -- | CR 603.11: the linked ability "When you do, ..." triggers each time
+    -- the redirect applies (Head of the Hunt). Empty, and elided, for a
+    -- redirect linking none.
+    whenYouDo :: Seq.Seq effect
   }
   deriving (Eq, Ord, Show)

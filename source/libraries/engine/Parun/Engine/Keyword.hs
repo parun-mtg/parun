@@ -1564,6 +1564,7 @@ unearth cost =
                       False
                       LibraryPosition.defaultValue
                       False
+                      Seq.empty
                   )
             }
    in ActivatedAbility.MkActivatedAbility
@@ -4143,6 +4144,7 @@ castFromGraveyardExile =
         False
         LibraryPosition.defaultValue
         False
+        Seq.empty
     )
 
 -- | The replacement effects rule 702 mints for a card in a HAND, off the keyword
@@ -4238,6 +4240,7 @@ madnessDiscardExile =
         False
         LibraryPosition.defaultValue
         False
+        Seq.empty
     )
 
 -- The static continuous abilities rule 702 states as a keyword's meaning, for the

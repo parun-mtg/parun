@@ -2881,7 +2881,7 @@ replaceNames asking onCard onAbility onEffect x = case x of
 
 replacementEffectNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> ReplacementEffect.ReplacementEffect card ability effect -> r
 replacementEffectNames asking onCard onAbility onEffect x = case x of
-  ReplacementEffect.ZoneChangeR zoneChangeR -> zoneChangeRNames asking zoneChangeR
+  ReplacementEffect.ZoneChangeR zoneChangeR -> zoneChangeRNames asking onEffect zoneChangeR
   ReplacementEffect.EntryR entryR -> entryRNames asking onAbility onEffect entryR
   ReplacementEffect.DamageR damageR -> damageRNames asking onEffect damageR
   ReplacementEffect.DestructionR destructionR -> destructionRNames asking destructionR
@@ -3392,9 +3392,9 @@ zoneChangePatternNames :: (Monoid r) => Asking r -> ZoneChangePattern.ZoneChange
 zoneChangePatternNames asking x = case x of
   ZoneChangePattern.MkZoneChangePattern _whenDestination whoseObject whatObject _whenDiscarded _causedBy _duringResolution -> controllerRelationNames asking whoseObject <> filterNames asking whatObject
 
-zoneChangeRNames :: (Monoid r) => Asking r -> ZoneChangeR.ZoneChangeR -> r
-zoneChangeRNames asking x = case x of
-  ZoneChangeR.MkZoneChangeR matching _destination _revealing _shuffling _position _optional -> zoneChangePatternNames asking matching
+zoneChangeRNames :: (Monoid r) => Asking r -> (effect -> r) -> ZoneChangeR.ZoneChangeR effect -> r
+zoneChangeRNames asking onEffect x = case x of
+  ZoneChangeR.MkZoneChangeR matching _destination _revealing _shuffling _position _optional whenYouDo -> zoneChangePatternNames asking matching <> foldMap onEffect whenYouDo
 
 zoneScopeNames :: (Monoid r) => Asking r -> ZoneScope.ZoneScope -> r
 zoneScopeNames asking x = case x of

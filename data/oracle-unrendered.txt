@@ -1505,6 +1505,7 @@ havoc-jester
 hawkeye-avenging-archer
 head-banger
 head-games
+head-of-the-hunt
 headless-skaab
 heal
 healing-grace

@@ -54,6 +54,7 @@ effect =
         False
         LibraryPosition.defaultValue
         False
+        Seq.empty
     )
 
 effectJson :: String

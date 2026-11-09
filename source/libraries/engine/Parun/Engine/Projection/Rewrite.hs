@@ -1657,14 +1657,15 @@ rewritePrintedReplacement pairs printed =
 rewriteReplacementEffect :: [(TextWord.TextWord, TextWord.TextWord)] -> ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
 rewriteReplacementEffect pairs effect = case effect of
   -- CR 400.3's owner and the destination Zone name no word; the moving object's
-  -- Filter does.
+  -- Filter and the CR 603.11 linked trigger's effects do.
   ReplacementEffect.ZoneChangeR r ->
     ReplacementEffect.ZoneChangeR
       r
         { ZoneChangeR.matching =
             (ZoneChangeR.matching r)
               { ZoneChangePattern.whatObject = Filter.rewrite pairs (ZoneChangePattern.whatObject (ZoneChangeR.matching r))
-              }
+              },
+          ZoneChangeR.whenYouDo = fmap (rewriteEffect pairs) (ZoneChangeR.whenYouDo r)
         }
   ReplacementEffect.EntryR r ->
     ReplacementEffect.EntryR

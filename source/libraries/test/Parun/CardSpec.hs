@@ -2322,7 +2322,8 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.RunEffects effects) _) -> Foldable.toList effects
   ReplacementEffect.DamageR {} -> []
   ReplacementEffect.CounterR {} -> []
-  ReplacementEffect.ZoneChangeR {} -> []
+  -- CR 603.11's linked trigger runs these each time the redirect applies.
+  ReplacementEffect.ZoneChangeR r -> Foldable.toList (ZoneChangeR.whenYouDo r)
   ReplacementEffect.DestructionR _ -> []
   ReplacementEffect.TokenR {} -> []
   -- The same linked trigger, on the copy a turning face up makes.
@@ -5239,7 +5240,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- rather than a kind holding nothing.
   ReplacementEffect.CounterR (CounterR.MkCounterR counterPattern _) ->
     unframed [CounterPattern.onWhat counterPattern] <> concatMap counterKindFilters (Maybe.maybeToList (CounterPattern.whichKind counterPattern))
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ _ _ _ _) -> unframed [ZoneChangePattern.whatObject zoneChangePattern]
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ _ _ _ _ _) -> unframed [ZoneChangePattern.whatObject zoneChangePattern]
   ReplacementEffect.EntryR (EntryR.MkEntryR entryPattern entryRewrite) -> unframed [entryPattern] <> entryRewriteFilters entryRewrite
   -- CR 615.1's shields narrow by their source, which is a Filter over the object
   -- dealing the damage (Luminesce's "black sources and red sources", Galvanic

@@ -18,6 +18,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
@@ -3593,7 +3594,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
       s
       "one redirect replacement"
       (fmap snd (Projection.replacementsOf Zone.Battlefield rip gs))
-      [ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Graveyard) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.And []) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False)]
+      [ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Graveyard) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.And []) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False Seq.empty)]
 
   Spec.it s "a vanilla creature projects no replacements" $ do
     pikerPrinting <- S.printingOf s registry "Goblin Piker"
