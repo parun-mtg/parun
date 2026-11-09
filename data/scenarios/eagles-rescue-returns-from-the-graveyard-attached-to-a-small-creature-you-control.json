@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Llanowar Elves",
@@ -55,10 +54,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Elvish Mystic",
@@ -84,56 +83,54 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "step": "PrecombatMain"
+    "step": "Upkeep"
   },
   "description": "CR 113.6k, 303.4f, 602.5d: Eagle's Rescue returns from its owner's graveyard at sorcery speed attached to a creature its controller controls with power 1 or less",
   "note": "Grizzly Bears has power 2 and bob's Elvish Mystic is not alice's, so both are refused; Llanowar Elves takes it and becomes a 3/3 flier. The activation is refused first in alice's upkeep, with the same mana open.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "Upkeep",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$rescue",
-          "targets": [
-            "$elves"
-          ],
           "mana": [
             "$p1",
             "$p2",
             "$i1",
             "$i2"
+          ],
+          "object": "$rescue",
+          "targets": [
+            "$elves"
           ]
         }
-      }
+      },
+      "step": "Upkeep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$i1",
+            "$i2"
+          ],
           "object": "$rescue",
           "targets": [
             "$bears"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            "$i1",
-            "$i2"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "AnnounceHybridHalf",
@@ -142,12 +139,12 @@
             "value": "White"
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "AnnounceHybridHalf",
@@ -156,78 +153,78 @@
             "value": "White"
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$i1",
+            "$i2"
+          ],
           "object": "$rescue",
           "targets": [
             "$mystic"
-          ],
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceHybridHalf",
+          "with": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceHybridHalf",
+          "with": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
           "mana": [
             "$p1",
             "$p2",
             "$i1",
             "$i2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "AnnounceHybridHalf",
-          "with": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "AnnounceHybridHalf",
-          "with": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Activate": {
+          ],
           "object": "$rescue",
           "targets": [
             "$elves"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            "$i1",
-            "$i2"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "AnnounceHybridHalf",
@@ -236,12 +233,12 @@
             "value": "White"
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "AnnounceHybridHalf",
@@ -250,51 +247,54 @@
             "value": "White"
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": "$elves",
           "object": "Eagle's Rescue",
-          "is": "$elves"
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$elves",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$elves",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "$elves"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

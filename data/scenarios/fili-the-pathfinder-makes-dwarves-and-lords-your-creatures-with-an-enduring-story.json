@@ -154,6 +154,19 @@
       "turn": 1
     },
     {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Fíli the Pathfinder"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
@@ -301,7 +314,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
@@ -338,6 +351,14 @@
       "turn": 2
     },
     {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
       "check": {
         "Count": {
           "card": "Dwarf Token",
@@ -347,7 +368,7 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "EndStep",
       "turn": 2
     },
     {
@@ -360,7 +381,7 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "EndStep",
       "turn": 2
     }
   ]

@@ -97,7 +97,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 303.4a, 122.1, 613.1f, 302.6, 502.3: Enchanted River's Grasp taps the creature it enters attached to and removes every counter from it; the creature loses its abilities and stays tapped through its controller's untap step",
+  "description": "CR 303.4a, 122.1, 613.1f, 502.3: Enchanted River's Grasp taps the creature it enters attached to and removes every counter from it; the creature loses its abilities and stays tapped through its controller's untap step",
   "note": "Bob's Wind Drake carries three +1/+1 counters and a charge counter, two kinds, so 'all counters' is seen across kinds. It loses flying and stays tapped in bob's turn-2 upkeep, while bob's Mountain beside it untaps there.",
   "timeline": [
     {

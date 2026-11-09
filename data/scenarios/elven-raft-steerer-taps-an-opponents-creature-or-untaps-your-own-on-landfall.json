@@ -53,6 +53,12 @@
             "label": "giant"
           }
         ],
+        "hand": [
+          {
+            "card": "Island",
+            "label": "bi"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -79,7 +85,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 207.2c, 700.2b, 601.2c, 603.3d: Elven Raft-Steerer's landfall taps a creature an opponent controls or untaps one you control, each mode admitting only its own side's creatures",
-  "note": "Turn 1's first mode refuses alice's tapped Bears and taps bob's Hill Giant. On turn 3 the Bears attack and tap; the postcombat land's second mode refuses the Giant and untaps the Bears.",
+  "note": "Turn 1's first mode refuses alice's tapped Bears and taps bob's Hill Giant. On turn 3 the Bears attack and tap; the postcombat land's second mode refuses the Giant and untaps the Bears. Bob's own land on turn 2 triggers nothing.",
   "timeline": [
     {
       "do": {
@@ -98,7 +104,7 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
-          "target": [
+          "tapped": [
             "$mine"
           ]
         }
@@ -109,7 +115,7 @@
     {
       "do": {
         "ChooseTargets": {
-          "target": [
+          "tapped": [
             "$giant"
           ]
         }
@@ -148,6 +154,25 @@
     },
     {
       "do": {
+        "PlayLand": "$bi"
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
         "Attack": []
       },
       "player": "bob",
@@ -162,6 +187,14 @@
       },
       "player": "alice",
       "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
       "turn": 3
     },
     {
@@ -192,7 +225,7 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
-          "target": [
+          "untapped": [
             "$giant"
           ]
         }
@@ -203,7 +236,7 @@
     {
       "do": {
         "ChooseTargets": {
-          "target": [
+          "untapped": [
             "$mine"
           ]
         }

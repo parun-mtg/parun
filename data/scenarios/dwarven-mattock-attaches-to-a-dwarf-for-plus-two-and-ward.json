@@ -3,7 +3,6 @@
     "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Dwarven Mauler",
@@ -47,10 +46,16 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Dwarven Mauler",
+            "label": "bobmauler"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -70,37 +75,36 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
     "step": "PrecombatMain"
   },
   "description": "CR 301.5, 603.3d, 702.21a: Dwarven Mattock's enters trigger attaches it to a Dwarf you control, which gets +2/+2 and ward {1}",
-  "note": "Grizzly Bears is a creature alice controls but no Dwarf, so the trigger refuses it and takes Dwarven Mauler; Mauler's 2/1 becomes 4/3 with one ward {1}, and the Bears keep 2/2 and no ward.",
+  "note": "Grizzly Bears is a creature alice controls but no Dwarf, and bob's Dwarven Mauler is a Dwarf she does not control, so the trigger refuses both and takes her Dwarven Mauler; its 2/1 becomes 4/3 with one ward {1}, and the Bears keep 2/2.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$mattock",
           "mana": [
             "$m1",
             "$m2"
-          ]
+          ],
+          "object": "$mattock"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -108,57 +112,68 @@
             "$bears"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$bobmauler"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "ChooseTargets": {
           "target": [
             "$mauler"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": "$mauler",
           "object": "Dwarven Mattock",
-          "is": "$mauler"
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$mauler",
           "power": 4,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$mauler",
+          "count": 1,
           "keyword": {
             "type": "Ward",
             "value": {
@@ -172,21 +187,24 @@
               }
             }
           },
-          "count": 1
+          "object": "$mauler"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
