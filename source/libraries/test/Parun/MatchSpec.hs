@@ -92,4 +92,4 @@ renumbered matchup result = case result of
 
 -- The scenario a match game saves as, read back.
 saved :: NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-saved matchup timeline = Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec (Command.saved PrintingTable.empty Text.empty Map.empty matchup timeline)))
+saved matchup timeline = Either.either (error . Text.unpack) id (Codec.decode Codec.Scenario.codec (Codec.encode Codec.Scenario.codec (Command.saved PrintingTable.empty Text.empty Nothing Map.empty matchup timeline)))

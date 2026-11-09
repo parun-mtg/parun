@@ -77,7 +77,7 @@ match options registry decks = do
           let (outcome, timeline) = Identity.runIdentity (game registry seed index decks)
           TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) Map.empty (Command.seated (firstAt index) decks) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) Nothing Map.empty (Command.seated (firstAt index) decks) timeline)
           pure (tallied outcome tally)
       )
       Tally.empty
@@ -90,7 +90,7 @@ match options registry decks = do
 -- --bot 2` plays at that seed and `--first`.
 game :: (Monad m) => Registry.Registry m -> Word.Word64 -> Natural -> (Deck.Deck, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry seed index decks =
-  State.runStateT (Game.run (lifted registry) [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+  State.runStateT (Game.run (lifted registry) Nothing [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | The registry, beneath the entries kept so far.
 lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed) m)

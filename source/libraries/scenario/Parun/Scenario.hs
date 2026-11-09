@@ -107,6 +107,7 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -231,10 +232,10 @@ run :: (Monad m) => Registry.Registry m -> Scenario.Scenario -> m (Either Failur
 run registry scenario = do
   staging <- case Scenario.start scenario of
     Start.FromBoard board -> fmap (fmap (\placed' -> (placed', Driver.drive [] scripted stepBudget finished (Staged.state placed')))) (stage registry board)
-    Start.FromDecks entrants -> fmap (fmap (\(seated, matchup) -> (seated, setUp matchup (Staged.state seated)))) (enter registry entrants)
+    Start.FromDecks format entrants -> fmap (fmap (\(seated, matchup) -> (seated, setUp matchup (Staged.state seated)))) (enter registry format entrants)
   let fromDecks = case Scenario.start scenario of
         Start.FromBoard _ -> False
-        Start.FromDecks _ -> True
+        Start.FromDecks _ _ -> True
       attempt known = do
         (board, playing) <- Bifunctor.first Failed staging
         (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, replaying = fromDecks})
@@ -256,10 +257,10 @@ run registry scenario = do
       Driver.drive [] scripted replayBudget finished set
 
 -- | CR 103: each entrant seated in turn order, its deck list read and its
--- graveyard order set (CR 404.3), nothing yet created; Setup.newGame builds the
--- libraries.
-enter :: (Monad m) => Registry.Registry m -> NonEmpty.NonEmpty Entrant.Entrant -> m (Either Failure.ScenarioFailure (Staged.Staged, NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)))
-enter registry entrants = do
+-- graveyard order set (CR 404.3), under `format` (CR 100.2), nothing yet
+-- created; Setup.newGame builds the libraries.
+enter :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> NonEmpty.NonEmpty Entrant.Entrant -> m (Either Failure.ScenarioFailure (Staged.Staged, NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck)))
+enter registry format entrants = do
   let seated = NonEmpty.zip entrants (fmap PlayerId.MkPlayerId (0 NonEmpty.:| [1 ..]))
       ids = Map.fromList (fmap (Bifunctor.first Entrant.name) (NonEmpty.toList seated))
   decks <- traverse (\(entrant, pid) -> fmap (either (Left . Failure.MkInvalidCorpus) (Bifunctor.bimap (Failure.MkUnreadableDeck (Entrant.name entrant) . Text.intercalate (Text.pack "; ") . fmap DeckList.explain) ((,) pid) . DeckList.sound)) (DeckList.parse registry (Text.unlines (Entrant.deck entrant)))) seated
@@ -267,7 +268,7 @@ enter registry entrants = do
     Just (label : _) -> Left (Failure.MkDuplicateLabel label)
     _ -> do
       matchup <- sequence decks
-      let base = Setup.gameWith GameSettings.plain (fmap fst matchup)
+      let base = Setup.gameWith GameSettings.plain {GameSettings.format = format} (fmap fst matchup)
           ordered = foldr (\(entrant, pid) -> Game.setGraveyardOrder pid (Entrant.graveyardOrder entrant)) base seated
       pure (Staged.MkStaged ordered ids Map.empty, matchup)
 

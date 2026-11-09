@@ -25,6 +25,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
@@ -87,13 +88,14 @@ namer seats gs =
 labelOf :: Map.Map PlayerId.PlayerId Label.Label -> PlayerId.PlayerId -> Label.Label
 labelOf seats pid = Maybe.fromMaybe (Label.MkLabel (Text.pack ("player " <> show (PlayerId.unwrap pid)))) (Map.lookup pid seats)
 
--- | The scenario a game played from these decks, each seat at its graveyard
--- order, replays as, each printing named as `table` names it.
-scenario :: PrintingTable.PrintingTable -> Text.Text -> NonEmpty.NonEmpty (Label.Label, GraveyardOrder.GraveyardOrder, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
-scenario table description entrants timeline =
+-- | The scenario a game played from these decks under `format` (CR 100.2),
+-- each seat at its graveyard order, replays as, each printing named as
+-- `table` names it.
+scenario :: PrintingTable.PrintingTable -> Text.Text -> Maybe Format.Format -> NonEmpty.NonEmpty (Label.Label, GraveyardOrder.GraveyardOrder, Deck.Deck) -> Seq.Seq Timed.Timed -> Scenario.Type.Scenario
+scenario table description format entrants timeline =
   Scenario.Type.MkScenario
     { Scenario.Type.description = description,
-      Scenario.Type.start = Start.FromDecks (fmap (\(label, order, deck) -> Entrant.MkEntrant label (Text.lines (DeckList.render table Nothing deck)) order) entrants),
+      Scenario.Type.start = Start.FromDecks format (fmap (\(label, order, deck) -> Entrant.MkEntrant label (Text.lines (DeckList.render table Nothing deck)) order) entrants),
       Scenario.Type.timeline = timeline,
       Scenario.Type.final = Seq.empty
     }

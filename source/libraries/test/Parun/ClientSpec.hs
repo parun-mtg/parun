@@ -168,7 +168,7 @@ spec s registry = Spec.describe s "Client" $ do
   Spec.it s "a change of seat waits for the seat leaving to finish reading, clears the screen, and waits before showing the next seat" $ do
     matchup <- BotSpec.bears s registry
     let people = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (screen 300 plays) (const (Right Nothing))), (S.bob, Game.human (S.fixtureRegistry []) (screen 300 plays) (const (Right Nothing)))]
-        shown = reverse (written (State.execState (Game.run (S.fixtureRegistry []) [] people (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix 1) Map.empty matchup) blank))
+        shown = reverse (written (State.execState (Game.run (S.fixtureRegistry []) Nothing [] people (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix 1) Map.empty matchup) blank))
         handOffs = [i | (i, l) <- zip [0 :: Int ..] shown, Text.isPrefixOf (Text.pack "Pass to ") l]
         at i = Maybe.listToMaybe (drop i shown)
         -- The last hand-off may be cut short by the end of input.
@@ -837,7 +837,7 @@ spec s registry = Spec.describe s "Client" $ do
     matchup <- BotSpec.bears s registry
     let terminal = screen 3000 plays
         seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) terminal (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
-        (outcome, sc) = State.runState (Game.run (S.fixtureRegistry []) [] seats (Client.ending terminal [S.alice]) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix 1) Map.empty matchup) blank
+        (outcome, sc) = State.runState (Game.run (S.fixtureRegistry []) Nothing [] seats (Client.ending terminal [S.alice]) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix 1) Map.empty matchup) blank
         loser = case outcome of
           Right (Result.Won winner, _) -> Just (if winner == S.alice then S.bob else S.alice)
           _ -> Nothing
@@ -1447,7 +1447,7 @@ botOrDefault = Driver.seated (Bot.bot []) (Answerer.MkAnswerer (pure . Replay.de
 against :: (Screen -> Maybe Text.Text) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), [Text.Text])
 against typist matchup =
   let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (screen 3000 typist) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
-      (outcome, sc) = State.runState (Game.run (S.fixtureRegistry []) [] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix 1) Map.empty matchup) blank
+      (outcome, sc) = State.runState (Game.run (S.fixtureRegistry []) Nothing [] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix 1) Map.empty matchup) blank
    in (outcome, reverse (written sc))
 
 -- Since the last line typed.

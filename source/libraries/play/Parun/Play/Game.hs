@@ -29,6 +29,7 @@ import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
@@ -65,18 +66,17 @@ wired :: (Monad m) => Registry.Registry m -> (Text.Text -> m (Maybe Text.Text)) 
 wired registry exchange = Protocol.over (judgingNames registry) (\line -> Trans.lift (Client.lift2 (exchange line) >>= maybe (Client.stop (Text.pack "end of input")) pure)) Chance.chance
 
 -- | A plain two-player game over the card reference `registry`
--- ('consulting'), from setup to its result; the head of the matchup plays
--- first, and each seat starts at its graveyard order in `orders`
--- (Driver.match). `finish` is shown the final state before the result is
--- returned (Client.ending). Left is why play stopped before the end.
---
--- Not implemented: the settings' format, which --format names (#6710).
-run :: (Monad m) => Registry.Registry m -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> SplitMix.SplitMix -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
-run registry observers seats finish hotseat generator orders matchup =
+-- ('consulting'), under `format` (CR 100.2), from setup to its result; the
+-- head of the matchup plays first, and each seat starts at its graveyard order
+-- in `orders` (Driver.match). `finish` is shown the final state before the
+-- result is returned (Client.ending). Left is why play stopped before the end.
+-- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game.
+run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> SplitMix.SplitMix -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
+run registry format observers seats finish hotseat generator orders matchup =
   Except.runExceptT (State.evalStateT (State.evalStateT played generator) hotseat)
   where
     played = do
-      (result, gs) <- Driver.match observers (consulting registry seats) GameSettings.plain orders matchup
+      (result, gs) <- Driver.match observers (consulting registry seats) GameSettings.plain {GameSettings.format = format} orders matchup
       Trans.lift (finish gs)
       pure (result, gs)
 
