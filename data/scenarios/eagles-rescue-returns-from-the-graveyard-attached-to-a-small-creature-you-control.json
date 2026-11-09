@@ -89,7 +89,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 113.6k, 303.4f, 602.5d: Eagle's Rescue returns from its owner's graveyard at sorcery speed attached to a creature its controller controls with power 1 or less",
+  "description": "CR 113.6m, 303.4f, 602.5d: Eagle's Rescue returns from its owner's graveyard at sorcery speed attached to a creature its controller controls with power 1 or less",
   "note": "Grizzly Bears has power 2 and bob's Elvish Mystic is not alice's, so both are refused; Llanowar Elves takes it and becomes a 3/3 flier. The activation is refused first in alice's upkeep, with the same mana open.",
   "timeline": [
     {

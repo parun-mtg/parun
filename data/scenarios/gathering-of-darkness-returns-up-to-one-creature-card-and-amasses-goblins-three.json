@@ -1,10 +1,8 @@
 {
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Swamp",
@@ -39,16 +37,6 @@
             "label": "s8"
           }
         ],
-        "hand": [
-          {
-            "card": "Gathering of Darkness",
-            "label": "g1"
-          },
-          {
-            "card": "Gathering of Darkness",
-            "label": "g2"
-          }
-        ],
         "graveyard": [
           {
             "card": "Grizzly Bears",
@@ -61,6 +49,16 @@
           {
             "card": "Gray Ogre",
             "label": "ogre"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Gathering of Darkness",
+            "label": "g1"
+          },
+          {
+            "card": "Gathering of Darkness",
+            "label": "g2"
           }
         ],
         "library": [
@@ -82,10 +80,10 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "graveyard": [
           {
             "card": "Hill Giant",
@@ -111,16 +109,16 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
   "description": "CR 115.1, 601.2c, 701.47a: Gathering of Darkness returns up to one creature card from its caster's graveyard and amasses Goblins 3",
   "note": "The first cast refuses a noncreature card and an opponent's creature card, then returns Grizzly Bears and creates a Goblin Army with three counters. The second announces no target though Gray Ogre is still there, leaves it, and still amasses, putting three more on the same Army: 6, and still one Army.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
@@ -136,11 +134,11 @@
             "$shock"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
@@ -156,12 +154,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "mana": [
@@ -176,18 +173,18 @@
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -195,12 +192,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
           "count": 3,
@@ -209,12 +206,12 @@
           },
           "object": "Goblin Army Token"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Goblin Army Token",
@@ -223,12 +220,12 @@
             "Goblin"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "mana": [
@@ -240,18 +237,18 @@
           "object": "$g2",
           "targets": []
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
           "count": 6,
@@ -260,12 +257,12 @@
           },
           "object": "Goblin Army Token"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Goblin Army Token",
@@ -273,12 +270,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Shock",
@@ -286,12 +283,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Gray Ogre",
@@ -299,7 +296,10 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
