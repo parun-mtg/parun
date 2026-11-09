@@ -975,6 +975,7 @@ elixir-of-immortality
 elkin-bottle
 elkin-lair
 eloren-wilds
+elrond-moon-reader
 elspeth-suns-champion
 elspeths-smite
 elven-passage

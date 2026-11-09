@@ -142,6 +142,17 @@
       "turn": 1
     },
     {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExtraManaSource",
+          "with": null
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
         "View": {
           "is": [

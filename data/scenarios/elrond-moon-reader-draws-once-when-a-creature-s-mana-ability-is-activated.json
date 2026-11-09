@@ -29,12 +29,12 @@
         ],
         "hand": [
           {
-            "card": "Grizzly Bears",
-            "label": "bears1"
+            "card": "Runeclaw Bear",
+            "label": "bear"
           },
           {
             "card": "Grizzly Bears",
-            "label": "bears2"
+            "label": "bears"
           }
         ],
         "library": [
@@ -54,16 +54,17 @@
     "step": "PrecombatMain"
   },
   "description": "CR 605.3b Elrond, Moon-Reader draws once when a creature's mana ability is activated",
-  "note": "Elrond's ruling: a creature's mana ability triggers it. The Forests paying for the first Bears trigger nothing, being lands; the two Elves paying for the second fire one trigger, the ability triggering only once each turn, and alice draws the Island.",
+  "note": "Elrond's ruling: a creature's mana ability triggers it. The Forests paying for the Runeclaw Bear trigger nothing, being lands; the two Elves paying for Grizzly Bears fire one trigger, the ability triggering only once each turn, and alice draws the Island.",
   "timeline": [
     {
       "do": {
         "Cast": {
           "mana": [
             "$f1",
-            "$f2"
+            "$f2",
+            null
           ],
-          "object": "$bears1"
+          "object": "$bear"
         }
       },
       "player": "alice",
@@ -74,7 +75,7 @@
       "check": {
         "View": {
           "is": [
-            "$bears1"
+            "Runeclaw Bear"
           ],
           "of": "Stack"
         }
@@ -96,7 +97,7 @@
             "$elves1",
             "$elves2"
           ],
-          "object": "$bears2"
+          "object": "$bears"
         }
       },
       "player": "alice",
@@ -108,7 +109,7 @@
         "View": {
           "is": [
             "trigger of $elrond",
-            "$bears2"
+            "Grizzly Bears"
           ],
           "of": "Stack"
         }
@@ -146,7 +147,7 @@
       "check": {
         "Count": {
           "card": "Grizzly Bears",
-          "count": 2,
+          "count": 1,
           "player": "alice",
           "zone": "Battlefield"
         }
