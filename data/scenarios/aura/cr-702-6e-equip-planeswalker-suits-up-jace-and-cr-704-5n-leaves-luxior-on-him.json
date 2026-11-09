@@ -1,6 +1,6 @@
 {
   "description": "CR 702.6e equip planeswalker suits up Jace, and CR 704.5n leaves Luxior on him",
-  "note": "Eight Islands rather than the test's five, so that the {3} plain equip is affordable when it is refused on Jace and the refusal is the target's, not the mana's.",
+  "note": "Eight Islands rather than the test's five, with the planeswalker equip offering only Jace, so it takes him unasked.",
   "board": {
     "seats": [
       {

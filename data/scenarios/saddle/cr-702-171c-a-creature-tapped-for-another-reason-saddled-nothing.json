@@ -1,6 +1,6 @@
 {
   "description": "CR 702.171c a creature tapped for another reason saddled nothing",
-  "note": "The Hill Giant starts tapped, so it paid no saddle cost; Jedit Ojanen saddles the attacking Giant Beaver. The refused target proves the trigger does not offer the Giant: untapped and saddling, it is offered and the refusal stands. The saddle is activated in the main phase, as CR 702.171a's sorcery timing requires.",
+  "note": "The Hill Giant starts tapped, so it paid no saddle cost; Jedit Ojanen saddles the attacking Giant Beaver. The trigger takes its target unasked, so it does not offer the Giant: untapped and saddling, it would be offered and prompted for. The saddle is activated in the main phase, as CR 702.171a's sorcery timing requires.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

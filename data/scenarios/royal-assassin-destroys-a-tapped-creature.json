@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a whole card: Royal Assassin taps to destroy target tapped creature",
-  "note": "Bob's untapped Gray Ogre is refused as a target; his tapped Hill Giant is destroyed.",
+  "note": "Bob's untapped Gray Ogre is not offered as a target, so his tapped Hill Giant is taken unasked and destroyed.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

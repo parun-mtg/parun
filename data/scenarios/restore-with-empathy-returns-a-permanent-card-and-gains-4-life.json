@@ -17,7 +17,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 115.1 / 119.3: Restore with Empathy returns a permanent card from its controller's graveyard to hand and gains 4 life",
-  "note": "On the same mana, an instant card in alice's graveyard and a creature card in bob's are refused. Grizzly Bears returns to her hand and she goes from 13 to 17 life.",
+  "note": "An instant card in alice's graveyard and a creature card in bob's are not offered. Grizzly Bears is taken unasked and returns to her hand and she goes from 13 to 17 life.",
   "timeline": [
     {"do": {"Cast": {"object": "$rwe"}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
     {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1},

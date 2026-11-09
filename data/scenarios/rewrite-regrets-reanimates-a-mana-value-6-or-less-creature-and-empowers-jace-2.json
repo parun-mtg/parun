@@ -20,7 +20,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 202.3 / 701.71a: Rewrite Regrets returns a creature card of mana value 6 or less from its controller's graveyard to the battlefield, then empowers Jace 2",
-  "note": "On the same mana, Ancient Hellkite (mana value 7), Exploration (not a creature or planeswalker) and bob's Grizzly Bears (not alice's graveyard) are refused. Craw Wurm, at exactly 6, returns, and alice's new Jace token gets two loyalty counters.",
+  "note": "Ancient Hellkite (mana value 7), Exploration (not a creature or planeswalker) and bob's Grizzly Bears (not alice's graveyard) are not offered. Craw Wurm, at exactly 6, is taken unasked and returns, and alice's new Jace token gets two loyalty counters.",
   "timeline": [
     {"do": {"Cast": {"object": "$rr"}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
     {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1},

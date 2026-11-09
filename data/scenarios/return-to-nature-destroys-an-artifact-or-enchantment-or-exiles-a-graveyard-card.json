@@ -135,7 +135,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Return to Nature's three modes destroy an artifact, destroy an enchantment or exile a card from a graveyard, each refusing the others' targets.",
+  "description": "Return to Nature's three modes destroy an artifact, destroy an enchantment or exile a card from a graveyard, the first and third refusing the others' targets.",
   "timeline": [
     {
       "player": "alice",

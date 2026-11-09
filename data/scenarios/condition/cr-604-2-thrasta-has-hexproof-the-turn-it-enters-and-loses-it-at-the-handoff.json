@@ -1,6 +1,6 @@
 {
   "description": "CR 604.2 Thrasta has hexproof the turn it enters, and loses it at the handoff",
-  "note": "bob's two Doom Blades, four Swamps and library card are witnesses added for the targeting assertions: the Blade is offered (the Piker is a legal target) but refused at Thrasta the turn it entered, and next turn the Blades kill both.",
+  "note": "bob's two Doom Blades, four Swamps and library card are witnesses added for the targeting assertions: the Blade is offered the turn Thrasta entered (the Piker is a legal target), and next turn the Blades kill both.",
   "board": {
     "seats": [
       {

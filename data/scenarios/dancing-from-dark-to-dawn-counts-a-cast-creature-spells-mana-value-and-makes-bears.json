@@ -132,7 +132,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.2, 601.2i, 202.3, 115.1, 122.1a, 207.2c, 111.1: Dancing from Dark to Dawn puts counters equal to a cast creature spell's mana value on a creature you control, and makes a Bear on landfall",
-  "note": "A Divination (mana value 3, not a creature) triggers nothing. The Hill Giant cast (mana value 4) triggers it; bob's Craw Wurm is refused as the target, and alice's Grizzly Bears takes four counters, ahead of the Giant resolving. Playing a Forest makes one 2/2 Bear token. On bob's turn his Llanowar Elves, a creature spell he casts, triggers nothing.",
+  "note": "A Divination (mana value 3, not a creature) triggers nothing. The Hill Giant cast (mana value 4) triggers it; bob's Craw Wurm is not offered as the target, so alice's Grizzly Bears is taken unasked and gets four counters, ahead of the Giant resolving. Playing a Forest makes one 2/2 Bear token. On bob's turn his Llanowar Elves, a creature spell he casts, triggers nothing.",
   "timeline": [
     {
       "do": {

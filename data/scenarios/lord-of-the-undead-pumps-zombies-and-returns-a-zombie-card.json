@@ -1,6 +1,6 @@
 {
   "description": "CR 613.4c / 602.2 whole card: Lord of the Undead gives other Zombies +1/+1, and pays {1}{B} and taps to return a Zombie card from its controller's graveyard to her hand",
-  "note": "Scathe Zombies are 3/3, the Lord itself and the bears stay 2/2; the Hill Giant in her graveyard is refused as a target, and the Gravedigger comes back.",
+  "note": "Scathe Zombies are 3/3, the Lord itself and the bears stay 2/2; the Hill Giant in her graveyard is not offered as a target, so the Gravedigger is taken unasked and comes back.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

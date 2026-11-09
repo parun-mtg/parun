@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2 whole card: Angelic Page taps to give target attacking or blocking creature +1/+1 until end of turn",
-  "note": "Alice attacks with her bears and keeps her Hill Giant home: the Giant is refused as a target, and the 3/3 bears deal bob 3.",
+  "note": "Alice attacks with her bears and keeps her Hill Giant home: the Giant is not offered as a target, so the bears are taken unasked and, 3/3, deal bob 3.",
   "board": {"active": "alice", "step": "BeginningOfCombat", "seats": [{"name": "alice", "battlefield": [{"card": "Angelic Page", "label": "page", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Hill Giant", "label": "giant", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},

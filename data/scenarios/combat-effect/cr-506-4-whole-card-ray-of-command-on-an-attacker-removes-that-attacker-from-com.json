@@ -1,6 +1,6 @@
 {
   "description": "CR 506.4 whole card: Ray of Command on an attacker removes THAT attacker from combat, and it deals no combat damage",
-  "note": "Kill Shot and its three Plains are a witness added for the attacking-creature filter: refused at the stolen Piker, it destroys the one still attacking.",
+  "note": "Kill Shot and its three Plains are a witness added for the attacking-creature filter: the stolen Piker is not offered, so it takes the one still attacking unasked and destroys it.",
   "board": {
     "seats": [
       {

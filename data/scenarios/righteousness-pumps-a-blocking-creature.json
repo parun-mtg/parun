@@ -1,6 +1,6 @@
 {
   "description": "CR 509.1 / 613.4c whole card: Righteousness gives target blocking creature +7/+7 until end of turn",
-  "note": "Bob's attacking Hill Giant is refused as the target. Alice's blocking bears become 9/9 and kill the Giant.",
+  "note": "Bob's attacking Hill Giant is not offered as the target, so alice's blocking bears are taken unasked. They become 9/9 and kill the Giant.",
   "board": {
     "active": "bob",
     "step": "BeginningOfCombat",

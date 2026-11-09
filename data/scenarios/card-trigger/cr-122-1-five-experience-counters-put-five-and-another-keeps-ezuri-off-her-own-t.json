@@ -1,6 +1,6 @@
 {
   "description": "CR 122.1 five experience counters put five, and \"another\" keeps Ezuri off her own trigger",
-  "note": "The target prompt refuses Ezuri herself, so \"another\" is proven by the offer rather than by an outcome two creatures cannot tell apart.",
+  "note": "Ezuri herself is not offered, so the target is taken unasked and \"another\" is proven by the missing prompt rather than by an outcome two creatures cannot tell apart.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

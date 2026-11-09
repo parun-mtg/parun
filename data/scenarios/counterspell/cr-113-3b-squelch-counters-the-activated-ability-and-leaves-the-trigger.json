@@ -1,6 +1,6 @@
 {
   "description": "CR 113.3b Squelch counters the activated ability and leaves the trigger, which still kills the Piker",
-  "note": "One ability of each kind on the stack: Aether Flash's trigger for the entering Piker and bob's Prodigal Sorcerer ping at alice. A Squelch aimed at the trigger is refused (CR 113.3b: it counters activated abilities only); aimed at the ping it counters it and draws, and the trigger still deals the Piker 2.",
+  "note": "One ability of each kind on the stack: Aether Flash's trigger for the entering Piker and bob's Prodigal Sorcerer ping at alice. Squelch does not offer the trigger (CR 113.3b: it counters activated abilities only), so it takes the ping unasked, counters it and draws, and the trigger still deals the Piker 2.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

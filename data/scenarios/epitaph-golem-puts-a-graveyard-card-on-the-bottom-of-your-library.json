@@ -134,5 +134,5 @@
       "turn": 1
     }
   ],
-  "note": "Bob's Bolt is refused as a target; the Island stays on top."
+  "note": "Bob's Bolt is not offered as a target, so the target is taken unasked; the Island stays on top."
 }

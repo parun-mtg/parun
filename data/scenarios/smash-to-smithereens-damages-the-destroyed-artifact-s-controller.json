@@ -77,7 +77,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.8a / 608.2h whole card: Smash to Smithereens destroys target artifact and deals 3 damage to that artifact's controller",
-  "note": "Carol owns the Rod of Ruin but bob controls it, so bob takes the 3 and carol none; the Grizzly Bears target is refused.",
+  "note": "Carol owns the Rod of Ruin but bob controls it, so bob takes the 3 and carol none; the Grizzly Bears is not offered, so the Rod is taken unasked.",
   "timeline": [
     {
       "do": {

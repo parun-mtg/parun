@@ -1,6 +1,6 @@
 {
   "description": "CR 701.19c whole card: Nekrataal's enters trigger destroys target nonartifact, nonblack creature, and that creature can't be regenerated",
-  "note": "Drudge Skeletons (black) and Ornithopter (artifact) are refused as targets. Bob regenerates River Boa in response, and it dies anyway.",
+  "note": "Drudge Skeletons (black) and Ornithopter (artifact) are not offered as targets, so River Boa is taken unasked. Bob regenerates it in response, and it dies anyway.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

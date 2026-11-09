@@ -1,6 +1,6 @@
 {
   "description": "Infernal Reckoning exiles target colorless creature and its caster gains life equal to its power",
-  "note": "bob's Grizzly Bears is green and refused; his Bronze Sable (2/1, colorless) is exiled and alice gains 2.",
+  "note": "bob's Grizzly Bears is green and not offered, so his Bronze Sable (2/1, colorless) is taken unasked and exiled and alice gains 2.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

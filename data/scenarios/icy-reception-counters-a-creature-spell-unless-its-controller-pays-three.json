@@ -94,7 +94,7 @@
     "step": "PrecombatMain"
   },
   "description": "Icy Reception counters a creature spell unless its controller pays {3}, and cannot target an instant",
-  "note": "alice's Grizzly Bears and Shock are on the stack: the counter mode refuses Shock on the same mana, then counters the bears when alice declines to pay.",
+  "note": "alice's Grizzly Bears and Shock are on the stack: the counter mode does not offer Shock, so it takes the bears unasked and counters them when alice declines to pay.",
   "timeline": [
     {
       "do": {

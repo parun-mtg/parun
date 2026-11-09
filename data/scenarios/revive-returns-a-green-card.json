@@ -1,6 +1,6 @@
 {
   "description": "CR 105.2 / 115.1 whole card: Revive returns target green card from its caster's graveyard to her hand",
-  "note": "The red Hill Giant in her graveyard is refused as a target; the Grizzly Bears comes back.",
+  "note": "The red Hill Giant in her graveyard is not offered as a target, so the Grizzly Bears is taken unasked and comes back.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

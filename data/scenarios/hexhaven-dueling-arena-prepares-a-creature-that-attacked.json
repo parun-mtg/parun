@@ -1,6 +1,6 @@
 {
   "description": "CR 602.5d / 723.3a Hexhaven Dueling Arena's {2} prepares only a creature that attacked this turn, and only as a sorcery",
-  "note": "The Recollector attacks and the Heckler stays home. The {2} ability is refused at end of combat (sorcery timing) and, in the second main phase, refused for the Heckler; it then prepares the Recollector, with the same two Swamps each time.",
+  "note": "The Recollector attacks and the Heckler stays home. The {2} ability is refused at end of combat (sorcery timing); in the second main phase it does not offer the Heckler, so it takes the Recollector unasked and prepares it, with the same two Swamps both times.",
   "board": {
     "seats": [
       {

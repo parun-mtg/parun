@@ -72,7 +72,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 122.1 / 602.2: Animal Sanctuary's {2}, {T} puts a +1/+1 counter on a target Bird, Cat, Dog, Goat, Ox or Snake and refuses a Bear",
+  "description": "CR 122.1 / 602.2: Animal Sanctuary's {2}, {T} puts a +1/+1 counter on a target Bird, Cat, Dog, Goat, Ox or Snake and does not offer a Bear",
   "timeline": [
     {
       "do": {

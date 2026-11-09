@@ -1,6 +1,6 @@
 {
   "description": "CR 608.2h whole card: Chastise destroys target attacking creature and its caster gains life equal to its power",
-  "note": "Bob attacks with the 6/4 Craw Wurm and keeps his bears home: targeting the bears is refused, the Wurm is destroyed, and alice gains 6, its power as it last existed, not its toughness.",
+  "note": "Bob attacks with the 6/4 Craw Wurm and keeps his bears home: the bears are not offered as a target, so the Wurm is taken unasked and destroyed, and alice gains 6, its power as it last existed, not its toughness.",
   "board": {
     "active": "bob",
     "step": "BeginningOfCombat",

@@ -42,7 +42,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.25a: Refute Destiny exiles a green or blue creature, then surveils 1",
-  "note": "On the same mana, red Hill Giant is refused (not green or blue) and green Exploration is refused (not a creature or planeswalker). Grizzly Bears is exiled and the surveil bins Lightning Bolt.",
+  "note": "Red Hill Giant (not green or blue) and green Exploration (not a creature or planeswalker) are not offered. Grizzly Bears is taken unasked and exiled and the surveil bins Lightning Bolt.",
   "timeline": [
     {
       "do": {

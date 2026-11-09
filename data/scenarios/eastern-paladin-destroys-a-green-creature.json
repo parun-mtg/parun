@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a whole card: Eastern Paladin pays {B}{B} and taps to destroy target green creature",
-  "note": "Bob's Hill Giant is refused as a target; his green Grizzly Bears is destroyed.",
+  "note": "Bob's Hill Giant is not offered as a target, so his green Grizzly Bears is taken unasked and destroyed.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "manaPool": "BB", "battlefield": [{"card": "Eastern Paladin", "label": "paladin", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$paladin"}}},

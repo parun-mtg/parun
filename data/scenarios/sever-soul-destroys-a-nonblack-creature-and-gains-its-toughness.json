@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a / 608.2h whole card: Sever Soul destroys target nonblack creature, which can't be regenerated, and its caster gains life equal to its toughness",
-  "note": "Bob's black Typhoid Rats are refused as a target; his 6/4 Craw Wurm is destroyed and alice gains 4, its toughness, not its power.",
+  "note": "Bob's black Typhoid Rats are not offered as a target, so his 6/4 Craw Wurm is taken unasked and destroyed, and alice gains 4, its toughness, not its power.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

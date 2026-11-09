@@ -72,7 +72,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.8a: Finishing Blow destroys a target planeswalker, and refuses a land",
+  "description": "CR 701.8a: Finishing Blow destroys a target planeswalker, and does not offer a land",
   "timeline": [
     {
       "do": {

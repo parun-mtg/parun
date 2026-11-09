@@ -63,8 +63,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.6a / 702.34a / 702.10a: Stingcaster Mage's enters trigger gives an instant or sorcery card in its controller's graveyard flashback at its mana cost, refusing a creature card and an opponent's instant, and the Mage attacks the turn it arrives",
-  "note": "The refused targets are a creature card in alice's graveyard and an instant in bob's; Lightning Bolt is then cast from the graveyard for {R} and exiled.",
+  "description": "CR 603.6a / 702.34a / 702.10a: Stingcaster Mage's enters trigger gives an instant or sorcery card in its controller's graveyard flashback at its mana cost, not offering a creature card or an opponent's instant, and the Mage attacks the turn it arrives",
+  "note": "A creature card in alice's graveyard and an instant in bob's are not offered, so the target is taken unasked; Lightning Bolt is then cast from the graveyard for {R} and exiled.",
   "timeline": [
     {
       "do": {

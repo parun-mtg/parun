@@ -104,7 +104,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 508.1m / 603.2: Mage-Ring Responder's attack trigger deals 7 damage to target creature defending player controls, and {7} untaps it",
-  "note": "Three seats: carol's Gray Ogre is refused while Responder attacks bob, whose Craw Wurm takes 7 and dies; after combat seven Mountains untap the tapped Responder.",
+  "note": "Three seats: carol's Gray Ogre is not offered while Responder attacks bob, so his Craw Wurm is taken unasked, takes 7 and dies; after combat seven Mountains untap the tapped Responder.",
   "timeline": [
     {
       "do": {

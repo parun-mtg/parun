@@ -1,6 +1,6 @@
 {
   "description": "CR 701.8a / 115.1 whole card: Deathmark destroys target green or white creature, and can't target a red one",
-  "note": "Bob has a green Grizzly Bears and a red Hill Giant: the cast at the Giant is refused, and the Bears are destroyed.",
+  "note": "Bob has a green Grizzly Bears and a red Hill Giant: the Giant is not offered as a target, so the Bears are taken unasked and destroyed.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

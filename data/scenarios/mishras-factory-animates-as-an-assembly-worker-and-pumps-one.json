@@ -83,7 +83,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Mishra's Factory: animated it is a land, artifact and 2/2 Assembly-Worker until end of turn; the second Factory's {T} pumps it and refuses the Bears and an unanimated Factory",
+  "description": "Mishra's Factory: animated it is a land, artifact and 2/2 Assembly-Worker until end of turn; the second Factory's {T} pumps it, does not offer the Bears and refuses an unanimated Factory",
   "timeline": [
     {
       "player": "alice",

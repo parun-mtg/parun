@@ -115,7 +115,7 @@
     "step": "PrecombatMain"
   },
   "description": "Fiendish Panda, CR 400.7: a Clone copying it, grown by a life gain, cannot return itself though its own card is no Bear and costs no more than its power",
-  "note": "Clone (mana value 4) copies bob's Panda and a counter makes it 4/3, so only \"another\" refuses its card. Bob's Panda is unmoved by alice's life gain.",
+  "note": "Clone (mana value 4) copies bob's Panda and a counter makes it 4/3, so only \"another\" keeps its card from being offered. Bob's Panda is unmoved by alice's life gain.",
   "timeline": [
     {
       "do": {

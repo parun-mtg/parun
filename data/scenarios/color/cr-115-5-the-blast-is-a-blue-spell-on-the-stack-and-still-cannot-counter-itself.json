@@ -1,6 +1,6 @@
 {
   "description": "CR 115.5 the blast is a blue spell on the stack and still cannot counter itself",
-  "note": "The Haskell test puts the Drone straight onto the stack; here it is cast, so alice has two Swamps beside the three Mountains. The Blast, blue under the Servant once on the stack, is refused as its own counter target, and then counters the Drone.",
+  "note": "The Haskell test puts the Drone straight onto the stack; here it is cast, so alice has two Swamps beside the three Mountains. The Blast, blue under the Servant once on the stack, is not offered as its own counter target, so it takes the Drone unasked and counters it.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

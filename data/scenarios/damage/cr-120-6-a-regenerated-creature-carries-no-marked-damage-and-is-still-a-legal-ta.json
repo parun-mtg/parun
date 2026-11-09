@@ -1,6 +1,6 @@
 {
   "description": "CR 120.6 a regenerated creature carries no marked damage and is still a legal target",
-  "note": "Alice activates one Uthden Troll's regeneration, then Bolts it: it regenerates and carries no marked damage. Fatal Blow aimed at its undamaged twin is refused, and aimed at the regenerated Troll it is cast and destroys it (it can't be regenerated), so the Troll was dealt damage this turn though nothing is marked on it.",
+  "note": "Alice activates one Uthden Troll's regeneration, then Bolts it: it regenerates and carries no marked damage. Fatal Blow does not offer its undamaged twin, so it takes the regenerated Troll unasked and destroys it (it can't be regenerated), so the Troll was dealt damage this turn though nothing is marked on it.",
   "board": {
     "seats": [
       {

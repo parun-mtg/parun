@@ -96,7 +96,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 707.2: Extravagant Replication copies another nonland permanent you control at your upkeep only",
-  "note": "Bob's upkeep raises no prompt, or the run would fail on it. Refused: itself, a land, another player's permanent.",
+  "note": "Bob's upkeep raises no prompt, or the run would fail on it. The trigger offers neither itself, a land nor another player's permanent, so its target is taken unasked.",
   "timeline": [
     {
       "do": "Pass",

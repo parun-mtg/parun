@@ -95,7 +95,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 702.11a, 702.12a, 716.3d: Concerted Care gives target artifact or creature its controller controls hexproof and indestructible until end of turn",
-  "note": "Bob's Hill Giant and alice's own untapped Plains are refused as targets; her Bonesplitter, an artifact that is no creature, is a legal one.",
+  "note": "Bob's Hill Giant and alice's own untapped Plains are not offered as targets, so her Bonesplitter, an artifact that is no creature, is taken unasked.",
   "timeline": [
     {
       "do": {

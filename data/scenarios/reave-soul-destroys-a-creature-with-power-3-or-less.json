@@ -51,7 +51,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 115.1 / 701.8a: Reave Soul can target only a creature with power 3 or less, and destroys it",
-  "note": "Craw Wurm, power 6, is refused as a target; Hill Giant, power 3, is destroyed.",
+  "note": "Craw Wurm, power 6, is not offered as a target, so Hill Giant, power 3, is taken unasked and destroyed.",
   "timeline": [
     {
       "do": {

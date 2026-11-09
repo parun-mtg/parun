@@ -1,6 +1,6 @@
 {
   "description": "CR 603.2 / 608.2 whole card: Anarchist's enters trigger may return target sorcery card from its controller's graveyard to their hand",
-  "note": "Hill Giant, a creature card beside the Lava Axe, is refused as the target; alice takes the Axe back.",
+  "note": "Hill Giant, a creature card beside the Lava Axe, is not offered as the target, so alice takes the Axe back unasked.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",

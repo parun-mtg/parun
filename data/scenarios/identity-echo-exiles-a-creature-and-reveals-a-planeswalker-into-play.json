@@ -71,7 +71,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 602.5d / 701.20a Identity Echo exiles a creature alice controls and puts the first creature or planeswalker card revealed onto the battlefield, the rest on the bottom",
-  "note": "Exiling the Bears reveals Shock, then the Hill Giant; the Giant enters and Shock goes beneath Ajani, which was never revealed. Exiling the Giant then reveals Ajani, a planeswalker, which enters, and the reveal stops there: Shock beneath it is never revealed. The ability is refused at beginning of combat (sorcery timing), at bob's Ogre (not alice's) and at alice's Mountain (neither type), each on the same four Mountains.",
+  "note": "Exiling the Bears reveals Shock, then the Hill Giant; the Giant enters and Shock goes beneath Ajani, which was never revealed. Exiling the Giant then reveals Ajani, a planeswalker, which enters, and the reveal stops there: Shock beneath it is never revealed. The ability is refused at beginning of combat (sorcery timing) on the same four Mountains, and offers neither bob's Ogre (not alice's) nor alice's Mountain (neither type).",
   "timeline": [
     {
       "player": "alice",
