@@ -30,11 +30,8 @@
 -- Parun.Engine.Activate's command-zone arm, proved on Barrin in
 -- Parun.VanguardSpec.
 --
--- WHAT IS NOT IMPLEMENTED:
---
---   * CR 902.3's vanguard card for every player (#6705), so a game where one
---     player brought a vanguard and another did not is playable here and is not
---     a legal Vanguard game.
+-- CR 902.3's vanguard card for every player is deck validation, before the
+-- game: Parun.Legality.checkGame.
 module Parun.Engine.Vanguard where
 
 import qualified Data.List as List

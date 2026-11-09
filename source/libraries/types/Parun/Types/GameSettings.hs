@@ -111,10 +111,8 @@ data GameSettings = MkGameSettings
     ante :: Bool,
     -- | CR 901.15: whether a Planechase game uses one communal planar deck. Off
     -- by default ('plain'); read by Parun.Engine.Plane.planarDeckHolder,
-    -- Parun.Engine.Planechase and Parun.Engine.Setup.
-    --
-    -- Not implemented: CR 901.15a's deck construction (size, phenomena,
-    -- names) (#6705).
+    -- Parun.Engine.Planechase and Parun.Engine.Setup, and by
+    -- Parun.Legality.checkGame for CR 901.15a's deck construction.
     singlePlanarDeck :: Bool,
     -- | CR 100.2: the format the decks were built for, or Nothing for a game
     -- under no format's construction rules. Nothing by default ('plain'); read

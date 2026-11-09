@@ -7,15 +7,15 @@ import qualified Parun.Types.SideDeck as SideDeck
 
 -- | One way a deck breaks its format's construction rules.
 data Violation
-  = -- | CR 100.2a / 100.2b / 718.2 / 901.3 / 904.3: fewer cards in the deck,
-    -- or the supplementary deck named, than the minimum; its size, then the
-    -- minimum.
+  = -- | CR 100.2a / 100.2b / 718.2 / 901.3 / 901.15a / 904.3: fewer cards in
+    -- the deck, or the supplementary deck named, than the minimum; its size,
+    -- then the minimum.
     TooFewCards (Maybe SideDeck.SideDeck) Natural.Natural Natural.Natural
   | -- | CR 903.5a / 903.12d: more cards in the deck than the maximum; the
     -- deck's size, then the maximum.
     TooManyCards Natural.Natural Natural.Natural
-  | -- | CR 100.2a / 100.4a / 718.2a / 901.3 / 904.3: more cards of one
-    -- English name across deck and sideboard, or in the supplementary deck
+  | -- | CR 100.2a / 100.4a / 718.2a / 901.3 / 901.15a / 904.3: more cards of
+    -- one English name across deck and sideboard, or in the supplementary deck
     -- named, than the limit, a restricted card's one included; the name, the
     -- count, then the limit.
     TooManyCopies (Maybe SideDeck.SideDeck) CardName.CardName Natural.Natural Natural.Natural
@@ -49,12 +49,15 @@ data Violation
   | -- | CR 123.2a: one sticker sheet a constructed player brings more than
     -- once; its name, then how many.
     DuplicateStickerSheet Text.Text Natural.Natural
-  | -- | CR 901.3: more phenomenon cards in a planar deck than the maximum;
-    -- the count, then the maximum.
+  | -- | CR 901.3 / 901.15a: more phenomenon cards in a planar deck than the
+    -- maximum; the count, then the maximum.
     TooManyPhenomena Natural.Natural Natural.Natural
   | -- | CR 718.2a / 901.3 / 904.3 and the Unstable FAQ: a card in a
     -- supplementary deck that is not of the kind the deck holds.
     MisplacedCard SideDeck.SideDeck CardName.CardName
   | -- | CR 902.3: a vanguard designation that is not a vanguard card.
     NotVanguardCard CardName.CardName
+  | -- | CR 902.3: players without a vanguard card in a game where another
+    -- brings one; how many, then the players in the game.
+    MissingVanguard Natural.Natural Natural.Natural
   deriving (Eq, Ord, Show)
