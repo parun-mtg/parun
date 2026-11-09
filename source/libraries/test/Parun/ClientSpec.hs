@@ -44,6 +44,7 @@ import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
+import qualified Parun.ResolveSpec as ResolveSpec
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.AbilityName as AbilityName
@@ -72,6 +73,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EntryR as EntryR
@@ -114,6 +116,8 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Pile as Pile
 import qualified Parun.Types.PileDraw as PileDraw
 import qualified Parun.Types.PlayOptions as PlayOptions
+import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -263,7 +267,7 @@ spec s registry = Spec.describe s "Client" $ do
         resumed = takeWhile (not . Text.isPrefixOf (Text.pack "Your hand")) (drop 1 (dropWhile (not . Text.isPrefixOf (Text.pack "> ")) since))
         summary line = any (`Text.isPrefixOf` line) [Text.pack "Turn ", Text.pack "Player 1 (you)", Text.pack "Player 2: ", Text.pack "  "] || Text.null line
     Spec.assertBool s (elem lastLook shown) "the subgame reached its turn 4"
-    Spec.assertEqWith s "exactly the main game's entries not yet shown, once" (filter (not . summary) resumed) [Text.pack "Player 2 loses 10 life.", Text.pack "Shahrazad is put into a graveyard from the stack."]
+    Spec.assertEqWith s "exactly the main game's entries not yet shown, once" (filter (not . summary) resumed) [Text.pack "Player 1's library is shuffled.", Text.pack "Player 2's library is shuffled.", Text.pack "Player 2 loses 10 life.", Text.pack "Shahrazad is put into a graveyard from the stack."]
     Spec.assertEqWith s "into the main game's next turn" (fmap GameState.turnNumber outcome) (Right 4)
 
   Spec.it s "CR 113.7a Mindslaver's ability is named by its source at its target prompt and on the stack" $ do
@@ -458,7 +462,7 @@ spec s registry = Spec.describe s "Client" $ do
         facingBob = Hotseat.fresh {Hotseat.facing = Just S.bob}
         facingAlice = Hotseat.fresh {Hotseat.facing = Just S.alice}
         upkeep = gs {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.activePlayer = S.bob}
-    Spec.assertEqWith s "passed for, in the other seat's upkeep" (asking facingAlice [] upkeep manaOnly) (Right Action.Pass, [Text.pack "Player 1 draws 7 cards.", Text.pack "Player 2 draws 7 cards.", Text.pack "Player 1 keeps.", Text.pack "Player 2 keeps.", Text.pack "Player 1 passes in Player 2's upkeep (no other actions)."])
+    Spec.assertEqWith s "passed for, in the other seat's upkeep" (asking facingAlice [] upkeep manaOnly) (Right Action.Pass, [Text.pack "Player 1's library is shuffled.", Text.pack "Player 2's library is shuffled.", Text.pack "Player 1 draws 7 cards.", Text.pack "Player 2 draws 7 cards.", Text.pack "Player 1 keeps.", Text.pack "Player 2 keeps.", Text.pack "Player 1 passes in Player 2's upkeep (no other actions)."])
     let menu (outcome, shown) = (outcome, any menuHeading shown)
         handedOff (outcome, shown) = (outcome, take 2 shown)
     Spec.assertEqWith s "handed off and asked, facing another seat" (handedOff (asking facingBob ["", ""] upkeep manaOnly)) (Right Action.Pass, [Text.pack "<clear>", Text.pack "Pass to Player 1, then press Enter."])
@@ -790,12 +794,16 @@ spec s registry = Spec.describe s "Client" $ do
       s
       "told to Player 2"
       (Render.events view (Render.witnessed view))
-      [ Text.pack "Player 1 draws 7 cards.",
+      [ Text.pack "Player 1's library is shuffled.",
+        Text.pack "Player 2's library is shuffled.",
+        Text.pack "Player 1 draws 7 cards.",
         Text.pack "Player 2 draws 7 cards.",
         Text.pack "Player 1 mulligans, bottoming 1 card.",
         Text.pack "Player 2 keeps.",
+        Text.pack "Player 1's library is shuffled.",
         Text.pack "Player 1 draws 7 cards.",
         Text.pack "Player 1 mulligans, bottoming 2 cards.",
+        Text.pack "Player 1's library is shuffled.",
         Text.pack "Player 1 draws 7 cards.",
         Text.pack "Player 1 keeps."
       ]
@@ -832,6 +840,32 @@ spec s registry = Spec.describe s "Client" $ do
         Text.pack "Player 1 puts 1 +1/+1 counter on Siege Wurm.",
         Text.pack "Soldier Token is created."
       ]
+
+  Spec.it s "CR 701.23a / 701.24a another seat is told a search of a library and its shuffle" $ do
+    board <- ResolveSpec.loreBoard s registry
+    let view = PlayerView.viewFor S.bob (ResolveSpec.resolveLore (ResolveSpec.findPinned [ResolveSpec.loreForest board]) board)
+        searching line = Text.isInfixOf (Text.pack "search") line || Text.isInfixOf (Text.pack "shuffle") line
+    Spec.assertEqWith
+      s
+      "told to Player 2"
+      (filter searching (Render.events view (Render.witnessed view)))
+      [Text.pack "Player 1 searches their library.", Text.pack "Player 1's library is shuffled."]
+
+  Spec.it s "CR 701.22a / 701.25a / 706.1 a scry and a surveil are told, a roll only by its result" $ do
+    gs <- started s registry
+    let logged =
+          [ GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry S.alice),
+            GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Surveil S.bob),
+            GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.alice),
+            GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.alice, DieResult.result = 4}
+          ]
+        witnessing = gs {GameState.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) logged)}
+        view = PlayerView.viewFor S.bob witnessing
+    Spec.assertEqWith
+      s
+      "told"
+      (Render.events view (Render.witnessed view))
+      [Text.pack "Player 1 scries.", Text.pack "Player 2 surveils.", Text.pack "Player 1 rolls 4."]
 
   Spec.it s "CR 104.3 the entries that end the game are shown before its result" $ do
     matchup <- BotSpec.bears s registry
