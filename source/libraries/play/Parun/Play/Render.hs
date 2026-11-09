@@ -77,6 +77,8 @@ import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
+import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
@@ -374,8 +376,9 @@ events view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (drawer a
 
 -- | A witnessed entry as a sentence naming its cards, players and amounts, or
 -- nothing for the bookkeeping a seat can read off the board (a step, a tap,
--- mana, a trigger) or another entry already tells (a spell's move to the
--- stack, a land play's, discard's or mill's move, a block's per-attacker records).
+-- mana, a trigger) or another entry already tells (a die roll, a spell's move
+-- to the stack, a land play's, discard's or mill's move, a block's
+-- per-attacker records).
 event :: PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
 event view logged = case LoggedEvent.event logged of
   GameEvent.SpellCast c -> said [player (SpellWasCast.player c), Text.pack "casts", snapshotName (SpellWasCast.characteristics c)]
@@ -425,7 +428,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.TriggeredAbilityResolved {} -> Nothing
   GameEvent.BecameTarget {} -> Nothing
   GameEvent.PermanentActed {} -> Nothing
-  GameEvent.PlayerActed {} -> Nothing
+  GameEvent.PlayerActed a -> playerActed (PlayerActed.player a) (PlayerActed.action a)
   -- CR 702.26b / 702.26n: a phased-out card's arrival in exile, which no seat sees.
   GameEvent.ArrivedUnseen {} -> Nothing
   GameEvent.DamagePrevented p ->
@@ -498,6 +501,33 @@ event view logged = case LoggedEvent.event logged of
       Recipient.ToBattle oid -> name oid
       Recipient.ToObject oid -> name oid
       Recipient.ToPile _ -> Text.pack "a pile"
+
+-- | A player action as a sentence, or nothing for a die roll (CR 706.1), whose
+-- DieResultSettled or PlanarDieRolled entries tell it.
+playerActed :: PlayerId.PlayerId -> PlayerAction.PlayerAction -> Maybe Text.Text
+playerActed pid action = case action of
+  PlayerAction.Scry -> does "scries"
+  PlayerAction.Surveil -> does "surveils"
+  PlayerAction.Proliferate -> does "proliferates"
+  PlayerAction.RollDice -> Nothing
+  PlayerAction.OpenAttraction -> does "opens an Attraction"
+  PlayerAction.ClaimPrize -> does "claims the prize"
+  PlayerAction.TemptedByRing -> does "is tempted by the Ring"
+  PlayerAction.Blight -> does "blights"
+  PlayerAction.Forage -> does "forages"
+  PlayerAction.Foretell -> does "foretells a card"
+  PlayerAction.CollectEvidence -> does "collects evidence"
+  PlayerAction.GiveGift -> does "gives a gift"
+  PlayerAction.Earthbend -> does "earthbends"
+  PlayerAction.Waterbend -> does "waterbends"
+  PlayerAction.Airbend -> does "airbends"
+  PlayerAction.Firebend -> does "firebends"
+  PlayerAction.CompleteDungeon -> does "completes a dungeon"
+  -- Logged under the library's owner, who need not be the shuffler.
+  PlayerAction.Shuffle -> Just (player pid <> Text.pack "'s library is shuffled.")
+  PlayerAction.SearchLibrary -> does "searches their library"
+  where
+    does predicate = Just (player pid <> Text.pack " " <> Text.pack predicate <> Text.pack ".")
 
 -- | The objects whose arrival another witnessed entry already tells: a spell
 -- cast, a land played, a card discarded or milled. Only the move that made
