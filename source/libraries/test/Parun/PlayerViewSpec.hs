@@ -216,8 +216,8 @@ spec s registry = Spec.describe s "PlayerView" $ do
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToCreature victim]]
     Spec.assertBool s (Text.pack "Stack, top first: Searing Spear targeting Goblin Piker" `elem` Render.board True view) "bob's board names it"
-  -- CR 602.2b: alice's Prodigal Sorcerer's ability, aimed at bob, names bob
-  -- and its source on bob's board's stack line.
+  -- CR 602.2b: alice's Prodigal Sorcerer's ability, aimed at bob, names bob,
+  -- its source and its text on bob's board's stack line.
   Spec.it s "CR 602.2b an ability on the stack shows every seat its target" $ do
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     card <- S.cardOf s registry "Prodigal Sorcerer"
@@ -226,7 +226,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         gs = snd (Engine.runGamePure (aimedAt (== Recipient.ToPlayer S.bob)) placed {GameState.priority = Just S.alice} (Activate.activateAbility S.alice source ability))
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToPlayer S.bob]]
-    Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability targeting Player 2" `elem` Render.board True view) "bob's board names it"
+    Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability \"{T}: Prodigal Sorcerer deals 1 damage to any target.\" targeting Player 2" `elem` Render.board True view) "bob's board names it"
   Spec.it s "CR 406.3 a card exiled face down shows its owner nothing of itself" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Exile piker S.alice (Setup.emptyGame S.bothPlayers)
