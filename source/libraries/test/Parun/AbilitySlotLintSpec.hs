@@ -155,6 +155,7 @@ import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnTally as TurnTally
@@ -915,7 +916,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- than on the constructor: CR 508.1 lets only the active player declare,
         -- so "whenever YOU attack" can only happen on the controller's turn and
         -- "whenever A PLAYER attacks" can happen on anyone's.
-        attacksWith relation ability = ability {TriggeredAbility.condition = TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing Nothing))}
+        attacksWith relation ability = ability {TriggeredAbility.condition = TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing TriggerFrequency.EveryTime Nothing))}
         youAttack = face {Face.delayedAbilities = fmap (attacksWith PlayerRelation.You) (Face.delayedAbilities face)}
         anyoneAttacks = face {Face.delayedAbilities = fmap (attacksWith PlayerRelation.AnyPlayer) (Face.delayedAbilities face)}
         -- CR 102.1: a damage trigger's turn scope, Fblthp, Impossibly Lost's

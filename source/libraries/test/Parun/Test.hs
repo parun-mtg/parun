@@ -99,6 +99,7 @@ import qualified Parun.Codec.AttackCostSpec
 import qualified Parun.Codec.AttackCountSpec
 import qualified Parun.Codec.AttackLimitScopeSpec
 import qualified Parun.Codec.AttackLimitUnlessSpec
+import qualified Parun.Codec.AttackMeasureSpec
 import qualified Parun.Codec.AttackOptionSpec
 import qualified Parun.Codec.AttackPermissionSpec
 import qualified Parun.Codec.AttackRequirementSpec
@@ -1129,6 +1130,7 @@ spec s registry corpus = do
   Parun.Codec.AttackCostSpec.spec s
   Parun.Codec.AttackCompanySpec.spec s
   Parun.Codec.AttackCountSpec.spec s
+  Parun.Codec.AttackMeasureSpec.spec s
   Parun.Codec.AttackTriggerSpec.spec s
   Parun.Codec.EntersTriggerSpec.spec s
   Parun.Codec.LeavesTriggerSpec.spec s
