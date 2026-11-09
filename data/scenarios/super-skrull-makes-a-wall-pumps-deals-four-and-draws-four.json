@@ -155,7 +155,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 602.2, 111.1, 120.3e: Super-Skrull's four activated abilities make a 0/4 defender Wall, give it +4/+4, deal 4 damage to a creature and make a target player draw four",
+  "description": "CR 602.2, 111.1, 120.3e: Super-Skrull's four activated abilities make a 0/4 defender Wall, give Super-Skrull +4/+4, deal 4 damage to a creature and make a target player draw four",
   "timeline": [
     {
       "do": {

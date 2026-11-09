@@ -75,7 +75,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 303.4, 702.8a, 702.10a: Super Speed gives the enchanted creature +1/+0 and haste, and first strike until end of turn as it enters",
+  "description": "CR 303.4, 702.7a, 702.10a: Super Speed gives the enchanted creature +1/+0 and haste, and first strike until end of turn as it enters",
   "timeline": [
     {
       "do": {

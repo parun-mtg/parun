@@ -99,7 +99,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 602.2, 701.21a: Kingpin's Enforcers' {2}{B}, sacrifice an artifact or creature draws a card, and a land can't be sacrificed for it",
-  "note": "Memnite is an artifact creature; Grizzly Bears a creature; the Swamp is offered nothing.",
+  "note": "Memnite pays as an artifact creature and Grizzly Bears as a creature; a Swamp is refused as the sacrifice.",
   "timeline": [
     {
       "do": {
