@@ -643,7 +643,7 @@ prohibitsCasting pid oid variable gs =
         -- CR 601.3b ALLOWS, and this is the prohibit half: a permission is not a
         -- prohibition, and CR 101.2 would let a prohibition outvote it anyway.
         -- mayCastAsThoughItHadFlash below is where it is read.
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -842,7 +842,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.CantBeTargetedBy {} -> False
         -- CR 305.1 again: a land is never cast, so a permission about the timing
         -- of a CAST has nothing to widen here either.
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -940,7 +940,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -1053,7 +1053,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -1146,7 +1146,7 @@ prohibitsBecomingMonarch pid gs =
         -- restriction; where a card does target (Jared's own first clause), CR
         -- 601.2c's own check turns it away before this one is asked.
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -1210,7 +1210,7 @@ stateBasedActionDoesntApplyTo action pid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -1275,7 +1275,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -1345,7 +1345,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -1424,7 +1424,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -1489,7 +1489,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -2085,7 +2085,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
 -- rather than CR 709.4's combined view. The posture spellCostAdjustments takes,
 -- through the same matchesObject.
 mayCastAsThoughItHadFlash :: PlayerId -> ObjectId -> GameState -> Bool
-mayCastAsThoughItHadFlash pid oid gs = any (grantReaches castFlashGrant oid gs) (applying pid gs)
+mayCastAsThoughItHadFlash pid oid gs = any (grantReaches castFlashGrant pid oid gs) (applying pid gs)
 
 -- CR 601.1a / 601.3b: may `pid` PLAY `oid` as though it had flash -- the
 -- widened window Parun.Engine.Action.landTimingOk reads beside
@@ -2100,7 +2100,7 @@ mayCastAsThoughItHadFlash pid oid gs = any (grantReaches castFlashGrant oid gs) 
 -- widens a CAST; this is the one place it widens a land PLAY, and neither
 -- folds into the other.
 mayPlayAsThoughItHadFlash :: PlayerId -> ObjectId -> GameState -> Bool
-mayPlayAsThoughItHadFlash pid oid gs = any (grantReaches landPlayFlashGrant oid gs) (applying pid gs)
+mayPlayAsThoughItHadFlash pid oid gs = any (grantReaches landPlayFlashGrant pid oid gs) (applying pid gs)
 
 -- CR 602.5: the clauses of its rider that grants let `pid` activate an ability
 -- under this rule-702 keyword of `srcId` past -- Leonin Shikari's "equip
@@ -2153,23 +2153,35 @@ tapForManaGrants pid gs =
 -- One row of `applying`, asked whether the grant `grantOf` reads off it reaches
 -- `oid`: CR 601.3b's first sentence through matchesObjectFrom, and its second --
 -- what a choice still to be made during the proposal could make of the card --
--- through choiceCouldApply.
-grantReaches :: (PlayerEffect -> Maybe (Filter Keyword)) -> ObjectId -> GameState -> (RowSource, PlayerEffect) -> Bool
-grantReaches grantOf oid gs (source, effect) =
-  maybe False (\criterion -> matchesObjectFrom source criterion oid gs || choiceCouldApply source criterion oid gs) (grantOf effect)
+-- through choiceCouldApply. Then Radagast of Rhosgobel's "first" (flashFirst).
+grantReaches :: (PlayerEffect -> Maybe FlashGrant) -> PlayerId -> ObjectId -> GameState -> (RowSource, PlayerEffect) -> Bool
+grantReaches grantOf pid oid gs (source, effect) =
+  maybe False (\(criterion, first) -> (matchesObjectFrom source criterion oid gs || choiceCouldApply source criterion oid gs) && flashFirst pid source criterion oid gs first) (grantOf effect)
+
+-- A grant on the "as though it had flash" axis: the criterion the spell or card
+-- must meet, and PlayerEffect.CastAsThoughItHadFlash's scope, Nothing for every
+-- matching one.
+type FlashGrant = (Filter Keyword, Maybe TurnScope.TurnScope)
+
+-- Radagast of Rhosgobel's "the first creature spell you cast each turn": firstCast
+-- asked with the grant's own criterion, as spellCostAdjustments asks Shadow in the
+-- Warp's, so the two halves of Radagast's sentence read one tally. True without a
+-- scope.
+flashFirst :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> Maybe TurnScope.TurnScope -> Bool
+flashFirst pid source criterion oid gs = maybe True (firstCast pid source criterion oid gs)
 
 -- CR 601.1a / 601.3b: the criterion a grant on the "as though it had flash"
 -- axis applies to a LAND PLAY, or Nothing. Only the play-scoped grant (Scout's
 -- Warning) reaches a land: CR 601.3b's own rule is about beginning to CAST
 -- (Vedalken Orrery), and a land is never cast (CR 305.1). Exhaustive, so a new
 -- PlayerEffect is named here by -Werror; castFlashGrant below leans on that.
-landPlayFlashGrant :: PlayerEffect -> Maybe (Filter Keyword)
+landPlayFlashGrant :: PlayerEffect -> Maybe FlashGrant
 landPlayFlashGrant effect = case effect of
-  PlayerEffect.MayPlayAsThoughItHadFlash criterion -> Just criterion
+  PlayerEffect.MayPlayAsThoughItHadFlash criterion -> Just (criterion, Nothing)
   PlayerEffect.KeywordRiderGrant _ -> Nothing
   PlayerEffect.LoyaltyGrant _ -> Nothing
   PlayerEffect.MayTapForMana _ -> Nothing
-  PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+  PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
   PlayerEffect.CantCastSpells -> Nothing
   PlayerEffect.CantActivateAbilities {} -> Nothing
   PlayerEffect.CantCastMoreThan _ -> Nothing
@@ -2226,9 +2238,9 @@ landPlayFlashGrant effect = case effect of
 -- being one way to play a card -- every grant landPlayFlashGrant admits. The
 -- fallthrough is to that EXHAUSTIVE function, so a new constructor still owes an
 -- arm.
-castFlashGrant :: PlayerEffect -> Maybe (Filter Keyword)
+castFlashGrant :: PlayerEffect -> Maybe FlashGrant
 castFlashGrant effect = case effect of
-  PlayerEffect.CastAsThoughItHadFlash criterion -> Just criterion
+  PlayerEffect.CastAsThoughItHadFlash criterion first -> Just (criterion, first)
   _ -> landPlayFlashGrant effect
 
 -- CR 601.3b's LOOKAHEAD, asked of a permission that does NOT name the spell as it
@@ -2319,7 +2331,7 @@ xCouldApply src criterion oid variable gs =
 -- Parun.Engine.Cast.windowedCandidates is the caller.
 flashNamesCandidate :: PlayerId -> ObjectId -> VariableChoice.VariableChoice -> GameState -> Bool
 flashNamesCandidate pid oid variable gs =
-  let names (source, effect) = maybe False (\criterion -> matchesObjectFrom source criterion oid gs || xCouldApply source criterion oid variable gs) (castFlashGrant effect)
+  let names (source, effect) = maybe False (\(criterion, first) -> (matchesObjectFrom source criterion oid gs || xCouldApply source criterion oid variable gs) && flashFirst pid source criterion oid gs first) (castFlashGrant effect)
    in any names (applying pid gs)
 
 -- CR 601.2e / 601.3b: does a grant on castFlashGrant's axis applying to `pid`
@@ -2329,7 +2341,7 @@ flashNamesCandidate pid oid variable gs =
 mayCastAsThoughItHadFlashAt :: PlayerId -> ObjectId -> Integer -> GameState -> Bool
 mayCastAsThoughItHadFlashAt pid oid manaValue gs =
   let view = (Projection.viewOfObject oid gs) {Filter.manaValue = Just manaValue}
-      admits (source, effect) = maybe False (Filter.matches (contextFrom source oid gs) view) (castFlashGrant effect)
+      admits (source, effect) = maybe False (\(criterion, first) -> Filter.matches (contextFrom source oid gs) view criterion && flashFirst pid source criterion oid gs first) (castFlashGrant effect)
    in any admits (applying pid gs)
 
 -- CR 400.1: whose copies of a zone a reference inside a permission applying to
@@ -2426,7 +2438,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.CastFrom grant -> Just grant
   -- The other CR 601.3 permission on this axis names a TIME, and this
   -- question is about a ZONE.
-  PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+  PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
   PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
   PlayerEffect.KeywordRiderGrant _ -> Nothing
   PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -2771,7 +2783,7 @@ mayCastFromHandWithoutPayingManaCost pid oid gs =
         -- WHEN. Neither states a cost, which is the whole reason this arm is its
         -- own: Yawgmoth's Will's cast pays the card's printed cost.
         PlayerEffect.CastFrom _ -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -2861,7 +2873,7 @@ playLandPiles pid gs =
         -- this one widens where they may come from -- without either knowing of
         -- the other.
         PlayerEffect.PlayAdditionalLands _ -> []
-        PlayerEffect.CastAsThoughItHadFlash _ -> []
+        PlayerEffect.CastAsThoughItHadFlash {} -> []
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> []
         PlayerEffect.KeywordRiderGrant _ -> []
         PlayerEffect.LoyaltyGrant _ -> []
@@ -2990,7 +3002,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.LoseLifeForUnspentMana -> False
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -3108,7 +3120,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.LoseLifeForUnspentMana -> False
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -3205,7 +3217,7 @@ protectionCarriers gs =
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -3279,7 +3291,7 @@ landPlaysAllowed :: PlayerId -> GameState -> Maybe Natural
 landPlaysAllowed pid gs =
   let grantOf effect = case effect of
         PlayerEffect.PlayAdditionalLands extra -> Just extra
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -3749,7 +3761,7 @@ maximumHandSize pid gs =
         PlayerEffect.MayPayLifeForMana {} -> current
         PlayerEffect.SpendManaAsThough _ -> current
         PlayerEffect.CantBeTargetedBy {} -> current
-        PlayerEffect.CastAsThoughItHadFlash _ -> current
+        PlayerEffect.CastAsThoughItHadFlash {} -> current
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> current
         PlayerEffect.KeywordRiderGrant _ -> current
         PlayerEffect.LoyaltyGrant _ -> current
@@ -3836,7 +3848,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -3915,7 +3927,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -3998,7 +4010,7 @@ prohibitsGainingLife pid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -4077,7 +4089,7 @@ prohibitsLosingLife pid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -4155,7 +4167,7 @@ precludes outcome pid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -4231,7 +4243,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4364,7 +4376,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.MayPayLifeForMana {} -> False
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash _ -> False
+        PlayerEffect.CastAsThoughItHadFlash {} -> False
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
         PlayerEffect.KeywordRiderGrant _ -> False
         PlayerEffect.LoyaltyGrant _ -> False
@@ -4436,7 +4448,7 @@ targetingRestrictions =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4519,7 +4531,7 @@ hexproofExemptions =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4670,7 +4682,7 @@ unpreventable gs =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4755,7 +4767,7 @@ unredirectable gs =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4810,7 +4822,7 @@ statedFlips pid gs =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4891,7 +4903,7 @@ rollModifiers pid gs =
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
-        PlayerEffect.CastAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
         PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
         PlayerEffect.KeywordRiderGrant _ -> Nothing
         PlayerEffect.LoyaltyGrant _ -> Nothing
@@ -4963,13 +4975,13 @@ castUse effect = case effect of
   PlayerEffect.ModifyCost modifier
     | CostModifier.subject modifier == CostSubject.Spells && Maybe.isNothing (CostModifier.whichTargets modifier) && Maybe.isNothing (CostModifier.perTarget modifier) -> Just (CostModifier.matching modifier)
   PlayerEffect.NextSpell criterion -> Just criterion
-  _ -> castFlashGrant effect
+  _ -> fst <$> castFlashGrant effect
 
 -- CR 611.2a / 601.1a's other half: the rows `pid` would spend by playing `oid`
 -- as a land. Asked of the pre-move state by Parun.Engine.Engine's Play arm for
 -- spentByCast's reason, and consumed once the land has actually moved.
 spentByLandPlay :: PlayerId -> ObjectId -> GameState -> [ActivePlayerEffect.ActivePlayerEffect]
-spentByLandPlay = spentGrants landPlayFlashGrant
+spentByLandPlay = spentGrants (fmap fst . landPlayFlashGrant)
 
 spentGrants :: (PlayerEffect -> Maybe (Filter Keyword)) -> PlayerId -> ObjectId -> GameState -> [ActivePlayerEffect.ActivePlayerEffect]
 spentGrants useOf pid oid gs =
@@ -5011,7 +5023,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.SpendManaAsThough _ -> pure effect
   PlayerEffect.CantBeTargetedBy {} -> pure effect
   PlayerEffect.HasProtectionFrom _ -> pure effect
-  PlayerEffect.CastAsThoughItHadFlash _ -> pure effect
+  PlayerEffect.CastAsThoughItHadFlash {} -> pure effect
   PlayerEffect.MayPlayAsThoughItHadFlash _ -> pure effect
   PlayerEffect.KeywordRiderGrant _ -> pure effect
   PlayerEffect.LoyaltyGrant _ -> pure effect
@@ -5094,7 +5106,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.SpendManaAsThough _ -> pure effect
   PlayerEffect.CantBeTargetedBy {} -> pure effect
   PlayerEffect.HasProtectionFrom _ -> pure effect
-  PlayerEffect.CastAsThoughItHadFlash _ -> pure effect
+  PlayerEffect.CastAsThoughItHadFlash {} -> pure effect
   PlayerEffect.MayPlayAsThoughItHadFlash _ -> pure effect
   PlayerEffect.KeywordRiderGrant _ -> pure effect
   PlayerEffect.LoyaltyGrant _ -> pure effect

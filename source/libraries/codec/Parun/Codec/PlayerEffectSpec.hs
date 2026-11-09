@@ -62,6 +62,7 @@ import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
+import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -246,8 +247,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastAsThoughItHadFlash (Filter.And []))
-      " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"type\":\"And\",\"value\":[]}} "
+      (PlayerEffect.CastAsThoughItHadFlash (Filter.And []) Nothing)
+      " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"matching\":{\"type\":\"And\",\"value\":[]}}} "
+  -- Radagast of Rhosgobel's "the first creature spell you cast each turn".
+  Spec.it s "CastAsThoughItHadFlash, only the first each turn" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.CastAsThoughItHadFlash (Filter.HasCardType CardType.Creature) (Just (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))))
+      " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"onlyFirst\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}} "
   -- CR 601.1a / Scout's Warning: the PLAY-scoped sibling, carrying its Filter.
   Spec.it s "MayPlayAsThoughItHadFlash, Scout's Warning's creature card" $
     Common.assertCodec
@@ -289,8 +297,8 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastAsThoughItHadFlash (Filter.And [Filter.HasColor Color.Green, Filter.HasCardType CardType.Creature]))
-      " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HasColor\",\"value\":\"Green\"},{\"type\":\"HasCardType\",\"value\":\"Creature\"}]}} "
+      (PlayerEffect.CastAsThoughItHadFlash (Filter.And [Filter.HasColor Color.Green, Filter.HasCardType CardType.Creature]) Nothing)
+      " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"matching\":{\"type\":\"And\",\"value\":[{\"type\":\"HasColor\",\"value\":\"Green\"},{\"type\":\"HasCardType\",\"value\":\"Creature\"}]}}} "
   -- CR 701.6a, twice for CastAsThoughItHadFlash's reason: Spider-Punk narrows by
   -- nothing and Prowling Serpopard narrows by a card type, so a codec that
   -- dropped the payload would round-trip one of these and not both. WHOSE spells

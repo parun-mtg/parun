@@ -2566,7 +2566,7 @@ playerEffectNames asking x = case x of
   PlayerEffect.SpendManaAsThough clause -> spendManaAsThoughNames asking clause
   PlayerEffect.CantBeTargetedBy _playerScope quality -> foldMap (filterNames asking) quality
   PlayerEffect.HasProtectionFrom filter_ -> filterNames asking filter_
-  PlayerEffect.CastAsThoughItHadFlash filter_ -> filterNames asking filter_
+  PlayerEffect.CastAsThoughItHadFlash filter_ onlyFirst -> foldMap (\scope -> history asking HistoryRead.Casts <> turnScopeNames asking scope) onlyFirst <> filterNames asking filter_
   PlayerEffect.NextSpell filter_ -> filterNames asking filter_
   PlayerEffect.MayPlayAsThoughItHadFlash filter_ -> filterNames asking filter_
   PlayerEffect.KeywordRiderGrant grant ->

@@ -551,7 +551,7 @@ rewritePlayerEffect pairs effect = case effect of
      in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (rewritePerTarget pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
   -- No filter to rewrite: a rule-702 designator is not a word CR 612.1 swaps.
   PlayerEffect.AlternativeActivationCost _ -> effect
-  PlayerEffect.CastAsThoughItHadFlash f -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f)
+  PlayerEffect.CastAsThoughItHadFlash f first -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f) first
   PlayerEffect.NextSpell f -> PlayerEffect.NextSpell (Filter.rewrite pairs f)
   PlayerEffect.MayPlayAsThoughItHadFlash f -> PlayerEffect.MayPlayAsThoughItHadFlash (Filter.rewrite pairs f)
   -- A rule-702 designator is no word CR 612.1 swaps; the two grants' Filters

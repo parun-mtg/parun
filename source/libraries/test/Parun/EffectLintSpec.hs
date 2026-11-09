@@ -1243,7 +1243,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.MayPayLifeForMana {} -> False
   PlayerEffect.SpendManaAsThough _ -> False
   PlayerEffect.CantBeTargetedBy {} -> False
-  PlayerEffect.CastAsThoughItHadFlash _ -> False
+  PlayerEffect.CastAsThoughItHadFlash {} -> False
   PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
   PlayerEffect.KeywordRiderGrant _ -> False
   PlayerEffect.LoyaltyGrant _ -> False
@@ -1325,7 +1325,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.MayPayLifeForMana {} -> False
   PlayerEffect.SpendManaAsThough _ -> False
   PlayerEffect.CantBeTargetedBy {} -> False
-  PlayerEffect.CastAsThoughItHadFlash _ -> False
+  PlayerEffect.CastAsThoughItHadFlash {} -> False
   PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
   PlayerEffect.KeywordRiderGrant _ -> False
   PlayerEffect.LoyaltyGrant _ -> False

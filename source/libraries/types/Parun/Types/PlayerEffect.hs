@@ -34,6 +34,7 @@ import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
+import qualified Parun.Types.TurnScope as TurnScope
 
 -- | CR 611.1's third clause: a continuous effect affecting players or the rules
 -- of the game rather than the characteristics of an object. The player analogue
@@ -120,8 +121,10 @@ data PlayerEffect
     -- proven by Parun.CastProhibitionSpec's "CR 702.16e" Runed Halo case.
     HasProtectionFrom (Filter.Filter Keyword.Keyword)
   | -- | CR 601.3b / Vedalken Orrery: this player may cast a matching spell as
-    -- though it had flash.
-    CastAsThoughItHadFlash (Filter.Filter Keyword.Keyword)
+    -- though it had flash; given a scope, only the first matching spell they
+    -- cast in a turn it admits, as Parun.Types.CostModifier.onlyFirst reads
+    -- (Radagast of Rhosgobel).
+    CastAsThoughItHadFlash (Filter.Filter Keyword.Keyword) (Maybe TurnScope.TurnScope)
   | -- | CR 601.1a / 601.3b / Scout's Warning: this player may PLAY a matching card
     -- as though it had flash, which reaches a land where the arm above does not.
     MayPlayAsThoughItHadFlash (Filter.Filter Keyword.Keyword)
