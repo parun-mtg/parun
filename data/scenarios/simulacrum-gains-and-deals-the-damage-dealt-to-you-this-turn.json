@@ -206,34 +206,13 @@
       "turn": 3
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$s1",
-            "$s2",
-            null
-          ],
-          "object": "$sim",
-          "targets": [
-            "$ogre"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
             "$s1",
             "$s2"
           ],
-          "object": "$sim",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$sim"
         }
       },
       "player": "alice",

@@ -80,10 +80,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$assault",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$assault"
         }
       }
     },

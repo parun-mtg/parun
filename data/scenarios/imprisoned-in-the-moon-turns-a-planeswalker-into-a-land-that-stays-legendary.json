@@ -74,10 +74,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$im",
-          "targets": [
-            "$pw"
-          ]
+          "object": "$im"
         }
       }
     },

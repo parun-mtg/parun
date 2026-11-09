@@ -81,9 +81,6 @@
       "do": {
         "Cast": {
           "object": "$leechcraft",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

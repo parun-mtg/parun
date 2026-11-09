@@ -61,9 +61,6 @@
       "do": {
         "Cast": {
           "object": "$aphotic-wisps",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$swamp",
             null

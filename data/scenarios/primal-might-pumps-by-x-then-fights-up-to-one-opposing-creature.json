@@ -210,9 +210,6 @@
           ],
           "object": "$pm2",
           "targetsBySlot": {
-            "target": [
-              "$bear"
-            ],
             "victim": []
           },
           "x": 0

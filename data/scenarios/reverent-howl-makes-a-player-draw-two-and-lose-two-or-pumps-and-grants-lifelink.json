@@ -181,10 +181,7 @@
           "modes": [
             1
           ],
-          "object": "$h2",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$h2"
         }
       },
       "player": "alice",

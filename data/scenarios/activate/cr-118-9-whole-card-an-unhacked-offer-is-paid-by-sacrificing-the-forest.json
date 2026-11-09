@@ -55,10 +55,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$bargainer",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$bargainer"
         }
       }
     },

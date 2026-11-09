@@ -149,9 +149,6 @@
       "do": {
         "Cast": {
           "object": "$counter",
-          "targets": [
-            "Lightning Bolt"
-          ],
           "mana": [
             "$i1",
             "$i2"

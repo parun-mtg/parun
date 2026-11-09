@@ -75,9 +75,6 @@
       "do": {
         "Cast": {
           "object": "$answer",
-          "targets": [
-            "Prowling Serpopard"
-          ],
           "mana": [
             "$a1",
             "$a2",

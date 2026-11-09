@@ -55,9 +55,6 @@
         "Activate": {
           "object": "$tameshi",
           "x": 1,
-          "targets": [
-            "$ring"
-          ],
           "mana": [
             "$p1",
             "$p2",

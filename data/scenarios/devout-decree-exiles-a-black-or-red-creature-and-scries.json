@@ -73,25 +73,9 @@
   "note": "bob's green Bears is no legal target; his black Scathe Zombies is exiled, and alice puts her top card on the bottom.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$decree",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$decree",
-          "targets": [
-            "$zombies"
-          ]
+          "object": "$decree"
         }
       },
       "player": "alice",

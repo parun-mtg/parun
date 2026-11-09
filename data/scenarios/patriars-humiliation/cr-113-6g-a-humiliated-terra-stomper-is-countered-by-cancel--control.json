@@ -144,10 +144,7 @@
             "$i1",
             null
           ],
-          "object": "$unsummon",
-          "targets": [
-            "$stomper"
-          ]
+          "object": "$unsummon"
         }
       },
       "player": "alice",
@@ -211,10 +208,7 @@
             "$b2",
             "$b3"
           ],
-          "object": "$cancel",
-          "targets": [
-            "Terra Stomper"
-          ]
+          "object": "$cancel"
         }
       },
       "player": "bob",

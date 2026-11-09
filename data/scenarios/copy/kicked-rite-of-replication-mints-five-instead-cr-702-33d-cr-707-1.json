@@ -90,9 +90,6 @@
       "do": {
         "Cast": {
           "object": "$rite-of-replication",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

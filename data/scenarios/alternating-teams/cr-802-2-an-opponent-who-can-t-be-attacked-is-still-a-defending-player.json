@@ -112,31 +112,10 @@
     {
       "turn": 1,
       "step": "DeclareAttackers",
-      "player": "dave",
-      "refuse": {
-        "Cast": {
-          "object": "$dave yare",
-          "targets": [
-            "$dave bears"
-          ],
-          "mana": [
-            "$dave plains 1",
-            "$dave plains 2",
-            "$dave plains 3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
       "player": "carol",
       "do": {
         "Cast": {
           "object": "$carol yare",
-          "targets": [
-            "$carol bears"
-          ],
           "mana": [
             "$carol plains 1",
             "$carol plains 2",

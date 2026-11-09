@@ -109,24 +109,6 @@
   "note": "bob's Shock is neither, so a cast at it is refused; his Forest goes to his hand.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$f1",
-            "$f2",
-            "$f3"
-          ],
-          "object": "$pulse",
-          "targets": [
-            "$shock"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -134,10 +116,7 @@
             "$f2",
             "$f3"
           ],
-          "object": "$pulse",
-          "targets": [
-            "$bf"
-          ]
+          "object": "$pulse"
         }
       },
       "player": "alice",

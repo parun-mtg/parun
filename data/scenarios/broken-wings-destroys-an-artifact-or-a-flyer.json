@@ -165,10 +165,7 @@
             "$b1",
             "$b2"
           ],
-          "object": "$two",
-          "targets": [
-            "$ring"
-          ]
+          "object": "$two"
         }
       },
       "player": "alice",

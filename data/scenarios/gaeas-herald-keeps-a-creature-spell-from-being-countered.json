@@ -84,10 +84,7 @@
       "player": "bob",
       "do": {
         "Cast": {
-          "object": "$counter",
-          "targets": [
-            "Gray Ogre"
-          ]
+          "object": "$counter"
         }
       }
     },

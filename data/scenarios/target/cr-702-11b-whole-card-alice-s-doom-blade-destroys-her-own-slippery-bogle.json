@@ -44,9 +44,6 @@
       "do": {
         "Cast": {
           "object": "$doom-blade",
-          "targets": [
-            "$slippery-bogle"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2"

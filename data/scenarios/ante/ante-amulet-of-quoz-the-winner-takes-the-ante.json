@@ -13,7 +13,7 @@
   "timeline": [
     { "turn": 1, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "CallCoin", "with": "Heads" } } },
     { "turn": 1, "step": "Upkeep", "player": "alice", "do": { "Answer": { "prompt": "FlipCoin", "with": "Heads" } } },
-    { "turn": 1, "step": "Upkeep", "player": "alice", "do": { "Activate": { "object": "$amulet", "ability": 0, "targets": ["$bob"] } } },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "do": { "Activate": { "object": "$amulet", "ability": 0 } } },
     { "turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "Upkeep", "player": "bob", "do": { "ChooseOptional": "Declines" } }
   ],

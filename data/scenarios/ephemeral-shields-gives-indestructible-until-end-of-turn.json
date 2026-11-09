@@ -78,9 +78,6 @@
       "do": {
         "Cast": {
           "object": "$shields",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$plains",
             "$island",

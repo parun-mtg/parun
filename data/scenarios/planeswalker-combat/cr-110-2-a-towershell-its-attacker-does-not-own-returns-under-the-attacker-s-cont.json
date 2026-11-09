@@ -87,9 +87,6 @@
       "do": {
         "Cast": {
           "object": "$treason",
-          "targets": [
-            "$shell"
-          ],
           "mana": [
             "$m1",
             "$m2",

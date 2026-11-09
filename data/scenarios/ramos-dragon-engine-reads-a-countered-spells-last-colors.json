@@ -155,9 +155,6 @@
           "mana": [
             "$i1",
             "$i2"
-          ],
-          "targets": [
-            "Watchwolf"
           ]
         }
       }

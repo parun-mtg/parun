@@ -59,9 +59,6 @@
       "do": {
         "Cast": {
           "object": "$hatred",
-          "targets": [
-            "$goblin-piker"
-          ],
           "x": 0,
           "mana": [
             "$swamp",

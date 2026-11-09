@@ -89,35 +89,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$twine",
-          "targetsBySlot": {
-            "yours": [
-              "$div"
-            ],
-            "theirs": [
-              "$giant"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$twine",
-          "targetsBySlot": {
-            "yours": [
-              "$div"
-            ],
-            "theirs": [
-              "$conc"
-            ]
-          }
+          "object": "$twine"
         }
       }
     },

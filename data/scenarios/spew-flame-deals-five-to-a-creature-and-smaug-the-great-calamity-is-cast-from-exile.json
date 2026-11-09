@@ -109,28 +109,6 @@
   "note": "Indomitable Ancients' toughness 10 keeps it alive to show exactly 5 damage.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "face": "Spew Flame",
-          "mana": [
-            "$m1",
-            "$m2",
-            "$m3",
-            "$m4",
-            "$m5",
-            null
-          ],
-          "object": "$smaug",
-          "targets": [
-            "$bob"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "face": "Spew Flame",
@@ -142,10 +120,7 @@
             "$m5",
             null
           ],
-          "object": "$smaug",
-          "targets": [
-            "$ancients"
-          ]
+          "object": "$smaug"
         }
       },
       "player": "alice",

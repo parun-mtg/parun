@@ -164,9 +164,6 @@
       "do": {
         "Cast": {
           "object": "Giant Growth",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest",
             null

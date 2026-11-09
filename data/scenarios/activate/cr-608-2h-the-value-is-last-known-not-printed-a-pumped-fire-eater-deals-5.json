@@ -38,9 +38,6 @@
       "do": {
         "Cast": {
           "object": "$growth",
-          "targets": [
-            "$eater"
-          ],
           "mana": [
             "$forest"
           ]

@@ -65,18 +65,6 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$hydra"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": "Pass"
     },
     {

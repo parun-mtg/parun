@@ -111,9 +111,6 @@
       "do": {
         "Cast": {
           "object": "$desertion",
-          "targets": [
-            "Faerie Squadron"
-          ],
           "mana": [
             "$island-1",
             "$island-2",

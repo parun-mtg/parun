@@ -107,18 +107,6 @@
     },
     {
       "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
       "step": "DeclareBlockers",
       "player": "alice",
       "check": {

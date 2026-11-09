@@ -208,10 +208,7 @@
           "mana": [
             "$i2"
           ],
-          "object": "$s2",
-          "targets": [
-            "trigger of $outcast"
-          ]
+          "object": "$s2"
         }
       },
       "player": "bob",

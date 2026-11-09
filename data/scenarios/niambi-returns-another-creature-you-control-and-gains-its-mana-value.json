@@ -144,42 +144,6 @@
       "turn": 2
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$bb"
-          ]
-        }
-      },
-      "step": "EndStep",
-      "turn": 2
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "Niambi, Esteemed Speaker"
-          ]
-        }
-      },
-      "step": "EndStep",
-      "turn": 2
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "EndStep",
-      "turn": 2
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "EndStep",

@@ -189,9 +189,6 @@
       "do": {
         "Cast": {
           "object": "$disenchant",
-          "targets": [
-            "Story Circle"
-          ],
           "mana": [
             "$bp1",
             "$bp2"

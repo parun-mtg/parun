@@ -93,10 +93,7 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "object": "$hammer",
-          "targets": [
-            "$drake"
-          ]
+          "object": "$hammer"
         }
       },
       "player": "alice",

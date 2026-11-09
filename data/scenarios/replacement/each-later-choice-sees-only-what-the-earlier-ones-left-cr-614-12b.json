@@ -178,9 +178,6 @@
       "do": {
         "Cast": {
           "object": "$rite-of-replication",
-          "targets": [
-            "$wood-elemental"
-          ],
           "mana": [
             "$island",
             "$island-2",

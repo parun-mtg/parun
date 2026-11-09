@@ -50,9 +50,6 @@
       "do": {
         "Cast": {
           "object": "$caustic-exhale",
-          "targets": [
-            "$armored-galleon"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2"

@@ -146,10 +146,7 @@
             "$s5",
             "$s6"
           ],
-          "object": "$td",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$td"
         }
       },
       "player": "alice",

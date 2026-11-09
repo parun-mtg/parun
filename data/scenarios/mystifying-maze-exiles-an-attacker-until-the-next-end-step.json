@@ -90,33 +90,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$maze",
-          "targets": [
-            "$bears"
-          ],
-          "ability": 1,
-          "mana": [
-            "$i1",
-            "$i2",
-            "$i3",
-            "$i4",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$maze",
-          "targets": [
-            "$giant"
-          ],
           "ability": 1,
           "mana": [
             "$i1",

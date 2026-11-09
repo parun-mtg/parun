@@ -134,9 +134,6 @@
       "do": {
         "Cast": {
           "object": "$graft",
-          "targets": [
-            "$confiscate"
-          ],
           "mana": [
             "$bi0",
             "$bi1",

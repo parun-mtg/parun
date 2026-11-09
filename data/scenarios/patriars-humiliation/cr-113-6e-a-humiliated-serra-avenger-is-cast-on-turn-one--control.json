@@ -108,10 +108,7 @@
             "$i1",
             null
           ],
-          "object": "$unsummon",
-          "targets": [
-            "$avenger"
-          ]
+          "object": "$unsummon"
         }
       },
       "player": "alice",

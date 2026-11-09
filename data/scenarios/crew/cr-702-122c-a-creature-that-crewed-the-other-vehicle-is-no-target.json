@@ -129,30 +129,6 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$piker"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "View": {
           "of": "Stack",

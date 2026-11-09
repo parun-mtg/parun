@@ -80,9 +80,6 @@
       "do": {
         "Cast": {
           "object": "$nyxborn-rollicker",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$mountain",
             "$mountain-2",

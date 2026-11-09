@@ -187,10 +187,7 @@
             "$s1",
             null
           ],
-          "object": "$regen",
-          "targets": [
-            "$horror"
-          ]
+          "object": "$regen"
         }
       },
       "player": "alice",

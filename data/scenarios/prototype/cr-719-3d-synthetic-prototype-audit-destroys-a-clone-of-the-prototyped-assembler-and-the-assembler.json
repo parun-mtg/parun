@@ -254,9 +254,6 @@
       "do": {
         "Cast": {
           "object": "$audit-2",
-          "targets": [
-            "Autonomous Assembler"
-          ],
           "mana": [
             "$bob-island-3",
             "$bob-island-4"

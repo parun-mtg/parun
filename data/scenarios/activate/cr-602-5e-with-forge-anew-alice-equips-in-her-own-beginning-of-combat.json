@@ -39,9 +39,6 @@
       "do": {
         "Activate": {
           "object": "$bonesplitter",
-          "targets": [
-            "$goblin-piker"
-          ],
           "cost": []
         }
       }

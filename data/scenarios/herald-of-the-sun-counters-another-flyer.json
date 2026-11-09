@@ -84,9 +84,6 @@
       "do": {
         "Activate": {
           "object": "$herald",
-          "targets": [
-            "$drake"
-          ],
           "mana": [
             "$w1",
             "$w2",

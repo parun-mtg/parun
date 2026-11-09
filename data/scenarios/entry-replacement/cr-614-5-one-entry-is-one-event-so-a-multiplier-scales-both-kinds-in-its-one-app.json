@@ -68,9 +68,6 @@
       "do": {
         "Cast": {
           "object": "$per",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$p1",
             "$p2",

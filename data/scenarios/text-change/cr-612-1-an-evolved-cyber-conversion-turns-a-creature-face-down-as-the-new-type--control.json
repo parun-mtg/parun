@@ -51,10 +51,7 @@
             "$bob-island",
             "$bob-island-2"
           ],
-          "object": "$conversion",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$conversion"
         }
       },
       "player": "bob",

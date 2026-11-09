@@ -57,10 +57,7 @@
       "player": "alice",
       "refuse": {
         "Cast": {
-          "object": "$revive",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$revive"
         }
       },
       "step": "PrecombatMain",
@@ -96,10 +93,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$revive",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$revive"
         }
       },
       "player": "alice",

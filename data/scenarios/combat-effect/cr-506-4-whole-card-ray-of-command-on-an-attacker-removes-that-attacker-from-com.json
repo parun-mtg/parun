@@ -216,30 +216,9 @@
       "turn": 1,
       "step": "EndOfCombat",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$kill-shot",
-          "targets": [
-            "$goblin-piker"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "EndOfCombat",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$kill-shot",
-          "targets": [
-            "$goblin-piker-2"
-          ],
           "mana": [
             "$p1",
             "$p2",

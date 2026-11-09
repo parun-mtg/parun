@@ -108,10 +108,7 @@
             "$s3",
             "$s4"
           ],
-          "object": "$zombify",
-          "targets": [
-            "$heliod"
-          ]
+          "object": "$zombify"
         }
       },
       "player": "alice",

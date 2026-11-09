@@ -102,9 +102,6 @@
       "do": {
         "Activate": {
           "object": "$hellkite",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$m1",
             null
@@ -126,22 +123,6 @@
         "Damage": {
           "object": "$giant",
           "damage": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$hellkite",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$m2"
-          ]
         }
       }
     },

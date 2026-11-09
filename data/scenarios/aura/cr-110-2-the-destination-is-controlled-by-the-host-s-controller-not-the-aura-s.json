@@ -75,9 +75,6 @@
         "Activate": {
           "object": "$mage",
           "ability": 1,
-          "targets": [
-            "$aura"
-          ],
           "mana": [
             "$i1",
             "$i2"

@@ -150,21 +150,6 @@
           "ability": 1,
           "object": "$lili",
           "targets": [
-            "$giant"
-          ],
-          "x": 2
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 1,
-          "object": "$lili",
-          "targets": [
             "$kytheon"
           ],
           "x": 1
@@ -178,9 +163,6 @@
         "Activate": {
           "ability": 1,
           "object": "$lili",
-          "targets": [
-            "$bears"
-          ],
           "x": 2
         }
       },

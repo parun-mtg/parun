@@ -128,10 +128,7 @@
             "$m5",
             "$m6"
           ],
-          "object": "$radiate",
-          "targets": [
-            "Lightning Bolt"
-          ]
+          "object": "$radiate"
         }
       },
       "player": "alice",

@@ -215,10 +215,7 @@
             "$s3",
             "$s4"
           ],
-          "object": "$f2",
-          "targets": [
-            "$rip"
-          ]
+          "object": "$f2"
         }
       },
       "player": "alice",

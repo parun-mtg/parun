@@ -46,9 +46,6 @@
       "do": {
         "Cast": {
           "object": "$doom-blade",
-          "targets": [
-            "$slaughter-drone"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2"

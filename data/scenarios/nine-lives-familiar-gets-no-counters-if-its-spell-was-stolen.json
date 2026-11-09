@@ -145,9 +145,6 @@
       "do": {
         "Cast": {
           "object": "$snatch",
-          "targets": [
-            "Nine-Lives Familiar"
-          ],
           "mana": [
             "$i1",
             "$i2",

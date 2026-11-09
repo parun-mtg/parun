@@ -44,10 +44,7 @@
           "mana": [
             "$forest"
           ],
-          "object": "$bg",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$bg"
         }
       },
       "player": "alice",

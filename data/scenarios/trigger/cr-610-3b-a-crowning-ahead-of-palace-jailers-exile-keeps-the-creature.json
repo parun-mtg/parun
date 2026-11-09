@@ -39,8 +39,6 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "OrderTimestamps": ["Palace Jailer", "Jared Carthalion, True Heir"] } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "OrderTriggers": ["Palace Jailer", "Palace Jailer", "Jared Carthalion, True Heir"] } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "opponent": ["$bob"] } }, "source": "Jared Carthalion, True Heir" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$piker"] } }, "source": "Palace Jailer" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Jared Carthalion, True Heir", "trigger of Palace Jailer", "trigger of Palace Jailer"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Monarch": { "player": "bob" } } },

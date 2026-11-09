@@ -79,10 +79,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$cancel",
-          "targets": [
-            "Banefire"
-          ]
+          "object": "$cancel"
         }
       },
       "player": "bob",

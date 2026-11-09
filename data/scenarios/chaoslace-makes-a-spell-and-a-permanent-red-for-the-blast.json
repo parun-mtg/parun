@@ -157,26 +157,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$i1",
-            null
-          ],
-          "modes": [
-            0
-          ],
-          "object": "$b1",
-          "targets": [
-            "Giant Growth"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -229,10 +209,7 @@
           "modes": [
             0
           ],
-          "object": "$b1",
-          "targets": [
-            "Giant Growth"
-          ]
+          "object": "$b1"
         }
       },
       "player": "alice",
@@ -263,23 +240,6 @@
       "player": "bob",
       "step": "BeginningOfCombat",
       "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$i1",
-            null
-          ],
-          "object": "$b2",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
     },
     {
       "do": {

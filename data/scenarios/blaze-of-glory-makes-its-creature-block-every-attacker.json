@@ -11,7 +11,7 @@
   },
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$piker 1", "$piker 2", "$piker 3", "$piker 4"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Cast": {"object": "$blaze", "targets": ["$wall"], "mana": ["$bob plains"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Cast": {"object": "$blaze", "mana": ["$bob plains"]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": {"Block": {"$wall": ["$piker 1", "$piker 2", "$piker 3"]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$wall": ["$piker 1", "$piker 2", "$piker 3", "$piker 4"]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$piker 4", "blockers": ["$wall"]}}},

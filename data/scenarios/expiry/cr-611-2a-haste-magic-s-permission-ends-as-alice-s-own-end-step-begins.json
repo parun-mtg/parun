@@ -34,7 +34,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$haste-magic", "targets": ["$giant"], "mana": ["$mountain-1", "$mountain-2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$haste-magic", "mana": ["$mountain-1", "$mountain-2", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast Lightning Bolt", "ActivateManaAbility $mountain-3"] } } },

@@ -120,9 +120,6 @@
       "do": {
         "Cast": {
           "object": "$para",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             null
           ]

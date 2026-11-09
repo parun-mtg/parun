@@ -83,10 +83,7 @@
           "mana": [
             null
           ],
-          "object": "$endurance",
-          "targets": [
-            "$ogre"
-          ]
+          "object": "$endurance"
         }
       },
       "player": "alice",

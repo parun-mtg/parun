@@ -164,10 +164,7 @@
             "$p",
             null
           ],
-          "object": "$wt",
-          "targets": [
-            "$prison"
-          ]
+          "object": "$wt"
         }
       },
       "player": "alice",

@@ -71,9 +71,6 @@
       "do": {
         "Cast": {
           "object": "$moment",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$w1",
             "$w2"

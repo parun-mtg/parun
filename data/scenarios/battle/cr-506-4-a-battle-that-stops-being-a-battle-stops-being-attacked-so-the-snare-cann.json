@@ -109,9 +109,6 @@
       "do": {
         "Cast": {
           "object": "$graft",
-          "targets": [
-            "$song"
-          ],
           "mana": [
             "$island",
             "$island-2",

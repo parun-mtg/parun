@@ -122,24 +122,6 @@
   "description": "Legion's Judgment destroys a creature with power 4 or greater and can't target a smaller one.",
   "timeline": [
     {
-      "refuse": {
-        "Cast": {
-          "object": "$lj",
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3"
-          ],
-          "targets": [
-            "$hg"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "object": "$lj",
@@ -147,9 +129,6 @@
             "$p1",
             "$p2",
             "$p3"
-          ],
-          "targets": [
-            "$la"
           ]
         }
       },

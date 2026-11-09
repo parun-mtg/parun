@@ -20,7 +20,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "Activate": { "object": "$arena", "ability": 2, "targets": ["$heckler"], "mana": ["$s1", "$s2", "$s3", "$s4", null] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "Activate": { "object": "$arena", "ability": 2, "mana": ["$s1", "$s2", "$s3", "$s4", null] } } },
     { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "View": { "of": "Designations", "object": "$heckler", "is": ["Prepared"] } } }
   ]

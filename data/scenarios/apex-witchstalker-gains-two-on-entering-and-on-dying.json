@@ -76,10 +76,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$murder",
-          "targets": [
-            "Apex Witchstalker"
-          ]
+          "object": "$murder"
         }
       },
       "player": "alice",

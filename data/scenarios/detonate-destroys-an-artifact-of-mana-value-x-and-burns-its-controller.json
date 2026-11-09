@@ -106,10 +106,7 @@
       "do": {
         "Cast": {
           "object": "$d",
-          "x": 4,
-          "targets": [
-            "$statue"
-          ]
+          "x": 4
         }
       }
     },

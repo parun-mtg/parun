@@ -110,9 +110,6 @@
         "Cast": {
           "object": "$consecrate",
           "face": "Consecrate",
-          "targets": [
-            "Magmakin Artillerist"
-          ],
           "mana": [
             "$p",
             "$s"

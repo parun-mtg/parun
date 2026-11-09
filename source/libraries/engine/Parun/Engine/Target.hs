@@ -1868,7 +1868,8 @@ chooserOf controller oid source seed chooser = do
 -- A slot whose count the card or the board already fixes is not offered at the
 -- first prompt, there being one legal answer; a count outside the offered range
 -- is clamped back into it, which is the same game as answering its nearest end.
--- Neither prompt is raised when it has nothing to ask.
+-- Neither prompt is raised when it has nothing to ask: the second not when
+-- every slot's count is the number of recipients it is offered.
 --
 -- `mine` is the slots THIS seat announces; `slots` and `sets` stay whole, since
 -- slotCapacities resolves a ZoneScope.InSlot pool against the named slot wherever
@@ -1906,10 +1907,13 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
             (\slot (lo, hi) -> max lo (min hi (Map.findWithDefault lo slot announced)))
             ranges
       asked = Map.intersectionWith (,) counts offered
+      -- Every slot taking all it is offered admits one answer, so it is bound
+      -- unasked. Should that answer fail the joint check, no other passes either.
+      forced = all (\(n, legal) -> Natural.length legal == n) asked
   if Map.null asked
     then pure (Map.empty, Set.empty)
     else do
-      answer <- Game.choose (Prompt.ChooseTargets decider chooser oid asked)
+      answer <- if forced then pure (fmap snd asked) else Game.choose (Prompt.ChooseTargets decider chooser oid asked)
       -- CR 406.4's draw, taken before selectionLegal judges the announcement:
       -- the drawn card can be one the slot's Filter refuses, and CR 601.2e is
       -- what then reverses the casting.

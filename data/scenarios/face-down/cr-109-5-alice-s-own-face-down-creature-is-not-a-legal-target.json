@@ -62,29 +62,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$break",
-          "targets": [
-            "$mine"
-          ],
-          "mana": [
-            "$m1",
-            "$m2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$break",
-          "targets": [
-            "$victim"
-          ],
           "mana": [
             "$m1",
             "$m2"

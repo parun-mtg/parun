@@ -57,9 +57,6 @@
       "do": {
         "Cast": {
           "object": "$woc",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$s1",
             "$s2"

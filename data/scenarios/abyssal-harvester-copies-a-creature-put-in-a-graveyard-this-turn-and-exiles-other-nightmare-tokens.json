@@ -167,25 +167,9 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$h",
-          "targets": [
-            "$stale"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$h",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$h"
         }
       },
       "player": "alice",

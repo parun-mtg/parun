@@ -38,7 +38,7 @@
       "turn": 2,
       "step": "PrecombatMain",
       "player": "bob",
-      "do": { "Cast": { "object": "$switch", "targets": ["$giant", "$piker"], "mana": ["$i1", "$i2", "$i3", "$i4", "$i5"] } }
+      "do": { "Cast": { "object": "$switch", "mana": ["$i1", "$i2", "$i3", "$i4", "$i5"] } }
     },
     { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
     { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Controller", "object": "$giant", "is": "carol" } } },

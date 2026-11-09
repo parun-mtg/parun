@@ -40,9 +40,6 @@
       "do": {
         "Cast": {
           "object": "$raise-dead",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$swamp"
           ]

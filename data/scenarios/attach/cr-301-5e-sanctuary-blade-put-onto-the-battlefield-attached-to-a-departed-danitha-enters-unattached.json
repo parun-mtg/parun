@@ -109,9 +109,6 @@
       "do": {
         "Cast": {
           "object": "$swords",
-          "targets": [
-            "Danitha, Benalia's Hope"
-          ],
           "mana": [
             "$p6"
           ]

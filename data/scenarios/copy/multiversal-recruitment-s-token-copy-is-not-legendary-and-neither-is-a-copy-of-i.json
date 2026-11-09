@@ -73,9 +73,6 @@
       "do": {
         "Cast": {
           "object": "$recruitment",
-          "targets": [
-            "$azusa"
-          ],
           "mana": [
             "$i1",
             "$i2",

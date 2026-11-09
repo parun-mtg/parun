@@ -125,20 +125,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "creatures": [
-            "$sentry",
-            "$student"
-          ]
-        }
-      },
-      "source": "Exchange of Words"
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": "Pass"
     },
     {

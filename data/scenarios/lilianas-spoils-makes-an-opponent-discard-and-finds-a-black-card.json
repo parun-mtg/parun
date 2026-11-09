@@ -127,9 +127,6 @@
       "do": {
         "Cast": {
           "object": "$spoils",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$s1",
             "$s2",

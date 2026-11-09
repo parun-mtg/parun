@@ -43,10 +43,7 @@
           "mana": [
             "$i1"
           ],
-          "object": "$disarm",
-          "targets": [
-            "$cloud"
-          ]
+          "object": "$disarm"
         }
       },
       "player": "alice",

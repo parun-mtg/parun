@@ -71,38 +71,9 @@
   "description": "Generous Revival cannot return alice's Hill Giant, mana value 4, nor bob's Grizzly Bears; it returns alice's Horned Turtle, mana value 3, with a +1/+1 counter",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$rev",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$rev",
-          "targets": [
-            "$gb"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$rev",
-          "targets": [
-            "$turtle"
-          ]
+          "object": "$rev"
         }
       },
       "player": "alice",

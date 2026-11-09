@@ -90,10 +90,7 @@
             "$m2",
             null
           ],
-          "object": "$shatter",
-          "targets": [
-            "$bsplit"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "alice",

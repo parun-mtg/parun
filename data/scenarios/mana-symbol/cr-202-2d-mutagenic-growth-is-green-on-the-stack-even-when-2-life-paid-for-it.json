@@ -33,10 +33,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$mutagenic-growth",
-          "targets": [
-            "$goblin-piker"
-          ]
+          "object": "$mutagenic-growth"
         }
       }
     },

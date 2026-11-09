@@ -80,33 +80,13 @@
   "note": "Carol owns the Rod of Ruin but bob controls it, so bob takes the 3 and carol none; the Grizzly Bears target is refused.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$m1",
-            "$m2"
-          ],
-          "object": "$smash",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
             "$m1",
             "$m2"
           ],
-          "object": "$smash",
-          "targets": [
-            "$rod"
-          ]
+          "object": "$smash"
         }
       },
       "player": "alice",

@@ -89,30 +89,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$kill-shot",
-          "targets": [
-            "$defender"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$kill-shot",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$p1",
             "$p2",

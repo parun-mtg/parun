@@ -139,9 +139,6 @@
       "refuse": {
         "Cast": {
           "object": "$raise",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$swamp"
           ]
@@ -155,9 +152,6 @@
       "do": {
         "Cast": {
           "object": "$disenchant",
-          "targets": [
-            "Ground Seal"
-          ],
           "mana": [
             "$w1",
             "$w2",
@@ -179,9 +173,6 @@
       "do": {
         "Cast": {
           "object": "$raise",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$swamp"
           ]

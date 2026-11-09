@@ -70,9 +70,6 @@
       "do": {
         "Cast": {
           "object": "$glory",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$plains"
           ]

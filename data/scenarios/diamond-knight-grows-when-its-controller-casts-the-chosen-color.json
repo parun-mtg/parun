@@ -160,10 +160,7 @@
             "$forest",
             null
           ],
-          "object": "$growth",
-          "targets": [
-            "Diamond Knight"
-          ]
+          "object": "$growth"
         }
       },
       "player": "alice",

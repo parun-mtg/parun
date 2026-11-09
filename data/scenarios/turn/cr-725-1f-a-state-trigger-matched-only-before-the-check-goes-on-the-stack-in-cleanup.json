@@ -68,10 +68,7 @@
             "$swamp3",
             "$swamp4"
           ],
-          "object": "$raising",
-          "targets": [
-            "$men"
-          ]
+          "object": "$raising"
         }
       },
       "player": "alice",

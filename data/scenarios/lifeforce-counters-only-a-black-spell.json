@@ -108,26 +108,6 @@
           "mana": [
             "$f",
             null
-          ],
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$e",
-          "mana": [
-            "$a",
-            "$b"
-          ],
-          "targets": [
-            "Giant Growth"
           ]
         }
       }
@@ -142,9 +122,6 @@
           "mana": [
             "$a",
             "$b"
-          ],
-          "targets": [
-            "Dark Ritual"
           ]
         }
       }

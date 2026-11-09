@@ -51,9 +51,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$darksteel-myr"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

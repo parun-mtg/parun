@@ -70,9 +70,6 @@
       "do": {
         "Cast": {
           "object": "$giant-growth",
-          "targets": [
-            "$tomakul-honor-guard"
-          ],
           "mana": [
             "$forest",
             null

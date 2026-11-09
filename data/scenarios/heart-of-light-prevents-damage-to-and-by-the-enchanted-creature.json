@@ -65,9 +65,6 @@
       "do": {
         "Cast": {
           "object": "$heart",
-          "targets": [
-            "$pyromancer"
-          ],
           "mana": [
             null
           ]

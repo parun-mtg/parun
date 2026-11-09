@@ -33,7 +33,7 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$lightning", "targets": ["$wurm-a", "$wurm-b"], "mana": ["$mountain1", "$mountain2", "$mountain3", "$mountain4"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseDivision", "with": [[["Creature", "$wurm-a"], 1], [["Creature", "$wurm-b"], 3]] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$redirect", "targets": ["Forked Lightning"], "mana": ["$island1", "$island2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$redirect", "mana": ["$island1", "$island2"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "creatures": ["$wurm-c", "$wurm-d"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseDivision", "with": [[["Creature", "$wurm-c"], 3], [["Creature", "$wurm-d"], 1]] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },

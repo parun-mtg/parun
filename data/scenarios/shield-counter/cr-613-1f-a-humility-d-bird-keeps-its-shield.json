@@ -203,9 +203,6 @@
       "do": {
         "Cast": {
           "object": "$blade-1",
-          "targets": [
-            "Swooping Protector"
-          ],
           "mana": [
             "$swamp-1",
             "$swamp-2",

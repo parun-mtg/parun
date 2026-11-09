@@ -209,10 +209,7 @@
             "$p2",
             null
           ],
-          "object": "$pac",
-          "targets": [
-            "$el"
-          ]
+          "object": "$pac"
         }
       },
       "player": "bob",

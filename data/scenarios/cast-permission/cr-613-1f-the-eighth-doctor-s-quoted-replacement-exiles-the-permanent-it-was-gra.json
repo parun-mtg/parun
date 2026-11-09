@@ -116,9 +116,6 @@
       "do": {
         "Cast": {
           "object": "$disenchant",
-          "targets": [
-            "Ornithopter#2"
-          ],
           "mana": [
             "$p1",
             "$p2",

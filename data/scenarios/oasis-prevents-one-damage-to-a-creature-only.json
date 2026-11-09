@@ -87,28 +87,9 @@
   "description": "Oasis: its shield takes one of the Bolt's three, leaving 2 on the Hill Giant; a player is no target",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            null
-          ],
-          "object": "$oasis",
-          "targets": [
-            "$alice"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$oasis",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$oasis"
         }
       },
       "player": "alice",

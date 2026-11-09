@@ -98,9 +98,6 @@
       "do": {
         "Activate": {
           "object": "$slash",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$s1",
             null

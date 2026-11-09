@@ -93,24 +93,6 @@
       "turn": 2
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "mana": [
-            "$i1",
-            "$i2"
-          ],
-          "object": "$shaper",
-          "targets": [
-            "$theirs"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -118,10 +100,7 @@
             "$i1",
             "$i2"
           ],
-          "object": "$shaper",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$shaper"
         }
       },
       "player": "alice",

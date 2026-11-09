@@ -98,10 +98,7 @@
       "player": "bob",
       "do": {
         "Cast": {
-          "object": "$ray",
-          "targets": [
-            "$mine"
-          ]
+          "object": "$ray"
         }
       }
     },

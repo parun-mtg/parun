@@ -3016,6 +3016,7 @@ auraSwapSpec s registry =
           let (concealmentId, gs) = S.addHandCard concealment S.alice (S.landsFor plains S.alice 4 board)
               concealing :: Prompt.Prompt r -> r
               concealing p = case p of
+                Prompt.AnnounceTargets _ _ _ offers -> 1 <$ offers
                 Prompt.ChooseTargets _ _ _ offers -> fmap (Set.filter ((== Just wingsId) . Recipient.objectOf) . snd) offers
                 _ -> answer pacifismId wolvesId p
           case Projection.abilitiesOf wingsId gs of

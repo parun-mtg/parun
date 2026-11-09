@@ -1,6 +1,6 @@
 {
   "description": "CR 601.2c Dismantling Wave destroys up to one artifact or enchantment of each opponent's",
-  "note": "One slot per opponent, bob's first. Each refused cast aims one slot at something that slot does not offer, the other slot at its own player's permanent: alice's own Ornithopter in either slot, and each opponent's permanent in the other opponent's slot.",
+  "note": "One slot per opponent, bob's first. Each refused cast aims one slot at something that slot does not offer, the other slot at its own player's permanent, each opponent holding a second so the slot is asked: alice's own Ornithopter in either slot, and each opponent's permanent in the other opponent's slot.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
@@ -38,6 +38,9 @@
           {
             "card": "Ornithopter",
             "label": "bobs"
+          },
+          {
+            "card": "Ornithopter"
           }
         ]
       },
@@ -47,6 +50,9 @@
           {
             "card": "Glorious Anthem",
             "label": "anthem"
+          },
+          {
+            "card": "Ornithopter"
           }
         ]
       }

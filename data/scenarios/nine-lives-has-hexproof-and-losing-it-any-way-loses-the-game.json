@@ -142,26 +142,6 @@
   ],
   "timeline": [
     {
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$f1",
-            "$f2"
-          ],
-          "modes": [
-            1
-          ],
-          "object": "$nb",
-          "targets": [
-            "$nine"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
       "check": {
         "Count": {
           "card": "Nine Lives",
@@ -195,10 +175,7 @@
           "modes": [
             1
           ],
-          "object": "$na",
-          "targets": [
-            "$nine"
-          ]
+          "object": "$na"
         }
       },
       "player": "alice",

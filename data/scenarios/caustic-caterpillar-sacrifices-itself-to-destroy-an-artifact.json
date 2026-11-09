@@ -62,10 +62,7 @@
     {
       "do": {
         "Activate": {
-          "object": "$caterpillar",
-          "targets": [
-            "$thopter"
-          ]
+          "object": "$caterpillar"
         }
       },
       "player": "alice",

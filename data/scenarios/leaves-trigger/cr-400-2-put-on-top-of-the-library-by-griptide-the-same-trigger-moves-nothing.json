@@ -54,9 +54,6 @@
       "do": {
         "Cast": {
           "object": "$griptide",
-          "targets": [
-            "$synthetic-persistent-roaches"
-          ],
           "mana": [
             "$island",
             "$island-2",

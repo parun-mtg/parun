@@ -200,10 +200,7 @@
             "$s4",
             null
           ],
-          "object": "$z",
-          "targets": [
-            "$gy"
-          ]
+          "object": "$z"
         }
       },
       "player": "alice",

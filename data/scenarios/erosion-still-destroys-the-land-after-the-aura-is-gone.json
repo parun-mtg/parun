@@ -113,10 +113,7 @@
             "$p2",
             null
           ],
-          "object": "$disenchant",
-          "targets": [
-            "$erosion"
-          ]
+          "object": "$disenchant"
         }
       },
       "player": "bob",

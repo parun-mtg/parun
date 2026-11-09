@@ -174,51 +174,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$floe",
-          "targets": [
-            "$men"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$floe",
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$floe",
-          "targets": [
-            "$home"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$floe",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$floe"
         }
       }
     },

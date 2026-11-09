@@ -88,10 +88,7 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "object": "$discarder",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$discarder"
         }
       },
       "player": "alice",

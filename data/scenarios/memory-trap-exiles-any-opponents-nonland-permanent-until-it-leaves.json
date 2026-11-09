@@ -152,10 +152,7 @@
             "$f1",
             "$f2"
           ],
-          "object": "$nat",
-          "targets": [
-            "Memory Trap"
-          ]
+          "object": "$nat"
         }
       },
       "player": "alice",

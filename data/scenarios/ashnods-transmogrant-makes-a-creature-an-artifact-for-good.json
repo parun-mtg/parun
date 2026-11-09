@@ -87,25 +87,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$tm",
-          "targets": [
-            "$thopter"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$tm",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$tm"
         }
       }
     },

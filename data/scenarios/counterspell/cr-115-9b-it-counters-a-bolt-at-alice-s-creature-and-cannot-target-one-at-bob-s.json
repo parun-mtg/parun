@@ -67,9 +67,6 @@
       "do": {
         "Cast": {
           "object": "$rebuff-the-wicked",
-          "targets": [
-            "Lightning Bolt"
-          ],
           "mana": [
             "$plains"
           ]

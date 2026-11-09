@@ -75,10 +75,7 @@
             "$p1",
             null
           ],
-          "object": "$humiliation",
-          "targets": [
-            "$avenger"
-          ]
+          "object": "$humiliation"
         }
       },
       "player": "alice",
@@ -104,10 +101,7 @@
             "$i1",
             null
           ],
-          "object": "$unsummon",
-          "targets": [
-            "$avenger"
-          ]
+          "object": "$unsummon"
         }
       },
       "player": "alice",

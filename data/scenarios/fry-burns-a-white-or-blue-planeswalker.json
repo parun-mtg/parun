@@ -95,10 +95,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$fry",
-          "targets": [
-            "$ajani"
-          ]
+          "object": "$fry"
         }
       },
       "player": "alice",

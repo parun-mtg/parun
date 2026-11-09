@@ -90,10 +90,7 @@
             "$i4",
             null
           ],
-          "object": "$maze",
-          "targets": [
-            "$spitter"
-          ]
+          "object": "$maze"
         }
       },
       "player": "alice",

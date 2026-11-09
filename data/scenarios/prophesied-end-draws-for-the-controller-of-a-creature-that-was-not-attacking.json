@@ -173,10 +173,7 @@
             "$w3",
             "$w4"
           ],
-          "object": "$pe2",
-          "targets": [
-            "$homebody"
-          ]
+          "object": "$pe2"
         }
       },
       "player": "alice",

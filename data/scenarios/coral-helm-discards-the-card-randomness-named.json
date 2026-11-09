@@ -81,24 +81,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$island-1",
-            "$island-2",
-            "$island-3"
-          ],
-          "object": "$helm",
-          "targets": [
-            "$island-1"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
@@ -106,10 +88,7 @@
             "$island-2",
             "$island-3"
           ],
-          "object": "$helm",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$helm"
         }
       },
       "player": "alice",

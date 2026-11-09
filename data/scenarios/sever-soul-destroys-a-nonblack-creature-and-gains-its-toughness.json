@@ -57,25 +57,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$sever",
-          "targets": [
-            "$rats"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$sever",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$sever"
         }
       }
     },

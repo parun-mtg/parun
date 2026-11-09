@@ -190,15 +190,7 @@
             "$f2",
             "$f3"
           ],
-          "object": "$bite",
-          "targetsBySlot": {
-            "dealer": [
-              "Vampire Nighthawk"
-            ],
-            "victim": [
-              "$wurm"
-            ]
-          }
+          "object": "$bite"
         }
       },
       "player": "bob",

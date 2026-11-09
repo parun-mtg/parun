@@ -96,44 +96,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$iso",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$p1"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$iso",
-          "targets": [
-            "$bf"
-          ],
-          "mana": [
-            "$p1"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$iso",
-          "targets": [
-            "$merfolk"
-          ],
           "mana": [
             "$p1"
           ]

@@ -31,7 +31,7 @@
   },
   "timeline": [
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
-    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Activate": { "object": "$spirit", "targets": ["$giant"], "mana": ["$i1", "$i2", "$i3", "$i4", null] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Activate": { "object": "$spirit", "mana": ["$i1", "$i2", "$i3", "$i4", null] } } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "$mirrorweave", "targets": ["$towershell"], "mana": ["$i5", "$i6", "$i7", "$i8"] } } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Names": { "object": "$spirit", "names": ["Meandering Towershell"] } } },

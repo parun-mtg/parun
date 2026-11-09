@@ -42,9 +42,6 @@
       "do": {
         "Cast": {
           "object": "$tactics",
-          "targets": [
-            "$stalker"
-          ],
           "mana": [
             "$m1",
             "$m2"

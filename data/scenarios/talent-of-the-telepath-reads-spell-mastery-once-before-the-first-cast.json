@@ -111,10 +111,7 @@
             "$i3",
             "$i4"
           ],
-          "object": "$talent",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$talent"
         }
       },
       "player": "alice",

@@ -72,25 +72,9 @@
   "note": "bob's green Grizzly Bears is refused; his red Goblin Piker is destroyed and alice goes 20 to 21.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$tc",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$tc",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$tc"
         }
       },
       "player": "alice",

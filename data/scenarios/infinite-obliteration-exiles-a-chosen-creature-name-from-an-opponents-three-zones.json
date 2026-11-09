@@ -75,25 +75,9 @@
   ],
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$io",
-          "targets": [
-            "$alice"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$io",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$io"
         }
       },
       "player": "alice",

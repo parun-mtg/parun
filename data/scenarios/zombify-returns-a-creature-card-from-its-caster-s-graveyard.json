@@ -86,50 +86,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$zombify",
-          "targets": [
-            "$ogre"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3",
-            "$s4"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$zombify",
-          "targets": [
-            "$bolt"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3",
-            "$s4"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$zombify",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$s1",
             "$s2",

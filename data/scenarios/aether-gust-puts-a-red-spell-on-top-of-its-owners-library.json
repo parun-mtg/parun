@@ -94,10 +94,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$gust",
-          "targets": [
-            "Lightning Bolt"
-          ]
+          "object": "$gust"
         }
       },
       "player": "alice",

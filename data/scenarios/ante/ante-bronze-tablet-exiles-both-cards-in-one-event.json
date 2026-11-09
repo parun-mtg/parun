@@ -34,7 +34,6 @@
         "Activate": {
           "object": "$tablet",
           "ability": 0,
-          "targets": ["$thopter"],
           "mana": ["$mountain-1", "$mountain-2", "$mountain-3", "$mountain-4"]
         }
       }

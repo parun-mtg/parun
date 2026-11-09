@@ -104,33 +104,13 @@
   "description": "Ashnod's Battle Gear: {2}, {T} gives target creature you control +2/-2 for as long as it remains tapped; its controller may leave it tapped through the untap step",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$m1",
-            "$m2"
-          ],
-          "object": "$gear",
-          "targets": [
-            "$wall"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
             "$m1",
             "$m2"
           ],
-          "object": "$gear",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$gear"
         }
       },
       "player": "alice",

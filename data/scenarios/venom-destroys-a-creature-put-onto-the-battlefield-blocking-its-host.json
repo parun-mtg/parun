@@ -90,9 +90,6 @@
       "do": {
         "Cast": {
           "object": "$foliage",
-          "targets": [
-            "$host"
-          ],
           "mana": [
             "$f1",
             "$f2",

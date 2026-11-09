@@ -58,9 +58,6 @@
       "do": {
         "Cast": {
           "object": "$blade",
-          "targets": [
-            "$elves"
-          ],
           "mana": [
             "$swamp-1",
             "$swamp-2",
@@ -76,9 +73,6 @@
       "do": {
         "Cast": {
           "object": "$wisps",
-          "targets": [
-            "$elves"
-          ],
           "mana": [
             "$swamp-3"
           ]

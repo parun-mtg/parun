@@ -92,9 +92,6 @@
       "do": {
         "Cast": {
           "object": "$turn-to-frog",
-          "targets": [
-            "$bog-wraith"
-          ],
           "mana": [
             "$island",
             "$island-2",

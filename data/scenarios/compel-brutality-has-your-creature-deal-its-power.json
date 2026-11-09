@@ -51,15 +51,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$compel",
-          "targetsBySlot": {
-            "dealer": [
-              "$mine"
-            ],
-            "victim": [
-              "$baloth"
-            ]
-          }
+          "object": "$compel"
         }
       },
       "player": "alice",

@@ -71,9 +71,6 @@
       "do": {
         "Cast": {
           "object": "$aura-graft",
-          "targets": [
-            "$unholy-strength"
-          ],
           "mana": [
             "$island",
             "$island-2",

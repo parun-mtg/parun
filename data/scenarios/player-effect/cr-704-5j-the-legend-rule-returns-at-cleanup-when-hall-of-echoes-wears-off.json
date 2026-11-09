@@ -114,10 +114,7 @@
           "mana": [
             null
           ],
-          "object": "$hall",
-          "targets": [
-            "$isamaru"
-          ]
+          "object": "$hall"
         }
       },
       "player": "alice",

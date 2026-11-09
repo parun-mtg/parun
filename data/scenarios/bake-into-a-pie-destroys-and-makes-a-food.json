@@ -128,10 +128,7 @@
             "$s4",
             null
           ],
-          "object": "$pie",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$pie"
         }
       },
       "player": "alice",

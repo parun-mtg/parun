@@ -71,9 +71,6 @@
           "object": "$helm",
           "mana": [
             "$m1"
-          ],
-          "targets": [
-            "$gb"
           ]
         }
       }

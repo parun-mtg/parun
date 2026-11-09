@@ -59,9 +59,6 @@
       "do": {
         "Cast": {
           "object": "$stir-the-grave",
-          "targets": [
-            "$goblin-piker"
-          ],
           "x": 2,
           "mana": [
             "$swamp",

@@ -73,18 +73,6 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
-        "ChooseTargets": {
-          "enchant": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
         "Answer": {
           "prompt": "ChooseDiscard",
           "with": [

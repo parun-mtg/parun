@@ -129,9 +129,6 @@
       "do": {
         "Cast": {
           "object": "$unsummon",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "Coldsteel Heart",
             null

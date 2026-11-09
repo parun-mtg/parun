@@ -129,9 +129,6 @@
       "do": {
         "Cast": {
           "object": "$bend",
-          "targets": [
-            "Lightning Bolt"
-          ],
           "mana": [
             "$m2"
           ]

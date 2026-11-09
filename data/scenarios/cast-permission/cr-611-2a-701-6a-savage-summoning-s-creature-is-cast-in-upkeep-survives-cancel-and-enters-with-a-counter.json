@@ -138,9 +138,6 @@
       "do": {
         "Cast": {
           "object": "$c1",
-          "targets": [
-            "Savage Summoning"
-          ],
           "mana": [
             "$i1",
             "$i2",
@@ -214,9 +211,6 @@
       "do": {
         "Cast": {
           "object": "$c2",
-          "targets": [
-            "Grizzly Bears"
-          ],
           "mana": [
             "$i4",
             "$i5",

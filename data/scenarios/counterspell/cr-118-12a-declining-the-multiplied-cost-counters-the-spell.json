@@ -104,9 +104,6 @@
       "do": {
         "Cast": {
           "object": "$disdain",
-          "targets": [
-            "Goblin Piker#5"
-          ],
           "mana": [
             "$alice-island-1",
             "$alice-island-2",

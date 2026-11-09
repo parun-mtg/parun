@@ -68,25 +68,9 @@
   "description": "CR 602.2 / 120.3: Skyway Sniper's {2}{G} deals 1 damage to a target creature with flying",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$sniper",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$sniper",
-          "targets": [
-            "$drake"
-          ]
+          "object": "$sniper"
         }
       },
       "player": "alice",

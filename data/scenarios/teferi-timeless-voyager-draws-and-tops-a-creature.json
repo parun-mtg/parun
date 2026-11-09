@@ -159,10 +159,7 @@
       "do": {
         "Activate": {
           "ability": 1,
-          "object": "Teferi, Timeless Voyager",
-          "targets": [
-            "$bears"
-          ]
+          "object": "Teferi, Timeless Voyager"
         }
       },
       "player": "alice",

@@ -56,10 +56,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$twitch",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$twitch"
         }
       }
     },

@@ -59,10 +59,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$bribery",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$bribery"
         }
       }
     },

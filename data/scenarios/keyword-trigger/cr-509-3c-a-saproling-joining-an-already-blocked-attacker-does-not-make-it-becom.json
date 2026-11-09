@@ -83,9 +83,6 @@
       "do": {
         "Cast": {
           "object": "$flash-foliage",
-          "targets": [
-            "$sacred-prey"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

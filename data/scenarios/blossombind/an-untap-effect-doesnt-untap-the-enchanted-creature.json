@@ -88,10 +88,7 @@
             "$i2",
             null
           ],
-          "object": "$bind",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$bind"
         }
       },
       "player": "alice",
@@ -118,10 +115,7 @@
             "$p2",
             "$p3"
           ],
-          "object": "$inspirit",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$inspirit"
         }
       },
       "player": "alice",

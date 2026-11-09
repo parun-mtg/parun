@@ -55,10 +55,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$favor",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$favor"
         }
       }
     },

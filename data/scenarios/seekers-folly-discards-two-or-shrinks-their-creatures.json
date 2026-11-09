@@ -123,10 +123,7 @@
           "modes": [
             0
           ],
-          "object": "$one",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$one"
         }
       },
       "player": "alice",

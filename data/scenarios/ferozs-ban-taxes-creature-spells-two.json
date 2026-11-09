@@ -10,7 +10,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$bears", "mana": ["$f1", "$f2", "$f3", "$f4", null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$growth", "targets": ["Grizzly Bears"], "mana": ["$f5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$growth", "mana": ["$f5"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"PowerToughness": {"object": "Grizzly Bears", "power": 5, "toughness": 5}}}
   ]

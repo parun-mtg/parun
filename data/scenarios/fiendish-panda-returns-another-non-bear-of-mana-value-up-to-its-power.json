@@ -96,10 +96,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$murder",
-          "targets": [
-            "$panda"
-          ]
+          "object": "$murder"
         }
       },
       "player": "bob",

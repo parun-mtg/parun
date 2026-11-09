@@ -90,9 +90,6 @@
       "do": {
         "Cast": {
           "object": "$spin",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$i1",
             "$i2",

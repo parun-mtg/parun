@@ -155,27 +155,10 @@
   "description": "Teferi, Master of Time's -3 phases out a creature you don't control until its controller's next turn, through another player's turn.",
   "timeline": [
     {
-      "refuse": {
-        "Activate": {
-          "ability": 1,
-          "object": "$t",
-          "targets": [
-            "$mine"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 1,
-          "object": "$t",
-          "targets": [
-            "$foe"
-          ]
+          "object": "$t"
         }
       },
       "player": "alice",

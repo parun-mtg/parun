@@ -57,7 +57,6 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$wraith", "keyword": {"type": "Landwalk", "value": {"type": "HasSubtype", "value": "Swamp"}}, "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$exchange", "mana": ["$island2", "$island3", "$island4"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "source": "Exchange of Words", "do": {"ChooseTargets": {"creatures": ["$wraith", "$piker"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$piker", "keyword": {"type": "Landwalk", "value": {"type": "HasSubtype", "value": "Island"}}, "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$piker", "keyword": {"type": "Landwalk", "value": {"type": "HasSubtype", "value": "Swamp"}}, "count": 0}}},

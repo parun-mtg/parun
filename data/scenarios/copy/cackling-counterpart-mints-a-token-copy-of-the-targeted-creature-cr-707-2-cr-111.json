@@ -49,9 +49,6 @@
       "do": {
         "Cast": {
           "object": "$cackling-counterpart",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

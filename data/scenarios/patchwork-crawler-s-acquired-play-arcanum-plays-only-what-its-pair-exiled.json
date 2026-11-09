@@ -41,7 +41,7 @@
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$crawler", "ability": 0, "mana": ["$island", "$island-2", "$island-3", null], "targets": ["$urianger"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$crawler", "ability": 0, "mana": ["$island-4", "$island-5", "$island-6", null], "targets": ["$grizzly"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$crawler", "ability": 0, "mana": ["$island-4", "$island-5", "$island-6", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$crawler", "ability": 1 } } },

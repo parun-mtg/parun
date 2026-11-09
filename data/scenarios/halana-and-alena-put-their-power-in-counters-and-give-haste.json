@@ -76,30 +76,6 @@
       "turn": 1,
       "step": "BeginningOfCombat",
       "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$hl"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$gb"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "do": "Pass"
     },
     {

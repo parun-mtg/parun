@@ -11,7 +11,7 @@
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Cast": {"object": "$fire", "mana": ["$m1", "$m2", "$m3", null], "targetsBySlot": {"dealer": ["$giant"], "victim": ["$alice"]}}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "check": {"Life": {"player": "alice", "life": 17}}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Cast": {"object": "$fists", "mana": ["$m4", "$m5"], "targets": ["$giant"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Cast": {"object": "$fists", "mana": ["$m4", "$m5"]}}},
     {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 16}}}
   ]
 }

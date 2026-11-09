@@ -114,47 +114,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$cancel",
-          "targets": [
-            "ability of $sorcerer"
-          ],
-          "mana": [
-            "$i1",
-            "$i2",
-            "$i3",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$stifle",
-          "targets": [
-            "Goblin Piker"
-          ],
-          "mana": [
-            "$i4"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$cancel",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$i1",
             "$i2",
@@ -171,9 +133,6 @@
       "do": {
         "Cast": {
           "object": "$stifle",
-          "targets": [
-            "ability of $sorcerer"
-          ],
           "mana": [
             "$i4"
           ]

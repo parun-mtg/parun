@@ -14,7 +14,7 @@
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$s1", "targets": ["$alice"], "mana": ["$b1", null]}}},
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": ["trigger of $leyline", "Shock#4"]}}},
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
-    {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": {"Cast": {"object": "$snatch", "targets": ["Shock#4"], "mana": ["$u1", "$u2", "$u3", "$u4", "$u5", "$u6", null]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": {"Cast": {"object": "$snatch", "mana": ["$u1", "$u2", "$u3", "$u4", "$u5", "$u6", null]}}},
     {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": "Pass"},
     {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": {"ChooseTargets": {"target": ["$alice"]}}},
     {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},

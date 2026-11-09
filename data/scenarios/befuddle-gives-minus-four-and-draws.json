@@ -52,10 +52,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$befuddle",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$befuddle"
         }
       },
       "player": "alice",

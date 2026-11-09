@@ -121,10 +121,7 @@
             "$p2",
             "$p3"
           ],
-          "object": "$dub",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$dub"
         }
       },
       "player": "alice",

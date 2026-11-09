@@ -51,9 +51,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

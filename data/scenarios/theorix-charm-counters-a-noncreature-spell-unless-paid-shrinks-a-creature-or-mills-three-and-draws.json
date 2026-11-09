@@ -225,10 +225,7 @@
           "modes": [
             1
           ],
-          "object": "$c2",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$c2"
         }
       },
       "player": "alice",
@@ -290,26 +287,6 @@
       "turn": 2
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$i3",
-            "$s3"
-          ],
-          "modes": [
-            0
-          ],
-          "object": "$c1",
-          "targets": [
-            "Grizzly Bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -319,10 +296,7 @@
           "modes": [
             0
           ],
-          "object": "$c1",
-          "targets": [
-            "Think Twice"
-          ]
+          "object": "$c1"
         }
       },
       "player": "alice",

@@ -111,9 +111,6 @@
         "Activate": {
           "object": "$engine",
           "ability": 0,
-          "targets": [
-            "trigger of Ravenous Rats#5"
-          ],
           "mana": [
             "$s3",
             "$s4"

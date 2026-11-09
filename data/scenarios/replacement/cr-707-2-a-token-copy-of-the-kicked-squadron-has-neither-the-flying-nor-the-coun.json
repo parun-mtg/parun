@@ -132,9 +132,6 @@
       "do": {
         "Cast": {
           "object": "$rite",
-          "targets": [
-            "Faerie Squadron"
-          ],
           "mana": [
             "$i6",
             "$i7",

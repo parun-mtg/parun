@@ -124,18 +124,6 @@
       "turn": 2,
       "step": "Upkeep",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$moon"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "do": "Pass"
     },
     {

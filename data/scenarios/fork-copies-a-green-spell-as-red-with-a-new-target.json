@@ -132,10 +132,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$fork",
-          "targets": [
-            "Giant Growth"
-          ]
+          "object": "$fork"
         }
       },
       "player": "bob",

@@ -154,10 +154,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$shatter",
-          "targets": [
-            "$wand"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "alice",

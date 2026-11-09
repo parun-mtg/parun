@@ -66,7 +66,7 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$piker", "keyword": { "type": "Lifelink" }, "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "$piker", "names": ["War Mammoth"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$piker", "keyword": { "type": "Trample" }, "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$crown", "ability": 0, "targets": ["Metamorphic Alteration"], "mana": ["$swamp-1", "$swamp-2", "$swamp-3", "$swamp-4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$crown", "ability": 0, "mana": ["$swamp-1", "$swamp-2", "$swamp-3", "$swamp-4", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttachment", "with": "$bears" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "$piker", "names": ["Goblin Piker"] } } },

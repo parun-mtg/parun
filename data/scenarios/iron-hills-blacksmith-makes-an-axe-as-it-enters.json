@@ -164,10 +164,7 @@
             "$p3",
             "$p4"
           ],
-          "object": "Axe",
-          "targets": [
-            "Iron Hills Blacksmith"
-          ]
+          "object": "Axe"
         }
       },
       "player": "alice",

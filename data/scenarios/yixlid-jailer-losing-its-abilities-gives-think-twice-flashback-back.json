@@ -102,10 +102,7 @@
             "$i2",
             null
           ],
-          "object": "$frog",
-          "targets": [
-            "$target"
-          ]
+          "object": "$frog"
         }
       },
       "player": "alice",

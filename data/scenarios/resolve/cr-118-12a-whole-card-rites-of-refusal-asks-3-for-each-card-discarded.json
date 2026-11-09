@@ -138,9 +138,6 @@
       "do": {
         "Cast": {
           "object": "$refusal",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$island",
             "$island-2"

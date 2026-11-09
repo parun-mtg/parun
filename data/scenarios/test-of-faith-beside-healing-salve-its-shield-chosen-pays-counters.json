@@ -113,10 +113,7 @@
             "$w2",
             null
           ],
-          "object": "$tof",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$tof"
         }
       },
       "player": "alice",

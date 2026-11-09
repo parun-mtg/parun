@@ -81,30 +81,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$elite",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$elite",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$p1",
             "$p2",

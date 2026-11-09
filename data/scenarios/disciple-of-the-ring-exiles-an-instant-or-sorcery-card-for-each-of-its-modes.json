@@ -109,10 +109,7 @@
           "modes": [
             0
           ],
-          "object": "$disciple",
-          "targets": [
-            "Shock"
-          ]
+          "object": "$disciple"
         }
       },
       "player": "alice",

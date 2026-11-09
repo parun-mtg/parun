@@ -102,9 +102,6 @@
       "do": {
         "Cast": {
           "object": "$growth",
-          "targets": [
-            "Voice of All"
-          ],
           "mana": [
             "$forest"
           ]

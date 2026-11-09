@@ -73,10 +73,7 @@
             "$i3",
             "$i4"
           ],
-          "object": "$energize",
-          "targets": [
-            "$theirs"
-          ]
+          "object": "$energize"
         }
       },
       "player": "alice",

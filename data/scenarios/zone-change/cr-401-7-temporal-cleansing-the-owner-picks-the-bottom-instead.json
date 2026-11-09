@@ -103,9 +103,6 @@
       "do": {
         "Cast": {
           "object": "$treason",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$m1",
             "$m2",
@@ -151,9 +148,6 @@
       "do": {
         "Cast": {
           "object": "$spell",
-          "targets": [
-            "$piker"
-          ],
           "cost": [
             {
               "type": "Generic",

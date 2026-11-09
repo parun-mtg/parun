@@ -180,9 +180,6 @@
       "do": {
         "Cast": {
           "object": "$cancel",
-          "targets": [
-            "Grizzly Bears"
-          ],
           "mana": [
             "$i1",
             "$i2",

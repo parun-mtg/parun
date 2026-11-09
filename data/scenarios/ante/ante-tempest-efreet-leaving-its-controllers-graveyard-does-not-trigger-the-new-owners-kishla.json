@@ -52,10 +52,7 @@
       "do": {
         "Activate": {
           "object": "$efreet",
-          "ability": 0,
-          "targets": [
-            "$bob"
-          ]
+          "ability": 0
         }
       }
     },

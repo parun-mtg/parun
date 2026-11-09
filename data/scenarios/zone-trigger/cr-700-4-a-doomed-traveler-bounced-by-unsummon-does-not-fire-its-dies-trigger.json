@@ -39,9 +39,6 @@
       "do": {
         "Cast": {
           "object": "$unsummon",
-          "targets": [
-            "$doomed-traveler"
-          ],
           "mana": [
             "$island"
           ]

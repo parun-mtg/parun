@@ -109,9 +109,6 @@
       "do": {
         "Cast": {
           "object": "$growth",
-          "targets": [
-            "Defenestrated Phantom"
-          ],
           "mana": [
             "$forest-1",
             null

@@ -66,10 +66,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$zombify",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$zombify"
         }
       }
     }

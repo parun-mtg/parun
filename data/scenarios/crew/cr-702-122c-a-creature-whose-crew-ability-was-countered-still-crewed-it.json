@@ -94,9 +94,6 @@
       "do": {
         "Cast": {
           "object": "$stifle",
-          "targets": [
-            "ability of $s1"
-          ],
           "mana": [
             "$island"
           ]

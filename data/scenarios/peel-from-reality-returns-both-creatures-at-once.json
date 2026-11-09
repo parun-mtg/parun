@@ -67,15 +67,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$spell",
-          "targetsBySlot": {
-            "mine": [
-              "$shredder"
-            ],
-            "theirs": [
-              "$bears"
-            ]
-          }
+          "object": "$spell"
         }
       }
     },

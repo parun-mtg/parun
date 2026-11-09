@@ -15,6 +15,9 @@
           {
             "card": "Swamp",
             "label": "swamp"
+          },
+          {
+            "card": "Goblin Piker"
           }
         ],
         "hand": [

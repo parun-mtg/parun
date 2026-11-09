@@ -94,46 +94,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$m1",
-            "$m2",
-            "$m3",
-            "$m4",
-            null
-          ],
-          "object": "$echo",
-          "targets": [
-            "$ogre"
-          ]
-        }
-      },
-      "step": "PostcombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "mana": [
-            "$m1",
-            "$m2",
-            "$m3",
-            "$m4",
-            null
-          ],
-          "object": "$echo",
-          "targets": [
-            "$m1"
-          ]
-        }
-      },
-      "step": "PostcombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
@@ -143,10 +103,7 @@
             "$m4",
             null
           ],
-          "object": "$echo",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$echo"
         }
       },
       "player": "alice",
@@ -210,10 +167,7 @@
             "$m7",
             "$m8"
           ],
-          "object": "$echo",
-          "targets": [
-            "Hill Giant"
-          ]
+          "object": "$echo"
         }
       },
       "player": "alice",

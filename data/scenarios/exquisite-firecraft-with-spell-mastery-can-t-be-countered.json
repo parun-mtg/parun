@@ -129,10 +129,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$cancel",
-          "targets": [
-            "Exquisite Firecraft"
-          ]
+          "object": "$cancel"
         }
       },
       "player": "bob",

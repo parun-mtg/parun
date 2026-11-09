@@ -99,10 +99,7 @@
           "modes": [
             0
           ],
-          "object": "$favor",
-          "targets": [
-            "Shock"
-          ]
+          "object": "$favor"
         }
       },
       "player": "alice",

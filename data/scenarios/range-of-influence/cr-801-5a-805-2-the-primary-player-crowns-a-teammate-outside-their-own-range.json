@@ -90,19 +90,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$frank"
-          ]
-        }
-      },
-      "player": "alice",
-      "source": "Jared Carthalion, True Heir",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

@@ -80,9 +80,6 @@
       "do": {
         "Cast": {
           "object": "$phyrexian-tribute",
-          "targets": [
-            "$sol-ring"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

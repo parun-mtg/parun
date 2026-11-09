@@ -245,47 +245,10 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 1,
-          "mana": [
-            null
-          ],
-          "object": "$cat",
-          "targets": [
-            "$div"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 4
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 1,
-          "mana": [
-            null
-          ],
-          "object": "$cat",
-          "targets": [
-            "$goblin"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 4
-    },
-    {
       "do": {
         "Activate": {
           "ability": 1,
-          "object": "$cat",
-          "targets": [
-            "$bolt"
-          ]
+          "object": "$cat"
         }
       },
       "player": "alice",

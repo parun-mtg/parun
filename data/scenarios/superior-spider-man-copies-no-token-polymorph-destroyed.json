@@ -72,10 +72,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$polymorph",
-          "targets": [
-            "$token"
-          ]
+          "object": "$polymorph"
         }
       },
       "player": "alice",

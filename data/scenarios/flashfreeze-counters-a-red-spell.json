@@ -76,23 +76,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$unsummon",
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$freeze",
-          "targets": [
-            "Unsummon"
-          ]
+          "object": "$unsummon"
         }
       }
     },
@@ -102,10 +86,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$freeze",
-          "targets": [
-            "Shock"
-          ]
+          "object": "$freeze"
         }
       }
     },

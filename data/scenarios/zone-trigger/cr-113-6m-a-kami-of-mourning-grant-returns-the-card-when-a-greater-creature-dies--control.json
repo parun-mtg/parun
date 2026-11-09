@@ -265,9 +265,6 @@
       "do": {
         "Cast": {
           "object": "$blade3",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$s8",
             "$s9"

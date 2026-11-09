@@ -120,10 +120,7 @@
             "$a2",
             "$a3"
           ],
-          "object": "$grasp",
-          "targets": [
-            "$drake"
-          ]
+          "object": "$grasp"
         }
       },
       "player": "alice",

@@ -61,9 +61,6 @@
       "do": {
         "Cast": {
           "object": "$aura-graft",
-          "targets": [
-            "$setessan-training"
-          ],
           "mana": [
             "$island",
             "$island-2"

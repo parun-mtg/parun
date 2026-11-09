@@ -64,10 +64,7 @@
             "Plains",
             "Plains#2"
           ],
-          "object": "$curtain",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$curtain"
         }
       },
       "player": "bob",

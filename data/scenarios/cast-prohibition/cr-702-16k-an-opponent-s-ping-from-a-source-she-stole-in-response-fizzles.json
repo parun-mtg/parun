@@ -134,9 +134,6 @@
       "do": {
         "Cast": {
           "object": "$ray",
-          "targets": [
-            "$sorcerer"
-          ],
           "mana": [
             "$i1",
             "$p1",

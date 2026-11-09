@@ -5,7 +5,7 @@
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$attacker"]}},
     {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 13}}},
     {"turn": 1, "step": "EndStep", "player": "bob", "check": {"View": {"of": "Stack", "is": ["trigger of $attacker"]}}},
-    {"turn": 1, "step": "EndStep", "player": "bob", "do": {"Cast": {"object": "$unsummon", "mana": ["$island"], "targets": ["$attacker"]}}},
+    {"turn": 1, "step": "EndStep", "player": "bob", "do": {"Cast": {"object": "$unsummon", "mana": ["$island"]}}},
     {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Inferno Hellion", "count": 1}}},
     {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Inferno Hellion", "count": 0}}}
   ]

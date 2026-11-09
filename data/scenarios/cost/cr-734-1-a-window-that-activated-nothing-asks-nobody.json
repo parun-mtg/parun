@@ -27,7 +27,7 @@
   },
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$piker", "mana": ["$mountain-1", "$mountain-2", null] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$leak", "targets": ["Goblin Piker"], "mana": ["$island-1", "$island-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$leak", "mana": ["$island-1", "$island-2"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": { "ChooseToPay": { "decision": "Pays", "mana": [null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseToPay": { "decision": "Declines" } } },

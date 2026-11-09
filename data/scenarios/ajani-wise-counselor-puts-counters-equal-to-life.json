@@ -77,10 +77,7 @@
       "do": {
         "Activate": {
           "ability": 2,
-          "object": "$ajani",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$ajani"
         }
       },
       "player": "alice",

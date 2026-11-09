@@ -63,9 +63,6 @@
       "do": {
         "Activate": {
           "object": "$forensic-researcher",
-          "targets": [
-            "$goblin-piker"
-          ],
           "costOrder": [
             0,
             1

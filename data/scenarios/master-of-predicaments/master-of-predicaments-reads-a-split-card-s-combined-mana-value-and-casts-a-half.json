@@ -130,18 +130,6 @@
     },
     {
       "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$ogre"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
       "step": "EndOfCombat",
       "player": "alice",
       "check": {

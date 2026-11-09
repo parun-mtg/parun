@@ -65,9 +65,6 @@
       "do": {
         "Cast": {
           "object": "$blade",
-          "targets": [
-            "$harold"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

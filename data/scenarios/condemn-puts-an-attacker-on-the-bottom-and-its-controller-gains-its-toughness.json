@@ -74,28 +74,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$condemn",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$plains"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$condemn",
-          "targets": [
-            "$wurm"
-          ],
           "mana": [
             "$plains"
           ]

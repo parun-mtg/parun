@@ -124,32 +124,10 @@
       "turn": 1,
       "step": "Upkeep",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$avacyn",
-          "ability": 0,
-          "targets": [
-            "$avacyn"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$avacyn",
           "ability": 0,
-          "targets": [
-            "$baloth"
-          ],
           "mana": [
             "$p1",
             "$p2",
@@ -183,9 +161,6 @@
         "Activate": {
           "object": "$avacyn",
           "ability": 0,
-          "targets": [
-            "$baloth"
-          ],
           "mana": [
             "$p3",
             "$p4"

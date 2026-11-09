@@ -90,10 +90,7 @@
             "$m3",
             null
           ],
-          "object": "$aladdin",
-          "targets": [
-            "$myr"
-          ]
+          "object": "$aladdin"
         }
       },
       "player": "alice",

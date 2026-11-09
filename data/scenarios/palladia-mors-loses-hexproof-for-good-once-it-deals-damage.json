@@ -100,24 +100,6 @@
       "turn": 1
     },
     {
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$swamp1",
-            "$swamp2",
-            "$swamp3"
-          ],
-          "object": "$murder",
-          "targets": [
-            "$palladia"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Attack": [
           "$palladia"

@@ -116,30 +116,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$piker"
-          ]
-        }
-      },
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$elves"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "DeclareAttackers",

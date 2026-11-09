@@ -56,7 +56,6 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$ape", "power": 2, "toughness": 3}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$exchange", "mana": ["$island2", "$island3", "$island4"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "source": "Exchange of Words", "do": {"ChooseTargets": {"creatures": ["$ape", "$hag"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$ape", "keyword": {"type": "Landwalk", "value": {"type": "HasSubtype", "value": "Forest"}}, "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$ape", "keyword": {"type": "Landwalk", "value": {"type": "HasSubtype", "value": "Island"}}, "count": 0}}},

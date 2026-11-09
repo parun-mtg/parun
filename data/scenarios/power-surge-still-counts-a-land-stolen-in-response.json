@@ -123,10 +123,7 @@
             "$i3",
             "$i4"
           ],
-          "object": "$ray",
-          "targets": [
-            "Dryad Arbor"
-          ]
+          "object": "$ray"
         }
       },
       "player": "alice",

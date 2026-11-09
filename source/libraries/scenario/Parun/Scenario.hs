@@ -832,7 +832,8 @@ answerDedicated decider asked =
                 else resolveSlots gs key verb offered chosen
             _ -> Nothing
         -- CR 601.2c's announcement, answered from the ChooseTargets entry that
-        -- will name the targets, which stays queued for that prompt.
+        -- will name the targets, which stays queued for that prompt unless the
+        -- announcement leaves none to ask (forcedAnnouncement).
         Prompt.Type.AnnounceTargets who _ asking offered -> do
           key <- whenOf gs (Decider.unwrap who)
           let named = Maybe.fromMaybe asking (Game.abilitySourceOf asking gs)
@@ -842,9 +843,12 @@ answerDedicated decider asked =
               announce = do
                 found <- takeForSource gs key named
                 case found of
-                  Just (_, Timed.MkTimed {Timed.entry = Entry.Do verb@(Move.ChooseTargets chosen)}) -> do
+                  Just (index, Timed.MkTimed {Timed.entry = Entry.Do verb@(Move.ChooseTargets chosen)}) -> do
                     knownSlots gs key verb asking chosen
-                    announceSlots key verb offered chosen
+                    counts <- announceSlots key verb offered chosen
+                    forced <- forcedAnnouncement gs key verb offered chosen counts
+                    Monad.when forced (popAt key index)
+                    pure counts
                   Just (index, Timed.MkTimed {Timed.entry = Entry.Refuse verb@(Move.ChooseTargets chosen)}) -> do
                     knownSlots gs key verb asking chosen
                     everyOffered <- offersAll gs offered chosen
@@ -1372,8 +1376,11 @@ answerActionChoice key verb choices asked =
               let mine = Map.restrictKeys (Choices.targetsBySlot choices) (Map.keysSet offered)
               Monad.unless (Map.size mine == Map.size offered) unexpected
               counts <- announceSlots key verb offered mine
-              -- A slot announced at zero raises no ChooseTargets to spend it.
-              updateChoices (\current -> current {Choices.targetsBySlot = Map.withoutKeys (Choices.targetsBySlot current) (Map.keysSet (Map.filter (== 0) counts))})
+              forced <- forcedAnnouncement gs key verb offered (Choices.targetsBySlot choices) counts
+              -- A slot announced at zero raises no ChooseTargets to spend it,
+              -- nor does a forced announcement.
+              let spent = if forced then Map.keysSet offered else Map.keysSet (Map.filter (== 0) counts)
+              updateChoices (\current -> current {Choices.targetsBySlot = Map.withoutKeys (Choices.targetsBySlot current) spent})
               pure counts
         Prompt.Type.ChooseTargets _ _ _ offered -> case (Choices.targets choices, Map.toList offered) of
           (Just targets, [(slot, (count, candidates))])
@@ -1394,13 +1401,16 @@ answerActionChoice key verb choices asked =
           _ -> unexpected
         -- CR 601.2c: a single variable slot announces as many targets as the
         -- move names, and the list stays for the ChooseTargets that follows;
-        -- none follows an announced zero, so an empty list is spent here.
+        -- none follows an announced zero, nor one announcing every candidate
+        -- (forcedAnnouncement), so such a list is spent here.
         Prompt.Type.AnnounceTargets _ _ _ offered -> case (Choices.targets choices, Map.toList offered) of
           (Just targets, [(slot, (range, candidates))])
             | TargetCount.least range <= Natural.length targets
                 && Natural.length targets <= TargetCount.ceilingOn (Natural.length candidates) range -> do
-                Monad.when (null targets) (updateChoices (\current -> current {Choices.targets = Nothing}))
-                pure (Map.singleton slot (Natural.length targets))
+                let counts = Map.singleton slot (Natural.length targets)
+                forced <- forcedAnnouncement gs key verb offered (Map.singleton slot (Seq.fromList targets)) counts
+                Monad.when forced (updateChoices (\current -> current {Choices.targets = Nothing}))
+                pure counts
           _ -> unexpected
         Prompt.Type.ChooseModes _ _ _ legal selection -> case Choices.modes choices of
           Just modes
@@ -1896,6 +1906,22 @@ announceSlots key verb offered chosen
   -- control"); the ChooseTargets that follows holds the entry to every key.
   | Map.keysSet offered `Set.isSubsetOf` Map.keysSet chosen = announceCounts key verb offered chosen
   | otherwise = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
+
+-- | Whether an announcement leaves no ChooseTargets to follow: every slot
+-- takes none of its candidates or all of them, and the entry names no other
+-- slot. CR 601.2c then has one answer, which the engine binds unasked, so the
+-- names must be exactly those candidates.
+forcedAnnouncement :: GameState.GameState -> When.When -> Move.Move -> Map.Map SlotName.SlotName (TargetCount.TargetCount, Set.Set Recipient.Recipient) -> Map.Map SlotName.SlotName (Seq.Seq Reference.Reference) -> Map.Map SlotName.SlotName Natural -> Run Bool
+forcedAnnouncement gs key verb offered chosen counts =
+  let refused :: Run b
+      refused = failWith (Failure.MkActionNotOffered key verb (fmap SlotName.unwrap (Map.keys offered)))
+      takes slot (_, candidates) = let n = Map.findWithDefault 0 slot counts in n == 0 || n == Natural.length candidates
+      forced = and (Map.mapWithKey takes offered) && Map.keysSet (Map.filter (not . Seq.null) chosen) `Set.isSubsetOf` Map.keysSet offered
+      check slot (_, candidates) = do
+        let refs = Foldable.toList (Map.findWithDefault Seq.empty slot chosen)
+        resolved <- mapM (\ref -> resolveRecipient gs ref candidates refused) refs
+        Monad.unless (null refs || Set.fromList resolved == candidates) refused
+   in if forced then Map.traverseWithKey check offered >> pure True else pure False
 
 -- | The counts an entry names, a slot it omits naming 0, failing unless each
 -- is within its slot's range.

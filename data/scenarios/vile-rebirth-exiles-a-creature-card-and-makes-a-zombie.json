@@ -71,25 +71,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$rebirth",
-          "targets": [
-            "$bolt"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$rebirth",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$rebirth"
         }
       }
     },

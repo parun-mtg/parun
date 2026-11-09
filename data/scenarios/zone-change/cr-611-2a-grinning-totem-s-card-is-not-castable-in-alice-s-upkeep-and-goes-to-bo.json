@@ -62,9 +62,6 @@
         "Activate": {
           "object": "$totem",
           "ability": 0,
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$m1",
             "$m2"

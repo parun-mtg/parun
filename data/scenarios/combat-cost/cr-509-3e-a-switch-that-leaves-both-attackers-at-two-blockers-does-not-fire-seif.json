@@ -144,11 +144,7 @@
       "player": "bob",
       "do": {
         "Activate": {
-          "object": "$general-jarkeld",
-          "targets": [
-            "$llanowar-elves",
-            "$goblin-piker"
-          ]
+          "object": "$general-jarkeld"
         }
       }
     },

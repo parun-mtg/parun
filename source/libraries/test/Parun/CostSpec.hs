@@ -5094,13 +5094,14 @@ announcedReversalSpec s registry = Spec.describe s "Reversal after an announceme
         Spec.assertEqWith s "CR 601.2h and the next priority can say why" (GameState.undone kept) (Map.singleton S.alice Undoing.UnpaidCost)
 
   -- Tyrant's Machine's "{4}, {T}: Tap target creature." announced with a
-  -- player for its creature.
+  -- player for its creature. Two Pikers, so the target is asked (CR 601.2c).
   Spec.it s "CR 601.2e an activation announcing an illegal target is reversed, and says why" $ do
     machine <- S.printingOf s registry "Tyrant's Machine"
     island <- S.printingOf s registry "Island"
     piker <- S.printingOf s registry "Goblin Piker"
     let (machineId, g1) = S.addPermanent machine S.alice (S.landsInPlay island 4)
-        (_, gs) = S.addPermanent piker S.bob g1
+        (_, g2) = S.addPermanent piker S.bob g1
+        (_, gs) = S.addPermanent piker S.bob g2
         illegal :: Prompt.Prompt r -> r
         illegal p = case p of
           Prompt.ChooseTargets _ _ _ asked -> fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) asked

@@ -47,9 +47,6 @@
       "do": {
         "Cast": {
           "object": "$spill",
-          "targets": [
-            "$wall"
-          ],
           "mana": [
             "$m1",
             "$m2",

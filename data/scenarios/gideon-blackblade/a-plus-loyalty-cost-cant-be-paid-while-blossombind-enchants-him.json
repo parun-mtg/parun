@@ -66,10 +66,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$bind",
-          "targets": [
-            "$gideon"
-          ]
+          "object": "$bind"
         }
       },
       "player": "alice",

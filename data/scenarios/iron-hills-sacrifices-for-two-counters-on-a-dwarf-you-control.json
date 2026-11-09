@@ -86,32 +86,6 @@
   "description": "CR 115.1: Iron Hills sacrifices itself for two +1/+1 counters on target Dwarf you control, and not a creature of another type or an opponent's",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$land",
-          "targets": [
-            "$bad"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$land",
-          "targets": [
-            "$theirs"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
@@ -121,10 +95,7 @@
             "$m3",
             null
           ],
-          "object": "$land",
-          "targets": [
-            "$good"
-          ]
+          "object": "$land"
         }
       },
       "player": "alice",

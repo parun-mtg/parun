@@ -127,18 +127,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "DeclareAttackers",

@@ -164,30 +164,10 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 2,
-          "mana": [
-            null
-          ],
-          "object": "$b",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 2,
-          "object": "$b",
-          "targets": [
-            "$a"
-          ]
+          "object": "$b"
         }
       },
       "player": "alice",

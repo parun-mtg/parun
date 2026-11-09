@@ -90,10 +90,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$influence",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$influence"
         }
       },
       "player": "alice",

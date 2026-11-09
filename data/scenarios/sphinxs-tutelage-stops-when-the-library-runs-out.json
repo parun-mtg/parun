@@ -38,18 +38,6 @@
   "note": "Bob's last two cards are both red, so the process repeats against an empty library, mills nothing and stops. Bob stays in the game (only drawing from an empty library loses it, CR 704.5b), so the main-phase checks are reached.",
   "timeline": [
     {
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "DrawStep",
-      "turn": 2
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "DrawStep",

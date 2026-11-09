@@ -10,8 +10,7 @@
     ]
   },
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$apex", "ability": 0, "targets": ["$apex"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$apex", "ability": 0, "targets": ["$walker"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$apex", "ability": 0}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Garruk, Caller of Beasts", "count": 1}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$apex", "kind": {"type": "Loyalty"}, "count": 6}}}

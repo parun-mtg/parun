@@ -155,26 +155,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "mana": [
-            "$s",
-            "$m2",
-            "$m3",
-            "$m4"
-          ],
-          "object": "$ogre",
-          "targets": [
-            "$wurm"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -184,10 +164,7 @@
             "$m3",
             "$m4"
           ],
-          "object": "$ogre",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$ogre"
         }
       },
       "player": "alice",

@@ -100,9 +100,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$promising-duskmage"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

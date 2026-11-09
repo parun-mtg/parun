@@ -83,9 +83,6 @@
       "do": {
         "Cast": {
           "object": "$leak",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$ai1",
             "$ai2"

@@ -102,9 +102,6 @@
       "do": {
         "Cast": {
           "object": "$pf",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$s1",
             "$s2"

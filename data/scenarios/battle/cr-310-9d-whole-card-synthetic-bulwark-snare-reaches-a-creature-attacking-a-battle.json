@@ -183,9 +183,6 @@
         "Activate": {
           "object": "$carol-snare",
           "ability": 0,
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$carol-plains"
           ]

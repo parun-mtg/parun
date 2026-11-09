@@ -163,10 +163,7 @@
             "$p3",
             "$p4"
           ],
-          "object": "$cub",
-          "targets": [
-            "$efreet"
-          ]
+          "object": "$cub"
         }
       },
       "player": "alice",
@@ -183,10 +180,7 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "object": "$efreet",
-          "targets": [
-            "$bob"
-          ]
+          "object": "$efreet"
         }
       },
       "player": "alice",

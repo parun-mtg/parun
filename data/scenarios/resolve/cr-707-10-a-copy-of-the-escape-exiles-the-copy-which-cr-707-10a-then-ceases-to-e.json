@@ -102,9 +102,6 @@
       "do": {
         "Cast": {
           "object": "$twincast",
-          "targets": [
-            "Chronomantic Escape"
-          ],
           "mana": [
             "$island",
             "$island-2"

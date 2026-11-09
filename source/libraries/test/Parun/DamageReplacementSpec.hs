@@ -219,14 +219,16 @@ braceForImpactSpec s registry = Spec.describe s "Brace for Impact (CR 615.5)" $ 
     Spec.assertEqWith s "and the shield still installed after both" (preventAllRows after) 1
   -- The POSITIVE half is the pin: the multicolored creature IS in the legal set
   -- on the same board the mono-coloured one is not, so a filter that excluded
-  -- everything would fail here rather than pass the negative vacuously.
+  -- everything would fail here rather than pass the negative vacuously. Two
+  -- Jedits, so the target is asked (CR 601.2c) and the Piker can be named.
   Spec.it s "CR 105.2b: only a multicolored creature is a legal target" $ do
     plains <- S.printingOf s registry "Plains"
     jedit <- S.printingOf s registry "Jedit Ojanen"
     pikerPrinting <- S.printingOf s registry "Goblin Piker"
     brace <- S.printingOf s registry "Brace for Impact"
     let base = S.landsInPlay plains 5
-        (multi, g1) = S.addPermanent jedit S.alice base
+        (multi, g0) = S.addPermanent jedit S.alice base
+        (_, g1) = S.addPermanent jedit S.alice g0
         (mono, g2) = S.addPermanent pikerPrinting S.alice g1
         (g3, spellId) = S.handOne brace g2
         atMulti = castAndResolve (onlyCreature multi) g3 spellId

@@ -104,9 +104,6 @@
       "do": {
         "Cast": {
           "object": "$radiate",
-          "targets": [
-            "Crumb and Get It"
-          ],
           "mana": [
             "Mountain",
             "Mountain#2",

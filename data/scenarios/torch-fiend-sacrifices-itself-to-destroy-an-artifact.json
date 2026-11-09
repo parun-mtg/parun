@@ -63,25 +63,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$fiend",
-          "targets": [
-            "$anthem"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$fiend",
-          "targets": [
-            "$ornithopter"
-          ]
+          "object": "$fiend"
         }
       }
     },
