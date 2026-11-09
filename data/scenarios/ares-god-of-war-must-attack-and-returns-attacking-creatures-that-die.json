@@ -1,0 +1,218 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ares, God of War",
+            "label": "ares",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Llanowar Elves"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "alib1"
+          },
+          {
+            "card": "Island",
+            "label": "alib2"
+          },
+          {
+            "card": "Island",
+            "label": "alib3"
+          },
+          {
+            "card": "Island",
+            "label": "alib4"
+          },
+          {
+            "card": "Island",
+            "label": "alib5"
+          },
+          {
+            "card": "Island",
+            "label": "alib6"
+          },
+          {
+            "card": "Island",
+            "label": "alib7"
+          },
+          {
+            "card": "Island",
+            "label": "alib8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "blib1"
+          },
+          {
+            "card": "Island",
+            "label": "blib2"
+          },
+          {
+            "card": "Island",
+            "label": "blib3"
+          },
+          {
+            "card": "Island",
+            "label": "blib4"
+          },
+          {
+            "card": "Island",
+            "label": "blib5"
+          },
+          {
+            "card": "Island",
+            "label": "blib6"
+          },
+          {
+            "card": "Island",
+            "label": "blib7"
+          },
+          {
+            "card": "Island",
+            "label": "blib8"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.1d / 603.10a: Ares attacks each combat if able, and whenever an attacking creature its controller controls dies, that card returns to its owner's hand",
+  "note": "Ares dies attacking into the Craw Wurm and returns to hand; a Llanowar Elves Shocked before combat stays in the graveyard.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$elves"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 2,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Attack": []
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$ares",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$wurm": [
+            "$ares"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ares, God of War",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

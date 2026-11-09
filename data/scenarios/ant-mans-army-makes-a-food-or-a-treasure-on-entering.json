@@ -1,0 +1,152 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Ant-Man's Army",
+            "label": "army"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "alib1"
+          },
+          {
+            "card": "Island",
+            "label": "alib2"
+          },
+          {
+            "card": "Island",
+            "label": "alib3"
+          },
+          {
+            "card": "Island",
+            "label": "alib4"
+          },
+          {
+            "card": "Island",
+            "label": "alib5"
+          },
+          {
+            "card": "Island",
+            "label": "alib6"
+          },
+          {
+            "card": "Island",
+            "label": "alib7"
+          },
+          {
+            "card": "Island",
+            "label": "alib8"
+          }
+        ],
+        "manaPool": "GCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island",
+            "label": "blib1"
+          },
+          {
+            "card": "Island",
+            "label": "blib2"
+          },
+          {
+            "card": "Island",
+            "label": "blib3"
+          },
+          {
+            "card": "Island",
+            "label": "blib4"
+          },
+          {
+            "card": "Island",
+            "label": "blib5"
+          },
+          {
+            "card": "Island",
+            "label": "blib6"
+          },
+          {
+            "card": "Island",
+            "label": "blib7"
+          },
+          {
+            "card": "Island",
+            "label": "blib8"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.6a / 111.10a: when Ant-Man's Army enters, its controller creates a Food token or a Treasure token, their choice",
+  "note": "Alice picks the Treasure, the second instruction, so no Food is made.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$army"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseClause",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Treasure Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Food Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

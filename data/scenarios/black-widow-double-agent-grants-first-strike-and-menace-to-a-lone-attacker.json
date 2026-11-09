@@ -1,0 +1,215 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Black Widow, Double Agent",
+            "label": "widow"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "alib1"
+          },
+          {
+            "card": "Island",
+            "label": "alib2"
+          },
+          {
+            "card": "Island",
+            "label": "alib3"
+          },
+          {
+            "card": "Island",
+            "label": "alib4"
+          },
+          {
+            "card": "Island",
+            "label": "alib5"
+          },
+          {
+            "card": "Island",
+            "label": "alib6"
+          },
+          {
+            "card": "Island",
+            "label": "alib7"
+          },
+          {
+            "card": "Island",
+            "label": "alib8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "bgiant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "blib1"
+          },
+          {
+            "card": "Island",
+            "label": "blib2"
+          },
+          {
+            "card": "Island",
+            "label": "blib3"
+          },
+          {
+            "card": "Island",
+            "label": "blib4"
+          },
+          {
+            "card": "Island",
+            "label": "blib5"
+          },
+          {
+            "card": "Island",
+            "label": "blib6"
+          },
+          {
+            "card": "Island",
+            "label": "blib7"
+          },
+          {
+            "card": "Island",
+            "label": "blib8"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 506.5 / 702.111b: whenever a creature you control attacks alone, it gains first strike and menace until end of turn",
+  "note": "Neither of bob's creatures can block the menacing Grizzly Bears alone; alice's Hill Giant, not attacking, gains nothing.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "FirstStrike"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Menace"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Menace"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$ogre": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Menace"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

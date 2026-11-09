@@ -1,0 +1,250 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Absorbing Man",
+            "label": "absorb"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "alib1"
+          },
+          {
+            "card": "Island",
+            "label": "alib2"
+          },
+          {
+            "card": "Island",
+            "label": "alib3"
+          },
+          {
+            "card": "Island",
+            "label": "alib4"
+          },
+          {
+            "card": "Island",
+            "label": "alib5"
+          },
+          {
+            "card": "Island",
+            "label": "alib6"
+          },
+          {
+            "card": "Island",
+            "label": "alib7"
+          },
+          {
+            "card": "Island",
+            "label": "alib8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "blib1"
+          },
+          {
+            "card": "Island",
+            "label": "blib2"
+          },
+          {
+            "card": "Island",
+            "label": "blib3"
+          },
+          {
+            "card": "Island",
+            "label": "blib4"
+          },
+          {
+            "card": "Island",
+            "label": "blib5"
+          },
+          {
+            "card": "Island",
+            "label": "blib6"
+          },
+          {
+            "card": "Island",
+            "label": "blib7"
+          },
+          {
+            "card": "Island",
+            "label": "blib8"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 707.9b / 611.2a: at the beginning of your first main phase, Absorbing Man becomes a copy of up to one target artifact, non-Aura enchantment or land until your next turn, keeping his name, his 4/4 Human Villain creature body and vigilance",
+  "note": "He copies bob's Sol Ring, so he is an artifact creature through bob's turn; on alice's next turn the copy has ended by her upkeep, and with no target chosen he stays himself.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$ring"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$absorb",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$absorb",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$absorb"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Absorbing Man",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$absorb",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$absorb",
+          "types": [
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": []
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$absorb",
+          "types": [
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$absorb",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

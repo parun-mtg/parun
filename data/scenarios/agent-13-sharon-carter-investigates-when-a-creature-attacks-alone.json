@@ -1,0 +1,169 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Agent 13, Sharon Carter",
+            "label": "agent"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "alib1"
+          },
+          {
+            "card": "Island",
+            "label": "alib2"
+          },
+          {
+            "card": "Island",
+            "label": "alib3"
+          },
+          {
+            "card": "Island",
+            "label": "alib4"
+          },
+          {
+            "card": "Island",
+            "label": "alib5"
+          },
+          {
+            "card": "Island",
+            "label": "alib6"
+          },
+          {
+            "card": "Island",
+            "label": "alib7"
+          },
+          {
+            "card": "Island",
+            "label": "alib8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island",
+            "label": "blib1"
+          },
+          {
+            "card": "Island",
+            "label": "blib2"
+          },
+          {
+            "card": "Island",
+            "label": "blib3"
+          },
+          {
+            "card": "Island",
+            "label": "blib4"
+          },
+          {
+            "card": "Island",
+            "label": "blib5"
+          },
+          {
+            "card": "Island",
+            "label": "blib6"
+          },
+          {
+            "card": "Island",
+            "label": "blib7"
+          },
+          {
+            "card": "Island",
+            "label": "blib8"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 506.5 / 701.16a: whenever a creature you control attacks alone, Agent 13 investigates",
+  "note": "The Grizzly Bears attacks alone on turn 1 and makes the one Clue; on turn 3 two creatures attack and none is made.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears",
+          "$giant"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clue Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}
