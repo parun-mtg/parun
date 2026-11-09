@@ -1798,10 +1798,12 @@ lake-of-the-dead
 lake-town-lookout
 lake-town-mariners-gone-fishing
 lake-town-toymaker
+lakeshore-apothecary
 lam-storm-crane-elder
 land-tax
 lantern-flare
 last-chance
+last-light-of-durins-day
 last-rites
 lathril-blade-of-the-elves
 lava-burst
@@ -1874,6 +1876,7 @@ liquimetal-coating
 lithoform-engine
 littjara-kinseekers
 littjara-mirrorlake
+little-bear
 liu-bei-lord-of-shu
 living-artifact
 living-destiny
@@ -1892,6 +1895,7 @@ localized-destruction
 lofty-denial
 lone-revenant
 lone-wolf
+long-bodied-grey-dog
 long-lake-nuisance
 longstalk-brawl
 longtusk-cub
@@ -1946,6 +1950,7 @@ magmakin-artillerist
 magmatic-insight
 magnetic-mountain
 magnetic-theft
+magnificent-end
 magnivore
 magnus-the-red
 magus-of-the-unseen
@@ -1997,6 +2002,7 @@ master-of-the-wild-hunt
 master-thief
 master-warcraft
 masterful-replication
+masters-councillors
 matca-rioters
 matoya-archon-elder
 mayhem-devil
@@ -2057,6 +2063,7 @@ mindsplice-apparatus
 mine-security
 minthara-merciless-soul
 miracle-worker
+mirkwood-meditator
 mirkwood-trapper
 mirror-image
 mirror-match
@@ -2074,6 +2081,7 @@ mishras-workshop
 misinformation
 mist-dragon
 mistcaller
+misty-mountains-raider
 mitotic-slime
 mizzium-meddler
 mizzixs-mastery
@@ -2088,6 +2096,7 @@ molten-birth
 molten-disaster
 molten-psyche
 molten-sentry
+moment-of-glory
 moment-of-silence
 monks-fist
 monomania
@@ -2102,6 +2111,7 @@ mortal-combat
 mortivore
 mossborn-hydra
 mossbridge-troll
+most-decrepit-old-bird-speak-secrets
 mu-yanling-celestial-wind
 mu-yanling-sky-dancer
 mudbutton-clanger
@@ -2118,6 +2128,7 @@ mutalith-vortex-beast
 mutavault
 mutual-epiphany
 mwonvuli-beast-tracker
+my-precious-allure-of-power
 mycosynth-golem
 myojin-of-nights-reach
 myr-welder
@@ -2134,6 +2145,7 @@ naked-singularity
 nameless-inversion
 nantuko-cultivator
 narcomoeba
+nasty-little-rabbit
 natural-affinity
 natural-order
 natural-selection
@@ -2167,6 +2179,7 @@ nexus-of-fate
 nicol-bolas-planeswalker
 nicol-bolas-the-ravager-nicol-bolas-the-arisen
 night-shift-of-the-living-dead
+nighthowl-pursuer
 nightmares-thirst
 nightpack-ambusher
 nightsnare
@@ -2209,8 +2222,10 @@ odds-ends
 odric-master-tactician
 oglor-devoted-assistant
 ogre-siegebreaker
+oin-the-brave
 ojutais-command
 okk
+old-fat-spider
 old-fat-spider-cant-see-me
 old-growth-troll
 omen
@@ -2240,6 +2255,7 @@ orcish-farmer
 orcish-spy
 orcish-squatters
 orcish-veteran
+orcrist-goblin-cleaver
 ordeal-of-nylea
 oreskos-explorer
 oreskos-sun-guide
@@ -2285,6 +2301,7 @@ paralyze
 paranormal-analyst
 parasitic-grasp
 pariah
+part-in-friendship
 part-the-waterveil
 patchwork-crawler
 path-of-ancestry
@@ -3213,6 +3230,9 @@ thraben-gargoyle-stonewing-antagonizer
 thraben-inspector
 thran-golem
 thran-power-suit
+thranduil-sindarin-liege-silvan-rally
+thranduils-company
+thranduils-decree
 thrashing-frontliner
 thrasta-tempests-roar
 threaten
@@ -3222,6 +3242,7 @@ thrill-of-possibility
 thromok-the-insatiable
 throne-of-eldraine
 throne-of-empires
+through-the-forest-gate
 throwing-knife
 thrull-surgeon
 thud
@@ -3237,6 +3258,7 @@ tidal-wave
 tide-skimmer
 tidebinder-mage
 tidewalker
+tidings-of-war
 timberpack-wolf
 time-bomb
 time-elemental
@@ -3264,6 +3286,7 @@ tolabow-loch-rascal
 tolarian-kraken
 tolarian-terror
 tolarian-winds
+tom-bert-and-william
 tomb-of-annihilation
 tome-anima
 tome-of-the-infinite
@@ -3309,8 +3332,10 @@ tribal-flames
 tribute-to-hunger
 tricksters-stratagem
 triskelion
+troll-negotiations
 troll-of-khazad-dum
 trollhide
+troop-of-ponies
 trove-of-temptation
 truce
 true-believer
@@ -3345,6 +3370,7 @@ uncharted-haven
 uncharted-voyage
 uncle-istvan
 uncontrollable-anger
+uncover-the-moon-letters
 uncovered-clues
 undead-servant
 under-construction-skyscraper
@@ -3356,6 +3382,7 @@ underworld-dreams
 undulating-witness
 undying-flames
 undying-malice
+uneasy-partings
 unerring-sling
 unesh-criosphinx-sovereign
 unexpectedly-absent
@@ -3397,6 +3424,7 @@ vault-112-sadistic-simulation
 vedalken-orrery
 veil-of-summer
 veiling-oddity
+velvetwing-butterflies-gaze-in-wonder
 venerable-warsinger
 venerated-loxodon
 venerated-rotpriest
@@ -3462,6 +3490,7 @@ vorel-of-the-hull-clade
 vorinclex-monstrous-raider
 vorrac-battlehorns
 vow-of-flight
+vow-to-erebor
 vraska-soul-of-stone
 vraska-the-cutting-glare
 vulshok-battlemaster
@@ -3486,6 +3515,7 @@ warden-of-evos-isle
 warden-of-the-beyond
 warden-of-the-woods
 wardens-of-the-cycle
+wargling
 warp-world
 warped-devotion
 warriors-blades
@@ -3548,6 +3578,7 @@ wild-guess
 wild-instincts
 wild-ricochet
 wildborn-preserver
+wilderland-scrounger
 wildfire
 wildfire-elemental
 wildgrowth-walker
@@ -3579,6 +3610,7 @@ witness-protection
 wits-end
 wizards-of-the-_
 wizards-rockets
+wizards-staff
 wolf-in-_-clothing
 wolf-pack
 wolfir-silverheart
@@ -3586,6 +3618,7 @@ wolfriders-saddle
 wood-elemental
 woodland-bellower
 woodland-champion
+woodland-weavemaster
 woodwork-prodigy-soul-tether
 word-of-blasting
 word-of-command

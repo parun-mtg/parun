@@ -931,13 +931,21 @@ hasChosenSubtypeTag = Text.pack "HasChosenSubtype"
 -- Persecute): the filters its mode reads AFTER the choice (CR 608.2c's "in the
 -- order written") read it, though its target slots, chosen before it resolves
 -- (CR 601.2c), still cannot, nor can a filter ahead of it or in another mode.
+--
+-- A printed triggered or activated ability whose own resolution makes such a
+-- choice is admitted after it in EVERY position, unframed ones included:
+-- Parun.Engine.Resolve.Slots.effectContext frames the resolution's reads by the
+-- source's live choices, so a Create quantity's Count reads the type the
+-- clause before it chose (Orcrist, Goblin-cleaver's scenario).
 chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) -> Text.Text -> Face.Face Card.Type.Card -> (Int, Int)
 chosenValueCounts admitted answers tag card =
   let total keep pairs = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (keep . fst) pairs))
       spellPairs = modalFilters (Face.spell card)
       answered = afterChoice answers (Face.spell card)
       inSpell = total admitted spellPairs - total admitted answered
-   in (total admitted (cardFilters card) - inSpell, total (not . admitted) (cardFilters card) + inSpell)
+      abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities card) <> fmap ActivatedAbility.modal (Face.activatedAbilities card)
+      inAbility = total (not . admitted) (concatMap (afterChoice answers) abilityModals)
+   in (total admitted (cardFilters card) - inSpell + inAbility, total (not . admitted) (cardFilters card) + inSpell - inAbility)
 
 -- The filters a spell's mode reads after its first `Effect.ChooseQuality q`
 -- whose `q` answers the atom:
@@ -3717,6 +3725,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Throne of Eldraine", hasChosenColorCounts, "a mana restriction", (1, 0)),
         ("Kindred Discovery", hasChosenSubtypeCounts, "two trigger conditions", (2, 0)),
         ("Brass Herald", hasChosenSubtypeCounts, "an affected set and a resolution's own filter", (2, 0)),
+        ("Orcrist, Goblin-cleaver", hasChosenSubtypeCounts, "a triggered ability's Create quantity after its own choice", (1, 0)),
         ("Persecute", hasChosenColorCounts, "a spell's own hand sweep after its own choice", (1, 0)),
         ("Story Circle", hasChosenColorCounts, "an activated ability's chosen damage source", (1, 0)),
         ("Avacyn, Guardian Angel", hasChosenColorCounts, "two activated abilities' damage shields", (2, 0))
