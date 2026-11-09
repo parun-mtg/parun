@@ -1,0 +1,64 @@
+{
+  "description": "CR 118.9 / 119.4 Inside Information at X = 3 exiles bob's top three cards, and alice casts both spells for life and plays the land",
+  "note": "One grant covers every exiled card, unlike Nashi's one; alice's own library stays put. Hill Giant costs 4 life, Raging Goblin 1.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Swamp", "label": "s1", "ready": true },
+          { "card": "Swamp", "label": "s2", "ready": true },
+          { "card": "Swamp", "label": "s3", "ready": true },
+          { "card": "Swamp", "label": "s4", "ready": true },
+          { "card": "Swamp", "label": "s5", "ready": true }
+        ],
+        "hand": [{ "card": "Inside Information", "label": "info" }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Hill Giant" },
+          { "card": "Raging Goblin" },
+          { "card": "Forest" },
+          { "card": "Goblin Piker" }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$info",
+          "x": 3,
+          "mana": ["$s1", "$s2", "$s3", "$s4", "$s5"]
+        }
+      }
+    },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Library", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "Hill Giant" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 16 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "Raging Goblin" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "Forest" } }
+  ],
+  "final": [
+    { "Life": { "player": "alice", "life": 15 } },
+    { "Life": { "player": "bob", "life": 20 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Raging Goblin", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1 } },
+    { "Count": { "player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 0 } },
+    { "Count": { "player": "bob", "zone": "Library", "card": "Goblin Piker", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Library", "card": "Plains", "count": 2 } }
+  ]
+}
