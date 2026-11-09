@@ -60,6 +60,7 @@ import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer
@@ -1517,7 +1518,7 @@ asYouCascade applyOneEffect runSubgame resolving source controller legal chosen 
       chosen
       ( Effect.MoveToZone
           ( MoveToZone.MkMoveToZone
-              (ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot criterion (HowMany.UpTo (Just (Quantity.Type.Literal 1))) (PlayerRef.Relative PlayerRelation.You) Nothing False))
+              (ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot criterion (HowMany.UpTo (Just (Quantity.Type.Literal 1))) (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice))
               Zone.Battlefield
               EntryRiders.defaultValue {EntryRiders.tapped = TapState.Tapped}
               Nothing

@@ -1,5 +1,6 @@
 module Parun.Types.ChosenCardFromAmong where
 
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
@@ -58,6 +59,10 @@ data ChosenCardFromAmong = MkChosenCardFromAmong
     -- | CR 700.3: under a pileChooser, the pick is a face-up pile shown to every
     -- player and the rest a face-down one, so the split is asked even of one
     -- card. Curator of Destinies; proved by its CR 700.3 scenarios.
-    faceUpPile :: Bool
+    faceUpPile :: Bool,
+    -- | Whether the chooser picks or randomness does, AtRandom leaving the
+    -- chooser and any pile chooser unasked. Proved by the Getaway Barrel
+    -- scenarios.
+    selection :: CardSelection.CardSelection
   }
   deriving (Eq, Ord, Show)

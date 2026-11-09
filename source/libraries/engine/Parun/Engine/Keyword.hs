@@ -49,6 +49,7 @@ import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer
@@ -8088,7 +8089,7 @@ hideaway n =
       hide =
         Effect.MoveToZone
           ( MoveToZone.MkMoveToZone
-              (ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong hideawaySeen (Filter.And []) HowMany.one (PlayerRef.Relative PlayerRelation.You) Nothing False))
+              (ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong hideawaySeen (Filter.And []) HowMany.one (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice))
               Zone.Exile
               plain {EntryRiders.exiledFaceDown = True}
               (Just hideawayExiled)

@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.Filter as Filter
@@ -28,7 +29,8 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.one,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
-            ChosenCardFromAmong.faceUpPile = False
+            ChosenCardFromAmong.faceUpPile = False,
+            ChosenCardFromAmong.selection = CardSelection.ByChoice
           }
       )
       " {\"slot\":\"revealed\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -44,7 +46,8 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo (Just (Quantity.Literal 2)),
             ChosenCardFromAmong.chooser = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent")),
             ChosenCardFromAmong.pileChooser = Nothing,
-            ChosenCardFromAmong.faceUpPile = False
+            ChosenCardFromAmong.faceUpPile = False,
+            ChosenCardFromAmong.selection = CardSelection.ByChoice
           }
       )
       " {\"slot\":\"revealed\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}},\"chooser\":{\"type\":\"InSlot\",\"value\":\"opponent\"}} "
@@ -59,7 +62,8 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.Opponent,
             ChosenCardFromAmong.pileChooser = Just (PlayerRef.Relative PlayerRelation.You),
-            ChosenCardFromAmong.faceUpPile = False
+            ChosenCardFromAmong.faceUpPile = False,
+            ChosenCardFromAmong.selection = CardSelection.ByChoice
           }
       )
       " {\"slot\":\"revealed\",\"filter\":{\"type\":\"And\",\"value\":[]},\"count\":{\"type\":\"UpTo\"},\"chooser\":{\"type\":\"Relative\",\"value\":\"Opponent\"},\"pileChooser\":{\"type\":\"Relative\",\"value\":\"You\"}} "
@@ -75,8 +79,25 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Just (PlayerRef.Relative PlayerRelation.Opponent),
-            ChosenCardFromAmong.faceUpPile = True
+            ChosenCardFromAmong.faceUpPile = True,
+            ChosenCardFromAmong.selection = CardSelection.ByChoice
           }
       )
       " {\"slot\":\"looked\",\"filter\":{\"type\":\"And\",\"value\":[]},\"count\":{\"type\":\"UpTo\"},\"pileChooser\":{\"type\":\"Relative\",\"value\":\"Opponent\"},\"faceUpPile\":true} "
+  -- Getaway Barrel's "a random creature card from among them".
+  Spec.it s "MkChosenCardFromAmong, at random" $
+    Common.assertCodec
+      s
+      ChosenCardFromAmong.codec
+      ( ChosenCardFromAmong.MkChosenCardFromAmong
+          { ChosenCardFromAmong.slot = SlotName.MkSlotName (Text.pack "revealed"),
+            ChosenCardFromAmong.filter = Filter.HasCardType CardType.Creature,
+            ChosenCardFromAmong.count = HowMany.one,
+            ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
+            ChosenCardFromAmong.pileChooser = Nothing,
+            ChosenCardFromAmong.faceUpPile = False,
+            ChosenCardFromAmong.selection = CardSelection.AtRandom
+          }
+      )
+      " {\"slot\":\"revealed\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"selection\":\"AtRandom\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenCardFromAmong.codec

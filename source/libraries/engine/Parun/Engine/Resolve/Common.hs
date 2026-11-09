@@ -76,6 +76,7 @@ import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastOffer as CastOffer
@@ -2138,6 +2139,12 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- 601.2b left on the resolving object -- TopOfLibrary's reading, and its clamp: a
 -- count that will not evaluate, or evaluates negative, is zero cards (CR
 -- 107.2, 107.1b). pickCounted asks it.
+--
+-- AtRandom asks nobody: randomCards' question to the interpreter, over the
+-- matching members, naming that many distinct cards (all of them for an
+-- uncapped count) -- Getaway Barrel's "a random creature card from among them".
+-- Proved by the scenario "Getaway Barrel puts a random creature card from among
+-- the revealed cards onto the battlefield".
 chooseCardFromAmong ::
   ObjectId ->
   ObjectId ->
@@ -2146,14 +2153,17 @@ chooseCardFromAmong ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardFromAmong.ChosenCardFromAmong ->
   Game [ObjectId]
-chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count chooser pileChooser faceUpPile) = do
+chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count chooser pileChooser faceUpPile selection) = do
   members <- fromAmongMembers legal resolving chosen slot
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
       matching = matchingFromAmong legal resolving controller source gs filter_ (stillPresent gs members)
-      pick purpose =
+      pick purpose = case selection of
+        CardSelection.AtRandom -> \pool -> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength pool) amount (HowMany.quantity count)) pool
+        CardSelection.ByChoice -> byChoice purpose
+      byChoice purpose =
         fmap snd
           . pickByChooser
             resolving
@@ -3589,7 +3599,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
             let scoped = Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
              in not (null scoped) && all (\pid -> null (graveyardCardsOf context gs pid filter_)) scoped
           Chooser.BoundInSlot _ -> False
-      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _) ->
+      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _) ->
         mustPick count && maybe False (null . matchingFromAmong legal resolving controller source gs filter_ . stillPresent gs) (fromAmongBound slot)
       ObjectRef.ChosenPermanents choice -> mustPick (ChosenPermanents.count choice) && null (chosenCandidates legal resolving controller source gs choice)
       -- Only when no member names anything: a read always might.
