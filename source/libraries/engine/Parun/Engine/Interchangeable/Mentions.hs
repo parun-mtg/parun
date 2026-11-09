@@ -816,7 +816,7 @@ alternativeCostNames asking x = case x of
 
 amassNames :: (Monoid r) => Asking r -> Amass.Amass -> r
 amassNames asking x = case x of
-  Amass.MkAmass quantity _kind slot -> quantityNames asking quantity <> foldMap (slotNames asking) slot
+  Amass.MkAmass player quantity _kind slot -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) slot
 
 anyNumberDiscardNames :: (Monoid r) => Asking r -> AnyNumberDiscard.AnyNumberDiscard -> r
 anyNumberDiscardNames asking x = case x of

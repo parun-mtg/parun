@@ -314,7 +314,7 @@ ownQuantities effect = case effect of
   Effect.FromOutsideTheGame _ -> []
   Effect.ExileThisSpell -> []
   Effect.Bolster quantity -> [quantity]
-  Effect.Amass (Amass.MkAmass quantity _ _) -> [quantity]
+  Effect.Amass (Amass.MkAmass _ quantity _ _) -> [quantity]
   Effect.Blight (Blight.MkBlight _ quantity _) -> [quantity]
   Effect.Earthbend (Earthbend.MkEarthbend quantity _) -> [quantity]
   Effect.Airbend {} -> []

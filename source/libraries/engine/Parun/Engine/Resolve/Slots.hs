@@ -1152,7 +1152,7 @@ effectPlayerRefs effect = case effect of
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName ref _ _) -> [ref]
   Effect.ChooseQuality _ -> []
   Effect.Bolster {} -> []
-  Effect.Amass {} -> []
+  Effect.Amass (Amass.Type.MkAmass ref _ _ _) -> [ref]
   Effect.Blight (Blight.Type.MkBlight ref _ _) -> [ref]
   -- Rule 701.66a reaches no player the card did not target.
   Effect.Earthbend {} -> []
@@ -1338,7 +1338,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ExileThisSpell -> Map.empty
   Effect.Bolster quantity -> quantitySlots quantity
   -- The COUNT only: the amass slot is a DEFINITION, not a read, Create's reason.
-  Effect.Amass (Amass.Type.MkAmass quantity _ _) -> quantitySlots quantity
+  Effect.Amass (Amass.Type.MkAmass _ quantity _ _) -> quantitySlots quantity
   -- The count and the blighters; the slot is a DEFINITION, Amass's reason above.
   Effect.Blight (Blight.Type.MkBlight _ quantity _) -> quantitySlots quantity
   Effect.Earthbend (Earthbend.MkEarthbend quantity _) -> quantitySlots quantity
@@ -2212,7 +2212,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.FromOutsideTheGame _ -> True
   Effect.ExileThisSpell -> True
   Effect.Bolster quantity -> Quantity.slotsAreExhaustive quantity
-  Effect.Amass (Amass.Type.MkAmass quantity _ _) -> Quantity.slotsAreExhaustive quantity
+  Effect.Amass (Amass.Type.MkAmass _ quantity _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.Blight (Blight.Type.MkBlight _ quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Earthbend (Earthbend.MkEarthbend quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Airbend {} -> True
@@ -2516,7 +2516,7 @@ hasRead wanted =
         Effect.FromOutsideTheGame _ -> False
         Effect.ExileThisSpell -> False
         Effect.Bolster quantity -> Quantity.hasRead wanted quantity
-        Effect.Amass (Amass.Type.MkAmass quantity _ _) -> Quantity.hasRead wanted quantity
+        Effect.Amass (Amass.Type.MkAmass _ quantity _ _) -> Quantity.hasRead wanted quantity
         Effect.Blight (Blight.Type.MkBlight _ quantity _) -> Quantity.hasRead wanted quantity
         Effect.Earthbend (Earthbend.MkEarthbend quantity _) -> Quantity.hasRead wanted quantity
         Effect.Airbend {} -> False
@@ -2804,7 +2804,7 @@ boundSlots effect = case effect of
   Effect.ExileThisSpell -> Set.empty
   Effect.Bolster _ -> Set.empty
   -- CR 701.47c's "the amassed Army": the creature the amasser chose.
-  Effect.Amass (Amass.Type.MkAmass _ _ mSlot) -> foldMap Set.singleton mSlot
+  Effect.Amass (Amass.Type.MkAmass _ _ _ mSlot) -> foldMap Set.singleton mSlot
   -- CR 701.68c's "blighted creature", the rule one over and the same shape.
   Effect.Blight (Blight.Type.MkBlight _ _ mSlot) -> foldMap Set.singleton mSlot
   -- Binding.earthbentLand is stamped by Parun.Engine.Resolve.Effect, not defined

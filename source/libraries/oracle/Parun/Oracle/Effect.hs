@@ -853,9 +853,9 @@ effect context e = case e of
         n <- Target.cards (Mill.quantity m)
         imperative context (Mill.player m) (Text.pack "mill " <> n) (Text.pack "mills " <> n)
   -- "Empower Jace 2" (CR 701.71a).
-  Effect.Amass (Amass.MkAmass q AmassKind.EmpowerJace Nothing) -> do
+  Effect.Amass (Amass.MkAmass who q AmassKind.EmpowerJace Nothing) -> do
     n <- Target.amount q
-    imperative context (PlayerRef.Relative PlayerRelation.You) (Text.pack "empower Jace " <> n) Text.empty
+    imperative context who (Text.pack "empower Jace " <> n) (Text.pack "empowers Jace " <> n)
   -- "Scry 2" (CR 701.22a).
   Effect.Scry (PlayerQuantity.MkPlayerQuantity who q) -> do
     n <- Target.amount q
