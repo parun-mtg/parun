@@ -256,7 +256,7 @@ assemble results =
         -- (Parun.Types.StickerRef, CR 123.3a).
         Right (Sheet count sheet) -> (section, entries, sheets <> Seq.replicate (Natural.toIntSaturating count) sheet, notes, named, bad)
         -- One number per copy, so a zero is kept and a repeated name appends.
-        Right (Note noted name) -> (section, entries, sheets, Map.insertWith (flip (<>)) name (Seq.singleton noted) notes, named, bad)
+        Right (Note value name) -> (section, entries, sheets, Map.insertWith (flip (<>)) name (Seq.singleton value) notes, named, bad)
       (_, found, brought, noted, header, reported) = List.foldl' step (Main, [], Seq.empty, Map.empty, Nothing, []) results
       gather want = Map.fromListWith (+) [(printing, count) | (section, printing, count) <- found, section `elem` want]
       once want = Map.keysSet (gather [want])

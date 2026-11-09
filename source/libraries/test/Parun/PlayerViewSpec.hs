@@ -15,6 +15,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Cards as Cards
 import qualified Parun.Codec.PlayerView as Codec.PlayerView
@@ -159,7 +160,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         Spec.assertEqWith s "hand" (SeatView.hand seat) []
         Spec.assertEqWith s "library size" (SeatView.librarySize seat) (Natural.length (Game.zoneMembers Zone.Library S.alice gs))
   Spec.it s "CR 905.2b every seat sees a player's draft notes, and the board writes them" $ do
-    let noted = Map.fromList [(CardName.MkCardName (Text.pack "Lurking Automaton"), Seq.fromList [9, 3]), (CardName.MkCardName (Text.pack "Garbage Fire"), Seq.singleton 2)]
+    let noted = Map.fromList [(CardName.MkCardName (Text.pack "Lurking Automaton"), Seq.fromList [9, 3 :: Natural]), (CardName.MkCardName (Text.pack "Garbage Fire"), Seq.singleton 2)]
         empty = Setup.emptyGame S.bothPlayers
         gs = empty {GameState.players = Map.adjust (\p -> p {Player.draftNotes = noted}) S.alice (GameState.players empty)}
     Spec.assertEqWith s "bob sees alice's notes" (fmap SeatView.draftNotes (seatOf S.alice (PlayerView.viewFor S.bob gs))) (Just noted)
