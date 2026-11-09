@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.StickerSheet as StickerSheet
@@ -114,13 +115,17 @@ data Deck = MkDeck
     -- | CR 123.2: the sticker sheets this player brings. A Seq, not a Set:
     -- CR 123.2b lets a limited player bring two of one sheet, and CR 123.3a
     -- keeps their stickers apart.
-    stickerSheets :: Seq.Seq StickerSheet.StickerSheet
+    stickerSheets :: Seq.Seq StickerSheet.StickerSheet,
+    -- | CR 905.2b: the numbers this player recorded during a Conspiracy
+    -- draft, by the name of the card they recorded each for, one per copy
+    -- (Player.draftNotes). Empty outside Conspiracy Draft.
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq Natural.Natural)
   }
   deriving (Eq, Ord, Show)
 
 -- | A deck with no commander, no vanguard, no dungeons, no sideboard, no
--- conspiracies and no supplementary decks -- every format but Commander and Vanguard,
+-- conspiracies, no supplementary decks and no draft notes -- every format but Commander and Vanguard,
 -- every game nobody ventures in, every game nobody wishes in, and every game
 -- outside Conspiracy Draft.
 fromCards :: Map.Map Printing.Printing Natural.Natural -> Deck
-fromCards m = MkDeck {cards = m, commander = Map.empty, vanguard = Nothing, dungeons = Set.empty, sideboard = Map.empty, conspiracies = Map.empty, sideDecks = Map.empty, stickerSheets = Seq.empty}
+fromCards m = MkDeck {cards = m, commander = Map.empty, vanguard = Nothing, dungeons = Set.empty, sideboard = Map.empty, conspiracies = Map.empty, sideDecks = Map.empty, stickerSheets = Seq.empty, draftNotes = Map.empty}

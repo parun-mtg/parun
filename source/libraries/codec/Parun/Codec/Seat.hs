@@ -43,6 +43,7 @@ codec = Fields.object $ do
   ante <- Fields.defaulted "ante" Seq.empty (Common.seq Placement.codec) Seat.ante
   sideDecks <- Fields.defaulted "sideDecks" Map.empty (Common.keyedList (Common.keyValue SideDeck.codec (Common.seq Placement.codec))) Seat.sideDecks
   startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.multiset CardName.codec) Seat.startingDeck
+  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq Common.natural))) Seat.draftNotes
   pure
     Seat.MkSeat
       { Seat.name = name,
@@ -61,7 +62,8 @@ codec = Fields.object $ do
         Seat.command = command,
         Seat.ante = ante,
         Seat.sideDecks = sideDecks,
-        Seat.startingDeck = startingDeck
+        Seat.startingDeck = startingDeck,
+        Seat.draftNotes = draftNotes
       }
 
 -- | A pool as one letter per unit, CR 105.1's W, U, B, R and G and CR 106.1b's

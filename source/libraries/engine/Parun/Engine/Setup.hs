@@ -207,6 +207,9 @@ gameWith settings order =
               -- started, there having been no venture to remove one from it.
               Player.completedDungeons = 0,
               Player.completedDungeonNames = Set.empty,
+              -- CR 905.2b: what a player noted during the draft is their deck's
+              -- business -- createDeck below.
+              Player.draftNotes = Map.empty,
               -- CR 103.2a: the starting deck is what is left once the sideboard
               -- is set aside, and which cards a player brought is their deck's
               -- business -- createDeck below.
@@ -445,7 +448,7 @@ createDeck pid deck = do
           -- reason and no object is minted for it either. CR 400.11c is what
           -- keeps anything else from reaching these until a card brings one in.
           let total = startingLifeOf (GameState.settings gs) (length (GameState.turnOrder gs)) pid (Deck.commander deck) (Vanguard.lifeModifierOf pid gs + (if Map.null (Map.findWithDefault Map.empty SideDeck.Scheme (Deck.sideDecks deck)) then 0 else Archenemy.lifeBonus))
-           in Map.adjust (\p -> p {Player.life = total, Player.startingLife = total, Player.dungeons = Set.fromList dungeonIds, Player.outsideTheGame = Map.fromList sideboardIds, Player.stickerSheets = Deck.stickerSheets deck}) pid (GameState.players gs)
+           in Map.adjust (\p -> p {Player.life = total, Player.startingLife = total, Player.dungeons = Set.fromList dungeonIds, Player.outsideTheGame = Map.fromList sideboardIds, Player.stickerSheets = Deck.stickerSheets deck, Player.draftNotes = Deck.draftNotes deck}) pid (GameState.players gs)
       }
   -- CR 718.2 / 901.4 / 904.4 and the Unstable FAQ: each supplementary deck
   -- begins in the command zone, and is neither in the library nor, below, in
@@ -1073,6 +1076,10 @@ resetPlayers settings seats lifeModifier players =
               Player.companion = Nothing,
               -- CR 103.2d: the new game draws again. Player.stickerSheets is
               -- NOT reset, for Player.dungeons' reason.
+              --
+              -- Player.draftNotes is NOT reset either (docs/decisions.md,
+              -- "Whether a restart or a subgame keeps what was noted during
+              -- the draft").
               Player.chosenStickerSheets = Set.empty
             }
         Status.Departed _ -> player

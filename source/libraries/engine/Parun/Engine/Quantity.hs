@@ -46,6 +46,7 @@ import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
@@ -64,6 +65,7 @@ import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Moved as Moved
+import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
@@ -1039,6 +1041,18 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
             let completed = maybe Set.empty Player.completedDungeonNames (Map.lookup pid (GameState.players gs))
              in Just (if Set.member name completed then 1 else 0)
           _ -> Nothing
+        -- CR 905.2b off Player.draftNotes, DungeonsCompleted's arm in arity and
+        -- source. A copy entering under another player reads its controller's
+        -- notes, which are none if they drafted none (Lurking Automaton's and
+        -- Cogwork Grinder's rulings of 2014-05-29).
+        Quantity.DraftNotes (DraftNoteTally.MkDraftNoteTally ref name fold) -> case playersOf ref of
+          Just [pid] ->
+            let noted = maybe Seq.empty (Map.findWithDefault Seq.empty name . Player.draftNotes) (Map.lookup pid (GameState.players gs))
+                folded = case fold of
+                  NoteFold.Total -> sum noted
+                  NoteFold.Highest -> foldr max 0 noted
+             in Just (toInteger folded)
+          _ -> Nothing
         -- CR 903.8's tally, DungeonsCompleted's arm in arity, source and
         -- liveness: every commander's count summed, Commander's Insignia's ruling
         -- for a partner pair. A cast in progress is not among them: Cast records
@@ -1451,6 +1465,7 @@ objectSlots quantity = case quantity of
   Quantity.CommanderCasts _ -> Set.empty
   Quantity.CommanderColors _ -> Set.empty
   Quantity.CompletedDungeon {} -> Set.empty
+  Quantity.DraftNotes {} -> Set.empty
   Quantity.EnteredThisTurn -> Set.empty
   Quantity.EnteredFrom _ -> Set.empty
   Quantity.WasCastFrom _ -> Set.empty
@@ -1739,6 +1754,7 @@ hasRead wanted quantity = case quantity of
   Quantity.CommanderCasts _ -> False
   Quantity.CommanderColors _ -> False
   Quantity.CompletedDungeon {} -> False
+  Quantity.DraftNotes {} -> False
   Quantity.EnteredThisTurn -> False
   Quantity.EnteredFrom _ -> False
   Quantity.WasCastFrom _ -> False
@@ -1837,6 +1853,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.CommanderCasts _ -> False
   Quantity.CommanderColors _ -> False
   Quantity.CompletedDungeon {} -> False
+  Quantity.DraftNotes {} -> False
   Quantity.EnteredThisTurn -> False
   Quantity.EnteredFrom _ -> False
   Quantity.WasCastFrom _ -> False

@@ -1635,3 +1635,19 @@ Entries are ordered by the first rule each cites.
   leaving `Binding.activatedAbility` unbound. Proved by the scenario
   `rings-of-brighthearth-copies-nothing-of-a-goblin-bookie-reflip`.
 - **Issue**: #5733.
+
+## Whether a restart or a subgame keeps what was noted during the draft
+
+- **Question**: CR 905.2b lets abilities refer to draft notes "during the
+  game". Does a game CR 728 restarts, or a CR 730 subgame, still read them?
+- **Rules**: CR 728.1, 730.1b, 730.2, 905.1d, 905.2b (CR of 2026-11-06); the
+  cards' rulings speak only of whose notes are read.
+- **Decision**: Yes. The notes are made before any game of the draft begins,
+  so neither game created them, and CR 730.1b's bar is on effects and
+  definitions created in a game.
+- **Rejected**: Only the Conspiracy Draft game reads them: CR 905.2b names no
+  such limit, and a restarted game or subgame is played with the same pool.
+- **Site**: `Parun.Engine.Setup.resetPlayers`, which leaves
+  `Player.draftNotes` alone. Proved by `Parun.SetupSpec`'s "CR 905.2b
+  createDeck records the draft notes, and a subgame keeps them".
+- **Issue**: #4006.

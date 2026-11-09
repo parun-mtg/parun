@@ -4755,6 +4755,7 @@ quantityReads q = case q of
   -- CR 903.4a: read off the printed cards, which no layer writes.
   Quantity.Type.CommanderColors _ -> Set.empty
   Quantity.Type.CompletedDungeon {} -> Set.empty
+  Quantity.Type.DraftNotes {} -> Set.empty
   Quantity.Type.EnteredThisTurn -> Set.empty
   Quantity.Type.EnteredFrom _ -> Set.empty
   Quantity.Type.WasCastFrom _ -> Set.empty

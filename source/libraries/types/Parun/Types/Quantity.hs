@@ -20,6 +20,7 @@ import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -342,6 +343,10 @@ data Quantity
   | -- | CR 309.7 as a 0\/1: has that player completed a dungeon with this name --
     -- Acererak the Archlich's "if you haven't completed Tomb of Annihilation".
     CompletedDungeon CompletedDungeon.CompletedDungeon
+  | -- | CR 905.2b: the numbers that player recorded during the draft for cards
+    -- of that name, folded; none reads 0 (Lurking Automaton's ruling of
+    -- 2014-05-29).
+    DraftNotes DraftNoteTally.DraftNoteTally
   | -- | CR 400.7 / 608.2i: 1 if the object this quantity is evaluated against
     -- entered the battlefield this turn, else 0, read off GameState.events.
     EnteredThisTurn

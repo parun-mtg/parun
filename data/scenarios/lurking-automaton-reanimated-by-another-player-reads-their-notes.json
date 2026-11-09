@@ -1,0 +1,18 @@
+{
+  "description": "CR 905.2b / 614.1c: a Lurking Automaton entering under a player other than its owner reads its controller's notes, not its owner's (ruling of 2014-05-29)",
+  "note": "Bob drafted the Automaton and noted 11; alice noted 3 for one of her own. Rise from the Grave puts bob's Automaton onto the battlefield under alice's control, so it enters with 3 counters, not 11.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "BBBBB", "draftNotes": [{"key": "Lurking Automaton", "value": [3]}], "hand": [{"card": "Rise from the Grave", "label": "rise"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "draftNotes": [{"key": "Lurking Automaton", "value": [11]}], "graveyard": [{"card": "Lurking Automaton", "label": "automaton"}], "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$rise"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Lurking Automaton", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Lurking Automaton", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}}
+  ]
+}

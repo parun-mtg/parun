@@ -1,0 +1,17 @@
+{
+  "description": "CR 905.2b / 120.3: Garbage Fire deals damage to target creature equal to the highest number its controller noted for cards named Garbage Fire",
+  "note": "Alice noted 2 and 5, so the Fire deals 5 to bob's 6/6 Colossal Dreadmaw: not their sum, 7, which would kill it, nor the first, 2.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "RRR", "draftNotes": [{"key": "Garbage Fire", "value": [2, 5]}], "hand": [{"card": "Garbage Fire", "label": "fire"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Colossal Dreadmaw", "label": "dreadmaw"}], "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$fire"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$dreadmaw", "damage": 5}}}
+  ]
+}

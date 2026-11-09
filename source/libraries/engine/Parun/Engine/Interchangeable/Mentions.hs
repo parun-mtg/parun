@@ -206,6 +206,7 @@ import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
+import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
@@ -1394,6 +1395,10 @@ destructionRNames asking x = case x of
 devotionNames :: (Monoid r) => Asking r -> Devotion.Devotion -> r
 devotionNames asking x = case x of
   Devotion.MkDevotion player _colors -> playerRefNames asking player
+
+draftNoteTallyNames :: (Monoid r) => Asking r -> DraftNoteTally.DraftNoteTally -> r
+draftNoteTallyNames asking x = case x of
+  DraftNoteTally.MkDraftNoteTally player _card _fold -> playerRefNames asking player
 
 devourNames :: (Monoid r) => Asking r -> Devour.Devour keyword -> r
 devourNames asking x = case x of
@@ -2819,6 +2824,7 @@ quantityNames asking x = case x of
   Quantity.CommanderCasts playerRef -> playerRefNames asking playerRef
   Quantity.CommanderColors (CommanderColors.MkCommanderColors player _colors) -> playerRefNames asking player
   Quantity.CompletedDungeon completedDungeon -> completedDungeonNames asking completedDungeon
+  Quantity.DraftNotes tally -> draftNoteTallyNames asking tally
   Quantity.EnteredThisTurn -> history asking HistoryRead.Entries
   Quantity.EnteredFrom inZone -> history asking HistoryRead.Entries <> inZoneNames asking inZone
   Quantity.WasCastFrom castFrom -> history asking HistoryRead.Entries <> history asking HistoryRead.Casts <> castFromNames asking castFrom

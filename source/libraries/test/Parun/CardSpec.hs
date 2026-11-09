@@ -4417,6 +4417,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.CommanderCasts _ -> []
   Quantity.Type.CommanderColors _ -> []
   Quantity.Type.CompletedDungeon {} -> []
+  Quantity.Type.DraftNotes {} -> []
   Quantity.Type.EnteredThisTurn -> []
   Quantity.Type.EnteredFrom _ -> []
   Quantity.Type.WasCastFrom _ -> []

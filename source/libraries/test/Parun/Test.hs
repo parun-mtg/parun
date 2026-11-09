@@ -329,6 +329,7 @@ import qualified Parun.Codec.DistinctOfSpec
 import qualified Parun.Codec.DivideSpec
 import qualified Parun.Codec.DoesNotUntapNextSpec
 import qualified Parun.Codec.DraftBoosterSpec
+import qualified Parun.Codec.DraftNoteTallySpec
 import qualified Parun.Codec.DrawCountRSpec
 import qualified Parun.Codec.DrawCountRewriteSpec
 import qualified Parun.Codec.DrawRSpec
@@ -552,6 +553,7 @@ import qualified Parun.Codec.NextDamageOutcomeSpec
 import qualified Parun.Codec.NextStepOfSpec
 import qualified Parun.Codec.NinjutsuSpec
 import qualified Parun.Codec.NinjutsuVariantSpec
+import qualified Parun.Codec.NoteFoldSpec
 import qualified Parun.Codec.NumberFloorSpec
 import qualified Parun.Codec.ObjectCountSpec
 import qualified Parun.Codec.ObjectIdSpec
@@ -1245,6 +1247,7 @@ spec s registry corpus = do
   Parun.Codec.CompanyCountSpec.spec s
   Parun.Codec.ComparisonSpec.spec s
   Parun.Codec.CompletedDungeonSpec.spec s
+  Parun.Codec.DraftNoteTallySpec.spec s
   Parun.Codec.ComponentCardSpec.spec s
   Parun.Codec.ConditionSpec.spec s
   Parun.Codec.ConjureCardsSpec.spec s
@@ -1595,6 +1598,7 @@ spec s registry corpus = do
   Parun.Codec.ParitySpec.spec s
   Parun.Codec.NamesAreSpec.spec s
   Parun.Codec.NinjutsuSpec.spec s
+  Parun.Codec.NoteFoldSpec.spec s
   Parun.Codec.NinjutsuVariantSpec.spec s
   Parun.Codec.ObjectIdSpec.spec s
   Parun.Codec.ObjectRefSpec.spec s

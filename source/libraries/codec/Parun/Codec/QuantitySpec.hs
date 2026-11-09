@@ -32,6 +32,7 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DistinctOf as DistinctOf
+import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.InZone as InZone
@@ -45,6 +46,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -818,6 +820,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon (PlayerRef.Relative PlayerRelation.You) (CardName.MkCardName (Text.pack "Tomb of Annihilation"))))
       " {\"type\":\"CompletedDungeon\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"dungeon\":\"Tomb of Annihilation\"}} "
+  Spec.it s "DraftNotes, a player, a printed name and a fold" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.DraftNotes (DraftNoteTally.MkDraftNoteTally (PlayerRef.Relative PlayerRelation.You) (CardName.MkCardName (Text.pack "Cogwork Grinder")) NoteFold.Total))
+      " {\"type\":\"DraftNotes\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"card\":\"Cogwork Grinder\",\"fold\":\"Total\"}} "
   -- CR 400.7 with NOTHING on the wire either: the object is the one the quantity
   -- is evaluated against, and "this turn" is the event log's own extent.
   Spec.it s "EnteredThisTurn is nullary" $

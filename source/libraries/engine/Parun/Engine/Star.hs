@@ -93,6 +93,7 @@ substituteStar star quantity = case quantity of
   Quantity.CommanderCasts _ -> quantity
   Quantity.CommanderColors _ -> quantity
   Quantity.CompletedDungeon {} -> quantity
+  Quantity.DraftNotes {} -> quantity
   Quantity.EnteredThisTurn -> quantity
   Quantity.EnteredFrom _ -> quantity
   Quantity.WasCastFrom _ -> quantity

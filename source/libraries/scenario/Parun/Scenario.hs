@@ -382,6 +382,7 @@ stage registry board =
               lives = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.life seat)) (NonEmpty.toList seated))
               counters = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.counters seat)) (NonEmpty.toList seated))
               orders = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.graveyardOrder seat)) (NonEmpty.toList seated))
+              notes = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.draftNotes seat)) (NonEmpty.toList seated))
               positioned =
                 base
                   { GameState.activePlayer = active,
@@ -390,7 +391,7 @@ stage registry board =
                     GameState.manaPool = Map.fromList [(pid, Mana.Type.MkMana (fmap plainUnit (Seat.manaPool seat))) | (seat, pid) <- NonEmpty.toList seated, not (null (Seat.manaPool seat))],
                     GameState.phase = Board.phase board,
                     GameState.remaining = Seq.drop 1 (Seq.dropWhileL (/= Board.phase board) (Seq.fromList Turn.allPhases)),
-                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders}) (GameState.players base),
+                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes}) (GameState.players base),
                     GameState.monarch = monarch
                   }
           case misseat of
