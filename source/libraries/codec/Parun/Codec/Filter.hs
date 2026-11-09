@@ -257,6 +257,7 @@ relatesToBound =
       <*> Fields.required "hop" Hop.codec (\(_, h, _) -> h)
       <*> Fields.required "slot" SlotName.codec (\(_, _, y) -> y)
 
+-- Exhaustive, not over Parun.Engine.Children: the codec is an interpreter, every atom a tag of its own.
 tagOf :: Filter.Filter keyword -> String
 tagOf x = case x of
   Filter.HasCardType {} -> "HasCardType"

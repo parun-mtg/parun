@@ -1841,6 +1841,7 @@ library engine
     Parun.Engine.BlockRequirement
     Parun.Engine.Card
     Parun.Engine.Cast
+    Parun.Engine.Children
     Parun.Engine.Claim
     Parun.Engine.Cloak
     Parun.Engine.Coin

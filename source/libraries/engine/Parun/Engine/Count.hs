@@ -11,6 +11,7 @@ module Parun.Engine.Count where
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -19,6 +20,7 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Deploy as Deploy
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -402,10 +404,6 @@ playerMatches viewOf context gs predicate pid =
 -- The candidate is held as "you" for the INNER count only; the outer context rides
 -- through unchanged, so a nested atom reading the perspective still reads the real
 -- one. That is the asymmetry the whole atom exists for.
---
--- Exhaustive rather than a catch-all, bakeBound's posture: a later atom that must
--- be answered against the board has to fail to compile here rather than silently
--- go unbaked and answer False.
 bakePerspective :: ViewOf -> Filter.Context -> GameState -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword
 bakePerspective viewOf context gs candidate predicate =
   let recur = bakePerspective viewOf context gs candidate
@@ -456,87 +454,6 @@ bakePerspective viewOf context gs candidate predicate =
                   && maybe False (\view -> Filter.owner view == Just candidate && Filter.matches context view inner) (viewOf oid)
               bound = Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
            in truth (toInteger (length (Prelude.filter owned bound)) >= toInteger n)
-        Filter.Type.And fs -> Filter.Type.And (fmap recur fs)
-        Filter.Type.Or fs -> Filter.Type.Or (fmap recur fs)
-        Filter.Type.Not f -> Filter.Type.Not (recur f)
-        Filter.Type.Unwritten f -> Filter.Type.Unwritten (recur f)
-        Filter.Type.HasCardType _ -> predicate
-        Filter.Type.HasSupertype _ -> predicate
-        Filter.Type.HasColor _ -> predicate
-        Filter.Type.Shares _ _ -> predicate
-        Filter.Type.HasSubtype _ -> predicate
-        Filter.Type.HasName _ -> predicate
-        Filter.Type.NameWordsAtLeast _ -> predicate
-        Filter.Type.HasNameOriginallyPrintedIn _ -> predicate
-        Filter.Type.HasKeyword _ -> predicate
-        Filter.Type.HasKeywordFamily _ -> predicate
-        Filter.Type.Measures _ -> predicate
-        Filter.Type.ManaValueParity _ -> predicate
-        Filter.Type.ManaCostRepeatsSymbol -> predicate
-        Filter.Type.ControllerIsOwner -> predicate
-        Filter.Type.HeldBy _ _ -> predicate
-        Filter.Type.ControlledByRole _ -> predicate
-        Filter.Type.HeldByBound _ _ -> predicate
-        Filter.Type.HeldByPlayer _ _ -> predicate
-        Filter.Type.HeldByRecipient _ -> predicate
-        Filter.Type.IsSource -> predicate
-        Filter.Type.IsObject _ -> predicate
-        Filter.Type.TargetsSource -> predicate
-        Filter.Type.HasSingleTarget -> predicate
-        -- NOT descended into, for the reason AttachedTo below is not: `candidate` here
-        -- is a PLAYER, and CR 115.1 puts no player on the stack, so
-        -- Parun.Engine.Filter answers this atom False for a player candidate whatever
-        -- the nest says and never evaluates it.
-        Filter.Type.TargetsOnlyOne _ -> predicate
-        -- Not descended into for the atom above's reason.
-        Filter.Type.TargetsMatching _ -> predicate
-        Filter.Type.TargetsPlayer _ -> predicate
-        Filter.Type.IsBound _ -> predicate
-        Filter.Type.IsTarget -> predicate
-        Filter.Type.ControllerRelatesToBound {} -> predicate
-        Filter.Type.HasChosenName {} -> predicate
-        Filter.Type.HasChosenColor -> predicate
-        Filter.Type.HasChosenSubtype -> predicate
-        Filter.Type.HasChosenCardType -> predicate
-        Filter.Type.IsExiledWithSource _ -> predicate
-        Filter.Type.IsLastExiledWithSource -> predicate
-        Filter.Type.OfChosenPlayer -> predicate
-        Filter.Type.OfRelatedPlayer _ -> predicate
-        Filter.Type.IsPlayer _ -> predicate
-        Filter.Type.IsAttacking -> predicate
-        -- Untouched for HeldBy's reason: the relation is answered against the
-        -- perspective at Parun.Engine.Filter.matches, which holds one.
-        Filter.Type.IsAttackingPlayer _ -> predicate
-        -- Untouched for the atom above's reason.
-        Filter.Type.IsAttackingPlaneswalker _ -> predicate
-        -- Untouched for the two atoms above's reason.
-        Filter.Type.IsAttackingBattle _ -> predicate
-        Filter.Type.DeclaredAttackedThisCombat -> predicate
-        Filter.Type.IsBlocking -> predicate
-        Filter.Type.HasBlockStatus _ -> predicate
-        Filter.Type.DeclaredThisTurn _ -> predicate
-        Filter.Type.CouldAttackThisTurn -> predicate
-        Filter.Type.DeclaredAttackerThisCombat -> predicate
-        Filter.Type.DeclaredBlockerThisCombat -> predicate
-        Filter.Type.LeftLibraryThisTurn _ -> predicate
-        Filter.Type.CantCrewVehicles -> predicate
-        Filter.Type.DealtDamageThisTurn -> predicate
-        Filter.Type.DealtDamageTo _ -> predicate
-        Filter.Type.EnteredThisTurn _ -> predicate
-        Filter.Type.CrewedSourceThisTurn -> predicate
-        Filter.Type.ConvokedSourceThisTurn -> predicate
-        Filter.Type.SaddledSourceThisTurn -> predicate
-        Filter.Type.ControlledSinceTurnBegan -> predicate
-        -- NOT descended into, unlike And/Or/Not above, and that is the load-bearing
-        -- call rather than an omission: `candidate` here is a PLAYER (the sole caller
-        -- folds this over playerView), and CR 303.4b makes a player enchanted by
-        -- an Aura rather than attached to one, so Parun.Engine.Filter answers this atom
-        -- False for a player candidate whatever the nest says and never evaluates it.
-        -- Baking the nest against this candidate would bake a question about the HOST
-        -- against a player who is not it.
-        Filter.Type.AttachedTo _ -> predicate
-        -- A player never moved, so Parun.Engine.Filter answers this atom False for one.
-        Filter.Type.BeforeMove _ -> predicate
         -- CR 303.4b / 301.5a: something the nested Filter admits is attached TO this
         -- PLAYER candidate. Baked here for CardsInGraveyardAtLeast's reason -- CR
         -- 109.3 keeps attachment off the characteristics, so this is a board
@@ -546,49 +463,15 @@ bakePerspective viewOf context gs candidate predicate =
         -- from this side.
         Filter.Type.HasAttached f ->
           truth (any (\view -> Filter.matches context view f) (Maybe.mapMaybe viewOf (attachersOfPlayer gs candidate)))
-        Filter.Type.IsAttachedTo _ -> predicate
-        Filter.Type.IsEvaluated -> predicate
-        Filter.Type.IsHostOfSource -> predicate
-        Filter.Type.EnteredWithSource -> predicate
-        Filter.Type.CounterLinkedToSource _ -> predicate
-        Filter.Type.AttachedNoLaterThanSource -> predicate
-        Filter.Type.CanHostSubject -> predicate
-        Filter.Type.CanAttachToSubject -> predicate
-        Filter.Type.HasEntryHost -> predicate
-        Filter.Type.HostOfSubjectHasCardType _ -> predicate
-        Filter.Type.IsCommander -> predicate
-        Filter.Type.IsToken -> predicate
-        Filter.Type.IsActivatedAbility _ -> predicate
-        Filter.Type.IsAbility -> predicate
-        Filter.Type.IsEmblem -> predicate
-        -- NOT descended into, RepresentedByCard's reason below: CR 113.7's subject is
-        -- an ability on the stack, which a player is not.
-        Filter.Type.FromSource _ -> predicate
-        Filter.Type.IsTapped -> predicate
-        Filter.Type.IsFaceDown -> predicate
-        -- NOT descended into, for AttachedTo's reason: CR 708.12's subject is the card
-        -- representing an OBJECT, so Parun.Engine.Filter answers the atom False for a
-        -- player candidate whatever the nest says, and baking the nest here would bake
-        -- a question about that card against a player who is not one.
-        Filter.Type.RepresentedByCard _ -> predicate
-        Filter.Type.IsExiledFaceDown -> predicate
-        Filter.Type.Transformed -> predicate
-        Filter.Type.IsRingBearer -> predicate
-        Filter.Type.IsPaired -> predicate
-        Filter.Type.IsPairedWithSource -> predicate
-        Filter.Type.BlockPartnerOfSource _ -> predicate
-        Filter.Type.HasDesignation _ -> predicate
-        Filter.Type.HasCounters _ -> predicate
-        Filter.Type.HasCountersOfAnyKind -> predicate
-        Filter.Type.HasSticker _ -> predicate
-        Filter.Type.Stickered -> predicate
-        Filter.Type.HasActivatedAbility _ -> predicate
-        Filter.Type.IsInZone _ -> predicate
-        Filter.Type.WasCastFrom _ -> predicate
-        Filter.Type.TagWasSpent _ -> predicate
-        Filter.Type.Paid _ -> predicate
-        Filter.Type.IsPrototyped -> predicate
-        Filter.Type.IsPreparedSpell -> predicate
+        -- Descended into through the connectives alone. Every nest is asked of
+        -- some other OBJECT -- a target, a host, a source, a represented card,
+        -- an anchored permanent -- and `candidate` here is a PLAYER (the sole
+        -- caller folds this over playerView): CR 115.1 puts no player on the
+        -- stack and CR 303.4b makes a player enchanted rather than attached, so
+        -- Parun.Engine.Filter answers those atoms False for a player whatever
+        -- the nest says, and baking the nest would bake a question about that
+        -- object against a player who is not it.
+        _ -> Identity.runIdentity (Children.filterChildren Children.leaves {Children.connective = Identity.Identity . recur} predicate)
 
 -- A baked answer as a Filter. `And []` is the trivial predicate by
 -- Parun.Types.Filter's own note, so its negation is the trivially false one --
