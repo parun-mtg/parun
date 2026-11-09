@@ -7,6 +7,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
@@ -78,7 +79,8 @@ seatView pid gs seat = do
 -- CR 613) for a seat that may see them, which for a face-down permanent or
 -- spell is every seat (CR 708.2); the card behind a face-down object for a
 -- seat that may look at it (CR 406.3, 708.5), and the foretell cost it was
--- given with it (CR 702.143e); and what an ability came from.
+-- given with it (CR 702.143e); what an ability came from; and what a stack
+-- object targets, which CR 601.2c / 602.2b / 603.3d announce to every seat.
 objectView :: PlayerId.PlayerId -> GameState.GameState -> ObjectId.ObjectId -> Maybe ObjectView.ObjectView
 objectView pid gs oid = do
   object <- Game.lookupObject oid gs
@@ -106,7 +108,8 @@ objectView pid gs oid = do
           if seen
             then Object.foretellCostReduction object
             else Nothing,
-        ObjectView.ability = abilityView pid gs oid
+        ObjectView.ability = abilityView pid gs oid,
+        ObjectView.targets = Set.toList (Projection.View.targetsOfStackObject gs oid)
       }
 
 -- | CR 113.7a / 602.2a: an ability on the stack by its source, where `pid` may

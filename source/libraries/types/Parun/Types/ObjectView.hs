@@ -29,6 +29,8 @@ data ObjectView = MkObjectView
     -- | CR 702.143d / 702.143e: what a granted foretell cost takes off the card's mana cost, for a seat that may look at it.
     foretellCostReduction :: Maybe ManaCost.ManaCost,
     -- | CR 113.7a / 602.2a: what an ability on the stack came from, and Nothing for anything else.
-    ability :: Maybe AbilityView.AbilityView
+    ability :: Maybe AbilityView.AbilityView,
+    -- | CR 601.2c / 602.2b / 603.3d: what a spell or ability on the stack targets, and empty for anything else.
+    targets :: [Recipient.Recipient]
   }
   deriving (Eq, Show)

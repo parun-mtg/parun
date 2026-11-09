@@ -175,7 +175,8 @@ ordered view = List.sortOn (\o -> (Maybe.fromMaybe 0 (ObjectView.characteristics
 listed :: PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Text.Text]
 listed view label shown = [Text.pack label <> Text.intercalate (Text.pack ", ") (fmap (describe view) shown) | not (null shown)]
 
--- | An object's name, power and toughness, and status.
+-- | An object's name, power and toughness, status, and what it targets (CR
+-- 601.2c / 602.2b / 603.3d).
 describe :: PlayerView.PlayerView -> ObjectView.ObjectView -> Text.Text
 describe view o =
   let pt = do
@@ -187,7 +188,10 @@ describe view o =
         [Text.pack "tapped" | ObjectView.tapped o == TapState.Tapped]
           <> [Text.pack (show (ObjectView.damage o) <> " damage") | ObjectView.damage o > 0]
           <> [counters n kind | (kind, n) <- Map.toList (ObjectView.counters o), n > 0]
-   in nameOf view o <> Maybe.fromMaybe Text.empty pt <> if null status then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") status <> Text.pack ")"
+      targeting = case ObjectView.targets o of
+        [] -> Text.empty
+        targets -> Text.pack " targeting " <> listing (fmap (recipientName view) targets)
+   in nameOf view o <> Maybe.fromMaybe Text.empty pt <> (if null status then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") status <> Text.pack ")") <> targeting
 
 -- | CR 708.2a: a face-down object has no name, and a hidden one shows none;
 -- CR 406.3 / 708.5: a face-down card the seat may look at names its card too.
@@ -494,13 +498,17 @@ event view logged = case LoggedEvent.event logged of
       AttackTarget.OfPlayer pid -> player pid
       AttackTarget.OfPlaneswalker oid -> name oid
       AttackTarget.OfBattle oid -> name oid
-    recipient r = case r of
-      Recipient.ToPlayer pid -> player pid
-      Recipient.ToCreature oid -> name oid
-      Recipient.ToPlaneswalker oid -> name oid
-      Recipient.ToBattle oid -> name oid
-      Recipient.ToObject oid -> name oid
-      Recipient.ToPile _ -> Text.pack "a pile"
+    recipient = recipientName view
+
+-- | A player or object a damage event, an attachment or a target names.
+recipientName :: PlayerView.PlayerView -> Recipient.Recipient -> Text.Text
+recipientName view r = case r of
+  Recipient.ToPlayer pid -> player pid
+  Recipient.ToCreature oid -> named view oid
+  Recipient.ToPlaneswalker oid -> named view oid
+  Recipient.ToBattle oid -> named view oid
+  Recipient.ToObject oid -> named view oid
+  Recipient.ToPile _ -> Text.pack "a pile"
 
 -- | A player action as a sentence, or nothing for a die roll (CR 706.1), whose
 -- DieResultSettled or PlanarDieRolled entries tell it.
