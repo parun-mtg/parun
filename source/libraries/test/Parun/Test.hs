@@ -17,6 +17,7 @@ import qualified Parun.AttackKeywordTriggerSpec
 import qualified Parun.AttractionSpec
 import qualified Parun.AuraSpec
 import qualified Parun.BattleSpec
+import qualified Parun.Benchmark.HarnessSpec
 import qualified Parun.BindingSpec
 import qualified Parun.BoardEffectSpec
 import qualified Parun.BotSpec
@@ -1063,6 +1064,7 @@ spec s registry corpus = do
   Parun.AttractionSpec.spec s registry
   Parun.AuraSpec.spec s registry
   Parun.BattleSpec.spec s registry
+  Parun.Benchmark.HarnessSpec.spec s
   Parun.BindingSpec.spec s
   Parun.BoardEffectSpec.spec s registry
   Parun.CardSpec.spec s registry corpus

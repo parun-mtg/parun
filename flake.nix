@@ -68,7 +68,7 @@
           default = parun;
           benchmark = pkgs.runCommand "parun-benchmark-results" { } ''
             mkdir -p "$out"
-            ${parun}/bin/parun-benchmark --csv "$out/bench.csv" +RTS -T
+            ${parun}/bin/parun-benchmark --json "$out/bench.json" +RTS -T
           '';
         }
       );

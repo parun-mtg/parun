@@ -7,6 +7,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
+import qualified Parun.Benchmark.Harness as Harness
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Cost as Cost
@@ -34,7 +35,6 @@ import qualified Parun.Types.Printing as Printing
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Zone as Zone
-import qualified Test.Tasty.Bench as Bench
 
 -- Two players, seeded from the benchmark's argument.
 playersFrom :: Natural -> NonEmpty.NonEmpty PlayerId
@@ -367,54 +367,54 @@ main = do
   hearse <- fetchOrThrow registry "Unlicensed Hearse"
   shade <- fetchOrThrow registry "Frozen Shade"
   angel <- fetchOrThrow registry "Serra Angel"
-  Bench.defaultMain
-    [ Bench.bench "goldfish 2p" $ Bench.whnf (goldfish deck) 0,
-      Bench.bench "casting 2p" $ Bench.whnf (casting deck) 0,
-      Bench.bench "fighting 2p" $ Bench.whnf (fighting deck) 0,
-      Bench.bench "fighting 2p aura" $ Bench.whnf (fighting controlDeck) 0,
+  Harness.defaultMain
+    [ Harness.whnf "goldfish 2p" (goldfish deck) 0,
+      Harness.whnf "casting 2p" (casting deck) 0,
+      Harness.whnf "fighting 2p" (fighting deck) 0,
+      Harness.whnf "fighting 2p aura" (fighting controlDeck) 0,
       -- The line above's paired control: same board, no Aura (loadNoAuraDeck).
-      Bench.bench "fighting 2p no aura" $ Bench.whnf (fighting noAuraDeck) 0,
-      Bench.bench "casting 2p dependent" $ Bench.whnf (casting dependentDeck) 0,
+      Harness.whnf "fighting 2p no aura" (fighting noAuraDeck) 0,
+      Harness.whnf "casting 2p dependent" (casting dependentDeck) 0,
       -- The line above's paired control: same 13 cards, no movable layer
       -- (loadIndependentDeck).
-      Bench.bench "casting 2p independent" $ Bench.whnf (casting independentDeck) 0,
+      Harness.whnf "casting 2p independent" (casting independentDeck) 0,
       -- #435: every cast of 40 cards in hand over 40 creatures and 3 anthems.
-      Bench.bench "castable 40" $ Bench.whnf (castableCount True mountain anthem piker) 40,
+      Harness.whnf "castable 40" (castableCount True mountain anthem piker) 40,
       -- The line above's paired control: the same question card by card.
-      Bench.bench "castable 40 unshared" $ Bench.whnf (castableCount False mountain anthem piker) 40,
-      Bench.bench "payable plural payable" $ Bench.whnf (payable plural (generic 4)) 0,
-      Bench.bench "payable plural short" $ Bench.whnf (payable plural (generic 14)) 0,
-      Bench.bench "payable plural far short" $ Bench.whnf (payable plural (generic 40)) 0,
-      Bench.bench "payable plural off colour" $ Bench.whnf (payable plural (colored Color.Blue 3)) 0,
-      Bench.bench "payable drum short" $ Bench.whnf (payable drum (generic 9)) 0,
+      Harness.whnf "castable 40 unshared" (castableCount False mountain anthem piker) 40,
+      Harness.whnf "payable plural payable" (payable plural (generic 4)) 0,
+      Harness.whnf "payable plural short" (payable plural (generic 14)) 0,
+      Harness.whnf "payable plural far short" (payable plural (generic 40)) 0,
+      Harness.whnf "payable plural off colour" (payable plural (colored Color.Blue 3)) 0,
+      Harness.whnf "payable drum short" (payable drum (generic 9)) 0,
       -- #1448: every activation of 40 and of 80 targeted abilities.
-      Bench.bench "legal actions 40" $ Bench.whnf (legalActionCount sorcerer) 40,
-      Bench.bench "legal actions 80" $ Bench.whnf (legalActionCount sorcerer) 80,
+      Harness.whnf "legal actions 40" (legalActionCount sorcerer) 40,
+      Harness.whnf "legal actions 80" (legalActionCount sorcerer) 80,
       -- The two lines above' paired control: the same boards, the ability
       -- targeting nothing (Merfolk Looter).
-      Bench.bench "legal actions 40 untargeted" $ Bench.whnf (legalActionCount looter) 40,
-      Bench.bench "legal actions 80 untargeted" $ Bench.whnf (legalActionCount looter) 80,
+      Harness.whnf "legal actions 40 untargeted" (legalActionCount looter) 40,
+      Harness.whnf "legal actions 80 untargeted" (legalActionCount looter) 80,
       -- #6432's four shapes, each at 40 and 80. Mana sources: every Elf's mana
       -- ability, asked by both mana-source sweeps.
-      Bench.bench "legal actions 40 mana sources" $ Bench.whnf (legalActionCountOf [elves] []) 40,
-      Bench.bench "legal actions 80 mana sources" $ Bench.whnf (legalActionCountOf [elves] []) 80,
+      Harness.whnf "legal actions 40 mana sources" (legalActionCountOf [elves] []) 40,
+      Harness.whnf "legal actions 80 mana sources" (legalActionCountOf [elves] []) 80,
       -- A cost with mana: Carrion Ants' {1}, beside a Mountain apiece.
-      Bench.bench "legal actions 40 mana cost" $ Bench.whnf (legalActionCountOf [ants, mountain] []) 40,
-      Bench.bench "legal actions 80 mana cost" $ Bench.whnf (legalActionCountOf [ants, mountain] []) 80,
+      Harness.whnf "legal actions 40 mana cost" (legalActionCountOf [ants, mountain] []) 40,
+      Harness.whnf "legal actions 80 mana cost" (legalActionCountOf [ants, mountain] []) 80,
       -- A cost sacrificing another permanent: Bloodthrone Vampire's.
-      Bench.bench "legal actions 40 sacrifice" $ Bench.whnf (legalActionCountOf [vampire] []) 40,
-      Bench.bench "legal actions 80 sacrifice" $ Bench.whnf (legalActionCountOf [vampire] []) 80,
+      Harness.whnf "legal actions 40 sacrifice" (legalActionCountOf [vampire] []) 40,
+      Harness.whnf "legal actions 80 sacrifice" (legalActionCountOf [vampire] []) 80,
       -- A cost tapping other permanents: Unlicensed Hearse's crew 2, which no
       -- 0-power Hearse can pay, beside its "from a single graveyard" slots
       -- over as many graveyard cards.
-      Bench.bench "legal actions 40 crew" $ Bench.whnf (legalActionCountOf [hearse] [mountain]) 40,
-      Bench.bench "legal actions 80 crew" $ Bench.whnf (legalActionCountOf [hearse] [mountain]) 80,
+      Harness.whnf "legal actions 40 crew" (legalActionCountOf [hearse] [mountain]) 40,
+      Harness.whnf "legal actions 80 crew" (legalActionCountOf [hearse] [mountain]) 80,
       -- #6552's shapes. An unpayable mana cost: Frozen Shade's {B} beside a
       -- Mountain apiece, which Mana.ceilingAdmits refuses.
-      Bench.bench "legal actions 40 unpayable" $ Bench.whnf (legalActionCountOf [shade, mountain] []) 40,
-      Bench.bench "legal actions 80 unpayable" $ Bench.whnf (legalActionCountOf [shade, mountain] []) 80,
+      Harness.whnf "legal actions 40 unpayable" (legalActionCountOf [shade, mountain] []) 40,
+      Harness.whnf "legal actions 80 unpayable" (legalActionCountOf [shade, mountain] []) 80,
       -- A graveyard of cards printing keywords that permit no cast there:
       -- Serra Angel's, beside a Mountain apiece.
-      Bench.bench "legal actions 40 buried keywords" $ Bench.whnf (legalActionCountOf [mountain] [angel]) 40,
-      Bench.bench "legal actions 80 buried keywords" $ Bench.whnf (legalActionCountOf [mountain] [angel]) 80
+      Harness.whnf "legal actions 40 buried keywords" (legalActionCountOf [mountain] [angel]) 40,
+      Harness.whnf "legal actions 80 buried keywords" (legalActionCountOf [mountain] [angel]) 80
     ]
