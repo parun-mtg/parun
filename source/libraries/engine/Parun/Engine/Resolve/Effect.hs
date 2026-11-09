@@ -1421,7 +1421,9 @@ activateWhileRolling runSubgame pid oid ability = do
     -- CR 734.1: the payment reversed the activation back to `before` itself.
     Payment.Unpaid -> pure False
     -- CR 602.2b: the activation is recorded with no stack object to name, so
-    -- a trigger copying "that ability" copies nothing.
+    -- a trigger copying "that ability" copies nothing (docs/decisions.md,
+    -- "Whether copying an activation that never reached the stack copies
+    -- anything").
     Payment.Paid _ -> do
       State.modify' (ActivationRestriction.recordActivation oid ability)
       State.modify' (ActivationRestriction.logActivation before pid oid (Just ability) AbilityKind.NonManaAbility Set.empty)

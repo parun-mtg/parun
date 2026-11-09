@@ -495,6 +495,15 @@ spec s registry = Spec.describe s "Client" $ do
       (filter (Text.isPrefixOf (Text.pack "Undone: ")) (takeWhile (not . menuHeading) (drop 1 (dropWhile (/= Text.pack "> stop") shown))))
       [Text.pack "Undone: Cast Grizzly Bears could not be completed (its cost was not paid), so it was reversed and its payments canceled."]
 
+  Spec.it s "CR 734.1 a cast stopped partway is told undone though the mana ability paid toward it is kept" $ do
+    (lands, resolved, tapped, shown) <- castTyping (keepsMana "Grizzly Bears") s registry "Grizzly Bears" ["Mountain", "Forest"]
+    Spec.assertEqWith s "the bear did not resolve, and one land stayed tapped" (resolved, length (filter (`elem` lands) tapped)) (False, 1)
+    Spec.assertEqWith
+      s
+      "told once, before the next menu"
+      (filter (Text.isPrefixOf (Text.pack "Undone: ")) (takeWhile (not . menuHeading) (drop 1 (dropWhile (/= Text.pack "> stop") shown))))
+      [Text.pack "Undone: Cast Grizzly Bears could not be completed (its cost was not paid), so it was reversed and its payments canceled."]
+
   Spec.it s "CR 601.2e a cast whose announced modes are illegal is told undone, and why" $ do
     let gs = (Setup.emptyGame S.bothPlayers) {GameState.undone = Map.singleton S.alice Undoing.IllegalProposal}
         view = PlayerView.viewFor S.alice gs
@@ -1596,6 +1605,17 @@ castsOnce word spell sc
           cast = [n | not (typedYet word sc), (n, rest) <- options, rest == Text.pack (". Cast " <> spell)]
        in Maybe.listToMaybe (cast <> [n | (n, rest) <- options, rest == Text.pack ". Pass"])
   | otherwise = plays sc
+  where
+    shown = pending sc
+
+-- Casts the spell as castsOnce does, paying with the first source listed,
+-- then stopping, and keeping the mana ability the reversed cast asks about.
+keepsMana :: String -> Screen -> Maybe Text.Text
+keepsMana spell sc
+  | any (Text.isPrefixOf (Text.pack "That action was reversed.")) shown = Just (Text.pack "2")
+  | any (\l -> Text.isPrefixOf (Text.pack "Paying ") l && Text.isInfixOf (Text.pack " in the pool") l) shown = Just (Text.pack "stop")
+  | any (Text.isPrefixOf (Text.pack "Paying ")) shown = Just (Text.pack "1")
+  | otherwise = castsOnce "stop" spell sc
   where
     shown = pending sc
 
