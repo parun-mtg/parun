@@ -272,7 +272,7 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       let named = S.nameOf . Printing.card
       Spec.assertEqWith s "the deck" (entriesOf (Deck.cards deck)) [(Text.pack "Goblin Piker", 4)]
       Spec.assertEqWith s "CR 702.139a: the companion in the sideboard" (entriesOf (Deck.sideboard deck)) [(Text.pack "Goblin Piker", 2), (Text.pack "Wax//Wane", 1)]
-      Spec.assertEqWith s "the commander" (fmap named (Set.toList (Deck.commander deck))) [CardName.MkCardName (Text.pack "Blossom-Blessed Angel")]
+      Spec.assertEqWith s "the commander" (fmap named (Map.keys (Deck.commander deck))) [CardName.MkCardName (Text.pack "Blossom-Blessed Angel")]
       Spec.assertEqWith s "the side decks" (Map.map entriesOf (Deck.sideDecks deck)) (Map.fromList [(SideDeck.Planar, [(Text.pack "Wax//Wane", 3)]), (SideDeck.Scheme, [(Text.pack "Goblin Piker", 5)])])
       Spec.assertEqWith s "the conspiracies" (entriesOf (Deck.conspiracies deck)) [(Text.pack "Goblin Piker", 6)]
       Spec.assertEqWith s "the dungeons" (fmap named (Set.toList (Deck.dungeons deck))) [CardName.MkCardName (Text.pack "Goblin Piker")]
@@ -363,10 +363,21 @@ spec s = Spec.describe s "Parun.DeckList" $ do
     . withPool "chosen"
     $ \registry -> do
       deck <- deckOf s "chosen" registry "4 Goblin Piker\n\nCommander\nThe Prismatic Piper {color: g}\n"
-      Spec.assertEqWith s "chosen green" (fmap Printing.chosenColor (Set.toList (Deck.commander deck))) [Just Color.Green]
+      Spec.assertEqWith s "chosen green" (fmap Printing.chosenColor (Map.keys (Deck.commander deck))) [Just Color.Green]
       let text = DeckList.render (Registry.printings registry) Nothing deck
       Spec.assertBool s (Text.isInfixOf (Text.pack "\nCommander\n1 The Prismatic Piper {color: G}\n") text) ("the choice: " <> show text)
       again <- deckOf s "chosen-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- CR 903.13e: two of one commander, the same printing twice.
+  Spec.it s "CR 903.13e a Commander section keeps its count, and a rendered list writes it back"
+    . withPool "chosen"
+    $ \registry -> do
+      deck <- deckOf s "two-pipers" registry "4 Goblin Piker\n\nCommander\n2 The Prismatic Piper {color: r}\n"
+      Spec.assertEqWith s "two red Pipers" (Map.toList (Map.mapKeys Printing.chosenColor (Deck.commander deck))) [(Just Color.Red, 2)]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\nCommander\n2 The Prismatic Piper {color: R}\n") text) ("the count: " <> show text)
+      again <- deckOf s "two-pipers-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
 
   -- One closed set of choices, each taking as many colours as its rule says,

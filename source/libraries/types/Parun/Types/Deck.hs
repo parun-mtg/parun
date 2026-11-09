@@ -28,7 +28,7 @@ import qualified Parun.Types.StickerSheet as StickerSheet
 -- second copy in the deck. Parun.Engine.Setup.createDeck reads the two fields into
 -- the two zones.
 --
--- A SET and not one card: CR 903.3 designates one legendary card per deck, and
+-- SEVERAL and not one card: CR 903.3 designates one legendary card per deck, and
 -- CR 702.124a's partner abilities let it designate two instead. Which pairs are
 -- legal is CR 702.124's business rather than this field's --
 -- Parun.Engine.Commander.designations is the reader that judges it.
@@ -38,10 +38,9 @@ data Deck = MkDeck
     -- which CR 903.6 and CR 702.124b start in the command zone. Empty for every
     -- deck but a Commander deck's.
     --
-    -- A Set and not `cards`' multiset: CR 903.5b gives every card in the deck
-    -- but a basic land a different English name, and CR 903.3 designates a
-    -- legendary one, so two designations are two distinct printings.
-    commander :: Set.Set Printing.Printing,
+    -- A multiset like `cards`: CR 903.13e lets a Commander Draft deck
+    -- designate two of one card (The Prismatic Piper's ruling of 2020-11-10).
+    commander :: Map.Map Printing.Printing Natural.Natural,
     -- | CR 902.3: the vanguard card this player brings, which CR 313.2 keeps in
     -- the command zone for the whole game.
     --
@@ -124,4 +123,4 @@ data Deck = MkDeck
 -- every game nobody ventures in, every game nobody wishes in, and every game
 -- outside Conspiracy Draft.
 fromCards :: Map.Map Printing.Printing Natural.Natural -> Deck
-fromCards m = MkDeck {cards = m, commander = Set.empty, vanguard = Nothing, dungeons = Set.empty, sideboard = Map.empty, conspiracies = Map.empty, sideDecks = Map.empty, stickerSheets = Seq.empty}
+fromCards m = MkDeck {cards = m, commander = Map.empty, vanguard = Nothing, dungeons = Set.empty, sideboard = Map.empty, conspiracies = Map.empty, sideDecks = Map.empty, stickerSheets = Seq.empty}

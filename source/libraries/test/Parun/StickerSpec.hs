@@ -625,7 +625,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     sheets <- committedSheets
     mountain <- S.printingOf s registry "Mountain"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let deck = (withSheetsDeck (take 3 sheets) (Deck.fromCards (Map.singleton mountain 10))) {Deck.commander = Set.singleton shimatsu}
+    let deck = (withSheetsDeck (take 3 sheets) (Deck.fromCards (Map.singleton mountain 10))) {Deck.commander = Map.singleton shimatsu 1}
         parent = withSheets (take 3 sheets) (S.runPure S.identityAnswer (S.landsInPlay mountain 2) (Setup.createDeck S.alice deck))
     case Set.toList (GameState.command parent) of
       [commander] -> do
@@ -656,7 +656,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     plains <- S.printingOf s registry "Plains"
     shahrazad <- S.printingOf s registry "Shahrazad"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let deck = (withSheetsDeck (take 3 sheets) (Deck.fromCards (Map.singleton mountain 8))) {Deck.commander = Set.singleton shimatsu}
+    let deck = (withSheetsDeck (take 3 sheets) (Deck.fromCards (Map.singleton mountain 8))) {Deck.commander = Map.singleton shimatsu 1}
         dealt = withSheets (take 3 sheets) (S.runPure S.identityAnswer (S.landsInPlay plains 2) (Setup.createDeck S.alice deck))
         (shahrazadId, board) = S.addHandCard shahrazad S.alice dealt
         pt :: ObjectId.ObjectId -> GameState.GameState -> (Maybe Integer, Maybe Integer)

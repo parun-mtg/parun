@@ -422,7 +422,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     let deck =
           Deck.MkDeck
             { Deck.cards = Map.empty,
-              Deck.commander = Set.empty,
+              Deck.commander = Map.empty,
               Deck.vanguard = Nothing,
               Deck.dungeons = Set.empty,
               Deck.sideboard = Map.fromList [(signInBlood, 2), (dragon, 1)],
@@ -1263,7 +1263,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     zirda <- S.printingOf s registry "Zirda, the Dawnwaker"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     let (board, wishId) = S.handOne wish (S.landsInPlay forest 4)
-        commanded = S.runPure S.identityAnswer board (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Set.singleton shimatsu}))
+        commanded = S.runPure S.identityAnswer board (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Map.singleton shimatsu 1}))
         withZirda = stockPool [(zirda, 1)]
     Spec.assertEqWith s "CR 903.11: in a Commander game her hand gets nothing" (printingsIn Zone.Hand S.alice (resolveWish exercising wishId (withZirda commanded))) []
     Spec.assertEqWith s "with no commander the same wish brings Zirda in" (printingsIn Zone.Hand S.alice (resolveWish exercising wishId (withZirda board))) [zirda]
@@ -1274,7 +1274,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     bear <- S.printingOf s registry "Prodigal Sorcerer"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     let (bearId, plain) = S.addPermanent bear S.alice (Setup.emptyGame S.bothPlayers)
-        commanded = S.runPure S.identityAnswer plain (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Set.singleton shimatsu}))
+        commanded = S.runPure S.identityAnswer plain (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Map.singleton shimatsu 1}))
         predicate = Filter.Or [Filter.HasCardType CardType.Creature, Filter.HasCardType CardType.Land]
         offered parent = Event.eligible predicate bearId S.alice (Setup.subgameStateFrom S.alice parent)
     Spec.assertEqWith s "CR 903.11: under a commander nothing is offered" (offered commanded) []

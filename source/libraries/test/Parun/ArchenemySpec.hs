@@ -11,7 +11,6 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Engine.Archenemy as Archenemy
 import qualified Parun.Engine.Engine as Engine
@@ -81,7 +80,7 @@ spec s registry = Spec.describe s "Parun.Engine.Archenemy" $ do
     forest <- S.printingOf s registry "Forest"
     look <- S.printingOf s registry "Look Skyward and Despair"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let commanderDeck = (Deck.fromCards (Map.singleton forest 20)) {Deck.commander = Set.singleton shimatsu}
+    let commanderDeck = (Deck.fromCards (Map.singleton forest 20)) {Deck.commander = Map.singleton shimatsu 1}
         alices = commanderDeck {Deck.sideDecks = Map.singleton SideDeck.Scheme (Map.singleton look 2)}
         teamed shared =
           let gs = Setup.emptyGame S.threePlayers

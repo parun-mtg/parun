@@ -60,7 +60,7 @@ deckOf :: Printing.Printing -> Maybe Printing.Printing -> Deck.Deck
 deckOf mountain vanguard =
   Deck.MkDeck
     { Deck.cards = Map.singleton mountain 30,
-      Deck.commander = Set.empty,
+      Deck.commander = Map.empty,
       Deck.vanguard = vanguard,
       Deck.dungeons = Set.empty,
       Deck.sideboard = Map.empty,

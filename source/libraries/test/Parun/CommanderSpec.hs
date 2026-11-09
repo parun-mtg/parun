@@ -116,7 +116,9 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
+import qualified Parun.Types.DraftBooster as DraftBooster
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -130,6 +132,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Subtype as Subtype.Type
@@ -143,7 +146,7 @@ import qualified Parun.Types.Zone as Zone
 -- zone are what this file is about.
 commanderBoard :: Printing.Printing -> Printing.Printing -> Int -> GameState.GameState
 commanderBoard mountain shimatsu lands =
-  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton shimatsu, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
       -- A precombat main phase with alice holding priority and an empty stack,
       -- which is Support.handOne's shape. CR 302.1 -- a creature card is cast
       -- "during a main phase of their turn when the stack is empty" -- is a
@@ -291,7 +294,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     mountain <- S.printingOf s registry "Mountain"
     cid <- S.printingOf s registry "Cid, Timeless Artificer"
     ornithopter <- S.printingOf s registry "Ornithopter"
-    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 1), (mountain, 3)], Deck.commander = Set.singleton cid, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 1), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         cidsIn ids gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName cid)) ids
         intoPlay' oid gs = S.runPureWith S.identityAnswer gs (Event.changeZoneReturning (pure ()) oid Zone.Battlefield)
@@ -317,7 +320,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
   Spec.it s "CR 903.3 a commander is not interchangeable with another copy of its card" $ do
     mountain <- S.printingOf s registry "Mountain"
     cid <- S.printingOf s registry "Cid, Timeless Artificer"
-    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 2), (mountain, 3)], Deck.commander = Set.singleton cid, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.fromList [(cid, 2), (mountain, 3)], Deck.commander = Map.singleton cid 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice deck)
         named gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName cid))
         cids = named built (Game.zoneMembers Zone.Library S.alice built <> inCommandZone built)
@@ -373,7 +376,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
   -- IS the commander is one card, not zero.
   Spec.it s "CR 903.5 the commander counts toward the deck's size" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton shimatsu, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
     Spec.assertEqWith s "one card" (Setup.deckSize deck) 1
     Spec.assertEqWith s "and none without a commander" (Setup.deckSize (Deck.fromCards Map.empty)) 0
   -- CR 113.6: rule 113.6p functions an EMBLEM's and a VANGUARD card's abilities in
@@ -416,7 +419,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     grist <- S.printingOf s registry "Grist, the Hunger Tide"
     walls <- S.printingOf s registry "The Walls of Ba Sing Se"
     piker <- S.printingOf s registry "Goblin Piker"
-    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton c, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton c 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
         seated = S.runPure S.identityAnswer (commanderBoard mountain grist 0) (Setup.createDeck S.bob (deckFor walls))
         (pikerId, board) = S.addPermanent piker S.bob seated
         (_, played) = S.addPermanent walls S.bob board
@@ -471,7 +474,7 @@ designationSpec s registry = Spec.describe s "Designation" $ do
     anafenza <- S.printingOf s registry "Anafenza, the Foremost"
     walls <- S.printingOf s registry "The Walls of Ba Sing Se"
     piker <- S.printingOf s registry "Goblin Piker"
-    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton c, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deckFor c = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton c 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
         stating = S.runPure S.identityAnswer (commanderBoard mountain warden 0) (Setup.createDeck S.bob (deckFor walls))
         unstated = S.runPure S.identityAnswer (commanderBoard mountain walls 0) (Setup.createDeck S.bob (deckFor anafenza))
         binned base =
@@ -558,20 +561,27 @@ taxSpec s registry = Spec.describe s "Tax" $ do
 -- Setup.createDeck like commanderBoard above -- the designation is what these
 -- cases are about, so nothing is placed by hand.
 --
+-- `format` is the format the game says its decks were built for (CR 100.2).
+--
 -- `lands` Mountains and as many Plains, since Akiri's {R}{W} needs both colours.
 -- The tax case below wants exactly ONE of each: what a cast taps is not readable
 -- off a wider board, because paying {W} from a board whose Mountains sort first
 -- taps every Mountain on the way to a Plains, taxed or not.
-partnerBoard :: Printing.Printing -> Printing.Printing -> Int -> [Printing.Printing] -> GameState.GameState
-partnerBoard mountain plains lands commanders =
-  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.fromList commanders, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+partnerBoard :: Maybe Format.Format -> Printing.Printing -> Printing.Printing -> Int -> [Printing.Printing] -> GameState.GameState
+partnerBoard format mountain plains lands commanders =
+  let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.fromListWith (+) [(printing, 1) | printing <- commanders], Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
       board =
         (S.landsFor plains S.alice lands (S.landsInPlay mountain lands))
           { GameState.phase = Phase.PrecombatMain,
             GameState.activePlayer = S.alice,
             GameState.priority = Just S.alice
           }
-   in S.runPure S.identityAnswer board (Setup.createDeck S.alice deck)
+      settings = (GameState.settings board) {GameSettings.format = format}
+   in S.runPure S.identityAnswer board {GameState.settings = settings} (Setup.createDeck S.alice deck)
+
+-- CR 903.13a: a Commander Draft of Commander Legends boosters, the default.
+commanderDraft :: Format.Format
+commanderDraft = Format.MkFormat RuleFamily.CommanderDraft Nothing (Set.singleton DraftBooster.CommanderLegends)
 
 -- The command-zone object representing one printing, which is how a case tells
 -- alice's two commanders apart: CR 400.7 gives each a fresh id, and the printed
@@ -630,7 +640,7 @@ partnerSpec s registry = Spec.describe s "Partner" $ do
     plains <- S.printingOf s registry "Plains"
     rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
-    let gs = partnerBoard mountain plains 6 [rograkh, akiri]
+    let gs = partnerBoard Nothing mountain plains 6 [rograkh, akiri]
     Spec.assertEqWith s "both are in the command zone" (List.sort (commandZoneNames gs)) (List.sort [S.nameOf (Printing.card rograkh), S.nameOf (Printing.card akiri)])
     Spec.assertEqWith s "and both are commanders" (fmap (\oid -> Commander.isCommander oid gs) (inCommandZone gs)) [True, True]
     Spec.assertEqWith s "she is designated both" (fmap (List.sort . commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just (List.sort [rograkh, akiri]))
@@ -643,11 +653,35 @@ partnerSpec s registry = Spec.describe s "Partner" $ do
     plains <- S.printingOf s registry "Plains"
     rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let refused = partnerBoard mountain plains 6 [rograkh, shimatsu]
-        control = partnerBoard mountain plains 6 [rograkh]
+    let refused = partnerBoard Nothing mountain plains 6 [rograkh, shimatsu]
+        control = partnerBoard Nothing mountain plains 6 [rograkh]
     Spec.assertEqWith s "nothing is in the command zone" (commandZoneNames refused) []
     Spec.assertEqWith s "and she is designated nothing" (fmap (commanderPrintingsOf refused) (Map.lookup S.alice (GameState.players refused))) (Just [])
     Spec.assertEqWith s "control leg: the same deck naming Rograkh alone still designates him (CR 903.3)" (commandZoneNames control) [S.nameOf (Printing.card rograkh)]
+  -- CR 903.13e: two of one card with partner, which only a multiset designates.
+  Spec.it s "CR 903.13e two The Prismatic Piper are both designated, each its own commander" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    plains <- S.printingOf s registry "Plains"
+    piper <- S.printingOf s registry "The Prismatic Piper"
+    let gs = partnerBoard (Just commanderDraft) mountain plains 1 [piper, piper]
+    Spec.assertEqWith s "both are in the command zone" (commandZoneNames gs) (replicate 2 (S.nameOf (Printing.card piper)))
+    Spec.assertEqWith s "and both are commanders" (fmap (\oid -> Commander.isCommander oid gs) (inCommandZone gs)) [True, True]
+    Spec.assertEqWith s "she is designated two cards" (fmap (Set.size . Player.commander) (Map.lookup S.alice (GameState.players gs))) (Just 2)
+  -- CR 903.13f(3): Krenko and Shimatsu, both red and neither with partner.
+  Spec.it s "CR 903.13f(3) a Commander Masters draft gives one-colour commanders partner for deck building" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    plains <- S.printingOf s registry "Plains"
+    krenko <- S.printingOf s registry "Krenko, Mob Boss"
+    shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
+    rakdos <- S.printingOf s registry "Rakdos, the Muscle"
+    faceless <- S.printingOf s registry "Faceless One"
+    let masters = Just commanderDraft {Format.boosters = Set.singleton DraftBooster.CommanderMasters}
+        paired = partnerBoard masters mountain plains 1 [krenko, shimatsu]
+    Spec.assertEqWith s "both are in the command zone" (List.sort (commandZoneNames paired)) (List.sort [S.nameOf (Printing.card krenko), S.nameOf (Printing.card shimatsu)])
+    Spec.assertEqWith s "a Commander Legends draft designates neither" (commandZoneNames (partnerBoard (Just commanderDraft) mountain plains 1 [krenko, shimatsu])) []
+    Spec.assertEqWith s "nor does Commander" (commandZoneNames (partnerBoard Nothing mountain plains 1 [krenko, shimatsu])) []
+    Spec.assertEqWith s "nor two colours: Rakdos, the Muscle beside Krenko" (commandZoneNames (partnerBoard masters mountain plains 1 [rakdos, krenko])) []
+    Spec.assertEqWith s "nor a Background, which is no commander by itself (CR 702.124k): Faceless One beside Krenko" (commandZoneNames (partnerBoard masters mountain plains 1 [faceless, krenko])) []
   -- CR 702.124d against CR 903.8, and the whole reason Player.commanderCasts is
   -- keyed per commander: "when casting a commander with partner, ignore how many
   -- times your other commander has been cast".
@@ -662,7 +696,7 @@ partnerSpec s registry = Spec.describe s "Partner" $ do
     plains <- S.printingOf s registry "Plains"
     rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
-    let gs = partnerBoard mountain plains 1 [rograkh, akiri]
+    let gs = partnerBoard Nothing mountain plains 1 [rograkh, akiri]
     case (inCommandZoneNamed rograkh gs, inCommandZoneNamed akiri gs) of
       ([first], [before]) -> do
         Spec.assertEqWith s "setup: neither commander is taxed yet, and both are castable" (fmap (\o -> (Commander.tax S.alice o gs, S.castable S.alice o gs)) [first, before]) [(0, True), (0, True)]
@@ -691,7 +725,7 @@ partnerSpec s registry = Spec.describe s "Partner" $ do
     plains <- S.printingOf s registry "Plains"
     rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
-    let gs = partnerBoard mountain plains 1 [rograkh, akiri]
+    let gs = partnerBoard Nothing mountain plains 1 [rograkh, akiri]
         -- CR 903.7: bob is in the same Commander game, and the fixture builds
         -- only alice's deck, so his forty is set here. Without it CR 704.5a's
         -- zero life would decide every case below before rule 903.10a could.
@@ -720,7 +754,7 @@ partnerTextSpec s registry = Spec.describe s "Partner text" $ do
     plains <- S.printingOf s registry "Plains"
     bjorna <- S.printingOf s registry "Bjorna, Nightfall Alchemist"
     hargilde <- S.printingOf s registry "Hargilde, Kindly Runechanter"
-    let gs = partnerBoard mountain plains 6 [bjorna, hargilde]
+    let gs = partnerBoard Nothing mountain plains 6 [bjorna, hargilde]
     Spec.assertEqWith s "both are in the command zone" (List.sort (commandZoneNames gs)) (List.sort [S.nameOf (Printing.card bjorna), S.nameOf (Printing.card hargilde)])
     Spec.assertEqWith s "she is designated both" (fmap (List.sort . commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just (List.sort [bjorna, hargilde]))
   -- Each leg is the control board with ONE printing swapped. April O'Neil has
@@ -733,7 +767,7 @@ partnerTextSpec s registry = Spec.describe s "Partner text" $ do
     hargilde <- S.printingOf s registry "Hargilde, Kindly Runechanter"
     april <- S.printingOf s registry "April O'Neil, Live on the Scene"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
-    let board = partnerBoard mountain plains 6
+    let board = partnerBoard Nothing mountain plains 6
     Spec.assertEqWith s "control leg: Bjorna beside Hargilde designates both" (List.length (commandZoneNames (board [bjorna, hargilde]))) 2
     Spec.assertEqWith s "CR 702.124i: Bjorna beside a different partner—[text] designates neither" (commandZoneNames (board [bjorna, april])) []
     Spec.assertEqWith s "CR 702.124f: plain partner is not this one, so Bjorna beside Akiri designates neither" (commandZoneNames (board [bjorna, akiri])) []
@@ -748,7 +782,7 @@ partnerWithSpec s registry = Spec.describe s "Partner with" $ do
     plains <- S.printingOf s registry "Plains"
     silvar <- S.printingOf s registry "Silvar, Devourer of the Free"
     trynn <- S.printingOf s registry "Trynn, Champion of Freedom"
-    let gs = partnerBoard mountain plains 6 [silvar, trynn]
+    let gs = partnerBoard Nothing mountain plains 6 [silvar, trynn]
     Spec.assertEqWith s "both are in the command zone" (List.sort (commandZoneNames gs)) (List.sort [S.nameOf (Printing.card silvar), S.nameOf (Printing.card trynn)])
     Spec.assertEqWith s "she is designated both" (fmap (List.sort . commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just (List.sort [silvar, trynn]))
   -- Each leg is the control board with ONE printing swapped. Lore Weaver has
@@ -764,7 +798,7 @@ partnerWithSpec s registry = Spec.describe s "Partner with" $ do
     ley <- S.printingOf s registry "Ley Weaver"
     lore <- S.printingOf s registry "Lore Weaver"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
-    let board = partnerBoard mountain plains 6
+    let board = partnerBoard Nothing mountain plains 6
     Spec.assertEqWith s "control leg: Silvar beside Trynn designates both" (List.length (commandZoneNames (board [silvar, trynn]))) 2
     Spec.assertEqWith s "CR 702.124j: Silvar beside a partner with naming somebody else designates neither" (commandZoneNames (board [silvar, lore])) []
     Spec.assertEqWith s "CR 702.124j: Ley Weaver and Lore Weaver name each other but are not legendary, so neither is designated" (commandZoneNames (board [ley, lore])) []
@@ -781,7 +815,7 @@ backgroundSpec s registry = Spec.describe s "Choose a Background" $ do
     plains <- S.printingOf s registry "Plains"
     wilson <- S.printingOf s registry "Wilson, Refined Grizzly"
     raised <- S.printingOf s registry "Raised by Giants"
-    let gs = partnerBoard mountain plains 6 [wilson, raised]
+    let gs = partnerBoard Nothing mountain plains 6 [wilson, raised]
     Spec.assertEqWith s "both are in the command zone" (List.sort (commandZoneNames gs)) (List.sort [S.nameOf (Printing.card wilson), S.nameOf (Printing.card raised)])
     Spec.assertEqWith s "and both are commanders, the enchantment as much as the creature" (fmap (\oid -> Commander.isCommander oid gs) (inCommandZone gs)) [True, True]
     Spec.assertEqWith s "she is designated both" (fmap (List.sort . commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just (List.sort [wilson, raised]))
@@ -801,7 +835,7 @@ backgroundSpec s registry = Spec.describe s "Choose a Background" $ do
     raised <- S.printingOf s registry "Raised by Giants"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let board = partnerBoard mountain plains 6
+    let board = partnerBoard Nothing mountain plains 6
     Spec.assertEqWith s "control leg: Wilson beside the Background designates both" (List.length (commandZoneNames (board [wilson, raised]))) 2
     Spec.assertEqWith s "CR 702.124k: Wilson beside a card that is no Background designates neither" (commandZoneNames (board [wilson, shimatsu])) []
     Spec.assertEqWith s "CR 702.124f: a partner ability is not this one, so Akiri beside the Background designates neither" (commandZoneNames (board [akiri, raised])) []
@@ -825,7 +859,7 @@ backgroundSpec s registry = Spec.describe s "Choose a Background" $ do
     raised <- S.printingOf s registry "Raised by Giants"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
     let played pair =
-          let (wilsonId, withWilson) = asCommanderCard wilson (S.addPermanent wilson S.alice) (partnerBoard mountain plains 6 pair)
+          let (wilsonId, withWilson) = asCommanderCard wilson (S.addPermanent wilson S.alice) (partnerBoard Nothing mountain plains 6 pair)
               (_, both) = S.addPermanent raised S.alice withWilson
            in (wilsonId, both)
         (designatedId, designated) = played [wilson, raised]
@@ -859,7 +893,7 @@ backgroundSpec s registry = Spec.describe s "Choose a Background" $ do
            in case Set.toList (Set.difference (GameState.battlefield after) (GameState.battlefield gs)) of
                 [oid] -> Just (counters oid after)
                 _ -> Nothing
-        withChef pair = snd (S.addPermanent chef S.alice (partnerBoard mountain plains 6 pair))
+        withChef pair = snd (S.addPermanent chef S.alice (partnerBoard Nothing mountain plains 6 pair))
         withWilson pair = snd (asCommanderCard wilson (S.addPermanent wilson S.alice) (withChef pair))
     -- CR 614.12: the Chef's effect already exists and would apply to Wilson on
     -- the battlefield, so his own granted row modifies how he enters.
@@ -878,7 +912,7 @@ doctorsCompanionSpec s registry = Spec.describe s "Doctor's companion" $ do
     plains <- S.printingOf s registry "Plains"
     rose <- S.printingOf s registry "Rose Noble"
     doctor <- S.printingOf s registry "The Fugitive Doctor"
-    let gs = partnerBoard mountain plains 6 [rose, doctor]
+    let gs = partnerBoard Nothing mountain plains 6 [rose, doctor]
     Spec.assertEqWith s "both are in the command zone" (List.sort (commandZoneNames gs)) (List.sort [S.nameOf (Printing.card rose), S.nameOf (Printing.card doctor)])
     Spec.assertEqWith s "and both are commanders" (fmap (\oid -> Commander.isCommander oid gs) (inCommandZone gs)) [True, True]
     Spec.assertEqWith s "she is designated both" (fmap (List.sort . commanderPrintingsOf gs) (Map.lookup S.alice (GameState.players gs))) (Just (List.sort [rose, doctor]))
@@ -905,7 +939,7 @@ doctorsCompanionSpec s registry = Spec.describe s "Doctor's companion" $ do
     doctor <- S.printingOf s registry "The Fugitive Doctor"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let board = partnerBoard mountain plains 6
+    let board = partnerBoard Nothing mountain plains 6
     Spec.assertEqWith s "control leg: Rose Noble beside the Doctor designates both" (List.length (commandZoneNames (board [rose, doctor]))) 2
     Spec.assertEqWith s "CR 702.124m: Rose Noble beside a legendary creature that is no Time Lord Doctor designates neither" (commandZoneNames (board [rose, shimatsu])) []
     Spec.assertEqWith s "CR 702.124f: a partner ability is not this one, so Akiri beside the Doctor designates neither" (commandZoneNames (board [akiri, doctor])) []
@@ -1207,7 +1241,7 @@ ninjutsuSpec s registry = Spec.describe s "Commander ninjutsu" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     piker <- S.printingOf s registry "Goblin Piker"
     board <- ninjutsuAttack s registry
-    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton yuriko, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+    let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton yuriko 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
         seated = S.runPure S.identityAnswer board (Setup.createDeck S.alice deck)
         (_, stocked) = S.addLibraryCard shimatsu S.alice seated
         gs = declaredAttack stocked
@@ -1284,7 +1318,7 @@ designating :: [(PlayerId.PlayerId, Printing.Printing)] -> GameState.GameState -
 designating seats gs0 =
   let one g (pid, printing) =
         S.runPure S.identityAnswer g $
-          Setup.createDeck pid Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton printing, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+          Setup.createDeck pid Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton printing 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
    in List.foldl' one gs0 seats
 
 -- Move a player's commander out of the command zone onto the battlefield through
@@ -1359,7 +1393,7 @@ commanderDamageSpec s registry = Spec.describe s "CommanderDamage" $ do
 brawlDesignating :: Printing.Printing -> GameState.GameState
 brawlDesignating commander =
   let brawling = Setup.gameWith GameSettings.plain {GameSettings.brawl = True} S.bothPlayers
-      deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Set.singleton commander, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+      deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.singleton commander 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
    in S.runPure S.identityAnswer brawling (Setup.createDeck S.alice deck)
 
 brawlSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -1390,7 +1424,7 @@ reclaiming p = case p of
 -- from the command zone, and give the parent non-library survivors besides.
 subgameParent :: Printing.Printing -> Printing.Printing -> GameState.GameState
 subgameParent mountain shimatsu =
-  let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 5, Deck.commander = Set.singleton shimatsu, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
+  let deck = Deck.MkDeck {Deck.cards = Map.singleton mountain 5, Deck.commander = Map.singleton shimatsu 1, Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty}
    in S.runPure S.identityAnswer (S.landsInPlay mountain 2) (Setup.createDeck S.alice deck)
 
 -- The subgame as playSubgame builds it: CR 730.2 / 730.2c's move in, then CR
@@ -1573,7 +1607,7 @@ restartSpec s registry = Spec.describe s "Restart" $ do
     plains <- S.printingOf s registry "Plains"
     rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
     akiri <- S.printingOf s registry "Akiri, Line-Slinger"
-    let gs = partnerBoard mountain plains 1 [rograkh, akiri]
+    let gs = partnerBoard Nothing mountain plains 1 [rograkh, akiri]
         after = S.runPure S.identityAnswer gs (Setup.restartGame S.performer Set.empty S.alice)
     Spec.assertEqWith s "setup: both partners start in the command zone" (length (inCommandZone gs)) 2
     Spec.assertEqWith s "CR 903.6 both are in the new game's command zone" (List.sort (fmap (\oid -> fmap S.nameOf (Game.cardOf oid after)) (inCommandZone after))) (List.sort [Just (S.printingName rograkh), Just (S.printingName akiri)])

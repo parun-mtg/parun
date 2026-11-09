@@ -9,6 +9,7 @@ import qualified Data.Either as Either
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
 import qualified Parun.BotSpec as BotSpec
@@ -93,7 +94,7 @@ spec s registry = Spec.describe s "Record" $ do
   -- cards are twenty over limited's forty.
   Spec.it s "CR 100.2 a game played under a format offers Yorion, and replays under it" $ do
     matchup <- yorions s registry
-    let limited = Just (Format.MkFormat RuleFamily.Limited Nothing)
+    let limited = Just (Format.MkFormat RuleFamily.Limited Nothing Set.empty)
         (outcome, (timeline, _)) = watched 1 limited bots Map.empty matchup
         (_, (unformatted, _)) = watched 1 Nothing bots Map.empty matchup
         offers = Seq.length . Seq.filter ((== Just (Text.pack "ChooseCompanion")) . answered)

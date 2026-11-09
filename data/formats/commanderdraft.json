@@ -1,0 +1,6 @@
+{
+  "boosters": [
+    "CommanderLegends"
+  ],
+  "rules": "CommanderDraft"
+}

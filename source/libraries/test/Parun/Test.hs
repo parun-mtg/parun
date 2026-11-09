@@ -327,6 +327,7 @@ import qualified Parun.Codec.DiscardedSpec
 import qualified Parun.Codec.DistinctOfSpec
 import qualified Parun.Codec.DivideSpec
 import qualified Parun.Codec.DoesNotUntapNextSpec
+import qualified Parun.Codec.DraftBoosterSpec
 import qualified Parun.Codec.DrawCountRSpec
 import qualified Parun.Codec.DrawCountRewriteSpec
 import qualified Parun.Codec.DrawRSpec
@@ -1343,6 +1344,7 @@ spec s registry corpus = do
   Parun.Codec.DealDamageSpec.spec s
   Parun.Codec.DeciderSpec.spec s
   Parun.Codec.DeckLimitSpec.spec s
+  Parun.Codec.DraftBoosterSpec.spec s
   Parun.Codec.FormatSpec.spec s
   Parun.Codec.LegalitySpec.spec s
   Parun.Codec.LegalityTableSpec.spec s
