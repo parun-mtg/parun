@@ -1529,8 +1529,11 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- known information (Filter.FromSource), so a source sacrificed to pay the
   -- cost still answers. An activation that put nothing on the stack (CR
   -- 605.3b) is read off Projection.viewOfUnstackedAbility instead, and CR
-  -- 605.1a's kind off the event. The scenarios named elrond-moon-reader prove
-  -- the mana road.
+  -- 605.1a's kind off the event. The scenario
+  -- elrond-moon-reader-draws-once-when-a-creature-s-mana-ability-is-activated
+  -- proves the mana road, and
+  -- runic-armasaur-draws-when-an-opponent-rerolls-with-goblin-bookie the
+  -- roll window's.
   TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger f kind) -> case event of
     GameEvent.AbilityActivated activated ->
       let activator = AbilityWasActivated.player activated

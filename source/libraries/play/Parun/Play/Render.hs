@@ -14,6 +14,7 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Oracle as Oracle
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.AttackTarget as AttackTarget
@@ -395,13 +396,15 @@ events view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (drawer a
 
 -- | A witnessed entry as a sentence naming its cards, players and amounts, or
 -- nothing for the bookkeeping a seat can read off the board (a step, a tap,
--- mana, a trigger) or another entry already tells (a die roll, a spell's move
+-- mana and the mana ability making it, a trigger) or another entry already tells (a die roll, a spell's move
 -- to the stack, a land play's, discard's or mill's move, a block's
 -- per-attacker records).
 event :: PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
 event view logged = case LoggedEvent.event logged of
   GameEvent.SpellCast c -> said [player (SpellWasCast.player c), Text.pack "casts", snapshotName (SpellWasCast.characteristics c)]
-  GameEvent.AbilityActivated a -> said [player (AbilityWasActivated.player a), Text.pack "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
+  GameEvent.AbilityActivated a
+    | AbilityWasActivated.kind a == AbilityKind.ManaAbility -> Nothing
+    | otherwise -> said [player (AbilityWasActivated.player a), Text.pack "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
   GameEvent.LandPlayed l -> said [player (LandPlayed.player l), Text.pack "plays", name (LandPlayed.land l)]
   GameEvent.AttackerDeclared a -> said [name (AttackerDeclared.attacker a), Text.pack "attacks", attacked (AttackerDeclared.target a)]
   GameEvent.BecameBlocking b -> said [name (BecameBlocking.blocker b), Text.pack "blocks", name (BecameBlocking.attacker b)]
