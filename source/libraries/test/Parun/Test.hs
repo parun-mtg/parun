@@ -200,6 +200,7 @@ import qualified Parun.Codec.CombatSpec
 import qualified Parun.Codec.CombatStepSpec
 import qualified Parun.Codec.CommanderColorsSpec
 import qualified Parun.Codec.CommanderDeckRuleSpec
+import qualified Parun.Codec.CompanionConditionSpec
 import qualified Parun.Codec.CompanyCountSpec
 import qualified Parun.Codec.ComparesSpec
 import qualified Parun.Codec.ComparisonSpec
@@ -1231,6 +1232,7 @@ spec s registry corpus = do
   Parun.Codec.CombatSpec.spec s
   Parun.Codec.CombatStepSpec.spec s
   Parun.Codec.CommanderDeckRuleSpec.spec s
+  Parun.Codec.CompanionConditionSpec.spec s
   Parun.Codec.ComparesSpec.spec s
   Parun.Codec.CompanyCountSpec.spec s
   Parun.Codec.ComparisonSpec.spec s

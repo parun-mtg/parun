@@ -69,6 +69,8 @@ wired registry exchange = Protocol.over (judgingNames registry) (\line -> Trans.
 -- first, and each seat starts at its graveyard order in `orders`
 -- (Driver.match). `finish` is shown the final state before the result is
 -- returned (Client.ending). Left is why play stopped before the end.
+--
+-- Not implemented: the settings' format, which --format names (#6710).
 run :: (Monad m) => Registry.Registry m -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> SplitMix.SplitMix -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
 run registry observers seats finish hotseat generator orders matchup =
   Except.runExceptT (State.evalStateT (State.evalStateT played generator) hotseat)

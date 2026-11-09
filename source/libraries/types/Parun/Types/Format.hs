@@ -12,4 +12,4 @@ data Format = MkFormat
     -- at all: any card, under the rules alone.
     pool :: Maybe Text.Text
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)

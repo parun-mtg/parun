@@ -133,6 +133,7 @@ import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
+import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
@@ -2111,7 +2112,8 @@ keywordNames asking x = case x of
   Keyword.Riot -> mempty
   Keyword.Spectacle cost -> history asking HistoryRead.LifeLosses <> costNames asking (keywordNames asking) cost
   Keyword.Escape cost -> costNames asking (keywordNames asking) cost
-  Keyword.Companion filter_ -> filterNames asking filter_
+  Keyword.Companion (CompanionCondition.EachCard filter_) -> filterNames asking filter_
+  Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> mempty
   Keyword.Foretell foretellCost -> foretellCostNames asking (keywordNames asking) foretellCost
   Keyword.Demonstrate -> mempty
   Keyword.Daybound -> mempty

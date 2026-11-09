@@ -28,6 +28,7 @@ import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection.View as Projection
+import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
@@ -80,16 +81,16 @@ rules table settings format =
           <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary (Format.rules format) settings, vanguardCard]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast Nothing 60 Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard]
+        RuleFamily.Constructed -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Constructed) Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast Nothing 40 Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
+        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
         -- CR 903.5.
-        RuleFamily.Commander -> commander False 100
+        RuleFamily.Commander -> commander False (RuleFamily.Engine.minimumDeckSize RuleFamily.Commander)
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
         -- 903.12d's size and CR 903.12e's basic lands.
-        RuleFamily.Brawl -> commander True 60
+        RuleFamily.Brawl -> commander True (RuleFamily.Engine.minimumDeckSize RuleFamily.Brawl)
 
 -- Deck and sideboard together: CR 100.4a counts the sideboard, and a card
 -- barred from the deck is barred from both (CR 407.3).

@@ -32,6 +32,22 @@ Each entry gives:
 
 Entries are ordered by the first rule each cites.
 
+## A deck-size companion in a game under no format
+
+- **Question**: Yorion, Sky Nomad's condition counts the starting deck against
+  "the minimum deck size". A game started under no format's construction
+  rules has none. Is the condition met?
+- **Rules**: CR 100.2a, 100.2b, 702.139a, 903.5a, 903.12d; CR of 2026-11-06.
+- **Decision**: No: with no format there is no minimum to count from, so the
+  condition is unmet and the card is never offered.
+- **Rejected**: A minimum of zero, which offers Yorion to a twenty-card deck
+  no format allows; constructed's sixty as a default, which guesses a format
+  the game did not name.
+- **Site**: `Parun.Engine.Companion.fulfilled`. Proved by `Parun.CompanionSpec`'s
+  "CR 100.2 a game under no format has no minimum, so Yorion is never
+  revealed".
+- **Issue**: #3261.
+
 ## What a creature an effect makes block may block
 
 - **Question**: "You may have it block an attacking creature of your choice"

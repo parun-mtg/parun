@@ -145,6 +145,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
+import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
@@ -3642,7 +3643,8 @@ keywordPayloadFilters keyword = case keyword of
   -- CR 702.139a's condition, which is a Filter rather than a Cost. KeywordFramed
   -- like the rest: Parun.Engine.Companion.fulfilled matches it against a printed
   -- face through a bare Context, so no slot is in scope.
-  Keyword.Companion predicate -> [predicate]
+  Keyword.Companion (CompanionCondition.EachCard predicate) -> [predicate]
+  Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> []
   -- CR 702.21a's cost, and rule 702.21b's perEach as mobilize's N.
   Keyword.Ward w -> costFilters (Ward.cost w) <> foldMap keywordCountFilters (Ward.perEach w)
   -- CR 702.94a's payload is a Cost too, so its filters are reached the same way.

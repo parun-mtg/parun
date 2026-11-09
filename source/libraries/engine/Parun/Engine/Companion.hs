@@ -11,9 +11,9 @@
 --
 -- THE INVARIANT: rule 702 is part of the rulebook, so reading Keyword.Companion
 -- here is the same closed-half act as reading a Phase. This module never asks
--- which CARD is being revealed -- the condition is a Filter the card carries, and
--- `fulfilled` evaluates it through the same generic matcher a wish's filter goes
--- through.
+-- which CARD is being revealed -- the condition is data the card carries, and
+-- `fulfilled` evaluates a per-card one through the same generic matcher a
+-- wish's filter goes through.
 module Parun.Engine.Companion where
 
 import qualified Control.Monad as Monad
@@ -30,13 +30,16 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection.View as Projection
+import qualified Parun.Engine.RuleFamily as RuleFamily
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Types.CompanionCondition as CompanionCondition
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
-import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.Format as Format
 import Parun.Types.Game (Game)
+import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.Keyword (Keyword)
@@ -72,7 +75,7 @@ actionCost =
 -- The PRINTED face, Parun.Engine.Event.eligible's reason: a card outside the game
 -- has no object to project (CR 400.11), and rule 702.139a says the ability
 -- "functions outside the game", so there is nothing else to read it from.
-conditionOf :: PrintingId -> GameState -> Maybe (Filter.Type.Filter Keyword)
+conditionOf :: PrintingId -> GameState -> Maybe (CompanionCondition.CompanionCondition Keyword)
 conditionOf printingId gs = do
   card <- Game.cardOfPrinting printingId gs
   let face = Game.resolveFaceFor Nothing card
@@ -82,9 +85,16 @@ conditionOf printingId gs = do
         (Foldable.toList (Face.keywordSet face))
     )
 
--- CR 702.139a: does this player's STARTING DECK fulfill the condition? Every card
--- in it must match, which is what makes one Filter enough to state a condition
--- written "each [subject] card ... [requirement]" -- the implication is an @Or@.
+-- CR 702.139a: does this player's STARTING DECK fulfill the condition?
+--
+-- EachCard: every card in it must match, which is what makes one Filter enough
+-- to state a condition written "each [subject] card ... [requirement]" -- the
+-- implication is an @Or@.
+--
+-- CardsOverMinimum: the deck's size against the minimum of the game's format
+-- (CR 100.2), and never met in a game under no format, which has no minimum to
+-- count from (docs/decisions.md, "A deck-size companion in a game under no
+-- format").
 --
 -- Player.startingDeck and never the library, which is rule 702.139b's whole
 -- point: the deck as it stood once the sideboard was set aside and before the
@@ -100,14 +110,18 @@ conditionOf printingId gs = do
 -- face is the whole of what a projection could answer. It is also the only
 -- reading available for a Commander game's commander, which CR 702.139b counts
 -- and CR 903.6 has already put in the command zone.
-fulfilled :: Filter.Type.Filter Keyword -> PlayerId -> GameState -> Bool
-fulfilled predicate pid gs =
+fulfilled :: CompanionCondition.CompanionCondition Keyword -> PlayerId -> GameState -> Bool
+fulfilled condition pid gs =
   let context = Filter.contextIn gs (Just pid) Nothing
-      deck = maybe Map.empty Player.startingDeck (Map.lookup pid (GameState.players gs))
-      admits printingId = case Game.cardOfPrinting printingId gs of
+      deck = filter (\(_, n) -> n > 0) (Map.toAscList (maybe Map.empty Player.startingDeck (Map.lookup pid (GameState.players gs))))
+      admits predicate printingId = case Game.cardOfPrinting printingId gs of
         Nothing -> False
         Just card -> Filter.matches context (Projection.viewOfCard (Game.resolveFaceFor Nothing card)) predicate
-   in all (admits . fst) (filter (\(_, n) -> n > 0) (Map.toAscList deck))
+   in case condition of
+        CompanionCondition.EachCard predicate -> all (admits predicate . fst) deck
+        CompanionCondition.CardsOverMinimum extra -> case GameSettings.format (GameState.settings gs) of
+          Nothing -> False
+          Just format -> sum (fmap snd deck) >= RuleFamily.minimumDeckSize (Format.rules format) + extra
 
 -- CR 103.2b: the cards this player may reveal as a companion -- the ones they own
 -- outside the game that have a companion ability whose condition their starting
@@ -126,7 +140,7 @@ revealable pid gs =
   let pool = maybe Map.empty Player.outsideTheGame (Map.lookup pid (GameState.players gs))
       admits printingId = case conditionOf printingId gs of
         Nothing -> False
-        Just predicate -> not (barredPrinting printingId) && fulfilled predicate pid gs
+        Just condition -> not (barredPrinting printingId) && fulfilled condition pid gs
       -- CR 407.3. A regression fence: no companion prints the ante reminder
       -- (Scryfall o:"playing for ante" o:companion, 2026-10-08, no hit; a
       -- companion printing it would refute this).
