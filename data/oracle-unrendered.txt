@@ -388,7 +388,9 @@ boreal-outrider
 borg-queen-perfection-manifest
 boros-battleshaper
 boseiju-who-shelters-all
+bothersome-noisemaker
 bottomless-vault
+boughside-wanderers
 boundless-realms
 brace-for-impact
 bragos-representative
@@ -438,6 +440,7 @@ bulk-up
 bumper-cars
 bureau-headmaster
 burlfist-oak
+burn-burn-tree-and-fern
 burning-anger
 burning-earth
 burning-eye-zubera
@@ -463,6 +466,7 @@ caltrops
 camouflage
 canopy-stalker
 cant-stay-away
+cantankerous-keepers
 capricious-efreet
 captains-maneuver
 captivating-vampire
@@ -491,6 +495,7 @@ caverns-of-despair
 cease-desist
 cease-fire
 celebr-8000
+celebrate-the-mountain-king
 celestial-armor
 celestial-dawn
 celestial-enforcer
@@ -543,6 +548,7 @@ chasm-skulker
 chatterfang-squirrel-general
 cheering-fanatic
 chief-engineer
+chief-wargs-company
 chimeric-staff
 cho-arrim-alchemist
 cho-manno-revolutionary
@@ -680,6 +686,7 @@ croakid-amphibonaut
 crown-of-empires
 crown-of-the-ages
 crucible-of-worlds
+crude-bent-blade
 cruel-bargain
 cruel-calculations
 cruel-edict
@@ -725,9 +732,13 @@ cyclops-gladiator
 cyclops-tyrant
 cytoshape
 dacks-duplicate
+dain-ironfoot
+dain-lord-of-the-iron-hills
+dains-company
 damping-engine
 dan-lewis
 dance-of-many
+dancing-from-dark-to-dawn
 dandan
 danitha-benalias-hope
 danitha-spear-of-agony
@@ -796,6 +807,7 @@ desecrated-tomb
 desecration-demon
 desert
 desertion
+desolation-of-smaug
 desolation-twin
 desperate-futurescribe
 destined-lead
@@ -854,6 +866,7 @@ dont-make-a-sound
 doom-cannon
 doomsday
 door-of-destinies
+dori-bearer-of-friends
 dormant-gomazoa
 double-major
 double-vision
@@ -862,6 +875,8 @@ doubling-chant
 doubling-cube
 doubling-season
 dovin-hand-of-control
+down-down-to-goblin-town
+down-in-the-valley
 draconic-visitor
 drafnas-restoration
 drag-to-the-bottom
@@ -882,6 +897,7 @@ drawn-from-dreams
 dread-charge
 dread-fugue
 dread-summons
+dreaded-bat-cloud
 dreadwaters
 dream-cache
 dream-devourer
@@ -908,6 +924,7 @@ dungeon-crawler
 dungeon-geists
 duplicant
 duress
+duskwatch-hunter
 duskwielder
 dust-animus
 dutiful-knowledge-seeker

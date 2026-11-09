@@ -1,0 +1,91 @@
+{
+  "faces": [
+    {
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 3
+            }
+          ],
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  "scope": {
+                    "type": "InHistory",
+                    "value": {
+                      "type": "MovedBetween",
+                      "value": {
+                        "from": "Battlefield",
+                        "to": "Graveyard"
+                      }
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "perEach": {
+            "type": "Literal",
+            "value": 1
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        },
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Dreaded Bat-Cloud",
+      "oracleText": "This spell costs {3} less to cast if a creature died this turn.\nFlying, deathtouch",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bat"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

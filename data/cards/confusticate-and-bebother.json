@@ -1,0 +1,110 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Confusticate and Bebother",
+      "oracleText": "Choose one —\n• Counter target spell unless its controller pays {4}.\n• Draw two cards, then discard a card.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "spell"
+                      }
+                    }
+                  }
+                ],
+                "payGate": {
+                  "branch": "IfNotPaid",
+                  "cost": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 4
+                      }
+                    ]
+                  },
+                  "payer": {
+                    "type": "HolderOfBound",
+                    "value": {
+                      "holder": "Controller",
+                      "hop": "Itself",
+                      "slot": "spell"
+                    }
+                  }
+                }
+              }
+            ],
+            "targetSlots": {
+              "spell": {
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Draw",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  },
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "Counted",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "You"
+                        },
+                        "quantity": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

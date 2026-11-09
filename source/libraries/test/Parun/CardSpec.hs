@@ -3317,6 +3317,8 @@ namedTokens =
     [ -- Ajani, Strength of the Pride's "a 2/2 white Cat Soldier creature token
       -- named Ajani's Pridemate".
       CardName.MkCardName (Text.pack "Ajani's Pridemate"),
+      -- Dáin Ironfoot's "a colorless Equipment artifact token named Axe".
+      CardName.MkCardName (Text.pack "Axe"),
       -- Synthetic Ursine Rite's, whose card-authored name spells its own Bear
       -- subtype inside a longer word -- the CR 612.2 boundary case.
       CardName.MkCardName (Text.pack "Bearer of the Wilds"),

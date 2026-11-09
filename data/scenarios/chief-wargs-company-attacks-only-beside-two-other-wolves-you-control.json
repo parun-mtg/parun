@@ -1,0 +1,188 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Chief Warg's Company",
+            "label": "warg",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Sacred Wolf",
+            "label": "bwolf"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Untap"
+  },
+  "description": "CR 508.1c, 503.1a, 603.2: Chief Warg's Company can't attack unless its controller controls two or more other Wolves, and makes a 2/2 Wolf at the beginning of her upkeep",
+  "note": "On turn 1 the upkeep Wolf is alice's only other Wolf; the Company itself (a Wolf), her Grizzly Bears (no Wolf) and bob's Sacred Wolf (not hers) would each make a second, so the refused attack shows all three exclusions. Her next upkeep mints a second token and the Company attacks for 5.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $warg"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolf Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Wolf Token",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Attack": [
+          "$warg"
+        ]
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolf Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$warg"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}
