@@ -126,9 +126,6 @@
       "do": {
         "Cast": {
           "object": "$strike2",
-          "targets": [
-            "$thopter"
-          ],
           "modes": [
             1
           ],

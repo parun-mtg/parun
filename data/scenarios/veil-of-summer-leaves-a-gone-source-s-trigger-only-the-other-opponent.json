@@ -122,30 +122,6 @@
     {
       "turn": 1,
       "step": "PrecombatMain",
-      "player": "bob",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$alice"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$carol"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "do": "Pass"
     },

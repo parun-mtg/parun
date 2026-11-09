@@ -75,10 +75,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$strike",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$strike"
         }
       }
     },

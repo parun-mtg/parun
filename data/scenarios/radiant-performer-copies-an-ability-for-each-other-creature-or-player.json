@@ -136,18 +136,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "spell": [
-            "ability of $pyro"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "check": {
         "View": {
           "is": [

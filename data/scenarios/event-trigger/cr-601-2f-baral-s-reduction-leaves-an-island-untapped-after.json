@@ -39,7 +39,7 @@
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$i2", "tapped": false}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$i3", "tapped": false}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$baral", "tapped": false}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$cancel", "targets": ["Goblin Piker"], "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$cancel", "mana": ["$i1", "$i2", null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$i1", "tapped": true}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$i2", "tapped": true}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$i3", "tapped": false}}},

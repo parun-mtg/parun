@@ -82,9 +82,6 @@
       "do": {
         "Cast": {
           "object": "$leak",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$alice-island-1",
             "$alice-island-2"

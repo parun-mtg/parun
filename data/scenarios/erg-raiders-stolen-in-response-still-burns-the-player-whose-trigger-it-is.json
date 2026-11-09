@@ -131,10 +131,7 @@
             "$i3",
             "$i4"
           ],
-          "object": "$ray",
-          "targets": [
-            "$raiders"
-          ]
+          "object": "$ray"
         }
       },
       "player": "alice",

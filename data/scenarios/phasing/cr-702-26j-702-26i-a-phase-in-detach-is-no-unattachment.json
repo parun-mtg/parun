@@ -66,10 +66,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$wargear",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$wargear"
         }
       }
     },
@@ -135,9 +132,6 @@
       "do": {
         "Cast": {
           "object": "$blade",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$s1",
             "$s2"

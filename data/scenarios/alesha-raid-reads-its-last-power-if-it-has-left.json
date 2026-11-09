@@ -129,18 +129,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$d1"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "EndStep",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "EndStep",
@@ -154,10 +142,7 @@
             "$s2",
             "$s3"
           ],
-          "object": "$mur",
-          "targets": [
-            "$al"
-          ]
+          "object": "$mur"
         }
       },
       "player": "bob",

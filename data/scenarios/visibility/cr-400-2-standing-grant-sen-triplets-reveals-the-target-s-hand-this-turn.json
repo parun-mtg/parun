@@ -14,7 +14,6 @@
     "step": "Untap"
   },
   "timeline": [
-    { "turn": 1, "step": "Upkeep", "player": "alice", "do": { "ChooseTargets": { "opponent": ["$bob"] } } },
     { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Sen Triplets"] } } },
     { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "View": { "of": "Seers", "object": "$b-hand", "is": ["bob"] } } },
     { "turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass" },

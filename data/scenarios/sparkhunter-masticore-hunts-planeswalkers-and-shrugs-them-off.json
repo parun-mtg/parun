@@ -196,23 +196,6 @@
       "turn": 1
     },
     {
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "object": "Sparkhunter Masticore",
-          "mana": [
-            "$a1"
-          ],
-          "targets": [
-            "$gb"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -220,9 +203,6 @@
           "mana": [
             "$a1",
             null
-          ],
-          "targets": [
-            "$pw"
           ]
         }
       },
@@ -285,20 +265,6 @@
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
-    },
-    {
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "object": "$pw",
-          "targets": [
-            "Sparkhunter Masticore"
-          ]
-        }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 2
     }
   ]
 }

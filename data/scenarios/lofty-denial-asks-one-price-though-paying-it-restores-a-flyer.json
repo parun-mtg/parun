@@ -221,9 +221,6 @@
             "$i1",
             "$i2",
             null
-          ],
-          "targets": [
-            "Lava Axe"
           ]
         }
       },
@@ -316,9 +313,6 @@
             "$i1",
             "$i2",
             null
-          ],
-          "targets": [
-            "Lightning Bolt#2"
           ]
         }
       },
@@ -463,9 +457,6 @@
           "mana": [
             "$i4",
             "$i5"
-          ],
-          "targets": [
-            "Lightning Bolt#2"
           ]
         }
       },

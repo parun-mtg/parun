@@ -123,9 +123,6 @@
       "do": {
         "Activate": {
           "object": "$crown",
-          "targets": [
-            "$venom"
-          ],
           "mana": [
             "$i1",
             "$i2",

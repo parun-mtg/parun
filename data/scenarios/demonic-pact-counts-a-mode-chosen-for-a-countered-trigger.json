@@ -82,10 +82,7 @@
           "mana": [
             "$i1"
           ],
-          "object": "$stifle",
-          "targets": [
-            "trigger of $pact"
-          ]
+          "object": "$stifle"
         }
       },
       "player": "bob",
@@ -147,18 +144,6 @@
           "prompt": "ChooseModes",
           "with": [
             1
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 3
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
           ]
         }
       },

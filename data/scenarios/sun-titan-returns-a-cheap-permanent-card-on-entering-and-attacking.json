@@ -173,18 +173,6 @@
       "step": "DeclareAttackers",
       "player": "alice",
       "do": {
-        "ChooseTargets": {
-          "target": [
-            "$plains"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
         "ChooseOptional": "Exercises"
       }
     },

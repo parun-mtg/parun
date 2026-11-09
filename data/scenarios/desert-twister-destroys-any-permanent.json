@@ -66,10 +66,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$twister",
-          "targets": [
-            "$ring"
-          ]
+          "object": "$twister"
         }
       }
     },

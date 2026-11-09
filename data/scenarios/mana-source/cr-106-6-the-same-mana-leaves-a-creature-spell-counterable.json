@@ -94,9 +94,6 @@
       "do": {
         "Cast": {
           "object": "$cancel",
-          "targets": [
-            "Erudite Wizard"
-          ],
           "mana": [
             "$island-3",
             "$island-4",

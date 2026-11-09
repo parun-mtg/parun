@@ -56,10 +56,7 @@
           "mana": [
             "$m1"
           ],
-          "object": "$fo",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$fo"
         }
       },
       "player": "alice",

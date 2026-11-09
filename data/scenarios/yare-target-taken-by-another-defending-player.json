@@ -98,9 +98,6 @@
       "do": {
         "Cast": {
           "object": "$yare",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$bob plains 1",
             "$bob plains 2",

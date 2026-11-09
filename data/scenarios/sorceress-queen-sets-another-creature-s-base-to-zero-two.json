@@ -85,19 +85,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$q",
-          "targets": [
-            "$q"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
@@ -112,10 +99,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$q",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$q"
         }
       }
     },

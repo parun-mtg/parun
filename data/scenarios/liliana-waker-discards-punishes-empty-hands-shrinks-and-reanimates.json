@@ -273,10 +273,7 @@
       "do": {
         "Activate": {
           "object": "$l",
-          "ability": 1,
-          "targets": [
-            "$cw"
-          ]
+          "ability": 1
         }
       },
       "player": "alice",
@@ -338,18 +335,6 @@
       },
       "player": "alice",
       "step": "PrecombatMain",
-      "turn": 7
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$gb"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "BeginningOfCombat",
       "turn": 7
     },
     {

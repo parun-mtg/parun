@@ -64,10 +64,7 @@
     {
       "do": {
         "Activate": {
-          "object": "$farmer",
-          "targets": [
-            "$forest"
-          ]
+          "object": "$farmer"
         }
       },
       "player": "alice",

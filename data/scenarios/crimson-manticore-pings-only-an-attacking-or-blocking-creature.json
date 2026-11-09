@@ -82,30 +82,11 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$m",
-          "mana": [
-            "$land"
-          ],
-          "targets": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$m",
           "mana": [
             "$land"
-          ],
-          "targets": [
-            "$giant"
           ]
         }
       }

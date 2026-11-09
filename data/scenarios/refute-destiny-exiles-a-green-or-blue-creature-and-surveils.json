@@ -45,38 +45,9 @@
   "note": "On the same mana, red Hill Giant is refused (not green or blue) and green Exploration is refused (not a creature or planeswalker). Grizzly Bears is exiled and the surveil bins Lightning Bolt.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$rd",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$rd",
-          "targets": [
-            "$exploration"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$rd",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$rd"
         }
       },
       "player": "alice",

@@ -180,10 +180,7 @@
       "do": {
         "Activate": {
           "ability": 1,
-          "object": "$t2",
-          "targets": [
-            "$elf"
-          ]
+          "object": "$t2"
         }
       },
       "player": "alice",

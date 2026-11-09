@@ -132,9 +132,6 @@
       "do": {
         "Cast": {
           "object": "$d",
-          "targets": [
-            "Nine-Lives Familiar"
-          ],
           "mana": [
             "$i1",
             "$i2",

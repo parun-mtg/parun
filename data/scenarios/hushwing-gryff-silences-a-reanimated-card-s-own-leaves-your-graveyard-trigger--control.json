@@ -124,9 +124,6 @@
       "do": {
         "Cast": {
           "object": "$zombify",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$s1",
             "$s2",

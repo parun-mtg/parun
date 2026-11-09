@@ -19,16 +19,19 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.ExtraTurn as ExtraTurn
@@ -225,7 +228,8 @@ spec s registry = Spec.describe s "GrandMelee" $ do
   -- CR 807.5b: a spell targets objects on its own stack only. Seat 2's Shock
   -- is on seat 0's marker's stack and seat 4's on seat 4's, so seat 3 has
   -- priority for both (CR 807.5a) and both controllers are in its range;
-  -- its Counterspell, cast on seat 4's, is offered seat 4's Shock alone.
+  -- its Counterspell, cast on seat 4's, is offered seat 4's Shock alone, so it
+  -- takes it unasked (CR 601.2c).
   Spec.it s "CR 807.5b Counterspell is offered its own stack's spells" $ do
     forest <- S.printingOf s registry "Forest"
     island <- S.printingOf s registry "Island"
@@ -238,9 +242,12 @@ spec s registry = Spec.describe s "GrandMelee" $ do
         (fourShock, withFour) = S.addHandCard shock (seat 4) (S.landsFor mountain (seat 4) 1 (Engine.workOn 2 zeroCast))
         fourCast = S.runPure S.identityAnswer withFour (S.cast (seat 4) fourShock)
         (counterId, staged) = S.addHandCard counterspell (seat 3) (S.landsFor island (seat 3) 2 fourCast)
-        offered = State.execState (Engine.runGame recordTargets staged (S.cast (seat 3) counterId)) []
+        ((_, countered), offered) = State.runState (Engine.runGame recordTargets staged (S.cast (seat 3) counterId)) []
+        counterspells = filter (Set.member (CardName.MkCardName (Text.pack "Counterspell")) . (`Projection.namesOf` countered)) (Game.allStacks countered)
+        aimed = foldMap (Foldable.fold . (`Resolve.targetsOnStack` countered)) counterspells
     Spec.assertEqWith s "a Shock is on each stack" (fmap length [GameState.stack zeroCast, GameState.stack fourCast, Game.allStacks staged]) [1, 1, 2]
-    Spec.assertEqWith s "CR 807.5b the target menu" offered [Set.fromList (fmap Recipient.ToObject (GameState.stack fourCast))]
+    Spec.assertEqWith s "CR 807.5b nobody was asked for a target" offered []
+    Spec.assertEqWith s "CR 807.5b the Counterspell aims at seat 4's Shock" aimed (Set.fromList (fmap Recipient.ToObject (GameState.stack fourCast)))
 
   -- CR 807.5b: with Shocks on both markers' stacks as above, seat 3 holds
   -- priority in both windows. Reached on seat 0's, it is asked which stack it

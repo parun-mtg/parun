@@ -65,27 +65,6 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Object",
-                  "$bad-moon"
-                ]
-              ]
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
-      "do": {
-        "Answer": {
           "prompt": "ChooseOptional",
           "with": "Exercises"
         }

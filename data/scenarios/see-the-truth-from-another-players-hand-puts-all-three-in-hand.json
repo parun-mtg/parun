@@ -113,18 +113,6 @@
   "description": "See the Truth cast from another player's hand wasn't cast from your hand, so each of the three cards goes to your hand.",
   "timeline": [
     {
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "Upkeep",

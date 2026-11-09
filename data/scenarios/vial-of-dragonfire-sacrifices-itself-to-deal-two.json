@@ -72,9 +72,6 @@
       "do": {
         "Activate": {
           "object": "$vial",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$r1",
             "$r2"

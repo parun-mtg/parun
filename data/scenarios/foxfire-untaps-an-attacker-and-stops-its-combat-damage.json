@@ -142,31 +142,9 @@
       "turn": 1,
       "step": "DeclareBlockers",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$fox",
-          "targets": [
-            "$home"
-          ],
-          "mana": [
-            "$f",
-            "$i1",
-            "$i2",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$fox",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$f",
             "$i1",

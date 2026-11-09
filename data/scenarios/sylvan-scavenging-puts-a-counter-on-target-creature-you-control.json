@@ -131,30 +131,6 @@
       "turn": 1,
       "step": "EndStep",
       "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$g"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$gb"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "do": "Pass"
     },
     {

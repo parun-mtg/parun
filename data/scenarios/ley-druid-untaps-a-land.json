@@ -54,10 +54,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$druid",
-          "targets": [
-            "$forest"
-          ]
+          "object": "$druid"
         }
       }
     },

@@ -60,10 +60,7 @@
       "do": {
         "Cast": {
           "face": "Wear",
-          "object": "$wt",
-          "targets": [
-            "$sphere"
-          ]
+          "object": "$wt"
         }
       },
       "player": "alice",
@@ -94,9 +91,6 @@
       "do": {
         "Cast": {
           "object": "$blast",
-          "targets": [
-            "Wear"
-          ],
           "x": 2
         }
       },

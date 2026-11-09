@@ -80,10 +80,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$helm",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$helm"
         }
       }
     },

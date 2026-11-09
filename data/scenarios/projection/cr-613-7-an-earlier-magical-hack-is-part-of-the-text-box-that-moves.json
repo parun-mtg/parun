@@ -147,20 +147,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "creatures": [
-            "$worded",
-            "$piker"
-          ]
-        }
-      },
-      "source": "Exchange of Words"
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": "Pass"
     },
     {

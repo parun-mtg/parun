@@ -48,9 +48,6 @@
       "do": {
         "Cast": {
           "object": "$pacifism",
-          "targets": [
-            "$bramble-elemental"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

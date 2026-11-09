@@ -118,9 +118,6 @@
       "do": {
         "Cast": {
           "object": "$clash",
-          "targets": [
-            "Ornithopter"
-          ],
           "x": 0
         }
       }

@@ -205,9 +205,6 @@
             "$i1",
             "$i2",
             null
-          ],
-          "targets": [
-            "Lightning Bolt#3"
           ]
         }
       },
@@ -342,9 +339,6 @@
           "mana": [
             "$i4",
             "$i5"
-          ],
-          "targets": [
-            "Lightning Bolt#3"
           ]
         }
       },
@@ -464,9 +458,6 @@
             "$i1",
             "$i2",
             null
-          ],
-          "targets": [
-            "Lightning Bolt#3"
           ]
         }
       },

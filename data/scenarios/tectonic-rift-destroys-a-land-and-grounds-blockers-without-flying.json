@@ -72,10 +72,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$rift",
-          "targets": [
-            "$mountain"
-          ]
+          "object": "$rift"
         }
       }
     },

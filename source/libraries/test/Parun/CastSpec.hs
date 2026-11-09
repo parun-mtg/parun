@@ -3800,9 +3800,9 @@ cleaveSpec s registry = Spec.describe s "Cleave" $ do
         (giantId, gs1) = spellCastFrom giant Zone.Graveyard gs0
         (washId, gs2) = S.addHandCard wash S.alice gs1
         board = aliceOnTurn gs2
-        (uncleavedOffer, uncleaved) = castOffered [theBlue] giantId washId board
+        (uncleavedOffer, uncleaved) = castOffered [theBlue] bearsId washId board
         (cleavedOffer, cleaved) = castOffered [ManaSymbol.Generic 1, theBlue, theBlue] bearsId washId board
-    Spec.assertEqWith s "CR 601.2c cast for {U}, the hand-cast Bears is not a legal target" uncleavedOffer (slotOffer "uncleaved" [giantId])
+    Spec.assertEqWith s "CR 601.2c cast for {U}, the hand-cast Bears is not a legal target, so the Giant is taken unasked" uncleavedOffer Map.empty
     Spec.assertEqWith s "CR 702.148a cast for its cleave cost, the bracket is gone and both spells are" cleavedOffer (slotOffer "cleaved" [bearsId, giantId])
     Spec.assertEqWith s "CR 701.6a uncleaved, the Giant is countered and the Bears is not" (namesOwned Zone.Graveyard S.bob uncleaved) (cardNames ["Hill Giant"])
     Spec.assertEqWith s "CR 701.6a cleaved, the Bears is countered" (namesOwned Zone.Graveyard S.bob cleaved) (cardNames ["Grizzly Bears"])
@@ -3820,9 +3820,10 @@ cleaveSpec s registry = Spec.describe s "Cleave" $ do
         (pikerId, gs1) = S.addPermanent piker S.bob gs0
         (retrievalId, gs2) = S.addHandCard retrieval S.alice gs1
         board = aliceOnTurn gs2
-        (uncleavedOffer, _) = castOffered [theBlue] bearsId retrievalId board
+        (uncleavedOffer, uncleaved) = castOffered [theBlue] pikerId retrievalId board
         (cleavedOffer, cleaved) = castOffered [ManaSymbol.Generic 1, theBlue] pikerId retrievalId board
-    Spec.assertEqWith s "CR 601.2c cast for {U}, only a nonland permanent alice controls is offered" uncleavedOffer (slotOffer "uncleaved" [bearsId])
+    Spec.assertEqWith s "CR 601.2c cast for {U}, only a nonland permanent alice controls is a target, so it is taken unasked" uncleavedOffer Map.empty
+    Spec.assertEqWith s "CR 601.2c the uncleaved cast returned alice's Bears and not bob's Piker" (namesOwned Zone.Hand S.alice uncleaved, namesOwned Zone.Hand S.bob uncleaved) (cardNames ["Grizzly Bears"], [])
     Spec.assertEqWith s "CR 702.148a cast for its cleave cost, bob's Piker is offered beside it" cleavedOffer (slotOffer "cleaved" [bearsId, pikerId])
     Spec.assertEqWith s "CR 702.148a the cleaved cast returned the Piker to bob's hand" (namesOwned Zone.Hand S.bob cleaved) (cardNames ["Goblin Piker"])
 
@@ -3866,15 +3867,15 @@ cleaveSpec s registry = Spec.describe s "Cleave" $ do
     changeling <- S.printingOf s registry "Woodland Changeling"
     piker <- S.printingOf s registry "Goblin Piker"
     let (_, gs0) = S.addPermanent kopala S.bob (S.landsInPlay island 4)
-        (changelingId, gs1) = S.addPermanent changeling S.bob gs0
+        (_, gs1) = S.addPermanent changeling S.bob gs0
         (pikerId, gs2) = S.addPermanent piker S.bob gs1
         (_, gs3) = S.addLibraryCard island S.alice gs2
         (rejectionId, gs4) = S.addHandCard rejection S.alice gs3
         board = aliceOnTurn gs4
-        (uncleavedOffer, uncleaved) = castOffered [ManaSymbol.Generic 1, theBlue] changelingId rejectionId board
+        (uncleavedOffer, uncleaved) = castOffered [ManaSymbol.Generic 1, theBlue] pikerId rejectionId board
         (_, cleaved) = castOffered [ManaSymbol.Generic 3, theBlue] pikerId rejectionId board
     Spec.assertEqWith s "CR 702.148a the cleaved cast returned the Piker, untaxed, and drew a card" (namesOwned Zone.Hand S.bob cleaved, namesOwned Zone.Hand S.alice cleaved) (cardNames ["Goblin Piker"], cardNames ["Island"])
-    Spec.assertEqWith s "CR 601.2c cast for {1}{U}, only the Wolf is offered" uncleavedOffer (slotOffer "uncleaved" [changelingId])
+    Spec.assertEqWith s "CR 601.2c cast for {1}{U}, only the Wolf is a target, so it is taken unasked" uncleavedOffer Map.empty
     Spec.assertEqWith s "CR 601.2f uncleaved, the taxed Changeling went home on all four Islands" (namesOwned Zone.Hand S.bob uncleaved, S.tappedCount S.alice uncleaved) (cardNames ["Woodland Changeling"], 4)
 
   -- The rest of the cleave cycle (Scryfall, 2026-10-12), each cast both ways.
@@ -3910,9 +3911,10 @@ cleaveSpec s registry = Spec.describe s "Cleave" $ do
         (giantId, gs1) = S.addPermanent giant S.bob gs0
         (graspId, gs2) = S.addHandCard grasp S.alice gs1
         board = aliceOnTurn gs2
-        (uncleavedOffer, _) = castOffered [ManaSymbol.Generic 1, theBlack] thaliaId graspId board
+        (uncleavedOffer, uncleaved) = castOffered [ManaSymbol.Generic 1, theBlack] giantId graspId board
         (cleavedOffer, cleaved) = castOffered [ManaSymbol.Generic 1, theBlack, theBlack] giantId graspId board
-    Spec.assertEqWith s "CR 601.2c cast for {1}{B}, only the Human is offered" uncleavedOffer (slotOffer "uncleaved" [thaliaId])
+    Spec.assertEqWith s "CR 601.2c cast for {1}{B}, only the Human is a target, so it is taken unasked" uncleavedOffer Map.empty
+    Spec.assertEqWith s "CR 601.2c the uncleaved Grasp killed Thalia and not the Giant" (namesOwned Zone.Graveyard S.bob (S.settleSba uncleaved)) (cardNames ["Thalia, Guardian of Thraben"])
     Spec.assertEqWith s "CR 702.148a cast for its cleave cost, the Giant is offered too" cleavedOffer (slotOffer "cleaved" [thaliaId, giantId])
     Spec.assertEqWith s "CR 702.148a the cleaved Grasp killed the Giant and alice gained 3" (namesOwned Zone.Graveyard S.bob (S.settleSba cleaved), S.lifeOf S.alice cleaved) (cardNames ["Hill Giant"], Just 23)
 

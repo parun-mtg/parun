@@ -100,9 +100,6 @@
         "Activate": {
           "ability": 1,
           "object": "$nalaar",
-          "targets": [
-            "$wall"
-          ],
           "x": 1
         }
       },
@@ -295,9 +292,6 @@
         "Activate": {
           "ability": 1,
           "object": "$nalaar",
-          "targets": [
-            "$wall"
-          ],
           "x": 2
         }
       },

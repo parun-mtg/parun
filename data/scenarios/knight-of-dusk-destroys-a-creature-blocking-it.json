@@ -5,8 +5,7 @@
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$knight", "$cub"]}},
     {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$bears": ["$knight"], "$giant": ["$cub"]}}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "refuse": {"Activate": {"object": "$knight", "targets": ["$giant"], "mana": ["$s1", "$s2", null]}}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Activate": {"object": "$knight", "targets": ["$bears"], "mana": ["$s1", "$s2", null]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Activate": {"object": "$knight", "mana": ["$s1", "$s2", null]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}}

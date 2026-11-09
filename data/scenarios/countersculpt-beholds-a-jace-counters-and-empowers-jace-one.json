@@ -82,10 +82,7 @@
             "$i1",
             "$i2"
           ],
-          "object": "$sculpt",
-          "targets": [
-            "Shock"
-          ]
+          "object": "$sculpt"
         }
       },
       "player": "alice",

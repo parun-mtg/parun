@@ -7,7 +7,7 @@
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Activate": {"object": "$ff", "ability": 0, "mana": ["$plains"]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "CombatDamage", "player": "bob", "check": {"Life": {"player": "alice", "life": 19}}},
-    {"turn": 1, "step": "CombatDamage", "player": "bob", "do": {"Cast": {"object": "$fists", "mana": ["$m1", "$m2"], "targets": ["$ace"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "bob", "do": {"Cast": {"object": "$fists", "mana": ["$m1", "$m2"]}}},
     {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 18}}}
   ]
 }

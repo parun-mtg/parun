@@ -102,10 +102,7 @@
           "mana": [
             "$m1"
           ],
-          "object": "$fo",
-          "targets": [
-            "$javelineer"
-          ]
+          "object": "$fo"
         }
       },
       "player": "alice",

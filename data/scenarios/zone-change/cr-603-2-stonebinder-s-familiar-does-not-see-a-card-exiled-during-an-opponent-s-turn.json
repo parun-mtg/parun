@@ -54,9 +54,6 @@
       "do": {
         "Activate": {
           "object": "$wretch",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$swamp"
           ]

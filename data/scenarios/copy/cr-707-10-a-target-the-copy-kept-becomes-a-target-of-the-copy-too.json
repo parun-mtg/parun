@@ -91,9 +91,6 @@
       "do": {
         "Cast": {
           "object": "$twincast",
-          "targets": [
-            "Giant Growth"
-          ],
           "mana": [
             "$forest-2",
             "$forest-3",

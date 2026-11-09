@@ -71,9 +71,6 @@
       "do": {
         "Cast": {
           "object": "$kill-shot",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

@@ -106,9 +106,6 @@
             1
           ],
           "object": "$nightmare",
-          "targets": [
-            "$tyrant"
-          ],
           "x": 3
         }
       },

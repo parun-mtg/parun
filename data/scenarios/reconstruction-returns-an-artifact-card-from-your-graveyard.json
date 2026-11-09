@@ -60,38 +60,9 @@
   "note": "Alice's Grizzly Bears card and Bob's Millstone card are not legal targets with the same mana; her Ornithopter card returns.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$reconstruction",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$reconstruction",
-          "targets": [
-            "$millstone"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$reconstruction",
-          "targets": [
-            "$thopter"
-          ]
+          "object": "$reconstruction"
         }
       },
       "player": "alice",

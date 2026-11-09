@@ -132,9 +132,6 @@
       "do": {
         "Cast": {
           "object": "$graft",
-          "targets": [
-            "$aura"
-          ],
           "mana": [
             "$i1",
             "$i2",

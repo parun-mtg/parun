@@ -122,9 +122,6 @@
       "do": {
         "Cast": {
           "object": "$doom-blade",
-          "targets": [
-            "Wall Token"
-          ],
           "mana": [
             "$s1",
             "$s2"

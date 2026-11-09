@@ -56,9 +56,6 @@
       "do": {
         "Cast": {
           "object": "$control-magic",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island",
             "$island-2",

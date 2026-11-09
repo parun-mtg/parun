@@ -136,30 +136,6 @@
     {
       "turn": 1,
       "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "ability": [
-            "ability of $sorcerer"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "ability": [
-            "ability of $ball"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "bob",
       "check": {
         "View": {

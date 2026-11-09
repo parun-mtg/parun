@@ -50,9 +50,6 @@
       "do": {
         "Activate": {
           "object": "$duskwielder",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$swamp",
             null

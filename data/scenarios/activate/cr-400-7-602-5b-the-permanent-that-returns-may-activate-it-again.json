@@ -143,10 +143,7 @@
             "$island",
             null
           ],
-          "object": "$unsummon",
-          "targets": [
-            "$guardian"
-          ]
+          "object": "$unsummon"
         }
       },
       "player": "alice",

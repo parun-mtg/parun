@@ -130,10 +130,7 @@
             "$u",
             null
           ],
-          "object": "$unsummon",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$unsummon"
         }
       },
       "player": "alice",

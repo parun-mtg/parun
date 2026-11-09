@@ -188,10 +188,7 @@
             "$p2",
             "$p3"
           ],
-          "object": "$gauntlets",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$gauntlets"
         }
       },
       "player": "alice",

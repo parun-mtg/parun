@@ -64,9 +64,6 @@
       "refuse": {
         "Cast": {
           "object": "$plummet",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$f1",
             "$f2"
@@ -81,9 +78,6 @@
       "do": {
         "Cast": {
           "object": "$spontaneous-flight",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2",
@@ -131,9 +125,6 @@
       "do": {
         "Cast": {
           "object": "$plummet",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$f1",
             "$f2"

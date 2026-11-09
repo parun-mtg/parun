@@ -92,47 +92,10 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$p",
-          "ability": 0,
-          "targets": [
-            "$thopter"
-          ],
-          "mana": [
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$p",
-          "ability": 0,
-          "targets": [
-            "$land"
-          ],
-          "mana": [
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$p",
-          "ability": 0,
-          "targets": [
-            "$icy"
-          ]
+          "ability": 0
         }
       }
     },

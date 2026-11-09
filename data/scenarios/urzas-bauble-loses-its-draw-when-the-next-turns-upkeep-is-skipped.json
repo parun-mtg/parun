@@ -133,10 +133,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$shatter",
-          "targets": [
-            "$hub"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "bob",

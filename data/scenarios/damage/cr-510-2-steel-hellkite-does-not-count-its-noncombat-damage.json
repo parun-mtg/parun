@@ -116,10 +116,7 @@
             "$m5",
             null
           ],
-          "object": "$ignition",
-          "targets": [
-            "$hk"
-          ]
+          "object": "$ignition"
         }
       },
       "player": "alice",

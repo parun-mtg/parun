@@ -70,10 +70,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$bind",
-          "targets": [
-            "$sentry"
-          ]
+          "object": "$bind"
         }
       },
       "player": "alice",

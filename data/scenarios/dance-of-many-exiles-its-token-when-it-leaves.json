@@ -155,10 +155,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$dis",
-          "targets": [
-            "Dance of Many"
-          ]
+          "object": "$dis"
         }
       }
     },

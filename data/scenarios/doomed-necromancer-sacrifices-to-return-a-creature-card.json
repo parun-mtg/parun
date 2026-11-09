@@ -61,34 +61,10 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$necromancer",
-          "ability": 0,
-          "targets": [
-            "$shock"
-          ],
-          "mana": [
-            "$swamp"
-          ],
-          "costOrder": [
-            0,
-            1
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$necromancer",
           "ability": 0,
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$swamp"
           ]

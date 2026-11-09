@@ -140,9 +140,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$forest-5"
-          ],
           "mana": [
             "$swamp-0",
             "$swamp-1",

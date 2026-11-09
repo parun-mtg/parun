@@ -67,9 +67,6 @@
         "Activate": {
           "object": "$bonesplitter",
           "ability": 0,
-          "targets": [
-            "$omen-hawker"
-          ],
           "mana": [
             "$island",
             null

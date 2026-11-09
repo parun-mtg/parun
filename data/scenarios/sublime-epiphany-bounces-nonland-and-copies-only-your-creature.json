@@ -160,30 +160,6 @@
       "turn": 1
     },
     {
-      "refuse": {
-        "Cast": {
-          "object": "$epi",
-          "mana": [
-            "$i1",
-            "$i2",
-            "$i3",
-            "$i4",
-            "$i5",
-            "$i6"
-          ],
-          "modes": [
-            3
-          ],
-          "targets": [
-            "$foe"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "object": "$epi",

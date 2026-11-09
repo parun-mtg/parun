@@ -93,7 +93,10 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   likewise announce their count for a slot that takes a variable number. A
   spell or ability with more than one target slot names them with
   `targetsBySlot`, `{ "victim": ["$bear"], "gauge": ["$wall"] }`, in place
-  of `targets`. A `Cast` of a card offering both a face-up and a face-down
+  of `targets`. Targets with one legal answer, every slot taking all its
+  candidates (CR 601.2c), are bound unasked: nothing names them, except a
+  variable slot's count, whose names must then be exactly its candidates. A
+  `Cast` of a card offering both a face-up and a face-down
   cast (CR 702.37c) says which with `"faceDown": false` or `true`, and a
   `Cast` of a split card names the half it casts (CR 709.3), `"face": "Consume"`.
   A cast's `yields` answers each `ChooseManaYield` its `mana` raises, in

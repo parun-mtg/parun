@@ -160,9 +160,6 @@
       "do": {
         "Cast": {
           "object": "$clash",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$mountain"
           ]

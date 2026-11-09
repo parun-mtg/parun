@@ -228,42 +228,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$aring"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 4
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 4
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bring"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 4
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

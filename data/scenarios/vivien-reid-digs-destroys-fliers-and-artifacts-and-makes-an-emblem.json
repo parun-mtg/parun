@@ -342,10 +342,7 @@
       "do": {
         "Activate": {
           "object": "$viv",
-          "ability": 1,
-          "targets": [
-            "$anthem"
-          ]
+          "ability": 1
         }
       }
     },

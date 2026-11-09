@@ -131,7 +131,6 @@ supplementary family settings deck = foldMap judge (Map.toList (Map.filter (not 
     commanderGame = family == RuleFamily.Commander || family == RuleFamily.Brawl
     judge (pile, held) =
       let sized least limit = atLeast (Just pile) least (const held) deck <> copiesAtMost (Just pile) (const False) limit (const held) deck
-          typed cardType card = Set.member cardType (TypeLine.types (Face.typeLine (Card.combined card)))
           (belongs, rule) = case pile of
             -- CR 718.2b / 718.2a.
             SideDeck.Attraction -> (\card -> Game.sideDeckBackOf card == Just SideDeck.Attraction, if limited then sized 3 Nothing else sized 10 (Just 1))
@@ -140,20 +139,45 @@ supplementary family settings deck = foldMap judge (Map.toList (Map.filter (not 
             -- at least fifteen, no two of a name.
             SideDeck.Contraption -> (\card -> Game.sideDeckBackOf card == Just SideDeck.Contraption, if limited then [] else sized 15 (Just 1))
             -- CR 901.3. Under CR 901.15a's communal deck every seat's cards
-            -- are one deck, so one seat's share is not sized alone.
-            --
-            -- Not implemented: CR 901.15a's communal deck construction (#6705).
-            SideDeck.Planar ->
-              let phenomena = sum (Map.filterWithKey (\printing _ -> typed CardType.Phenomenon (Printing.card printing)) held)
-               in (\card -> typed CardType.Plane card || typed CardType.Phenomenon card, if GameSettings.singlePlanarDeck settings then [] else sized 10 (Just 1) <> [Violation.TooManyPhenomena phenomena 2 | phenomena > 2])
+            -- are one deck, so one seat's share is not sized alone: checkGame
+            -- sizes the whole.
+            SideDeck.Planar -> (\card -> hasType CardType.Plane card || hasType CardType.Phenomenon card, if GameSettings.singlePlanarDeck settings then [] else planarDeck 1 held)
             -- CR 904.13d / 904.3.
-            SideDeck.Scheme -> (typed CardType.Scheme, if commanderGame then sized 10 (Just 1) else sized 20 (Just 2))
+            SideDeck.Scheme -> (hasType CardType.Scheme, if commanderGame then sized 10 (Just 1) else sized 20 (Just 2))
        in [Violation.MisplacedCard pile (Face.name (Card.combined card)) | card <- Set.toList (Set.fromList (fmap Printing.card (Map.keys held))), not (belongs card)] <> rule
 
 -- CR 902.3: the vanguard a deck brings is a vanguard card. Deck.vanguard holds
 -- one, which is CR 902.1's limit.
 vanguardCard :: Deck.Deck -> [Violation.Violation]
 vanguardCard deck = [Violation.NotVanguardCard (Face.name face) | printing <- Maybe.maybeToList (Deck.vanguard deck), let face = Card.combined (Printing.card printing), not (Set.member CardType.Vanguard (TypeLine.types (Face.typeLine face)))]
+
+-- | Every violation of the construction rules a game states of every
+-- player's deck together, one deck a seat: CR 901.15a's communal planar deck
+-- under the single planar deck option, and CR 902.3's vanguard card for each
+-- player once any brings one. Parun.Legality.check judges each deck alone.
+checkGame :: GameSettings.GameSettings -> [Deck.Deck] -> [Violation.Violation]
+checkGame settings decks = communal <> vanguards
+  where
+    players = Natural.length decks
+    pooled = Map.unionsWith (+) [Map.findWithDefault Map.empty SideDeck.Planar (Deck.sideDecks deck) | deck <- decks]
+    communal = if GameSettings.singlePlanarDeck settings && not (Map.null pooled) then planarDeck players pooled else []
+    missing = Natural.length (filter (Maybe.isNothing . Deck.vanguard) decks)
+    vanguards = [Violation.MissingVanguard missing players | missing > 0, missing < players]
+
+-- CR 901.3 / 901.15a: a planar deck's size and names, and its phenomena, for
+-- a deck shared by this many players: one for a player's own.
+planarDeck :: Natural.Natural -> Map.Map Printing.Printing Natural.Natural -> [Violation.Violation]
+planarDeck players held =
+  let phenomena = sum (Map.filterWithKey (\printing _ -> hasType CardType.Phenomenon (Printing.card printing)) held)
+      most = 2 * players
+      whole = Deck.fromCards held
+   in atLeast (Just SideDeck.Planar) (min 40 (10 * players)) Deck.cards whole
+        <> copiesAtMost (Just SideDeck.Planar) (const False) (Just 1) Deck.cards whole
+        <> [Violation.TooManyPhenomena phenomena most | phenomena > most]
+
+-- Whether a card's combined type line has the card type.
+hasType :: CardType.CardType -> Card.Type.Card -> Bool
+hasType cardType card = Set.member cardType (TypeLine.types (Face.typeLine (Card.combined card)))
 
 -- CR 903.5a: the deck with its commanders, which it counts among its cards.
 withCommander :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
@@ -356,6 +380,7 @@ explain violation = Text.pack $ case violation of
   Violation.TooManyPhenomena count most -> show count <> " phenomena in the planar deck, more than " <> show most
   Violation.MisplacedCard pile written -> spelled written <> " does not belong in " <> pileName (Just pile)
   Violation.NotVanguardCard written -> spelled written <> " is not a vanguard card"
+  Violation.MissingVanguard missing players -> show missing <> " of " <> show players <> " players without a vanguard card"
   where
     spelled = Text.unpack . CardName.unwrap
     pileName pile = case pile of

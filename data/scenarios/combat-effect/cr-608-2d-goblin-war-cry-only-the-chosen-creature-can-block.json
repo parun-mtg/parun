@@ -27,7 +27,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$war-cry", "targets": ["$bob"], "mana": ["$mountain", "$mountain-2", "$mountain-3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$war-cry", "mana": ["$mountain", "$mountain-2", "$mountain-3"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChoosePermanent", "with": "$bears" } } },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$wurm"] } },

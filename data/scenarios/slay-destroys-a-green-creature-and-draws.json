@@ -60,25 +60,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$slay",
-          "targets": [
-            "$giant"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$slay",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$slay"
         }
       }
     },

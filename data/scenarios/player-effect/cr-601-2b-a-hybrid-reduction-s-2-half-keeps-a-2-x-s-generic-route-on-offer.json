@@ -67,9 +67,6 @@
       "do": {
         "Cast": {
           "object": "$current",
-          "targets": [
-            "$wall"
-          ],
           "mana": [
             "$m",
             "$s1",

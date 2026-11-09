@@ -109,9 +109,6 @@
       "do": {
         "Cast": {
           "object": "$stifle",
-          "targets": [
-            "ability of $sorcerer"
-          ],
           "mana": [
             "$i1",
             null

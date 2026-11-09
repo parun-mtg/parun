@@ -9,7 +9,7 @@
      "library": [{"card": "Island"}, {"card": "Island"}]},
     {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$luxior", "ability": 0, "targets": ["$ajani"], "mana": ["$e1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$luxior", "ability": 0, "mana": ["$e1"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "$luxior", "is": "$ajani"}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$ajani", "ability": 0}}},

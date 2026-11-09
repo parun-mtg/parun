@@ -205,26 +205,6 @@
       "turn": 2
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$f1",
-            "$f2"
-          ],
-          "modes": [
-            1
-          ],
-          "object": "$n2",
-          "targets": [
-            "$bear"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -234,10 +214,7 @@
           "modes": [
             1
           ],
-          "object": "$n2",
-          "targets": [
-            "$ench"
-          ]
+          "object": "$n2"
         }
       },
       "player": "alice",

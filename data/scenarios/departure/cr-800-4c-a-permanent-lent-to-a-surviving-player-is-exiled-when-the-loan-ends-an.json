@@ -201,9 +201,6 @@
       "do": {
         "Cast": {
           "object": "$control-magic",
-          "targets": [
-            "$towershell"
-          ],
           "mana": [
             "$a0",
             "$a1",
@@ -277,9 +274,6 @@
       "do": {
         "Cast": {
           "object": "$ray",
-          "targets": [
-            "Meandering Towershell"
-          ],
           "mana": [
             "$i0",
             "$i1",

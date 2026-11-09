@@ -64,15 +64,7 @@
       "do": {
         "Cast": {
           "face": "Wear//Tear",
-          "object": "$wt",
-          "targetsBySlot": {
-            "artifact": [
-              "$sphere"
-            ],
-            "enchantment": [
-              "$prison"
-            ]
-          }
+          "object": "$wt"
         }
       },
       "player": "alice",
@@ -103,9 +95,6 @@
       "do": {
         "Cast": {
           "object": "$blast",
-          "targets": [
-            "Wear"
-          ],
           "x": 3
         }
       },

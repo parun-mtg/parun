@@ -65,9 +65,6 @@
       "do": {
         "Activate": {
           "object": "$key",
-          "targets": [
-            "$thopter"
-          ],
           "ability": 0,
           "mana": [
             "$u1"

@@ -96,41 +96,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$r",
-          "targets": [
-            "$f"
-          ],
-          "mana": [
-            "$i1",
-            "$i2",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseKicker",
-          "with": 0
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$r",
-          "targets": [
-            "$b"
-          ],
           "mana": [
             "$i1",
             "$i2",

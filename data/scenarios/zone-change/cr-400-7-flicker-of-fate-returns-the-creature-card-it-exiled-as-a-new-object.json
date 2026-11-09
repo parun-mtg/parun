@@ -46,9 +46,6 @@
       "do": {
         "Cast": {
           "object": "$flicker-of-fate",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2"

@@ -243,10 +243,7 @@
       "do": {
         "Activate": {
           "object": "$l",
-          "ability": 1,
-          "targets": [
-            "$my"
-          ]
+          "ability": 1
         }
       },
       "player": "alice",
@@ -295,10 +292,7 @@
       "do": {
         "Activate": {
           "object": "$l",
-          "ability": 2,
-          "targets": [
-            "$bob"
-          ]
+          "ability": 2
         }
       },
       "player": "alice",

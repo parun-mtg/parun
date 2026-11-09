@@ -134,9 +134,6 @@
       "do": {
         "Cast": {
           "object": "$redirect",
-          "targets": [
-            "Giant Growth"
-          ],
           "mana": [
             "$island",
             "$island-2",

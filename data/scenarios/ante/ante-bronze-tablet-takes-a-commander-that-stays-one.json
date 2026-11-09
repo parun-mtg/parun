@@ -90,10 +90,7 @@
             "$mountain-3",
             "$mountain-4"
           ],
-          "object": "$tablet",
-          "targets": [
-            "$jedit"
-          ]
+          "object": "$tablet"
         }
       },
       "player": "alice",

@@ -64,9 +64,6 @@
       "do": {
         "Cast": {
           "object": "$transcantation",
-          "targets": [
-            "Lightning Bolt"
-          ],
           "mana": [
             "$mountain-2",
             "$mountain-3"

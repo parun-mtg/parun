@@ -55,9 +55,6 @@
       "do": {
         "Cast": {
           "object": "$come-back-wrong",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

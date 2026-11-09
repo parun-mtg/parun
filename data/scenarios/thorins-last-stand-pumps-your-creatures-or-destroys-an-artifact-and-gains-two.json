@@ -134,10 +134,7 @@
           "modes": [
             1
           ],
-          "object": "$stand2",
-          "targets": [
-            "$anthem"
-          ]
+          "object": "$stand2"
         }
       },
       "player": "alice",

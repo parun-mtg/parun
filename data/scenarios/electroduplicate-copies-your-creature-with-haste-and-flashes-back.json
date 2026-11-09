@@ -133,25 +133,6 @@
       "turn": 2
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$m1",
-            "$m2",
-            "$m3",
-            null
-          ],
-          "object": "$e",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -160,10 +141,7 @@
             "$m3",
             null
           ],
-          "object": "$e",
-          "targets": [
-            "$g"
-          ]
+          "object": "$e"
         }
       },
       "player": "alice",
@@ -248,10 +226,7 @@
             "$m4",
             null
           ],
-          "object": "Electroduplicate",
-          "targets": [
-            "$g"
-          ]
+          "object": "Electroduplicate"
         }
       },
       "player": "alice",

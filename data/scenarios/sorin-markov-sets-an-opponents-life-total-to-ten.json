@@ -56,27 +56,10 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$sorin",
-          "ability": 1,
-          "targets": [
-            "$alice"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$sorin",
-          "ability": 1,
-          "targets": [
-            "$bob"
-          ]
+          "ability": 1
         }
       }
     },

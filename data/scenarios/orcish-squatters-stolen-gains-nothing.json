@@ -121,10 +121,7 @@
             "$i4",
             null
           ],
-          "object": "$ray",
-          "targets": [
-            "$squat"
-          ]
+          "object": "$ray"
         }
       },
       "player": "bob",

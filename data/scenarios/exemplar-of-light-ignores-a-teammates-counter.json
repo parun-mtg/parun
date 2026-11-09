@@ -175,10 +175,7 @@
           "mana": [
             "$f2"
           ],
-          "object": "$g2",
-          "targets": [
-            "$ex"
-          ]
+          "object": "$g2"
         }
       },
       "player": "bob",
@@ -254,10 +251,7 @@
           "mana": [
             "$f1"
           ],
-          "object": "$g1",
-          "targets": [
-            "$ex"
-          ]
+          "object": "$g1"
         }
       },
       "player": "alice",

@@ -88,9 +88,6 @@
       "do": {
         "Cast": {
           "object": "$frenzy",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$m1",
             "$m2",

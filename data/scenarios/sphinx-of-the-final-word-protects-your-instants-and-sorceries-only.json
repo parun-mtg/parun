@@ -214,9 +214,6 @@
       "do": {
         "Cast": {
           "object": "$c1",
-          "targets": [
-            "Divination"
-          ],
           "mana": [
             "$j1",
             "$j2",
@@ -304,9 +301,6 @@
       "do": {
         "Cast": {
           "object": "$c2",
-          "targets": [
-            "Coral Merfolk"
-          ],
           "mana": [
             "$j4",
             "$j5",
@@ -376,9 +370,6 @@
       "do": {
         "Cast": {
           "object": "$mine",
-          "targets": [
-            "Lightning Bolt"
-          ],
           "mana": [
             "$i6",
             "$i7",

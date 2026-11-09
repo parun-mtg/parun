@@ -272,10 +272,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$shatter",
-          "targets": [
-            "Tom, Bert, and William"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "alice",

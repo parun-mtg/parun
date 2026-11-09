@@ -144,10 +144,7 @@
           "modes": [
             1
           ],
-          "object": "$abrade",
-          "targets": [
-            "$gear"
-          ]
+          "object": "$abrade"
         }
       },
       "player": "bob",

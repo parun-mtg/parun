@@ -24,7 +24,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$auction", "targets": ["$giant"], "mana": ["$m1", "$m2", "$m3", "$m4", "$m5"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$auction", "mana": ["$m1", "$m2", "$m3", "$m4", "$m5"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseNumber", "with": 3 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "carol", "refuse": { "Answer": { "prompt": "ChooseNumber", "with": 2 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "carol", "do": { "Answer": { "prompt": "ChooseNumber", "with": 5 } } },

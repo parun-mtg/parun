@@ -96,9 +96,6 @@
       "do": {
         "Cast": {
           "object": "$major",
-          "targets": [
-            "Galadhrim Brigade"
-          ],
           "mana": [
             "$f5",
             "$island"

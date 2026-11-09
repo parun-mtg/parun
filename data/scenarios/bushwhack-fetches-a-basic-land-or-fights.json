@@ -177,14 +177,6 @@
           "modes": [
             1
           ],
-          "targetsBySlot": {
-            "mine": [
-              "$giant"
-            ],
-            "theirs": [
-              "$bears"
-            ]
-          },
           "mana": [
             "$f2"
           ]

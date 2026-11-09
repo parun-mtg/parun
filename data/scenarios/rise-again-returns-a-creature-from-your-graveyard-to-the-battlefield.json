@@ -134,46 +134,6 @@
   "description": "Rise Again returns a creature card from your own graveyard to the battlefield.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3",
-            "$s4",
-            "$s5"
-          ],
-          "object": "$ra",
-          "targets": [
-            "$theirs"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3",
-            "$s4",
-            "$s5"
-          ],
-          "object": "$ra",
-          "targets": [
-            "$bolt"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -183,10 +143,7 @@
             "$s4",
             "$s5"
           ],
-          "object": "$ra",
-          "targets": [
-            "$mine"
-          ]
+          "object": "$ra"
         }
       },
       "player": "alice",

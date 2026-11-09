@@ -4,7 +4,7 @@
 {"name":"alice","battlefield":[{"card":"Grizzly Bears","label":"bears"},{"card":"Forest","label":"f1"},{"card":"Forest","label":"f2"},{"card":"Forest","label":"f3"},{"card":"Forest","label":"f4"},{"card":"Forest","label":"f5"}],"hand":[{"card":"Talons of Wildwood","label":"talons"}],"graveyard":[{"card":"Talons of Wildwood","label":"gy"}],"library":[{"card":"Island"},{"card":"Island"}]},
 {"name":"bob","library":[{"card":"Island"},{"card":"Island"}]}]},
 "timeline":[
-{"turn":1,"step":"PrecombatMain","player":"alice","do":{"Cast":{"object":"$talons","targets":["$bears"],"mana":["$f1","$f2",null]}}},
+{"turn":1,"step":"PrecombatMain","player":"alice","do":{"Cast":{"object":"$talons","mana":["$f1","$f2",null]}}},
 {"turn":1,"step":"PrecombatMain","player":"alice","do":"Pass"},
 {"turn":1,"step":"PrecombatMain","player":"alice","check":{"PowerToughness":{"object":"$bears","power":3,"toughness":3}}},
 {"turn":1,"step":"PrecombatMain","player":"alice","check":{"Keywords":{"object":"$bears","keyword":{"type":"Trample"},"count":1}}},

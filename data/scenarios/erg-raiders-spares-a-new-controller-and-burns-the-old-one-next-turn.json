@@ -84,10 +84,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$treason",
-          "targets": [
-            "$raiders"
-          ]
+          "object": "$treason"
         }
       }
     },

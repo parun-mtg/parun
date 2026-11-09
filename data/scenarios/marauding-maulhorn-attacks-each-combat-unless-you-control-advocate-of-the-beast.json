@@ -15,7 +15,6 @@
     {"turn": 1, "step": "CombatDamage", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
     {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$advocate", "mana": ["$f1", "$f2", "$f3"]}}},
     {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"ChooseTargets": {"target": ["$maulhorn"]}}},
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
     {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}}
   ]

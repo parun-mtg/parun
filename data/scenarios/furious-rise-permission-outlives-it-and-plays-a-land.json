@@ -85,9 +85,6 @@
       "do": {
         "Cast": {
           "object": "$disenchant",
-          "targets": [
-            "$rise"
-          ],
           "mana": [
             "$plains",
             "Mountain"

@@ -161,9 +161,6 @@
       "do": {
         "Cast": {
           "object": "$blade",
-          "targets": [
-            "$pyro"
-          ],
           "mana": [
             "$b1",
             "$b2"

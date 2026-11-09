@@ -156,25 +156,6 @@
   "description": "CR 702.12b / 701.14a: indestructible Brash Taunter fights another creature and deals the damage it took to target opponent",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "mana": [
-            "$m1",
-            "$m2",
-            "$m3"
-          ],
-          "object": "$taunter",
-          "targets": [
-            "$taunter"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -183,10 +164,7 @@
             "$m2",
             "$m3"
           ],
-          "object": "$taunter",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$taunter"
         }
       },
       "player": "alice",

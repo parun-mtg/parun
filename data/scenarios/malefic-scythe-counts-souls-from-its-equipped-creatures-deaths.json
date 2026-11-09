@@ -277,9 +277,6 @@
         "Activate": {
           "object": "Malefic Scythe",
           "ability": 0,
-          "targets": [
-            "$g2"
-          ],
           "mana": [
             "$e2"
           ]

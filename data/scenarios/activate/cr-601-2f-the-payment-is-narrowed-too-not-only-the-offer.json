@@ -54,9 +54,6 @@
         "Activate": {
           "object": "$withered-wretch",
           "ability": 0,
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest"
           ]

@@ -1,6 +1,6 @@
 {
   "description": "CR 602.2b The Theorist, Jace Beleren's -2 returns each opponent's chosen artifact or creature",
-  "note": "One slot per opponent, bob's first. Each refused activation aims one slot at something that slot does not offer, the other slot at its own player's artifact or creature: alice's own Piker, carol's Glorious Anthem (neither artifact nor creature), and each opponent's creature in the other opponent's slot.",
+  "note": "One slot per opponent, bob's first. Each refused activation aims one slot at something that slot does not offer, the other slot at its own player's artifact or creature, each opponent holding a second so the slot is asked: alice's own Piker, carol's Glorious Anthem (neither artifact nor creature), and each opponent's creature in the other opponent's slot.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
@@ -32,6 +32,9 @@
           {
             "card": "Goblin Piker",
             "label": "bobs"
+          },
+          {
+            "card": "Goblin Piker"
           }
         ]
       },
@@ -41,6 +44,9 @@
           {
             "card": "Ornithopter",
             "label": "thopter"
+          },
+          {
+            "card": "Ornithopter"
           },
           {
             "card": "Glorious Anthem",

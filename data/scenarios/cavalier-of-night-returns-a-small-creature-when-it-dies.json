@@ -92,10 +92,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$murder",
-          "targets": [
-            "$cav"
-          ]
+          "object": "$murder"
         }
       },
       "player": "bob",
@@ -110,30 +107,6 @@
     },
     {
       "do": "Pass",
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$wurm"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1

@@ -136,10 +136,7 @@
             "$s4",
             "$s5"
           ],
-          "object": "$beacon",
-          "targets": [
-            "$heliod"
-          ]
+          "object": "$beacon"
         }
       },
       "player": "alice",

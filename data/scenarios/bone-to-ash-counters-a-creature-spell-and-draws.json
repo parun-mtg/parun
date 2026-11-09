@@ -75,10 +75,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$bone",
-          "targets": [
-            "Hill Giant"
-          ]
+          "object": "$bone"
         }
       },
       "player": "alice",

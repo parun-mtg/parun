@@ -89,9 +89,6 @@
       "do": {
         "Cast": {
           "object": "$ep",
-          "targets": [
-            "$m"
-          ],
           "mana": [
             null
           ]

@@ -123,9 +123,6 @@
       "do": {
         "Cast": {
           "object": "$boath",
-          "targets": [
-            "$jace"
-          ],
           "mana": [
             "$bi1",
             "$bi2",

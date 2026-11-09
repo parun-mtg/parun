@@ -188,9 +188,6 @@
       "do": {
         "Cast": {
           "object": "$disenchant",
-          "targets": [
-            "$seal"
-          ],
           "mana": [
             "$w1",
             "$w2",
@@ -212,9 +209,6 @@
       "do": {
         "Activate": {
           "object": "$reaper",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$s5",
             "$s6",

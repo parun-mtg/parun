@@ -74,9 +74,6 @@
       "do": {
         "Cast": {
           "object": "$bob yare",
-          "targets": [
-            "$wall"
-          ],
           "mana": [
             "$bob plains 1",
             "$bob plains 2",

@@ -35,7 +35,7 @@
     ]
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$first", "targets": ["$bears"], "mana": ["$f1", "$f2", "$f3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$first", "mana": ["$f1", "$f2", "$f3"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$bears", "ability": 0 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
@@ -43,7 +43,7 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$bears", "ability": 0 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
-    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$second", "targets": ["$bears"], "mana": ["$f1", "$f2", "$f3"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$second", "mana": ["$f1", "$f2", "$f3"] } } },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$bears", "ability": 0 } } },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },

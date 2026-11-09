@@ -48,9 +48,6 @@
       "do": {
         "Cast": {
           "object": "$unleash-fury",
-          "targets": [
-            "$silent-arbiter"
-          ],
           "mana": [
             "$mountain",
             "$mountain-2"

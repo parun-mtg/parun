@@ -25,7 +25,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$homecoming", "targets": ["$piker-card"], "mana": ["$plains-1", "$plains-2", "$plains-3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$homecoming", "mana": ["$plains-1", "$plains-2", "$plains-3", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$evolution", "targets": ["Synthetic Twinward Homecoming"], "mana": ["$island"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseWordSwap": { "from": { "type": "Zombie" }, "to": { "type": "Skeleton" } } }, "source": "Artificial Evolution" },

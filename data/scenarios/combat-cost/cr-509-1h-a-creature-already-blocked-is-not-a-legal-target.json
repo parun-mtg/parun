@@ -103,29 +103,9 @@
       "turn": 1,
       "step": "DeclareBlockers",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$curtain",
-          "targets": [
-            "$sacred-prey"
-          ],
-          "mana": [
-            "Plains",
-            "Plains#2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$curtain",
-          "targets": [
-            "$sacred-prey-2"
-          ],
           "mana": [
             "Plains",
             "Plains#2"

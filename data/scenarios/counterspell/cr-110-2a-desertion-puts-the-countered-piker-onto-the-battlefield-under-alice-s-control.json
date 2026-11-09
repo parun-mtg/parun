@@ -85,9 +85,6 @@
       "do": {
         "Cast": {
           "object": "$desertion",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$island-1",
             "$island-2",

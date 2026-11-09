@@ -93,25 +93,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$range",
-          "targets": [
-            "$theirs"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$range",
-          "targets": [
-            "$home"
-          ],
           "mana": [
             null
           ]

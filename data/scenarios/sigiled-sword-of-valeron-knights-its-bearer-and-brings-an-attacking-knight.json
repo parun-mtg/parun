@@ -72,9 +72,6 @@
       "do": {
         "Activate": {
           "object": "$sword",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$p1",
             "$p2",

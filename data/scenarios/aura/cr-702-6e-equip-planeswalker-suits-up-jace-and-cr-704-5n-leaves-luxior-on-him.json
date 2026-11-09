@@ -98,51 +98,10 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$luxior",
-          "ability": 0,
-          "targets": [
-            "$goblin"
-          ],
-          "mana": [
-            "$island-4",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$luxior",
-          "ability": 1,
-          "targets": [
-            "Jace Beleren"
-          ],
-          "mana": [
-            "$island-4",
-            "$island-5",
-            "$island-6",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$luxior",
           "ability": 0,
-          "targets": [
-            "Jace Beleren"
-          ],
           "mana": [
             "$island-4",
             null

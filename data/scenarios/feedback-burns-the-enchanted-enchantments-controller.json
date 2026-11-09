@@ -86,25 +86,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$fb",
-          "targets": [
-            "$land"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$fb",
-          "targets": [
-            "$aura"
-          ]
+          "object": "$fb"
         }
       }
     },

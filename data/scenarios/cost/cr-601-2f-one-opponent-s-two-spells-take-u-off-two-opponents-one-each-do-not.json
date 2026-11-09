@@ -133,9 +133,6 @@
       "do": {
         "Cast": {
           "object": "$scorn",
-          "targets": [
-            "Fog#3"
-          ],
           "mana": [
             "$island",
             "$swamp"

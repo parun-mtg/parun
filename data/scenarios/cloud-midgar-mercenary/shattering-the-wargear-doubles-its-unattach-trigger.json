@@ -49,10 +49,7 @@
             "$m1",
             "$m2"
           ],
-          "object": "$shatter",
-          "targets": [
-            "$wargear"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "alice",

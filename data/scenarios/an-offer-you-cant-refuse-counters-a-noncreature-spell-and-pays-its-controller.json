@@ -237,10 +237,7 @@
           "mana": [
             "$i1"
           ],
-          "object": "$o",
-          "targets": [
-            "Shock"
-          ]
+          "object": "$o"
         }
       },
       "player": "alice",

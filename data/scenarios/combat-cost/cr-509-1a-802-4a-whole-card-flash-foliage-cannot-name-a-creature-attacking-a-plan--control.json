@@ -99,9 +99,6 @@
       "do": {
         "Cast": {
           "object": "$foliage",
-          "targets": [
-            "$thopter"
-          ],
           "mana": [
             "$forest-1",
             "$forest-2",

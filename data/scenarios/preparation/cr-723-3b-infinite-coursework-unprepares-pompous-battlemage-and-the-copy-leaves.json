@@ -99,10 +99,7 @@
             "$i2",
             "$i3"
           ],
-          "object": "$coursework",
-          "targets": [
-            "Pompous Battlemage"
-          ]
+          "object": "$coursework"
         }
       },
       "player": "alice",

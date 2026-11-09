@@ -163,9 +163,6 @@
       "do": {
         "Cast": {
           "object": "$dis",
-          "targets": [
-            "$necro"
-          ],
           "mana": [
             null
           ]

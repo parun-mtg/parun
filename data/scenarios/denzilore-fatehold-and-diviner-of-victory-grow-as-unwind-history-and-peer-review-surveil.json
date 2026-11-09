@@ -91,38 +91,9 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "Unwind History#2",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "Unwind History#2",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "Unwind History#2",
-          "targets": [
-            "$bbears"
-          ]
+          "object": "Unwind History#2"
         }
       },
       "player": "alice",

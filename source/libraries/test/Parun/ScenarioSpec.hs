@@ -867,13 +867,14 @@ ghostlightRefusing refused =
         <> "]}"
 
 -- alice casts Yoshimaru, Scrappy Stray and its enters trigger refuses
--- `refused`, then chooses `chosen`.
+-- `refused`, then chooses `chosen`. Her Goblin Piker gives `mine` a second
+-- candidate, so the targets are asked (CR 601.2c).
 yoshimaruRefusing :: String -> String -> String
 yoshimaruRefusing refused chosen =
   let entry body = "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\"," <> body <> "}"
       library = "\"library\":[" <> List.intercalate "," (replicate 3 "{\"card\":\"Island\"}") <> "]"
    in "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"hand\":[{\"card\":\"Yoshimaru, Scrappy Stray\",\"label\":\"yosh\"}],\"manaPool\":\"GG\","
-        <> "\"battlefield\":[{\"card\":\"Hill Giant\",\"label\":\"giant\",\"ready\":true}],"
+        <> "\"battlefield\":[{\"card\":\"Hill Giant\",\"label\":\"giant\",\"ready\":true},{\"card\":\"Goblin Piker\"}],"
         <> library
         <> "},{\"name\":\"bob\",\"battlefield\":[{\"card\":\"Grizzly Bears\",\"label\":\"bears\",\"ready\":true}],"
         <> library
@@ -938,7 +939,7 @@ leakUnpaid =
   "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"battlefield\":[{\"card\":\"Island\",\"label\":\"i1\"},{\"card\":\"Island\",\"label\":\"i2\"}],\"hand\":[{\"card\":\"Mana Leak\",\"label\":\"leak\"}]},"
     <> "{\"name\":\"bob\",\"battlefield\":[{\"card\":\"Mountain\",\"label\":\"m1\"},{\"card\":\"Mountain\",\"label\":\"m2\"},{\"card\":\"Ancient Tomb\",\"label\":\"tomb\"},{\"card\":\"Island\",\"label\":\"bi\"}],\"hand\":[{\"card\":\"Goblin Piker\",\"label\":\"piker\"}]}],\"active\":\"bob\",\"step\":\"PrecombatMain\"},"
     <> "\"timeline\":[{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"bob\",\"do\":{\"Cast\":{\"object\":\"$piker\",\"mana\":[\"$m1\",\"$m2\",null]}}},"
-    <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$leak\",\"targets\":[\"Goblin Piker\"],\"mana\":[\"$i1\",\"$i2\"]}}},"
+    <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$leak\",\"mana\":[\"$i1\",\"$i2\"]}}},"
     <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":\"Pass\"},"
     <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"bob\",\"do\":{\"ChooseToPay\":{\"decision\":\"Pays\",\"mana\":[null]}}}]}"
 

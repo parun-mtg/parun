@@ -83,24 +83,6 @@
   "note": "Bob's Hill Giant is refused as the Aura's target; Giant Growth makes alice's Craw Wurm 9/7 before Doom Blade kills it, so nine Soldiers come: its last-known power, not its printed 6 or its toughness.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$p1",
-            "$p2",
-            null
-          ],
-          "object": "$investigation",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -108,10 +90,7 @@
             "$p2",
             null
           ],
-          "object": "$investigation",
-          "targets": [
-            "$wurm"
-          ]
+          "object": "$investigation"
         }
       },
       "player": "alice",

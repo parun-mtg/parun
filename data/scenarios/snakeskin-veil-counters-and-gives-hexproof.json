@@ -69,25 +69,9 @@
   "description": "CR 115.1 / 702.11: Snakeskin Veil targets a creature you control, with a counter and hexproof",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$spell",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$spell",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$spell"
         }
       },
       "player": "alice",

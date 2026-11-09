@@ -160,9 +160,6 @@
       "do": {
         "Activate": {
           "object": "$bonds",
-          "targets": [
-            "Grizzly Bears"
-          ],
           "mana": [
             "$p2",
             "$i2"

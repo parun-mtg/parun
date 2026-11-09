@@ -190,9 +190,6 @@
       "do": {
         "Cast": {
           "object": "$u",
-          "targets": [
-            "Erg Raiders"
-          ],
           "mana": [
             "$i",
             null

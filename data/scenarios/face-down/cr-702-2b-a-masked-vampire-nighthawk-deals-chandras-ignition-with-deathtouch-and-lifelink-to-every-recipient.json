@@ -150,10 +150,7 @@
             "$m4",
             "$m5"
           ],
-          "object": "$ignition",
-          "targets": [
-            "Vampire Nighthawk"
-          ]
+          "object": "$ignition"
         }
       },
       "player": "bob",

@@ -65,9 +65,6 @@
           "object": "$cover",
           "mana": [
             "$i1"
-          ],
-          "targets": [
-            "$bears"
           ]
         }
       },

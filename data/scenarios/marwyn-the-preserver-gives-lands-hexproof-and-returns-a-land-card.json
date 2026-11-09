@@ -96,28 +96,12 @@
   "note": "bob, with the mana for it, can't target alice's Forest with Stone Rain; alice returns a Plains from her graveyard to her hand.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$marwyn",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "mana": [
             null
           ],
-          "object": "$marwyn",
-          "targets": [
-            "$plains"
-          ]
+          "object": "$marwyn"
         }
       },
       "player": "alice",

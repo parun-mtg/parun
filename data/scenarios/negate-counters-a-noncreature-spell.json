@@ -111,10 +111,7 @@
       "player": "bob",
       "do": {
         "Cast": {
-          "object": "$negate",
-          "targets": [
-            "Divination"
-          ]
+          "object": "$negate"
         }
       }
     },

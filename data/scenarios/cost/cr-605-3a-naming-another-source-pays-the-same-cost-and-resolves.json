@@ -40,9 +40,6 @@
         "Activate": {
           "object": "$hanweir-battlements",
           "ability": 1,
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$mountain",
             null

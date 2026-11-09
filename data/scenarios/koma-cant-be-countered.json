@@ -131,9 +131,6 @@
       "do": {
         "Cast": {
           "object": "$cs",
-          "targets": [
-            "Koma, World-Eater"
-          ],
           "mana": [
             "$c1",
             "$c2"

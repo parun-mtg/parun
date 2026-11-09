@@ -137,10 +137,7 @@
           "mana": [
             "Swamp#3"
           ],
-          "object": "Dermotaxi",
-          "targets": [
-            "$bear"
-          ]
+          "object": "Dermotaxi"
         }
       },
       "player": "alice",

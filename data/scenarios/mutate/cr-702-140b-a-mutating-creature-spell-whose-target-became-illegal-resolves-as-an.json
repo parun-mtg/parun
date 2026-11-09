@@ -66,9 +66,6 @@
       "do": {
         "Cast": {
           "object": "$cubwarden",
-          "targets": [
-            "$falcon"
-          ],
           "cost": [
             {
               "type": "Generic",
@@ -120,9 +117,6 @@
       "do": {
         "Cast": {
           "object": "$wings",
-          "targets": [
-            "$falcon"
-          ],
           "mana": [
             "$i1",
             "$i2"

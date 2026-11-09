@@ -35,6 +35,7 @@ import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
+import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Label as Label
@@ -122,11 +123,13 @@ gameFormat asked lists = case (asked, headers) of
 -- | Stops before the game when a list's header names a format other than the
 -- one asked for, or its deck breaks the rules or pool of the format asked for
 -- or its header names, in a game not for ante, naming every violation of
--- every deck as `parun deck` does.
+-- every deck as `parun deck` does; and, under a format, every violation of
+-- the rules a game states of its decks together (Parun.Legality.checkGame).
 refuse :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO ()
 refuse format lists = do
   reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report format listed)) lists
-  let violations = concat reports
+  let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame GameSettings.plain (fmap (DeckList.deck . snd) lists)) else []
+      violations = concat reports <> together
   Monad.unless (null violations) $ do
     mapM_ (TextIO.hPutStrLn IO.stderr) violations
     Exit.exitFailure

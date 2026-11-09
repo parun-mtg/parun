@@ -61,9 +61,6 @@
             "$s1",
             "$s2",
             null
-          ],
-          "targets": [
-            "$piker"
           ]
         }
       }

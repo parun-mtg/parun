@@ -83,9 +83,6 @@
       "do": {
         "Cast": {
           "object": "$lapse",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$island-1",
             "$island-2"

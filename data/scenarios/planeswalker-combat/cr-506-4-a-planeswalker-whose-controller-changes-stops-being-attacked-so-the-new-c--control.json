@@ -132,9 +132,6 @@
       "do": {
         "Cast": {
           "object": "$graft",
-          "targets": [
-            "$aura"
-          ],
           "mana": [
             "$i1",
             "$i2",
@@ -251,9 +248,6 @@
       "do": {
         "Activate": {
           "object": "$bsnare",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$bp1",
             null

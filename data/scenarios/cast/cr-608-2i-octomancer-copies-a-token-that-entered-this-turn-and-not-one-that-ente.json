@@ -138,18 +138,6 @@
       "turn": 1,
       "step": "EndStep",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "Octopus Token"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
           "of": "Stack",

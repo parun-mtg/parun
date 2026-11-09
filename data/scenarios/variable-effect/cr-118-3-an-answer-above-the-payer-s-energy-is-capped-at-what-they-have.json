@@ -64,9 +64,6 @@
       "do": {
         "Cast": {
           "object": "$harnessed-lightning",
-          "targets": [
-            "$wall-of-stone"
-          ],
           "mana": [
             "$mountain",
             "$mountain-2"

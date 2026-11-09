@@ -88,10 +88,7 @@
             "$island-2",
             "$island-3"
           ],
-          "object": "$hinder",
-          "targets": [
-            "Goblin Piker"
-          ]
+          "object": "$hinder"
         }
       },
       "player": "alice",

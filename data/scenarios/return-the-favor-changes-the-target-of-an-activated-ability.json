@@ -101,10 +101,7 @@
           "modes": [
             1
           ],
-          "object": "$favor",
-          "targets": [
-            "ability of $pyro"
-          ]
+          "object": "$favor"
         }
       },
       "player": "alice",

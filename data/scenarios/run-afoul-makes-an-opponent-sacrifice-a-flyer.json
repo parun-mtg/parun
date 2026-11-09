@@ -124,31 +124,12 @@
   "description": "Run Afoul targets an opponent, who sacrifices a creature with flying; with none, their other creatures stay.",
   "timeline": [
     {
-      "refuse": {
-        "Cast": {
-          "object": "$ra1",
-          "mana": [
-            "$f1"
-          ],
-          "targets": [
-            "$alice"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "object": "$ra1",
           "mana": [
             "$f1",
             null
-          ],
-          "targets": [
-            "$bob"
           ]
         }
       },
@@ -207,9 +188,6 @@
           "object": "$ra2",
           "mana": [
             "$f2"
-          ],
-          "targets": [
-            "$bob"
           ]
         }
       },

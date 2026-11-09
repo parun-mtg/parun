@@ -84,24 +84,6 @@
   "description": "Epitaph Golem targets a card in your graveyard and puts it on the bottom of your library.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "ability": 0,
-          "mana": [
-            "$i1",
-            "$i2"
-          ],
-          "object": "$eg",
-          "targets": [
-            "$bbolt"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
           "ability": 0,
@@ -109,10 +91,7 @@
             "$i1",
             "$i2"
           ],
-          "object": "$eg",
-          "targets": [
-            "$bolt"
-          ]
+          "object": "$eg"
         }
       },
       "player": "alice",

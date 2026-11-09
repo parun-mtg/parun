@@ -144,9 +144,6 @@
       "do": {
         "Cast": {
           "object": "$flicker",
-          "targets": [
-            "Mulldrifter"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

@@ -180,52 +180,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$visage",
-          "targets": [
-            "$thopter"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3",
-            "$s4",
-            "$s5"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$visage",
-          "targets": [
-            "$idle"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            "$s3",
-            "$s4",
-            "$s5"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$visage",
-          "targets": [
-            "$turtle"
-          ],
           "mana": [
             "$s1",
             "$s2",

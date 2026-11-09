@@ -106,33 +106,11 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$reb",
-          "modes": [
-            0
-          ],
-          "targets": [
-            "Red Elemental Blast"
-          ],
-          "mana": [
-            "$m3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$reb",
           "modes": [
             0
-          ],
-          "targets": [
-            "Slaughter Drone"
           ],
           "mana": [
             "$m3"

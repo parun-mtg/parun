@@ -75,9 +75,6 @@
       "do": {
         "Cast": {
           "object": "$transcantation",
-          "targets": [
-            "Think Twice"
-          ],
           "mana": [
             "$mountain-1",
             "$mountain-2"

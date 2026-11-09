@@ -162,10 +162,7 @@
             "$bi2",
             null
           ],
-          "object": "$counter",
-          "targets": [
-            "Wind Drake"
-          ]
+          "object": "$counter"
         }
       },
       "player": "bob",

@@ -85,9 +85,6 @@
       "do": {
         "Activate": {
           "object": "$sorcerer",
-          "targets": [
-            "$bob"
-          ],
           "mana": [
             "$b1",
             "$b2",

@@ -117,9 +117,6 @@
       "do": {
         "Cast": {
           "object": "$aoath",
-          "targets": [
-            "$jace"
-          ],
           "mana": [
             "$ai1",
             "$ai2",

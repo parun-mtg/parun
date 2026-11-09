@@ -161,10 +161,7 @@
       "do": {
         "Activate": {
           "ability": 1,
-          "object": "$fury",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$fury"
         }
       },
       "player": "alice",

@@ -421,7 +421,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
             { Seat.hand = Seq.singleton (S.aliased "ebb" (S.cardSetup "Time Ebb"))
             }
         setup = S.board (mine NonEmpty.:| [S.battlefield S.bob [S.settled "giant" "Hill Giant"]]) S.alice S.precombatMain
-        choices = Choices.none {Choices.targets = Just [S.aliasRef "giant"], Choices.manaSources = Seq.fromList (fmap (Just . S.aliasRef) ["i1", "i2", "i3"])}
+        choices = Choices.none {Choices.manaSources = Seq.fromList (fmap (Just . S.aliasRef) ["i1", "i2", "i3"])}
         script = S.turn 1 [S.on S.precombatMain S.alice (S.castAction (S.aliasRef "ebb") choices)]
     gs <- S.play s registry setup script S.priorityGame
     Monad.forM_ [S.alice, S.bob] $ \pid -> do

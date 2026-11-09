@@ -137,9 +137,6 @@
       "do": {
         "Cast": {
           "object": "$csa",
-          "targets": [
-            "$buried"
-          ],
           "mana": [
             "$plains",
             "$swamp",
@@ -318,9 +315,6 @@
       "do": {
         "Cast": {
           "object": "$db3",
-          "targets": [
-            "$control"
-          ],
           "mana": [
             "$s5",
             "$s6"

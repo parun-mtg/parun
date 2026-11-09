@@ -130,10 +130,7 @@
           "mana": [
             "$i"
           ],
-          "object": "$u",
-          "targets": [
-            "Erg Raiders"
-          ]
+          "object": "$u"
         }
       },
       "player": "alice",

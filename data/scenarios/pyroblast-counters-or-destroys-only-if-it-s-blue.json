@@ -214,9 +214,6 @@
       "do": {
         "Cast": {
           "object": "$un",
-          "targets": [
-            "$green"
-          ],
           "mana": [
             "$i",
             null
@@ -233,9 +230,6 @@
           "object": "$p3",
           "modes": [
             0
-          ],
-          "targets": [
-            "Unsummon"
           ],
           "mana": [
             "$m3",
@@ -302,9 +296,6 @@
           "object": "$p4",
           "modes": [
             0
-          ],
-          "targets": [
-            "Hornet Sting"
           ],
           "mana": [
             "$m4"

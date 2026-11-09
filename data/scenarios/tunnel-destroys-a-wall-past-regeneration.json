@@ -90,25 +90,9 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$tunnel",
-          "targets": [
-            "$bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$tunnel",
-          "targets": [
-            "$wall"
-          ]
+          "object": "$tunnel"
         }
       },
       "player": "alice",

@@ -75,9 +75,6 @@
       "do": {
         "Cast": {
           "object": "$turn-the-tables",
-          "targets": [
-            "$jedit-ojanen"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

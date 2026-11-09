@@ -112,30 +112,11 @@
   "description": "Sporeweb Weaver can't be targeted by an opponent's blue spell.",
   "timeline": [
     {
-      "refuse": {
-        "Cast": {
-          "object": "$un",
-          "mana": [
-            "$ub"
-          ],
-          "targets": [
-            "$sw"
-          ]
-        }
-      },
-      "player": "bob",
-      "step": "BeginningOfCombat",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "object": "$un",
           "mana": [
             "$ub"
-          ],
-          "targets": [
-            "$gb"
           ]
         }
       },

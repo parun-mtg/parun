@@ -109,35 +109,11 @@
     {
       "turn": 1,
       "step": "PrecombatMain",
-      "player": "bob",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Creature",
-                  "$balemurk-leech"
-                ]
-              ]
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "do": {
         "Activate": {
           "object": "$synthetic-skeleton-key",
-          "ability": 0,
-          "targets": [
-            "$roaring-furnace"
-          ]
+          "ability": 0
         }
       }
     },

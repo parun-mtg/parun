@@ -74,9 +74,6 @@
       "do": {
         "Cast": {
           "object": "$growth",
-          "targets": [
-            "$arbiter"
-          ],
           "mana": [
             "$f1",
             null

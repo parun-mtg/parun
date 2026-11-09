@@ -63,9 +63,6 @@
       "do": {
         "Cast": {
           "object": "$inner-calm-outer-strength",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

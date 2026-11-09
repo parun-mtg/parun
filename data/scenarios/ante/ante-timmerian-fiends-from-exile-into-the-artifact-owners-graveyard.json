@@ -63,9 +63,6 @@
         "Activate": {
           "object": "$fiends",
           "ability": 0,
-          "targets": [
-            "$thopter"
-          ],
           "mana": [
             "$swamp-1",
             "$swamp-2",

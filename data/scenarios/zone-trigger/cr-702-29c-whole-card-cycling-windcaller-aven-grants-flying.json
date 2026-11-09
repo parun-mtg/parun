@@ -40,9 +40,6 @@
         "Activate": {
           "object": "$windcaller-aven",
           "ability": 0,
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island"
           ]

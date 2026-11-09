@@ -88,30 +88,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$light",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$light",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$p1",
             "$p2",

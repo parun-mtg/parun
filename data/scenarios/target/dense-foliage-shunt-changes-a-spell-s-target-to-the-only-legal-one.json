@@ -29,7 +29,7 @@
   },
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$shock", "targets": ["$bob"], "mana": ["$m1"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$shunt", "targets": ["Shock"], "mana": ["$b1", "$b2", "$b3"] } } }
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$shunt", "mana": ["$b1", "$b2", "$b3"] } } }
   ],
   "final": [
     { "Life": { "player": "alice", "life": 18 } },

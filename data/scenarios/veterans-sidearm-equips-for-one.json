@@ -56,10 +56,7 @@
     {
       "do": {
         "Activate": {
-          "object": "$sidearm",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$sidearm"
         }
       },
       "player": "alice",

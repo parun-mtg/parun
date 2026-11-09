@@ -61,10 +61,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$cache",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$cache"
         }
       }
     },
@@ -88,10 +85,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$cache",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$cache"
         }
       }
     },
@@ -171,10 +165,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$cache",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$cache"
         }
       }
     },

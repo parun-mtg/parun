@@ -111,10 +111,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$growth",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$growth"
         }
       },
       "player": "alice",

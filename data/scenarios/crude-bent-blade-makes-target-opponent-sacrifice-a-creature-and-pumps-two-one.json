@@ -271,10 +271,7 @@
             "$s4",
             "$s5"
           ],
-          "object": "Crude Bent Blade",
-          "targets": [
-            "$bears"
-          ]
+          "object": "Crude Bent Blade"
         }
       },
       "player": "alice",

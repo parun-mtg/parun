@@ -165,10 +165,7 @@
             "$b1",
             "$b2"
           ],
-          "object": "$nature",
-          "targets": [
-            "$tome"
-          ]
+          "object": "$nature"
         }
       },
       "player": "bob",

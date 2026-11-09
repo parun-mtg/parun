@@ -70,10 +70,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$mark",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$mark"
         }
       }
     },

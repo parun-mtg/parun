@@ -83,9 +83,6 @@
       "do": {
         "Cast": {
           "object": "$reb",
-          "targets": [
-            "Ancestral Recall"
-          ],
           "mana": [
             "$m1",
             null

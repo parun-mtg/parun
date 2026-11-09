@@ -145,10 +145,7 @@
       "do": {
         "Activate": {
           "ability": 1,
-          "object": "$t",
-          "targets": [
-            "$foe"
-          ]
+          "object": "$t"
         }
       },
       "player": "alice",

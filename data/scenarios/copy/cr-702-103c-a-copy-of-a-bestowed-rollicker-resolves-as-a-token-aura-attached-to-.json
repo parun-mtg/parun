@@ -114,9 +114,6 @@
         "Activate": {
           "object": "$lithoform-engine",
           "ability": 2,
-          "targets": [
-            "Nyxborn Rollicker"
-          ],
           "mana": [
             "$mountain-3",
             "$mountain-4",

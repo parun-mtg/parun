@@ -76,29 +76,9 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$dancer",
-          "targets": [
-            "$bears"
-          ],
-          "mana": [
-            "$p1",
-            "$p2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$dancer",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$p1",
             "$p2"

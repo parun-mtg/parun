@@ -62,9 +62,6 @@
           "object": "$nightmare",
           "ability": 0,
           "x": 3,
-          "targets": [
-            "$tyrant"
-          ],
           "costOrder": [
             0,
             1

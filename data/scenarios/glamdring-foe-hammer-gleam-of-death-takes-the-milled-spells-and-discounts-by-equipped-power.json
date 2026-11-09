@@ -243,10 +243,7 @@
             "$i8",
             null
           ],
-          "object": "Glamdring, Foe-hammer",
-          "targets": [
-            "$commando"
-          ]
+          "object": "Glamdring, Foe-hammer"
         }
       },
       "player": "alice",

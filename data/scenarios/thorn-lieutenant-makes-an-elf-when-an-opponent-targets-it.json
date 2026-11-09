@@ -95,9 +95,6 @@
       "do": {
         "Cast": {
           "object": "$growth",
-          "targets": [
-            "$lt"
-          ],
           "mana": [
             "$f1",
             null

@@ -98,38 +98,9 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$girl",
-          "targets": [
-            "$girl"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$girl",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$girl",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$girl"
         }
       },
       "player": "alice",

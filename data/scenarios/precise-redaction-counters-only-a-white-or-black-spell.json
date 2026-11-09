@@ -166,10 +166,7 @@
           "mana": [
             "$s1"
           ],
-          "object": "$disfigure",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$disfigure"
         }
       },
       "player": "bob",
@@ -190,10 +187,7 @@
             "$i2",
             null
           ],
-          "object": "$r1",
-          "targets": [
-            "Disfigure"
-          ]
+          "object": "$r1"
         }
       },
       "player": "alice",

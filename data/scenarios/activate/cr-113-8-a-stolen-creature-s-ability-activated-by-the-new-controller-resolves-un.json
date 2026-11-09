@@ -108,9 +108,6 @@
         "Activate": {
           "object": "$aladdin",
           "ability": 0,
-          "targets": [
-            "$myr"
-          ],
           "mana": [
             "$m4",
             "$m5",

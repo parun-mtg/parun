@@ -122,10 +122,7 @@
       "do": {
         "Activate": {
           "ability": 0,
-          "object": "$tl",
-          "targets": [
-            "$gb"
-          ]
+          "object": "$tl"
         }
       },
       "player": "alice",

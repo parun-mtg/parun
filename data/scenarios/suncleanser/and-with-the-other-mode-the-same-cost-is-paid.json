@@ -114,18 +114,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

@@ -132,9 +132,6 @@
       "do": {
         "Cast": {
           "object": "$bu",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$m1",
             "$m2",
@@ -181,9 +178,6 @@
       "do": {
         "Cast": {
           "object": "Bulk Up",
-          "targets": [
-            "$giant"
-          ],
           "mana": [
             "$m3",
             "$m4",

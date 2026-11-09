@@ -130,18 +130,6 @@
       "turn": 2
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "EndStep",
-      "turn": 2
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "EndStep",

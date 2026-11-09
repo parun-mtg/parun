@@ -79,10 +79,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$murder",
-          "targets": [
-            "$cav"
-          ]
+          "object": "$murder"
         }
       },
       "player": "bob",
@@ -97,30 +94,6 @@
     },
     {
       "do": "Pass",
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "Cavalier of Thorns"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1

@@ -176,10 +176,7 @@
             "$b",
             "$d"
           ],
-          "object": "$act",
-          "targets": [
-            "$src"
-          ]
+          "object": "$act"
         }
       },
       "player": "carl",

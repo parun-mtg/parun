@@ -49,10 +49,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$clash",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$clash"
         }
       },
       "player": "alice",

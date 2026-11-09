@@ -115,9 +115,6 @@
       "do": {
         "Cast": {
           "object": "$bspell",
-          "targets": [
-            "$invasion"
-          ],
           "mana": [
             "$bi1",
             "$bp1",

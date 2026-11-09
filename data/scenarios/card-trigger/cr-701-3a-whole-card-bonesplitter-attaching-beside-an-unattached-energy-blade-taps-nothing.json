@@ -40,10 +40,7 @@
           "mana": [
             "$s1"
           ],
-          "object": "$bonesplitter",
-          "targets": [
-            "$piker"
-          ]
+          "object": "$bonesplitter"
         }
       },
       "player": "alice",

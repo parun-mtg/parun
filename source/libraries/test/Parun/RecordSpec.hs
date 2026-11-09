@@ -131,13 +131,16 @@ targetsStack timed = case Timed.entry timed of
       _ -> False
 
 -- Two seats of Council of Advisors, whose enters trigger is on the stack for a
--- Stifle to target.
+-- Stifle to target, beside Soul Warden's: one trigger alone is bound unasked
+-- (CR 601.2c), so the Wardens give the Stifle a choice.
 stifles :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
 stifles s registry = do
   council <- S.printingOf s registry "Council of Advisors"
   stifle <- S.printingOf s registry "Stifle"
+  warden <- S.printingOf s registry "Soul Warden"
   island <- S.printingOf s registry "Island"
-  let deck = Deck.fromCards (Map.fromList [(council, 8), (stifle, 8), (island, 8)])
+  plains <- S.printingOf s registry "Plains"
+  let deck = Deck.fromCards (Map.fromList [(council, 8), (stifle, 8), (warden, 4), (island, 8), (plains, 4)])
   pure ((S.alice, deck) NonEmpty.:| [(S.bob, deck)])
 
 -- Two seats of Grizzly Bears and Forests, sixty cards with Yorion, Sky Nomad

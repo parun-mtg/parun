@@ -163,10 +163,7 @@
             "$p4",
             null
           ],
-          "object": "$cub",
-          "targets": [
-            "$fiends"
-          ]
+          "object": "$cub"
         }
       },
       "player": "alice",
@@ -188,10 +185,7 @@
             "$s2",
             "$s3"
           ],
-          "object": "$fiends",
-          "targets": [
-            "$thopter"
-          ]
+          "object": "$fiends"
         }
       },
       "player": "alice",

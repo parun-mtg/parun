@@ -3,7 +3,6 @@
   "note": "Alice's 6/4 Craw Wurm is the strongest, so on turn 1 she takes bob's tapped Hill Giant and attacks him with it. On turn 2 bob casts his own Craw Wurm, tying her, and on turn 3 nothing triggers.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Might Makes Right", "label": "mmr"}, {"card": "Craw Wurm", "label": "wurm"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "tapped": true}, {"card": "Forest", "label": "f0"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}, {"card": "Forest", "label": "f5"}], "hand": [{"card": "Craw Wurm", "label": "wurm2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
-    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
     {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "Controller", "object": "$giant", "is": "alice"}}},
     {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": false}}},

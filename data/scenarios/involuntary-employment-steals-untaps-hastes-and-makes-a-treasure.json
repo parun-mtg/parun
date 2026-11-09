@@ -86,9 +86,6 @@
       "do": {
         "Cast": {
           "object": "$e",
-          "targets": [
-            "$g"
-          ],
           "mana": [
             "$m1",
             "$m2",

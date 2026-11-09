@@ -172,48 +172,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$blade1",
-          "targets": [
-            "Dawnglade Regent"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
-      "refuse": {
-        "Cast": {
-          "object": "$blade1",
-          "targets": [
-            "$alicepiker"
-          ],
-          "mana": [
-            "$s1",
-            "$s2",
-            null
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
           "object": "$blade1",
-          "targets": [
-            "$bobpiker"
-          ],
           "mana": [
             "$s1",
             "$s2",

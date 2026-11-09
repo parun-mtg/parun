@@ -773,8 +773,9 @@ spec s registry = Spec.describe s "Sticker" $ do
     let (pyro, after, offers) = pyrodancerEnters pyrodancer Nothing (Setup.gameWith GameSettings.plain S.bothPlayers)
     Spec.assertEqWith s "CR 608.2d alice was not asked" (mays offers) 0
     Spec.assertEqWith s "and nothing is stickered" (fmap (Seq.length . Object.stickers) (Game.lookupObject pyro after)) (Just 0)
-  -- Two Pikers, one stickered: only it is a legal target, and it gets +2/+0
-  -- and menace.
+  -- Two Pikers, one stickered: only it is a legal target, so it is taken
+  -- unasked (CR 601.2c) though the answerer would name the other, and it gets
+  -- +2/+0 and menace.
   Spec.it s "CR 123.9 Pyrodancer's ability targets only a creature with an art sticker" $ do
     sheets <- committedSheets
     pyrodancer <- S.printingOf s registry "Proficient Pyrodancer"
@@ -788,12 +789,12 @@ spec s registry = Spec.describe s "Sticker" $ do
         recording p = case p of
           Prompt.ChooseTargets _ _ _ sets -> do
             State.put (concatMap (Maybe.mapMaybe Recipient.objectOf . Set.toList . snd) (Map.elems sets))
-            pure (namingTarget marked p)
+            pure (namingTarget plainPiker p)
           _ -> pure (S.identityAnswer p)
         ((_, after), offered) = case Activatable.abilitiesFor pyro board of
           [ability] -> State.runState (Engine.runGame recording board (Activate.activateAbility S.alice pyro ability >> Stack.resolveTop)) []
           _ -> (((), board), [])
-    Spec.assertEqWith s "CR 115.1 only the Piker with an art sticker is offered" offered [marked]
+    Spec.assertEqWith s "CR 115.1 only the Piker with an art sticker is a target, so nobody was asked" offered []
     Spec.assertEqWith s "it gets +2/+0 and menace" (Projection.powerOf marked after, Projection.hasKeyword Keyword.Menace marked after) (Just 4, True)
     Spec.assertEqWith s "the other Piker is untouched" (Projection.powerOf plainPiker after) (Just 2)
   -- Divergence 6: an art placement triggers the art ability alone, so one
@@ -963,12 +964,12 @@ spec s registry = Spec.describe s "Sticker" $ do
         recording p = case p of
           Prompt.ChooseTargets _ _ _ sets -> do
             State.put (concatMap (Maybe.mapMaybe Recipient.objectOf . Set.toList . snd) (Map.elems sets))
-            pure (namingTarget marked p)
+            pure (namingTarget plainPiker p)
           _ -> pure (S.identityAnswer p)
         ((_, after), offered) = case Activatable.abilitiesFor baaId board of
           [ability] -> State.runState (Engine.runGame recording board (Activate.activateAbility S.alice baaId ability >> Stack.resolveTop)) []
           _ -> (((), board), [])
-    Spec.assertEqWith s "CR 115.1 only the Piker with a name sticker is offered" offered [marked]
+    Spec.assertEqWith s "CR 115.1 only the Piker with a name sticker is a target, so nobody was asked" offered []
     Spec.assertEqWith s "it gains flying, the other Piker does not" (Projection.hasKeyword Keyword.Flying marked after, Projection.hasKeyword Keyword.Flying plainPiker after) (True, False)
   Spec.it s "CR 123.6 whole card: Sword-Swallowing Seraph names a Piker and puts a +1/+1 counter on it" $ do
     sheets <- committedSheets
@@ -1368,7 +1369,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     Spec.assertEqWith s "CR 208.3a nor has an uncrewed Dreadnought on the battlefield" (pt (stickeredBy S.addPermanent dreadnought)) (Nothing, Nothing)
   -- The off-battlefield read through a real reader: "creature cards with power
   -- 2 or less". Hill Giant is a 2/3 by Night's sticker; the Bears a 5/1 by
-  -- Otter's.
+  -- Otter's. The Giant alone is a target, so it is taken unasked (CR 601.2c).
   Spec.it s "CR 123.8 Graceful Restoration offers the Hill Giant its sticker makes a 2/3, not the Bears it makes a 5/1" $ do
     sheets <- committedSheets
     restoration <- S.printingOf s registry "Graceful Restoration"
@@ -1388,8 +1389,10 @@ spec s registry = Spec.describe s "Sticker" $ do
             State.put (concatMap (Maybe.mapMaybe Recipient.objectOf . Set.toList . snd) (Map.elems sets))
             pure (fmap snd sets)
           _ -> pure (S.identityAnswer p)
-        offered = State.execState (Engine.runGame recording board (S.cast S.alice spellId)) []
-    Spec.assertEqWith s "CR 123.8 only the Hill Giant card is offered" offered [giantCard]
+        ((_, after), offered) = State.runState (Engine.runGame recording board (S.cast S.alice spellId >> Stack.resolveTop)) []
+        graveyard = Game.zoneMembers Zone.Graveyard S.alice after
+    Spec.assertEqWith s "CR 123.8 only the Hill Giant card is a target, so nobody was asked" offered []
+    Spec.assertEqWith s "CR 123.8 the Giant left the graveyard and the Bears did not" (giantCard `elem` graveyard, bearsCard `elem` graveyard) (False, True)
   -- Review Focus 5's second half; CLAUDE.md's Clone tripwire for both grants.
   Spec.it s "CR 123.1/707.2 a Clone of a stickered Grizzly Bears is a 2/2 that does not fly" $ do
     sheets <- committedSheets
@@ -1440,7 +1443,7 @@ spec s registry = Spec.describe s "Sticker" $ do
           [ability] -> State.runState (Engine.runGame recording board (Activate.activateAbility S.alice lineId ability >> Stack.resolveTop)) Map.empty
           _ -> (((), board), Map.empty)
     Spec.assertEqWith s "CR 509.1c bob's Piker must block the Bears" (fmap (\r -> (ActiveBlockRequirement.blocker r, ActiveBlockRequirement.attacker r)) (GameState.blockRequirements after)) [(RestrictedCreatures.Named pikerId, Just (RestrictedCreatures.Named bearsId))]
-    Spec.assertEqWith s "CR 115.1 the attacker slot offers only the Bears" (Map.lookup (SlotName.MkSlotName (Text.pack "attacker")) offered) (Just [bearsId])
+    Spec.assertEqWith s "CR 115.1 the attacker slot offers only the Bears, so nobody was asked" (Map.lookup (SlotName.MkSlotName (Text.pack "attacker")) offered) Nothing
     -- "this turn": CR 514.2's sweep ends the requirement, read through the
     -- engine's CR 509.1c reader.
     let required = not . Requirement.vacuous . BlockRequirement.instances (\_ _ -> True) [pikerId] [bearsId]
@@ -1576,7 +1579,8 @@ spec s registry = Spec.describe s "Sticker" $ do
     Spec.assertEqWith s "CR 123.3 the offer spans all four kinds" (Set.fromList (fmap StickerRef.kind offered)) (Set.fromList [StickerKind.Name, StickerKind.Ability, StickerKind.PowerToughness, StickerKind.Art])
     Spec.assertEqWith s "CR 123.3c and nothing costing more than two tickets" (all (\r -> Sticker.ticketCost r board <= 2) offered) True
   -- Two creature cards in alice's graveyard, so the choice is asked; the Bears
-  -- takes the art sticker and only it is a legal target for the {3}{B}.
+  -- takes the art sticker and only it is a legal target for the {3}{B}, so it
+  -- is taken unasked (CR 601.2c) though the answerer would name the Giant.
   Spec.it s "CR 123.3/123.5 Scampire stickers a creature card in alice's graveyard, and returns only that card" $ do
     sheets <- committedSheets
     scampire <- S.printingOf s registry "Scampire"
@@ -1593,14 +1597,14 @@ spec s registry = Spec.describe s "Sticker" $ do
         recording p = case p of
           Prompt.ChooseTargets _ _ _ sets -> do
             State.put (concatMap (Maybe.mapMaybe Recipient.objectOf . Set.toList . snd) (Map.elems sets))
-            pure (namingTarget bearsCard p)
+            pure (namingTarget giantCard p)
           _ -> pure (S.identityAnswer p)
         ((_, returned), targets) = case Activatable.abilitiesFor scampId board of
           [ability] -> State.runState (Engine.runGame recording board (Activate.activateAbility S.alice scampId ability >> Stack.resolveTop)) []
           _ -> (((), board), [])
         arrived = [oid | oid <- Set.toList (GameState.battlefield returned), Set.notMember oid (GameState.battlefield board)]
     Spec.assertEqWith s "CR 123.3 the Bears card in the graveyard has the art sticker" (stickerKindsOn bearsCard stickered, stickerKindsOn giantCard stickered) ([StickerKind.Art], [])
-    Spec.assertEqWith s "CR 123.4 only the stickered Bears is a legal target" targets [bearsCard]
+    Spec.assertEqWith s "CR 123.4 only the stickered Bears is a legal target, so nobody was asked" targets []
     Spec.assertEqWith s "CR 123.5 the returned Bears keeps its sticker and has haste" (fmap (\oid -> (stickerKindsOn oid returned, Projection.hasKeyword Keyword.Haste oid returned)) arrived) [([StickerKind.Art], True)]
   Spec.it s "CR 608.2d Scampire with no creature card in alice's graveyard asks nothing" $ do
     sheets <- committedSheets

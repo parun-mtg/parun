@@ -156,9 +156,6 @@
       "do": {
         "Cast": {
           "object": "$counter",
-          "targets": [
-            "Obliterate"
-          ],
           "mana": [
             "$i1",
             "$i2"

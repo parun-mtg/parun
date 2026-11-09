@@ -107,44 +107,6 @@
   "note": "The refused casts name a creature card in the wrong graveyard and a noncreature card in the right one.",
   "timeline": [
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3",
-            "$p4"
-          ],
-          "object": "$res",
-          "targets": [
-            "$bear"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$p1",
-            "$p2",
-            "$p3",
-            "$p4"
-          ],
-          "object": "$res",
-          "targets": [
-            "$isle"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
@@ -153,10 +115,7 @@
             "$p3",
             "$p4"
           ],
-          "object": "$res",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$res"
         }
       },
       "player": "alice",

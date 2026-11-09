@@ -41,9 +41,6 @@
       "do": {
         "Cast": {
           "object": "$unholy-strength",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$swamp"
           ]

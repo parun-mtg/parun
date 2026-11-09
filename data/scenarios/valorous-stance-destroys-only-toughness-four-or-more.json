@@ -77,26 +77,6 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$v",
-          "mana": [
-            "$p1",
-            "$p2"
-          ],
-          "modes": [
-            1
-          ],
-          "targets": [
-            "$h"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$v",
@@ -106,9 +86,6 @@
           ],
           "modes": [
             1
-          ],
-          "targets": [
-            "$e"
           ]
         }
       }

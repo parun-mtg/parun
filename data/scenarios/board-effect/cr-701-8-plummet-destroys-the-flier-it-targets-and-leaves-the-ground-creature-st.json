@@ -50,9 +50,6 @@
       "do": {
         "Cast": {
           "object": "$plummet",
-          "targets": [
-            "$bird-maiden"
-          ],
           "mana": [
             "$forest",
             "$forest-2"

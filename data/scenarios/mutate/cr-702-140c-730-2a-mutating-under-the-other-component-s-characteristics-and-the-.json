@@ -65,9 +65,6 @@
       "do": {
         "Cast": {
           "object": "$cubwarden",
-          "targets": [
-            "$falcon-abomination"
-          ],
           "cost": [
             {
               "type": "Generic",

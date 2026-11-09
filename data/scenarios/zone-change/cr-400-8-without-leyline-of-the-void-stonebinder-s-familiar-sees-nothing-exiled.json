@@ -55,9 +55,6 @@
       "do": {
         "Cast": {
           "object": "$pull",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$plains"
           ]

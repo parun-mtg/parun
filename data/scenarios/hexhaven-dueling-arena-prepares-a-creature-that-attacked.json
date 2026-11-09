@@ -21,8 +21,7 @@
   "timeline": [
     { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$recollector"] } },
     { "turn": 1, "step": "EndOfCombat", "player": "alice", "refuse": { "Activate": { "object": "$arena", "ability": 1, "targets": ["$recollector"], "mana": ["$s1", "$s2", null] } } },
-    { "turn": 1, "step": "PostcombatMain", "player": "alice", "refuse": { "Activate": { "object": "$arena", "ability": 1, "targets": ["$heckler"], "mana": ["$s1", "$s2", null] } } },
-    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Activate": { "object": "$arena", "ability": 1, "targets": ["$recollector"], "mana": ["$s1", "$s2", null] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Activate": { "object": "$arena", "ability": 1, "mana": ["$s1", "$s2", null] } } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Designations", "object": "$recollector", "is": ["Prepared"] } } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Designations", "object": "$heckler", "is": [] } } },

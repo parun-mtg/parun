@@ -247,9 +247,6 @@
       "do": {
         "Cast": {
           "object": "$gg2",
-          "targets": [
-            "$bobs"
-          ],
           "mana": [
             "$f2"
           ]

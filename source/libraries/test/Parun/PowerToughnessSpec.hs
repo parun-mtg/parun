@@ -1571,8 +1571,7 @@ unleashFurySpec s registry = Spec.describe s "Unleash Fury" $ do
            in S.board (mine NonEmpty.:| [S.playerSetup S.bob]) S.alice S.precombatMain
         choices =
           Choices.none
-            { Choices.targets = Just [S.aliasRef "victim"],
-              Choices.manaSources = Seq.fromList [Just (S.aliasRef "first"), Just (S.aliasRef "second")]
+            { Choices.manaSources = Seq.fromList [Just (S.aliasRef "first"), Just (S.aliasRef "second")]
             }
         script = S.turn 1 [S.on S.precombatMain S.alice (S.castAction (S.aliasRef "spell") choices)]
     after <- S.play s registry (furyBoard [S.permanent "Glorious Anthem"]) script S.priorityGame

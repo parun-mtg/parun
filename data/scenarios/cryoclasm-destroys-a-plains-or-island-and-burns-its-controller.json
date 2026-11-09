@@ -57,25 +57,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$cryoclasm",
-          "targets": [
-            "$mountain"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$cryoclasm",
-          "targets": [
-            "$island"
-          ]
+          "object": "$cryoclasm"
         }
       }
     },

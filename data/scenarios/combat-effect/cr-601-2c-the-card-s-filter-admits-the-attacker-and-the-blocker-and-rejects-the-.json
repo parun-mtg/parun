@@ -180,9 +180,6 @@
         "Activate": {
           "object": "$labyrinth-2",
           "ability": 1,
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$i5",
             "$i6",

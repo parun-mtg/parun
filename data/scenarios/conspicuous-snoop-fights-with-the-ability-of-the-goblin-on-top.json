@@ -101,9 +101,6 @@
         "Activate": {
           "object": "$snoop",
           "ability": 0,
-          "targets": [
-            "$elves"
-          ],
           "mana": [
             "$m1",
             "$m2",

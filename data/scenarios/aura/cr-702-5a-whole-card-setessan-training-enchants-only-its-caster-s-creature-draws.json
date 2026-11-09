@@ -53,29 +53,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$setessan-training",
-          "targets": [
-            "$bobs-piker"
-          ],
-          "mana": [
-            "$forest",
-            "$forest-2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$setessan-training",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest",
             "$forest-2"

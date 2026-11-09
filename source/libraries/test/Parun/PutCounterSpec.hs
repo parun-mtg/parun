@@ -13,6 +13,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -401,9 +402,11 @@ doubleEachTargetSpec s registry = Spec.describe s "CR 701.10e doubling each kind
     Spec.assertEqWith s "the untargeted Piker keeps its one counter" (pairOn decoyId after) (Map.singleton CounterKind.PlusOnePlusOne 1)
     Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
 
--- `aiming` for a slot taking any number: the offered set filtered to `chosen`.
+-- `aiming` for a slot taking any number: as many as `chosen`, the offered set
+-- filtered to it.
 aimingAll :: Set.Set ObjectId.ObjectId -> Prompt.Prompt r -> r
 aimingAll chosen p = case p of
+  Prompt.AnnounceTargets _ _ _ offers -> Natural.length chosen <$ offers
   Prompt.ChooseTargets _ _ _ asked ->
     fmap (\(_, offered) -> Set.filter (maybe False (`Set.member` chosen) . Recipient.objectOf) offered) asked
   _ -> S.identityAnswer p

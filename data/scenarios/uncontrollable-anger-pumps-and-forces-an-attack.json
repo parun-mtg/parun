@@ -59,10 +59,7 @@
       "player": "alice",
       "do": {
         "Cast": {
-          "object": "$anger",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$anger"
         }
       }
     },

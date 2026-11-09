@@ -105,9 +105,6 @@
       "do": {
         "Cast": {
           "object": "$radiate",
-          "targets": [
-            "Lightning Bolt"
-          ],
           "mana": [
             "$m2",
             "$m3",

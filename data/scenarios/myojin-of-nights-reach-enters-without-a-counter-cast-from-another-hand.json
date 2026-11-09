@@ -112,18 +112,6 @@
       "turn": 1,
       "step": "Upkeep",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "do": "Pass"
     },
     {

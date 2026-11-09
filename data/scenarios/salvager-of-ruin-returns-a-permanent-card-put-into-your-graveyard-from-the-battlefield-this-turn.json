@@ -134,25 +134,9 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$salv",
-          "targets": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Activate": {
-          "object": "$salv",
-          "targets": [
-            "Grizzly Bears"
-          ]
+          "object": "$salv"
         }
       },
       "player": "alice",

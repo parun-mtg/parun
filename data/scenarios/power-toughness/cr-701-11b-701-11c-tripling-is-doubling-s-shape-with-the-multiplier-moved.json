@@ -52,9 +52,6 @@
       "do": {
         "Cast": {
           "object": "$synthetic-threefold-growth",
-          "targets": [
-            "$silent-arbiter"
-          ],
           "mana": [
             "$forest",
             "$forest-2",

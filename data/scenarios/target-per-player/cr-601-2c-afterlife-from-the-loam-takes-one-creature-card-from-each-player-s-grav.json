@@ -45,6 +45,8 @@
           {
             "card": "Ornithopter",
             "label": "athopter"
+          }, {
+            "card": "Grizzly Bears"
           }
         ],
         "hand": [
@@ -92,6 +94,9 @@
           {
             "card": "Glorious Anthem",
             "label": "anthem"
+          },
+          {
+            "card": "Grizzly Bears"
           }
         ],
         "library": [

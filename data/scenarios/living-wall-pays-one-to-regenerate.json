@@ -82,10 +82,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$disenchant",
-          "targets": [
-            "$wall"
-          ]
+          "object": "$disenchant"
         }
       },
       "player": "alice",

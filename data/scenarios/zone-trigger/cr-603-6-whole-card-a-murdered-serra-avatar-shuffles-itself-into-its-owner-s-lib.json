@@ -49,9 +49,6 @@
       "do": {
         "Cast": {
           "object": "$murder",
-          "targets": [
-            "$serra-avatar"
-          ],
           "mana": [
             "$swamp",
             "$swamp-2",

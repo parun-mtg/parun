@@ -112,9 +112,6 @@
           "object": "$fur",
           "mana": [
             "$m"
-          ],
-          "targets": [
-            "$bears"
           ]
         }
       },

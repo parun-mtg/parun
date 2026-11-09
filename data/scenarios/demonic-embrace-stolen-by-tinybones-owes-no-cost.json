@@ -79,18 +79,6 @@
       "turn": 1,
       "step": "CombatDamage",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "stolen": [
-            "$embrace"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
       "do": "Pass"
     },
     {
@@ -101,18 +89,6 @@
         "Answer": {
           "prompt": "OfferedCast",
           "with": "Exercises"
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "enchant": [
-            "$tiny"
-          ]
         }
       }
     },

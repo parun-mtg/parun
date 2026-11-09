@@ -197,9 +197,6 @@
       "do": {
         "Cast": {
           "object": "$can",
-          "targets": [
-            "Sphinx of the Final Word"
-          ],
           "mana": [
             "$j1",
             "$j2",

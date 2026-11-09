@@ -448,10 +448,12 @@ anafenzaAttackSpec s registry =
       -- answers everything aggressively -- which declares every legal attacker,
       -- so the declaration really happens.
       --
-      -- The LEGAL SET is what this asserts on rather than only the outcome, and
+      -- The PROMPTS are what this asserts on rather than only the outcome, and
       -- that is the difference between a discriminating test and a passing one:
       -- with the Piker the lowest-id candidate, an answerer that takes the first
       -- offer reaches the same board whether or not the filter rejected anything.
+      -- One legal target is bound unasked (CR 601.2c), so a second would show
+      -- as a recorded offer.
       recordTargets :: Prompt.Prompt r -> State.State [Map.Map SlotName.SlotName (Natural, Set.Set Recipient.Recipient)] r
       recordTargets p = case p of
         Prompt.ChooseTargets _ _ _ sets -> do
@@ -473,9 +475,9 @@ anafenzaAttackSpec s registry =
                   State.runState (Engine.runGame recordTargets gs (Engine.runStep >> Engine.priorityLoop)) []
             Spec.assertEqWith
               s
-              "the Piker attacking beside her is the only legal target"
+              "the Piker attacking beside her is the only legal target, so nobody was asked"
               (fmap (fmap snd . Map.elems) offered)
-              [[Set.singleton (Recipient.ToCreature pikerId)]]
+              []
             Spec.assertEqWith s "and it took the counter" (countersOn pikerId settled) (Just 1)
             Spec.assertEqWith s "\"another\" keeps Anafenza off her own trigger" (countersOn anafenzaId settled) (Just 0)
             Spec.assertEqWith s "an untapped creature is not a legal target" (countersOn wallId settled) (Just 0)

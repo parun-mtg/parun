@@ -77,10 +77,7 @@
       "do": {
         "Activate": {
           "object": "$bolas",
-          "ability": 1,
-          "targets": [
-            "$giant"
-          ]
+          "ability": 1
         }
       }
     },

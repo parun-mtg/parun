@@ -10,7 +10,7 @@
     ]
   },
   "timeline": [
-    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Activate": {"object": "$resonator", "targets": ["trigger of Power Leak"], "mana": ["$i1", "$i2", null]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Activate": {"object": "$resonator", "mana": ["$i1", "$i2", null]}}},
     {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
     {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
     {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Answer": {"prompt": "ChooseNumber", "with": 2}}, "source": "$leak"},

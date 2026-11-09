@@ -28,7 +28,7 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$doppelganger", "targets": ["$hydra"], "mana": ["$i1", "$s1", "$i2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$doppelganger", "mana": ["$i1", "$s1", "$i2", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Names": { "object": "$doppelganger", "names": ["Protean Hydra"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$sting", "targetsBySlot": { "victim": ["$doppelganger"], "copied": ["$giant"] }, "mana": ["$i3", "$i4", "$m1"] } } },

@@ -105,10 +105,7 @@
             "$p1",
             "$p2"
           ],
-          "object": "$dis",
-          "targets": [
-            "$cloak"
-          ]
+          "object": "$dis"
         }
       },
       "player": "bob",

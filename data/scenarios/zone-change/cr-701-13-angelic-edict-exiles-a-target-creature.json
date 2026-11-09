@@ -61,9 +61,6 @@
       "do": {
         "Cast": {
           "object": "$angelic-edict",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

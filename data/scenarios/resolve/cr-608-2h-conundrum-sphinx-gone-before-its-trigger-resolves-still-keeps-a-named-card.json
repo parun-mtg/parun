@@ -64,9 +64,6 @@
       "do": {
         "Cast": {
           "object": "$unsummon",
-          "targets": [
-            "$sphinx"
-          ],
           "mana": [
             "$island"
           ]

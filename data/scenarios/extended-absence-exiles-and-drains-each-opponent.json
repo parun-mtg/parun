@@ -94,10 +94,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$abs",
-          "targets": [
-            "$giant"
-          ]
+          "object": "$abs"
         }
       },
       "player": "alice",

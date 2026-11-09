@@ -73,35 +73,9 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$grapple",
-          "targetsBySlot": {
-            "dealer": [
-              "$spider"
-            ],
-            "victim": [
-              "$bears"
-            ]
-          }
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
-          "object": "$grapple",
-          "targetsBySlot": {
-            "dealer": [
-              "$spider"
-            ],
-            "victim": [
-              "$dragon"
-            ]
-          }
+          "object": "$grapple"
         }
       },
       "player": "alice",

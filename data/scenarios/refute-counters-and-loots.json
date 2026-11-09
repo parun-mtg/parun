@@ -87,10 +87,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$spell",
-          "targets": [
-            "Lightning Bolt"
-          ]
+          "object": "$spell"
         }
       },
       "player": "alice",

@@ -55,46 +55,9 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$synthetic-twofold-enchant",
-          "targets": [
-            "$untapped-piker"
-          ],
-          "mana": [
-            "$plains",
-            "$plains-2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "object": "$synthetic-twofold-enchant",
-          "targets": [
-            "$bobs-piker"
-          ],
-          "mana": [
-            "$plains",
-            "$plains-2"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$synthetic-twofold-enchant",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2"

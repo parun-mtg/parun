@@ -25,11 +25,11 @@
   },
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$wielder"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$ray", "targets": ["$wielder"], "mana": ["$island-1", "$island-2", "$island-3", "$island-4", null]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Cast": {"object": "$ray", "mana": ["$island-1", "$island-2", "$island-3", "$island-4", null]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Controller", "object": "$wielder", "is": "alice"}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$wielder", "targets": ["$bob"], "mana": [null]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$wielder", "mana": [null]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {
       "turn": 1,

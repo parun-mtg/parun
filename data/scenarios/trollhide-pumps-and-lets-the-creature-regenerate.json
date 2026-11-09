@@ -82,9 +82,6 @@
       "do": {
         "Cast": {
           "object": "$hide",
-          "targets": [
-            "$bears"
-          ],
           "mana": [
             "$f1",
             "$f2",
@@ -156,10 +153,7 @@
       "player": "bob",
       "do": {
         "Cast": {
-          "object": "$blade",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$blade"
         }
       }
     },

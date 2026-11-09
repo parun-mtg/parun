@@ -70,18 +70,6 @@
       "turn": 1,
       "step": "Upkeep",
       "player": "alice",
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$bears"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "Upkeep",
-      "player": "alice",
       "do": "Pass"
     },
     {

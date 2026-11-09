@@ -84,49 +84,6 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Object",
-                  "Kalakscion, Hunger Tyrant"
-                ]
-              ]
-            ]
-          ],
-          "unoffered": true
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseTargets",
-          "with": [
-            [
-              "target",
-              [
-                [
-                  "Object",
-                  "$goblin-piker"
-                ]
-              ]
-            ]
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "CombatDamage",
-      "player": "alice",
-      "do": {
-        "Answer": {
           "prompt": "ChooseOptional",
           "with": "Exercises"
         }

@@ -91,31 +91,12 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "Cast": {
-          "mana": [
-            "$p"
-          ],
-          "object": "$willing",
-          "targets": [
-            "$bbear"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
             "$p"
           ],
-          "object": "$willing",
-          "targets": [
-            "$abear"
-          ]
+          "object": "$willing"
         }
       },
       "player": "alice",

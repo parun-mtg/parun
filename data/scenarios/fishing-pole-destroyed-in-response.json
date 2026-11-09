@@ -122,10 +122,7 @@
             "$p1",
             "$p2"
           ],
-          "object": "$d",
-          "targets": [
-            "$pole"
-          ]
+          "object": "$d"
         }
       },
       "player": "alice",

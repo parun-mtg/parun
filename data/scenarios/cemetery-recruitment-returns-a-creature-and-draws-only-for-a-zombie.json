@@ -175,9 +175,6 @@
       "do": {
         "Cast": {
           "object": "$c2",
-          "targets": [
-            "$z"
-          ],
           "mana": [
             "$s3",
             "$s4"

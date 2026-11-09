@@ -6,7 +6,7 @@
     {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$rhinos"]}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Activate": {"object": "$ff", "ability": 0, "mana": ["$p1", null]}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Cast": {"object": "$curtain", "mana": ["$p2", "$p3"], "targets": ["$rhinos"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Cast": {"object": "$curtain", "mana": ["$p2", "$p3"]}}},
     {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": 12}}}
   ]
 }

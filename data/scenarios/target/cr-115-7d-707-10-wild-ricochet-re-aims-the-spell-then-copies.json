@@ -41,7 +41,7 @@
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$growth", "targets": ["$alice-piker"], "mana": ["$forest1", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$ricochet", "targets": ["Giant Growth"], "mana": ["$mountain1", "$mountain2", "$mountain3", "$mountain4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$ricochet", "mana": ["$mountain1", "$mountain2", "$mountain3", "$mountain4", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$bob-piker"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseTargets": { "target": ["$bob-piker"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },

@@ -62,9 +62,6 @@
       "do": {
         "Cast": {
           "object": "$ray",
-          "targets": [
-            "$wurm"
-          ],
           "x": 3
         }
       }

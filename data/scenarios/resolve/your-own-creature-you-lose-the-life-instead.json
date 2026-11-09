@@ -39,9 +39,6 @@
       "do": {
         "Cast": {
           "object": "$vapor-snag",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$island"
           ]

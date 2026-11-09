@@ -30,7 +30,6 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "source": "$ratchet", "do": { "ChooseOptional": "Exercises" } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$weathervane"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" }
   ]
 }

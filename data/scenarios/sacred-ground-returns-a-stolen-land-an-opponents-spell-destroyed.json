@@ -3,7 +3,7 @@
   "note": "The Forest is alice's and under bob's control, so it goes to alice's graveyard, and bob's spell's effect put it there. Sacred Ground's return puts it onto the battlefield under alice, its own controller. The scenario where bob sacrifices such a Forest to Excavating Anurid is the same board with only the cause changed.",
   "board": {"active": "bob", "step": "PrecombatMain", "seats": [{"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Sacred Ground", "label": "ground"}, {"card": "Forest", "label": "razed", "controller": "bob"}]}, {"name": "bob", "manaPool": "RRR", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "hand": [{"card": "Stone Rain", "label": "rain"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$rain", "targets": ["$razed"], "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$rain", "mana": [null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": ["trigger of $ground"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},

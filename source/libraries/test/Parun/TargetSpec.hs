@@ -2566,6 +2566,8 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
   redirectBioshiftSpec s registry
   -- And CR 115.7a's stricter "change the target", over Deflection.
   deflectionSpec s registry
+  -- CR 601.2c with one legal answer: bound unasked.
+  forcedTargetSpec s registry
 
 razorfinSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 razorfinSpec s registry = Spec.describe s "HasCountersOfAnyKind (CR 122.1)" $ do
@@ -3235,6 +3237,43 @@ redirectBioshiftSpec s registry =
           (aimed, targets, depth) <- run False
           Spec.assertEqWith s "no ward trigger: the re-target was refused" depth 1
           Spec.assertEqWith s "and Bioshift keeps both its targets" targets (fmap Set.singleton aimed)
+
+-- CR 601.2c over Doom Blade ("Destroy target nonblack creature."): alice casts
+-- it with bob's Hill Giant and a second creature of bob's on the battlefield.
+-- Her answerer records every ChooseTargets offer and answers it with nothing,
+-- which the cast's CR 601.2e check reverses, so the Giant can die only where
+-- the target was bound without asking.
+forcedTargetSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+forcedTargetSpec s registry =
+  let run other = do
+        swamp <- S.printingOf s registry "Swamp"
+        blade <- S.printingOf s registry "Doom Blade"
+        giant <- S.printingOf s registry "Hill Giant"
+        second <- S.printingOf s registry other
+        let lands = S.landsFor swamp S.alice 2 (Setup.emptyGame S.bothPlayers)
+            (withBlade, bladeId) = S.handOne blade lands
+            (giantId, g1) = S.addPermanent giant S.bob withBlade
+            (_, board) = S.addPermanent second S.bob g1
+            ((_, cast), asked) = State.runState (Engine.runGame refusingTargets board (S.cast S.alice bladeId)) 0
+        pure (giantId, asked, S.runPure S.identityAnswer cast Stack.resolveTop)
+   in Spec.describe s "one legal target (CR 601.2c)" $ do
+        Spec.it s "CR 601.2c Doom Blade beside a black creature takes the Giant unasked" $ do
+          (giantId, asked, after) <- run "Scathe Zombies"
+          Spec.assertBool s (not (S.onBattlefield giantId after)) "CR 601.2c Doom Blade destroyed the Giant"
+          Spec.assertEqWith s "CR 601.2c no target was asked for" asked (0 :: Int)
+        Spec.it s "CR 601.2c Doom Blade beside a second nonblack creature asks" $ do
+          (giantId, asked, after) <- run "Goblin Piker"
+          Spec.assertBool s (S.onBattlefield giantId after) "CR 601.2c the empty answer reversed the cast"
+          Spec.assertEqWith s "CR 601.2c the target was asked for" asked (1 :: Int)
+
+-- forcedTargetSpec's answerer: counts the ChooseTargets prompts, answering each
+-- with no recipients.
+refusingTargets :: Prompt.Prompt r -> State.State Int r
+refusingTargets p = case p of
+  Prompt.ChooseTargets _ _ _ asked -> do
+    State.modify' (+ 1)
+    pure (Set.empty <$ asked)
+  _ -> pure (S.identityAnswer p)
 
 -- CR 115.7a over Giant Growth: alice aims it at her Goblin Piker (2/1), and
 -- bob's Deflection changes its target. `others` are the other creatures on the

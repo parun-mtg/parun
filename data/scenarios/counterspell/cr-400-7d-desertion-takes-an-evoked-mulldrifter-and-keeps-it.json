@@ -123,9 +123,6 @@
       "do": {
         "Cast": {
           "object": "$desertion",
-          "targets": [
-            "Mulldrifter"
-          ],
           "mana": [
             "$island-1",
             "$island-2",

@@ -54,9 +54,6 @@
       "do": {
         "Cast": {
           "object": "$bg",
-          "targets": [
-            "$piker"
-          ],
           "mana": [
             "$forest"
           ]

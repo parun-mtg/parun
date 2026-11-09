@@ -273,10 +273,7 @@
           "mana": [
             "$f2"
           ],
-          "object": "$g2",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$g2"
         }
       },
       "player": "alice",

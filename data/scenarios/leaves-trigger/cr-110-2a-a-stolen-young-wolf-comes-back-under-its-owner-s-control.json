@@ -60,9 +60,6 @@
       "do": {
         "Cast": {
           "object": "$act-of-treason",
-          "targets": [
-            "$young-wolf"
-          ],
           "mana": [
             "$mountain",
             "$mountain-2",

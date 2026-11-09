@@ -67,9 +67,6 @@
         "Activate": {
           "object": "$dutiful-knowledge-seeker",
           "ability": 0,
-          "targets": [
-            "$island-4"
-          ],
           "mana": [
             "$island",
             "$island-2",

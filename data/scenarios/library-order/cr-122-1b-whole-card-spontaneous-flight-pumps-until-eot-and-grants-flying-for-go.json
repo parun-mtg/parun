@@ -63,9 +63,6 @@
       "do": {
         "Cast": {
           "object": "$spontaneous-flight",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$plains",
             "$plains-2",

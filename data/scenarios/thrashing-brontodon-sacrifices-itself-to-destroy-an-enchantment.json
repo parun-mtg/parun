@@ -73,9 +73,6 @@
       "do": {
         "Activate": {
           "object": "$brontodon",
-          "targets": [
-            "$gift"
-          ],
           "mana": [
             "$g1"
           ]

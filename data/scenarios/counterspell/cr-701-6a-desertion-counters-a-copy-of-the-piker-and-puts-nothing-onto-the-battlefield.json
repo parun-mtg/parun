@@ -92,9 +92,6 @@
       "do": {
         "Cast": {
           "object": "$major",
-          "targets": [
-            "Goblin Piker"
-          ],
           "mana": [
             "$forest",
             "$island"

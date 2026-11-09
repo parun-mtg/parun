@@ -123,18 +123,6 @@
       "turn": 3
     },
     {
-      "do": {
-        "ChooseTargets": {
-          "opponent": [
-            "$bob"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 3
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "Upkeep",

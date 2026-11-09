@@ -182,10 +182,7 @@
             "$m5",
             null
           ],
-          "object": "Ragged Short Spear#2",
-          "targets": [
-            "$bears"
-          ]
+          "object": "Ragged Short Spear#2"
         }
       },
       "player": "alice",

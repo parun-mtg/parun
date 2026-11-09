@@ -145,9 +145,6 @@
           "mana": [
             "$u1",
             "$u2"
-          ],
-          "targets": [
-            "See the Truth"
           ]
         }
       },

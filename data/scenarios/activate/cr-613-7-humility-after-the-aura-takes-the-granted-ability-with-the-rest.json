@@ -82,10 +82,7 @@
             "$forest-3",
             null
           ],
-          "object": "$gond",
-          "targets": [
-            "$sorcerer"
-          ]
+          "object": "$gond"
         }
       },
       "player": "alice",

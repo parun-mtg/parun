@@ -50,9 +50,6 @@
       "do": {
         "Cast": {
           "object": "$mutagenic-growth",
-          "targets": [
-            "$goblin-piker"
-          ],
           "mana": [
             "$forest"
           ]

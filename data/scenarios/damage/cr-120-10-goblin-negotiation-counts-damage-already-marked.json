@@ -60,9 +60,6 @@
       "do": {
         "Cast": {
           "object": "$gn",
-          "targets": [
-            "$wall"
-          ],
           "mana": [
             "$m1",
             "$m2",

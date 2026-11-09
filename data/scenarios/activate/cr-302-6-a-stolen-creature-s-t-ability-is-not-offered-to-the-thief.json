@@ -58,10 +58,7 @@
             "$island-3",
             "$island-4"
           ],
-          "object": "$control-magic",
-          "targets": [
-            "$sorcerer"
-          ]
+          "object": "$control-magic"
         }
       },
       "player": "alice",

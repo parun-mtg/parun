@@ -176,9 +176,6 @@
       "do": {
         "Activate": {
           "object": "$a",
-          "targets": [
-            "$x"
-          ],
           "mana": [
             "$s1",
             "$s2",

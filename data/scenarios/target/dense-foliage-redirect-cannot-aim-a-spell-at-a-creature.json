@@ -28,7 +28,7 @@
   },
   "timeline": [
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$shock", "targets": ["$bob"], "mana": ["$m1"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$redirect", "targets": ["Shock"], "mana": ["$i1", "$i2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$redirect", "mana": ["$i1", "$i2"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": { "Answer": { "prompt": "ChooseTargets", "with": [["target", [["Creature", "$piker"]]]] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseTargets", "with": [["target", []]] } } }
   ],

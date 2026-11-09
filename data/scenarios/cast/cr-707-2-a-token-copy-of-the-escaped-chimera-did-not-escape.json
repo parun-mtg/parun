@@ -146,9 +146,6 @@
       "do": {
         "Cast": {
           "object": "$rite",
-          "targets": [
-            "Loathsome Chimera"
-          ],
           "mana": [
             "$i0",
             "$i1",

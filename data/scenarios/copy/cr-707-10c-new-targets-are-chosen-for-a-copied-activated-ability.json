@@ -56,9 +56,6 @@
         "Activate": {
           "object": "$engine",
           "ability": 0,
-          "targets": [
-            "ability of $sorcerer"
-          ],
           "mana": [
             "$m1",
             "$m2"

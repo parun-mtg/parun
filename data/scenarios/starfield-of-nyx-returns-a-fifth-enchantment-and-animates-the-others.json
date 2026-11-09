@@ -89,30 +89,6 @@
       "turn": 1
     },
     {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "target": [
-            "$giant"
-          ]
-        }
-      },
-      "step": "Upkeep",
-      "turn": 2
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "target": [
-            "$fecundity"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 2
-    },
-    {
       "do": "Pass",
       "player": "alice",
       "step": "Upkeep",

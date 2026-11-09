@@ -124,9 +124,6 @@
       "do": {
         "Cast": {
           "object": "$desertion",
-          "targets": [
-            "Venerated Loxodon"
-          ],
           "mana": [
             "$island-1",
             "$island-2",
