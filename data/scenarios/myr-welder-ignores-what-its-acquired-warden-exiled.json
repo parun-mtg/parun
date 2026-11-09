@@ -42,7 +42,7 @@
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Palladium Myr", "count": 1 } } },
     { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Activate $welder"] } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$welder", "ability": 3, "costOrder": [0, 1] } } },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$welder", "ability": 3 } } },
     { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Palladium Myr", "count": 1 } } }
   ]

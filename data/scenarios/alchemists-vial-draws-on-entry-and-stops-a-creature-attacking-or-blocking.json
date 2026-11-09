@@ -5,9 +5,9 @@
     {"name": "alice", "manaPool": "CC", "hand": [{"card": "Alchemist's Vial", "label": "cast"}], "battlefield": [{"card": "Alchemist's Vial", "label": "first"}, {"card": "Alchemist's Vial", "label": "second"}, {"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Wind Drake", "label": "drake", "ready": true}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
     {"name": "bob", "battlefield": [{"card": "Giant Spider", "label": "spider", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$first", "targets": ["$giant"], "costOrder": [0, 1], "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$first", "targets": ["$giant"], "mana": [null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$second", "targets": ["$spider"], "costOrder": [0, 1], "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$second", "targets": ["$spider"], "mana": [null]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Alchemist's Vial", "count": 2}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Attack": ["$giant"]}},

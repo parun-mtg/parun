@@ -2704,6 +2704,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   soulDivinerSpec s registry
   quillspikeSpec s registry
   millikinSpec s registry
+  evolvingWildsSpec s registry
   randomDiscardSpec s registry
   brittleEffigySpec s registry
   trumpetingCarnosaurSpec s registry
@@ -4639,6 +4640,45 @@ quillspikeBoard s registry onGiant = do
         }
     )
 
+-- Evolving Wilds Land: "{T}, Sacrifice this land: Search your library for a
+-- basic land card, put it onto the battlefield tapped, then shuffle." Both parts
+-- touch only the land, and once it is sacrificed CR 400.7 leaves nothing to tap,
+-- so CR 601.2h's "unpayable costs can't be paid" leaves one order to pay in.
+evolvingWildsSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+evolvingWildsSpec s registry =
+  Spec.describe s "Evolving Wilds" $ do
+    Spec.it s "CR 601.2h Evolving Wilds is tapped then sacrificed without being asked" $ do
+      wilds <- S.printingOf s registry "Evolving Wilds"
+      let (wildsId, board) = evolvingWildsBoard wilds
+          ((_, after), asked) = State.runState (Engine.runGame recordingOrders board (Activate.activateAbility S.alice wildsId (theAbility wilds))) []
+      Spec.assertEqWith s "CR 601.2h the payer was asked to order nothing" asked []
+      Spec.assertEqWith s "CR 701.21a and the land was sacrificed for it" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
+    -- The same two parts printed the other way round: the one payable order is
+    -- still the one paid, the sacrifice last.
+    Spec.it s "CR 601.2h the sacrifice is paid last whatever order it is printed in" $ do
+      wilds <- S.printingOf s registry "Evolving Wilds"
+      let (wildsId, board) = evolvingWildsBoard wilds
+          payment = Cost.payComponents S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice wildsId [CostComponent.SacrificeThis, CostComponent.TapThis]
+          ((paid, after), asked) = State.runState (Engine.runGame recordingOrders board payment) []
+          isPaid = case paid of
+            Payment.Paid _ -> True
+            Payment.Unpaid -> False
+      Spec.assertEqWith s "CR 601.2h the payer was asked to order nothing" asked []
+      Spec.assertBool s isPaid "CR 601.2h the cost was paid in full"
+      Spec.assertEqWith s "CR 701.21a with the land in the graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
+
+-- alice controls Evolving Wilds, untapped, and nothing else.
+evolvingWildsBoard :: Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
+evolvingWildsBoard wilds =
+  let (wildsId, placed) = S.addPermanent wilds S.alice (Setup.emptyGame S.bothPlayers)
+   in ( wildsId,
+        placed
+          { GameState.phase = Phase.PrecombatMain,
+            GameState.activePlayer = S.alice,
+            GameState.priority = Just S.alice
+          }
+      )
+
 -- CR 601.2h pays a random discard after a chosen one, whatever order they are
 -- printed in, and asks no order. No pool card prints both; Dream Halls (#6094) with
 -- Sonic Burst would, and Coral Helm's component stands in for it here.
@@ -4699,13 +4739,13 @@ millikinSpec s registry =
     -- graveyard (CR 400.2) -- so each pass has a single part and the payer is
     -- given no order to choose. The recorder's control is the second run: the
     -- same board and the same answerer, over two parts that share the FIRST
-    -- pass, which is asked.
+    -- pass and can both be paid in either order, which is asked.
     Spec.it s "CR 601.2h the {T} and the mill are paid in different passes, so nothing is ordered" $ do
       millikin <- S.printingOf s registry "Millikin"
       let (millikinId, board) = millikinBoard millikin 3
           ability = theAbility millikin
           ((_, after), asked) = State.runState (Engine.runGame recordingOrders board (Activate.activateAbility S.alice millikinId ability)) []
-          sharedPass = State.execState (Engine.runGame recordingOrders board (Cost.payComponents S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice millikinId [CostComponent.TapThis, CostComponent.SacrificeThis])) []
+          sharedPass = State.execState (Engine.runGame recordingOrders board (Cost.payComponents S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice millikinId [CostComponent.TapThis, CostComponent.UntapThis])) []
       Spec.assertEqWith s "CR 601.2h the payer was asked to order nothing" (length asked) 0
       Spec.assertEqWith s "CR 701.17a and both parts were still paid: one card is in the graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
       Spec.assertEqWith s "CR 107.5 with Millikin tapped for the other part" (fmap Object.tapped (Game.lookupObject millikinId after)) (Just TapState.Tapped)

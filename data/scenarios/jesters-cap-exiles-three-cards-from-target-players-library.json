@@ -3,7 +3,7 @@
   "note": "Of bob's five cards alice exiles the Hill Giant, Gray Ogre and Craw Wurm; the two Islands are shuffled back.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "manaPool": "CC", "battlefield": [{"card": "Jester's Cap", "label": "cap"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "library": [{"card": "Island", "label": "i1"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Gray Ogre", "label": "ogre"}, {"card": "Craw Wurm", "label": "wurm"}, {"card": "Island", "label": "i2"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$cap", "targets": ["$bob"], "costOrder": [0, 1]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$cap", "targets": ["$bob"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$giant", "$ogre", "$wurm"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$i2", "$i1"]}}},

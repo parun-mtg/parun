@@ -5511,7 +5511,17 @@ orderPass pid oid components =
       gs <- State.get
       answer <- Game.choose (Prompt.OrderCostComponents (Decide.deciderFor pid gs) pid oid components)
       pure (Game.permute components answer)
-    else pure components
+    else pure (movesLast components)
+
+-- The one payable order where the source's own parts force it (`sourceForced`):
+-- the parts touching the source in place, then the part moving it. Stable, and
+-- the identity on any other cost.
+movesLast :: [CostComponent.CostComponent Keyword.Type.Keyword] -> [CostComponent.CostComponent Keyword.Type.Keyword]
+movesLast components =
+  let (movers, stay) = List.partition ((== Just True) . sourceOnly) components
+   in if sourceForced (filter orderSensitive components) && elem (Just False) (fmap sourceOnly components)
+        then stay <> movers
+        else components
 
 -- CR 601.2h: is this part paid in the SECOND pass -- "all costs that don't
 -- involve random elements or moving objects from the library to a public zone"
@@ -5635,10 +5645,71 @@ bindExiled arrived = case Foldable.toList arrived of
 -- their turn comes. A FENCE rather than proven behaviour -- no card in
 -- `data/cards/` prints two identical order-sensitive parts, so dropping this
 -- conjunct leaves the suite green.
+--
+-- And NOT `sourceForced`: CR 601.2h's "unpayable costs can't be paid" leaves
+-- one order where the source's own parts are all there is. Parun.CostSpec's
+-- "CR 601.2h Evolving Wilds is tapped then sacrificed without being asked" is
+-- the proof.
 orderObservable :: [CostComponent.CostComponent Keyword.Type.Keyword] -> Bool
 orderObservable components = case filter orderSensitive components of
-  first : rest@(_ : _) -> not (all (== first) rest)
+  sensitive@(first : rest@(_ : _)) -> not (all (== first) rest) && not (sourceForced sensitive)
   _ -> False
+
+-- Do these order-sensitive parts all touch only the source, one or more of them
+-- moving it? CR 400.7 makes the moved object a new one, so a part paid after
+-- the move has nothing left to tap, untap or count on (CR 118.3): the movers go
+-- last, and with two movers no order is payable at all.
+sourceForced :: [CostComponent.CostComponent Keyword.Type.Keyword] -> Bool
+sourceForced sensitive =
+  let touched = fmap sourceOnly sensitive
+   in all Maybe.isJust touched && elem (Just True) touched
+
+-- Does this part touch only the cost's source: Just True where it moves the
+-- source out of its zone, Just False where it leaves it there, Nothing where it
+-- reaches another object or none.
+--
+-- EXHAUSTIVE with no wildcard, `orderSensitive`'s posture and for its reason.
+sourceOnly :: CostComponent.CostComponent Keyword.Type.Keyword -> Maybe Bool
+sourceOnly component = case component of
+  CostComponent.SacrificeThis -> Just True
+  CostComponent.ReturnThis -> Just True
+  CostComponent.ExileThis -> Just True
+  CostComponent.ExileThisFrom _ -> Just True
+  CostComponent.DiscardThis _ -> Just True
+  CostComponent.TapThis -> Just False
+  CostComponent.UntapThis -> Just False
+  CostComponent.AddLoyaltyToThis _ -> Just False
+  CostComponent.RemoveLoyaltyFromThis _ -> Just False
+  CostComponent.RemoveCountersFromThis _ -> Just False
+  CostComponent.PutCountersOnThis _ -> Just False
+  CostComponent.Sacrifice {} -> Nothing
+  CostComponent.ReturnPermanents {} -> Nothing
+  CostComponent.ExilePermanents {} -> Nothing
+  CostComponent.DiscardCards {} -> Nothing
+  CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
+  CostComponent.ExileCardsFromGraveyard {} -> Nothing
+  CostComponent.ExileMaterials {} -> Nothing
+  CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.CollectEvidence _ -> Nothing
+  CostComponent.CollectEvidenceOfTargets -> Nothing
+  CostComponent.ExileCardsFromHand {} -> Nothing
+  CostComponent.RevealCardFromHand _ -> Nothing
+  CostComponent.Behold _ -> Nothing
+  CostComponent.BeholdAndExile _ -> Nothing
+  CostComponent.TapForTotalPower {} -> Nothing
+  CostComponent.TapPermanents {} -> Nothing
+  CostComponent.RemoveCounters {} -> Nothing
+  CostComponent.Blight _ -> Nothing
+  CostComponent.Forage -> Nothing
+  CostComponent.FlipCoin -> Nothing
+  CostComponent.ChooseOpponent _ -> Nothing
+  CostComponent.Waterbend _ -> Nothing
+  CostComponent.WaterbendInstead _ -> Nothing
+  CostComponent.MillCards _ -> Nothing
+  CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.PayLife _ -> Nothing
+  CostComponent.PayComputedLife _ -> Nothing
+  CostComponent.PayEnergy _ -> Nothing
 
 -- Can paying this part change what another part of the same cost can pay with?
 -- True for every part that moves an object out of a zone, taps or untaps one, or
@@ -5704,9 +5775,9 @@ orderSensitive component = case component of
   CostComponent.Blight _ -> True
   -- True: CR 701.61a moves three cards out of a graveyard or a Food off the
   -- battlefield, either of which another part of the same cost could have spent.
-  -- A FENCE rather than proven behaviour -- Thornvault Forager is the one card in
-  -- `data/cards/` printing this component, and its cost's other part is a {T},
-  -- which answers True too, so `orderObservable` is False either way.
+  -- Thornvault Forager is the one card in `data/cards/` printing this
+  -- component, and its "{T}, Forage" is asked its order on this answer, though
+  -- no board in the suite reads that order.
   CostComponent.Forage -> True
   -- False: CR 705.1's flip spends nothing another part of the same cost could
   -- have spent, the per-player scalars' answer. Alone in CR 601.2h's second pass

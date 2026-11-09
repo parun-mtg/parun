@@ -28,7 +28,7 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Forest", "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$bomber", "ability": 1, "targets": ["$kami"], "costOrder": [0, 1] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$bomber", "ability": 1, "targets": ["$kami"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Dismissive Pyromancer", "count": 1 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Damage": { "object": "$kami", "damage": 4 } } }

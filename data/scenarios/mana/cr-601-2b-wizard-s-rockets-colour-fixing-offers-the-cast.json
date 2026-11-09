@@ -91,10 +91,6 @@
       "do": {
         "Take": {
           "action": "ActivateManaAbility $rockets",
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$i1",
             "$i2",

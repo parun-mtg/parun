@@ -94,10 +94,6 @@
           "object": "$quicksand",
           "targets": [
             "$giant"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

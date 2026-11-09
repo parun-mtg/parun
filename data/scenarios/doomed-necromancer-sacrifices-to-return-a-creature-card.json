@@ -91,10 +91,6 @@
           ],
           "mana": [
             "$swamp"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

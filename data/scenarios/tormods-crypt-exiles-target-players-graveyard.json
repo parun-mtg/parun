@@ -81,10 +81,6 @@
           "object": "$crypt",
           "targets": [
             "$bob"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

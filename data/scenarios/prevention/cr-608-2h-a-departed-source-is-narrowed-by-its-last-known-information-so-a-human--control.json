@@ -54,10 +54,6 @@
           "ability": 0,
           "targets": [
             "$alice"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

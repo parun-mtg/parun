@@ -284,7 +284,7 @@ spec s registry = Spec.describe s "Client" $ do
     -- Asked while Mindslaver is on the battlefield; the stack shown then and
     -- once its sacrifice has moved it, a witnessed move naming it.
     Spec.assertBool s (Text.pack "Choose 1 target for Mindslaver's ability:" `elem` shown) "the target prompt names it"
-    Spec.assertEqWith s "CR 601.2h its cost's components, numbered" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (not . Text.isPrefixOf (Text.pack "Order cost components for Mindslaver:")) shown))) [Text.pack "  1. {T}", Text.pack "  2. Sacrifice Mindslaver"]
+    Spec.assertEqWith s "CR 601.2h its {T} and its sacrifice have one payable order, so none is asked" (filter (Text.isPrefixOf (Text.pack "Order cost components")) shown) []
     Spec.assertEqWith s "the stack names it, then once it is sacrificed" (Set.toList (Set.fromList (stacks shown)), take 1 (stacks (dropWhile (/= Text.pack "  Graveyard: Mindslaver") shown))) ([stackLine], [stackLine])
     Spec.assertEqWith s "no face-down card" (filter (Text.isInfixOf (Text.pack "face-down")) shown) []
     Spec.assertEqWith s "CR 602.2 the activation names its player and source" (filter (Text.isInfixOf (Text.pack "activate")) shown) [Text.pack "Player 1 activates Mindslaver's ability."]
@@ -1624,8 +1624,6 @@ slavesBob :: Screen -> Maybe Text.Text
 slavesBob sc
   | any (Text.isPrefixOf (Text.pack "Paying ")) shown = Just (Text.pack "auto")
   | any (Text.isPrefixOf (Text.pack "Choose 1 target for ")) shown = numberOf ". Player 2"
-  -- Tap, then sacrifice: the order shown.
-  | Text.pack "Order cost components for Mindslaver: type their numbers first to last, separated by spaces, or press Enter to keep this order; the first is paid first:" `elem` shown = Just Text.empty
   | any menuHeading shown, Just n <- numberOf ". Activate ability 1 of Mindslaver" = Just n
   | any (Text.isPrefixOf (Text.pack "Choose 1 card to discard")) shown = Monad.mplus (numberOf ". Hill Giant") (Just (Text.pack "1"))
   | otherwise = discardsGiant sc

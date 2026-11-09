@@ -3,7 +3,7 @@
   "note": "Alice's answer of two Islands and a Mountain is asked again: the second Island answers for no description the first has not taken, though a search for three cards each an Island, Swamp or Mountain card would have taken it. She then names an Island and the Mountain, and the second Island stays in her library.",
   "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Gem of Becoming", "label": "gem"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}], "library": [{"card": "Island", "label": "isl"}, {"card": "Island", "label": "isl2"}, {"card": "Mountain", "label": "mtn"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$gem", "mana": ["$p1", "$p2", "$p3"], "costOrder": [0, 1]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$gem", "mana": ["$p1", "$p2", "$p3"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$isl", "$isl2", "$mtn"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$isl", "$mtn"]}}},

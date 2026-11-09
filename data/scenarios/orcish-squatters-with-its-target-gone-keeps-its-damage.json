@@ -137,10 +137,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "object": "$wilds"
         }
       },

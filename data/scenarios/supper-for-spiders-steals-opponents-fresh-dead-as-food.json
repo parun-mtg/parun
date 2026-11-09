@@ -434,10 +434,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$s2",
             "$s3"

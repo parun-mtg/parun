@@ -188,10 +188,6 @@
           "object": "$crypt",
           "targets": [
             "$carol"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

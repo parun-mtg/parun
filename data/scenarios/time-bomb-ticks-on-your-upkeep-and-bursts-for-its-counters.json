@@ -157,10 +157,6 @@
           "object": "$tb",
           "mana": [
             "$m"
-          ],
-          "costOrder": [
-            0,
-            1
           ]
         }
       }

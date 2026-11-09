@@ -43,10 +43,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "object": "$apparatus",
           "targets": [
             "$alice"

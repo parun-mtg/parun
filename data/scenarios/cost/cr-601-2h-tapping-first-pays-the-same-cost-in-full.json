@@ -62,10 +62,6 @@
           "targets": [
             "$goblin-piker"
           ],
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$plains",
             "$plains-2",

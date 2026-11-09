@@ -85,10 +85,6 @@
       "do": {
         "Activate": {
           "ability": 1,
-          "costOrder": [
-            0,
-            1
-          ],
           "object": "$mine",
           "targets": [
             "$forest"

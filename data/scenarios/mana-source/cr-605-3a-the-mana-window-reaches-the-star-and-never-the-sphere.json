@@ -63,10 +63,6 @@
           "mana": [
             "$forest"
           ],
-          "costOrder": [
-            0,
-            1
-          ],
           "yields": [
             [
               {

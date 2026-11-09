@@ -165,10 +165,6 @@
       "do": {
         "Activate": {
           "object": "Food Token",
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$c0",
             "$c1"

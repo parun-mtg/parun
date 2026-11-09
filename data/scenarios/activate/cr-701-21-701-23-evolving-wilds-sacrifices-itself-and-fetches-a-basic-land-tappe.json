@@ -31,11 +31,7 @@
       "player": "alice",
       "do": {
         "Activate": {
-          "object": "$wilds",
-          "costOrder": [
-            0,
-            1
-          ]
+          "object": "$wilds"
         }
       }
     },

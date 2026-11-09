@@ -5,7 +5,7 @@
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$bears", "$falcon"]}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Activate": {"object": "$trap", "targets": ["$falcon"], "mana": ["$p1", "$p2"], "costOrder": [0, 1]}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$trap", "targets": ["$bears"], "mana": ["$p1", "$p2"], "costOrder": [0, 1]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Activate": {"object": "$trap", "targets": ["$bears"], "mana": ["$p1", "$p2"]}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Pit Trap", "count": 1}}},

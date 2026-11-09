@@ -178,10 +178,6 @@
       "player": "alice",
       "refuse": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$i3",
             "$i4",
@@ -198,10 +194,6 @@
     {
       "do": {
         "Activate": {
-          "costOrder": [
-            0,
-            1
-          ],
           "mana": [
             "$i3",
             "$i4",

@@ -26,7 +26,7 @@
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": ["$bobs"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseAnyNumberOfPermanents", "with": ["$giant", "$bolt"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ArrangeLibraryArrivals", "with": [1, 0] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$mirror", "costOrder": [0, 1] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$mirror" } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Lightning Bolt", "Hill Giant"] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Grizzly Bears", "count": 1 } } },
