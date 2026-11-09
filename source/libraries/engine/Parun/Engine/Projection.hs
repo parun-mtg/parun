@@ -32,7 +32,7 @@ import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
-import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
+import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, lastZoned, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
 import qualified Parun.Engine.Saga as Saga
@@ -101,6 +101,7 @@ import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Measure as Measure
@@ -1240,6 +1241,22 @@ viewOfObjectGiven pcs grants oid gs =
 -- Characteristics come from the live projection, which is CR 601.2i's own order.
 viewOfSpell :: PlayerId.PlayerId -> ObjectId -> GameState -> Filter.View
 viewOfSpell caster oid gs = viewOfCharacteristics (fullView gs) oid (project oid gs) (Just caster) (countersOf oid gs) gs
+
+-- CR 605.3b: the view of an activated ability that put nothing on the stack --
+-- a mana ability, or one activated inside a die roll's window -- read as
+-- viewOfSpell reads an ability that did: no characteristics, the activator its
+-- controller (CR 602.2a), CR 606.2's kind, and its source through CR 113.7a's
+-- last known information, as viewOfCharacteristics' abilitySource. The record
+-- is playerView's with no player behind it.
+viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> LoyaltyKind.LoyaltyKind -> GameState -> Filter.View
+viewOfUnstackedAbility activator source kind gs =
+  (Filter.playerView activator)
+    { Filter.playerIdentity = Nothing,
+      Filter.controller = Just activator,
+      Filter.activatedAbility = Just kind,
+      Filter.ability = True,
+      Filter.abilitySource = fmap (lastZoned gs source) (Count.orLastKnown (fullView gs) gs source)
+    }
 
 -- The ViewOf for callers OUTSIDE the CR 613 layer fold; `viewUpTo` below is the
 -- bounded counterpart for callers INSIDE it. Both are Count.ViewOf, so picking

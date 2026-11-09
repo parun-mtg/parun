@@ -34,36 +34,38 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "FromSource",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Planeswalker"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Sarkhan"
+                        },
+                        {
+                          "type": "IsInZone",
+                          "value": "Battlefield"
+                        }
+                      ]
+                    }
                   }
-                },
-                {
-                  "type": "FromSource",
-                  "value": {
-                    "type": "And",
-                    "value": [
-                      {
-                        "type": "HasCardType",
-                        "value": "Planeswalker"
-                      },
-                      {
-                        "type": "HasSubtype",
-                        "value": "Sarkhan"
-                      },
-                      {
-                        "type": "IsInZone",
-                        "value": "Battlefield"
-                      }
-                    ]
-                  }
-                }
-              ]
+                ]
+              }
             }
           },
           "modal": {

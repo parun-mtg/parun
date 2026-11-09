@@ -51,20 +51,22 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  {
+                    "type": "IsActivatedAbility",
+                    "value": "LoyaltyAbility"
                   }
-                },
-                {
-                  "type": "IsActivatedAbility",
-                  "value": "LoyaltyAbility"
-                }
-              ]
+                ]
+              }
             }
           },
           "intervening": {

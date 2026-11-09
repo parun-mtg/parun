@@ -47,6 +47,7 @@ import qualified Parun.Engine.Resolve.Common as Common
 import Parun.Engine.Resolve.Slots (boundSlots, resolvingAbilityName, slotBindings)
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction.Type
 import qualified Parun.Types.Binding as Binding.Type
@@ -1419,11 +1420,12 @@ activateWhileRolling runSubgame pid oid ability = do
   case payment of
     -- CR 734.1: the payment reversed the activation back to `before` itself.
     Payment.Unpaid -> pure False
-    -- Not implemented: this activation records no GameEvent.AbilityActivated,
-    -- so nothing triggers on it (#5733).
+    -- CR 602.2b: the activation is recorded with no stack object to name, so
+    -- a trigger copying "that ability" copies nothing.
     Payment.Paid _ -> do
       State.modify' (ActivationRestriction.recordActivation oid ability)
       State.modify' (ActivationRestriction.logActivation before pid oid (Just ability) AbilityKind.NonManaAbility Set.empty)
+      State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.loyalty = Loyalty.isLoyaltyCost (ActivatedAbility.cost ability), AbilityWasActivated.kind = AbilityKind.NonManaAbility}))
       let modal = ActivatedAbility.modal ability
           every = Set.fromList (fmap fst (zip (fmap ModeIndex.MkModeIndex [0 ..]) (Modal.modeEffects modal)))
           bound =

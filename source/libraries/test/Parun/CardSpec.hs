@@ -56,6 +56,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -4767,7 +4768,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- the spell rather than over a permanent; "this spell" names the bearer and
   -- needs no Filter to say so.
   TriggerCondition.SpellCast c -> actingFilters (SpellCast.spell c)
-  TriggerCondition.AbilityActivated f -> unframed [f]
+  TriggerCondition.AbilityActivated t -> unframed [AbilityActivatedTrigger.filter t]
   -- Rule 702.21a's Self subject names the bearer and a You subject CR 109.5's
   -- "you", and neither carries a Filter; a Matching one's is card text like any
   -- other: Professor Hojo's "creatures you control".
