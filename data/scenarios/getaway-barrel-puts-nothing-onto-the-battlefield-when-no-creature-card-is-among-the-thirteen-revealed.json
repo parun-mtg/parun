@@ -98,10 +98,7 @@
     {
       "do": {
         "Cast": {
-          "object": "$shatter",
-          "targets": [
-            "$barrel"
-          ]
+          "object": "$shatter"
         }
       },
       "player": "alice",
