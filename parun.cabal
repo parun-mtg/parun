@@ -3070,6 +3070,7 @@ library types
     Parun.Types.Keyword
     Parun.Types.KeywordCount
     Parun.Types.KeywordDesignator
+    Parun.Types.KeywordExpansion
     Parun.Types.KeywordFamily
     Parun.Types.KeywordInstance
     Parun.Types.KeywordRiderGrant
