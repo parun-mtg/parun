@@ -11,6 +11,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -22,14 +23,20 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       (hidden {ObjectView.characteristics = Just ProjectedCharacteristicsSpec.testCharacteristics})
       ( "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
-          <> ",\"face\":null,\"foretellCostReduction\":null,\"ability\":null}"
+          <> ",\"face\":null,\"foretellCostReduction\":null,\"ability\":null,\"targets\":[]}"
       )
   Spec.it s "an ability on the stack" $
     Common.assertCodec
       s
       ObjectView.codec
       (hidden {ObjectView.ability = Just (AbilityView.MkAbilityView (Just (ObjectId.MkObjectId 5)))})
-      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":{\"source\":5}}"
+      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":{\"source\":5},\"targets\":[]}"
+  Spec.it s "a spell on the stack with a target" $
+    Common.assertCodec
+      s
+      ObjectView.codec
+      (hidden {ObjectView.targets = [Recipient.ToCreature (ObjectId.MkObjectId 3)]})
+      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":null,\"targets\":[{\"type\":\"ToCreature\",\"value\":3}]}"
   Spec.it s "a hidden object" $
     Common.assertCodec
       s
@@ -43,14 +50,14 @@ spec s = Spec.describe s "Parun.Codec.ObjectView" $ do
       (hidden {ObjectView.face = Just ProjectedCharacteristicsSpec.testCharacteristics})
       ( "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
-          <> ",\"foretellCostReduction\":null,\"ability\":null}"
+          <> ",\"foretellCostReduction\":null,\"ability\":null,\"targets\":[]}"
       )
   Spec.it s "a foretold card given a foretell cost" $
     Common.assertCodec
       s
       ObjectView.codec
       (hidden {ObjectView.foretellCostReduction = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])})
-      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":2}],\"ability\":null}"
+      "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":2}],\"ability\":null,\"targets\":[]}"
   Spec.it s "has a schema" $ Common.assertHasSchema s ObjectView.codec
 
 -- Tapped and damaged, so neither status key encodes a default.
@@ -67,8 +74,9 @@ hidden =
       ObjectView.characteristics = Nothing,
       ObjectView.face = Nothing,
       ObjectView.foretellCostReduction = Nothing,
-      ObjectView.ability = Nothing
+      ObjectView.ability = Nothing,
+      ObjectView.targets = []
     }
 
 hiddenJson :: String
-hiddenJson = "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":null}"
+hiddenJson = "{\"object\":7,\"owner\":0,\"controller\":1,\"tapped\":true,\"damage\":2,\"counters\":[],\"attachedTo\":null,\"characteristics\":null,\"face\":null,\"foretellCostReduction\":null,\"ability\":null,\"targets\":[]}"

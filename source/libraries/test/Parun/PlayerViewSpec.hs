@@ -18,6 +18,7 @@ import qualified Data.Text as Text
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Cards as Cards
 import qualified Parun.Codec.PlayerView as Codec.PlayerView
+import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
@@ -188,6 +189,29 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertEqWith s "bob is" (abilityFor S.bob) [Just (AbilityView.MkAbilityView (Just held))]
     Spec.assertEqWith s "alice's drawing" (nameFor S.alice) (Text.pack "an ability")
     Spec.assertEqWith s "bob's drawing" (nameFor S.bob) (Text.pack "Mindslaver's ability")
+  -- CR 601.2c: alice's Searing Spear, cast at bob's Goblin Piker, names its
+  -- target to bob, in bob's view and on bob's board's stack line.
+  Spec.it s "CR 601.2c a spell on the stack shows every seat its target" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    spear <- S.printingOf s registry "Searing Spear"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (victim, withPiker) = S.addPermanent piker S.bob (Setup.emptyGame S.bothPlayers)
+        (spell, staged) = S.addHandCard spear S.alice (S.landsFor mountain S.alice 2 withPiker)
+        gs = S.runPure (aimedAt ((== Just victim) . Recipient.objectOf)) staged (S.cast S.alice spell)
+        view = PlayerView.viewFor S.bob gs
+    Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToCreature victim]]
+    Spec.assertBool s (Text.pack "Stack, top first: Searing Spear targeting Goblin Piker" `elem` Render.board True view) "bob's board names it"
+  -- CR 602.2b: alice's Prodigal Sorcerer's ability, aimed at bob, names bob
+  -- and its source on bob's board's stack line.
+  Spec.it s "CR 602.2b an ability on the stack shows every seat its target" $ do
+    sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
+    card <- S.cardOf s registry "Prodigal Sorcerer"
+    ability <- maybe (Spec.assertFailure s "Prodigal Sorcerer has no activated ability") pure (Maybe.listToMaybe (concatMap Face.activatedAbilities (NonEmpty.toList (Card.faces card))))
+    let (source, placed) = S.addPermanent sorcerer S.alice (Setup.emptyGame S.bothPlayers)
+        gs = snd (Engine.runGamePure (aimedAt (== Recipient.ToPlayer S.bob)) placed {GameState.priority = Just S.alice} (Activate.activateAbility S.alice source ability))
+        view = PlayerView.viewFor S.bob gs
+    Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToPlayer S.bob]]
+    Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability targeting Player 2" `elem` Render.board True view) "bob's board names it"
   Spec.it s "CR 406.3 a card exiled face down shows its owner nothing of itself" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Exile piker S.alice (Setup.emptyGame S.bothPlayers)
@@ -638,3 +662,9 @@ foretelling oid p = case p of
 
 seatOf :: PlayerId.PlayerId -> PlayerView.Type.PlayerView -> Maybe SeatView.SeatView
 seatOf pid = List.find ((== pid) . SeatView.player) . PlayerView.Type.seats
+
+-- Target only the offered recipients `wanted` accepts.
+aimedAt :: (Recipient.Recipient -> Bool) -> Prompt.Prompt r -> r
+aimedAt wanted p = case p of
+  Prompt.ChooseTargets _ _ _ asked -> fmap (Set.filter wanted . snd) asked
+  _ -> S.identityAnswer p

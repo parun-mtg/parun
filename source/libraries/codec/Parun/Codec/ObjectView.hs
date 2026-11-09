@@ -20,7 +20,8 @@ import qualified Parun.Types.ObjectView as ObjectView
 -- null for an object the seat may not see, and `face` for any but a face-down
 -- one the seat may look at; `foretellCostReduction` is null for anything but a
 -- card given a foretell cost the seat may look at; `ability` is null for
--- anything but an ability on the stack.
+-- anything but an ability on the stack; `targets` is empty for anything but a
+-- spell or ability on the stack with a target.
 codec :: Codec.Codec ObjectView.ObjectView
 codec = Fields.object $ do
   object <- Fields.required "object" ObjectId.codec ObjectView.object
@@ -34,6 +35,7 @@ codec = Fields.object $ do
   face <- Fields.required "face" (Common.maybe ProjectedCharacteristics.codec) ObjectView.face
   foretellCostReduction <- Fields.required "foretellCostReduction" (Common.maybe ManaCost.codec) ObjectView.foretellCostReduction
   ability <- Fields.required "ability" (Common.maybe AbilityView.codec) ObjectView.ability
+  targets <- Fields.required "targets" (Common.list Recipient.codec) ObjectView.targets
   pure
     ObjectView.MkObjectView
       { ObjectView.object = object,
@@ -46,5 +48,6 @@ codec = Fields.object $ do
         ObjectView.characteristics = characteristics,
         ObjectView.face = face,
         ObjectView.foretellCostReduction = foretellCostReduction,
-        ObjectView.ability = ability
+        ObjectView.ability = ability,
+        ObjectView.targets = targets
       }

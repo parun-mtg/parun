@@ -281,11 +281,13 @@ spec s registry = Spec.describe s "Client" $ do
         shown = reverse (written (State.execState (Except.runExceptT (State.evalStateT (State.evalStateT run (SplitMix.MkSplitMix 1)) Hotseat.fresh {Hotseat.facing = Just S.alice, Hotseat.autoPass = False})) blank))
         stacks = filter (Text.isPrefixOf (Text.pack "Stack, top first: "))
         stackLine = Text.pack "Stack, top first: Mindslaver's ability"
-    -- Asked while Mindslaver is on the battlefield; the stack shown then and
-    -- once its sacrifice has moved it, a witnessed move naming it.
+        targeted = stackLine <> Text.pack " targeting Player 2"
+    -- Asked while Mindslaver is on the battlefield; the stack shown then, before
+    -- and after CR 602.2b's target, and once its sacrifice has moved it, a
+    -- witnessed move naming it.
     Spec.assertBool s (Text.pack "Choose 1 target for Mindslaver's ability:" `elem` shown) "the target prompt names it"
     Spec.assertEqWith s "CR 601.2h its {T} and its sacrifice have one payable order, so none is asked" (filter (Text.isPrefixOf (Text.pack "Order cost components")) shown) []
-    Spec.assertEqWith s "the stack names it, then once it is sacrificed" (Set.toList (Set.fromList (stacks shown)), take 1 (stacks (dropWhile (/= Text.pack "  Graveyard: Mindslaver") shown))) ([stackLine], [stackLine])
+    Spec.assertEqWith s "the stack names it, then once it is sacrificed" (Set.toList (Set.fromList (stacks shown)), take 1 (stacks (dropWhile (/= Text.pack "  Graveyard: Mindslaver") shown))) ([stackLine, targeted], [targeted])
     Spec.assertEqWith s "no face-down card" (filter (Text.isInfixOf (Text.pack "face-down")) shown) []
     Spec.assertEqWith s "CR 602.2 the activation names its player and source" (filter (Text.isInfixOf (Text.pack "activate")) shown) [Text.pack "Player 1 activates Mindslaver's ability."]
 
