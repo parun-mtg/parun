@@ -738,8 +738,8 @@ import qualified Parun.Codec.SpellWasCopiedSpec
 import qualified Parun.Codec.SpendManaAsThoughSpec
 import qualified Parun.Codec.SpendTriggerSpec
 import qualified Parun.Codec.SpliceSpec
-import qualified Parun.Codec.StackedAbilitySpec
 import qualified Parun.Codec.StackObjectKindSpec
+import qualified Parun.Codec.StackedAbilitySpec
 import qualified Parun.Codec.StateBasedActionSpec
 import qualified Parun.Codec.StatedFlipSpec
 import qualified Parun.Codec.StaticAbilitySpec
@@ -1784,8 +1784,8 @@ spec s registry corpus = do
   Parun.Codec.SpendManaAsThoughSpec.spec s
   Parun.Codec.SpendTriggerSpec.spec s
   Parun.Codec.SpliceSpec.spec s
-  Parun.Codec.StackedAbilitySpec.spec s
   Parun.Codec.StackObjectKindSpec.spec s
+  Parun.Codec.StackedAbilitySpec.spec s
   Parun.Codec.StateBasedActionSpec.spec s
   Parun.Codec.StatedFlipSpec.spec s
   Parun.Codec.StaticAbilitySpec.spec s
