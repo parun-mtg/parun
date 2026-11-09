@@ -1587,6 +1587,7 @@ hustle-bustle
 hydra-broodmaster
 hydraulic-helper
 hydroblast
+i-am-iron-man
 icatian-store
 ice-cage
 ice-cauldron
@@ -1666,16 +1667,21 @@ intuition
 invasion-of-arcavios-invocation-of-the-founders
 invasion-of-dominaria-serra-faithkeeper
 invigorating-surge
+invisible-woman-sue-storm
 involuntary-employment
 inys-haen
 iridescent-angel
 iron-apprentice
+iron-fist-living-weapon
 iron-hills-blacksmith
 iron-hills-stalwart
+iron-lad-diverging-destiny
+iron-man-armor
 iron-monger-sadistic-tycoon
 ironclaw-buzzardiers
 ironclaw-curse
 ironclaw-orcs
+ironheart-clever-champion
 ironhoof-ox
 irresistible-prey
 isao-enlightened-bushi
@@ -1712,6 +1718,7 @@ jared-carthalion-true-heir
 jazal-goldmane
 jeering-homunculus
 jegantha-the-wellspring
+jessica-jones-private-eye
 jesters-cap
 jet-medallion
 jeweled-bird
@@ -1731,6 +1738,7 @@ just-fate
 justice
 justice-vance-astrovik
 juxtapose
+ka-zar-of-the-savage-land
 kaalia-zenith-seeker
 kadenas-silencer
 kaito-cunning-infiltrator
@@ -1738,6 +1746,7 @@ kalastria-highborn
 kalonian-hydra
 kalonian-twingrove
 kami-of-mourning
+kang-temporal-tyrant
 kang-the-conqueror
 kari-zev-crew-of-two
 karn-argent-defender
@@ -1765,6 +1774,7 @@ kharn-the-betrayer
 kili-the-resourceful
 kill-suit-cultist
 killing-wave
+killmonger-scourge-of-wakanda
 kindle-the-carnage
 kindle-the-inner-flame
 kindred-boon
@@ -1772,6 +1782,7 @@ kindred-discovery
 kindred-judgment
 kinetic-augur
 king-haralds-revenge
+king-tchalla-black-panther-hope-enduring
 kiora-behemoth-beckoner
 kiora-of-salt-and-sand
 kiora-the-rising-tide
@@ -1781,9 +1792,11 @@ kitesail-freebooter
 kithkin-brinefarer
 kjeldoran-dead
 kjeldoran-royal-guard
+klaw-sonic-subjugator
 knight-of-dusk
 knight-of-the-ebon-legion
 knight-of-the-white-orchid
+knight-of-wundagore
 koma-world-eater
 kongmings-contraptions
 konstrari-improviser-soul-tether
@@ -1794,6 +1807,7 @@ koth-the-geomancer
 kothophed-soul-hoarder
 krarks-thumb
 krav-the-unredeemed
+kree-sentinel
 krosan-vorine
 krovikan-fetish
 krovikan-sorcerer
@@ -1905,6 +1919,7 @@ loathsome-catoblepas
 loathsome-chimera
 localized-destruction
 lofty-denial
+loki-laufeyson
 lone-revenant
 lone-wolf
 long-bodied-grey-dog
@@ -1946,9 +1961,11 @@ luxior-giadas-gift
 lyra-archangel-of-dawn
 lyra-tolarian-archangel
 lys-alana-dignitary
+m-o-d-o-k
 ma-chao-western-warrior
 mabel-bitter-recluse
 mabel-valley-hero
+madame-masque
 maddening-imp
 maelstrom-pulse
 magar-of-the-magic-strings
@@ -2095,6 +2112,7 @@ mishras-workshop
 misinformation
 mist-dragon
 mistcaller
+mister-fantastic-reed-richards
 misty-mountains-raider
 mitotic-slime
 mizzium-meddler
