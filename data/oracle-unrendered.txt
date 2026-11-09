@@ -491,6 +491,7 @@ caverns-of-despair
 cease-desist
 cease-fire
 celebr-8000
+celebrate-the-mountain-king
 celestial-armor
 celestial-dawn
 celestial-enforcer
@@ -543,6 +544,7 @@ chasm-skulker
 chatterfang-squirrel-general
 cheering-fanatic
 chief-engineer
+chief-wargs-company
 chimeric-staff
 cho-arrim-alchemist
 cho-manno-revolutionary
@@ -680,6 +682,7 @@ croakid-amphibonaut
 crown-of-empires
 crown-of-the-ages
 crucible-of-worlds
+crude-bent-blade
 cruel-bargain
 cruel-calculations
 cruel-edict
@@ -725,6 +728,8 @@ cyclops-gladiator
 cyclops-tyrant
 cytoshape
 dacks-duplicate
+dain-ironfoot
+dain-lord-of-the-iron-hills
 damping-engine
 dan-lewis
 dance-of-many
@@ -854,6 +859,7 @@ dont-make-a-sound
 doom-cannon
 doomsday
 door-of-destinies
+dori-bearer-of-friends
 dormant-gomazoa
 double-major
 double-vision
@@ -882,6 +888,7 @@ drawn-from-dreams
 dread-charge
 dread-fugue
 dread-summons
+dreaded-bat-cloud
 dreadwaters
 dream-cache
 dream-devourer
