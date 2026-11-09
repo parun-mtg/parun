@@ -390,6 +390,7 @@ boros-battleshaper
 boseiju-who-shelters-all
 bothersome-noisemaker
 bottomless-vault
+boughside-wanderers
 boundless-realms
 brace-for-impact
 bragos-representative
@@ -465,6 +466,7 @@ caltrops
 camouflage
 canopy-stalker
 cant-stay-away
+cantankerous-keepers
 capricious-efreet
 captains-maneuver
 captivating-vampire
@@ -732,9 +734,11 @@ cytoshape
 dacks-duplicate
 dain-ironfoot
 dain-lord-of-the-iron-hills
+dains-company
 damping-engine
 dan-lewis
 dance-of-many
+dancing-from-dark-to-dawn
 dandan
 danitha-benalias-hope
 danitha-spear-of-agony
@@ -920,6 +924,7 @@ dungeon-crawler
 dungeon-geists
 duplicant
 duress
+duskwatch-hunter
 duskwielder
 dust-animus
 dutiful-knowledge-seeker
