@@ -1343,11 +1343,13 @@ glamer-spinners
 glamerdye
 glasses-of-urza
 gleaming-barrier
+gleaming-splendor
 glen-elendras-answer
 gliding-licid
 glimpse-the-future
 glint-horn-buccaneer
 glittering-lion
+gloin-the-mighty-easy-pickings
 gloom
 gloom-stalker
 glorfindel-dauntless-rescuer
@@ -1358,6 +1360,7 @@ gnarled-sage
 gnarlid-colony
 gnarlid-pack
 gnarlroot-trapper
+gnashing-of-teeth
 gnat-miser
 go-ninja-go
 goblin-arsonist
@@ -1373,12 +1376,14 @@ goblin-grenade
 goblin-kaboomist
 goblin-mutant
 goblin-negotiation
+goblin-plate-mail
 goblin-rabblemaster
 goblin-recruiter
 goblin-ringleader
 goblin-rock-sled
 goblin-shortcutter
 goblin-smuggler
+goblin-town-flunkies
 goblin-tunneler
 goblin-war-cry
 god-eternal-bontu
@@ -1392,6 +1397,7 @@ goldmane-griffin
 goldvein-pick
 golem-skin-gauntlets
 golgothian-sylex
+gollum-silent-slinker-meager-meal
 golos-tireless-pilgrim
 goreclaw-terror-of-qal-sisma
 goremand
@@ -1413,8 +1419,11 @@ gravebane-zombie
 gravegouger
 graveyard-marshal
 graxiplon
+great-fierce-bee
+great-gilded-boat
 great-intelligences-plan
 great-sable-stag
+great-ugly-looking-goblin-clap-snap
 greater-good
 greater-realm-of-preservation
 greater-werewolf
@@ -1446,6 +1455,7 @@ guerrilla-tactics
 guiding-hydra
 guiding-spirit
 guildsworn-prowler
+gundabad-opportunist
 gush
 gutless-plunderer
 gyox-brutal-carnivora
@@ -1535,6 +1545,7 @@ history-of-benalia
 hive-mind
 hixus-prison-warden
 hoarding-dragon
+hobbit-hole
 hollow-trees
 hollow-warrior
 holy-day
@@ -1648,6 +1659,8 @@ involuntary-employment
 inys-haen
 iridescent-angel
 iron-apprentice
+iron-hills-blacksmith
+iron-hills-stalwart
 iron-monger-sadistic-tycoon
 ironclaw-buzzardiers
 ironclaw-curse
@@ -1733,6 +1746,7 @@ keral-keep-disciples
 kessig-prowler-sinuous-predator
 kethis-the-hidden-hand
 ketramose-the-new-dawn
+key-to-the-side-door
 keys-to-the-house
 khabal-ghoul
 kharn-the-betrayer
@@ -1781,6 +1795,9 @@ labyrinth-of-skophos
 lady-sun
 lairwatch-giant
 lake-of-the-dead
+lake-town-lookout
+lake-town-mariners-gone-fishing
+lake-town-toymaker
 lam-storm-crane-elder
 land-tax
 lantern-flare

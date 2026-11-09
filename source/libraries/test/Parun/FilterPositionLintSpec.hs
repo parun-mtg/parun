@@ -93,6 +93,7 @@ import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
+import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
@@ -1120,10 +1121,26 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- this rejects the atom in positions that would in fact answer, and only in that
 -- direction -- widen it when a card wants one of them, which is the posture sweptForSingularSlots takes at
 -- SlotlessCostFramed and what the hand sweep's own entry is.
+--
+-- One position is admitted INSIDE a framing rather than as one: an activated
+-- ability's CR 701.9a discard cost criterion (Key to the Side-Door), whose pool
+-- Parun.Engine.Cost.discardCandidates frames through
+-- Parun.Engine.Projection.contextWithSlots. The rest of ActivationCostFramed is
+-- not, since Cost.xValue and Cost.tapForManaWith read a bare source context.
 framedNameCounts :: Face.Face Card.Type.Card -> (Int, Int)
 framedNameCounts card =
   let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed] == wanted) (cardFilters card)))
-   in (total True, total False)
+      discarded = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria card))
+   in (total True + discarded, total False - discarded)
+
+-- The criteria of this face's activated abilities' CR 701.9a discard costs,
+-- each also among cardFilters' ActivationCostFramed positions.
+discardCostCriteria :: Face.Face Card.Type.Card -> [Filter.Type.Filter Keyword.Keyword]
+discardCostCriteria card =
+  [ DiscardCards.whichCards discard
+  | ability <- Face.activatedAbilities card,
+    CostComponent.DiscardCards discard <- Cost.Type.components (ActivatedAbility.cost ability)
+  ]
 
 -- CR 709.4a's framed name comparisons (framedNameAtoms) are answerable only
 -- where Filter.Context.slotNames and battlefieldViews are filled, which two
@@ -1767,15 +1784,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- target slot, a CR 701.23 search filter, a CR 608.2c hand sweep's own filter,
   -- a CR 119.3 life loss amount and an effect's own object, the last four since
   -- their arms take their context from the resolution (Parun.ResolveSpec's
-  -- Bifurcate, Hour of Glory and Grim Reminder cases; Legion's End's scenario). That set
+  -- Bifurcate, Hour of Glory and Grim Reminder cases; Legion's End's scenario),
+  -- and an activated ability's discard cost criterion (framedNameCounts; Key to
+  -- the Side-Door's scenario). That set
   -- is narrower than the set that would answer -- framedNameCounts says why
   -- -- so this rejects in the safe direction only. See framedNameOffends
   -- for the two offences and Framing for why CR 303.4a's enchant slot is not one
   -- of the safe positions.
-  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount or an effect's object" $ do
+  Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object or a discard cost" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace framedNameOffends . Printing.card) ps
-    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a life loss amount's or an effect object's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a life loss amount's, an effect object's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous, the way the sibling sweeps would be alone: the pool authors the
     -- atom, and the cards that do are ACCEPTED here rather than skipped -- one in
     -- each admitted position, so no member of the set is unwitnessed.
@@ -1796,7 +1815,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter
         ("Maelstrom Pulse", 1), -- its destroy's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
-        ("Seasinger", 1) -- its ability's target slot, Controller at AnyPermanent
+        ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
+        ("Key to the Side-Door", 1) -- its ability's discard cost, at AnyPermanent
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
@@ -3357,7 +3377,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- each is asserted through framedNameCounts as well as the predicate -- the
   -- counts say the TRAVERSAL put it in that position, where the predicate alone is
   -- also satisfied by the codec half noticing an atom the traversal missed.
-  Spec.it s "the lint itself catches a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount or an effect's object" $ do
+  Spec.it s "the lint itself catches a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object or a discard cost" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     harness <- S.printingOf s registry "Harness the Storm"
