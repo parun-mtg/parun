@@ -2067,7 +2067,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- outright. A Parun.Types.ManaRestriction with no half set is mana no payment
   -- may ever use (or, under prohibits, mana restricted in nothing), which is
   -- mana the card might as well not have added (or not restricted) -- so it
-  -- is card data that means nothing rather than a rule parun implements. Nothing
+  -- is card data that means nothing rather than a rule parun implements. The
+  -- one exception is a prohibition barring generic mana alone (Jegantha, the
+  -- Wellspring), which restricts the symbols rather than the payments. Nothing
   -- in the codec can refuse it: every field defaults to Nothing, which is what
   -- lets Mishra's Workshop write one key, Omen Hawker another and Overgrown
   -- Zealot a third.
@@ -2075,7 +2077,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let offends effect = case effect of
           Effect.AddMana addition -> case ManaAddition.restriction addition of
-            Just restriction -> null (restrictionFilters restriction) && Maybe.isNothing (ManaRestriction.keywordActivations restriction)
+            Just restriction ->
+              null (restrictionFilters restriction)
+                && Maybe.isNothing (ManaRestriction.keywordActivations restriction)
+                && not (ManaRestriction.prohibits restriction && not (ManaRestriction.paysGeneric restriction))
             Nothing -> False
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps

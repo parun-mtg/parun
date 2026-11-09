@@ -4230,6 +4230,7 @@ filterReads f = case f of
   -- CR 202.3 reads the mana cost, which layer 1 alone sets (CR 707.2) and no
   -- Modification writes.
   Filter.Type.ManaValueParity _ -> Set.empty
+  Filter.Type.ManaCostRepeatsSymbol -> Set.empty
   Filter.Type.And fs -> foldMap filterReads fs
   Filter.Type.Or fs -> foldMap filterReads fs
   Filter.Type.Not g -> filterReads g
@@ -4411,6 +4412,7 @@ filterReadsPeers f = case f of
   Filter.Type.HasSticker _ -> False
   Filter.Type.Stickered -> False
   Filter.Type.ManaValueParity _ -> False
+  Filter.Type.ManaCostRepeatsSymbol -> False
 
 -- filterReadsPeers through an affected set. TheseObjects names ids (CR 611.2c)
 -- and Attached reads its source's attachment (CR 303.4m); neither builds a view.

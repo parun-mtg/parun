@@ -8,8 +8,6 @@ import qualified Parun.Types.Filter as Filter
 --
 -- PARAMETRIC in the keyword for Parun.Types.ForetellCost's reason. Only
 -- @CompanionCondition Keyword.Keyword@ is ever written.
---
--- Not implemented: Jegantha, the Wellspring's repeated mana symbol (#3261).
 data CompanionCondition keyword
   = -- | CR 702.139a: every card in the starting deck matches the Filter.
     EachCard (Filter.Filter keyword)

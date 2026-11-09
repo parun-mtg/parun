@@ -300,6 +300,7 @@ filterAtomsOf leaf predicate = case predicate of
   -- author to reach.
   Filter.Type.HeldByRecipient _ -> leaf predicate
   Filter.Type.ManaValueParity _ -> leaf predicate
+  Filter.Type.ManaCostRepeatsSymbol -> leaf predicate
   Filter.Type.IsSource -> leaf predicate
   Filter.Type.IsObject _ -> leaf predicate
   Filter.Type.TargetsSource -> leaf predicate
