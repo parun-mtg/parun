@@ -11,3 +11,10 @@ spec s = Spec.describe s "Parun.Extra.Word8" $ do
 
     Spec.it s "works with the largest Word8" $ do
       Spec.assertEq s (Word8.toInt 255) 255
+
+  Spec.describe s "toWord32" $ do
+    Spec.it s "works with zero" $ do
+      Spec.assertEq s (Word8.toWord32 0) 0
+
+    Spec.it s "works with the largest Word8" $ do
+      Spec.assertEq s (Word8.toWord32 255) 255

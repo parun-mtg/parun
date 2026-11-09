@@ -12,24 +12,23 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
-import qualified Data.Time.Clock.System as Clock
-import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Play.Command as Command
 import qualified Parun.Play.Game as Game
+import qualified Parun.Play.Generator as Generator
+import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Render as Render
-import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hotseat as Hotseat
+import qualified Parun.Types.Key as Key.Type
 import qualified Parun.Types.MatchOptions as MatchOptions
 import qualified Parun.Types.Result as Result
-import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
@@ -52,7 +51,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
 
 flags :: [GetOpt.OptDescr (MatchOptions.MatchOptions -> Either String MatchOptions.MatchOptions)]
 flags =
-  [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\n -> Right o {MatchOptions.seed = Just n}) (Read.readMaybe s)) "N") "the first game's seed, each later game's one more; the clock's when absent",
+  [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\k -> Right o {MatchOptions.seed = Just k}) (Key.fromHex (Text.pack s))) "KEY") "the key each game's is derived from, 64 hexadecimal digits, said when the match ends; drawn from the operating system when absent",
     GetOpt.Option [] ["games"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a number of games: " <> s)) (\n -> Right o {MatchOptions.games = n}) (Read.readMaybe s)) "N") "how many games to play; 100 when absent",
     GetOpt.Option [] ["save"] (GetOpt.ReqArg (\s o -> Right o {MatchOptions.save = Just s}) "DIR") "save each game in this directory as a scenario"
   ]
@@ -68,30 +67,30 @@ usage problems = do
 match :: MatchOptions.MatchOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
 match options registry format decks = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
-  seed <- maybe (fmap (SplitMix.Play.fromClock . Command.nanoseconds) Clock.getSystemTime) pure (MatchOptions.seed options)
-  IO.hPutStrLn IO.stderr ("Seed " <> show seed <> ".")
+  seed <- maybe Key.fresh pure (MatchOptions.seed options)
   Monad.forM_ (MatchOptions.save options) (Directory.createDirectoryIfMissing True)
   let count = MatchOptions.games options
   tally <-
     Monad.foldM
       ( \tally index -> do
           let (outcome, timeline) = Identity.runIdentity (game registry format seed index decks)
-          TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
+          TextIO.hPutStrLn IO.stderr (Text.pack ("Game " <> show (index + 1) <> ", seed ") <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first: ") <> ended outcome)
           Monad.forM_ (MatchOptions.save options) $ \directory ->
-            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack ("Played with parun match, seed " <> show (seedAt seed index) <> ", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) decks) timeline)
+            Command.save (directory <> "/game-" <> show (index + 1) <> ".json") (Command.saved (Registry.printings registry) (Text.pack "Played with parun match, seed " <> Key.toHex (seedAt seed index) <> Text.pack (", seat " <> show (firstAt index) <> " first.")) format Map.empty (Command.seated (firstAt index) decks) timeline)
           pure (tallied outcome tally)
       )
       Tally.empty
       (takeWhile (< count) [0 ..])
   mapM_ TextIO.putStrLn (summary count tally)
+  TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
 
 -- | Game `index`, from zero, of a match from `seed` under `format`: seeded
 -- 'seedAt', seat 'firstAt' playing first, the random bot in both seats; with
 -- the entry each answer replays as (Record.recording). It is the game `parun
 -- play --bot 1 --bot 2` plays at that seed and `--first`.
-game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Word.Word64 -> Natural -> (Deck.Deck, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
+game :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> Key.Type.Key -> Natural -> (Deck.Deck, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
 game registry format seed index decks =
-  State.runStateT (Game.run (lifted registry) format [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (SplitMix.MkSplitMix (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
+  State.runStateT (Game.run (lifted registry) format [Record.recording Command.labels sink] (Map.fromList [(Command.idOf n, Game.bot (lifted registry)) | n <- [1, 2]]) (const (pure ())) Hotseat.fresh (Generator.fromKey (seedAt seed index)) Map.empty (Command.seated (firstAt index) decks)) Seq.empty
 
 -- | The registry, beneath the entries kept so far.
 lifted :: (Monad m) => Registry.Registry m -> Registry.Registry (State.StateT (Seq.Seq Timed.Timed) m)
@@ -101,9 +100,10 @@ lifted = Registry.hoist Trans.lift
 sink :: (Monad m) => Timed.Timed -> Game.Play (State.StateT (Seq.Seq Timed.Timed) m) ()
 sink entry = Game.underneath (State.modify' (Seq.|> entry))
 
--- | Game `index`'s seed: the match's, plus the index, wrapping.
-seedAt :: Word.Word64 -> Natural -> Word.Word64
-seedAt seed index = seed + Maybe.fromMaybe 0 (Natural.toWord64 (mod index (2 ^ (64 :: Natural))))
+-- | Game `index`'s key, derived from the match's (Generator.derive), the
+-- index wrapping at 2^64.
+seedAt :: Key.Type.Key -> Natural -> Key.Type.Key
+seedAt seed index = Generator.derive seed (Maybe.fromMaybe 0 (Natural.toWord64 (mod index (2 ^ (64 :: Natural)))))
 
 -- | The seat playing first in game `index`: seat 1 at an even index, seat 2
 -- at an odd one, so each deck plays first in half the games. Each game is a

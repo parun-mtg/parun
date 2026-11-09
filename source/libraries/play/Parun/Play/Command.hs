@@ -17,22 +17,20 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
-import qualified Data.Time.Clock.System as Clock
-import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.DeckList as DeckList
-import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Legality as Legality
 import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Game as Game
+import qualified Parun.Play.Generator as Generator
+import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Render as Render
-import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
@@ -44,7 +42,6 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Scenario as Scenario
-import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Timed as Timed
 import qualified System.Console.GetOpt as GetOpt
@@ -65,7 +62,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
 
 flags :: [GetOpt.OptDescr (PlayOptions.PlayOptions -> Either String PlayOptions.PlayOptions)]
 flags =
-  [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\n -> Right o {PlayOptions.seed = Just n}) (Read.readMaybe s)) "N") "the generator's seed; the clock's when absent",
+  [ GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left ("not a seed: " <> s)) (\k -> Right o {PlayOptions.seed = Just k}) (Key.fromHex (Text.pack s))) "KEY") "the generator's key, 64 hexadecimal digits, said when the game ends; drawn from the operating system when absent",
     GetOpt.Option [] ["first"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.first = Just n}) (seat s)) "1|2") "which seat plays first; a seat picked at random chooses when absent",
     GetOpt.Option [] ["bot"] (GetOpt.ReqArg (\s o -> fmap (\n -> o {PlayOptions.bots = Set.insert n (PlayOptions.bots o)}) (seat s)) "1|2") "a seat the random bot plays",
     GetOpt.Option [] ["json"] (GetOpt.NoArg (\o -> Right o {PlayOptions.json = True})) "speak the line protocol on standard input and output",
@@ -135,14 +132,6 @@ refuse format lists = do
     mapM_ (TextIO.hPutStrLn IO.stderr) violations
     Exit.exitFailure
 
--- | Nanoseconds since the epoch; on macOS only microseconds tick.
-nanoseconds :: Clock.SystemTime -> Natural
-nanoseconds t = Integer.toNaturalSaturating (toInteger (Clock.systemSeconds t) * 1000000000 + toInteger (Clock.systemNanoseconds t))
-
--- | A seed from the system clock, for a run given none.
-clockSeed :: IO Word.Word64
-clockSeed = fmap (SplitMix.Play.fromClock . nanoseconds) Clock.getSystemTime
-
 -- | A game between the two decks under `format`, the one 'settle' names
 -- (CR 100.2).
 play :: PlayOptions.PlayOptions -> Registry.Registry Identity.Identity -> Maybe Format.Format -> (Deck.Deck, Deck.Deck) -> IO ()
@@ -151,13 +140,12 @@ play options registry format (one, two) = do
   let reference :: Registry.Registry IO
       reference = Registry.hoist (pure . Identity.runIdentity) registry
       lookUp = Identity.runIdentity . Interpreter.chosenCard registry
-  seed <- maybe clockSeed pure (PlayOptions.seed options)
-  IO.hPutStrLn IO.stderr ("Seed " <> show seed <> ".")
+  seed <- maybe Key.fresh pure (PlayOptions.seed options)
   let people = filter (`Set.notMember` PlayOptions.bots options) [1, 2]
   let (tell, ask)
         | PlayOptions.json options = (TextIO.hPutStrLn IO.stderr, Protocol.playOrDraw exchange . idOf)
         | otherwise = (TextIO.putStrLn, Game.playOrDraw terminal)
-  (starter, generator) <- State.runStateT (Game.starter tell ask options) (SplitMix.MkSplitMix seed)
+  (starter, generator) <- State.runStateT (Game.starter tell ask options) (Generator.fromKey seed)
   first <- maybe (failWith "end of input") pure starter
   let matchup = seated first (one, two)
       answerer n
@@ -179,10 +167,11 @@ play options registry format (one, two) = do
   outcome <- Exception.catch (Game.run reference format observers seats finish hotseat generator orders matchup) interrupted
   Monad.forM_ (PlayOptions.save options) $ \path -> do
     timeline <- IORef.readIORef entries
-    save path (saved (Registry.printings registry) (Text.pack ("Played with parun play, seed " <> show seed <> ".")) format orders matchup timeline)
+    save path (saved (Registry.printings registry) (Text.pack "Played with parun play, seed " <> Key.toHex seed <> Text.pack ".") format orders matchup timeline)
   case outcome of
     Right (result, _) -> (if PlayOptions.json options then TextIO.hPutStrLn IO.stderr else TextIO.putStrLn) (Render.result result)
     Left reason -> TextIO.hPutStrLn IO.stderr (Text.pack "Stopped: " <> reason <> Text.pack ".")
+  TextIO.hPutStrLn IO.stderr (Text.pack "Seed " <> Key.toHex seed <> Text.pack ".")
 
 idOf :: Natural -> PlayerId.PlayerId
 idOf n = PlayerId.MkPlayerId (n - 1)

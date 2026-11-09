@@ -41,7 +41,6 @@ import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
-import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Timed as Timed
 
@@ -69,7 +68,7 @@ spec s registry = Spec.describe s "Record" $ do
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
     matchup <- BotSpec.bears s registry
     let orders = Map.fromList [(S.alice, GraveyardOrder.Matters), (S.bob, GraveyardOrder.Matters)]
-        -- Seed 1's game puts cards into a graveyard together twice.
+        -- Seed 1's game puts cards into a graveyard together.
         (outcome, (timeline, _)) = watched 1 Nothing bots orders matchup
         arranged = Seq.filter ((== Just (Text.pack "ArrangeGraveyardArrivals")) . answered) timeline
     Spec.assertBool s (not (Seq.null arranged)) "a seat arranged a batch"
@@ -177,9 +176,9 @@ recorded seats matchup = fmap fst (watched 1 Nothing seats Map.empty matchup)
 
 -- recorded's game at a seed under a format, each seat at its graveyard order
 -- in `orders`.
-watched :: Word.Word64 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
+watched :: Word.Word32 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
 watched seed format seats orders matchup =
-  let played = Game.run (S.fixtureRegistry []) format [Record.recording labels sink, lastAsked] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (SplitMix.MkSplitMix seed) orders matchup
+  let played = Game.run (S.fixtureRegistry []) format [Record.recording labels sink, lastAsked] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (S.seeded seed) orders matchup
    in State.evalState (State.runStateT played (Seq.empty, Nothing)) ClientSpec.blank
 
 lastAsked :: Observer.Observer (Game.Play Base)

@@ -603,7 +603,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "parun play --format refuses a name with no format file"
     . S.withCorpusDir "legality-play-nonesuch" [("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--format", "nonesuch", "--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/legal.txt", dir <> "/legal.txt"])
+      result <- Exception.try (Command.main ["--format", "nonesuch", "--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/legal.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   -- Two bot seats, so a game the refusal let through would play to its end
@@ -611,31 +611,31 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "parun play --format constructed refuses five Grizzly Bears before the game starts"
     . S.withCorpusDir "legality-play" [("bears.txt", Text.pack "5 Grizzly Bears\n55 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--format", "constructed", "--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/bears.txt", dir <> "/legal.txt"])
+      result <- Exception.try (Command.main ["--format", "constructed", "--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/bears.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   Spec.it s "parun play --format vintage refuses two Black Lotus before the game starts"
     . S.withCorpusDir "legality-play-vintage" [("lotus.txt", Text.pack "1 Black Lotus\n59 Mountain\nSideboard\n1 Black Lotus\n"), ("legal.txt", Text.pack "1 Black Lotus\n59 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--format", "vintage", "--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/lotus.txt", dir <> "/legal.txt"])
+      result <- Exception.try (Command.main ["--format", "vintage", "--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/lotus.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   Spec.it s "parun play with no --format refuses a Format: limited list of 39 cards"
     . S.withCorpusDir "legality-play-header" [("small.txt", Text.pack "Format: limited\n4 Grizzly Bears\n35 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/small.txt", dir <> "/legal.txt"])
+      result <- Exception.try (Command.main ["--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/small.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   Spec.it s "parun play --format vintage refuses a Format: modern list"
     . S.withCorpusDir "legality-play-disagrees" [("modern.txt", Text.pack "Format: modern\n60 Mountain\n"), ("legal.txt", Text.pack "60 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--format", "vintage", "--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/modern.txt", dir <> "/legal.txt"])
+      result <- Exception.try (Command.main ["--format", "vintage", "--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/modern.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   Spec.it s "parun match refuses a Format: limited list of 39 cards"
     . S.withCorpusDir "legality-match-header" [("small.txt", Text.pack "Format: limited\n4 Grizzly Bears\n35 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Match.main ["--games", "1", "--seed", "1", dir <> "/small.txt", dir <> "/legal.txt"])
+      result <- Exception.try (Match.main ["--games", "1", "--seed", seed, dir <> "/small.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   -- CR 702.139a: Yorion, Sky Nomad's condition reads the game's format, so a
@@ -643,7 +643,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 100.2a parun play with no --format starts the game under the format both headers name"
     . S.withCorpusDir "legality-play-header-game" [("one.txt", yorionList (Just "constructed")), ("two.txt", yorionList (Just "constructed"))]
     $ \dir -> do
-      Command.main ["--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", "--save", dir <> "/game.json", dir <> "/one.txt", dir <> "/two.txt"]
+      Command.main ["--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", "--save", dir <> "/game.json", dir <> "/one.txt", dir <> "/two.txt"]
       (format, offers) <- savedGame s (dir <> "/game.json")
       Spec.assertEqWith s "the headers' format" format (Just (Format.MkFormat RuleFamily.Constructed Nothing Set.empty))
       Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" offers 2
@@ -651,7 +651,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 100.2a parun match starts each game under the format one header names"
     . S.withCorpusDir "legality-match-header-game" [("one.txt", yorionList Nothing), ("two.txt", yorionList (Just "constructed"))]
     $ \dir -> do
-      Match.main ["--games", "1", "--seed", "1", "--save", dir <> "/games", dir <> "/one.txt", dir <> "/two.txt"]
+      Match.main ["--games", "1", "--seed", seed, "--save", dir <> "/games", dir <> "/one.txt", dir <> "/two.txt"]
       (format, offers) <- savedGame s (dir <> "/games/game-1.json")
       Spec.assertEqWith s "the header's format" format (Just (Format.MkFormat RuleFamily.Constructed Nothing Set.empty))
       Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" offers 2
@@ -659,14 +659,18 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "parun play refuses lists whose headers name different formats"
     . S.withCorpusDir "legality-play-headers-disagree" [("constructed.txt", Text.pack "Format: constructed\n60 Mountain\n"), ("limited.txt", Text.pack "Format: limited\n60 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/constructed.txt", dir <> "/limited.txt"])
+      result <- Exception.try (Command.main ["--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/constructed.txt", dir <> "/limited.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
   Spec.it s "CR 100.2b parun play checks a list with no header against the format the other names"
     . S.withCorpusDir "legality-play-unheaded" [("small.txt", Text.pack "4 Grizzly Bears\n35 Mountain\n"), ("limited.txt", Text.pack "Format: limited\n4 Grizzly Bears\n36 Mountain\n")]
     $ \dir -> do
-      result <- Exception.try (Command.main ["--seed", "1", "--first", "1", "--bot", "1", "--bot", "2", dir <> "/small.txt", dir <> "/limited.txt"])
+      result <- Exception.try (Command.main ["--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", dir <> "/small.txt", dir <> "/limited.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
+
+-- A key for `--seed`: 63 zeros and a one.
+seed :: String
+seed = replicate 63 '0' <> "1"
 
 -- Eighty cards, twenty over constructed's sixty, with Yorion, Sky Nomad as
 -- the companion, under a header naming `format` if any.

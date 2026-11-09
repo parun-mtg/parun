@@ -70,6 +70,7 @@ import qualified Parun.Types.ForageMode as ForageMode
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.HandActionIndex as HandActionIndex
@@ -115,7 +116,6 @@ import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
@@ -134,8 +134,8 @@ spec s registry = Spec.describe s "Bot" $ do
   Spec.it s "chance shuffles each library from its seed" $ do
     matchup <- bears s registry
     let libraries gs = fmap (\pid -> Game.zoneMembers Zone.Library pid gs) [S.alice, S.bob]
-        seeded seed = libraries (State.evalState (setUp Chance.chance matchup) (SplitMix.MkSplitMix seed))
-        unshuffled = libraries (State.evalState (setUp (Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt)) matchup) (SplitMix.MkSplitMix 0))
+        seeded seed = libraries (State.evalState (setUp Chance.chance matchup) (S.seeded seed))
+        unshuffled = libraries (State.evalState (setUp (Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt)) matchup) (S.seeded 0))
     Spec.assertBool s (seeded 1 /= unshuffled) "shuffled"
     Spec.assertEq s (seeded 1) (seeded 1)
     Spec.assertBool s (seeded 1 /= seeded 2) "by seed"
@@ -648,16 +648,16 @@ drawn = drawnNaming []
 -- Every answer the bot gives the prompt over many seeds, naming a card from
 -- `names`.
 drawnNaming :: (Ord r) => [CardName.CardName] -> Prompt.Prompt r -> Set.Set r
-drawnNaming names prompt = Set.fromList (fmap (State.evalState (Answerer.unwrap (Bot.bot names) (Asked.mapGames (PlayerView.viewFor S.alice) (Asked.MkAsked [] (Setup.emptyGame S.bothPlayers) prompt))) . SplitMix.MkSplitMix) [1 .. 256])
+drawnNaming names prompt = Set.fromList (fmap (State.evalState (Answerer.unwrap (Bot.bot names) (Asked.mapGames (PlayerView.viewFor S.alice) (Asked.MkAsked [] (Setup.emptyGame S.bothPlayers) prompt))) . S.seeded) [1 .. 256])
 
 -- The bot dividing every creature's combat damage from `seed`, recording what
 -- each offer says the step's other attacking creatures already pay; the
 -- Guard-style block of every attacker otherwise.
-botAssigning :: Word.Word64 -> [ObjectId.ObjectId] -> Prompt.Prompt r -> State.State [Map.Map Recipient.Recipient Natural] r
+botAssigning :: Word.Word32 -> [ObjectId.ObjectId] -> Prompt.Prompt r -> State.State [Map.Map Recipient.Recipient Natural] r
 botAssigning seed attackers p = case p of
   Prompt.AssignCombatDamage _ _ _ _ paid _ -> do
     State.modify' (<> [paid])
-    pure (State.evalState (Answerer.unwrap (Bot.bot []) (Asked.mapGames (PlayerView.viewFor S.alice) (Asked.MkAsked [] (Setup.emptyGame S.bothPlayers) p))) (SplitMix.MkSplitMix seed))
+    pure (State.evalState (Answerer.unwrap (Bot.bot []) (Asked.mapGames (PlayerView.viewFor S.alice) (Asked.MkAsked [] (Setup.emptyGame S.bothPlayers) p))) (S.seeded seed))
   _ -> pure (PlaneswalkerCombatSpec.blockingAll attackers p)
 
 decider :: Decider.Decider
@@ -670,13 +670,13 @@ oid = ObjectId.MkObjectId 7
 -- an attack.
 data Answered = MkAnswered {within :: Bool, attacked :: Bool}
 
-played :: Word.Word64 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> ((Result.Result, GameState.GameState), [Answered])
+played :: Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> ((Result.Result, GameState.GameState), [Answered])
 played seed matchup =
-  let seats :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (State.StateT SplitMix.SplitMix (State.State [Answered])))
+  let seats :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (State.StateT Generator.Generator (State.State [Answered])))
       seats = Map.fromList [(S.alice, Driver.seated (Bot.bot []) Chance.chance), (S.bob, Driver.seated (Bot.bot []) Chance.chance)]
-   in State.runState (State.evalStateT (Driver.match [watching] (Driver.bySeat seats Chance.chance) GameSettings.plain Map.empty matchup) (SplitMix.MkSplitMix seed)) []
+   in State.runState (State.evalStateT (Driver.match [watching] (Driver.bySeat seats Chance.chance) GameSettings.plain Map.empty matchup) (S.seeded seed)) []
 
-watching :: Observer.Observer (State.StateT SplitMix.SplitMix (State.State [Answered]))
+watching :: Observer.Observer (State.StateT Generator.Generator (State.State [Answered]))
 watching =
   Observer.MkObserver
     { Observer.before = \_ -> pure (),
@@ -692,7 +692,7 @@ declares prompt answer = case prompt of
   Prompt.DeclareAttackers {} -> not (null (answer :: [ObjectId.ObjectId]))
   _ -> False
 
-setUp :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State SplitMix.SplitMix) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.State SplitMix.SplitMix GameState.GameState
+setUp :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State Generator.Generator) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> State.State Generator.Generator GameState.GameState
 setUp answerer matchup =
   fmap snd (Engine.runGameAsked (Answerer.unwrap answerer) (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup))
 

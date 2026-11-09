@@ -2,12 +2,13 @@ module Parun.Types.PlayOptions where
 
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Data.Word as Word
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.Key as Key
 
 -- | What `parun play` was asked for, seats numbered from one.
 data PlayOptions = MkPlayOptions
-  { seed :: Maybe Word.Word64,
+  { -- | The generator's key; drawn from the operating system when absent.
+    seed :: Maybe Key.Key,
     first :: Maybe Natural.Natural,
     bots :: Set.Set Natural.Natural,
     json :: Bool,
@@ -25,6 +26,6 @@ data PlayOptions = MkPlayOptions
   }
   deriving (Eq, Show)
 
--- | A seeded-from-the-clock game between two people, the first asked for.
+-- | A game keyed from the operating system's entropy between two people, the first asked for.
 none :: PlayOptions
 none = MkPlayOptions {seed = Nothing, first = Nothing, bots = Set.empty, json = False, save = Nothing, autoPass = True, arrangesGraveyard = Set.empty, format = Nothing}
