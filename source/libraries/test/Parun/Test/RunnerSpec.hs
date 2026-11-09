@@ -89,7 +89,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       case reported of
         [l] -> do
           Spec.assertBool s (Text.isPrefixOf (Text.pack "FAIL asserts: boom\n  CallStack") l) $ "unexpected line: " <> Text.unpack l
-          Spec.assertBool s (Text.isInfixOf (Text.pack "Parun/Test/RunnerSpec.hs") l) $ "no call site: " <> Text.unpack l
+          Spec.assertBool s (Text.isInfixOf (Text.pack "Parun/Test/RunnerSpec.hs") $ Text.replace (Text.pack "\\") (Text.pack "/") l) $ "no call site: " <> Text.unpack l
         _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
 
   Spec.describe s "summaryLine" $ do
