@@ -416,10 +416,14 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- (Game.shownTop, the ruling on Conspicuous Snoop). A card returned to
         -- the top from within its library is a new object (CR 401.6,
         -- Event.settleRevealedTops), so it lends afresh.
+        --
+        -- CR 404 / 108.2: in a graveyard, only a card, never a token awaiting
+        -- CR 704.5d (Game.cardsIn).
         Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion extra) ->
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
                 LentCards.TopOfYourLibrary -> (Zone.Library, foldMap (\you -> Maybe.maybeToList (Game.shownTop you gs)) (controllerOf src gs))
+                LentCards.InYourGraveyard -> (Zone.Graveyard, foldMap (\you -> Game.cardsIn Zone.Graveyard you gs) (controllerOf src gs))
               cards = filter (maybe False (\view -> Filter.matches context view criterion) . viewOf) lenders
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long

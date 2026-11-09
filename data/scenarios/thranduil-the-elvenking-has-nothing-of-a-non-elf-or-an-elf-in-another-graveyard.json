@@ -1,0 +1,135 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Thranduil, the Elvenking",
+            "label": "thranduil",
+            "ready": true
+          },
+          {
+            "card": "Elvish Lyrist",
+            "label": "lyrist",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Prodigal Sorcerer"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "GG",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Crusade",
+            "label": "c1"
+          },
+          {
+            "card": "Crusade",
+            "label": "c2"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Elvish Lyrist"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.1f: Thranduil, the Elvenking lends only from its own controller's graveyard, and only from an Elf card",
+  "note": "Prodigal Sorcerer in alice's graveyard is no Elf and bob's Elvish Lyrist is in bob's graveyard, so Thranduil has no ability. Once alice's own Lyrist is sacrificed into her graveyard, Thranduil has its ability.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate $lyrist"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$lyrist",
+          "targets": [
+            "$c1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Crusade",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate $thranduil"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
