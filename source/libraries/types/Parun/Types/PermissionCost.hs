@@ -14,4 +14,7 @@ data PermissionCost
     -- cost, where X is its mana value" (Hama, the Bloodbender), X read off the
     -- face being cast (CR 202.3d).
     WaterbendManaValue
+  | -- | CR 118.9 / 119.4: "pay life equal to its mana value rather than paying
+    -- its mana cost" (Nashi, Moon Sage's Scion), read off the face being cast.
+    PayLifeManaValue
   deriving (Eq, Ord, Show)

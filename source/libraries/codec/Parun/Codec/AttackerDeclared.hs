@@ -20,11 +20,13 @@ codec = Fields.object $ do
   target <- Fields.required "target" AttackTarget.codec AttackerDeclared.target
   count <- Fields.required "count" Common.natural AttackerDeclared.count
   attackingPlayer <- Fields.required "attackingPlayer" PlayerId.codec AttackerDeclared.attackingPlayer
+  power <- Fields.required "power" Common.integer AttackerDeclared.power
   pure
     AttackerDeclared.MkAttackerDeclared
       { AttackerDeclared.attacker = attacker,
         AttackerDeclared.defender = defender,
         AttackerDeclared.target = target,
         AttackerDeclared.count = count,
-        AttackerDeclared.attackingPlayer = attackingPlayer
+        AttackerDeclared.attackingPlayer = attackingPlayer,
+        AttackerDeclared.power = power
       }

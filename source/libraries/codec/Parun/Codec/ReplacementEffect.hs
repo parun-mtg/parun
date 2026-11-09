@@ -42,7 +42,7 @@ codec ::
 codec cardCodec abilityCodec effectCodec =
   Arm.tagged
     tagOf
-    [ Arm.payload "ZoneChangeR" ZoneChangeR.codec ReplacementEffect.ZoneChangeR (\x -> case x of ReplacementEffect.ZoneChangeR y -> Just y; _ -> Nothing),
+    [ Arm.payload "ZoneChangeR" (ZoneChangeR.codec effectCodec) ReplacementEffect.ZoneChangeR (\x -> case x of ReplacementEffect.ZoneChangeR y -> Just y; _ -> Nothing),
       Arm.payload "EntryR" (EntryR.codec abilityCodec effectCodec) ReplacementEffect.EntryR (\x -> case x of ReplacementEffect.EntryR y -> Just y; _ -> Nothing),
       Arm.payload "DamageR" (DamageR.codec effectCodec) ReplacementEffect.DamageR (\x -> case x of ReplacementEffect.DamageR y -> Just y; _ -> Nothing),
       Arm.payload "DestructionR" DestructionR.codec ReplacementEffect.DestructionR (\x -> case x of ReplacementEffect.DestructionR y -> Just y; _ -> Nothing),

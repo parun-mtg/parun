@@ -65,7 +65,6 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveCopy as ActiveCopy
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
-import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import Parun.Types.CandidateId (CandidateId)
@@ -861,7 +860,7 @@ matchesPrinted viewOf gs event candidate =
         -- hallowed-moonlight-exiles-a-card-that-enters-as-a-copy-of-a-creature,
         -- hallowed-moonlight-judges-heliod-on-the-devotion-of-the-player-it-enters-under
         -- and hallowed-moonlight-leaves-a-caged-creature-card-in-the-graveyard.
-        (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
+        (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
           let oid = ZoneChange.object zc
               entering = Map.member oid (GameState.enteringSubjects gs)
               namesBattlefield = ZoneChangePattern.whenDestination pat == Just Zone.Battlefield
@@ -3089,18 +3088,18 @@ legalCopyTargets context batch filter_ among self gs =
            in Game.linkedPile Nothing (Quantity.readerAcquisition context src gs) pile src gs
    in filter eligible domain
 
--- CR 707.9g / 603.11: the triggered ability linked to a CR 707.5 entry
--- replacement ("When you do, ..."), as the reflexive entry
--- Parun.Engine.Event.becomeCopyAs arms where a copy was made.
+-- CR 603.11 / 707.9g: the triggered ability linked to a replacement ("When
+-- you do, ..."): a CR 707.5 entry replacement's, armed by
+-- Parun.Engine.Event.becomeCopyAs where a copy was made, and a redirect's, armed
+-- by Parun.Engine.Event.apply each time it applies (Head of the Hunt).
 -- TriggerCondition.Reflexive, enlist's posture for its own linked ability
--- (Parun.Engine.Keyword.enlistReflexive): the
--- entry's existence is the "you do", and it fires at the next gather (CR 603.3),
--- after the permanent has entered. Nothing for a row that links none.
-linkedCopyTrigger :: AsCopy.AsCopy ability (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Maybe (TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card))
-linkedCopyTrigger asCopy
-  | Seq.null (AsCopy.whenYouDo asCopy) = Nothing
-  | otherwise =
-      Just (Mint.trigger TriggerCondition.Reflexive (AsCopy.whenYouDo asCopy))
+-- (Parun.Engine.Keyword.enlistReflexive): the entry's existence is the "you
+-- do", and it fires at the next gather (CR 603.3). Nothing for a row that links
+-- none.
+linkedTrigger :: Seq.Seq (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Maybe (TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card))
+linkedTrigger whenYouDo
+  | Seq.null whenYouDo = Nothing
+  | otherwise = Just (Mint.trigger TriggerCondition.Reflexive whenYouDo)
 
 -- CR 614.1c / 701.20a: the cards a player may reveal from their hand to satisfy
 -- an "as this enters, you may reveal a [matching] card from your hand" ability
@@ -4791,6 +4790,7 @@ installSpellMoveRow destination shuffling spellId caster gs =
                     shuffling
                     LibraryPosition.defaultValue
                     False
+                    Seq.empty
                 ),
             -- CR 113.7: the spell itself, which the pattern's IsSource is
             -- compared against.

@@ -16,7 +16,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
-import Parun.Engine.Event.Binding (admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, combatDamagerOn, postEventView)
+import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, combatDamagerOn, postEventView)
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -36,6 +36,7 @@ import qualified Parun.Types.AttachmentEnd as AttachmentEnd
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCount as AttackCount
+import qualified Parun.Types.AttackMeasure as AttackMeasure
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedSubject as AttackedSubject
@@ -187,7 +188,7 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 declarationsOf :: ObjectId -> GameState -> Int
 declarationsOf bearer gs =
   let declaredIt event = case event of
-        GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ _ _ _) -> oid == bearer
+        GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ _ _ _ _) -> oid == bearer
         _ -> False
    in length (Seq.filter (declaredIt . LoggedEvent.event) (GameState.events gs))
 
@@ -240,7 +241,21 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
     PlayerRelation.holds (Game.teams gs) (DeclarationTrigger.player t) you attacker
       && case DeclarationTrigger.attackers t of
         Nothing -> True
-        Just count -> Natural.length (admittedAttackers gs bearer you (AttackCount.filter count) attacker) >= AttackCount.floor count
+        Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (admittedAttackers gs bearer you (AttackCount.filter count) attacker)))
+      && case DeclarationTrigger.frequency t of
+        TriggerFrequency.EveryTime -> True
+        -- "For the first time each turn" narrows the EVENT, so an earlier
+        -- declaration that fell short of the count spends nothing
+        -- (docs/decisions.md, "What a short attack spends of Desert Were-Worm's
+        -- first time"). The one
+        -- being matched is already in the log, so "the first" is "the only
+        -- one so far"; an earlier one's creatures are each read through
+        -- viewWithLastKnown now, their power as stamped then.
+        TriggerFrequency.FirstTimeEachTurn ->
+          let qualifies declared = case DeclarationTrigger.attackers t of
+                Nothing -> True
+                Just count -> reachesFloor count [AttackerDeclared.power d | d <- declared, admitsAttacker gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
+           in length (filter qualifies (declarationsBy attacker gs)) <= 1
       -- As the Attacker arm's: asked of the live board, never re-checked (CR 603.4).
       && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) context gs bearer) (DeclarationTrigger.while t)
   -- CR 508.3f / 509.1h: the event alone answers it. Combat.blockers would
@@ -251,6 +266,38 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
   -- proves it.
   (AttackTrigger.Unblocked f, GameEvent.AttackerUnblocked u) -> admittedAt context board gs (AttackerUnblocked.attacker u) f
   _ -> False
+
+-- CR 508.3c / 107.1b: whether declared creatures with these powers, measured,
+-- reach the floor, negative powers included.
+reachesFloor :: AttackCount.AttackCount -> [Integer] -> Bool
+reachesFloor count powers = case AttackCount.measure count of
+  AttackMeasure.Creatures -> Natural.length powers >= AttackCount.floor count
+  AttackMeasure.TotalPower -> sum powers >= toInteger (AttackCount.floor count)
+
+-- The power AttackerDeclared stamped on this creature as it attacked (Desert
+-- Were-Worm's ruling), the latest declaration's when it attacked in several
+-- combat phases.
+declaredPower :: GameState -> ObjectId -> Integer
+declaredPower gs oid =
+  Maybe.fromMaybe 0 . Maybe.listToMaybe $
+    [ AttackerDeclared.power d
+    | GameEvent.AttackerDeclared d <- reverse (fmap LoggedEvent.event (Foldable.toList (GameState.events gs))),
+      AttackerDeclared.attacker d == oid
+    ]
+
+-- CR 508.3c: each declaration `attacker` made this turn, oldest first: the
+-- turn's AttackerDeclared events for that player, cut at each
+-- GameEvent.AttackersDeclared closing one.
+declarationsBy :: PlayerId -> GameState -> [[AttackerDeclared.AttackerDeclared]]
+declarationsBy attacker gs = go [] (fmap LoggedEvent.event (Foldable.toList (GameState.events gs)))
+  where
+    go pending events = case events of
+      [] -> []
+      GameEvent.AttackerDeclared d : rest
+        | AttackerDeclared.attackingPlayer d == attacker -> go (d : pending) rest
+      GameEvent.AttackersDeclared p : rest
+        | p == attacker -> reverse pending : go [] rest
+      _ : rest -> go pending rest
 
 -- CR 508.3a: whether the declared attacker is attacking what the trigger asks.
 attackerTargetHolds :: Filter.Context -> GameState -> ObjectId -> PlayerId -> AttackerTarget.AttackerTarget -> AttackerDeclared.AttackerDeclared -> Bool
@@ -311,7 +358,7 @@ declaredTargets :: GameState -> Map.Map ObjectId AttackTarget.AttackTarget
 declaredTargets gs =
   Map.fromList
     [ (oid, target)
-    | GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ target _ _) <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)),
+    | GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ target _ _ _) <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)),
       Set.member oid (Combat.declaredAttackers (GameState.combat gs))
     ]
 

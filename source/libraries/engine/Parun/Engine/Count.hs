@@ -471,7 +471,7 @@ bakePerspective viewOf context gs candidate predicate =
         Filter.Type.HasKeyword _ -> predicate
         Filter.Type.HasKeywordFamily _ -> predicate
         Filter.Type.Measures _ -> predicate
-        Filter.Type.ManaValueIsEven -> predicate
+        Filter.Type.ManaValueParity _ -> predicate
         Filter.Type.ControllerIsOwner -> predicate
         Filter.Type.HeldBy _ _ -> predicate
         Filter.Type.ControlledByRole _ -> predicate
@@ -1185,7 +1185,7 @@ lastKnownView peers oid gs lastKnown =
 declaredThisTurn :: ObjectId -> GameState -> Set.Set BlockRole.BlockRole
 declaredThisTurn oid gs =
   let roleOf event = case event of
-        GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared declared _ _ _ _) | declared == oid -> Just BlockRole.Attacker
+        GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared declared _ _ _ _ _) | declared == oid -> Just BlockRole.Attacker
         GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker _) | blocker == oid -> Just BlockRole.Blocker
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe (roleOf . LoggedEvent.event) (Foldable.toList (GameState.events gs)))

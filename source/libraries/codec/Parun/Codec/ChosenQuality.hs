@@ -13,7 +13,8 @@ codec =
       Arm.nullary "BasicLandType" ChosenQuality.BasicLandType,
       Arm.nullary "CreatureType" ChosenQuality.CreatureType,
       Arm.nullary "CardType" ChosenQuality.CardType,
-      Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing)
+      Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing),
+      Arm.nullary "Parity" ChosenQuality.Parity
     ]
 
 tagOf :: ChosenQuality.ChosenQuality -> String
@@ -23,3 +24,4 @@ tagOf x = case x of
   ChosenQuality.Number {} -> "Number"
   ChosenQuality.CreatureType -> "CreatureType"
   ChosenQuality.CardType -> "CardType"
+  ChosenQuality.Parity -> "Parity"

@@ -6,8 +6,8 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 508.1: a creature was declared attacking, whom it is attacking, what it
--- was announced at, how many creatures that declaration named, and the attacking
--- player who declared it.
+-- was announced at, how many creatures that declaration named, the attacking
+-- player who declared it, and its power as it attacked.
 
 -- The count is carried rather than counted out of the log, because CR 702.83b
 -- scopes "alone" to a given combat phase while the log is cleared per TURN: a
@@ -26,11 +26,17 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- player in every game but one using the shared team turns option, where each
 -- player on the active team is an attacking player (CR 805.10a) and "you
 -- attacked" asks about one of them (CR 805.10c).
+--
+-- `power` is read as the declaration is recorded, after CR 508.1k: Desert
+-- Were-Worm's "total power" counts it there and never again (its ruling of
+-- 2026-06-29), and a later declaration this turn reads an earlier one's off
+-- the log.
 data AttackerDeclared = MkAttackerDeclared
   { attacker :: ObjectId.ObjectId,
     defender :: PlayerId.PlayerId,
     target :: AttackTarget.AttackTarget,
     count :: Natural.Natural,
-    attackingPlayer :: PlayerId.PlayerId
+    attackingPlayer :: PlayerId.PlayerId,
+    power :: Integer
   }
   deriving (Eq, Ord, Show)

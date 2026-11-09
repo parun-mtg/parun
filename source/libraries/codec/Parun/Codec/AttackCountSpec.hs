@@ -7,18 +7,26 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackCount as AttackCount
+import qualified Parun.Types.AttackMeasure as AttackMeasure
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.AttackCount" $ do
   -- Military Intelligence's floor of two.
-  Spec.it s "MkAttackCount, both keys" $
+  Spec.it s "MkAttackCount, a count writes no measure" $
     Common.assertCodec
       s
       AttackCount.codec
-      (AttackCount.MkAttackCount 2 (Filter.HasCardType CardType.Creature))
+      (AttackCount.MkAttackCount AttackMeasure.Creatures 2 (Filter.HasCardType CardType.Creature))
       " {\"floor\":2,\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- Desert Were-Worm's total power 12.
+  Spec.it s "MkAttackCount, total power writes its measure" $
+    Common.assertCodec
+      s
+      AttackCount.codec
+      (AttackCount.MkAttackCount AttackMeasure.TotalPower 12 (Filter.And []))
+      " {\"measure\":\"TotalPower\",\"floor\":12,\"filter\":{\"type\":\"And\",\"value\":[]}} "
   -- A zero floor is CR 508.3d's "attacks" spelled another way.
   Spec.it s "rejects a zero floor" $
     Spec.assertBool

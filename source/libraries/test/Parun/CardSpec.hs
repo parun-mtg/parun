@@ -2322,7 +2322,8 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.RunEffects effects) _) -> Foldable.toList effects
   ReplacementEffect.DamageR {} -> []
   ReplacementEffect.CounterR {} -> []
-  ReplacementEffect.ZoneChangeR {} -> []
+  -- CR 603.11's linked trigger runs these each time the redirect applies.
+  ReplacementEffect.ZoneChangeR r -> Foldable.toList (ZoneChangeR.whenYouDo r)
   ReplacementEffect.DestructionR _ -> []
   ReplacementEffect.TokenR {} -> []
   -- The same linked trigger, on the copy a turning face up makes.
@@ -4955,7 +4956,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.CantBeTargetedBy _ quality -> Maybe.maybeToList quality
   -- CR 601.3b's "a spell with certain qualities", which is a Filter over the
   -- spell exactly as a cost modifier's is (Vedalken Orrery's is `And []`).
-  PlayerEffect.CastAsThoughItHadFlash f -> [f]
+  PlayerEffect.CastAsThoughItHadFlash f _ -> [f]
   PlayerEffect.NextSpell f -> [f]
   -- CR 601.1a / 601.3b's play-scoped sibling, the same shape (Scout's Warning's
   -- is HasCardType Creature).
@@ -5241,7 +5242,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- rather than a kind holding nothing.
   ReplacementEffect.CounterR (CounterR.MkCounterR counterPattern _) ->
     unframed [CounterPattern.onWhat counterPattern] <> concatMap counterKindFilters (Maybe.maybeToList (CounterPattern.whichKind counterPattern))
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ _ _ _ _) -> unframed [ZoneChangePattern.whatObject zoneChangePattern]
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ _ _ _ _ _) -> unframed [ZoneChangePattern.whatObject zoneChangePattern]
   ReplacementEffect.EntryR (EntryR.MkEntryR entryPattern entryRewrite) -> unframed [entryPattern] <> entryRewriteFilters entryRewrite
   -- CR 615.1's shields narrow by their source, which is a Filter over the object
   -- dealing the damage (Luminesce's "black sources and red sources", Galvanic

@@ -1019,9 +1019,12 @@ admittedAttackers :: GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Key
 admittedAttackers gs bearer you f attacker = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
   where
     combat = GameState.combat gs
-    admits oid =
-      Map.lookup oid (Combat.joinedUnder combat) == Just attacker
-        && maybe False (\view -> Filter.matches (Projection.sourceContext gs (Just you) bearer) view f) (Projection.viewWithLastKnown oid gs oid)
+    admits oid = Map.lookup oid (Combat.joinedUnder combat) == Just attacker && admitsAttacker gs bearer you f oid
+
+-- Whether the Filter admits this declared attacker, viewed through
+-- viewWithLastKnown and framed by the bearer: admittedAttackers' reading.
+admitsAttacker :: GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> ObjectId -> Bool
+admitsAttacker gs bearer you f oid = maybe False (\view -> Filter.matches (Projection.sourceContext gs (Just you) bearer) view f) (Projection.viewWithLastKnown oid gs oid)
 
 -- CR 508.3: the slots eventBindings stamps for an attack trigger, each off the
 -- event its arity matches. A declared or unblocked attacker and CR 508.5's

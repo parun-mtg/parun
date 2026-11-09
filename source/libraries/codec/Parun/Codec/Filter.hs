@@ -26,6 +26,7 @@ import qualified Parun.Codec.LoyaltyKind as LoyaltyKind
 import qualified Parun.Codec.Measures as Measures
 import qualified Parun.Codec.NameChooser as NameChooser
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.ParityOperand as ParityOperand
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.ProductionTag as ProductionTag
@@ -87,7 +88,7 @@ codec keywordCodec =
       Arm.payload "HeldByPlayer" heldByPlayer (uncurry Filter.HeldByPlayer) (\x -> case x of Filter.HeldByPlayer h y -> Just (h, y); _ -> Nothing),
       Arm.payload "HeldByRecipient" Holder.codec Filter.HeldByRecipient (\x -> case x of Filter.HeldByRecipient y -> Just y; _ -> Nothing),
       Arm.payload "Shares" (shares (codec keywordCodec)) (uncurry Filter.Shares) (\x -> case x of Filter.Shares t a -> Just (t, a); _ -> Nothing),
-      Arm.nullary "ManaValueIsEven" Filter.ManaValueIsEven,
+      Arm.payload "ManaValueParity" ParityOperand.codec Filter.ManaValueParity (\x -> case x of Filter.ManaValueParity y -> Just y; _ -> Nothing),
       Arm.nullary "ControllerIsOwner" Filter.ControllerIsOwner,
       Arm.payload "HeldBy" heldBy (uncurry Filter.HeldBy) (\x -> case x of Filter.HeldBy h r -> Just (h, r); _ -> Nothing),
       Arm.payload "IsPlayer" PlayerRelation.codec Filter.IsPlayer (\x -> case x of Filter.IsPlayer y -> Just y; _ -> Nothing),
@@ -272,7 +273,7 @@ tagOf x = case x of
   Filter.HeldByPlayer {} -> "HeldByPlayer"
   Filter.HeldByRecipient {} -> "HeldByRecipient"
   Filter.Shares {} -> "Shares"
-  Filter.ManaValueIsEven {} -> "ManaValueIsEven"
+  Filter.ManaValueParity {} -> "ManaValueParity"
   Filter.ControllerIsOwner {} -> "ControllerIsOwner"
   Filter.HeldBy {} -> "HeldBy"
   Filter.IsPlayer {} -> "IsPlayer"

@@ -8,4 +8,7 @@ data LentCards
   | -- | CR 401.5: the top card of the library of the effect's controller, while
     -- it is shown (Conspicuous Snoop).
     TopOfYourLibrary
+  | -- | CR 404: each card in the graveyard of the effect's controller
+    -- (Thranduil, the Elvenking).
+    InYourGraveyard
   deriving (Bounded, Enum, Eq, Ord, Show)

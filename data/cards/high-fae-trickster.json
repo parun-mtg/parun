@@ -29,8 +29,10 @@
           "effect": {
             "type": "CastAsThoughItHadFlash",
             "value": {
-              "type": "And",
-              "value": []
+              "matching": {
+                "type": "And",
+                "value": []
+              }
             }
           },
           "scope": {

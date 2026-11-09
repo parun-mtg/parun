@@ -44,4 +44,10 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
       ChosenQuality.codec
       ChosenQuality.CardType
       " {\"type\":\"CardType\"} "
+  Spec.it s "Parity (Gollum, Riddle Master)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      ChosenQuality.Parity
+      " {\"type\":\"Parity\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenQuality.codec

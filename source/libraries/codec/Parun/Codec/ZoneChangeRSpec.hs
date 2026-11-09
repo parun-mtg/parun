@@ -1,5 +1,7 @@
 module Parun.Codec.ZoneChangeRSpec where
 
+import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
 import qualified Parun.Codec.ZoneChangeR as ZoneChangeR
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -18,7 +20,7 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
   Spec.it s "MkZoneChangeR" $
     Common.assertCodec
       s
-      ZoneChangeR.codec
+      (ZoneChangeR.codec Common.text)
       ( ZoneChangeR.MkZoneChangeR
           { ZoneChangeR.matching =
               ZoneChangePattern.MkZoneChangePattern
@@ -33,7 +35,8 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.revealing = False,
             ZoneChangeR.shuffling = False,
             ZoneChangeR.position = LibraryPosition.defaultValue,
-            ZoneChangeR.optional = False
+            ZoneChangeR.optional = False,
+            ZoneChangeR.whenYouDo = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\"} "
@@ -42,7 +45,7 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
   Spec.it s "MkZoneChangeR with both riders" $
     Common.assertCodec
       s
-      ZoneChangeR.codec
+      (ZoneChangeR.codec Common.text)
       ( ZoneChangeR.MkZoneChangeR
           { ZoneChangeR.matching =
               ZoneChangePattern.MkZoneChangePattern
@@ -57,7 +60,8 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.revealing = True,
             ZoneChangeR.shuffling = True,
             ZoneChangeR.position = LibraryPosition.defaultValue,
-            ZoneChangeR.optional = False
+            ZoneChangeR.optional = False,
+            ZoneChangeR.whenYouDo = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\",\"whatObject\":{\"type\":\"IsSource\"}},\"destination\":\"Library\",\"revealing\":true,\"shuffling\":true} "
@@ -66,7 +70,7 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
   Spec.it s "MkZoneChangeR (Library of Leng)" $
     Common.assertCodec
       s
-      ZoneChangeR.codec
+      (ZoneChangeR.codec Common.text)
       ( ZoneChangeR.MkZoneChangeR
           { ZoneChangeR.matching =
               ZoneChangePattern.MkZoneChangePattern
@@ -81,8 +85,34 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.revealing = False,
             ZoneChangeR.shuffling = False,
             ZoneChangeR.position = LibraryPosition.Top,
-            ZoneChangeR.optional = True
+            ZoneChangeR.optional = True,
+            ZoneChangeR.whenYouDo = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\",\"whoseObject\":{\"type\":\"You\"},\"whenDiscarded\":\"ByEffect\"},\"destination\":\"Library\",\"position\":\"Top\",\"optional\":true} "
-  Spec.it s "has a schema" $ Common.assertHasSchema s ZoneChangeR.codec
+  -- CR 603.11: Head of the Hunt's linked "when you do"; the effect codec is a
+  -- parameter, so text stands in for it.
+  Spec.it s "MkZoneChangeR with a linked trigger (Head of the Hunt)" $
+    Common.assertCodec
+      s
+      (ZoneChangeR.codec Common.text)
+      ( ZoneChangeR.MkZoneChangeR
+          { ZoneChangeR.matching =
+              ZoneChangePattern.MkZoneChangePattern
+                { ZoneChangePattern.whenDestination = Just Zone.Graveyard,
+                  ZoneChangePattern.whatObject = Filter.And [],
+                  ZoneChangePattern.whoseObject = ControllerRelation.Related PlayerRelation.AnyPlayer,
+                  ZoneChangePattern.whenDiscarded = Nothing,
+                  ZoneChangePattern.causedBy = Nothing,
+                  ZoneChangePattern.duringResolution = False
+                },
+            ZoneChangeR.destination = Zone.Exile,
+            ZoneChangeR.revealing = False,
+            ZoneChangeR.shuffling = False,
+            ZoneChangeR.position = LibraryPosition.defaultValue,
+            ZoneChangeR.optional = False,
+            ZoneChangeR.whenYouDo = Seq.singleton (Text.pack "wolf")
+          }
+      )
+      " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\",\"whenYouDo\":[\"wolf\"]} "
+  Spec.it s "has a schema" $ Common.assertHasSchema s (ZoneChangeR.codec Common.text)

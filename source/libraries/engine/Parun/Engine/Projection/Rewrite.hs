@@ -551,7 +551,7 @@ rewritePlayerEffect pairs effect = case effect of
      in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (rewritePerTarget pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
   -- No filter to rewrite: a rule-702 designator is not a word CR 612.1 swaps.
   PlayerEffect.AlternativeActivationCost _ -> effect
-  PlayerEffect.CastAsThoughItHadFlash f -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f)
+  PlayerEffect.CastAsThoughItHadFlash f first -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f) first
   PlayerEffect.NextSpell f -> PlayerEffect.NextSpell (Filter.rewrite pairs f)
   PlayerEffect.MayPlayAsThoughItHadFlash f -> PlayerEffect.MayPlayAsThoughItHadFlash (Filter.rewrite pairs f)
   -- A rule-702 designator is no word CR 612.1 swaps; the two grants' Filters
@@ -1657,14 +1657,15 @@ rewritePrintedReplacement pairs printed =
 rewriteReplacementEffect :: [(TextWord.TextWord, TextWord.TextWord)] -> ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
 rewriteReplacementEffect pairs effect = case effect of
   -- CR 400.3's owner and the destination Zone name no word; the moving object's
-  -- Filter does.
+  -- Filter and the CR 603.11 linked trigger's effects do.
   ReplacementEffect.ZoneChangeR r ->
     ReplacementEffect.ZoneChangeR
       r
         { ZoneChangeR.matching =
             (ZoneChangeR.matching r)
               { ZoneChangePattern.whatObject = Filter.rewrite pairs (ZoneChangePattern.whatObject (ZoneChangeR.matching r))
-              }
+              },
+          ZoneChangeR.whenYouDo = fmap (rewriteEffect pairs) (ZoneChangeR.whenYouDo r)
         }
   ReplacementEffect.EntryR r ->
     ReplacementEffect.EntryR
@@ -2277,11 +2278,12 @@ rewriteAttackTrigger pairs trigger = case trigger of
           (fmap (rewriteCondition pairs) while_)
       )
   AttackTrigger.Attacked _ -> trigger
-  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers while_) ->
+  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers frequency while_) ->
     AttackTrigger.Declaration
       ( DeclarationTrigger.MkDeclarationTrigger
           player
-          (fmap (\(AttackCount.MkAttackCount n f) -> AttackCount.MkAttackCount n (Filter.rewrite pairs f)) attackers)
+          (fmap (\(AttackCount.MkAttackCount measure n f) -> AttackCount.MkAttackCount measure n (Filter.rewrite pairs f)) attackers)
+          frequency
           (fmap (rewriteCondition pairs) while_)
       )
   AttackTrigger.Unblocked f -> AttackTrigger.Unblocked (Filter.rewrite pairs f)

@@ -1,0 +1,31 @@
+{
+  "description": "CR 107.3b / 202.3e Nashi's permission casts bob's Molten Disaster at X = 0 for 2 life, and it deals no damage",
+  "note": "Alice has no mana, so nothing can pay an X; the payment is the mana value with X at 0.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Nashi, Moon Sage's Scion", "label": "nashi", "ready": true }],
+        "library": [{ "card": "Plains" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Molten Disaster" }, { "card": "Plains" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$nashi"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "Molten Disaster" } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 18 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" }
+  ],
+  "final": [
+    { "Count": { "player": "bob", "zone": "Graveyard", "card": "Molten Disaster", "count": 1 } },
+    { "Life": { "player": "alice", "life": 18 } },
+    { "Life": { "player": "bob", "life": 17 } },
+    { "Damage": { "object": "$nashi", "damage": 0 } }
+  ]
+}

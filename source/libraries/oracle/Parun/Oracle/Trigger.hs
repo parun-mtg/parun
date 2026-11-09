@@ -132,7 +132,7 @@ event context creature c = case c of
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage (ActingPermanent.Matching f) Nothing Nothing) Batching.OneOrMore) -> do
     (one, _) <- described context f
     [other ("Whenever " <> one <> " is dealt damage") [(becameSlot, "it")]]
-  TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing Nothing)) -> do
+  TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing TriggerFrequency.EveryTime Nothing)) -> do
     who <- case relation of
       PlayerRelation.You -> ["you attack"]
       PlayerRelation.Opponent -> ["an opponent attacks"]

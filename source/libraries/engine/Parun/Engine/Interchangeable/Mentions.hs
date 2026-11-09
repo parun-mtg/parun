@@ -622,7 +622,7 @@ filterNames asking criterion = case criterion of
   Filter.HasKeyword _keyword -> mempty
   Filter.HasKeywordFamily _family -> mempty
   Filter.Measures measures -> measuresNames asking measures
-  Filter.ManaValueIsEven -> mempty
+  Filter.ManaValueParity _operand -> mempty
   Filter.ControllerIsOwner -> mempty
   Filter.HeldBy _holder _relation -> mempty
   Filter.ControlledByRole _ -> mempty
@@ -2569,7 +2569,7 @@ playerEffectNames asking x = case x of
   PlayerEffect.SpendManaAsThough clause -> spendManaAsThoughNames asking clause
   PlayerEffect.CantBeTargetedBy _playerScope quality -> foldMap (filterNames asking) quality
   PlayerEffect.HasProtectionFrom filter_ -> filterNames asking filter_
-  PlayerEffect.CastAsThoughItHadFlash filter_ -> filterNames asking filter_
+  PlayerEffect.CastAsThoughItHadFlash filter_ onlyFirst -> foldMap (\scope -> history asking HistoryRead.Casts <> turnScopeNames asking scope) onlyFirst <> filterNames asking filter_
   PlayerEffect.NextSpell filter_ -> filterNames asking filter_
   PlayerEffect.MayPlayAsThoughItHadFlash filter_ -> filterNames asking filter_
   PlayerEffect.KeywordRiderGrant grant ->
@@ -2884,7 +2884,7 @@ replaceNames asking onCard onAbility onEffect x = case x of
 
 replacementEffectNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> ReplacementEffect.ReplacementEffect card ability effect -> r
 replacementEffectNames asking onCard onAbility onEffect x = case x of
-  ReplacementEffect.ZoneChangeR zoneChangeR -> zoneChangeRNames asking zoneChangeR
+  ReplacementEffect.ZoneChangeR zoneChangeR -> zoneChangeRNames asking onEffect zoneChangeR
   ReplacementEffect.EntryR entryR -> entryRNames asking onAbility onEffect entryR
   ReplacementEffect.DamageR damageR -> damageRNames asking onEffect damageR
   ReplacementEffect.DestructionR destructionR -> destructionRNames asking destructionR
@@ -3191,10 +3191,10 @@ attackCompanyNames asking x = case x of
 
 declarationTriggerNames :: (Monoid r) => Asking r -> DeclarationTrigger.DeclarationTrigger -> r
 declarationTriggerNames asking x = case x of
-  DeclarationTrigger.MkDeclarationTrigger _player attackers while_ ->
+  DeclarationTrigger.MkDeclarationTrigger _player attackers _frequency while_ ->
     ( case attackers of
         Nothing -> mempty
-        Just (AttackCount.MkAttackCount _floor filter_) -> filterNames asking filter_
+        Just (AttackCount.MkAttackCount _measure _floor filter_) -> filterNames asking filter_
     )
       <> foldMap (conditionNames asking) while_
 
@@ -3395,9 +3395,9 @@ zoneChangePatternNames :: (Monoid r) => Asking r -> ZoneChangePattern.ZoneChange
 zoneChangePatternNames asking x = case x of
   ZoneChangePattern.MkZoneChangePattern _whenDestination whoseObject whatObject _whenDiscarded _causedBy _duringResolution -> controllerRelationNames asking whoseObject <> filterNames asking whatObject
 
-zoneChangeRNames :: (Monoid r) => Asking r -> ZoneChangeR.ZoneChangeR -> r
-zoneChangeRNames asking x = case x of
-  ZoneChangeR.MkZoneChangeR matching _destination _revealing _shuffling _position _optional -> zoneChangePatternNames asking matching
+zoneChangeRNames :: (Monoid r) => Asking r -> (effect -> r) -> ZoneChangeR.ZoneChangeR effect -> r
+zoneChangeRNames asking onEffect x = case x of
+  ZoneChangeR.MkZoneChangeR matching _destination _revealing _shuffling _position _optional whenYouDo -> zoneChangePatternNames asking matching <> foldMap onEffect whenYouDo
 
 zoneScopeNames :: (Monoid r) => Asking r -> ZoneScope.ZoneScope -> r
 zoneScopeNames asking x = case x of

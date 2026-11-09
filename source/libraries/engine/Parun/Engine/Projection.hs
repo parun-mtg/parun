@@ -416,10 +416,14 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- (Game.shownTop, the ruling on Conspicuous Snoop). A card returned to
         -- the top from within its library is a new object (CR 401.6,
         -- Event.settleRevealedTops), so it lends afresh.
+        --
+        -- CR 404 / 108.2: in a graveyard, only a card, never a token awaiting
+        -- CR 704.5d (Game.cardsIn).
         Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion extra) ->
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
                 LentCards.TopOfYourLibrary -> (Zone.Library, foldMap (\you -> Maybe.maybeToList (Game.shownTop you gs)) (controllerOf src gs))
+                LentCards.InYourGraveyard -> (Zone.Graveyard, foldMap (\you -> Game.cardsIn Zone.Graveyard you gs) (controllerOf src gs))
               cards = filter (maybe False (\view -> Filter.matches context view criterion) . viewOf) lenders
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long
@@ -4225,7 +4229,7 @@ filterReads f = case f of
   Filter.Type.Stickered -> Set.empty
   -- CR 202.3 reads the mana cost, which layer 1 alone sets (CR 707.2) and no
   -- Modification writes.
-  Filter.Type.ManaValueIsEven -> Set.empty
+  Filter.Type.ManaValueParity _ -> Set.empty
   Filter.Type.And fs -> foldMap filterReads fs
   Filter.Type.Or fs -> foldMap filterReads fs
   Filter.Type.Not g -> filterReads g
@@ -4406,7 +4410,7 @@ filterReadsPeers f = case f of
   Filter.Type.HasCountersOfAnyKind -> False
   Filter.Type.HasSticker _ -> False
   Filter.Type.Stickered -> False
-  Filter.Type.ManaValueIsEven -> False
+  Filter.Type.ManaValueParity _ -> False
 
 -- filterReadsPeers through an affected set. TheseObjects names ids (CR 611.2c)
 -- and Attached reads its source's attachment (CR 303.4m); neither builds a view.
@@ -5870,6 +5874,7 @@ finalityOf oid gs =
               False
               LibraryPosition.defaultValue
               False
+              Seq.empty
           )
       ]
 

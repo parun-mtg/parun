@@ -254,6 +254,8 @@ library codec
     Parun.Codec.AttackLimitScopeSpec
     Parun.Codec.AttackLimitUnless
     Parun.Codec.AttackLimitUnlessSpec
+    Parun.Codec.AttackMeasure
+    Parun.Codec.AttackMeasureSpec
     Parun.Codec.AttackOption
     Parun.Codec.AttackOptionSpec
     Parun.Codec.AttackPermission
@@ -1206,6 +1208,10 @@ library codec
     Parun.Codec.PaidExpirySpec
     Parun.Codec.Pairing
     Parun.Codec.PairingSpec
+    Parun.Codec.Parity
+    Parun.Codec.ParityOperand
+    Parun.Codec.ParityOperandSpec
+    Parun.Codec.ParitySpec
     Parun.Codec.PartnerText
     Parun.Codec.PartnerTextSpec
     Parun.Codec.PastActivation
@@ -2620,6 +2626,7 @@ library types
     Parun.Types.AttackingPlayers
     Parun.Types.AttackLimitScope
     Parun.Types.AttackLimitUnless
+    Parun.Types.AttackMeasure
     Parun.Types.AttackOption
     Parun.Types.AttackPermission
     Parun.Types.AttackRequirement
@@ -3161,6 +3168,8 @@ library types
     Parun.Types.OwnershipChange
     Parun.Types.PaidExpiry
     Parun.Types.Pairing
+    Parun.Types.Parity
+    Parun.Types.ParityOperand
     Parun.Types.PartnerText
     Parun.Types.PastActivation
     Parun.Types.PayBranch

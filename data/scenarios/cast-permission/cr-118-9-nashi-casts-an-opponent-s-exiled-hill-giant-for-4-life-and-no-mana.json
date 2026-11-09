@@ -1,0 +1,33 @@
+{
+  "description": "CR 118.9 / 119.4 Nashi's hit exiles each player's top card; alice, with no mana, casts bob's Hill Giant for 4 life, and her own Raging Goblin is no longer offered",
+  "note": "Alice has no lands, so the Giant is offered only through the life payment. The one-play limit then withdraws the Goblin.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Nashi, Moon Sage's Scion", "label": "nashi", "ready": true }],
+        "library": [{ "card": "Raging Goblin" }, { "card": "Plains" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Hill Giant" }, { "card": "Plains" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$nashi"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast Raging Goblin", "Cast Hill Giant"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "Hill Giant" } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 16 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass"] } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Raging Goblin", "count": 1 } },
+    { "Life": { "player": "alice", "life": 16 } }
+  ]
+}

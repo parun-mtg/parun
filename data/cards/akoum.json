@@ -8,8 +8,10 @@
           "effect": {
             "type": "CastAsThoughItHadFlash",
             "value": {
-              "type": "HasCardType",
-              "value": "Enchantment"
+              "matching": {
+                "type": "HasCardType",
+                "value": "Enchantment"
+              }
             }
           },
           "scope": {

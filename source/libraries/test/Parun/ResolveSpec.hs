@@ -2715,7 +2715,7 @@ perforatingSpec s registry =
             (giantId, g2) = S.addPermanent giant S.carol g1
             (_, g3) = S.addHandCard swamp S.bob g2
             (_, g4) = S.addHandCard swamp S.carol g3
-            attacked = S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared artistId S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice)] g4
+            attacked = S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared artistId S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice 0)] g4
             begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (attacked {GameState.phase = endStep, GameState.activePlayer = S.alice})
         pure (bearsId, giantId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
       sacrifices cost = any (\c -> case c of CostComponent.Sacrifice {} -> True; _ -> False) (Cost.Type.components cost)

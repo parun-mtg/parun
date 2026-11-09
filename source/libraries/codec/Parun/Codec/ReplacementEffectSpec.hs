@@ -104,6 +104,7 @@ spec s =
                     False
                     LibraryPosition.defaultValue
                     False
+                    Seq.empty
                 )
             )
             " {\"type\":\"ZoneChangeR\",\"value\":{\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\"}} "
@@ -128,6 +129,7 @@ spec s =
                     False
                     LibraryPosition.defaultValue
                     False
+                    Seq.empty
                 )
             )
             " {\"type\":\"ZoneChangeR\",\"value\":{\"matching\":{\"whenDestination\":\"Graveyard\",\"whoseObject\":{\"type\":\"Opponent\"}},\"destination\":\"Exile\"}} "

@@ -1,0 +1,70 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Desert Were-Worm",
+            "label": "worm",
+            "ready": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves",
+            "ready": true
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 508.3c desert were worm attacking with total power 11 does not trigger",
+  "final": [
+    {
+      "Tapped": {
+        "object": "$worm",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$elves",
+        "tapped": true
+      }
+    }
+  ],
+  "note": "The board above with Llanowar Elves for Goblin Piker: 10 and 1 make 11. Both attackers stay tapped, and an added combat phase would fail the scenario on its unscheduled attack declaration.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$worm",
+          "$elves"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

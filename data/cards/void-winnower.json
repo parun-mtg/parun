@@ -22,7 +22,11 @@
                     }
                   },
                   {
-                    "type": "ManaValueIsEven"
+                    "type": "ManaValueParity",
+                    "value": {
+                      "type": "Printed",
+                      "value": "Even"
+                    }
                   }
                 ]
               }
@@ -43,7 +47,11 @@
           "effect": {
             "type": "CantCastMatching",
             "value": {
-              "type": "ManaValueIsEven"
+              "type": "ManaValueParity",
+              "value": {
+                "type": "Printed",
+                "value": "Even"
+              }
             }
           },
           "scope": {

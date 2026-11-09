@@ -299,7 +299,7 @@ filterAtomsOf leaf predicate = case predicate of
   -- A leaf for the two above's reason: a Holder holds no Filter for a card
   -- author to reach.
   Filter.Type.HeldByRecipient _ -> leaf predicate
-  Filter.Type.ManaValueIsEven -> leaf predicate
+  Filter.Type.ManaValueParity _ -> leaf predicate
   Filter.Type.IsSource -> leaf predicate
   Filter.Type.IsObject _ -> leaf predicate
   Filter.Type.TargetsSource -> leaf predicate
@@ -980,6 +980,7 @@ writesColors quality = case quality of
   ChosenQuality.CreatureType -> False
   ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
+  ChosenQuality.Parity -> False
 
 -- Whether a choice of this quality answers HasChosenSubtype, writesColors' twin.
 writesSubtype :: ChosenQuality.ChosenQuality -> Bool
@@ -989,6 +990,7 @@ writesSubtype quality = case quality of
   ChosenQuality.CreatureType -> True
   ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
+  ChosenQuality.Parity -> False
 
 -- Whether a choice of this quality answers HasChosenCardType, writesColors' twin.
 writesCardType :: ChosenQuality.ChosenQuality -> Bool
@@ -998,6 +1000,7 @@ writesCardType quality = case quality of
   ChosenQuality.CreatureType -> False
   ChosenQuality.CardType -> True
   ChosenQuality.Number _ -> False
+  ChosenQuality.Parity -> False
 
 -- CR 105.2's chosen colour is answerable only where Filter.Context.sourceChosenColors
 -- is filled: every source-framed position (sourceFramed), plus a static grant's

@@ -31,8 +31,10 @@
                       "effect": {
                         "type": "CastAsThoughItHadFlash",
                         "value": {
-                          "type": "HasCardType",
-                          "value": "Creature"
+                          "matching": {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          }
                         }
                       },
                       "players": {

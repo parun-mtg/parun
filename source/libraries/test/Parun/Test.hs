@@ -99,6 +99,7 @@ import qualified Parun.Codec.AttackCostSpec
 import qualified Parun.Codec.AttackCountSpec
 import qualified Parun.Codec.AttackLimitScopeSpec
 import qualified Parun.Codec.AttackLimitUnlessSpec
+import qualified Parun.Codec.AttackMeasureSpec
 import qualified Parun.Codec.AttackOptionSpec
 import qualified Parun.Codec.AttackPermissionSpec
 import qualified Parun.Codec.AttackRequirementSpec
@@ -569,6 +570,8 @@ import qualified Parun.Codec.OutsidePickSpec
 import qualified Parun.Codec.OwnedZoneSpec
 import qualified Parun.Codec.PaidExpirySpec
 import qualified Parun.Codec.PairingSpec
+import qualified Parun.Codec.ParityOperandSpec
+import qualified Parun.Codec.ParitySpec
 import qualified Parun.Codec.PartnerTextSpec
 import qualified Parun.Codec.PastActivationSpec
 import qualified Parun.Codec.PayBranchSpec
@@ -1129,6 +1132,7 @@ spec s registry corpus = do
   Parun.Codec.AttackCostSpec.spec s
   Parun.Codec.AttackCompanySpec.spec s
   Parun.Codec.AttackCountSpec.spec s
+  Parun.Codec.AttackMeasureSpec.spec s
   Parun.Codec.AttackTriggerSpec.spec s
   Parun.Codec.EntersTriggerSpec.spec s
   Parun.Codec.LeavesTriggerSpec.spec s
@@ -1583,6 +1587,8 @@ spec s registry corpus = do
   Parun.Codec.MoveSpec.spec s
   Parun.Codec.MoveToZoneSpec.spec s
   Parun.Codec.NameChooserSpec.spec s
+  Parun.Codec.ParityOperandSpec.spec s
+  Parun.Codec.ParitySpec.spec s
   Parun.Codec.NamesAreSpec.spec s
   Parun.Codec.NinjutsuSpec.spec s
   Parun.Codec.NinjutsuVariantSpec.spec s

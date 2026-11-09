@@ -1,5 +1,6 @@
 module Parun.Codec.PermanentCandidateSpec where
 
+import qualified Data.Sequence as Seq
 import qualified Parun.Codec.PermanentCandidate as PermanentCandidate
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -36,6 +37,7 @@ effect =
         False
         LibraryPosition.defaultValue
         False
+        Seq.empty
     )
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()

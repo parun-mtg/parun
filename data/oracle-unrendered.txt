@@ -807,6 +807,7 @@ dermotaxi
 desecrated-tomb
 desecration-demon
 desert
+desert-were-worm
 desertion
 desolation-of-smaug
 desolation-twin
@@ -1400,6 +1401,7 @@ goldmane-griffin
 goldvein-pick
 golem-skin-gauntlets
 golgothian-sylex
+gollum-riddle-master
 gollum-silent-slinker-meager-meal
 golos-tireless-pilgrim
 goreclaw-terror-of-qal-sisma
@@ -1505,6 +1507,7 @@ havoc-jester
 hawkeye-avenging-archer
 head-banger
 head-games
+head-of-the-hunt
 headless-skaab
 heal
 healing-grace
@@ -2149,6 +2152,7 @@ naked-singularity
 nameless-inversion
 nantuko-cultivator
 narcomoeba
+nashi-moon-sages-scion
 nasty-little-rabbit
 natural-affinity
 natural-order
@@ -2494,6 +2498,7 @@ quina-qu-gourmet
 qutrub-forayer
 rabid-elephant
 rabid-wombat
+radagast-of-rhosgobel
 radha-coalition-warlord
 radha-heart-of-keld
 radiant-performer
@@ -3270,6 +3275,7 @@ thraben-inspector
 thran-golem
 thran-power-suit
 thranduil-sindarin-liege-silvan-rally
+thranduil-the-elvenking
 thranduils-company
 thranduils-decree
 thrashing-frontliner

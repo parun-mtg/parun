@@ -21,6 +21,7 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
@@ -281,7 +282,7 @@ gamerPower gs = fmap (`Projection.powerOf` gs) (namedOn gamerName gs)
 exileEnteringAttractions :: ObjectId -> ActiveReplacement.ActiveReplacement
 exileEnteringAttractions src =
   ActiveReplacement.MkActiveReplacement
-    { ActiveReplacement.effect = ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Battlefield) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.HasSubtype Subtype.Attraction) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False),
+    { ActiveReplacement.effect = ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Battlefield) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.HasSubtype Subtype.Attraction) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False Seq.empty),
       ActiveReplacement.source = src,
       ActiveReplacement.controller = S.bob,
       ActiveReplacement.timestamp = Timestamp.MkTimestamp 0,
