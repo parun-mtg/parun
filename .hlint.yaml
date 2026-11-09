@@ -3,6 +3,7 @@
   - default: false
   - name:
     - ApplicativeDo
+    - CPP # Parun.Entropy's per-platform source of random bytes
     - FlexibleContexts
     - GADTs
     - RankNTypes

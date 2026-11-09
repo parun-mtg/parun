@@ -880,6 +880,7 @@ import qualified Parun.EarthbendSpec
 import qualified Parun.EffectLintSpec
 import qualified Parun.EmperorSpec
 import qualified Parun.EngineSpec
+import qualified Parun.EntropySpec
 import qualified Parun.EntryReplacementSpec
 import qualified Parun.EntryRestrictionSpec
 import qualified Parun.EventSpec
@@ -895,6 +896,7 @@ import qualified Parun.Extra.NaturalSpec
 import qualified Parun.Extra.OrdSpec
 import qualified Parun.Extra.ParsecSpec
 import qualified Parun.Extra.SemigroupSpec
+import qualified Parun.Extra.Word32Spec
 import qualified Parun.Extra.Word64Spec
 import qualified Parun.Extra.Word8Spec
 import qualified Parun.FaceDownSpec
@@ -957,7 +959,8 @@ import qualified Parun.PhasingSpec
 import qualified Parun.PlanechaseSpec
 import qualified Parun.PlaneswalkerCombatSpec
 import qualified Parun.PlaneswalkerSpec
-import qualified Parun.Play.SplitMixSpec
+import qualified Parun.Play.GeneratorSpec
+import qualified Parun.Play.KeySpec
 import qualified Parun.PlayerDesignationSpec
 import qualified Parun.PlayerEffectSpec
 import qualified Parun.PlayerViewSpec
@@ -1921,6 +1924,7 @@ spec s registry corpus = do
   Parun.EffectLintSpec.spec s registry corpus
   Parun.EmperorSpec.spec s registry
   Parun.EngineSpec.spec s registry
+  Parun.EntropySpec.spec s
   Parun.EntryReplacementSpec.spec s registry
   Parun.EntryRestrictionSpec.spec s registry
   Parun.EventSpec.spec s registry
@@ -1933,8 +1937,10 @@ spec s registry corpus = do
   Parun.Extra.IntSpec.spec s
   Parun.Extra.MonoidSpec.spec s
   Parun.Extra.NaturalSpec.spec s
+  Parun.Extra.Word32Spec.spec s
   Parun.Extra.Word64Spec.spec s
-  Parun.Play.SplitMixSpec.spec s
+  Parun.Play.GeneratorSpec.spec s
+  Parun.Play.KeySpec.spec s
   Parun.Extra.OrdSpec.spec s
   Parun.Extra.ParsecSpec.spec s
   Parun.Extra.SemigroupSpec.spec s

@@ -8,6 +8,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Data.Word as Word
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.Extra.Natural as Natural
@@ -20,6 +21,8 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Generator as Generator
+import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
@@ -34,13 +37,13 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Match" $ do
   Spec.it s "the decks take turns playing first, game by game" $ do
     decks <- pair <$> BotSpec.bears s registry
-    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing 7 index decks) [0, 1, 2, 3]
+    starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing (key 7) index decks) [0, 1, 2, 3]
     Spec.assertEqWith s "first to act on turn 1" starts (fmap (Just . Label.MkLabel . Text.pack) ["player1", "player2", "player1", "player2"])
 
   Spec.it s "each game of a match replays clean to its result" $ do
     decks <- pair <$> BotSpec.bears s registry
     Foldable.for_ [0, 1, 2, 3] $ \index -> do
-      (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing 7 index decks
+      (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing (key 7) index decks
       let matchup = Command.seated (Match.firstAt index) decks
       replayed <- Scenario.run registry (saved matchup timeline)
       case (outcome, replayed) of
@@ -48,12 +51,16 @@ spec s registry = Spec.describe s "Match" $ do
         (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
         (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
 
-  Spec.it s "a game's seed is the match's plus its index" $ do
+  Spec.it s "a game's key is derived from the match's and its index" $ do
     decks <- pair <$> BotSpec.bears s registry
-    late <- Match.game (S.fixtureRegistry []) Nothing 7 2 decks
-    early <- Match.game (S.fixtureRegistry []) Nothing 9 0 decks
-    Spec.assertEqWith s "result" (fmap fst (fst late)) (fmap fst (fst early))
-    Spec.assertEqWith s "timeline" (snd late) (snd early)
+    once <- Match.game (S.fixtureRegistry []) Nothing (key 7) 2 decks
+    again <- Match.game (S.fixtureRegistry []) Nothing (key 7) 2 decks
+    early <- Match.game (S.fixtureRegistry []) Nothing (key 7) 0 decks
+    other <- Match.game (S.fixtureRegistry []) Nothing (key 9) 2 decks
+    Spec.assertEqWith s "the same game again" (snd once) (snd again)
+    Spec.assertBool s (snd once /= snd early) "another index, another game"
+    Spec.assertBool s (snd once /= snd other) "another match, another game"
+    Spec.assertBool s (Match.seedAt (key 7) 2 /= key 7) "not the match's own key"
 
   Spec.it s "tallies each result, the stops, and the turns of a game with a result" $ do
     let ended n result = Right (result, S.threePlayerGame {GameState.turnNumber = n})
@@ -74,6 +81,10 @@ spec s registry = Spec.describe s "Match" $ do
       (fmap Text.pack ["Seat 1 won 0 of 1 games.", "Seat 2 won 0 of 1 games.", "Team 1 won 1 of 1 games.", "0 drawn, 0 stopped.", "A game with a result lasted 4.0 turns on average."])
 
 -- The decks of a two-seat matchup.
+-- The key 'S.seeded' starts from.
+key :: Word.Word32 -> Key.Key
+key = Generator.key . S.seeded
+
 pair :: NonEmpty.NonEmpty (a, d) -> (d, d)
 pair matchup = case NonEmpty.toList matchup of
   [(_, one), (_, two)] -> (one, two)

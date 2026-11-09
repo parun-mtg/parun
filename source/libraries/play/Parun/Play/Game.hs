@@ -21,8 +21,8 @@ import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Play.Bot as Bot
 import qualified Parun.Play.Chance as Chance
 import qualified Parun.Play.Client as Client
+import qualified Parun.Play.Generator as Generator.Play
 import qualified Parun.Play.Protocol as Protocol
-import qualified Parun.Play.SplitMix as SplitMix.Play
 import qualified Parun.Registry as Registry
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
@@ -32,6 +32,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Hotseat as Hotseat
 import qualified Parun.Types.Observer as Observer
@@ -39,11 +40,10 @@ import qualified Parun.Types.PlayOptions as PlayOptions
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Result as Result
-import qualified Parun.Types.SplitMix as SplitMix
 import qualified Parun.Types.Terminal as Terminal
 
 -- | The generator over the client's monad.
-type Play m = State.StateT SplitMix.SplitMix (Client.Client m)
+type Play m = State.StateT Generator.Generator (Client.Client m)
 
 -- | A person at the terminal, reading cards' printed text from the card data
 -- and told why the reference `registry` refuses a name (judgingNames).
@@ -71,7 +71,7 @@ wired registry exchange = Protocol.over (judgingNames registry) (\line -> Trans.
 -- in `orders` (Driver.match). `finish` is shown the final state before the
 -- result is returned (Client.ending). Left is why play stopped before the end.
 -- RecordSpec's Yorion, Sky Nomad case proves the format reaches the game.
-run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> SplitMix.SplitMix -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
+run :: (Monad m) => Registry.Registry m -> Maybe Format.Format -> [Observer.Observer (Play m)] -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Play m)) -> (GameState.GameState -> Client.Client m ()) -> Hotseat.Hotseat -> Generator.Generator -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m (Either Text.Text (Result.Result, GameState.GameState))
 run registry format observers seats finish hotseat generator orders matchup =
   Except.runExceptT (State.evalStateT (State.evalStateT played generator) hotseat)
   where
@@ -126,11 +126,11 @@ underneath = Trans.lift . Client.lift2
 -- drawn from the generator chooses whether to play first or draw, the bot
 -- through 'Bot.playsFirst' and any other seat by `ask`, which is Nothing at
 -- the end of input. Each step is told through `tell`.
-starter :: (Monad m) => (Text.Text -> m ()) -> (Natural -> m (Maybe Bool)) -> PlayOptions.PlayOptions -> State.StateT SplitMix.SplitMix m (Maybe Natural)
+starter :: (Monad m) => (Text.Text -> m ()) -> (Natural -> m (Maybe Bool)) -> PlayOptions.PlayOptions -> State.StateT Generator.Generator m (Maybe Natural)
 starter tell ask options = case PlayOptions.first options of
   Just seat -> pure (Just seat)
   Nothing -> do
-    chooser <- SplitMix.Play.pick (1 NonEmpty.:| [2])
+    chooser <- Generator.Play.pick (1 NonEmpty.:| [2])
     Trans.lift (tell (Text.pack ("Seat " <> show chooser <> " was picked at random to choose who plays first.")))
     plays <-
       if Set.member chooser (PlayOptions.bots options)

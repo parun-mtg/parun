@@ -15,15 +15,14 @@ import qualified Data.List as List
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
-import qualified Data.Word as Word
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.AssertionFailed as AssertionFailed
 import qualified Parun.Extra.Natural as Natural
-import qualified Parun.Play.Command as Command
-import qualified Parun.Play.SplitMix as SplitMix
+import qualified Parun.Play.Generator as Generator
+import qualified Parun.Play.Key as Key
 import qualified Parun.Spec as Spec
-import qualified Parun.Types.SplitMix as Generator
+import qualified Parun.Types.Key as Key.Type
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
@@ -48,7 +47,7 @@ data Outcome
 data Options = MkOptions
   { patterns :: [Text.Text],
     timeout :: Maybe Natural,
-    seed :: Maybe Word.Word64
+    seed :: Maybe Key.Type.Key
   }
   deriving (Eq, Show)
 
@@ -81,7 +80,7 @@ main collect = do
       Exit.exitFailure
     Right o -> pure o
   IO.hSetBuffering IO.stdout IO.LineBuffering
-  s <- maybe Command.clockSeed pure $ seed options
+  s <- maybe Key.fresh pure $ seed options
   cases <- collect
   lock <- Concurrent.newMVar ()
   let report line = Concurrent.withMVar lock . const $ TextIO.putStrLn line
@@ -93,7 +92,7 @@ flags :: [GetOpt.OptDescr (Options -> Either String Options)]
 flags =
   [ GetOpt.Option "p" ["pattern"] (GetOpt.ReqArg (\s o -> Right o {patterns = patterns o <> [Text.pack s]}) "SUBSTRING") "run the cases whose path holds this; repeated, those matching any",
     GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
-    GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\n -> Right o {seed = Just n}) $ Read.readMaybe s) "N") "the shuffle's seed; the clock's when absent"
+    GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent"
   ]
 
 parseOptions :: [String] -> Either String Options
@@ -125,7 +124,7 @@ selected options c = null (patterns options) || any (\p -> Text.isInfixOf p $ na
 
 -- | Runs the selected cases in an order shuffled by the seed, handing each
 -- failure's line to @report@ as it lands.
-run :: (Text.Text -> IO ()) -> Options -> Word.Word64 -> Seq.Seq Case -> IO Summary
+run :: (Text.Text -> IO ()) -> Options -> Key.Type.Key -> Seq.Seq Case -> IO Summary
 run report options s cases = do
   let order = ordered options s cases
   queue <- IORef.newIORef order
@@ -154,8 +153,8 @@ run report options s cases = do
   pure MkSummary {total = Natural.length order, failures = n}
 
 -- | The selected cases, in the order the seed shuffles them into.
-ordered :: Options -> Word.Word64 -> Seq.Seq Case -> [Case]
-ordered options s cases = State.evalState (SplitMix.shuffle . filter (selected options) $ Foldable.toList cases) $ Generator.MkSplitMix s
+ordered :: Options -> Key.Type.Key -> Seq.Seq Case -> [Case]
+ordered options s cases = State.evalState (Generator.shuffle . filter (selected options) $ Foldable.toList cases) $ Generator.fromKey s
 
 -- | Runs one case under the budget, if there is one. Any exception fails it
 -- with its own message, not the context GHC wraps it in, and so does a message
@@ -186,8 +185,8 @@ succeeded summary = total summary > 0 && failures summary == 0
 
 -- | The last line of a run. An empty selection is neither a pass nor a
 -- failure, so it reads differently from both.
-summaryLine :: Word.Word64 -> Summary -> Text.Text
+summaryLine :: Key.Type.Key -> Summary -> Text.Text
 summaryLine s summary
-  | total summary == 0 = Text.pack $ "Matched no tests with seed " <> show s <> "."
-  | failures summary == 0 = Text.pack $ "Passed all " <> show (total summary) <> " tests with seed " <> show s <> "."
-  | otherwise = Text.pack $ "Failed " <> show (failures summary) <> " of " <> show (total summary) <> " tests with seed " <> show s <> "."
+  | total summary == 0 = Text.pack "Matched no tests with seed " <> Key.toHex s <> Text.pack "."
+  | failures summary == 0 = Text.pack ("Passed all " <> show (total summary) <> " tests with seed ") <> Key.toHex s <> Text.pack "."
+  | otherwise = Text.pack ("Failed " <> show (failures summary) <> " of " <> show (total summary) <> " tests with seed ") <> Key.toHex s <> Text.pack "."

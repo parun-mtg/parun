@@ -21,6 +21,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 import qualified Data.Unique as Unique
+import qualified Data.Word as Word
 import Numeric.Natural (Natural)
 import qualified Parun.Cards as Cards
 import qualified Parun.Engine.Card as Card
@@ -94,10 +95,12 @@ import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.HandActionPerformer as HandActionPerformer
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.Key as Key
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -521,6 +524,11 @@ cardOf s registry name = do
 -- use: the case fails, naming the files.
 brokenCorpus :: Spec.Spec m n -> InvalidCorpus.InvalidCorpus -> m r
 brokenCorpus s = Spec.assertFailure s . Exception.displayException
+
+-- A generator at the start of the keystream of the key whose first word is
+-- this and every other word zero: a game's seed, for a test pinned to one.
+seeded :: Word.Word32 -> Generator.Generator
+seeded n = Generator.MkGenerator {Generator.key = Key.UnsafeKey (Seq.fromList (n : replicate 7 0)), Generator.block = 0, Generator.unused = []}
 
 -- A registry over these cards alone, each by its name, which reaches no file.
 fixtureRegistry :: (Applicative m) => [Card.Type.Card] -> Registry.Registry m
