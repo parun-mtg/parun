@@ -151,6 +151,12 @@ board begun view =
             <> listed view "  Exile: " (SeatView.exile s)
             <> (if pid == PlayerView.viewer view then [] else listed view "  Seen in hand: " (handOrder view (SeatView.hand s)))
             <> listed view "  Seen in library, top first: " (SeatView.library s)
+            <> notes (SeatView.draftNotes s)
+    -- CR 905.2b: "Draft notes: Garbage Fire 2, 5; Lurking Automaton 9".
+    notes noted =
+      [ Text.pack "  Draft notes: " <> Text.intercalate (Text.pack "; ") [CardName.unwrap name <> Text.singleton ' ' <> Text.intercalate (Text.pack ", ") (fmap (Text.pack . show) (Foldable.toList numbers)) | (name, numbers) <- Map.toList noted]
+      | not (Map.null noted)
+      ]
     stack = listed view "Stack, top first: " (PlayerView.stack view)
     -- CR 807.5: each other Grand Melee turn marker's stack.
     parked = concatMap (\(n, shown) -> listed view ("Turn marker " <> show n <> "'s stack, top first: ") shown) (Map.toList (PlayerView.parkedStacks view))

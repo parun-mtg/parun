@@ -15,6 +15,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Cards as Cards
 import qualified Parun.Codec.PlayerView as Codec.PlayerView
@@ -81,6 +82,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerControl as PlayerControl
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerView as PlayerView.Type
@@ -157,6 +159,13 @@ spec s registry = Spec.describe s "PlayerView" $ do
         Spec.assertEqWith s "hand size" (SeatView.handSize seat) 7
         Spec.assertEqWith s "hand" (SeatView.hand seat) []
         Spec.assertEqWith s "library size" (SeatView.librarySize seat) (Natural.length (Game.zoneMembers Zone.Library S.alice gs))
+  Spec.it s "CR 905.2b every seat sees a player's draft notes, and the board writes them" $ do
+    let noted = Map.fromList [(CardName.MkCardName (Text.pack "Lurking Automaton"), Seq.fromList [9, 3 :: Natural]), (CardName.MkCardName (Text.pack "Garbage Fire"), Seq.singleton 2)]
+        empty = Setup.emptyGame S.bothPlayers
+        gs = empty {GameState.players = Map.adjust (\p -> p {Player.draftNotes = noted}) S.alice (GameState.players empty)}
+    Spec.assertEqWith s "bob sees alice's notes" (fmap SeatView.draftNotes (seatOf S.alice (PlayerView.viewFor S.bob gs))) (Just noted)
+    Spec.assertEqWith s "and bob's own, none" (fmap SeatView.draftNotes (seatOf S.bob (PlayerView.viewFor S.bob gs))) (Just Map.empty)
+    Spec.assertBool s (Text.pack "  Draft notes: Garbage Fire 2; Lurking Automaton 9, 3" `elem` Render.board True (PlayerView.viewFor S.bob gs)) "bob's board writes them"
   Spec.it s "a seat's own library is hidden from it too" $ do
     gs <- started s registry
     case seatOf S.alice (PlayerView.viewFor S.alice gs) of
