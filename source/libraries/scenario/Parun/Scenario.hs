@@ -1165,6 +1165,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseOptional {} -> True
   Prompt.Type.ChooseToPay {} -> True
   Prompt.Type.ChooseForage {} -> True
+  Prompt.Type.ChooseParity {} -> True
   Prompt.Type.ChooseMutateSide {} -> True
   Prompt.Type.ChooseLibraryEnd {} -> True
   Prompt.Type.OfferedCast {} -> True

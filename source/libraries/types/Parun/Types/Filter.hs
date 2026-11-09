@@ -25,6 +25,7 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -98,8 +99,9 @@ data Filter keyword
   | -- | CR 202.3 read for its PARITY rather than against a bound -- Void
     -- Winnower's "spells with even mana values", whose reminder text settles the
     -- boundary case: "(Zero is even.)" CR 202.3e is what makes it interesting off
-    -- the stack, where an {X} in a cost counts as zero.
-    ManaValueIsEven
+    -- the stack, where an {X} in a cost counts as zero. The operand is that
+    -- printed parity or the source's chosen one (Gollum, Riddle Master).
+    ManaValueParity ParityOperand.ParityOperand
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
     -- perspective; False where it has none (CR 108.4, 109.1).
     HeldBy Holder.Holder PlayerRelation.PlayerRelation

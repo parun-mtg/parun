@@ -107,6 +107,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideObject as OutsideObject
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
@@ -432,6 +433,7 @@ offerOf gs prompt = case prompt of
   -- CR 608.2d: how many cards stay above the upper option.
   Prompt.ChooseLibraryEnd _ _ source above -> choosing prompt "options" (Just source) [("above", natural above)] [LibraryPosition.Top, LibraryPosition.Bottom]
   Prompt.ChooseForage _ _ source -> choosing prompt "options" (Just source) [] [ForageMode.ExileCards, ForageMode.SacrificeFood]
+  Prompt.ChooseParity _ _ source -> choosing prompt "options" (Just source) [] [Parity.Odd, Parity.Even]
   -- CR 702.140c: the creature it merges with.
   Prompt.ChooseMutateSide _ _ source onto -> choosing prompt "options" (Just source) [("onto", object onto)] [MutateSide.Over, MutateSide.Under]
   Prompt.ChooseBuyback _ _ source cost -> choosing prompt "options" (Just source) [("cost", payment cost)] [BuybackDecision.BuysBack, BuybackDecision.Declines]

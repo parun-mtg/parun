@@ -63,6 +63,8 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.Parity as Parity
+import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import qualified Parun.Types.PlayerId as PlayerId
@@ -1182,8 +1184,8 @@ voidWinnowerSpec s registry =
       disaster <- S.printingOf s registry "Molten Disaster"
       winnower <- S.printingOf s registry "Void Winnower"
       let (_, bobsPiker, _, bobsDisaster, board) = voidWinnowerBoard mountain piker bolt disaster [winnower]
-      Spec.assertBool s (PlayerEffect.matchesObjectFrom (PlayerEffect.liveSource Nothing) Filter.Type.ManaValueIsEven bobsPiker board) "the fixed spell's mana value is even"
-      Spec.assertBool s (PlayerEffect.matchesObjectFrom (PlayerEffect.liveSource Nothing) Filter.Type.ManaValueIsEven bobsDisaster board) "and so is the {X} spell's, while it sits in hand"
+      Spec.assertBool s (PlayerEffect.matchesObjectFrom (PlayerEffect.liveSource Nothing) (Filter.Type.ManaValueParity (ParityOperand.Printed Parity.Even)) bobsPiker board) "the fixed spell's mana value is even"
+      Spec.assertBool s (PlayerEffect.matchesObjectFrom (PlayerEffect.liveSource Nothing) (Filter.Type.ManaValueParity (ParityOperand.Printed Parity.Even)) bobsDisaster board) "and so is the {X} spell's, while it sits in hand"
       Spec.assertBool s (not (any (S.isCastOf bobsPiker) (askedOf S.bob board))) "the fixed one is refused"
       Spec.assertBool s (any (S.isCastOf bobsDisaster) (askedOf S.bob board)) "and the {X} one is offered"
 

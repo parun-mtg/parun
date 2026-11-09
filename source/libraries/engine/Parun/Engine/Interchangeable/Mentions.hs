@@ -622,7 +622,7 @@ filterNames asking criterion = case criterion of
   Filter.HasKeyword _keyword -> mempty
   Filter.HasKeywordFamily _family -> mempty
   Filter.Measures measures -> measuresNames asking measures
-  Filter.ManaValueIsEven -> mempty
+  Filter.ManaValueParity _operand -> mempty
   Filter.ControllerIsOwner -> mempty
   Filter.HeldBy _holder _relation -> mempty
   Filter.ControlledByRole _ -> mempty

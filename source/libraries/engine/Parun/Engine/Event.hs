@@ -229,6 +229,7 @@ import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.OutsideObject as OutsideObject
 import qualified Parun.Types.OutsidePick as OutsidePick
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PayerAnswer as PayerAnswer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
@@ -5519,7 +5520,8 @@ chooseQualityAs candidate quality oid = do
 -- 305.6's basic land types and CR 205.3m's creature types are always all legal
 -- and distinguishable, so there is no one-option case to elide. Both types
 -- write Object.chosenSubtype: no printing makes both choices, and CR 607.2d
--- links each to the ability that reads it.
+-- links each to the ability that reads it. A parity is written to
+-- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is.
 chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Acquisition.Acquisition -> ObjectId -> Game ()
 chooseQuality quality chooser acquisition oid = case quality of
   ChosenQuality.Colors range -> do
@@ -5545,6 +5547,14 @@ chooseQuality quality chooser acquisition oid = case quality of
         most = ChooseBetween.most range
     answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor chooser gs) chooser oid least NumberFloor.Least (Just most))
     State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just (max least (min most answer)))) oid)
+  ChosenQuality.Parity -> do
+    gs <- State.get
+    picked <- Game.choose (Prompt.ChooseParity (Decide.deciderFor chooser gs) chooser oid)
+    let written :: Natural
+        written = case picked of
+          Parity.Even -> 0
+          Parity.Odd -> 1
+    State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just written)) oid)
   where
     subtype prompt = do
       gs <- State.get

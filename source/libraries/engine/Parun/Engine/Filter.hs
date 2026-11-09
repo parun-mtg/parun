@@ -80,6 +80,8 @@ import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Pairing as Pairing
+import qualified Parun.Types.Parity as Parity
+import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -1860,6 +1862,11 @@ compares comparison n t = case comparison of
   Comparison.LessThan -> n < t
   Comparison.GreaterThan -> n > t
 
+-- A whole number's parity, zero being even (Void Winnower's and Gollum, Riddle
+-- Master's reminder text).
+parityOf :: Integer -> Parity.Parity
+parityOf n = if even n then Parity.Even else Parity.Odd
+
 -- The player a holder atom reads off the candidate: its controller (CR 110.2),
 -- Nothing for a player view and for a card in a hidden zone (CR 108.4), or its
 -- owner (CR 108.3), Nothing off an object.
@@ -2041,8 +2048,14 @@ matches context view predicate = case predicate of
   --
   -- Vacuously False where there is no mana value at all, exactly as the atom
   -- above is: a player, or an event snapshot carrying none. An ability on the
-  -- stack is NOT that case -- CR 202.3a's 0 is even, and it matches.
-  Filter.ManaValueIsEven -> maybe False even (manaValue view)
+  -- stack is NOT that case -- CR 202.3a's 0 is even, and it matches. The
+  -- chosen parity is that of sourceChosenNumber, vacuously False where the
+  -- source has chosen none, HasChosenColor's posture.
+  Filter.ManaValueParity operand ->
+    let wanted = case operand of
+          ParityOperand.Printed parity -> Just parity
+          ParityOperand.ChosenParity -> fmap (parityOf . toInteger) (sourceChosenNumber context)
+     in Maybe.fromMaybe False ((==) <$> fmap parityOf (manaValue view) <*> wanted)
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -2687,7 +2700,7 @@ rewrite pairs predicate = case predicate of
   -- Untouched: the atom names a comparison, and CR 612.1 finds no word in it to
   -- swap -- nor in a slot name it may carry.
   Filter.Measures _ -> predicate
-  Filter.ManaValueIsEven -> predicate
+  Filter.ManaValueParity _ -> predicate
   -- Untouched: CR 612.1 swaps a WORD in the text, and this atom names a player
   -- relation rather than a subtype.
   Filter.ControllerIsOwner -> predicate
@@ -3465,7 +3478,7 @@ bakeBound players objects controllers predicate = case predicate of
   -- the Context carrying the number into the match rather than a substitution
   -- making it.
   Filter.Measures _ -> predicate
-  Filter.ManaValueIsEven -> predicate
+  Filter.ManaValueParity _ -> predicate
   Filter.ControllerIsOwner -> predicate
   Filter.HeldBy _ _ -> predicate
   Filter.ControlledByRole _ -> predicate
@@ -3593,7 +3606,7 @@ bakeBound players objects controllers predicate = case predicate of
 -- CR 601.3a's lookahead is the one caller (Parun.Engine.PlayerEffect
 -- prohibitsCasting). Asking whether some choice of X could take a spell out of a
 -- prohibition means asking one Filter at more than one mana value, and this is
--- what BOUNDS that search: a literal comparison and ManaValueIsEven are the
+-- what BOUNDS that search: a literal comparison and ManaValueParity are the
 -- whole of the mana-value vocabulary a filter in this POSITION may use, so above
 -- every literal returned here the only distinction a Filter can still draw is
 -- parity, and a sample running two past the greatest literal has already seen
@@ -3646,7 +3659,7 @@ manaValueThresholds predicate = case predicate of
   Filter.Controls _ f -> manaValueThresholds f
   -- Reads the mana value and compares it against NO literal, so it bounds
   -- nothing: parity is what the sample's two-past-the-greatest tail is for.
-  Filter.ManaValueIsEven -> []
+  Filter.ManaValueParity _ -> []
   Filter.HasCardType _ -> []
   Filter.HasSupertype _ -> []
   Filter.HasColor _ -> []
@@ -3802,7 +3815,7 @@ statesAQuality predicate = case predicate of
   -- card as much when X is computed, or is another object's, as when it is
   -- printed.
   Filter.Measures _ -> True
-  Filter.ManaValueIsEven -> True
+  Filter.ManaValueParity _ -> True
   Filter.HasCardType _ -> True
   Filter.HasSupertype _ -> True
   Filter.HasColor _ -> True
@@ -3972,7 +3985,9 @@ readsSourceValues predicate = case predicate of
     Operand.AmountInSlot _ -> False
     Operand.EnclosingAmount -> False
     Operand.OfEachOtherCandidate _ -> False
-  Filter.ManaValueIsEven -> False
+  Filter.ManaValueParity operand -> case operand of
+    ParityOperand.Printed _ -> False
+    ParityOperand.ChosenParity -> True
   Filter.HasCardType _ -> False
   Filter.HasSupertype _ -> False
   Filter.HasColor _ -> False
@@ -4146,7 +4161,7 @@ overBoundSlotsWith f predicate = case predicate of
           Operand.Own _ -> pure predicate
           Operand.EnclosingAmount -> pure predicate
           Operand.OfEachOtherCandidate _ -> pure predicate
-  Filter.ManaValueIsEven -> pure predicate
+  Filter.ManaValueParity _ -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControlledByRole _ -> pure predicate

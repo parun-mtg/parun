@@ -43,6 +43,7 @@ import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
@@ -281,6 +282,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseBuyback {} -> SplitMix.pick (BuybackDecision.Declines NonEmpty.:| [BuybackDecision.BuysBack])
   Prompt.ChooseEntwine {} -> SplitMix.pick (EntwineDecision.Declines NonEmpty.:| [EntwineDecision.Entwines])
   Prompt.ChooseForage {} -> SplitMix.pick (ForageMode.ExileCards NonEmpty.:| [ForageMode.SacrificeFood])
+  Prompt.ChooseParity {} -> SplitMix.pick (Parity.Odd NonEmpty.:| [Parity.Even])
   Prompt.ChooseMutateSide {} -> SplitMix.pick (MutateSide.Over NonEmpty.:| [MutateSide.Under])
   Prompt.ChooseLibraryEnd {} -> SplitMix.pick (LibraryPosition.Top NonEmpty.:| [LibraryPosition.Bottom])
   Prompt.ChooseClash {} -> SplitMix.pick (LibraryPosition.Top NonEmpty.:| [LibraryPosition.Bottom])

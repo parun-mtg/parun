@@ -94,6 +94,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PermissionLimit as PermissionLimit
@@ -627,6 +628,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "buybacks" (drawn (Prompt.ChooseBuyback decider S.alice oid free)) (Set.fromList [BuybackDecision.Declines, BuybackDecision.BuysBack])
     Spec.assertEqWith s "entwines" (drawn (Prompt.ChooseEntwine decider S.alice oid free)) (Set.fromList [EntwineDecision.Declines, EntwineDecision.Entwines])
     Spec.assertEqWith s "forages" (drawn (Prompt.ChooseForage decider S.alice oid)) (Set.fromList [ForageMode.ExileCards, ForageMode.SacrificeFood])
+    Spec.assertEqWith s "parities" (drawn (Prompt.ChooseParity decider S.alice oid)) (Set.fromList [Parity.Even, Parity.Odd])
     Spec.assertEqWith s "mutate sides" (drawn (Prompt.ChooseMutateSide decider S.alice oid (ObjectId.MkObjectId 8))) (Set.fromList [MutateSide.Over, MutateSide.Under])
     Spec.assertEqWith s "library ends" (drawn (Prompt.ChooseLibraryEnd decider S.alice oid 0)) ends
     Spec.assertEqWith s "clashes" (drawn (Prompt.ChooseClash decider S.alice oid (ObjectId.MkObjectId 8) ((S.alice, ObjectId.MkObjectId 8) NonEmpty.:| []) Seq.empty)) ends

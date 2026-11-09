@@ -82,6 +82,7 @@ import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.OutsideCard as OutsideCard
+import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.PermissionLimit as PermissionLimit
@@ -1852,6 +1853,13 @@ combatReplaySpec s =
           -- Discriminating: a decode that ignored the response and answered the
           -- half rule 701.61a names first would pass one leg by accident.
           Spec.assertEqWith s "exiling three cards round trips" (Replay.decode p (Replay.encode p ForageMode.ExileCards)) (Just ForageMode.ExileCards)
+        -- CR 607.2d: so is odd or even (Gollum, Riddle Master).
+        Spec.it s "ChooseParity round-trips through the transcript" $ do
+          let p = Prompt.ChooseParity decider S.alice oid
+          Spec.assertEqWith s "even round trips" (Replay.decode p (Replay.encode p Parity.Even)) (Just Parity.Even)
+          -- Discriminating: a decode that ignored the response and answered the
+          -- short transcript's odd would pass one leg by accident.
+          Spec.assertEqWith s "odd round trips" (Replay.decode p (Replay.encode p Parity.Odd)) (Just Parity.Odd)
         -- CR 701.48a: so is which branch of learning the learner took, declining
         -- included.
         Spec.it s "ChooseLearn round-trips through the transcript" $ do
