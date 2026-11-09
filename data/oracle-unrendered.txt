@@ -3574,6 +3574,7 @@ yeva-natures-herald
 ygra-eater-of-all
 yisan-the-wanderer-bard
 yixlid-jailer
+yorion-sky-nomad
 yoshimaru-beloved-companion
 yoshimaru-scrappy-stray
 yotia-declares-war
