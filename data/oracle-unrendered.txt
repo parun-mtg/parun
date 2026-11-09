@@ -388,6 +388,7 @@ boreal-outrider
 borg-queen-perfection-manifest
 boros-battleshaper
 boseiju-who-shelters-all
+bothersome-noisemaker
 bottomless-vault
 boundless-realms
 brace-for-impact
@@ -438,6 +439,7 @@ bulk-up
 bumper-cars
 bureau-headmaster
 burlfist-oak
+burn-burn-tree-and-fern
 burning-anger
 burning-earth
 burning-eye-zubera
@@ -801,6 +803,7 @@ desecrated-tomb
 desecration-demon
 desert
 desertion
+desolation-of-smaug
 desolation-twin
 desperate-futurescribe
 destined-lead
@@ -868,6 +871,8 @@ doubling-chant
 doubling-cube
 doubling-season
 dovin-hand-of-control
+down-down-to-goblin-town
+down-in-the-valley
 draconic-visitor
 drafnas-restoration
 drag-to-the-bottom
