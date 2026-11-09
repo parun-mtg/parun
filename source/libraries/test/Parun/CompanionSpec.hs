@@ -486,9 +486,9 @@ specialAction s registry = Spec.describe s "CR 116.2g the special action" $ do
 -- `actionBoard` turned into a Commander game: Shimatsu designated as alice's
 -- commander through Setup.createDeck, and the two Zirdas put back in her pool,
 -- which createDeck refilled from the deck's empty sideboard.
-commandedBoard :: Printing.Printing -> PrintingId.PrintingId -> GameState.GameState -> GameState.GameState
-commandedBoard shimatsu zirdaId gs =
-  let built = S.runPure S.identityAnswer gs (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Map.singleton shimatsu 1}))
+commandedBoard :: [Printing.Printing] -> PrintingId.PrintingId -> GameState.GameState -> GameState.GameState
+commandedBoard commanders zirdaId gs =
+  let built = S.runPure S.identityAnswer gs (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Map.fromList (fmap (\c -> (c, 1)) commanders)}))
       restock p = p {Player.outsideTheGame = Map.singleton zirdaId 2}
    in built {GameState.players = Map.adjust restock S.alice (GameState.players built)}
 
@@ -517,9 +517,9 @@ commanderGame s registry = Spec.describe s "CR 903.11a a Commander game" $ do
   Spec.it s "CR 903.11a a Zirda she owns in the game bars the companion" $ do
     mountain <- S.printingOf s registry "Mountain"
     zirda <- S.printingOf s registry "Zirda, the Dawnwaker"
-    shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
+    aurelia <- S.printingOf s registry "Aurelia, the Warleader"
     let (zirdaId, plain) = actionBoard mountain zirda True 3
-        commanded = commandedBoard shimatsu zirdaId plain
+        commanded = commandedBoard [aurelia] zirdaId plain
         holding = snd . S.addHandCard zirda S.alice
         offeredOn gs = List.elem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice gs)
     Spec.assertBool s (offeredOn commanded) "CR 702.139d: a Commander game offers the action"
@@ -531,9 +531,26 @@ commanderGame s registry = Spec.describe s "CR 903.11a a Commander game" $ do
   Spec.it s "CR 903.11a a Zirda in her starting deck bars the companion" $ do
     mountain <- S.printingOf s registry "Mountain"
     zirda <- S.printingOf s registry "Zirda, the Dawnwaker"
-    shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
+    aurelia <- S.printingOf s registry "Aurelia, the Warleader"
     let (zirdaId, plain) = actionBoard mountain zirda True 3
-        commanded = commandedBoard shimatsu zirdaId plain
+        commanded = commandedBoard [aurelia] zirdaId plain
         stamp p = p {Player.startingDeck = Map.insert zirdaId 1 (Player.startingDeck p)}
         stamped = commanded {GameState.players = Map.adjust stamp S.alice (GameState.players commanded)}
     Spec.assertBool s (List.notElem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice stamped)) "CR 903.11a: a Zirda in her starting deck bars it"
+
+  -- The colour-identity limb: Zirda is red and white. Shimatsu's red alone bars
+  -- her, and so does Rograkh's; Aurelia's red and white admit her, and so do
+  -- Rograkh and Sidar Kondo together (CR 702.124c).
+  Spec.it s "CR 903.11a a companion outside her commanders' colour identity is not taken" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    zirda <- S.printingOf s registry "Zirda, the Dawnwaker"
+    shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
+    aurelia <- S.printingOf s registry "Aurelia, the Warleader"
+    rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
+    sidar <- S.printingOf s registry "Sidar Kondo of Jamuraa"
+    let (zirdaId, plain) = actionBoard mountain zirda True 3
+        offeredUnder commanders = List.elem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice (commandedBoard commanders zirdaId plain))
+    Spec.assertBool s (not (offeredUnder [shimatsu])) "CR 903.11a: not under a mono-red commander"
+    Spec.assertBool s (offeredUnder [aurelia]) "CR 903.4: a red and white commander admits her"
+    Spec.assertBool s (not (offeredUnder [rograkh])) "CR 903.4: Rograkh's colour indicator is red alone"
+    Spec.assertBool s (offeredUnder [rograkh, sidar]) "CR 702.124c: with Sidar Kondo the pair's identity covers her"
