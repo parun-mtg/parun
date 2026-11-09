@@ -116,7 +116,8 @@ data GameSettings = MkGameSettings
     singlePlanarDeck :: Bool,
     -- | CR 100.2: the format the decks were built for, or Nothing for a game
     -- under no format's construction rules. Nothing by default ('plain'); read
-    -- by Parun.Engine.Companion for CR 702.139a's minimum deck size.
+    -- by Parun.Engine.Companion for CR 702.139a's minimum deck size, and by
+    -- Parun.Engine.Commander.deckBuildingPartner for CR 903.13f(3).
     format :: Maybe Format.Format
   }
   deriving (Eq, Ord, Show)

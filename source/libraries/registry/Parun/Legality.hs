@@ -74,11 +74,25 @@ rules table settings format =
       -- CR 903.5a / 903.12d: exactly so many cards, commanders included. CR
       -- 903.5b: one of each name but a basic land, unless a card's own
       -- deckLimit says otherwise (CR 101.1). The format, and not the game's
-      -- settings, says which of CR 903.3 and CR 903.12c judges the commander.
-      commander brawl size =
-        [atLeast Nothing size withCommander, commanderAtMost size, copiesAtMost Nothing restricted (Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl}, inIdentity brawl]
-          <> foldMap (pure . inPool) standing
-          <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary (Format.rules format) settings, vanguardCard]
+      -- settings, says which of CR 903.3 and CR 903.12c judges the commander,
+      -- and whether CR 903.13f(3) gives a card partner.
+      --
+      -- CR 903.13f: a Commander Draft deck is Commander's with no maximum and
+      -- no copy limit but a card's own, and is limited play (CR 903.13a), so
+      -- CR 315.1's and CR 123.2a's constructed rules stay out. CR 903.13f(2)'s
+      -- "from that player's card pool" and CR 903.13e's added commanders are
+      -- not checked: a deck list records no pool.
+      commander family =
+        let brawl = family == RuleFamily.Brawl
+            draft = family == RuleFamily.CommanderDraft
+            size = RuleFamily.Engine.minimumDeckSize family
+         in [atLeast Nothing size withCommander]
+              <> [commanderAtMost size | not draft]
+              <> [copiesAtMost Nothing restricted (if draft then Nothing else Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl, GameSettings.format = Just format}, inIdentity brawl]
+              <> foldMap (pure . inPool) standing
+              <> [anteCards settings]
+              <> (if draft then [] else [conspiracies, stickerSheets])
+              <> [circledColors, supplementary family settings, vanguardCard]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
         RuleFamily.Constructed -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Constructed) Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard]
@@ -87,10 +101,12 @@ rules table settings format =
         -- tenth in the sideboard.
         RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
         -- CR 903.5.
-        RuleFamily.Commander -> commander False (RuleFamily.Engine.minimumDeckSize RuleFamily.Commander)
+        RuleFamily.Commander -> commander RuleFamily.Commander
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
         -- 903.12d's size and CR 903.12e's basic lands.
-        RuleFamily.Brawl -> commander True (RuleFamily.Engine.minimumDeckSize RuleFamily.Brawl)
+        RuleFamily.Brawl -> commander RuleFamily.Brawl
+        -- CR 903.13f.
+        RuleFamily.CommanderDraft -> commander RuleFamily.CommanderDraft
 
 -- Deck and sideboard together: CR 100.4a counts the sideboard, and a card
 -- barred from the deck is barred from both (CR 407.3).
@@ -117,18 +133,19 @@ atMost most counted deck =
 -- Parun.Engine.Commander.soleCommander reads CR 903.3a's ability.
 commanderAtMost :: Natural.Natural -> Deck.Deck -> [Violation.Violation]
 commanderAtMost most deck
-  | any (Set.member CommanderDeckRule.NoMaximumDeckSize . Face.commanderDeckRules . Card.frontFace . Printing.card) (Deck.commander deck) = []
+  | any (Set.member CommanderDeckRule.NoMaximumDeckSize . Face.commanderDeckRules . Card.frontFace . Printing.card) (Map.keys (Deck.commander deck)) = []
   | otherwise = atMost most withCommander deck
 
 -- CR 100.2d: each supplementary deck brought holds only its kind of card, as
 -- many as its rule asks, of as few names. A Commander or Brawl deck is built
--- ahead of time, so in constructed play (CR 100.2a); and a Brawl game is a
--- Commander game (CR 903.12a), so CR 904.13a's option covers it.
+-- ahead of time, so in constructed play (CR 100.2a), and a Commander Draft
+-- deck in limited play (CR 903.13a); and a Brawl or Commander Draft game is a
+-- Commander game (CR 903.12a, 903.13g), so CR 904.13a's option covers it.
 supplementary :: RuleFamily.RuleFamily -> GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]
 supplementary family settings deck = foldMap judge (Map.toList (Map.filter (not . Map.null) (Deck.sideDecks deck)))
   where
-    limited = family == RuleFamily.Limited
-    commanderGame = family == RuleFamily.Commander || family == RuleFamily.Brawl
+    limited = family == RuleFamily.Limited || family == RuleFamily.CommanderDraft
+    commanderGame = family == RuleFamily.Commander || family == RuleFamily.Brawl || family == RuleFamily.CommanderDraft
     judge (pile, held) =
       let sized least limit = atLeast (Just pile) least (const held) deck <> copiesAtMost (Just pile) (const False) limit (const held) deck
           (belongs, rule) = case pile of
@@ -181,7 +198,7 @@ hasType cardType card = Set.member cardType (TypeLine.types (Face.typeLine (Card
 
 -- CR 903.5a: the deck with its commanders, which it counts among its cards.
 withCommander :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
-withCommander deck = Map.unionWith (+) (Deck.cards deck) (Map.fromSet (const 1) (Deck.commander deck))
+withCommander deck = Map.unionWith (+) (Deck.cards deck) (Deck.commander deck)
 
 -- CR 100.2a / 100.4a: at most so many cards of one English name, among the
 -- cards `counted` picks: one for a card the pool restricts, else the card's
@@ -224,8 +241,8 @@ noSideboard deck =
 -- designation is reported.
 commanders :: GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]
 commanders settings deck
-  | Set.null (Deck.commander deck) = [Violation.NoCommander]
-  | Set.null (Commander.designations settings deck) = [Violation.IllegalCommander (Face.name (Card.combined (Printing.card printing))) | printing <- Set.toList (Deck.commander deck)]
+  | Map.null (Deck.commander deck) = [Violation.NoCommander]
+  | Map.null (Commander.designations settings deck) = [Violation.IllegalCommander (Face.name (Card.combined (Printing.card printing))) | printing <- Map.keys (Deck.commander deck)]
   | otherwise = []
 
 -- CR 903.5c / 903.5d: each card of the deck inside the combined colour
@@ -251,13 +268,13 @@ commanders settings deck
 -- under some choice exactly when it is under that one.
 inIdentity :: Bool -> Deck.Deck -> [Violation.Violation]
 inIdentity brawl deck
-  | Set.null (Deck.commander deck) = []
+  | Map.null (Deck.commander deck) = []
   | otherwise =
-      let identity = foldMap Commander.colorIdentity (Deck.commander deck)
+      let identity = foldMap Commander.colorIdentity (Map.keys (Deck.commander deck))
           basics = Map.fromListWith (+) [(subtype, count) | (printing, count) <- Map.toList (Deck.cards deck), basicLand (Printing.card printing), subtype <- Set.toList (landTypes printing)]
           chosen = if brawl && Set.null identity then fmap fst (Maybe.listToMaybe (List.sortOn (Ord.Down . snd) (Map.toList basics))) else Nothing
           exempt printing = basicLand (Printing.card printing) && any (`Set.member` landTypes printing) chosen
-          widened = [matching | printing <- Set.toList (Deck.commander deck), CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
+          widened = [matching | printing <- Map.keys (Deck.commander deck), CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
           context = Filter.contextFor Teams.none Nothing Nothing
           matches printing = Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing)))
           admitted printing = any (matches printing) widened
@@ -265,7 +282,7 @@ inIdentity brawl deck
           candidates = [printing | printing <- Map.keys (Deck.cards deck), not (exempt printing), not (admitted printing), not (within Nothing printing)]
           admits matching color printing = matches printing matching && within (Just color) printing
           choose matching = admits matching (List.maximumBy (Ord.comparing (\color -> (length (filter (admits matching color) candidates), Ord.Down color))) [minBound .. maxBound])
-          extraColors = [choose matching | printing <- Set.toList (Deck.commander deck), CommanderDeckRule.ChosenExtraColor matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
+          extraColors = [choose matching | printing <- Map.keys (Deck.commander deck), CommanderDeckRule.ChosenExtraColor matching <- Set.toList (Face.commanderDeckRules (Card.frontFace (Printing.card printing)))]
           extended printing = any ($ printing) extraColors
           outside printing = not (exempt printing) && not (admitted printing) && not (within Nothing printing) && not (extended printing)
           byName = Map.fromList [(Face.name (Card.combined (Printing.card printing)), printing) | printing <- Map.keys (Deck.cards deck)]
@@ -315,7 +332,7 @@ circledColors deck =
   Set.toList $
     Set.fromList
       [ Violation.MiscircledCard (Face.name face) circled instructed
-      | printing <- Map.keys (bothSections deck) <> Set.toList (Deck.commander deck),
+      | printing <- Map.keys (bothSections deck) <> Map.keys (Deck.commander deck),
         let face = Card.combined (Printing.card printing)
             circled = Int.toNaturalSaturating (Set.size (Printing.circled printing))
             instructed = if Face.circlesTwo face then 2 else 0 :: Natural.Natural,
@@ -336,7 +353,7 @@ stickerSheets deck =
 
 -- Each card of deck, sideboard and commanders once, by name.
 cardsIn :: Deck.Deck -> [(CardName.CardName, Card.Type.Card)]
-cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck) <> Set.toList (Deck.commander deck), let card = Printing.card printing])
+cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck) <> Map.keys (Deck.commander deck), let card = Printing.card printing])
 
 -- CR 205.4c: the supertype makes a basic land, not the name or a basic land
 -- type, so snow basics and Wastes are exempt and Dryad Arbor is not.

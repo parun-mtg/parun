@@ -707,6 +707,8 @@ library codec
     Parun.Codec.DivideSpec
     Parun.Codec.DoesNotUntapNext
     Parun.Codec.DoesNotUntapNextSpec
+    Parun.Codec.DraftBooster
+    Parun.Codec.DraftBoosterSpec
     Parun.Codec.Draw
     Parun.Codec.DrawCountR
     Parun.Codec.DrawCountRewrite
@@ -2880,6 +2882,7 @@ library types
     Parun.Types.Divide
     Parun.Types.Dividing
     Parun.Types.DoesNotUntapNext
+    Parun.Types.DraftBooster
     Parun.Types.Draw
     Parun.Types.DrawCountR
     Parun.Types.DrawCountRewrite

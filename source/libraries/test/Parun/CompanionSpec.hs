@@ -155,7 +155,7 @@ startingDeck s registry = Spec.describe s "CR 103.2a the starting deck" $ do
   Spec.it s "CR 702.139b counts the commander, which never reached the library" $ do
     (zirda, aliceDeck, _) <- decks s registry
     birds <- S.printingOf s registry "Birds of Paradise"
-    let commanderDeck = aliceDeck {Deck.commander = Set.singleton birds}
+    let commanderDeck = aliceDeck {Deck.commander = Map.singleton birds 1}
         gs = setup S.identityAnswer commanderDeck aliceDeck
         idOf printing = Map.lookup printing (GameState.printingIds gs)
         recorded = startingDeckOf S.alice gs
@@ -209,7 +209,7 @@ revealing s registry = Spec.describe s "CR 103.2b the reveal" $ do
 -- the sideboard, so the count is the only thing that differs.
 deckSize :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
-  let under family = GameSettings.plain {GameSettings.format = Just (Format.MkFormat family Nothing)}
+  let under family = GameSettings.plain {GameSettings.format = Just (Format.MkFormat family Nothing Set.empty)}
       mountains yorion mountain n = deckOf yorion [(mountain, n)]
       revealed settings deck = companionOf S.alice (setupWith settings revealingAnswer deck deck)
   -- CR 100.2a: sixty, so eighty is enough and seventy-nine is not.
@@ -234,7 +234,7 @@ deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
     yorion <- S.printingOf s registry "Yorion, Sky Nomad"
     mountain <- S.printingOf s registry "Mountain"
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let commanded n = (mountains yorion mountain n) {Deck.commander = Set.singleton shimatsu}
+    let commanded n = (mountains yorion mountain n) {Deck.commander = Map.singleton shimatsu 1}
         gs = setupWith (under RuleFamily.Commander) revealingAnswer (commanded 119) (commanded 118)
     Spec.assertBool s (Maybe.isJust (companionOf S.alice gs)) "CR 903.5a: 119 and the commander are twenty over 100"
     Spec.assertEqWith s "CR 702.139b: 118 and the commander are one short" (companionOf S.bob gs) Nothing
@@ -294,7 +294,7 @@ newGames s registry = Spec.describe s "CR 728.1 / 730.2 a new game" $ do
   Spec.it s "CR 702.139b a restart's starting deck counts the commander" $ do
     (_, aliceDeck, _) <- decks s registry
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
-    let built = setup S.identityAnswer (aliceDeck {Deck.commander = Set.singleton shimatsu}) aliceDeck
+    let built = setup S.identityAnswer (aliceDeck {Deck.commander = Map.singleton shimatsu 1}) aliceDeck
         restarted = S.runPure S.identityAnswer built (Setup.restartGame S.performer Set.empty S.alice)
         idOf printing = Map.lookup printing (GameState.printingIds restarted)
     Spec.assertEqWith s "CR 702.139b: Shimatsu is in the new starting deck" (idOf shimatsu >>= \i -> Map.lookup i (startingDeckOf S.alice restarted)) (Just 1)
@@ -433,7 +433,7 @@ specialAction s registry = Spec.describe s "CR 116.2g the special action" $ do
 -- which createDeck refilled from the deck's empty sideboard.
 commandedBoard :: Printing.Printing -> PrintingId.PrintingId -> GameState.GameState -> GameState.GameState
 commandedBoard shimatsu zirdaId gs =
-  let built = S.runPure S.identityAnswer gs (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Set.singleton shimatsu}))
+  let built = S.runPure S.identityAnswer gs (Setup.createDeck S.alice ((Deck.fromCards Map.empty) {Deck.commander = Map.singleton shimatsu 1}))
       restock p = p {Player.outsideTheGame = Map.singleton zirdaId 2}
    in built {GameState.players = Map.adjust restock S.alice (GameState.players built)}
 
@@ -450,7 +450,7 @@ commanderGame s registry = Spec.describe s "CR 903.11a a Commander game" $ do
           let built = setup revealingAnswer deck aliceDeck
               withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) built [1 :: Int, 2, 3]
            in withLands {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
-        commanded = ready (aliceDeck {Deck.commander = Set.singleton zirda})
+        commanded = ready (aliceDeck {Deck.commander = Map.singleton zirda 1})
         plain = ready aliceDeck
     Spec.assertBool s (Maybe.isJust (companionOf S.alice commanded)) "CR 103.2b: she reveals the companion"
     Spec.assertBool s (List.notElem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice commanded)) "CR 903.11a: but may not take it"

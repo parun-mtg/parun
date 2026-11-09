@@ -10,4 +10,6 @@ data RuleFamily
     Commander
   | -- | CR 903.12: a Brawl deck.
     Brawl
+  | -- | CR 903.13f: a Commander Draft deck.
+    CommanderDraft
   deriving (Bounded, Enum, Eq, Ord, Show)

@@ -4,6 +4,7 @@ import qualified Data.Either as Either
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Scenario as Scenario
 import qualified Parun.JsonCodec.Codec as Codec
@@ -67,7 +68,7 @@ spec s = Spec.describe s "Parun.Codec.Scenario" $ do
       Scenario.codec
       Scenario.Type.MkScenario
         { Scenario.Type.description = Text.pack "a game",
-          Scenario.Type.start = Start.Type.FromDecks (Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing)) (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []),
+          Scenario.Type.start = Start.Type.FromDecks (Just (Format.Type.MkFormat RuleFamily.Type.Constructed Nothing Set.empty)) (Entrant.Type.MkEntrant (Label.Type.MkLabel (Text.pack "alice")) [Text.pack "60 Forest"] GraveyardOrder.Type.Indifferent NonEmpty.:| []),
           Scenario.Type.timeline = Seq.empty,
           Scenario.Type.final = Seq.empty
         }

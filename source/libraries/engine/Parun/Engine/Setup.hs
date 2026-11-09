@@ -145,7 +145,7 @@ teamStartingLife commander members
 -- Counts what the deck NAMED and not what Parun.Engine.Commander.designations
 -- allows: rule 903.5a is about the cards the player brought.
 deckSize :: Deck.Deck -> Natural
-deckSize deck = sum (Map.elems (Deck.cards deck)) + Natural.length (Deck.commander deck)
+deckSize deck = sum (Map.elems (Deck.cards deck)) + sum (Deck.commander deck)
 
 -- Pair every player with one deck, for a symmetric (mirror) matchup.
 mirror :: Deck.Deck -> NonEmpty.NonEmpty PlayerId -> NonEmpty.NonEmpty (PlayerId, Deck.Deck)
@@ -459,14 +459,14 @@ createDeck pid deck = do
     Monad.replicateM_ (Natural.toIntSaturating n) (createCard pid printingId)
   -- Interned for every card the deck NAMED, because CR 702.139b counts each of
   -- them in `starting` below even when CR 702.124h refuses the designation.
-  commanderIds <- Monad.mapM (State.state . Game.intern) (Set.toAscList (Deck.commander deck))
+  commanderIds <- Monad.mapM (State.state . Game.intern) (Commander.occurrences (Deck.commander deck))
   -- CR 903.6 / CR 702.124b: "both commanders begin the game in the command
   -- zone". Which cards those are is Commander.designations' judgement, not this
   -- deck's claim -- rule 702.124 admits a second commander only for a pair one
   -- of its partner abilities allows, and an inadmissible pair designates
   -- neither.
   settings <- State.gets GameState.settings
-  designatedIds <- Monad.mapM (State.state . Game.intern) (Set.toAscList (Commander.designations settings deck))
+  designatedIds <- Monad.mapM (State.state . Game.intern) (Commander.occurrences (Commander.designations settings deck))
   -- CR 903.3: the card put there is the one designated, by its identity, so
   -- another copy of the printing in the library is no commander.
   Monad.forM_ designatedIds $ \printingId -> do

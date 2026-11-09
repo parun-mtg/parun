@@ -18,12 +18,6 @@
 -- Parun.Types.Player.commander gives: CR 903.3 designates the card itself, which
 -- keeps the designation across CR 400.7's fresh object id and through a change
 -- of owner, and no other copy of its printing shares it.
---
--- WHAT IS NOT IMPLEMENTED:
---
---   * CR 903.13's Commander Draft deck construction (#6670). Commander's and
---     Brawl's are Parun.Legality's, which reads `designations` and
---     `colorIdentity`.
 module Parun.Engine.Commander where
 
 import qualified Control.Monad as Monad
@@ -39,6 +33,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Subtype as Subtype.Engine
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
@@ -48,7 +43,9 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.DraftBooster as DraftBooster
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Format as Format
 import Parun.Types.GameEvent (GameEvent)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -66,6 +63,7 @@ import qualified Parun.Types.Player as Player
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
+import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
@@ -126,22 +124,43 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- legendary CARDS, rule 702.124k for a Background enchantment and rule 702.124m
 -- for two legendary creature cards. So Rowan Kenrith beside Will Kenrith is a
 -- legal pair of planeswalkers on rule 702.124j's own words.
-designations :: GameSettings.GameSettings -> Deck.Deck -> Set.Set Printing.Printing
+--
+-- A multiset because CR 903.13e lets a Commander Draft deck designate two of
+-- one card; CR 903.13f(3)'s partner is `deckBuildingPartner`'s.
+designations :: GameSettings.GameSettings -> Deck.Deck -> Map.Map Printing.Printing Natural
 designations settings deck =
   let named = Deck.commander deck
-   in case Set.toList named of
+   in case occurrences named of
         [] -> named
-        [one] | isBackground one -> Set.empty
+        [one] | isBackground one -> Map.empty
         [one] | soleCommander settings one -> named
-        [_] -> Set.empty
-        [_, _] | all hasPartner named -> named
+        [_] -> Map.empty
+        [a, b] | deckBuildingPartner settings a && deckBuildingPartner settings b -> named
         [a, b] | sharesPartnerText a b -> named
         [a, b] | namesEachOther a b -> named
         [a, b] | choosesBackground a && isBackground b -> named
         [a, b] | choosesBackground b && isBackground a -> named
         [a, b] | isDoctorsCompanion a && isTheDoctor b -> named
         [a, b] | isDoctorsCompanion b && isTheDoctor a -> named
-        _ -> Set.empty
+        _ -> Map.empty
+
+-- | Each designation of a commander multiset, in printing order.
+occurrences :: Map.Map Printing.Printing Natural -> [Printing.Printing]
+occurrences = Map.foldrWithKey (\printing n rest -> replicate (Natural.toIntSaturating n) printing <> rest) []
+
+-- | CR 702.124h's partner as deck building sees it: printed, or, CR
+-- 903.13f(3), held by a card that can be a commander by itself with at most
+-- one colour in its identity, in a Commander Draft that held Commander Masters
+-- boosters.
+deckBuildingPartner :: GameSettings.GameSettings -> Printing.Printing -> Bool
+deckBuildingPartner settings printing =
+  let masters format = Format.rules format == RuleFamily.CommanderDraft && Set.member DraftBooster.CommanderMasters (Format.boosters format)
+   in hasPartner printing
+        || ( any masters (GameSettings.format settings)
+               && not (isBackground printing)
+               && soleCommander settings printing
+               && Set.size (colorIdentity printing) <= 1
+           )
 
 -- | CR 903.3's requirement of a deck's one commander: a legendary card that is
 -- "either (a) a creature card, (b) a Vehicle card, or (c) a Spacecraft card with
