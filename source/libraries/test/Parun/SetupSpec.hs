@@ -384,7 +384,7 @@ everyCarrier source gs0 =
   let (ts, gs1) = Game.freshTimestamp (S.withEffect source (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 0) (Quantity.Literal 0))) gs0)
       gs2 = S.addPlayerEffect Expiry.AtCleanup (AffectedPlayers.Named S.bob) PlayerEffect.CantCastSpells S.alice gs1
       creature = RestrictedCreatures.Named source
-      choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Acquisition.Own
+      choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
       replacement = ActiveReplacement.MkActiveReplacement ActiveReplacementSpec.effect source S.alice ts Expiry.AtCleanup Uses.Unlimited ReplacementOrigin.Other Nothing Nothing Map.empty choices
    in gs2
         { GameState.copyEffects = [ActiveCopy.MkActiveCopy source ts Expiry.AtCleanup (CopyCoverage.These (Set.singleton source)) (Projection.project source gs2) Nothing],

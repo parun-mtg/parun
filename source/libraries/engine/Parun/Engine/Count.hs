@@ -496,6 +496,7 @@ bakePerspective viewOf context gs candidate predicate =
         Filter.Type.HasChosenName {} -> predicate
         Filter.Type.HasChosenColor -> predicate
         Filter.Type.HasChosenSubtype -> predicate
+        Filter.Type.HasChosenCardType -> predicate
         Filter.Type.IsExiledWithSource _ -> predicate
         Filter.Type.IsLastExiledWithSource -> predicate
         Filter.Type.OfChosenPlayer -> predicate

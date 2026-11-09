@@ -113,6 +113,7 @@ codec keywordCodec =
       Arm.payload "HasChosenName" NameChooser.codec Filter.HasChosenName (\x -> case x of Filter.HasChosenName y -> Just y; _ -> Nothing),
       Arm.nullary "HasChosenColor" Filter.HasChosenColor,
       Arm.nullary "HasChosenSubtype" Filter.HasChosenSubtype,
+      Arm.nullary "HasChosenCardType" Filter.HasChosenCardType,
       Arm.payload "IsExiledWithSource" ExiledPile.codec Filter.IsExiledWithSource (\x -> case x of Filter.IsExiledWithSource y -> Just y; _ -> Nothing),
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,
       Arm.nullary "OfChosenPlayer" Filter.OfChosenPlayer,
@@ -292,6 +293,7 @@ tagOf x = case x of
   Filter.HasChosenName {} -> "HasChosenName"
   Filter.HasChosenColor {} -> "HasChosenColor"
   Filter.HasChosenSubtype {} -> "HasChosenSubtype"
+  Filter.HasChosenCardType {} -> "HasChosenCardType"
   Filter.IsExiledWithSource {} -> "IsExiledWithSource"
   Filter.IsLastExiledWithSource -> "IsLastExiledWithSource"
   Filter.OfChosenPlayer {} -> "OfChosenPlayer"

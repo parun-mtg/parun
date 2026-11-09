@@ -12,8 +12,9 @@
 -- "each permanent card in your starting deck has an activated ability", written
 -- in card data as @Or [Not permanentCard, HasActivatedAbility]@.
 -- Yorion, Sky Nomad is the deck-size condition's, read against
--- Parun.Types.GameSettings' format, and Lutri, the Spellchaser the
--- distinct-names condition's.
+-- Parun.Types.GameSettings' format, Lutri, the Spellchaser the
+-- distinct-names condition's, and Umori, the Collector the shared-card-type
+-- condition's.
 --
 -- THE BOARD SHAPE that makes the condition case discriminating. Both decks hold
 -- Mountains, Birds of Paradise and Lightning Bolts; bob's holds one Doomed
@@ -73,6 +74,7 @@ spec s registry = Spec.describe s "Companion" $ do
   revealing s registry
   deckSize s registry
   differentNames s registry
+  sharedCardType s registry
   newGames s registry
   mainGameCompanion s registry
   specialAction s registry
@@ -262,6 +264,22 @@ differentNames s registry = Spec.describe s "CR 702.139a a distinct-names condit
         gs = setup revealingAnswer (deckOf lutri ((bolt, 1) : shared)) (deckOf lutri ((bolt, 2) : shared))
     Spec.assertEqWith s "CR 702.139a: alice's nonland cards each have their own name, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup lutri (GameState.printingIds gs)))
     Spec.assertEqWith s "CR 201.2b: bob's two Lightning Bolts share a name" (companionOf S.bob gs) Nothing
+
+-- Umori, the Collector's "each nonland card in your starting deck shares a card
+-- type" (CR 702.139a, 205.2a), on its ruling's example: artifact creature and
+-- creature share Creature, and adding a bare artifact leaves no type on all.
+sharedCardType :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+sharedCardType s registry = Spec.describe s "CR 702.139a a shared-card-type condition" $ do
+  Spec.it s "CR 205.2a an artifact creature and a creature reveal Umori, and an artifact beside them does not" $ do
+    umori <- S.printingOf s registry "Umori, the Collector"
+    mountain <- S.printingOf s registry "Mountain"
+    birds <- S.printingOf s registry "Birds of Paradise"
+    ornithopter <- S.printingOf s registry "Ornithopter"
+    stone <- S.printingOf s registry "Mind Stone"
+    let shared = [(mountain, 20), (birds, 2), (ornithopter, 2)]
+        gs = setup revealingAnswer (deckOf umori shared) (deckOf umori ((stone, 1) : shared))
+    Spec.assertEqWith s "CR 702.139a: alice's nonland cards are all creatures, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup umori (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 205.2a: bob's Mind Stone is no creature, and his Birds no artifact" (companionOf S.bob gs) Nothing
 
 -- CR 728.1 / 730.2: a restart and a subgame each start a new game following rule
 -- 103, so CR 103.2a's starting deck is taken again from the cards the new game is

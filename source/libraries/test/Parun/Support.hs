@@ -1531,7 +1531,7 @@ addRegenShield oid gs =
             ActiveReplacement.condition = Nothing,
             ActiveReplacement.rider = Nothing,
             ActiveReplacement.slots = Map.empty,
-            ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Acquisition.Own
+            ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
           }
    in addReplacement active gs1
 
@@ -1556,7 +1556,7 @@ addPlayerEffect expiry scope effect controller gs =
         ActivePlayerEffect.MkActivePlayerEffect
           { ActivePlayerEffect.source = ObjectId.MkObjectId 998,
             ActivePlayerEffect.controller = controller,
-            ActivePlayerEffect.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.empty, SourceChoices.subtype = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
+            ActivePlayerEffect.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.empty, SourceChoices.colors = Set.empty, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
             ActivePlayerEffect.timestamp = ts,
             ActivePlayerEffect.expiry = expiry,
             ActivePlayerEffect.scope = scope,

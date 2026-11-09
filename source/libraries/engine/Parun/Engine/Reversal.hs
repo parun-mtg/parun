@@ -433,6 +433,7 @@ objectWith before entry closed = do
   attachedTo <- field Object.attachedTo
   chosenColors <- field Object.chosenColors
   chosenSubtype <- field Object.chosenSubtype
+  chosenCardType <- field Object.chosenCardType
   chosenNames <- field Object.chosenNames
   chosenPlayers <- field Object.chosenPlayers
   chosenNumber <- field Object.chosenNumber
@@ -504,6 +505,7 @@ objectWith before entry closed = do
         Object.attachedTo = attachedTo,
         Object.chosenColors = chosenColors,
         Object.chosenSubtype = chosenSubtype,
+        Object.chosenCardType = chosenCardType,
         Object.chosenNames = chosenNames,
         Object.chosenPlayers = chosenPlayers,
         Object.chosenNumber = chosenNumber,

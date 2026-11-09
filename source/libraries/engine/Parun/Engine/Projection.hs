@@ -4002,6 +4002,8 @@ filterReads f = case f of
   -- Reads the candidate's SUBTYPES, HasSubtype's answer: the chosen half arrives
   -- on the Context baked at production, and CR 613.1d's layer writes the other.
   Filter.Type.HasChosenSubtype -> Set.singleton Subtypes
+  -- HasCardType's answer, the chosen half arriving on the Context.
+  Filter.Type.HasChosenCardType -> Set.singleton Types
   Filter.Type.IsExiledWithSource _ -> Set.empty
   Filter.Type.IsLastExiledWithSource -> Set.empty
   -- Reads the candidate's CONTROLLER, ControllerRelatesToBound's answer above: rule
@@ -4342,6 +4344,7 @@ filterReadsPeers f = case f of
   -- at production; the candidate's own subtypes come from its partial, so no PEER
   -- is projected.
   Filter.Type.HasChosenSubtype -> False
+  Filter.Type.HasChosenCardType -> False
   Filter.Type.IsExiledWithSource _ -> False
   Filter.Type.IsLastExiledWithSource -> False
   -- The carrier's chosen player arrives on the Context; the candidate's own

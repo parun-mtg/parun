@@ -13,6 +13,8 @@ data ChosenQuality
     BasicLandType
   | -- | CR 205.3m: one creature type, written to Object.chosenSubtype (Pillar of Origins).
     CreatureType
+  | -- | CR 205.2a: one card type, written to Object.chosenCardType (Umori, the Collector).
+    CardType
   | -- | CR 607.2d: one number in the range, replacing the last, written to Object.chosenNumber (Shapeshifter).
     Number ChooseBetween.ChooseBetween
   deriving (Eq, Ord, Show)
