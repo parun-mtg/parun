@@ -1,0 +1,124 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Eagle of the Great Shelf",
+            "label": "eagle",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "b1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "b2",
+            "tapped": true
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bb1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bb2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bb3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bb4"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.1m, 603.2: Eagle of the Great Shelf's attack trigger gives it +1/+1 for each other creature its controller controls",
+  "note": "Alice controls three other creatures, one tapped and none attacking, so the 2/5 Eagle attacks alone as 5/8. Bob's four creatures are not counted (counting them gives 9/12), nor is the Eagle itself (6/9).",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$eagle"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$eagle",
+          "power": 5,
+          "toughness": 8
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

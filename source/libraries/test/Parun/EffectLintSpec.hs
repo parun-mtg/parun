@@ -3108,7 +3108,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ riders _ _ _ _)
             | specified riders ->
                 not
-                  ( ref == ObjectRef.InSlot Binding.became
+                  ( ref `elem` [ObjectRef.InSlot Binding.became, ObjectRef.InSlot Binding.triggerSource]
                       && Set.member Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine face))
                       && not (any (holdsPlayer . TargetSlot.pool) (Face.enchant face))
                   )
@@ -3117,8 +3117,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace offendsOn . Printing.card) ps
     -- Guards against a vacuous sweep, one per arm: Preston Garvey, Minuteman
     -- creates a token attached to a target, Nomad Mythmaker moves an Aura card
-    -- attached to a creature its controller controls, and Necrotic Plague
-    -- returns itself attached to a target.
+    -- attached to a creature its controller controls, and Necrotic Plague and
+    -- Eagle's Rescue return themselves attached to a target.
     Spec.assertBool s (any (anyFace (any creates . cardResolutionEffects) . Printing.card) ps) "the pool has a card creating a token attached to something"
     Spec.assertBool s (any (anyFace (any moves . cardResolutionEffects) . Printing.card) ps) "the pool has a card moving an Aura attached to a host it describes"
     Spec.assertBool s (any (anyFace (any (\effect -> case effect of Effect.MoveToZone m -> specified (MoveToZone.riders m); _ -> False) . cardResolutionEffects) . Printing.card) ps) "the pool has a card moving an Aura attached to a host a slot names"

@@ -913,13 +913,16 @@ dust-animus
 dutiful-knowledge-seeker
 dwarven-catapult
 dwarven-hold
+dwarven-mattock
 dwarven-mauler
+dwarven-shortsword
 dwarven-soldier
 dwarven-warriors
 dwell-on-the-past
 dwindle
 eager-construct
 eager-trufflesnout
+eagles-rescue
 eardrum-rattler
 early-harvest
 earthbending-lesson
@@ -955,6 +958,7 @@ elkin-lair
 eloren-wilds
 elspeth-suns-champion
 elspeths-smite
+elven-passage
 elven-riders
 elvish-bard
 elvish-berserker
@@ -972,6 +976,7 @@ emperor-crocodile
 emporium-thopterist
 empty-city-ruse
 emrakul-the-exigent-doom
+enchanted-rivers-grasp
 enchantment-alteration
 encouraging-aviator-jump
 encrust
@@ -1007,6 +1012,7 @@ errantry
 ersatz-gnomes
 ertais-scorn
 erudite-wizard
+esgaroth-garrison
 essence-burn
 essence-of-the-wild
 etali-primal-storm
@@ -1092,6 +1098,7 @@ fblthp-impossibly-lost
 fblthp-knows-the-way
 fblthp-lost-on-the-range
 fear-of-change
+fearsome-goblin-pair
 feat-of-resistance
 fecundity
 feed-the-pack
@@ -1122,6 +1129,7 @@ fiery-emancipation
 fiery-encore
 fiery-impulse
 fight-or-flight
+fili-the-pathfinder
 final-fortune
 final-punishment
 final-strike
@@ -1230,12 +1238,15 @@ gaeas-liege
 gaeas-protector
 gaeas-revenge
 galactus-devourer-of-worlds
+galion-elvenkings-butler
 gallia-the-merrymaker
 gallia-tragic-host
 galloping-lizrog
 galvanic-blast
 galvanic-relay
 game-of-chaos
+gandalf-goblins-bane-flameshape
+gandalf-wandering-wizard
 gang-of-elk
 gardenize
 gargos-vicious-watcher
@@ -1259,6 +1270,7 @@ gate-colossus
 gatekeeper-of-malakir
 gather-specimens
 gather-the-pack
+gathering-of-darkness
 gauntlet-of-might
 gauntlet-of-power
 gauntlets-of-chaos
@@ -1303,11 +1315,13 @@ gift-of-doom
 gift-of-estates
 gift-of-paradise
 gifts-ungiven
+gigantic-big-bear
 gilded-lotus
 gilder-bairn
 gilt-leaf-winnower
 giltspire-avenger
 glacial-crasher
+glamdring-foe-hammer-gleam-of-death
 glamer-spinners
 glamerdye
 glasses-of-urza
