@@ -1319,7 +1319,7 @@ data Context = MkContext
     -- False.
     --
     -- What keeps a card out of those positions is Parun.FilterPositionLintSpec's
-    -- "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount or an effect's object",
+    -- "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object or a discard cost",
     -- the sweep sourceMeasures' and defendingPlayer's siblings each have.
     slotNames :: Map.Map SlotName.SlotName (Set.Set CardName.CardName),
     -- CR 110.2: the CONTROLLERS of the objects the surrounding announcement's
