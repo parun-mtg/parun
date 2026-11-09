@@ -1702,9 +1702,10 @@ expansionOf keyword = case keyword of
         KeywordExpansion.permissions = castFromGraveyardIfInstantOrSorcery
       }
 
--- CR 113.2c: what one instance mints, once per instance held.
+-- CR 113.2c: what one instance mints, once per instance held -- perPayment
+-- with a mint that ignores the ordinal.
 perInstance :: [a] -> Natural -> [a]
-perInstance minted count = concat (List.genericReplicate count minted)
+perInstance minted = concat . perPayment (const minted)
 
 -- CR 702.34a's clause, which CR 702.133a and 702.196a share: a permission to
 -- cast from a graveyard, granted only when the face is an instant or sorcery.
