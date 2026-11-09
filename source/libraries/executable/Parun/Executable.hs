@@ -57,8 +57,10 @@ main = do
   case arguments of
     ["schema"] -> schema
     ["schema", "scenario"] -> scenarioSchema
-    ["deck", path] -> deck Nothing path
-    ["deck", "--format", format, path] -> deck (Just (Text.pack format)) path
+    ["deck", path] -> deck Nothing Nothing path
+    ["deck", "--format", format, path] -> deck (Just (Text.pack format)) Nothing path
+    ["deck", "--pool", pool, path] -> deck Nothing (Just pool) path
+    ["deck", "--format", format, "--pool", pool, path] -> deck (Just (Text.pack format)) (Just pool) path
     ["ingest", path] -> ingest path
     ["oracle"] -> oracle
     "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
@@ -69,7 +71,7 @@ main = do
     "test" : rest -> Environment.withArgs rest Parun.Test.main
     _ -> do
       name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
+      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
       Exit.exitFailure
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a
@@ -83,28 +85,37 @@ main = do
 --
 -- With a format, asked for or named by the list's header, a deck breaking its
 -- rules or pool in a game not for ante is reported, every violation beside
--- every bad line, and not written back.
-deck :: Maybe Text.Text -> FilePath -> IO ()
-deck format path = do
+-- every bad line, and not written back. A limited deck is checked against the
+-- card pool a second list holds (Parun.Legality.fromPool), whose bad lines are
+-- reported too.
+deck :: Maybe Text.Text -> Maybe FilePath -> FilePath -> IO ()
+deck format poolPath path = do
+  registry <- Registry.defaultRegistry
+  listed <- readDeckList registry path
+  pool <- traverse (readDeckList registry) poolPath
+  let poolProblems = [Text.pack (file <> ": ") <> DeckList.explain problem | (file, held) <- Maybe.maybeToList ((,) <$> poolPath <*> pool), problem <- DeckList.problems held]
+  (checked, problems) <- Legality.report format (fmap (Legality.poolOf . DeckList.deck) pool) listed
+  case poolProblems <> fmap (Text.pack (path <> ": ") <>) problems of
+    [] -> TextIO.putStr (DeckList.render (Registry.printings registry) checked (DeckList.deck listed))
+    reported -> do
+      mapM_ (TextIO.hPutStrLn IO.stderr) reported
+      Exit.exitFailure
+
+-- The deck list a file holds, or a stop naming why it holds none.
+readDeckList :: Registry.Registry IO -> FilePath -> IO DeckList.Listed
+readDeckList registry path = do
   bytes <- ByteString.readFile path
   case Encoding.decodeUtf8' bytes of
     Left err -> do
       IO.hPutStrLn IO.stderr $ path <> ": not valid UTF-8: " <> show err
       Exit.exitFailure
     Right contents -> do
-      registry <- Registry.defaultRegistry
       result <- DeckList.parse registry contents
       case result of
         Left corpus -> do
           IO.hPutStrLn IO.stderr (Exception.displayException corpus)
           Exit.exitFailure
-        Right listed -> do
-          (checked, problems) <- Legality.report format listed
-          case problems of
-            [] -> TextIO.putStr (DeckList.render (Registry.printings registry) checked (DeckList.deck listed))
-            _ -> do
-              mapM_ (TextIO.hPutStrLn IO.stderr . (Text.pack (path <> ": ") <>)) problems
-              Exit.exitFailure
+        Right listed -> pure listed
 
 -- | Reads script/ingest/candidates.jq's reduction of MTGJSON's AtomicCards and
 -- writes a card file for every keyword-only card it holds, Oracle text included

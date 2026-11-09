@@ -42,6 +42,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DeckLimit as DeckLimit
+import qualified Parun.Types.DraftBooster as DraftBooster
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
@@ -62,13 +63,24 @@ import qualified Paths_parun as Paths
 import qualified System.Directory as Directory
 
 -- | Every violation of the format's rules and pool, for a game played with the
--- settings given, from every rule: none stops at the first failure.
-check :: LegalityTable.LegalityTable -> GameSettings.GameSettings -> Format.Format -> Deck.Deck -> [Violation.Violation]
-check table settings format deck = concatMap ($ deck) (rules table settings format)
+-- settings given, from every rule: none stops at the first failure. A limited
+-- format's deck is checked against the card pool given (see 'fromPool'), any
+-- other format's ignores it.
+check :: LegalityTable.LegalityTable -> GameSettings.GameSettings -> Format.Format -> Maybe CardPool -> Deck.Deck -> [Violation.Violation]
+check table settings format cardPool deck = concatMap ($ deck) (rules table settings format cardPool)
+
+-- | CR 100.2b / 100.4b: a limited player's card pool, how many cards of each
+-- English name it holds.
+type CardPool = Map.Map CardName.CardName Natural.Natural
+
+-- | The card pool a deck list holds, by name, counting the sections 'fromPool'
+-- counts: a pool written as a list.
+poolOf :: Deck.Deck -> CardPool
+poolOf deck = Map.fromListWith (+) [(Face.name (Card.combined (Printing.card printing)), count) | (printing, count) <- Map.toList (fromPoolCards deck)]
 
 -- | The construction rules a format imposes, each a predicate over a deck.
-rules :: LegalityTable.LegalityTable -> GameSettings.GameSettings -> Format.Format -> [Deck.Deck -> [Violation.Violation]]
-rules table settings format =
+rules :: LegalityTable.LegalityTable -> GameSettings.GameSettings -> Format.Format -> Maybe CardPool -> [Deck.Deck -> [Violation.Violation]]
+rules table settings format cardPool =
   let standing = fmap (poolStanding table) (Format.pool format)
       restricted card = any (\standingOf -> standingOf card == Just (Just Legality.Restricted)) standing
       -- CR 903.5a / 903.12d: exactly so many cards, commanders included. CR
@@ -78,10 +90,9 @@ rules table settings format =
       -- and whether CR 903.13f(3) gives a card partner.
       --
       -- CR 903.13f: a Commander Draft deck is Commander's with no maximum and
-      -- no copy limit but a card's own, and is limited play (CR 903.13a), so
-      -- CR 315.1's and CR 123.2a's constructed rules stay out. CR 903.13f(2)'s
-      -- "from that player's card pool" and CR 903.13e's added commanders are
-      -- not checked: a deck list records no pool.
+      -- no copy limit but a card's own or its card pool's (CR 903.13f(2)), and
+      -- is limited play (CR 903.13a), so CR 315.1's and CR 123.2a's
+      -- constructed rules stay out.
       commander family =
         let brawl = family == RuleFamily.Brawl
             draft = family == RuleFamily.CommanderDraft
@@ -90,6 +101,7 @@ rules table settings format =
               <> [commanderAtMost size | not draft]
               <> [copiesAtMost Nothing restricted (if draft then Nothing else Just 1) withCommander, noSideboard, commanders settings {GameSettings.brawl = brawl, GameSettings.format = Just format}, inIdentity brawl]
               <> foldMap (pure . inPool) standing
+              <> [\deck -> fromPool (addedCommanders (Format.boosters format) held deck) deck | draft, Just held <- [cardPool]]
               <> [anteCards settings]
               <> (if draft then [] else [conspiracies, stickerSheets])
               <> [circledColors, supplementary family settings, vanguardCard]
@@ -99,7 +111,7 @@ rules table settings format =
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
+        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> foldMap (pure . fromPool) cardPool <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
         -- CR 903.5.
         RuleFamily.Commander -> commander RuleFamily.Commander
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
@@ -195,6 +207,37 @@ planarDeck players held =
 -- Whether a card's combined type line has the card type.
 hasType :: CardType.CardType -> Card.Type.Card -> Bool
 hasType cardType card = Set.member cardType (TypeLine.types (Face.typeLine (Card.combined card)))
+
+-- Deck, sideboard and commanders together.
+everySection :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
+everySection deck = Map.unionWith (+) (bothSections deck) (Deck.commander deck)
+
+-- CR 100.2b / 100.4b: the cards a limited deck draws from its card pool: deck,
+-- sideboard and commanders (CR 903.13f(2)), the conspiracies taken from the
+-- sideboard (CR 315.2), and the Attraction (CR 718.2b) and Contraption (the
+-- Unstable FAQ) decks.
+fromPoolCards :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
+fromPoolCards deck = Map.unionsWith (+) ([everySection deck, Deck.conspiracies deck] <> [Map.findWithDefault Map.empty pile (Deck.sideDecks deck) | pile <- [SideDeck.Attraction, SideDeck.Contraption]])
+
+-- CR 100.2b: each card 'fromPoolCards' counts but a basic land card is one
+-- the card pool holds, and no more of a name than the pool holds. Names are
+-- compared as copiesAtMost compares them.
+fromPool :: CardPool -> Deck.Deck -> [Violation.Violation]
+fromPool held deck =
+  let tallies = Map.fromListWith (+) [(Face.name (Card.combined card), count) | (printing, count) <- Map.toList (fromPoolCards deck), let card = Printing.card printing, not (basicLand card)]
+      judge (written, count) = case Map.lookup written held of
+        Nothing -> [Violation.NotInCardPool written]
+        Just most -> [Violation.TooManyCopies Nothing written count most | count > most]
+   in foldMap judge (Map.toList tallies)
+
+-- CR 903.13e: a Commander Draft card pool, with the cards named The Prismatic
+-- Piper or Faceless One its boosters let the deck add, up to two of each,
+-- counting only those the deck designates as its commanders.
+addedCommanders :: Set.Set DraftBooster.DraftBooster -> CardPool -> Deck.Deck -> CardPool
+addedCommanders boosters held deck =
+  let designated = poolOf (Deck.fromCards (Deck.commander deck))
+      added name from = [(written, min 2 count) | any (`Set.member` boosters) from, let written = CardName.MkCardName (Text.pack name), Just count <- [Map.lookup written designated]]
+   in Map.unionWith (+) held (Map.fromList (added "The Prismatic Piper" [DraftBooster.CommanderLegends, DraftBooster.CommanderMasters] <> added "Faceless One" [DraftBooster.BattleForBaldursGate]))
 
 -- CR 903.5a: the deck with its commanders, which it counts among its cards.
 withCommander :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
@@ -353,7 +396,7 @@ stickerSheets deck =
 
 -- Each card of deck, sideboard and commanders once, by name.
 cardsIn :: Deck.Deck -> [(CardName.CardName, Card.Type.Card)]
-cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (bothSections deck) <> Map.keys (Deck.commander deck), let card = Printing.card printing])
+cardsIn deck = Map.toList (Map.fromList [(Face.name (Card.combined card), card) | printing <- Map.keys (everySection deck), let card = Printing.card printing])
 
 -- CR 205.4c: the supertype makes a basic land, not the name or a basic land
 -- type, so snow basics and Wastes are exempt and Dryad Arbor is not.
@@ -364,16 +407,17 @@ basicLand card =
 
 -- | Everything wrong with a deck list, as lines a person can read: its bad
 -- lines, then its deck's violations of the format asked for or its header
--- names, in a game not for ante. Beside them, the format checked.
-report :: Maybe Text.Text -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
-report asked listed = do
+-- names, against the card pool given, in a game not for ante. Beside them,
+-- the format checked.
+report :: Maybe Text.Text -> Maybe CardPool -> DeckList.Listed -> IO (Maybe Text.Text, [Text.Text])
+report asked cardPool listed = do
   let (format, disagreement) = DeckList.formatFor asked listed
       lines' = fmap DeckList.explain (DeckList.problems listed <> disagreement)
   checked <- traverse named format
   let violations = case checked of
         Nothing -> []
         Just (Left problem) -> [problem]
-        Just (Right known) -> fmap explain (known GameSettings.plain (DeckList.deck listed))
+        Just (Right known) -> fmap explain (known GameSettings.plain cardPool (DeckList.deck listed))
   pure (format, lines' <> violations)
 
 -- | A violation as a line a person can read.
@@ -396,6 +440,7 @@ explain violation = Text.pack $ case violation of
   Violation.DuplicateStickerSheet name count -> show count <> " copies of the sticker sheet " <> Text.unpack name <> ", more than 1"
   Violation.TooManyPhenomena count most -> show count <> " phenomena in the planar deck, more than " <> show most
   Violation.MisplacedCard pile written -> spelled written <> " does not belong in " <> pileName (Just pile)
+  Violation.NotInCardPool written -> spelled written <> " is not in the card pool"
   Violation.NotVanguardCard written -> spelled written <> " is not a vanguard card"
   Violation.MissingVanguard missing players -> show missing <> " of " <> show players <> " players without a vanguard card"
   where
@@ -410,7 +455,7 @@ explain violation = Text.pack $ case violation of
 -- | The check of the shipped format a name means, against the shipped table:
 -- "constructed" and "limited" for the rules alone, "vintage" and the like with
 -- a pool.
-named :: Text.Text -> IO (Either Text.Text (GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]))
+named :: Text.Text -> IO (Either Text.Text (GameSettings.GameSettings -> Maybe CardPool -> Deck.Deck -> [Violation.Violation]))
 named name = do
   found <- shipped name
   case found of

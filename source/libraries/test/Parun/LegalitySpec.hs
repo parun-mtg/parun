@@ -57,7 +57,7 @@ violations :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily ->
 violations s registry family = violationsIn s registry GameSettings.plain (Format.MkFormat family Nothing Set.empty) noTable
 
 violationsIn :: Spec.Spec IO n -> Registry.Registry IO -> GameSettings.GameSettings -> Format.Format -> LegalityTable.LegalityTable -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO [Violation.Violation]
-violationsIn s registry settings format table main side = fmap (Legality.check table settings format) (deckOf s registry main side)
+violationsIn s registry settings format table main side = fmap (Legality.check table settings format Nothing) (deckOf s registry main side)
 
 -- The violations a deck raises in a shipped format, by name, in a game not
 -- for ante.
@@ -65,7 +65,7 @@ violationsNamed :: Spec.Spec IO n -> Registry.Registry IO -> String -> [(String,
 violationsNamed s registry name main side = do
   checker <- Legality.named (Text.pack name)
   deck <- deckOf s registry main side
-  either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain deck)) checker
+  either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain Nothing deck)) checker
 
 -- A deck and a sideboard led by the commanders named.
 ledBy :: Spec.Spec IO n -> Registry.Registry IO -> [String] -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO Deck.Deck
@@ -77,7 +77,7 @@ ledBy s registry commanders main side = do
 -- The violations a deck led by the commanders named raises under a rule
 -- family with no pool, in a game whose settings say nothing of Brawl.
 ledViolations :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> [String] -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO [Violation.Violation]
-ledViolations s registry family commanders main side = fmap (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing Set.empty)) (ledBy s registry commanders main side)
+ledViolations s registry family commanders main side = fmap (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing Set.empty) Nothing) (ledBy s registry commanders main side)
 
 -- The violations a deck led by the commanders named raises in a shipped
 -- format, by name, in a game whose settings say nothing of Brawl.
@@ -85,7 +85,7 @@ ledViolationsNamed :: Spec.Spec IO n -> Registry.Registry IO -> String -> [Strin
 ledViolationsNamed s registry name commanders main side = do
   checker <- Legality.named (Text.pack name)
   deck <- ledBy s registry commanders main side
-  either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain deck)) checker
+  either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain Nothing deck)) checker
 
 -- A table with no cards, for a format with no pool, which reads none.
 noTable :: LegalityTable.LegalityTable
@@ -113,12 +113,12 @@ committedSheets s = do
 withSheets :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> [(String, Natural.Natural)] -> [StickerSheet.StickerSheet] -> IO [Violation.Violation]
 withSheets s registry family main sheets = do
   deck <- deckOf s registry main []
-  pure (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing Set.empty) deck {Deck.stickerSheets = Seq.fromList sheets})
+  pure (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing Set.empty) Nothing deck {Deck.stickerSheets = Seq.fromList sheets})
 
 -- The violations a deck bringing these supplementary decks and this vanguard
 -- raises under a rule family with no pool, in a game with these settings.
 withSideDecks :: Spec.Spec IO n -> Registry.Registry IO -> RuleFamily.RuleFamily -> GameSettings.GameSettings -> Deck.Deck -> [(SideDeck.SideDeck, [(String, Natural.Natural)])] -> Maybe String -> IO [Violation.Violation]
-withSideDecks s registry family settings deck piles vanguard = fmap (Legality.check noTable settings (Format.MkFormat family Nothing Set.empty)) (supplied s registry deck piles vanguard)
+withSideDecks s registry family settings deck piles vanguard = fmap (Legality.check noTable settings (Format.MkFormat family Nothing Set.empty) Nothing) (supplied s registry deck piles vanguard)
 
 -- A deck bringing the supplementary decks and the vanguard named.
 supplied :: Spec.Spec IO n -> Registry.Registry IO -> Deck.Deck -> [(SideDeck.SideDeck, [(String, Natural.Natural)])] -> Maybe String -> IO Deck.Deck
@@ -150,11 +150,11 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 100.2a: a list with a bad line still has its five Grizzly Bears counted" $ do
     let text = "5 Grizzly Bears\n55 Mountain\n1 Lightnin Bolt\n"
     listed <- DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure
-    (format, reported) <- Legality.report (Just (Text.pack "constructed")) listed
+    (format, reported) <- Legality.report (Just (Text.pack "constructed")) Nothing listed
     Spec.assertEqWith s "the format" format (Just (Text.pack "constructed"))
     Spec.assertEqWith s "the bad line, then the violation" reported [DeckList.explain (DeckList.NoSuchCard 3 (nameOf "Lightnin Bolt")), Legality.explain (copies "Grizzly Bears" 5)]
     headed <- DeckList.parse registry (Text.pack ("Format: limited\n" <> text)) >>= either (S.brokenCorpus s) pure
-    (headerFormat, headerReported) <- Legality.report Nothing headed
+    (headerFormat, headerReported) <- Legality.report Nothing Nothing headed
     Spec.assertEqWith s "the header's format" headerFormat (Just (Text.pack "limited"))
     Spec.assertEqWith s "under which five are legal" headerReported [DeckList.explain (DeckList.NoSuchCard 4 (nameOf "Lightnin Bolt"))]
 
@@ -209,6 +209,27 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     Spec.assertEqWith s "nine" nine []
     ten <- violations s registry RuleFamily.Limited [("Nazgûl", 10), ("Mountain", 30)] []
     Spec.assertEqWith s "ten" ten [Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack "Nazgûl")) 10 9]
+
+  Spec.it s "CR 100.2b: a limited deck holds only its card pool and basic lands, no more of a card than the pool" $ do
+    let pool = "1 Llanowar Elves\n1 Grizzly Bears\n"
+    pooled <- DeckList.parse registry (Text.pack pool) >>= either (S.brokenCorpus s) pure
+    let held = Just (Legality.poolOf (DeckList.deck pooled))
+        sealed text = DeckList.parse registry (Text.pack text) >>= either (S.brokenCorpus s) pure >>= Legality.report (Just (Text.pack "limited")) held
+    (_, outside) <- sealed "2 Llanowar Elves\n1 Lightning Bolt\n37 Forest\n"
+    Spec.assertEqWith s "a Lightning Bolt and a second Llanowar Elves" outside (fmap Legality.explain [Violation.NotInCardPool (nameOf "Lightning Bolt"), Violation.TooManyCopies Nothing (nameOf "Llanowar Elves") 2 1])
+    (_, legal) <- sealed "1 Llanowar Elves\n39 Forest\n"
+    Spec.assertEqWith s "one Llanowar Elves" legal []
+    (_, sideboard) <- sealed "1 Llanowar Elves\n39 Forest\n\nSideboard\n1 Llanowar Elves\n"
+    Spec.assertEqWith s "CR 100.4b: a second in the sideboard" sideboard (fmap Legality.explain [Violation.TooManyCopies Nothing (nameOf "Llanowar Elves") 2 1])
+    (_, constructed) <- DeckList.parse registry (Text.pack "4 Lightning Bolt\n56 Mountain\n") >>= either (S.brokenCorpus s) pure >>= Legality.report (Just (Text.pack "constructed")) held
+    Spec.assertEqWith s "a constructed deck ignores the pool" constructed []
+
+  Spec.it s "CR 718.2b: a limited Attraction deck draws on the card pool" $ do
+    deck <- deckOf s registry [("Mountain", 40)] []
+    attractions <- supplied s registry deck [(SideDeck.Attraction, [("Bumper Cars", 3)])] Nothing
+    let limited held = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Limited Nothing Set.empty) (Just (Map.singleton (nameOf "Bumper Cars") held)) attractions
+    Spec.assertEqWith s "three of three" (limited 3) []
+    Spec.assertEqWith s "three of two" (limited 2) [Violation.TooManyCopies Nothing (nameOf "Bumper Cars") 3 2]
 
   -- Proficient Pyrodancer's player brings sheets for its stickers.
   Spec.it s "CR 123.2a: a constructed player bringing sticker sheets brings ten, each unique" $ do
@@ -327,12 +348,12 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 902.1: a deck list naming Barrin and Selenia as vanguards is refused" $ do
     listed <- DeckList.parse registry (Text.pack "60 Mountain\nVanguard\n1 Barrin\n1 Selenia\n") >>= either (S.brokenCorpus s) pure
-    (_, reported) <- Legality.report (Just (Text.pack "constructed")) listed
+    (_, reported) <- Legality.report (Just (Text.pack "constructed")) Nothing listed
     Spec.assertEqWith s "the second refused" reported [DeckList.explain (DeckList.VanguardRepeated 4 (nameOf "Selenia"))]
 
   Spec.it s "CR 123.2a: a Commander player bringing sticker sheets is in constructed play too" $ do
     sheets <- committedSheets s
-    found <- fmap (\deck -> Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Commander Nothing Set.empty) deck {Deck.stickerSheets = Seq.fromList (take 2 sheets)}) (ledBy s registry ["Krenko, Mob Boss"] [("Mountain", 99)] [])
+    found <- fmap (\deck -> Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Commander Nothing Set.empty) Nothing deck {Deck.stickerSheets = Seq.fromList (take 2 sheets)}) (ledBy s registry ["Krenko, Mob Boss"] [("Mountain", 99)] [])
     Spec.assertEqWith s "violations" found [Violation.TooFewStickerSheets 2 10]
 
   Spec.it s "CR 123.2b: a limited player may bring two of one sticker sheet" $ do
@@ -419,7 +440,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
         circling colors = do
           spires <- S.printingOf s registry "Cryptic Spires"
           deck <- deckOf s registry [("Mountain", 59)] []
-          pure (Legality.check noTable GameSettings.plain constructed deck {Deck.cards = Map.insert spires {Printing.circled = Set.fromList colors} 1 (Deck.cards deck)})
+          pure (Legality.check noTable GameSettings.plain constructed Nothing deck {Deck.cards = Map.insert spires {Printing.circled = Set.fromList colors} 1 (Deck.cards deck)})
     two <- circling [Color.Blue, Color.Black]
     Spec.assertEqWith s "two circled" two []
     none <- circling []
@@ -430,7 +451,7 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 207.5: a sideboard Mountain circling two colours is refused" $ do
     mountain <- S.printingOf s registry "Mountain"
     deck <- deckOf s registry [("Mountain", 60)] []
-    let found = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Limited Nothing Set.empty) deck {Deck.sideboard = Map.singleton mountain {Printing.circled = Set.fromList [Color.Red, Color.Green]} 1}
+    let found = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Limited Nothing Set.empty) Nothing deck {Deck.sideboard = Map.singleton mountain {Printing.circled = Set.fromList [Color.Red, Color.Green]} 1}
     Spec.assertEqWith s "violations" found [Violation.MiscircledCard (nameOf "Mountain") 2 0]
 
   Spec.it s "CR 903.5: Krenko leading Lightning Bolt and 98 Mountains is a legal Commander deck" $ do
@@ -544,10 +565,20 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     deck <- deckOf s registry [("Lightning Bolt", 3), ("Mountain", 65)] []
     let led = deck {Deck.commander = Map.singleton piper {Printing.chosenColor = Just Color.Red} 2}
     checker <- Legality.named (Text.pack "commanderdraft")
-    draft <- either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain led)) checker
+    draft <- either (Spec.assertFailure s . Text.unpack) (\known -> pure (known GameSettings.plain Nothing led)) checker
     Spec.assertEqWith s "Commander Draft" draft []
-    let commander = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Commander Nothing Set.empty) led
+    let commander = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Commander Nothing Set.empty) Nothing led
     Spec.assertEqWith s "Commander" commander [Violation.TooFewCards Nothing 70 100, Violation.TooManyCopies Nothing (nameOf "Lightning Bolt") 3 1, Violation.TooManyCopies Nothing (nameOf "The Prismatic Piper") 2 1]
+
+  Spec.it s "CR 903.13e / 903.13f(2): a Commander Draft deck draws on its card pool, but for two The Prismatic Piper leading it" $ do
+    piper <- S.printingOf s registry "The Prismatic Piper"
+    deck <- deckOf s registry [("Lightning Bolt", 3), ("Mountain", 65)] []
+    let draft boosters = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.CommanderDraft Nothing (Set.fromList boosters)) (Just (Map.singleton (nameOf "Lightning Bolt") 3))
+        led = deck {Deck.commander = Map.singleton piper {Printing.chosenColor = Just Color.Red} 2}
+    Spec.assertEqWith s "Commander Legends" (draft [DraftBooster.CommanderLegends] led) []
+    Spec.assertEqWith s "Battle for Baldur's Gate" (draft [DraftBooster.BattleForBaldursGate] led) [Violation.NotInCardPool (nameOf "The Prismatic Piper")]
+    let main = led {Deck.cards = Map.insert piper 1 (Deck.cards led)}
+    Spec.assertEqWith s "a third in the deck" (draft [DraftBooster.CommanderLegends] main) [Violation.TooManyCopies Nothing (nameOf "The Prismatic Piper") 3 2]
 
   Spec.it s "CR 903.13f(1): a Commander Draft deck is at least 60 cards" $ do
     small <- ledViolations s registry RuleFamily.CommanderDraft ["Krenko, Mob Boss"] [("Mountain", 58)] []
@@ -555,14 +586,14 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
 
   Spec.it s "CR 903.13f(3): only a Commander Masters draft pairs Krenko with Shimatsu" $ do
     deck <- ledBy s registry ["Krenko, Mob Boss", "Shimatsu the Bloodcloaked"] [("Mountain", 58)] []
-    let draft boosters = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.CommanderDraft Nothing (Set.fromList boosters)) deck
+    let draft boosters = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.CommanderDraft Nothing (Set.fromList boosters)) Nothing deck
     Spec.assertEqWith s "Commander Masters" (draft [DraftBooster.CommanderLegends, DraftBooster.CommanderMasters]) []
     Spec.assertEqWith s "Commander Legends" (draft [DraftBooster.CommanderLegends]) [Violation.IllegalCommander (nameOf "Krenko, Mob Boss"), Violation.IllegalCommander (nameOf "Shimatsu the Bloodcloaked")]
 
   Spec.it s "CR 903.13a / 903.13g: a Commander Draft deck is limited play in a Commander game" $ do
     deck <- ledBy s registry ["Krenko, Mob Boss"] [("Mountain", 59)] []
     sheets <- committedSheets s
-    let draft = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.CommanderDraft Nothing Set.empty)
+    let draft = Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.CommanderDraft Nothing Set.empty) Nothing
     Spec.assertEqWith s "CR 123.2b: two sticker sheets" (draft deck {Deck.stickerSheets = Seq.fromList (take 2 sheets)}) []
     attractions <- withSideDecks s registry RuleFamily.CommanderDraft GameSettings.plain deck [(SideDeck.Attraction, [("Bumper Cars", 3)])] Nothing
     Spec.assertEqWith s "CR 718.2b: three Bumper Cars" attractions []

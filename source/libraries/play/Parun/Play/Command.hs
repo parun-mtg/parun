@@ -127,7 +127,7 @@ gameFormat asked lists = case (asked, headers) of
 -- the rules a game states of its decks together (Parun.Legality.checkGame).
 refuse :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO ()
 refuse format lists = do
-  reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report format listed)) lists
+  reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report format Nothing listed)) lists
   let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame GameSettings.plain (fmap (DeckList.deck . snd) lists)) else []
       violations = concat reports <> together
   Monad.unless (null violations) $ do
