@@ -1,0 +1,142 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Pinecone Strike",
+      "oracleText": "Choose one or both —\n• Pinecone Strike deals 3 damage to target creature. If that creature would die this turn, exile it instead.\n• Destroy target artifact token.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creature"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "Replace",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "effect": {
+                        "type": "ZoneChangeR",
+                        "value": {
+                          "destination": "Exile",
+                          "matching": {
+                            "whatObject": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "IsBound",
+                                  "value": "creature"
+                                },
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "IsInZone",
+                                  "value": "Battlefield"
+                                }
+                              ]
+                            },
+                            "whenDestination": "Graveyard"
+                          }
+                        }
+                      },
+                      "origin": "Other",
+                      "uses": "Unlimited"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "token"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "token": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Artifact"
+                    },
+                    {
+                      "type": "IsToken"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 2
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
