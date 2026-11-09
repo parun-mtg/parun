@@ -27,6 +27,18 @@
             "label": "pk"
           },
           {
+            "card": "Goblin Piker",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "pk2"
+          },
+          {
             "card": "Island",
             "label": "i1"
           },
@@ -107,8 +119,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.2c: The Great Goblin pings bob once when one proliferate puts two kinds of counters on alice's Goblin, and not for bob's Goblin",
-  "note": "Proliferate gives the Piker a +1/+1 and a shield counter in one event, two counter records: one trigger, not two. Bob's Piker gets one too, under alice's hand, and a Goblin she doesn't control adds nothing.",
+  "description": "CR 603.2c: one proliferate makes The Great Goblin ping bob once per Goblin of alice's, however many kinds each got, and not for bob's Goblin",
+  "note": "One proliferate is one event giving the first Piker a +1/+1 and a shield counter, two counter records: one trigger for it, one for the second Piker, none for bob's Piker, which gets its counter from alice but isn't hers.",
   "timeline": [
     {
       "do": {
@@ -138,9 +150,63 @@
           "with": [
             [
               "$pk",
+              "$pk2",
               "$bpk"
             ],
             []
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$gg",
+          "$gg"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "target",
+              [
+                [
+                  "Player",
+                  "bob"
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "target",
+              [
+                [
+                  "Player",
+                  "bob"
+                ]
+              ]
+            ]
           ]
         }
       },
@@ -183,6 +249,20 @@
           "kind": {
             "type": "PlusOnePlusOne"
           },
+          "object": "$pk2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
           "object": "$bpk"
         }
       },
@@ -194,11 +274,18 @@
       "check": {
         "View": {
           "is": [
+            "trigger of $gg",
             "trigger of $gg"
           ],
           "of": "Stack"
         }
       },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
@@ -223,7 +310,7 @@
     {
       "check": {
         "Life": {
-          "life": 18,
+          "life": 16,
           "player": "bob"
         }
       },

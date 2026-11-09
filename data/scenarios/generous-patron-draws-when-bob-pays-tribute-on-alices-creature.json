@@ -114,7 +114,7 @@
             "$f4",
             "$f5"
           ],
-          "object": "$snake"
+          "object": "Snake of the Golden Grove"
         }
       },
       "player": "alice",
@@ -134,7 +134,7 @@
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "object": "$snake"
+          "object": "Snake of the Golden Grove"
         }
       },
       "player": "alice",

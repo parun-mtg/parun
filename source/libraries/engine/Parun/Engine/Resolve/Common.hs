@@ -3703,8 +3703,12 @@ proliferateOnce source controller = do
     let keptPermanents = filter (\oid -> Set.member oid pickedPermanents) permanents
         keptPlayers = filter (\pid -> Set.member pid pickedPlayers) players
     -- CR 122.6: object counters through the single funnel, so CR 614's counter
-    -- replacements apply to a proliferated counter as to a placed one.
-    Monad.forM_ keptPermanents $ \oid ->
+    -- replacements apply to a proliferated counter as to a placed one. ONE
+    -- event, the PutCounters arm's CR 608.2f bracket, so a kind-free
+    -- per-permanent trigger sees a permanent's kinds together:
+    -- data/scenarios/the-great-goblin-pings-once-per-goblin-however-many-kinds-proliferate-adds.json
+    -- proves it.
+    Event.simultaneously . Monad.forM_ keptPermanents $ \oid ->
       Monad.forM_ (kindsOn oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
     -- CR 122.1: and player counters through their own funnel.
     --

@@ -4746,9 +4746,10 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- for PermanentActs' reason.
   TriggerCondition.SelfPreventsDamage f -> unframed [f]
   TriggerCondition.LifeChanges _ -> []
-  -- A counter trigger names a counter kind, and CR 122.1b's kind may be a whole
-  -- Keyword carrying a Filter -- "whenever the second hexproof-from-Goblins
-  -- counter is put on this permanent"; see #2728. A Permanent holder carries one
+  -- A counter trigger may name a counter kind, and CR 122.1b's kind may be a
+  -- whole Keyword carrying a Filter -- "whenever the second
+  -- hexproof-from-Goblins counter is put on this permanent"; see #2728. A
+  -- Permanent holder carries one
   -- over the permanents the counters moved on, swept like Leaves', so a
   -- card's "one or more creatures" is not exempt from the corpus filter lints.
   TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind _ holder _ _) ->

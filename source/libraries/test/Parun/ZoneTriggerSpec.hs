@@ -2047,6 +2047,7 @@ representativeEvents cond =
         -- zero, so a matcher that had read `after` anyway would find nothing
         -- and the eventBindingSlots pin below would see nothing stamped.
         TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger which motion _ threshold _) ->
+          -- Any kind admits a +1/+1 counter.
           let kind = case which of
                 WhichCounters.OfKind k -> k
                 WhichCounters.OfAnyKind -> CounterKind.PlusOnePlusOne
@@ -2416,7 +2417,8 @@ everyTriggerCondition =
     TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime),
     TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) Batching.OneOrMore TriggerFrequency.EveryTime),
     -- One per grouping, holder and threshold the pool prints, plus a
-    -- per-counter Permanent holder, whose `became` no printing claims yet.
+    -- per-counter Permanent holder, whose `became` no printing claims yet, and
+    -- The Great Goblin's kind-free one.
     TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 1) CounterGrouping.EachPermanent),
     TriggerCondition.SelfBecomesClassLevel (ClassLevel.MkClassLevel 2),
     TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Defense) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent),
