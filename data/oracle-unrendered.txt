@@ -1298,6 +1298,7 @@ gemcutter-buccaneer
 gemstone-caverns
 general-jarkeld
 generator-servant
+generous-patron
 generous-revival
 genesis-hydra
 genesis-wave
@@ -3210,6 +3211,7 @@ the-filigree-sylex
 the-foretold-soldier
 the-fugitive-doctor
 the-great-aurora
+the-great-goblin
 the-hive
 the-karst-enchanted
 the-kenriths-royal-funeral

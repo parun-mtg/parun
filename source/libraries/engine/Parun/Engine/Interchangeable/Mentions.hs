@@ -1273,7 +1273,7 @@ counterHolderNames asking x = case x of
 
 counterTriggerNames :: (Monoid r) => Asking r -> CounterTrigger.CounterTrigger -> r
 counterTriggerNames asking x = case x of
-  CounterTrigger.MkCounterTrigger kind _motion holder _threshold _grouping -> counterKindNames asking (keywordNames asking) kind <> counterHolderNames asking holder
+  CounterTrigger.MkCounterTrigger kind _motion holder _threshold _grouping -> whichCountersNames asking (keywordNames asking) kind <> counterHolderNames asking holder
 
 counterRNames :: (Monoid r) => Asking r -> CounterR.CounterR -> r
 counterRNames asking x = case x of

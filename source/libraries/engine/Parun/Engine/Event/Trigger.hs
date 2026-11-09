@@ -164,6 +164,7 @@ import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
 import qualified Parun.Types.Voted as Voted
+import qualified Parun.Types.WhichCounters as WhichCounters
 import Parun.Types.Zone (Zone)
 import qualified Parun.Types.Zone as Zone
 import Parun.Types.ZoneChange (ZoneChange)
@@ -1257,7 +1258,15 @@ batchScoped condition = case condition of
   -- OneOrMore LifeChanges: "one or more counters ... on one or more permanents"
   -- names the whole group as the trigger event, which occurs once. The other
   -- groupings name each permanent, or each counter (`counterOccurrences`).
-  TriggerCondition.CountersChange counterTrigger -> CounterTrigger.grouping counterTrigger == CounterGrouping.EachBatch
+  -- A kind-free EachPermanent is batch-scoped too, split per permanent by
+  -- batchPartition: GameEvent.CountersPut is one record per kind, so a +1/+1
+  -- and a shield counter put together would otherwise be two occurrences. A
+  -- kind-specific one already sees one record per permanent per event.
+  TriggerCondition.CountersChange counterTrigger -> case (CounterTrigger.grouping counterTrigger, CounterTrigger.kind counterTrigger) of
+    (CounterGrouping.EachBatch, _) -> True
+    (CounterGrouping.EachPermanent, WhichCounters.OfAnyKind) -> True
+    (CounterGrouping.EachPermanent, WhichCounters.OfKind _) -> False
+    (CounterGrouping.EachCounter, _) -> False
   TriggerCondition.SelfBecomesClassLevel _ -> False
   TriggerCondition.SpellCast {} -> False
   TriggerCondition.AbilityActivated _ -> False

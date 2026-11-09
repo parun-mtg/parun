@@ -134,7 +134,10 @@
             "value": {
               "grouping": "EachCounter",
               "kind": {
-                "type": "PlusOnePlusOne"
+                "type": "OfKind",
+                "value": {
+                  "type": "PlusOnePlusOne"
+                }
               },
               "motion": {
                 "type": "Removed"

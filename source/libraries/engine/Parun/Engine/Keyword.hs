@@ -266,6 +266,7 @@ import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Ward as Ward
+import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
@@ -8933,7 +8934,7 @@ suspendLastCounter keyword =
               OfferCast.slot = Nothing
             }
    in ( Mint.triggerIf
-          (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger CounterKind.Time CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent))
+          (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent))
           stillExiled
           (Seq.singleton effect)
       )
@@ -9347,7 +9348,7 @@ timeCounterUpkeep =
 vanishingLastCounter :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 vanishingLastCounter =
   let effect = Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot Binding.triggerSource, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing}
-   in Mint.trigger (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger CounterKind.Time CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent)) (Seq.singleton effect)
+   in Mint.trigger (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent)) (Seq.singleton effect)
 
 -- CR 702.176a's FOURTH ability: "at the beginning of your end step, if this
 -- permanent's impending cost was paid and it has a time counter on it, remove a

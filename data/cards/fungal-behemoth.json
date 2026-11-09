@@ -143,7 +143,10 @@
             "value": {
               "grouping": "EachCounter",
               "kind": {
-                "type": "Time"
+                "type": "OfKind",
+                "value": {
+                  "type": "Time"
+                }
               },
               "motion": {
                 "type": "Removed"

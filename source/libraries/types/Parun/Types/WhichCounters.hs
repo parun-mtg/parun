@@ -2,9 +2,9 @@ module Parun.Types.WhichCounters where
 
 import qualified Parun.Types.CounterKind as CounterKind
 
--- | Which counters an instruction to remove them reaches (CR 122.1): one kind,
--- or any kind, where each counter taken is the payer's choice of kind as well
--- as of permanent.
+-- | Which counters an instruction to remove them, or a counter trigger,
+-- reaches (CR 122.1): one kind, or any kind, where each counter taken is the
+-- payer's choice of kind as well as of permanent.
 --
 -- PARAMETRIC in the keyword for the CounterKind it carries, exactly as
 -- Parun.Types.CounterKind is.

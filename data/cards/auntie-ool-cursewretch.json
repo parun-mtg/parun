@@ -70,7 +70,10 @@
                 }
               },
               "kind": {
-                "type": "MinusOneMinusOne"
+                "type": "OfKind",
+                "value": {
+                  "type": "MinusOneMinusOne"
+                }
               },
               "motion": {
                 "type": "Put",
