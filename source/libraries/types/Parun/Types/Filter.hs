@@ -102,6 +102,9 @@ data Filter keyword
     -- the stack, where an {X} in a cost counts as zero. The operand is that
     -- printed parity or the source's chosen one (Gollum, Riddle Master).
     ManaValueParity ParityOperand.ParityOperand
+  | -- | CR 107.4 / 202.1: some mana symbol appears more than once in the
+    -- candidate's mana cost (Jegantha, the Wellspring).
+    ManaCostRepeatsSymbol
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
     -- perspective; False where it has none (CR 108.4, 109.1).
     HeldBy Holder.Holder PlayerRelation.PlayerRelation

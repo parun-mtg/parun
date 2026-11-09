@@ -89,6 +89,7 @@ codec keywordCodec =
       Arm.payload "HeldByRecipient" Holder.codec Filter.HeldByRecipient (\x -> case x of Filter.HeldByRecipient y -> Just y; _ -> Nothing),
       Arm.payload "Shares" (shares (codec keywordCodec)) (uncurry Filter.Shares) (\x -> case x of Filter.Shares t a -> Just (t, a); _ -> Nothing),
       Arm.payload "ManaValueParity" ParityOperand.codec Filter.ManaValueParity (\x -> case x of Filter.ManaValueParity y -> Just y; _ -> Nothing),
+      Arm.nullary "ManaCostRepeatsSymbol" Filter.ManaCostRepeatsSymbol,
       Arm.nullary "ControllerIsOwner" Filter.ControllerIsOwner,
       Arm.payload "HeldBy" heldBy (uncurry Filter.HeldBy) (\x -> case x of Filter.HeldBy h r -> Just (h, r); _ -> Nothing),
       Arm.payload "IsPlayer" PlayerRelation.codec Filter.IsPlayer (\x -> case x of Filter.IsPlayer y -> Just y; _ -> Nothing),
@@ -274,6 +275,7 @@ tagOf x = case x of
   Filter.HeldByRecipient {} -> "HeldByRecipient"
   Filter.Shares {} -> "Shares"
   Filter.ManaValueParity {} -> "ManaValueParity"
+  Filter.ManaCostRepeatsSymbol -> "ManaCostRepeatsSymbol"
   Filter.ControllerIsOwner {} -> "ControllerIsOwner"
   Filter.HeldBy {} -> "HeldBy"
   Filter.IsPlayer {} -> "IsPlayer"

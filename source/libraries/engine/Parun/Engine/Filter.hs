@@ -2060,6 +2060,13 @@ matches context view predicate = case predicate of
           ParityOperand.Printed parity -> Just parity
           ParityOperand.ChosenParity -> fmap (parityOf . toInteger) (sourceChosenNumber context)
      in Maybe.fromMaybe False ((==) <$> fmap parityOf (manaValue view) <*> wanted)
+  -- CR 107.4 / 202.1, exact symbols ({X}{X}{R} repeats {X}, {R/G}{R/G} the
+  -- hybrid). A split card's combined cost is its halves' symbols side by side
+  -- (CR 709.4b's last sentence), so Crime // Punishment repeats {B}. No mana
+  -- cost at all repeats nothing.
+  Filter.ManaCostRepeatsSymbol ->
+    let symbols = foldMap ManaCost.unwrap (manaCost view)
+     in length (ListUtils.nubOrd symbols) < length symbols
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -2707,6 +2714,7 @@ rewrite pairs predicate = case predicate of
   -- swap -- nor in a slot name it may carry.
   Filter.Measures _ -> predicate
   Filter.ManaValueParity _ -> predicate
+  Filter.ManaCostRepeatsSymbol -> predicate
   -- Untouched: CR 612.1 swaps a WORD in the text, and this atom names a player
   -- relation rather than a subtype.
   Filter.ControllerIsOwner -> predicate
@@ -3487,6 +3495,7 @@ bakeBound players objects controllers predicate = case predicate of
   -- making it.
   Filter.Measures _ -> predicate
   Filter.ManaValueParity _ -> predicate
+  Filter.ManaCostRepeatsSymbol -> predicate
   Filter.ControllerIsOwner -> predicate
   Filter.HeldBy _ _ -> predicate
   Filter.ControlledByRole _ -> predicate
@@ -3669,6 +3678,7 @@ manaValueThresholds predicate = case predicate of
   -- Reads the mana value and compares it against NO literal, so it bounds
   -- nothing: parity is what the sample's two-past-the-greatest tail is for.
   Filter.ManaValueParity _ -> []
+  Filter.ManaCostRepeatsSymbol -> []
   Filter.HasCardType _ -> []
   Filter.HasSupertype _ -> []
   Filter.HasColor _ -> []
@@ -3826,6 +3836,7 @@ statesAQuality predicate = case predicate of
   -- printed.
   Filter.Measures _ -> True
   Filter.ManaValueParity _ -> True
+  Filter.ManaCostRepeatsSymbol -> True
   Filter.HasCardType _ -> True
   Filter.HasSupertype _ -> True
   Filter.HasColor _ -> True
@@ -4000,6 +4011,7 @@ readsSourceValues predicate = case predicate of
   Filter.ManaValueParity operand -> case operand of
     ParityOperand.Printed _ -> False
     ParityOperand.ChosenParity -> True
+  Filter.ManaCostRepeatsSymbol -> False
   Filter.HasCardType _ -> False
   Filter.HasSupertype _ -> False
   Filter.HasColor _ -> False
@@ -4175,6 +4187,7 @@ overBoundSlotsWith f predicate = case predicate of
           Operand.EnclosingAmount -> pure predicate
           Operand.OfEachOtherCandidate _ -> pure predicate
   Filter.ManaValueParity _ -> pure predicate
+  Filter.ManaCostRepeatsSymbol -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControlledByRole _ -> pure predicate

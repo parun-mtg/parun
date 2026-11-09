@@ -167,6 +167,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.ControllerIsOwner
       " {\"type\":\"ControllerIsOwner\"} "
+  Spec.it s "ManaCostRepeatsSymbol" $
+    Common.assertCodec
+      s
+      codec
+      Filter.ManaCostRepeatsSymbol
+      " {\"type\":\"ManaCostRepeatsSymbol\"} "
   Spec.it s "ManaValueParity" $
     Common.assertCodec
       s

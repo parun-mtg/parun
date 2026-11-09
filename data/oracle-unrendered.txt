@@ -1707,6 +1707,7 @@ jarad-golgari-lich-lord
 jared-carthalion-true-heir
 jazal-goldmane
 jeering-homunculus
+jegantha-the-wellspring
 jesters-cap
 jet-medallion
 jeweled-bird

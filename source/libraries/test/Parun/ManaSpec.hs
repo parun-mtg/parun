@@ -82,6 +82,7 @@ import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaOption as ManaOption
 import qualified Parun.Types.ManaProduction as ManaProduction
+import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -4195,6 +4196,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   recipientsSpec s registry
   valleymakerSpec s registry
   spectralSearchlightSpec s registry
+  genericBarSpec s
 
 -- CR 605.3b's road has no ability object, so a mana addition excluding a
 -- BINDING SLOT's players names nobody -- Mana.recipientsOf's own stated posture.
@@ -4679,3 +4681,31 @@ cacheBoard :: Printing.Printing -> CounterKind.CounterKind Keyword.Keyword -> Pl
 cacheBoard printing kind active phase =
   let (oid, gs) = S.addPermanent printing S.alice S.threePlayerGame
    in (oid, (S.addCounter kind 3 oid gs) {GameState.activePlayer = active, GameState.phase = phase, GameState.remaining = Seq.empty})
+
+-- CR 106.6 / 107.4b: Jegantha, the Wellspring's "can't be spent to pay generic
+-- mana costs", asked of Mana.spend, which Parun.Engine.Cost's payment window
+-- reads to decide whether the pool already covers the cost.
+genericBarSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
+genericBarSpec s = Spec.describe s "CR 107.4b mana barred from generic mana" $ do
+  let unit restricted color =
+        ManaUnit.MkManaUnit
+          { ManaUnit.manaType = ManaType.Colored color,
+            ManaUnit.tags = Set.empty,
+            ManaUnit.retention = ManaRetention.Ordinary,
+            ManaUnit.restriction = if restricted then Just ManaRestriction.none {ManaRestriction.prohibits = True, ManaRestriction.paysGeneric = False} else Nothing,
+            ManaUnit.rider = Nothing,
+            ManaUnit.spendTrigger = Nothing,
+            ManaUnit.sourceChoices = Nothing,
+            ManaUnit.sourceLastExiled = Nothing
+          }
+      jegantha = fmap (unit True) [Color.White, Color.Blue, Color.Black, Color.Red, Color.Green]
+      spent cost pool = fmap (List.sort . Mana.Type.unwrap . fst) (Mana.spend [] ManaSpending.AsProduced 0 (ManaCost.MkManaCost cost) (Mana.Type.MkMana pool))
+      green = ManaSymbol.OfType (ManaType.Colored Color.Green)
+      red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+  Spec.it s "CR 107.4b five barred mana pay {G} and not the {1} beside it" $ do
+    Spec.assertEqWith s "CR 107.4b: nothing pays {1}" (spent [ManaSymbol.Generic 1, green] jegantha) Nothing
+    Spec.assertEqWith s "CR 107.4b: a plain red mana does" (spent [ManaSymbol.Generic 1, green] (unit False Color.Red : jegantha)) (Just (List.sort (fmap (unit True) [Color.White, Color.Blue, Color.Black, Color.Red])))
+  -- The barred red must pay {R} so the plain one is left for {1}: the first
+  -- assignment, taking the plain one for {R}, strands the generic.
+  Spec.it s "CR 107.4b {R}{1} out of a plain red and a barred red spends the barred one on {R}" $
+    Spec.assertEqWith s "CR 601.2h: both are spent" (spent [red, ManaSymbol.Generic 1] [unit False Color.Red, unit True Color.Red]) (Just [])

@@ -13,8 +13,8 @@
 -- in card data as @Or [Not permanentCard, HasActivatedAbility]@.
 -- Yorion, Sky Nomad is the deck-size condition's, read against
 -- Parun.Types.GameSettings' format, Lutri, the Spellchaser the
--- distinct-names condition's, and Umori, the Collector the shared-card-type
--- condition's.
+-- distinct-names condition's, Umori, the Collector the shared-card-type
+-- condition's, and Jegantha, the Wellspring the repeated-symbol one.
 --
 -- THE BOARD SHAPE that makes the condition case discriminating. Both decks hold
 -- Mountains, Birds of Paradise and Lightning Bolts; bob's holds one Doomed
@@ -75,6 +75,7 @@ spec s registry = Spec.describe s "Companion" $ do
   deckSize s registry
   differentNames s registry
   sharedCardType s registry
+  repeatedSymbols s registry
   newGames s registry
   mainGameCompanion s registry
   specialAction s registry
@@ -280,6 +281,42 @@ sharedCardType s registry = Spec.describe s "CR 702.139a a shared-card-type cond
         gs = setup revealingAnswer (deckOf umori shared) (deckOf umori ((stone, 1) : shared))
     Spec.assertEqWith s "CR 702.139a: alice's nonland cards are all creatures, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup umori (GameState.printingIds gs)))
     Spec.assertEqWith s "CR 205.2a: bob's Mind Stone is no creature, and his Birds no artifact" (companionOf S.bob gs) Nothing
+
+-- Jegantha, the Wellspring's "no card in your starting deck has more than one of
+-- the same mana symbol in its mana cost" (CR 702.139a, 107.4). Both decks hold
+-- twenty Mountains, Birds of Paradise and Lightning Bolts, none repeating a
+-- symbol; each case adds one card to bob's.
+repeatedSymbols :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+repeatedSymbols s registry = Spec.describe s "CR 702.139a a repeated-symbol condition" $ do
+  let against extra = do
+        jegantha <- S.printingOf s registry "Jegantha, the Wellspring"
+        mountain <- S.printingOf s registry "Mountain"
+        birds <- S.printingOf s registry "Birds of Paradise"
+        bolt <- S.printingOf s registry "Lightning Bolt"
+        added <- S.printingOf s registry extra
+        let shared = [(mountain, 20), (birds, 2), (bolt, 2)]
+            gs = setup revealingAnswer (deckOf jegantha shared) (deckOf jegantha ((added, 1) : shared))
+        Spec.assertEqWith s "CR 702.139a: no card of alice's repeats a symbol" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup jegantha (GameState.printingIds gs)))
+        pure (companionOf S.bob gs)
+  Spec.it s "CR 107.4 Ball Lightning's {R}{R}{R} keeps Jegantha back" $ do
+    bob <- against "Ball Lightning"
+    Spec.assertEqWith s "CR 107.4a: {R} three times" bob Nothing
+
+  -- The ruling's {(r/g)}{(r/g)}: the exact symbol, hybrid as much as any.
+  Spec.it s "CR 107.4e Umori's two {B/G} keep Jegantha back" $ do
+    bob <- against "Umori, the Collector"
+    Spec.assertEqWith s "CR 107.4e: {B/G} twice" bob Nothing
+
+  -- CR 709.4b: the combined cost's separate symbols, {3}{W}{B} beside {X}{B}{G}.
+  Spec.it s "CR 709.4b Crime // Punishment's halves together repeat {B}" $ do
+    bob <- against "Crime"
+    Spec.assertEqWith s "CR 709.4b: {B} in each half" bob Nothing
+
+  -- The control for the three above: a card adding symbols none of the shared
+  -- cards hold twice.
+  Spec.it s "CR 107.4 Grizzly Bears' {1}{G} repeats nothing" $ do
+    bob <- against "Grizzly Bears"
+    Spec.assertBool s (Maybe.isJust bob) "CR 702.139a: {1} and {G} once each"
 
 -- CR 728.1 / 730.2: a restart and a subgame each start a new game following rule
 -- 103, so CR 103.2a's starting deck is taken again from the cards the new game is

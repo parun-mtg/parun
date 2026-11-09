@@ -1609,6 +1609,8 @@ meetRestriction :: ManaRestriction.ManaRestriction -> Maybe ManaRestriction.Mana
 meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then (if ManaRestriction.prohibits other then eitherProhibits one other else excluding other one) else (if ManaRestriction.prohibits other then excluding one other else alongside one other))
   where
     both a b = Filter.Type.And [a, b]
+    -- CR 107.4b: barred from generic mana where either is.
+    generic a b = ManaRestriction.paysGeneric a && ManaRestriction.paysGeneric b
     -- Two permissions: each half admits what both admit.
     alongside a b =
       let halves r = (ManaRestriction.activations r, ManaRestriction.keywordActivations r)
@@ -1622,7 +1624,8 @@ meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then
               ManaRestriction.keywordActivations = keywords,
               ManaRestriction.unlocks = both <$> ManaRestriction.unlocks a <*> ManaRestriction.unlocks b,
               ManaRestriction.turnsFaceUp = both <$> ManaRestriction.turnsFaceUp a <*> ManaRestriction.turnsFaceUp b,
-              ManaRestriction.prohibits = False
+              ManaRestriction.prohibits = False,
+              ManaRestriction.paysGeneric = generic a b
             }
     -- A permission less a prohibition: each half the permission admits, less
     -- what the prohibition names.
@@ -1635,7 +1638,8 @@ meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then
               ManaRestriction.keywordActivations = if keywordFree && Maybe.isNothing (ManaRestriction.activations prohibit) then ManaRestriction.keywordActivations permit else Nothing,
               ManaRestriction.unlocks = less ManaRestriction.unlocks,
               ManaRestriction.turnsFaceUp = less ManaRestriction.turnsFaceUp,
-              ManaRestriction.prohibits = False
+              ManaRestriction.prohibits = False,
+              ManaRestriction.paysGeneric = generic permit prohibit
             }
     -- Two prohibitions: each half refuses what either names.
     eitherProhibits a b =
@@ -1654,7 +1658,8 @@ meetRestriction one = maybe one (\other -> if ManaRestriction.prohibits one then
               ManaRestriction.keywordActivations = Either.fromRight Nothing keywords,
               ManaRestriction.unlocks = named ManaRestriction.unlocks,
               ManaRestriction.turnsFaceUp = named ManaRestriction.turnsFaceUp,
-              ManaRestriction.prohibits = True
+              ManaRestriction.prohibits = True,
+              ManaRestriction.paysGeneric = generic a b
             }
 
 -- Does this route's ability name someone besides its controller (CR 602.1b)?
@@ -1678,9 +1683,13 @@ mayTakeRoute controls pid oid gs activator
 -- The TAGS are CR 107.4h's {S}, a second axis rather than more types: the symbol
 -- constrains how the mana was PRODUCED and not what it is. Empty for every other
 -- symbol, which is what keeps them all indifferent to how their mana was made.
+--
+-- GENERIC is a third axis, set by anyTypeDemand alone: CR 107.4b's generic mana,
+-- which mana CR 106.6 bars from it cannot serve (Jegantha, the Wellspring).
 data Demand = MkDemand
   { demandTypes :: Set.Set ManaType,
-    demandTags :: Set.Set ProductionTag.ProductionTag
+    demandTags :: Set.Set ProductionTag.ProductionTag,
+    demandGeneric :: Bool
   }
   deriving (Eq, Ord, Show)
 
@@ -1706,7 +1715,9 @@ data Supply = MkSupply
     -- 609.4b rewrites it to what the mana may be spent as.
     supplyMade :: Set.Set ManaType,
     supplyTags :: Set.Set ProductionTag.ProductionTag,
-    supplyAdmits :: Set.Set PaymentSubject.PaymentSubject
+    supplyAdmits :: Set.Set PaymentSubject.PaymentSubject,
+    -- | CR 107.4b: the mana may pay generic mana (paysGeneric).
+    supplyGeneric :: Bool
   }
   deriving (Eq, Ord, Show)
 
@@ -1718,7 +1729,11 @@ data Supply = MkSupply
 -- and a mana that is not from one cannot become so. A supply carrying a tag
 -- nothing asked for is no worse for it.
 --
--- The RESTRICTION is not read here: a demand carries no record of which payment
+-- GENERIC is the one part of CR 106.6 read here, since it is a question about
+-- the symbol rather than the payment: Jegantha, the Wellspring's mana serves no
+-- generic demand.
+--
+-- The RESTRICTION is otherwise not read here: a demand carries no record of which payment
 -- it belongs to, and that is what CR 106.6 asks about.
 -- payableResolutionsGiven's `admits` is where the two meet, pairing a demand
 -- with the payment it belongs to before asking `supplyAdmits`.
@@ -1726,6 +1741,11 @@ serves :: Supply -> Demand -> Bool
 serves supply demand =
   not (Set.disjoint (supplyTypes supply) (demandTypes demand))
     && Set.isSubsetOf (demandTags demand) (supplyTags supply)
+    && (supplyGeneric supply || not (demandGeneric demand))
+
+-- CR 106.6 / 107.4b: may this unit pay generic mana?
+paysGeneric :: ManaUnit -> Bool
+paysGeneric = maybe True ManaRestriction.paysGeneric . ManaUnit.restriction
 
 -- CR 106.6, split over one player's pool: the units this payment may draw on,
 -- and the ones it may not. Built on `admitsUnder` below, which is THE one reader
@@ -1846,7 +1866,8 @@ supplyOf admitting unit =
     { supplyTypes = Set.singleton (ManaUnit.manaType unit),
       supplyMade = Set.singleton (ManaUnit.manaType unit),
       supplyTags = ManaUnit.tags unit,
-      supplyAdmits = admitting unit
+      supplyAdmits = admitting unit,
+      supplyGeneric = paysGeneric unit
     }
 
 -- CR 609.4b, applied to ONE mana type: what a mana of this type may be spent as
@@ -1915,10 +1936,11 @@ rewriteSupply clauses supply = case clauses of
 -- TYPED symbol but CR 107.4h's {S}. A symbol demanding no particular mana
 -- (Generic, and either symbol's second way) builds no demand at all.
 ofTypes :: Set.Set ManaType -> Demand
-ofTypes types = MkDemand {demandTypes = types, demandTags = Set.empty}
+ofTypes types = MkDemand {demandTypes = types, demandTags = Set.empty, demandGeneric = False}
 
 -- A GENERIC symbol of a SOURCE's own activation cost, said as a demand: CR
--- 106.1b's six types and no tag, so any supply's TYPE serves it.
+-- 106.1b's six types and no tag, so any supply's TYPE serves it, though not
+-- mana barred from generic mana (`serves`).
 --
 -- A demand rather than a count, because CR 605.3c and CR 106.6 both narrow which
 -- supplies may serve it -- only what an earlier position supplies, and only mana
@@ -1928,7 +1950,7 @@ ofTypes types = MkDemand {demandTypes = types, demandTags = Set.empty}
 -- Star's "{1}, {T}, Sacrifice this artifact" and Coal Golem's "{3}, Sacrifice
 -- this creature" are the printings that reach it.
 anyTypeDemand :: Demand
-anyTypeDemand = ofTypes everyManaType
+anyTypeDemand = (ofTypes everyManaType) {demandGeneric = True}
 
 -- CR 118.14, applied to ONE demand: under a permission to spend mana of any
 -- type, a demand for red mana is served by any of CR 106.1b's six types.
@@ -2025,7 +2047,7 @@ waysOf symbol = case symbol of
   -- made structural, since generic-mana reductions don't affect {S} costs. Every
   -- type (CR 106.1b) and one tag, so nothing about the mana's identity is asked
   -- and everything about its provenance is.
-  ManaSymbol.Snow -> [(Just (MkDemand everyManaType (Set.singleton ProductionTag.Snow)), 0, 0)]
+  ManaSymbol.Snow -> [(Just ((ofTypes everyManaType) {demandTags = Set.singleton ProductionTag.Snow}), 0, 0)]
   -- Unreachable in payment: substituteX removes every Variable before canPay --
   -- at CR 601.2b for a cast or an activation, and at
   -- Parun.Engine.Resolve.Effect.payGatePaid for CR 118.12's cost paid on resolution.
@@ -2127,16 +2149,23 @@ servesUnit clauses unit = serves (rewriteSupply clauses (supplyOf (const Set.emp
 -- that covers the rest. A mana cost is a handful of symbols, so the search is
 -- trivially small, and being exact means canPay's Hall condition and this never
 -- disagree about whether a cost is payable.
-spendDemands :: [SpendManaAsThough.SpendManaAsThough] -> [ManaUnit] -> [Demand] -> Maybe [ManaUnit]
+--
+-- EVERY assignment, lazily, so `spend` can go on to the next where the units
+-- one leaves cannot pay the generic part (`paysGeneric`).
+spendDemands :: [SpendManaAsThough.SpendManaAsThough] -> [ManaUnit] -> [Demand] -> [[ManaUnit]]
 spendDemands clauses units demands = case demands of
-  [] -> Just units
+  [] -> [units]
   wanted : rest ->
-    Maybe.listToMaybe (Maybe.mapMaybe (\left -> spendDemands clauses left rest) (removals clauses wanted units))
+    concatMap (\left -> spendDemands clauses left rest) (removals clauses wanted units)
 
-takeAny :: [ManaUnit] -> a -> Maybe [ManaUnit]
-takeAny units _ = case units of
-  _ : rest -> Just rest
-  [] -> Nothing
+-- Pay `generic` mana out of these units, leaving the rest: any unit CR 107.4b
+-- lets pay it, which is every unit but one barred from it (`paysGeneric`).
+-- Which ones go is immaterial here, since `spend` answers only whether.
+takeGeneric :: Natural -> [ManaUnit] -> Maybe [ManaUnit]
+takeGeneric generic units =
+  let (able, barred) = List.partition paysGeneric units
+      n = Natural.toIntSaturating generic
+   in if length able >= n then Just (drop n able <> barred) else Nothing
 
 -- A payment as the sequence of ONE-MANA choices it is: a typed symbol's demand,
 -- then one entry per generic mana, which CR 107.4b lets any type pay.
@@ -2146,10 +2175,11 @@ takeAny units _ = case units of
 paymentSteps :: [Demand] -> Natural -> [Maybe Demand]
 paymentSteps demands generic = fmap Just demands <> replicate (Natural.toIntSaturating generic) Nothing
 
--- Could this one unit pay that one step?
+-- Could this one unit pay that one step? A generic one, unless the unit is
+-- barred from generic mana (CR 107.4b, `paysGeneric`).
 paysStep :: [SpendManaAsThough.SpendManaAsThough] -> Maybe Demand -> ManaUnit -> Bool
 paysStep clauses step unit = case step of
-  Nothing -> True
+  Nothing -> paysGeneric unit
   Just wanted -> servesUnit clauses unit wanted
 
 -- Every pool these steps could leave behind, as a SET of sorted pools -- which is
@@ -2260,8 +2290,11 @@ spend :: [SpendManaAsThough.SpendManaAsThough] -> ManaSpending -> Natural -> Man
 spend clauses spending budget cost (Mana.MkMana units) =
   let attempt (demands, generic, life) = do
         Monad.guard (life <= budget)
-        afterTyped <- spendDemands clauses units demands
-        left <- Monad.foldM takeAny afterTyped [1 .. generic]
+        -- Where every unit pays generic mana, the units one assignment leaves
+        -- pay it exactly when any other's do, so the first is asked alone.
+        let assignments = spendDemands clauses units demands
+            asked = if all paysGeneric units then take 1 assignments else assignments
+        left <- Maybe.listToMaybe (Maybe.mapMaybe (takeGeneric generic) asked)
         pure (Mana.MkMana left, life)
    in Maybe.listToMaybe (Maybe.mapMaybe attempt (resolutions spending cost))
 
@@ -2668,7 +2701,7 @@ plainSupplies clauses oid routes = case ListUtils.nubOrd [activations | (activat
       all plainRoute routes,
       all (Maybe.isNothing . ManaUnit.restriction) units ->
         let times = Activations.times activations
-            supply unitsOfOne = rewriteSupply clauses MkSupply {supplyTypes = typesIn unitsOfOne, supplyMade = typesIn unitsOfOne, supplyTags = Set.unions (fmap ManaUnit.tags unitsOfOne), supplyAdmits = Set.empty}
+            supply unitsOfOne = rewriteSupply clauses MkSupply {supplyTypes = typesIn unitsOfOne, supplyMade = typesIn unitsOfOne, supplyTags = Set.unions (fmap ManaUnit.tags unitsOfOne), supplyAdmits = Set.empty, supplyGeneric = True}
          in if all ((<= 1) . length) yields
               then Just [(supply units, times) | not (null units)]
               else case yields of
@@ -2971,7 +3004,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
             unions =
               fmap
                 (uncurry collapsed)
-                (Map.toList (Map.fromListWith (<>) (fmap (\units -> (foldMap admitting units, units)) narrow)))
+                (Map.toList (Map.fromListWith (<>) (fmap (\units -> ((foldMap admitting units, all paysGeneric units), units)) narrow)))
             blank unit = (unit {ManaUnit.manaType = ManaType.Colorless}, admitting unit)
             alike units = case ListUtils.nubOrd (fmap blank units) of
               [shape] -> Just (Natural.length units, shape)
@@ -2982,7 +3015,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
                in toInteger (Set.size multisets) == multichoose (toInteger types) (toInteger n)
             spread ((n, (unit, admits)), multisets) =
               let types = Set.unions (fmap Set.fromList (Set.toList multisets))
-               in List.genericReplicate n (rewriteSupply clauses MkSupply {supplyTypes = types, supplyMade = types, supplyTags = ManaUnit.tags unit, supplyAdmits = admits})
+               in List.genericReplicate n (rewriteSupply clauses MkSupply {supplyTypes = types, supplyMade = types, supplyTags = ManaUnit.tags unit, supplyAdmits = admits, supplyGeneric = paysGeneric unit})
             spreads = Map.filterWithKey complete families
             apart = [fmap (rewriteSupply clauses . supplyOf admitting) units | units <- wide, maybe True (`Map.notMember` spreads) (alike units)]
          in case ListUtils.nubOrd (filter (not . null) (unions <> fmap spread (Map.toList spreads) <> apart)) of
@@ -3180,7 +3213,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
       --
       --   * a yield's units past `demanded` serve nothing, so they are dropped;
       --   * two alternatives alike in what each unit could serve -- the types
-      --     some demand names, whether any type at all, the tags and the
+      --     some demand names, whether it could pay generic mana, the tags and the
       --     payments admitting it -- are one, claiming either's candidates;
       --   * and one whose every unit serves strictly less than another's, on
       --     the same claims, is never the better choice: Food Chain's red where
@@ -3192,7 +3225,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
       -- times its own claims let it be taken (Claim.repeats).
       exclusiveAlternatives entries =
         let raw = [(fmap (rewriteSupply clauses . supplyOf admitting) (List.genericTake demanded units), Activations.claims own) | (units, own) <- entries, not (null units)]
-            normal supply = (Set.intersection (supplyTypes supply) relevant, not (Set.null (supplyTypes supply)), supplyTags supply, supplyAdmits supply)
+            normal supply = (Set.intersection (supplyTypes supply) relevant, not (Set.null (supplyTypes supply)) && supplyGeneric supply, supplyTags supply, supplyAdmits supply)
             widened = zipWith (\x y -> x {Claim.Type.pool = Set.union (Claim.Type.pool x) (Claim.Type.pool y)})
             merged = Map.elems (Map.fromListWith (\(units, a) (_, b) -> (units, widened a b)) [(fmap normal units, (units, own)) | (units, own) <- raw])
             uniform units = case units of
@@ -3205,7 +3238,7 @@ sourceOptions clauses admitting contends board demanded needs supplies =
                   (Just (typesB, anyB, tagsB, admitsB), Just (typesW, anyW, tagsW, admitsW)) -> anyB == anyW && tagsB == tagsW && admitsB == admitsW && Set.isProperSubsetOf typesW typesB
                   _ -> False
          in [(alternative, Claim.repeats (snd alternative)) | alternative <- merged, not (any (`dominates` alternative) merged)]
-      collapsed admits units =
+      collapsed (admits, generic) units =
         if null units
           then []
           else
@@ -3215,7 +3248,8 @@ sourceOptions clauses admitting contends board demanded needs supplies =
                   { supplyTypes = Set.fromList (fmap ManaUnit.manaType units),
                     supplyMade = Set.fromList (fmap ManaUnit.manaType units),
                     supplyTags = Set.unions (fmap ManaUnit.tags units),
-                    supplyAdmits = admits
+                    supplyAdmits = admits,
+                    supplyGeneric = generic
                   }
             ]
       -- Taking a group no times is always a way to fill a pool, so a group the

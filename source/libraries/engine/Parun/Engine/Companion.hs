@@ -92,7 +92,9 @@ conditionOf printingId gs = do
 --
 -- EachCard: every card in it must match, which is what makes one Filter enough
 -- to state a condition written "each [subject] card ... [requirement]" -- the
--- implication is an @Or@.
+-- implication is an @Or@. Jegantha, the Wellspring's "no card ... has more
+-- than one of the same mana symbol in its mana cost" is @EachCard (Not
+-- ManaCostRepeatsSymbol)@.
 --
 -- DifferentNames: the cards the Filter matches have different names (CR
 -- 201.2b), counting a printing held twice as two cards and comparing CR
