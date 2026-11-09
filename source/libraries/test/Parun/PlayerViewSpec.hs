@@ -54,8 +54,8 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Casting as Casting
 import qualified Parun.Types.Choices as Choices
-import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.ControlDuration as ControlDuration
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Discarded as Discarded
@@ -93,10 +93,10 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SeatView as SeatView
-import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SplitMix as SplitMix
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Visibility as Visibility.Type
@@ -203,7 +203,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         staged = (S.addCounter CounterKind.Loyalty 4 walker placed) {GameState.priority = Just S.alice}
         gs = S.runPure S.identityAnswer staged (Activate.activateAbility S.alice walker minus)
         stackFor pid = let view = PlayerView.viewFor pid gs in fmap (Render.describe view) (PlayerView.Type.stack view)
-    Spec.assertEqWith s "bob reads its text" (stackFor S.bob) [Text.pack "Ajani Goldmane's ability \"\8722\&1: Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.\""]
+    Spec.assertEqWith s "bob reads its text" (stackFor S.bob) [Text.pack "Ajani Goldmane's ability \"[\8722\&1]: Put a +1/+1 counter on each creature you control and they gain vigilance until end of turn.\""]
   -- CR 601.2c: alice's Searing Spear, cast at bob's Goblin Piker, names its
   -- target to bob, in bob's view and on bob's board's stack line.
   Spec.it s "CR 601.2c a spell on the stack shows every seat its target" $ do
