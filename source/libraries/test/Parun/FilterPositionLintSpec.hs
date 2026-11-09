@@ -2103,7 +2103,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- cost with a count announced beside it: March of Otherworldly Light and March
     -- of Burgeoning Life.
     --
-    -- At most, against the power: Spawnbroker's `theirs` slot and Nihiloor's.
+    -- At most, against the power: Spawnbroker's `theirs` slot, Nihiloor's, and
+    -- Custodi Peacekeeper's, whose bound is a draft note (CR 905.2b).
     --
     -- Greater than, against the power, in a combat restriction's affected set:
     -- Ensnaring Bridge.
@@ -2139,6 +2140,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Ornate Imitations", 1),
         ("Spawnbroker", 1),
         ("Nihiloor", 1),
+        ("Custodi Peacekeeper", 1),
         ("March of Otherworldly Light", 1),
         ("March of Burgeoning Life", 1),
         ("Ensnaring Bridge", 1),
