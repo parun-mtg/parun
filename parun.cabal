@@ -1560,6 +1560,8 @@ library codec
     Parun.Codec.SpendTriggerSpec
     Parun.Codec.Splice
     Parun.Codec.SpliceSpec
+    Parun.Codec.StackedAbility
+    Parun.Codec.StackedAbilitySpec
     Parun.Codec.StackObjectKind
     Parun.Codec.StackObjectKindSpec
     Parun.Codec.StateBasedAction
@@ -3366,6 +3368,7 @@ library types
     Parun.Types.SpendTrigger
     Parun.Types.Splice
     Parun.Types.SplitMix
+    Parun.Types.StackedAbility
     Parun.Types.StackObjectKind
     Parun.Types.Staged
     Parun.Types.Start

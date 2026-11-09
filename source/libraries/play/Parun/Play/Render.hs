@@ -13,6 +13,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
+import qualified Parun.Oracle as Oracle
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.AttackTarget as AttackTarget
@@ -91,6 +92,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.TapState as TapState
@@ -175,8 +177,8 @@ ordered view = List.sortOn (\o -> (Maybe.fromMaybe 0 (ObjectView.characteristics
 listed :: PlayerView.PlayerView -> String -> [ObjectView.ObjectView] -> [Text.Text]
 listed view label shown = [Text.pack label <> Text.intercalate (Text.pack ", ") (fmap (describe view) shown) | not (null shown)]
 
--- | An object's name, power and toughness, status, and what it targets (CR
--- 601.2c / 602.2b / 603.3d).
+-- | An object's name, power and toughness, status, which ability it is (CR
+-- 113.7a), and what it targets (CR 601.2c / 602.2b / 603.3d).
 describe :: PlayerView.PlayerView -> ObjectView.ObjectView -> Text.Text
 describe view o =
   let pt = do
@@ -191,7 +193,20 @@ describe view o =
       targeting = case ObjectView.targets o of
         [] -> Text.empty
         targets -> Text.pack " targeting " <> listing (fmap (recipientName view) targets)
-   in nameOf view o <> Maybe.fromMaybe Text.empty pt <> (if null status then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") status <> Text.pack ")") <> targeting
+      which = foldMap (\text -> Text.pack " \"" <> text <> Text.pack "\"") (ObjectView.ability o >>= abilityText view)
+   in nameOf view o <> Maybe.fromMaybe Text.empty pt <> (if null status then Text.empty else Text.pack " (" <> Text.intercalate (Text.pack ", ") status <> Text.pack ")") <> which <> targeting
+
+-- | CR 113.7a: an ability on the stack's Oracle text, which tells apart two
+-- abilities of one source, its source called by the name the seat knows it
+-- by, else "this object"; Nothing for one Parun.Oracle does not render yet.
+abilityText :: PlayerView.PlayerView -> AbilityView.AbilityView -> Maybe Text.Text
+abilityText view a = Maybe.listToMaybe $ case AbilityView.ability a of
+  StackedAbility.Activated activated -> Oracle.activated context activated
+  StackedAbility.Triggered triggered -> Oracle.triggered context creature triggered
+  where
+    source = AbilityView.source a
+    context = Oracle.contextOf (Maybe.fromMaybe (Text.pack "this object") (source >>= knownName view)) []
+    creature = any (isA CardType.Creature) (source >>= (`Map.lookup` objects view))
 
 -- | CR 708.2a: a face-down object has no name, and a hidden one shows none;
 -- CR 406.3 / 708.5: a face-down card the seat may look at names its card too.

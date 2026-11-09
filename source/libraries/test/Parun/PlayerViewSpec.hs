@@ -55,6 +55,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Casting as Casting
 import qualified Parun.Types.Choices as Choices
 import qualified Parun.Types.ControlDuration as ControlDuration
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Discarded as Discarded
@@ -95,6 +96,7 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SplitMix as SplitMix
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Visibility as Visibility.Type
@@ -185,10 +187,23 @@ spec s registry = Spec.describe s "PlayerView" $ do
         gs = g3 {GameState.objects = Map.insert oid (Object.newSettled S.bob (Source.OfAbility source) Zone.Stack ts) (GameState.objects g3), GameState.stack = [oid]}
         abilityFor pid = fmap ObjectView.ability (PlayerView.Type.stack (PlayerView.viewFor pid gs))
         nameFor pid = let view = PlayerView.viewFor pid gs in Render.named view oid
-    Spec.assertEqWith s "alice is not told the hand card" (abilityFor S.alice) [Just (AbilityView.MkAbilityView Nothing)]
-    Spec.assertEqWith s "bob is" (abilityFor S.bob) [Just (AbilityView.MkAbilityView (Just held))]
+    Spec.assertEqWith s "alice is not told the hand card" (abilityFor S.alice) [Just (AbilityView.MkAbilityView Nothing (StackedAbility.Activated ability))]
+    Spec.assertEqWith s "bob is" (abilityFor S.bob) [Just (AbilityView.MkAbilityView (Just held) (StackedAbility.Activated ability))]
     Spec.assertEqWith s "alice's drawing" (nameFor S.alice) (Text.pack "an ability")
     Spec.assertEqWith s "bob's drawing" (nameFor S.bob) (Text.pack "Mindslaver's ability")
+  -- CR 113.7a: alice activates Ajani Goldmane's second loyalty ability, and
+  -- bob's stack line tells it from the other two.
+  Spec.it s "CR 113.7a an ability on the stack shows every seat which of its source's abilities it is" $ do
+    card <- S.cardOf s registry "Ajani Goldmane"
+    ajani <- S.printingOf s registry "Ajani Goldmane"
+    minus <- case concatMap Face.activatedAbilities (NonEmpty.toList (Card.faces card)) of
+      [_, second, _] -> pure second
+      _ -> Spec.assertFailure s "Ajani Goldmane has not three activated abilities"
+    let (walker, placed) = S.addPermanent ajani S.alice (Setup.emptyGame S.bothPlayers)
+        staged = (S.addCounter CounterKind.Loyalty 4 walker placed) {GameState.priority = Just S.alice}
+        gs = S.runPure S.identityAnswer staged (Activate.activateAbility S.alice walker minus)
+        stackFor pid = let view = PlayerView.viewFor pid gs in fmap (Render.describe view) (PlayerView.Type.stack view)
+    Spec.assertEqWith s "bob reads its text" (stackFor S.bob) [Text.pack "Ajani Goldmane's ability \"[\8722\&1]: Put a +1/+1 counter on each creature you control and they gain vigilance until end of turn.\""]
   -- CR 601.2c: alice's Searing Spear, cast at bob's Goblin Piker, names its
   -- target to bob, in bob's view and on bob's board's stack line.
   Spec.it s "CR 601.2c a spell on the stack shows every seat its target" $ do
@@ -201,8 +216,8 @@ spec s registry = Spec.describe s "PlayerView" $ do
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToCreature victim]]
     Spec.assertBool s (Text.pack "Stack, top first: Searing Spear targeting Goblin Piker" `elem` Render.board True view) "bob's board names it"
-  -- CR 602.2b: alice's Prodigal Sorcerer's ability, aimed at bob, names bob
-  -- and its source on bob's board's stack line.
+  -- CR 602.2b: alice's Prodigal Sorcerer's ability, aimed at bob, names bob,
+  -- its source and its text on bob's board's stack line.
   Spec.it s "CR 602.2b an ability on the stack shows every seat its target" $ do
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     card <- S.cardOf s registry "Prodigal Sorcerer"
@@ -211,7 +226,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
         gs = snd (Engine.runGamePure (aimedAt (== Recipient.ToPlayer S.bob)) placed {GameState.priority = Just S.alice} (Activate.activateAbility S.alice source ability))
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToPlayer S.bob]]
-    Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability targeting Player 2" `elem` Render.board True view) "bob's board names it"
+    Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability \"{T}: Prodigal Sorcerer deals 1 damage to any target.\" targeting Player 2" `elem` Render.board True view) "bob's board names it"
   Spec.it s "CR 406.3 a card exiled face down shows its owner nothing of itself" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, placed) = S.addObjectIn Zone.Exile piker S.alice (Setup.emptyGame S.bothPlayers)
