@@ -22,7 +22,10 @@
             "type": "CountersChange",
             "value": {
               "kind": {
-                "type": "Lore"
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
               },
               "motion": {
                 "type": "Put",
@@ -52,7 +55,10 @@
             "type": "CountersChange",
             "value": {
               "kind": {
-                "type": "Lore"
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
               },
               "motion": {
                 "type": "Put",
@@ -122,7 +128,10 @@
             "type": "CountersChange",
             "value": {
               "kind": {
-                "type": "Lore"
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
               },
               "motion": {
                 "type": "Put",

@@ -100,8 +100,11 @@
             "type": "CountersChange",
             "value": {
               "kind": {
-                "type": "Named",
-                "value": "intervention"
+                "type": "OfKind",
+                "value": {
+                  "type": "Named",
+                  "value": "intervention"
+                }
               },
               "motion": {
                 "type": "Removed"

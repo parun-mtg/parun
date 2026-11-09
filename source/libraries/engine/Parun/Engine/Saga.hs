@@ -61,6 +61,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WithCounters as WithCounters
 
 -- | CR 715.2b's threshold crossing: did a count going from `before` to `after`
@@ -133,7 +134,7 @@ chapterTriggers restricted before after n = crossed before after n && (after == 
 -- card prints two entries sharing one modal.
 chapterOf :: TriggeredAbility card ability -> Maybe Natural
 chapterOf ability = case TriggeredAbility.condition ability of
-  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger CounterKind.Lore (CounterMotion.Put _) CounterHolder.Self (Just n) _) -> Just n
+  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put _) CounterHolder.Self (Just n) _) -> Just n
   _ -> Nothing
 
 -- | CR 715.2a: the chapter numbers a permanent's abilities print, read off the

@@ -4,9 +4,9 @@ module Parun.Codec.CounterTrigger where
 
 import qualified Parun.Codec.CounterGrouping as CounterGrouping
 import qualified Parun.Codec.CounterHolder as CounterHolder
-import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterMotion as CounterMotion
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.WhichCounters as WhichCounters
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -18,7 +18,7 @@ import qualified Parun.Types.CounterTrigger as CounterTrigger
 -- EachPermanent write no key.
 codec :: Codec.Codec CounterTrigger.CounterTrigger
 codec = Fields.object $ do
-  kind <- Fields.required "kind" (CounterKind.codec Keyword.codec) CounterTrigger.kind
+  kind <- Fields.required "kind" (WhichCounters.codec Keyword.codec) CounterTrigger.kind
   motion <- Fields.required "motion" CounterMotion.codec CounterTrigger.motion
   holder <- Fields.defaulted "holder" CounterHolderType.Self CounterHolder.codec CounterTrigger.holder
   threshold <- Fields.defaulted "threshold" Nothing (Common.maybe Common.natural) CounterTrigger.threshold

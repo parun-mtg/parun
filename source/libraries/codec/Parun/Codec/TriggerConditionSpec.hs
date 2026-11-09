@@ -91,6 +91,7 @@ import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 
 -- | At least one case per TriggerCondition constructor. RoomFullyUnlocked gets
@@ -371,8 +372,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger CounterKind.Lore (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent))
-      " {\"type\":\"CountersChange\",\"value\":{\"kind\":{\"type\":\"Lore\"},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"threshold\":3}} "
+      (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent))
+      " {\"type\":\"CountersChange\",\"value\":{\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Lore\"}},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"threshold\":3}} "
   -- CR 717.2a. The payload is the bar's printed level number and nothing else:
   -- the ability is printed on the Class whose level changes, so there is nothing
   -- to select among.

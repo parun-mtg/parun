@@ -148,7 +148,10 @@
             "type": "CountersChange",
             "value": {
               "kind": {
-                "type": "Loyalty"
+                "type": "OfKind",
+                "value": {
+                  "type": "Loyalty"
+                }
               },
               "motion": {
                 "type": "Removed"

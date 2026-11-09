@@ -85,7 +85,10 @@
                 }
               },
               "kind": {
-                "type": "PlusOnePlusOne"
+                "type": "OfKind",
+                "value": {
+                  "type": "PlusOnePlusOne"
+                }
               },
               "motion": {
                 "type": "Put",

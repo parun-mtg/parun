@@ -175,6 +175,7 @@ import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
+import qualified Parun.Types.WhichCounters as WhichCounters
 import Parun.Types.Zone (Zone)
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -502,17 +503,19 @@ isMainPhase phase = case phase of
   Phase.Ending _ -> False
 
 -- CR 122: the object, count before and count after of a counter event moving
--- the trigger's kind its way, CR 122.6a's putter read against `you`; Nothing
--- for every other event.
+-- the trigger's kind (any kind for WhichCounters.OfAnyKind, CR 122.1) its way,
+-- CR 122.6a's putter read against `you`; Nothing for every other event.
 countersMoved :: GameState -> PlayerId -> CounterTrigger.CounterTrigger -> GameEvent -> Maybe (ObjectId, Natural, Natural)
 countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterTrigger, event) of
   (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after))
-    | kind == wanted && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
+    | wanted kind && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
   (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after))
-    | kind == wanted -> Just (oid, before, after)
+    | wanted kind -> Just (oid, before, after)
   _ -> Nothing
   where
-    wanted = CounterTrigger.kind counterTrigger
+    wanted kind = case CounterTrigger.kind counterTrigger of
+      WhichCounters.OfKind named -> kind == named
+      WhichCounters.OfAnyKind -> True
 
 -- CR 603.6a: a permanent entered the battlefield, an entry that may trigger
 -- `you`'s abilities (`entryTriggers`), and it is the permanent the trigger

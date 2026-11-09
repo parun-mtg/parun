@@ -885,6 +885,10 @@ batchPartition cond bindings = case cond of
   -- data/scenarios/tinybones-pocket-nuisance-makes-each-opponent-discard-and-pings-them-once-per-discarding-player.json
   -- proves the split.
   TriggerCondition.Discards _ -> seat Binding.triggerPlayer
+  -- CR 603.2c: a kind-free EachPermanent is one occurrence per permanent, its
+  -- kinds' records joined (batchBindings sums "that many"). A Self holder and
+  -- an EachBatch stamp no `became`, so the split leaves them whole.
+  TriggerCondition.CountersChange _ -> object Binding.became
   -- A wildcard where batchScoped is exhaustive: a batch condition splits only
   -- where an arm above says by what.
   _ -> Seq.empty

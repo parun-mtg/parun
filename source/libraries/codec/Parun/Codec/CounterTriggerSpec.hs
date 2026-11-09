@@ -11,6 +11,8 @@ import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.WhichCounters as WhichCounters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CounterTrigger" $ do
@@ -19,21 +21,28 @@ spec s = Spec.describe s "Parun.Codec.CounterTrigger" $ do
     Common.assertCodec
       s
       CounterTrigger.codec
-      (CounterTrigger.MkCounterTrigger CounterKind.Loyalty CounterMotion.Removed CounterHolder.Self Nothing CounterGrouping.EachPermanent)
-      " {\"kind\":{\"type\":\"Loyalty\"},\"motion\":{\"type\":\"Removed\"}} "
+      (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Loyalty) CounterMotion.Removed CounterHolder.Self Nothing CounterGrouping.EachPermanent)
+      " {\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Loyalty\"}},\"motion\":{\"type\":\"Removed\"}} "
   -- CR 715.2b's chapter III.
   Spec.it s "a threshold writes its key" $
     Common.assertCodec
       s
       CounterTrigger.codec
-      (CounterTrigger.MkCounterTrigger CounterKind.Lore (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent)
-      " {\"kind\":{\"type\":\"Lore\"},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"threshold\":3} "
+      (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent)
+      " {\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Lore\"}},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"threshold\":3} "
   -- Cloaked Cadet's "one or more +1/+1 counters are put on one or more
   -- creatures".
   Spec.it s "a holder and a grouping write their keys" $
     Common.assertCodec
       s
       CounterTrigger.codec
-      (CounterTrigger.MkCounterTrigger CounterKind.PlusOnePlusOne (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.HasCardType CardType.Creature)) Nothing CounterGrouping.EachBatch)
-      " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"holder\":{\"type\":\"Permanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"grouping\":\"EachBatch\"} "
+      (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.HasCardType CardType.Creature)) Nothing CounterGrouping.EachBatch)
+      " {\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"PlusOnePlusOne\"}},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"holder\":{\"type\":\"Permanent\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"grouping\":\"EachBatch\"} "
+  -- The Great Goblin's "one or more counters", of no kind.
+  Spec.it s "any kind writes its tag" $
+    Common.assertCodec
+      s
+      CounterTrigger.codec
+      (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.You) (CounterHolder.Permanent (Filter.HasSubtype Subtype.Army)) Nothing CounterGrouping.EachPermanent)
+      " {\"kind\":{\"type\":\"OfAnyKind\"},\"motion\":{\"type\":\"Put\",\"value\":\"You\"},\"holder\":{\"type\":\"Permanent\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Army\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CounterTrigger.codec
