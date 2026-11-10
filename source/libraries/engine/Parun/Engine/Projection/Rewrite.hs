@@ -45,7 +45,6 @@ import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
-import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyClause as CopyClause
@@ -82,7 +81,6 @@ import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Modal as Modal.Type
-import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -982,25 +980,22 @@ rewriteWithCounters pairs w =
     . fmap (rewriteQuantity pairs)
     $ WithCounters.counters w
 
--- The modal payload both abilities carry, its shared clauses too. Both halves
--- of a mode: its clauses'
--- effects, and its TARGET SLOTS, whose Filter is the candidate set CR 601.2c
--- (imported by CR 602.2b) reads. The Pool is not an omission: it names a rules
--- category (CR 115) rather than a word printed on the card.
+-- The modal payload both abilities carry, its shared clauses too: Children's
+-- modalChildren at Identity. Both halves of a mode: its clauses' conditions,
+-- costs and effects, and its TARGET SLOTS, whose Filter is the candidate set CR
+-- 601.2c (imported by CR 602.2b) reads. The Pool is not an omission: it names a
+-- rules category (CR 115) rather than a word printed on the card. The mode
+-- selection, a clause's asker and the slot names stay leaves, as before.
 rewriteModal :: [(TextWord.TextWord, TextWord.TextWord)] -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteModal pairs modal =
-  let rewriteClause c =
-        c
-          { Clause.effects = fmap (rewriteEffect pairs) (Clause.effects c),
-            Clause.payGate = fmap (rewritePayGate pairs) (Clause.payGate c),
-            Clause.condition = fmap (rewriteCondition pairs) (Clause.condition c)
-          }
-      rewriteMode m =
-        m
-          { Mode.clauses = fmap rewriteClause (Mode.clauses m),
-            Mode.targetSlots = fmap (rewriteTargetSlot pairs) (Mode.targetSlots m)
-          }
-   in modal {Modal.Type.modes = fmap rewriteMode (Modal.Type.modes modal), Modal.Type.shared = fmap rewriteClause (Modal.Type.shared modal)}
+rewriteModal pairs =
+  Identity.runIdentity
+    . Children.modalChildren
+      Children.modalLeaves
+        { Children.modalCondition = Identity.Identity . rewriteCondition pairs,
+          Children.modalPayGate = Identity.Identity . rewritePayGate pairs,
+          Children.modalEffect = Identity.Identity . rewriteEffect pairs,
+          Children.modalTargetSlot = Identity.Identity . rewriteTargetSlot pairs
+        }
 
 -- CR 612.1 through the cost a clause offers as it resolves (CR 118.12).
 -- Lithophage's "sacrifice this creature unless you sacrifice a Mountain" is the
