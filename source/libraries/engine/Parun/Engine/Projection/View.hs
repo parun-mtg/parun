@@ -41,6 +41,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.Card as Card.Type
@@ -172,7 +173,7 @@ viewOfCardLapsed lapsed face =
           -- CR 506.3 / 509.1a: a card off the battlefield never attacked or
           -- blocked; CR 303.4b: nor is it attached to anything.
           Filter.attacking = False,
-          Filter.attackingAlone = False,
+          Filter.attackingAlone = Set.empty,
           -- CR 508.1b: a printed face attacks nothing, for the reason above.
           Filter.attackingPlayer = Nothing,
           -- CR 508.1b: nor any planeswalker, for the same reason.
@@ -474,8 +475,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- a departed creature out of the record, so Count.lastKnownView writes CR
       -- 608.2h's answer over this one.
       Filter.attacking = Game.isAttacking oid gs,
-      -- CR 506.5: the same map, holding this attacker and no other.
-      Filter.attackingAlone = Map.keys (Combat.attackers (GameState.combat gs)) == [oid],
+      -- CR 506.5 / 506.6: the same map, holding this attacker and no other, or
+      -- no other attacking the player this one attacks.
+      Filter.attackingAlone = attackingAloneAmong oid (Combat.attackers (GameState.combat gs)),
       -- CR 508.1b: the same map's VALUE, kept only when it names a player. A
       -- creature attacking a planeswalker or a battle answers Nothing here and
       -- True above, which is CR 509.1a's and CR 802.4a's own three-way split --
@@ -883,6 +885,20 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- arm being layer 6's only writer.
       Filter.grantsStationToughness = PC.grantsStationToughness pc
     }
+
+-- CR 506.5 / 506.6: the AloneAmong groups among which this attacker is alone
+-- in this attackers map; empty for a creature the map does not hold.
+attackingAloneAmong :: ObjectId -> Map ObjectId AttackTarget.AttackTarget -> Set AloneAmong.AloneAmong
+attackingAloneAmong oid attackers = case Map.lookup oid attackers of
+  Nothing -> Set.empty
+  Just attacked ->
+    let others = Map.delete oid attackers
+        alone among = case among of
+          AloneAmong.EveryAttacker -> Map.null others
+          AloneAmong.AttackersOfItsPlayer -> case attacked of
+            AttackTarget.OfPlayer _ -> attacked `notElem` Map.elems others
+            _ -> False
+     in Set.fromList (filter alone [minBound .. maxBound])
 
 -- CR 506.4's controller clause, asked live: does the permanent this attacker's
 -- announcement names still have the controller recorded as the attacker joined

@@ -104,7 +104,7 @@ blackCreature =
       Filter.identity = Just (ObjectId.MkObjectId 7),
       Filter.playerIdentity = Nothing,
       Filter.attacking = False,
-      Filter.attackingAlone = False,
+      Filter.attackingAlone = Set.empty,
       Filter.attackingPlayer = Nothing,
       Filter.attackingPlaneswalkerController = Nothing,
       Filter.attackingBattleProtector = Nothing,
@@ -195,7 +195,7 @@ devoidBigCreature =
       Filter.identity = Nothing,
       Filter.playerIdentity = Nothing,
       Filter.attacking = False,
-      Filter.attackingAlone = False,
+      Filter.attackingAlone = Set.empty,
       Filter.attackingPlayer = Nothing,
       Filter.attackingPlaneswalkerController = Nothing,
       Filter.attackingBattleProtector = Nothing,
@@ -1305,8 +1305,15 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 506.5: alone reads its own field; attacking beside another is not alone.
     Spec.it s "alone matches only a view attacking alone" $ do
       let alone = Filter.Type.IsAttacking (Just AloneAmong.EveryAttacker)
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True, Filter.attackingAlone = True}) alone) "attacking alone"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True, Filter.attackingAlone = Set.singleton AloneAmong.EveryAttacker}) alone) "attacking alone"
       Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) alone)) "attacking beside another"
+
+    -- CR 506.6: alone among its player's attackers is a different group from
+    -- alone among every attacker.
+    Spec.it s "alone among its player's attackers reads its own member" $ do
+      let alone = Filter.Type.IsAttacking (Just AloneAmong.AttackersOfItsPlayer)
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True, Filter.attackingAlone = Set.singleton AloneAmong.AttackersOfItsPlayer}) alone) "attacking a player alone"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True, Filter.attackingAlone = Set.singleton AloneAmong.EveryAttacker}) alone)) "alone, but not among its player's attackers"
 
   Spec.describe s "IsBlocking" $ do
     Spec.it s "matches a view whose combat status says so" $ do
