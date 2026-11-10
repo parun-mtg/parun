@@ -223,7 +223,7 @@ counting context c = case (Count.aggregation c, Count.scope c) of
     p <- Filter.phrase (Filter.Type.And rest) (keyword context)
     (placed, fallback, ms) <- case (zone, whose, controllers) of
       (Zone.Battlefield, PlayerRef.Relative PlayerRelation.AnyPlayer, []) ->
-        let nowhere = null (Filter.qualifiers p) && not (any (`elem` [Filter.Type.IsAttacking, Filter.Type.IsBlocking]) rest)
+        let nowhere = null (Filter.qualifiers p) && not (any (`elem` [Filter.Type.IsAttacking Nothing, Filter.Type.IsBlocking]) rest)
          in [(Filter.merge p (Filter.MkPhrase [] [] [Filter.MkQualifier (Text.pack "on the battlefield") (Text.pack "on the battlefield") | nowhere]), permanent, [])]
       (Zone.Battlefield, PlayerRef.Relative PlayerRelation.AnyPlayer, [controller]) -> do
         (controls', ms) <- controllerOf controller

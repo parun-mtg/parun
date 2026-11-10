@@ -2,6 +2,7 @@ module Parun.Types.Filter where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
@@ -280,10 +281,13 @@ data Filter keyword
     -- slot's objects the filter admits; baked like the three above.
     OwnsBoundAtLeast Natural.Natural SlotName.SlotName (Filter keyword)
   | -- | CR 508.1k: the candidate is an ATTACKING creature, not since removed from
-    -- combat (CR 506.4). Reading combat status breaches nothing: it is a rules
-    -- concept the closed half owns, so the read is the same kind of act as
-    -- reading a card type.
-    IsAttacking
+    -- combat (CR 506.4), and with Just, attacking alone among the attackers the
+    -- AloneAmong names (CR 506.5). Reading combat status breaches nothing: it is
+    -- a rules concept the closed half owns, so the read is the same kind of act
+    -- as reading a card type.
+    --
+    -- CR 506.6's AttackersOfItsPlayer is not implemented and never matches (#6873).
+    IsAttacking (Maybe AloneAmong.AloneAmong)
   | -- | CR 508.1b: the candidate is an attacking creature AND the player it is
     -- attacking stands in this relation to the perspective (CR 109.5). Strictly
     -- CR 508.1b's player and never CR 508.5's defending player, which CR 509.1a

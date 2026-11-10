@@ -2071,7 +2071,7 @@ ninjutsu (Ninjutsu.MkNinjutsu cost variant) =
               Filter.And
                 [ Filter.HasCardType CardType.Creature,
                   Filter.HeldBy Holder.Controller PlayerRelation.You,
-                  Filter.IsAttacking,
+                  Filter.IsAttacking Nothing,
                   Filter.HasBlockStatus BlockStatus.Unblocked
                 ]
           }
@@ -3409,7 +3409,7 @@ plainAlternativeCosts keywords =
                 ( Filter.And
                     [ Filter.HasCardType CardType.Creature,
                       Filter.HeldBy Holder.Controller PlayerRelation.You,
-                      Filter.IsAttacking,
+                      Filter.IsAttacking Nothing,
                       Filter.HasBlockStatus BlockStatus.Unblocked
                     ]
                 )
@@ -5626,7 +5626,7 @@ battleCry =
               Duration.UntilEndOfTurn
               (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 1) (Quantity.Literal 0)))
               ( ObjectRef.EachMatching
-                  (Filter.And [Filter.HasCardType CardType.Creature, Filter.IsAttacking, Filter.Not Filter.IsSource])
+                  (Filter.And [Filter.HasCardType CardType.Creature, Filter.IsAttacking Nothing, Filter.Not Filter.IsSource])
               )
               Nothing
           )
@@ -6161,7 +6161,7 @@ afflict n =
 -- still goes through Event.putCounters, so CR 122.6's funnel is unaffected.
 mentor :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 mentor =
-  let slot = TargetSlot.required Pool.Creatures (Just (Filter.And [Filter.IsAttacking, Filter.Measures (Measures.MkMeasures Measure.Power Comparison.LessThan (Operand.OfSource Measure.Power))]))
+  let slot = TargetSlot.required Pool.Creatures (Just (Filter.And [Filter.IsAttacking Nothing, Filter.Measures (Measures.MkMeasures Measure.Power Comparison.LessThan (Operand.OfSource Measure.Power))]))
       effect = Effect.Mentor mentorTarget
    in Mint.triggerOf
         (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue))

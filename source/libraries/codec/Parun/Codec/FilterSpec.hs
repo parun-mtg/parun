@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
@@ -355,8 +356,14 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      Filter.IsAttacking
+      (Filter.IsAttacking Nothing)
       " {\"type\":\"IsAttacking\"} "
+  Spec.it s "IsAttacking alone" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.IsAttacking (Just AloneAmong.EveryAttacker))
+      " {\"type\":\"IsAttacking\",\"value\":\"EveryAttacker\"} "
   Spec.it s "IsAttackingPlayer" $
     Common.assertCodec
       s
@@ -828,7 +835,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
         bySubtype = Filter.HasSubtype Subtype.Wall
         isSource = Filter.IsSource
         ravenousRats = Filter.IsPlayer PlayerRelation.Opponent
-        killShot = Filter.IsAttacking
+        killShot = Filter.IsAttacking Nothing
         flashFoliage = Filter.IsAttackingPlayer PlayerRelation.You
         -- Soul Snare's whole target filter, the composite the new atom ships in.
         soulSnare = Filter.Or [Filter.IsAttackingPlayer PlayerRelation.You, Filter.IsAttackingPlaneswalker PlayerRelation.You]
@@ -840,7 +847,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
         -- ships in.
         breakOpen = Filter.And [Filter.IsFaceDown, Filter.HeldBy Holder.Controller PlayerRelation.Opponent]
         crownOfTheAges = Filter.And [Filter.HasSubtype Subtype.Aura, Filter.AttachedTo (Filter.HasCardType CardType.Creature)]
-        labyrinthOfSkophos = Filter.Or [Filter.IsAttacking, Filter.IsBlocking]
+        labyrinthOfSkophos = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking]
         -- Hollow Warrior's toll criterion, the deepest nest of the two new
         -- combat-phase atoms a card actually writes.
         hollowWarrior =
