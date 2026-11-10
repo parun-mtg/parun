@@ -15,8 +15,8 @@
 -- history read is a named discard, and that is the one site nothing forces: a
 -- type that later gains one owes every discard of it here a function. A type
 -- with a traversal in Parun.Engine.Children (Filter, Quantity, Effect,
--- TriggerCondition, Keyword, Cost, PlayerEffect, ReplacementEffect) is matched
--- there instead, its leaf types discarded there.
+-- TriggerCondition, Keyword, Cost, PlayerEffect, ReplacementEffect, Condition,
+-- Duration) is matched there instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -86,7 +86,6 @@ import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
-import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
@@ -156,7 +155,6 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MovedKinds as MovedKinds
-import qualified Parun.Types.NextStepOf as NextStepOf
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Onset as Onset
@@ -212,7 +210,6 @@ import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.UntapRestriction as UntapRestriction
-import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WhichTurn as WhichTurn
@@ -586,16 +583,17 @@ combatRestrictionNames asking x = case x of
   CombatRestriction.CantAttackMoreThan attackLimitUnless -> attackLimitUnlessNames asking attackLimitUnless
   CombatRestriction.CantBlockMoreThan limitUnless -> limitUnlessNames asking limitUnless
 
-comparesNames :: (Monoid r) => Asking r -> Compares.Compares -> r
-comparesNames asking x = case x of
-  Compares.MkCompares measured _comparison threshold -> quantityNames asking measured <> quantityNames asking threshold
-
+-- Parun.Engine.Children's traversal at Const. No condition reads the history
+-- itself; those reads sit in its Quantities.
 conditionNames :: (Monoid r) => Asking r -> Condition.Condition -> r
-conditionNames asking x = case x of
-  Condition.Compares compares -> comparesNames asking compares
-  Condition.Any items -> foldMap (conditionNames asking) items
-  Condition.All items -> foldMap (conditionNames asking) items
-  Condition.During duringPhase -> duringPhaseNames asking duringPhase
+conditionNames asking =
+  Const.getConst
+    . Children.conditionChildren
+      Children.MkConditionChildren
+        { Children.conditionQuantity = Const.Const . quantityNames asking,
+          Children.conditionNested = Const.Const . conditionNames asking,
+          Children.conditionTurn = Const.Const . turnScopeNames asking
+        }
 
 controllerRelationNames :: (Monoid r) => Asking r -> ControllerRelation.ControllerRelation -> r
 controllerRelationNames asking x = case x of
@@ -707,35 +705,25 @@ dungeonRoomNames :: (Monoid r) => Asking r -> (card -> r) -> DungeonRoom.Dungeon
 dungeonRoomNames asking onCard x = case x of
   DungeonRoom.MkDungeonRoom _name ability _exits -> modalNames asking onCard (grantedAbilityNames asking onCard) ability
 
+-- Parun.Engine.Children's traversal at Const.
 durationNames :: (Monoid r) => Asking r -> Duration.Duration -> r
-durationNames asking x = case x of
-  Duration.UntilEndOfTurn -> mempty
-  Duration.Indefinite -> mempty
-  Duration.Perpetual -> mempty
-  Duration.UntilYourNextTurn -> mempty
-  Duration.UntilNextStepOf next -> playerRefNames asking (NextStepOf.player next)
-  Duration.UntilEndOfYourNextTurn -> mempty
-  Duration.UntilEndOfNextTurnOf playerRef -> playerRefNames asking playerRef
-  Duration.DuringNextTurnOf playerRef -> playerRefNames asking playerRef
-  Duration.DuringNextUntapStepOf playerRef -> playerRefNames asking playerRef
-  Duration.DuringYourNextTurn -> mempty
-  Duration.DuringThatExtraTurn -> mempty
-  Duration.ForAsLongAs condition -> conditionNames asking condition
-  Duration.UntilEndOfCombat -> mempty
-  Duration.UntilEndOfCombatOnYourNextTurn -> mempty
-  Duration.UntilPaid (UntilPaid.MkUntilPaid payer cost) -> playerRefNames asking payer <> costNames asking (keywordNames asking) cost
-  Duration.UntilUsed slot -> foldMap (slotNames asking) slot
-  Duration.UntilEvent durationEvent -> durationEventNames asking durationEvent
+durationNames asking = Const.getConst . Children.durationChildren (durationVisitors asking)
 
+-- The event that ends a duration, through the same visitors: Expiry.OnEvent
+-- holds one too.
 durationEventNames :: (Monoid r) => Asking r -> DurationEvent.DurationEvent -> r
-durationEventNames asking x = case x of
-  DurationEvent.SourceTurnedFaceDown -> mempty
-  DurationEvent.SpellCast filter_ -> filterNames asking filter_
-  DurationEvent.Planeswalked -> mempty
-  DurationEvent.SourceExiledCard -> mempty
-  DurationEvent.SourceLeftBattlefield -> mempty
-  DurationEvent.BoundCardCast slot -> slotNames asking slot
-  DurationEvent.CardCast objectId -> names asking (== objectId)
+durationEventNames asking = Const.getConst . Children.durationEventChildren (durationVisitors asking)
+
+durationVisitors :: (Monoid r) => Asking r -> Children.DurationChildren (Const.Const r)
+durationVisitors asking =
+  Children.MkDurationChildren
+    { Children.durationPlayer = Const.Const . playerRefNames asking,
+      Children.durationCondition = Const.Const . conditionNames asking,
+      Children.durationCost = Const.Const . costNames asking (keywordNames asking),
+      Children.durationSlot = Const.Const . slotNames asking,
+      Children.durationFilter = Const.Const . filterNames asking,
+      Children.durationObject = \oid -> Const.Const (names asking (== oid))
+    }
 
 eachCardFromAmongNames :: (Monoid r) => Asking r -> EachCardFromAmong.EachCardFromAmong -> r
 eachCardFromAmongNames asking x = case x of
