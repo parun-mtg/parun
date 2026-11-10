@@ -4,7 +4,7 @@
       "delayedAbilities": {
         "forth eorlingas": {
           "condition": {
-            "type": "PermanentsDealCombatDamageToPlayer",
+            "type": "PermanentsDealDamageToPlayer",
             "value": {
               "filter": {
                 "type": "And",
@@ -22,6 +22,7 @@
                   }
                 ]
               },
+              "kind": "Combat",
               "oneOrMorePlayers": true,
               "recipient": "AnyPlayer"
             }

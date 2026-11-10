@@ -11762,7 +11762,7 @@ controllerTurnScoped cond = case cond of
   -- The field again, LeavesZone's reading below: Fblthp, Impossibly Lost's
   -- "during your turn".
   TriggerCondition.PlayerIsDealtDamage watched -> Turn.isControllersTurn (PlayerIsDealtDamage.scope watched)
-  TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> False
+  TriggerCondition.PermanentsDealDamageToPlayer _ -> False
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> False
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> False
   TriggerCondition.PlayerTookInitiative -> False

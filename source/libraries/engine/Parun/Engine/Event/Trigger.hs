@@ -1014,7 +1014,7 @@ looksBack condition = case condition of
   TriggerCondition.DealsDamage _ -> False
   TriggerCondition.IsDealtDamage _ -> False
   TriggerCondition.PlayerIsDealtDamage _ -> False
-  TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> False
+  TriggerCondition.PermanentsDealDamageToPlayer _ -> False
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> False
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> False
   TriggerCondition.PlayerTookInitiative -> False
@@ -1197,13 +1197,15 @@ batchScoped condition = case condition of
   -- damage" (Pia Nalaar, Chief Mechanic) names that whole group as its trigger
   -- event, which occurs once per damagers' controller and damaged player
   -- (Event.Binding's batchPartition) -- where DealsDamage naming a player is
-  -- CR 603.2c's second sentence and fires once per damager.
-  TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> True
+  -- CR 603.2c's second sentence and fires once per damager. Noncombat damage
+  -- (The Thing, Ben Grimm's "deal damage") is grouped as its event is, the
+  -- PlayerIsDealtDamage arm's simultaneity.
+  TriggerCondition.PermanentsDealDamageToPlayer _ -> True
   -- CR 726.2 prints "whenever A CREATURE deals combat damage to the monarch",
   -- CR 603.2c's second sentence: one trigger per damaging creature.
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> False
   -- CR 727.2's own "one or more creatures a player controls deal combat
-  -- damage", the True beside PermanentsDealCombatDamageToPlayer's, split per
+  -- damage", the True beside PermanentsDealDamageToPlayer's, split per
   -- damagers' controller by batchPartition. A take is one occurrence per
   -- taker, so the arm below is False.
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> True
@@ -2930,7 +2932,7 @@ zonesTriggeredFrom cond =
         TriggerCondition.PlayerIsDealtDamage _ -> battlefield
         -- The batch reading watches from the battlefield too, for DealsDamage's
         -- reason: its bearer is a bystander.
-        TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> battlefield
+        TriggerCondition.PermanentsDealDamageToPlayer _ -> battlefield
         TriggerCondition.CreatureDealtCombatDamageToMonarch -> battlefield
         TriggerCondition.CreaturesDealtCombatDamageToInitiative -> battlefield
         TriggerCondition.PlayerTookInitiative -> battlefield
@@ -3187,7 +3189,7 @@ stateTriggersOn gs
             TriggerCondition.DealsDamage _ -> False
             TriggerCondition.IsDealtDamage _ -> False
             TriggerCondition.PlayerIsDealtDamage _ -> False
-            TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> False
+            TriggerCondition.PermanentsDealDamageToPlayer _ -> False
             TriggerCondition.CreatureDealtCombatDamageToMonarch -> False
             TriggerCondition.CreaturesDealtCombatDamageToInitiative -> False
             TriggerCondition.PlayerTookInitiative -> False

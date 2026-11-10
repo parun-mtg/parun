@@ -838,7 +838,7 @@ modularSpec s registry =
 -- CR 603.2c's FIRST sentence on the same event: "whenever ONE OR MORE artifact
 -- creatures you control deal combat damage to a player" fires once for the CR
 -- 510.2 step however many connected --
--- TriggerCondition.PermanentsDealCombatDamageToPlayer, the batch twin of the
+-- TriggerCondition.PermanentsDealDamageToPlayer, the batch twin of the
 -- condition data/scenarios/counter-keyword-trigger proves.
 --
 -- Pia Nalaar, Chief Mechanic {G}{U}{R} Legendary Creature -- Human Artificer 2/4

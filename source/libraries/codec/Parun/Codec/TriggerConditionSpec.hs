@@ -63,7 +63,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -161,15 +161,15 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage PlayerRelation.Opponent (Just DamageKind.Noncombat) Nothing)))
       " {\"type\":\"PlayerIsDealtDamage\",\"value\":{\"dealt\":{\"recipient\":\"Opponent\",\"kind\":\"Noncombat\"}}} "
-  -- CR 603.2c's batch reading of DealsDamage's combat damage to a player, so a
+  -- CR 603.2c's batch reading of DealsDamage's damage to a player, so a
   -- separate tag is the only thing that keeps Pia Nalaar's once-per-step card and
   -- Tovolar's once-per-damager card apart on the wire.
-  Spec.it s "PermanentsDealCombatDamageToPlayer round-trips with its Filter and recipient" $
+  Spec.it s "PermanentsDealDamageToPlayer round-trips with its Filter, kind and recipient" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) PlayerRelation.AnyPlayer False))
-      " {\"type\":\"PermanentsDealCombatDamageToPlayer\",\"value\":{\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"recipient\":\"AnyPlayer\"}} "
+      (TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False))
+      " {\"type\":\"PermanentsDealDamageToPlayer\",\"value\":{\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"kind\":\"Combat\",\"recipient\":\"AnyPlayer\"}} "
   -- CR 726.2: a creature dealt combat damage to the monarch.
   Spec.it s "CreatureDealtCombatDamageToMonarch" $
     Common.assertCodec
