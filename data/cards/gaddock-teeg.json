@@ -1,0 +1,101 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Gaddock Teeg",
+      "oracleText": "Noncreature spells with mana value 4 or greater can't be cast.\nNoncreature spells with {X} in their mana costs can't be cast.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CantCastMatching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                },
+                {
+                  "type": "Measures",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measure": "ManaValue",
+                    "operand": {
+                      "type": "Literal",
+                      "value": 4
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        },
+        {
+          "effect": {
+            "type": "CantCastMatching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  }
+                },
+                {
+                  "type": "ManaCostHasSymbol",
+                  "value": "VariableSymbol"
+                }
+              ]
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Advisor",
+          "Kithkin"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -2913,6 +2913,7 @@ reservedSlots =
       Binding.manaSource,
       Binding.castSpell,
       Binding.castSpellTargets,
+      Binding.castSpellX,
       Binding.thisAbility,
       Binding.announcedTargets,
       Binding.targetingObject,

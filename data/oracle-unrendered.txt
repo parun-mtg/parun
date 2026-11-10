@@ -1310,6 +1310,7 @@ furor-of-the-bitten
 future-sight
 fyndhorn-druid
 fynn-the-fangbearer
+gaddock-teeg
 gadrak-the-crown-scourge
 gaeas-blessing
 gaeas-herald
@@ -2629,6 +2630,7 @@ raffine-scheming-seer
 raffines-informant
 raft-security-officer
 rag-man
+rage-extractor
 rage-into-the-valley
 ragged-short-spear
 raging-river
@@ -3911,6 +3913,7 @@ yuriko-the-tigers-shadow
 yurlok-of-scorch-thrash
 zada-hedron-grinder
 zameck-guildmage
+zaxara-the-exemplary
 zealous-conscripts
 zealous-inquisitor
 zhao-ruthless-admiral

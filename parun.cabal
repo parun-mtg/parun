@@ -1095,6 +1095,8 @@ library codec
     Parun.Codec.ManaSpent
     Parun.Codec.ManaSpentSpec
     Parun.Codec.ManaSymbol
+    Parun.Codec.ManaSymbolKind
+    Parun.Codec.ManaSymbolKindSpec
     Parun.Codec.ManaSymbolSpec
     Parun.Codec.ManaType
     Parun.Codec.ManaTypeSpec
@@ -3153,6 +3155,7 @@ library types
     Parun.Types.ManaSpending
     Parun.Types.ManaSpent
     Parun.Types.ManaSymbol
+    Parun.Types.ManaSymbolKind
     Parun.Types.ManaType
     Parun.Types.ManaUnit
     Parun.Types.ManaWindow

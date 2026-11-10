@@ -511,6 +511,7 @@ import qualified Parun.Codec.ManaSpec
 import qualified Parun.Codec.ManaSpecificationSpec
 import qualified Parun.Codec.ManaSpendingSpec
 import qualified Parun.Codec.ManaSpentSpec
+import qualified Parun.Codec.ManaSymbolKindSpec
 import qualified Parun.Codec.ManaSymbolSpec
 import qualified Parun.Codec.ManaTypeSpec
 import qualified Parun.Codec.ManaUnitSpec
@@ -1548,6 +1549,7 @@ spec s registry corpus = do
   Parun.Codec.ManaSpec.spec s
   Parun.Codec.ManaSpecificationSpec.spec s
   Parun.Codec.ManaSpendingSpec.spec s
+  Parun.Codec.ManaSymbolKindSpec.spec s
   Parun.Codec.ManaSymbolSpec.spec s
   Parun.Codec.ManaTypeSpec.spec s
   Parun.Codec.ManaUnitSpec.spec s

@@ -74,6 +74,8 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Morph as Morph
@@ -2071,6 +2073,16 @@ matches context view predicate = case predicate of
   Filter.ManaCostRepeatsSymbol ->
     let symbols = foldMap ManaCost.unwrap (manaCost view)
      in length (ListUtils.nubOrd symbols) < length symbols
+  -- CR 107.3 / 107.4g over the mana cost's symbols, CR 709.4b's combined cost
+  -- included; an object with no mana cost has none. {H} is either Phyrexian
+  -- shape (CR 107.4f).
+  Filter.ManaCostHasSymbol kind ->
+    let isKind symbol = case (kind, symbol) of
+          (ManaSymbolKind.VariableSymbol, ManaSymbol.Variable) -> True
+          (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.Phyrexian _) -> True
+          (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.HybridPhyrexian _) -> True
+          _ -> False
+     in any isKind (foldMap ManaCost.unwrap (manaCost view))
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -3410,6 +3422,7 @@ manaValueThresholds predicate = case predicate of
   -- nothing: parity is what the sample's two-past-the-greatest tail is for.
   Filter.ManaValueParity _ -> []
   Filter.ManaCostRepeatsSymbol -> []
+  Filter.ManaCostHasSymbol _ -> []
   Filter.HasCardType _ -> []
   Filter.HasSupertype _ -> []
   Filter.HasColor _ -> []
@@ -3569,6 +3582,7 @@ statesAQuality predicate = case predicate of
   Filter.Measures _ -> True
   Filter.ManaValueParity _ -> True
   Filter.ManaCostRepeatsSymbol -> True
+  Filter.ManaCostHasSymbol _ -> True
   Filter.HasCardType _ -> True
   Filter.HasSupertype _ -> True
   Filter.HasColor _ -> True
@@ -3745,6 +3759,7 @@ readsSourceValues predicate = case predicate of
     ParityOperand.Printed _ -> False
     ParityOperand.ChosenParity -> True
   Filter.ManaCostRepeatsSymbol -> False
+  Filter.ManaCostHasSymbol _ -> False
   Filter.HasCardType _ -> False
   Filter.HasSupertype _ -> False
   Filter.HasColor _ -> False
