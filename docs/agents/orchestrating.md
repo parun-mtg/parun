@@ -131,9 +131,10 @@ summary, and its title carries no CR numbers.
   constructor are never in flight together: link the later as blocked by
   the earlier, so the toposort orders them. A batch takes a contiguous run in
   name order, so batches meet only at their ends in a sorted list.
-- **Hot files stay sorted.** A list every card PR edits is kept in byte order,
-  never appended to: `data/oracle-unrendered.txt` (`script/sort-lines.sh`,
-  the `sorted` hook). A new list of that kind gets the same treatment.
+- **Hot lists are one file per entry.** A list every card PR edits is a
+  directory of empty marker files, so parallel PRs touch different paths:
+  `data/oracle-unrendered/<slug>.txt`. A new list of that kind gets the same
+  treatment.
 - **Carry findings forward** by editing unlabelled issues: a census verdict a
   merged unit overturned, a renderer wording or `docs/decisions.md` entry it
   added that a later unit must extend rather than duplicate. An issue a unit

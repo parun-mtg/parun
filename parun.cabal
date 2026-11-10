@@ -18,7 +18,7 @@ data-files:
   decks/**/*.txt
   formats/*.json
   legalities.json
-  oracle-unrendered.txt
+  oracle-unrendered/*.txt
   printings.json
   scenarios/**/*.json
   sticker-sheets/*.json
