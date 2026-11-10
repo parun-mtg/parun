@@ -585,6 +585,7 @@ choiceless action = case action of
           && null (ActivatedAbility.maximumX ability)
           && maybe True (null . ManaCost.unwrap) (Cost.mana cost)
           && null (Cost.components cost)
+          && null (ActivatedAbility.costChoices ability)
   _ -> False
 
 -- | CR 601.2g/h: a payment as the game choice it completes, read off the

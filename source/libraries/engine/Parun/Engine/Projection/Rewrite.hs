@@ -975,6 +975,7 @@ rewriteActivatedAbility pairs ability =
     { ActivatedAbility.modal = rewriteModal pairs (ActivatedAbility.modal ability),
       ActivatedAbility.condition = fmap (rewriteCondition pairs) (ActivatedAbility.condition ability),
       ActivatedAbility.cost = Filter.rewriteCost pairs (ActivatedAbility.cost ability),
+      ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.rewriteCost pairs) . CostChoice.unwrap) (ActivatedAbility.costChoices ability),
       ActivatedAbility.restrictions = fmap (rewriteRestriction pairs) (ActivatedAbility.restrictions ability),
       -- CR 101.1's ceiling on this ability's X, exactly as Face.maximumX above
       -- carries a spell's. A regression fence for that field's reason: no

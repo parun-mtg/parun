@@ -2844,7 +2844,7 @@ rewriteKeyword pairs keyword = case keyword of
   -- the arms below are also a fence for.
   --
   -- CR 702.21b's perEach is a KeywordCount, descended as mobilize's N is.
-  Keyword.Type.Ward w -> Keyword.Type.Ward (Ward.MkWard (rewriteCost pairs (Ward.cost w)) (fmap (rewriteKeywordCount pairs) (Ward.perEach w)))
+  Keyword.Type.Ward w -> Keyword.Type.Ward (Ward.MkWard (fmap (rewriteCost pairs) (Ward.cost w)) (fmap (rewriteKeywordCount pairs) (Ward.perEach w)))
   -- CR 702.33a, CR 702.33c, CR 702.34a, CR 702.37a and CR 702.42a: each states a
   -- cost as part of the keyword, so rewriteCost carries CR 612.1 into it.
   Keyword.Type.Kicker cost -> Keyword.Type.Kicker (rewriteCost pairs cost)

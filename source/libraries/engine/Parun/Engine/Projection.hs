@@ -68,6 +68,7 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamagePattern as DamagePattern
@@ -341,7 +342,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
             let named
                   | Keyword.countsActivations a = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
                   | otherwise = a
-             in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a)}]}
+             in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a)}]}
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
                   TriggerLimit.Unlimited -> t

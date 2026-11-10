@@ -497,7 +497,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
   Spec.it s "CR 605.1a a {T}: Add {G} ability is a mana ability" $
     let ab =
           ActivatedAbility.MkActivatedAbility
-            { ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
+            { ActivatedAbility.costChoices = [],
+              ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
               ActivatedAbility.modal = Mint.oneMode (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing))),
               ActivatedAbility.maximumX = [],
               ActivatedAbility.minimumX = 0,
@@ -513,7 +514,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
   Spec.it s "CR 605.1a an ability that targets is NOT a mana ability" $
     let ab =
           ActivatedAbility.MkActivatedAbility
-            { ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
+            { ActivatedAbility.costChoices = [],
+              ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
               ActivatedAbility.modal =
                 Mint.oneModeTargeting
                   (Map.singleton (SlotName.MkSlotName (Text.pack "x")) (TargetSlot.required Pool.AnyTarget Nothing))
@@ -532,7 +534,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
   Spec.it s "CR 605.1a a damage ability is NOT a mana ability" $
     let ab =
           ActivatedAbility.MkActivatedAbility
-            { ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
+            { ActivatedAbility.costChoices = [],
+              ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
               ActivatedAbility.modal =
                 Mint.oneModeTargeting
                   (Map.singleton (SlotName.MkSlotName (Text.pack "x")) (TargetSlot.required Pool.AnyTarget Nothing))
@@ -4544,7 +4547,7 @@ atLife n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) S.a
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
 
 -- CR 106.3's count read off the BOARD rather than off the card: Cabal Coffers
 -- (Torment) prints "{2}, {T}: Add {B} for each Swamp you control." Oracle text

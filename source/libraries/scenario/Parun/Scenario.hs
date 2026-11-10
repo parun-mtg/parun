@@ -1430,6 +1430,15 @@ answerActionChoice key verb choices asked =
                   updateChoices (\current -> current {Choices.x = Nothing})
                   pure x
             _ -> unexpected
+        -- Candidates sharing their mana and their offer (an activation cost's
+        -- choice, CR 602.2b) are told apart only by index: a move naming
+        -- neither takes the Answer its key schedules.
+        Prompt.Type.ChooseCost {}
+          | Maybe.isNothing (Choices.cost choices) && Maybe.isNothing (Choices.costOffer choices) -> do
+              found <- takeAnswer gs (Just (When.player key)) kind
+              case found of
+                Just (answerKey, index, timed) -> answerGeneric gs answerKey kind index timed prompt
+                Nothing -> unexpected
         Prompt.Type.ChooseCost _ _ _ candidates _ -> case filter (namedCandidate choices) candidates of
           [cost]
             | Maybe.isJust (Choices.cost choices) || Maybe.isJust (Choices.costOffer choices) -> do

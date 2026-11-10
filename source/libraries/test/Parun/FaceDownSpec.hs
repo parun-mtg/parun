@@ -2541,7 +2541,7 @@ disguiseSpec s registry =
       morphed = Facing.faceDown FaceDownReason.Morphed
       -- CR 702.21a's ward {2}, written as the trigger's cost is written, so the
       -- assertion reads the listing rather than restating it.
-      ward2 = Keyword.Ward (Ward.MkWard (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []) Nothing)
+      ward2 = Keyword.Ward (Ward.MkWard (NonEmpty.singleton (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) Nothing)
    in Spec.describe s "Disguise" $ do
         -- CR 702.168a prices the disguise cast at {3} exactly as CR 702.37a prices
         -- the morph one, and CR 118.9's alternative replaces the mana cost -- so

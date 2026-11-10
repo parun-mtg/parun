@@ -465,6 +465,7 @@ bubble-smuggler
 bubbling-cauldron
 budding-insurgent
 bulk-up
+bullseye-death-dealer
 bumper-cars
 bureau-headmaster
 burlfist-oak
@@ -3498,6 +3499,7 @@ tinybones-joins-up
 tinybones-pocket-nuisance
 tinybones-the-pickpocket
 titanbones-towering-heart
+titania-rugged-rumbler
 titanias-song
 tithing-blade-consuming-sepulcher
 tivit-seller-of-secrets

@@ -513,7 +513,7 @@ abilityAddsManaNames asking x = case x of
 
 activatedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> ActivatedAbility.ActivatedAbility card ability -> r
 activatedAbilityNames asking onCard onAbility x = case x of
-  ActivatedAbility.MkActivatedAbility cost maximumX _minimumX definedX modal restrictions _activator condition _name keyword -> costNames asking (keywordNames asking) cost <> foldMap (quantityNames asking) maximumX <> foldMap (quantityNames asking) definedX <> modalNames asking onCard onAbility modal <> foldMap (activationRestrictionNames asking) restrictions <> foldMap (conditionNames asking) condition <> foldMap (keywordNames asking) keyword
+  ActivatedAbility.MkActivatedAbility cost costChoices maximumX _minimumX definedX modal restrictions _activator condition _name keyword -> costNames asking (keywordNames asking) cost <> foldMap (costChoiceNames asking) costChoices <> foldMap (quantityNames asking) maximumX <> foldMap (quantityNames asking) definedX <> modalNames asking onCard onAbility modal <> foldMap (activationRestrictionNames asking) restrictions <> foldMap (conditionNames asking) condition <> foldMap (keywordNames asking) keyword
 
 activationProhibitionNames :: (Monoid r) => Asking r -> ActivationProhibition.ActivationProhibition -> r
 activationProhibitionNames asking x = case x of
@@ -2455,7 +2455,7 @@ untapRewriteNames asking x = case x of
 
 wardNames :: (Monoid r) => Asking r -> (keyword -> r) -> Ward.Ward keyword -> r
 wardNames asking onKeyword x = case x of
-  Ward.MkWard cost perEach -> costNames asking onKeyword cost <> foldMap (keywordCountNames asking) perEach
+  Ward.MkWard cost perEach -> foldMap (costNames asking onKeyword) cost <> foldMap (keywordCountNames asking) perEach
 
 whenSpentNames :: (Monoid r) => Asking r -> WhenSpent.WhenSpent -> r
 whenSpentNames asking x = case x of

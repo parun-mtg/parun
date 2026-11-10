@@ -2049,7 +2049,7 @@ wardSpec s registry =
         -- two abilities for CR 603.2's general reason. Asserted of the MINT, as
         -- fabricate's multiplicity is: no printing carries ward twice.
         Spec.it s "CR 603.2 each instance of ward is its own ability" $ do
-          let cost n = Ward.MkWard (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) Nothing
+          let cost n = Ward.MkWard (NonEmpty.singleton (Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) [])) Nothing
           Spec.assertEqWith s "ward {2} held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Ward (cost 2)) 2)) [Keyword.ward (cost 2), Keyword.ward (cost 2)]
           Spec.assertBool s (Keyword.ward (cost 2) /= Keyword.ward (cost 3)) "and the cost reaches the minted ability"
 

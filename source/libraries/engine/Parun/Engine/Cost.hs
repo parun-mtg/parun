@@ -430,13 +430,17 @@ frontFaceKeywords oid card gs =
 -- beheld" reads is the SLOT the chosen option's own payment bound
 -- (Binding.beheldObject), so no clause has to ask which candidate carried it.
 choiceVariants :: Face.Face card -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
-choiceVariants face =
-  let variants candidates choice =
-        [ candidate {CandidateCost.cost = plus (CandidateCost.cost candidate) option}
-        | candidate <- candidates,
-          option <- NonEmpty.toList (CostChoice.unwrap choice)
-        ]
-   in \candidate -> List.foldl' variants [candidate] (Face.additionalCostChoices face)
+choiceVariants face candidate =
+  fmap (\cost -> candidate {CandidateCost.cost = cost}) (withChoices (Face.additionalCostChoices face) (CandidateCost.cost candidate))
+
+-- | One cost per way of paying these choices beside `cost`, the product over
+-- them in printed order. A spell's (`choiceVariants`) and an activated
+-- ability's (Parun.Engine.Activatable.costsFor, CR 602.2b) are the same
+-- expansion.
+withChoices :: [CostChoice.CostChoice] -> Cost Keyword.Type.Keyword -> [Cost Keyword.Type.Keyword]
+withChoices choices cost =
+  let variants costs choice = [plus sofar option | sofar <- costs, option <- NonEmpty.toList (CostChoice.unwrap choice)]
+   in List.foldl' variants [cost] choices
 
 -- | CR 702.48a: offering, an optional ADDITIONAL cost, so a candidate is offered
 -- as it stands and once more per sacrificeable [quality] permanent, which

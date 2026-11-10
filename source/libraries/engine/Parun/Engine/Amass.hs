@@ -186,7 +186,8 @@ jaceToken =
 loyaltyAbility :: Natural -> Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card) -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
 loyaltyAbility n effect =
   ActivatedAbility.MkActivatedAbility
-    { ActivatedAbility.cost =
+    { ActivatedAbility.costChoices = [],
+      ActivatedAbility.cost =
         Cost.MkCost
           { Cost.mana = Just (ManaCost.MkManaCost []),
             Cost.components = [CostComponent.RemoveLoyaltyFromThis (CostAmount.Fixed n)]
