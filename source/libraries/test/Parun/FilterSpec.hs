@@ -12,11 +12,13 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamageDealer as DamageDealer
@@ -24,6 +26,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Holder as Holder
@@ -1346,6 +1349,16 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       let before = Filter.Type.And [Filter.Type.Not (Filter.Type.HasSubtype Subtype.Island), Filter.Type.Or [Filter.Type.HasSubtype Subtype.Island, Filter.Type.IsAttacking]]
           after = Filter.Type.And [Filter.Type.Not (Filter.Type.HasSubtype Subtype.Forest), Filter.Type.Or [Filter.Type.HasSubtype Subtype.Forest, Filter.Type.IsAttacking]]
       Spec.assertEqWith s "every occurrence" (Filter.rewrite [(TextWord.SubtypeWord Subtype.Island, TextWord.SubtypeWord Subtype.Forest)] before) after
+
+    -- CR 612.2: Baron Helmut Zemo's "black cards with fifteen or more black
+    -- mana symbols" holds the colour word twice, once outside the Filter.
+    Spec.it s "swaps a threshold exile's colour word in its filter and its tally" $ do
+      let exile c = CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling 15 (CardTally.ManaSymbolsOf c) (Filter.Type.HasColor c))
+      Spec.assertEqWith
+        s
+        "black became white twice"
+        (Filter.rewriteComponent [(TextWord.ColorWord Color.Black, TextWord.ColorWord Color.White)] (exile Color.Black))
+        (exile Color.White)
 
     -- CR 612.1 changes WORDS, and a card type is not a subtype word.
     Spec.it s "leaves an atom that names no subtype alone" $ do
