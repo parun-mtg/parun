@@ -5,3 +5,6 @@ packages: .
 -- which run Setup directly and never read this file.
 executable-dynamic: False
 shared: False
+-- Every dependency ships with GHC, so the build never reads a package index.
+-- Without one, CI cannot fail when a Hackage mirror does.
+active-repositories: :none

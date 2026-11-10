@@ -36,6 +36,7 @@ jobs:
         with:
           # Track the GHC that nixpkgs' default package set uses.
           ghc-version: 9.10.3
+          cabal-update: false
       - id: cache
         uses: actions/cache/restore@v6
         with:
@@ -44,7 +45,6 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.haskell.outputs.ghc-version }}-${{ github.sha }}
           restore-keys: ${{ runner.os }}-${{ runner.arch }}-${{ steps.haskell.outputs.ghc-version }}-
-      - run: cabal update
       - run: cabal configure --flags=pedantic --jobs --semaphore
       - run: cabal build all
       - run: cabal run parun -- test --timeout=120s

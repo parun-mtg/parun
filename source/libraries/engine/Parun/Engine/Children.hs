@@ -157,7 +157,7 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
@@ -1959,8 +1959,8 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
   PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
     fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
-  PlayerEffect.CastFromHandWithoutPayingManaCost (FreeCastFromHand.MkFreeCastFromHand spells amount) ->
-    fmap PlayerEffect.CastFromHandWithoutPayingManaCost (FreeCastFromHand.MkFreeCastFromHand <$> playerFilter c spells <*> traverse (playerQuantity c) amount)
+  PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast spells amount from) ->
+    fmap PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast <$> playerFilter c spells <*> traverse (playerQuantity c) amount <*> pure from)
   PlayerEffect.CantGetCounters _ -> pure effect
   -- CR 705.3: "the first coin you flip each turn" counts the turn's flips.
   PlayerEffect.StateCoinFlip (StatedFlip.MkStatedFlip _ _ firstEachTurn) -> effect <$ Monad.when firstEachTurn (playerLooksBack c HistoryRead.CoinFlips)

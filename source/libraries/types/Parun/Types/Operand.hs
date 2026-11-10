@@ -22,7 +22,7 @@ data Operand
   | -- | CR 202.3 / 601.2c: the amount the enclosing target slot, conjure
     -- reference, combat restriction or free-cast grant names
     -- (Parun.Types.TargetSlot's, Parun.Types.FromReference's,
-    -- Parun.Types.AffectedUnless's and Parun.Types.FreeCastFromHand's @amount@).
+    -- Parun.Types.AffectedUnless's and Parun.Types.FreeCast's @amount@).
     EnclosingAmount
   | -- | CR 608.2d: that measure of every other candidate the enclosing choice offers (Crackling Doom).
     OfEachOtherCandidate Measure.Measure

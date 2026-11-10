@@ -112,7 +112,7 @@ import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EquipTarget as EquipTarget
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
@@ -494,7 +494,7 @@ amountedSlotAtoms value = case value of
         tagged names = any (\v -> case v of Value.String t -> String.unwrap t `elem` fmap Text.pack names; _ -> False) (keyed "type")
         referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference"] then keyed "value" else []))
         restrictionAtoms = sum (fmap (amountedAtoms "affected") (if tagged ["CantAttack", "CantBlock"] then keyed "value" else []))
-        freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["CastFromHandWithoutPayingManaCost"] then keyed "value" else []))
+        freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["CastWithoutPayingManaCost"] then keyed "value" else []))
         here =
           if null (keyed "pool") || null (keyed "amount")
             then referenceAtoms + restrictionAtoms + freeCastAtoms
@@ -507,7 +507,7 @@ amountedSlotAtoms value = case value of
 
 -- A conjure reference pick's value, a combat restriction's
 -- (Parun.Types.AffectedUnless) or a free-cast grant's
--- (Parun.Types.FreeCastFromHand): the atoms of its subtree at `key` where an
+-- (Parun.Types.FreeCast): the atoms of its subtree at `key` where an
 -- "amount" sits beside it, and none where it does not.
 amountedAtoms :: String -> Value.Value -> Int
 amountedAtoms key value = case value of
@@ -1898,7 +1898,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 601.3a no player effect compares a mana value against anything but a literal" $ do
     ps <- S.allPrintings s corpus
     let encode = Codec.encode (Filter.Codec.codec Keyword.Codec.codec)
-        freeCastSpells c = [FreeCastFromHand.spells grant | PlayerEffect.CastFromHandWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)]
+        freeCastSpells c = [FreeCast.spells grant | PlayerEffect.CastWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)]
         inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c]
         nonLiteral = (/= Text.pack "Literal")
         offenders = filter (anyFace ((/= 0) . inPlayerEffects nonLiteral) . Printing.card) ps

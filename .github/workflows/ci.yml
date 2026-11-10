@@ -23,7 +23,6 @@ jobs:
             dist-newstyle
           key: cabal-${{ hashFiles('flake.lock') }}-${{ github.sha }}
           restore-keys: cabal-${{ hashFiles('flake.lock') }}-
-      - run: nix develop .#ci --command cabal update
       - run: |
           nix develop .#ci --command cabal configure \
             --disable-executable-dynamic \

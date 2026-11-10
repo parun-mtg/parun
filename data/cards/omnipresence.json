@@ -33,7 +33,7 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "CastFromHandWithoutPayingManaCost",
+            "type": "CastWithoutPayingManaCost",
             "value": {
               "amount": {
                 "type": "Count",
@@ -69,6 +69,7 @@
                   }
                 }
               },
+              "from": "Hand",
               "spells": {
                 "type": "Measures",
                 "value": {
