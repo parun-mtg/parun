@@ -1927,6 +1927,7 @@ stubView table oid =
                 Filter.token = False,
                 Filter.commander = False,
                 Filter.activatedAbility = Nothing,
+                Filter.activationCost = Nothing,
                 Filter.ability = False,
                 Filter.emblem = False,
                 Filter.abilitySource = Nothing,

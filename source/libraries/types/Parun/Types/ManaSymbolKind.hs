@@ -2,8 +2,8 @@ module Parun.Types.ManaSymbolKind where
 
 import qualified Parun.Types.Color as Color
 
--- | Which kind of mana symbol Filter.ManaCostHasSymbol looks for in a mana
--- cost, and Quantity.ManaSymbolCount counts.
+-- | Which kind of mana symbol Filter.ManaCostHasSymbol looks for in a mana or
+-- activation cost, and Quantity.ManaSymbolCount counts.
 data ManaSymbolKind
   = -- | CR 107.3: {X} (Zaxara, the Exemplary; Gaddock Teeg).
     VariableSymbol

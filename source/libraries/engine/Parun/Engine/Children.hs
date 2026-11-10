@@ -240,6 +240,7 @@ import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectCount as ObjectCount
@@ -312,6 +313,7 @@ import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
@@ -908,6 +910,7 @@ effectChildren c effect = case effect of
   Effect.AsYouCascade named -> fmap Effect.AsYouCascade (onSlot c named)
   Effect.Explore ref -> fmap Effect.Explore (onObjectRef c ref)
   Effect.Connive (Connive.MkConnive quantity ref) -> fmap Effect.Connive (Connive.MkConnive <$> onQuantity c quantity <*> onObjectRef c ref)
+  Effect.SetX (SetX.MkSetX value ref) -> fmap Effect.SetX (SetX.MkSetX <$> newXChildren c value <*> onObjectRef c ref)
   Effect.Discard subject -> fmap Effect.Discard (discardChildren c subject)
   Effect.LoseLife (LifeLoss.MkLifeLoss who quantity cause tally) -> fmap Effect.LoseLife (LifeLoss.MkLifeLoss <$> onPlayer c who <*> onQuantity c quantity <*> pure cause <*> traverse (onSlot c) tally)
   Effect.GainLife x -> fmap Effect.GainLife (playerQuantityChildren c x)
@@ -1229,6 +1232,12 @@ copyTargetsChildren c targets = case targets of
   CopyTargets.ChosenByController -> pure targets
   CopyTargets.ForEach ref -> fmap CopyTargets.ForEach (onObjectRef c ref)
   CopyTargets.Stated ref -> fmap CopyTargets.Stated (onObjectRef c ref)
+
+-- | A SetX's new value: the quantity it becomes, where it states one.
+newXChildren :: (Applicative f) => EffectChildren card ability f -> NewX.NewX -> f NewX.NewX
+newXChildren c newX = case newX of
+  NewX.Becomes quantity -> fmap NewX.Becomes (onQuantity c quantity)
+  NewX.Multiplied _ -> pure newX
 
 -- | A counter's alternative destination: the Filter it allows and its slot.
 counterDestinationChildren :: (Applicative f) => EffectChildren card ability f -> CounterDestination.CounterDestination -> f CounterDestination.CounterDestination

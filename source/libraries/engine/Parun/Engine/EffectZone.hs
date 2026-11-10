@@ -243,6 +243,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   -- CR 707.10 mints a new object onto the stack; nothing the ability is on
   -- moves out of a zone.
   Effect.CopyStackObject {} -> Set.empty
+  Effect.SetX {} -> Set.empty
   Effect.Replace {} -> Set.empty
   Effect.SkipPhase {} -> Set.empty
   -- CR 615.5's rider is not descended into, and the answer stands: the rider

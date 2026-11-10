@@ -108,7 +108,8 @@ data Filter keyword
     -- candidate's mana cost (Jegantha, the Wellspring).
     ManaCostRepeatsSymbol
   | -- | CR 107.3 / 107.4g: a symbol of this kind appears in the candidate's mana
-    -- cost (Zaxara, the Exemplary's {X}, Rage Extractor's {H}).
+    -- cost, or an activated ability's activation cost (CR 602.2b) (Zaxara, the
+    -- Exemplary's {X}, Rage Extractor's {H}, Glava, Five-Advents Mage's {X}).
     ManaCostHasSymbol ManaSymbolKind.ManaSymbolKind
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
     -- perspective; False where it has none (CR 108.4, 109.1).

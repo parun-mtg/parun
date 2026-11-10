@@ -155,6 +155,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.ObjectRef as ObjectRef
@@ -209,6 +210,7 @@ import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
@@ -781,6 +783,22 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.Connive (Connive.MkConnive (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self")))))
       " {\"type\":\"Connive\",\"value\":{\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"}}} "
+  -- Unbound Flourishing's "double the value of X".
+  Spec.it s "SetX Multiplied" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.SetX (SetX.MkSetX (NewX.Multiplied 2) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "thatSpell")))))
+      " {\"type\":\"SetX\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"thatSpell\"},\"value\":{\"type\":\"Multiplied\",\"value\":2}}} "
+  -- Glava, Five-Advents Mage's "the value of X become 5".
+  Spec.it s "SetX" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Literal 5)) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "thatSpell")))))
+      " {\"type\":\"SetX\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"thatSpell\"},\"value\":{\"type\":\"Becomes\",\"value\":{\"type\":\"Literal\",\"value\":5}}}} "
   Spec.it s "Mill" $
     Common.assertJsonCodec
       s

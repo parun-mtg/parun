@@ -1177,6 +1177,7 @@ library codec
     Parun.Codec.NameInsertion
     Parun.Codec.NamesAre
     Parun.Codec.NamesAreSpec
+    Parun.Codec.NewX
     Parun.Codec.NextDamageInstance
     Parun.Codec.NextDamageOutcome
     Parun.Codec.NextDamageOutcomeSpec
@@ -1547,6 +1548,7 @@ library codec
     Parun.Codec.SetOwner
     Parun.Codec.SetPowerToughness
     Parun.Codec.SetPowerToughnessSpec
+    Parun.Codec.SetX
     Parun.Codec.ShownCards
     Parun.Codec.ShownCardsSpec
     Parun.Codec.ShownComponent
@@ -3212,6 +3214,7 @@ library types
     Parun.Types.NameChooser
     Parun.Types.NameInsertion
     Parun.Types.NamesAre
+    Parun.Types.NewX
     Parun.Types.NextDamageInstance
     Parun.Types.NextDamageOutcome
     Parun.Types.NextStepOf
@@ -3428,6 +3431,7 @@ library types
     Parun.Types.SetHalfLocked
     Parun.Types.SetOwner
     Parun.Types.SetPowerToughness
+    Parun.Types.SetX
     Parun.Types.ShownCards
     Parun.Types.ShownComponent
     Parun.Types.Shows

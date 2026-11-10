@@ -119,6 +119,7 @@ import qualified Parun.Codec.Search as Search
 import qualified Parun.Codec.SetClassLevel as SetClassLevel
 import qualified Parun.Codec.SetHalfLocked as SetHalfLocked
 import qualified Parun.Codec.SetOwner as SetOwner
+import qualified Parun.Codec.SetX as SetX
 import qualified Parun.Codec.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Codec.SkipPhase as SkipPhase
 import qualified Parun.Codec.SlotName as SlotName
@@ -216,6 +217,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Explore" ObjectRef.codec Effect.Explore (\x -> case x of Effect.Explore y -> Just y; _ -> Nothing),
           Arm.payload "ArrangeInLibrary" ArrangeInLibrary.codec Effect.ArrangeInLibrary (\x -> case x of Effect.ArrangeInLibrary y -> Just y; _ -> Nothing),
           Arm.payload "Connive" Connive.codec Effect.Connive (\x -> case x of Effect.Connive y -> Just y; _ -> Nothing),
+          Arm.payload "SetX" SetX.codec Effect.SetX (\x -> case x of Effect.SetX y -> Just y; _ -> Nothing),
           Arm.payload "Mill" Mill.codec Effect.Mill (\x -> case x of Effect.Mill y -> Just y; _ -> Nothing),
           Arm.payload "Discard" Discard.codec Effect.Discard (\x -> case x of Effect.Discard y -> Just y; _ -> Nothing),
           Arm.payload "LoseLife" LifeLoss.codec Effect.LoseLife (\x -> case x of Effect.LoseLife y -> Just y; _ -> Nothing),
@@ -401,6 +403,7 @@ tagOf x = case x of
   Effect.Explore {} -> "Explore"
   Effect.ArrangeInLibrary {} -> "ArrangeInLibrary"
   Effect.Connive {} -> "Connive"
+  Effect.SetX {} -> "SetX"
   Effect.Mill {} -> "Mill"
   Effect.Discard {} -> "Discard"
   Effect.LoseLife {} -> "LoseLife"

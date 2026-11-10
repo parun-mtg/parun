@@ -3336,6 +3336,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
     ObjectRef.InSlot _ -> null (copyStackSubjects legal resolving controller source gs ref)
     _ -> False
   Effect.ChooseNewTargets {} -> False
+  Effect.SetX {} -> False
   Effect.ChangeTargets {} -> False
   Effect.Replace {} -> False
   Effect.SkipPhase {} -> False
