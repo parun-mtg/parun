@@ -838,8 +838,9 @@ candidateCostsGiven permitted pid name oid gs =
               -- paying its printed cost or an alternative -- the hand, the `_` arm,
               -- and a graveyard some permission opens. Not where the permission
               -- itself fixes the cost: a plotted card (CR 702.170d), a foretold one
-              -- (CR 702.143a), a free CR 118.9 grant, flashback's or escape's own
-              -- cost, or rule 702.162a's converted cast. Parun.CastSpec's "CR
+              -- (CR 702.143a), a permission's own free cast (Extract Power),
+              -- flashback's or escape's own cost, or rule 702.162a's converted
+              -- cast. Parun.CastSpec's "CR
               -- 702.170d a Mulldrifter Aven Interrupter plotted is offered no evoke
               -- cost" proves it.
               --
