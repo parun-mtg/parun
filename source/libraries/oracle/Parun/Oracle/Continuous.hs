@@ -380,8 +380,8 @@ affected context attached enchants a = case a of
     | Just word <- attached,
       [slot] <- enchants -> do
         (one, _) <- Target.described context slot
-        [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular]
-  Affected.Matching Filter.Type.IsSource -> [Target.MkReference (Target.self context) [] Filter.Singular]
+        [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular []]
+  Affected.Matching Filter.Type.IsSource -> [Target.MkReference (Target.self context) [] Filter.Singular []]
   Affected.Matching f
     | elem attachedToSource (conjuncts f) -> do
         word <- Maybe.maybeToList attached
@@ -395,7 +395,7 @@ affected context attached enchants a = case a of
           (rest, _) -> do
             p <- Filter.phrase (Filter.Type.And rest) (Target.keyword context)
             Filter.describe Filter.Singular Target.permanent p
-        [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular]
+        [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular []]
     | otherwise -> Target.object context Target.Affected (ObjectRef.EachMatching f)
   _ -> []
   where

@@ -393,7 +393,7 @@ paid context g predicates
           [(Prose.sentence (Text.pack "you may " <> second <> each') <> Text.pack " If you do, " <> lowered context body, ms <> counted)]
         branch -> do
           (who, person) <- case (branch, PayGate.payer g) of
-            (PayBranch.IfNonePaid, PlayerRef.Relative PlayerRelation.AnyPlayer) -> [(Target.MkReference (Text.pack "any player") [] Filter.Singular, Target.Third)]
+            (PayBranch.IfNonePaid, PlayerRef.Relative PlayerRelation.AnyPlayer) -> [(Target.MkReference (Text.pack "any player") [] Filter.Singular [], Target.Third)]
             (PayBranch.IfNotPaid, payer) -> Target.player context payer
             _ -> []
           p <- case predicates of
@@ -701,10 +701,13 @@ equalToX v =
   where
     splits e = [(Text.intercalate (Text.pack " to ") a, Text.intercalate (Text.pack " to ") b) | let parts = Text.splitOn (Text.pack " to ") e, n <- [1 .. length parts - 1], let (a, b) = splitAt n parts]
 
--- | Whether two predicates have one subject, so the second can drop it.
+-- | Whether two predicates have one subject, so the second can drop it: the
+-- same words, or a second naming the first's target again ("Target creature
+-- gains vigilance until end of turn and can't be blocked this turn", Pym
+-- Particles).
 sameSubject :: Predicate -> Predicate -> Bool
 sameSubject p q = case (subject p, subject q) of
-  (Just a, Just b) -> a == b
+  (Just a, Just b) -> a == b || (not (null (Target.antecedents b)) && Target.antecedents b == Target.mentions a)
   _ -> False
 
 -- | The sentences that must follow a predicate, each after a space.

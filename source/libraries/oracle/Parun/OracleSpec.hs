@@ -1062,6 +1062,10 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Target creature can't be blocked this turn.")) (Oracle.render (unblocked Duration.UntilEndOfTurn (Filter.And [])))
     Spec.assertEq s (Just (Text.pack "Target creature can't be blocked this turn except by Walls.")) (Oracle.render (unblocked Duration.UntilEndOfTurn (Filter.Not (Filter.HasSubtype Subtype.Wall))))
     Spec.assertEq s Nothing (Oracle.render (unblocked Duration.UntilEndOfCombat (Filter.And [])))
+    -- A second instruction naming the first's target again drops the subject
+    -- (Pym Particles).
+    let vigilant = spell [clause [modify (ObjectRef.InSlot target) Duration.UntilEndOfTurn (Modification.GainKeyword Keyword.Vigilance), Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked Duration.UntilEndOfTurn (Filter.IsBound target) (Filter.And []))]] [(target, TargetSlot.required Pool.Creatures Nothing)]
+    Spec.assertEq s (Just (Text.pack "Target creature gains vigilance until end of turn and can't be blocked this turn.")) (Oracle.render vigilant)
 
   -- CR 506.8a: a time before attackers are declared follows the turn it is
   -- in after a comma.
