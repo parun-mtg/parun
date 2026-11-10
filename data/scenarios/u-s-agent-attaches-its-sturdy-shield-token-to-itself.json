@@ -1,32 +1,8 @@
 {
-  "description": "CR 111.4, 701.3a, 702.6a: U.S.Agent creates the colorless Equipment token Sturdy Shield and attaches it to itself, not to another creature its controller has; the Shield gives +1/+2 and its equip {2} moves it",
-  "note": "Grizzly Bears is a second creature alice controls, so attaching to any creature but U.S.Agent shows; the hybrid {W/B} is paid with the Swamp.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          }
-        ],
         "battlefield": [
           {
             "card": "Plains",
@@ -62,10 +38,7 @@
             "card": "U.S.Agent, John Walker",
             "label": "agent"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Plains"
@@ -85,32 +58,56 @@
           {
             "card": "Plains"
           }
-        ]
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 111.4, 701.3a, 702.6a: U.S.Agent creates the colorless Equipment token Sturdy Shield and attaches it to itself, not to another creature its controller has; the Shield gives +1/+2 and its equip {2} moves it",
+  "note": "Grizzly Bears is a second creature alice controls, so attaching to any creature but U.S.Agent shows; the hybrid {W/B} is paid with the Swamp.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$agent",
           "mana": [
             "$s0",
             "$p0",
             "$p1",
             "$p2",
             null
-          ]
+          ],
+          "object": "$agent"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "AnnounceHybridHalf",
@@ -119,24 +116,24 @@
             "value": "Black"
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Sturdy Shield",
@@ -144,48 +141,48 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": "U.S.Agent, John Walker",
           "object": "Sturdy Shield",
-          "is": "U.S.Agent, John Walker"
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "U.S.Agent, John Walker",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Sturdy Shield",
@@ -193,12 +190,12 @@
             "Artifact"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Sturdy Shield",
@@ -206,79 +203,82 @@
             "Equipment"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
+          "is": [],
           "object": "Sturdy Shield",
-          "is": []
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "Sturdy Shield",
           "ability": 0,
           "mana": [
             "$p3",
             "$p4"
           ],
+          "object": "Sturdy Shield",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "AttachedTo",
+          "is": "$bears",
           "object": "Sturdy Shield",
-          "is": "$bears"
+          "of": "AttachedTo"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 3,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "U.S.Agent, John Walker",
           "power": 3,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

@@ -1,33 +1,8 @@
 {
-  "description": "CR 702.8a, 611.2b, 613.1f: The Wondrous Wasp, flashed in on bob's turn, taps Serra Angel and strips its abilities past end of turn, until the Wasp leaves the battlefield",
-  "note": "The Angel is checked again on alice's next turn, so an until-end-of-turn reading fails; bolting the Wasp gives flying and vigilance back.",
   "board": {
     "active": "bob",
-    "step": "Upkeep",
-    "turn": 2,
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Island",
@@ -51,10 +26,7 @@
             "card": "Lightning Bolt",
             "label": "bolt"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -75,6 +47,9 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Serra Angel",
@@ -84,178 +59,203 @@
             "card": "Grizzly Bears",
             "label": "bears"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "Upkeep",
+    "turn": 2
   },
+  "description": "CR 702.8a, 611.2b, 613.1f: The Wondrous Wasp, flashed in on bob's turn, taps Serra Angel and strips its abilities past end of turn, until the Wasp leaves the battlefield",
+  "note": "The Angel is checked again on alice's next turn, so an until-end-of-turn reading fails; bolting the Wasp gives flying and vigilance back.",
   "timeline": [
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$angel",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$wasp",
           "mana": [
             "$i0",
             "$i1",
             null
-          ]
+          ],
+          "object": "$wasp"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$angel"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$angel",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$angel",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "$angel"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$angel",
+          "count": 0,
           "keyword": {
             "type": "Vigilance"
           },
-          "count": 0
+          "object": "$angel"
         }
-      }
-    },
-    {
-      "turn": 2,
+      },
+      "player": "alice",
       "step": "Upkeep",
-      "player": "alice",
+      "turn": 2
+    },
+    {
       "check": {
         "Keywords": {
-          "object": "The Wondrous Wasp",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "The Wondrous Wasp"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$angel",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "$angel"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$bolt",
           "mana": [
             "$m0",
             null
           ],
+          "object": "$bolt",
           "targets": [
             "The Wondrous Wasp"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$angel",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "$angel"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$angel",
+          "count": 1,
           "keyword": {
             "type": "Vigilance"
           },
-          "count": 1
+          "object": "$angel"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     }
   ]
 }
