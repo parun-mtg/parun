@@ -1186,6 +1186,7 @@ fellwar-stone
 feral-deathgorger-dusk-sight
 feral-lightning
 ferocity-of-the-hunt
+ferropede
 fertile-ground
 fertilids-favor
 fervent-charge
@@ -3137,6 +3138,7 @@ spike-cannibal
 spiked-corridor-torture-pit
 spikeshell-harrier
 spin-into-myth
+spinal-parasite
 spinebiter
 spinner-of-souls
 spirit-link
@@ -3454,6 +3456,7 @@ throne-of-eldraine
 throne-of-empires
 through-the-forest-gate
 throwing-knife
+thrull-parasite
 thrull-surgeon
 thud
 thunderbolts-conspiracy

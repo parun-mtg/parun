@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "RemoveCountersFromThis",
+                "value": {
+                  "count": 2,
+                  "kind": {
+                    "type": "PlusOnePlusOne"
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RemoveCountersAmong",
+                        "value": {
+                          "count": {
+                            "type": "Exactly",
+                            "value": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          },
+                          "from": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "kind": {
+                            "type": "OfAnyKind"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": []
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Sunburst"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        }
+      ],
+      "name": "Spinal Parasite",
+      "oracleText": "Sunburst (This creature enters with a +1/+1 counter on it for each color of mana spent to cast it.)\nRemove two +1/+1 counters from this creature: Remove a counter from target permanent.",
+      "power": {
+        "type": "Literal",
+        "value": -1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": -1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Insect"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
