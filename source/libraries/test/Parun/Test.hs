@@ -829,6 +829,7 @@ import qualified Parun.Codec.UntapHoldSpec
 import qualified Parun.Codec.UntapRSpec
 import qualified Parun.Codec.UntapRestrictionSpec
 import qualified Parun.Codec.UntapRewriteSpec
+import qualified Parun.Codec.UntapScopeSpec
 import qualified Parun.Codec.UntilPaidSpec
 import qualified Parun.Codec.UsesSpec
 import qualified Parun.Codec.VanguardSpec
@@ -1869,6 +1870,7 @@ spec s registry corpus = do
   Parun.Codec.UntapHoldSpec.spec s
   Parun.Codec.UntapRestrictionSpec.spec s
   Parun.Codec.UntapRewriteSpec.spec s
+  Parun.Codec.UntapScopeSpec.spec s
   Parun.Codec.UntapRSpec.spec s
   Parun.Codec.UsesSpec.spec s
   Parun.Codec.VanguardSpec.spec s

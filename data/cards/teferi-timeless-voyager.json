@@ -132,7 +132,9 @@
                           "duration": {
                             "type": "UntilEndOfYourNextTurn"
                           },
-                          "what": "PhaseIn"
+                          "what": {
+                            "type": "PhaseIn"
+                          }
                         }
                       },
                       {

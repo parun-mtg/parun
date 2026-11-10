@@ -113,7 +113,9 @@
                           "duration": {
                             "type": "UntilEndOfCombat"
                           },
-                          "what": "Block"
+                          "what": {
+                            "type": "Block"
+                          }
                         }
                       }
                     ]
