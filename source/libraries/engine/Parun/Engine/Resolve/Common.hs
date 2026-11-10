@@ -3208,6 +3208,7 @@ clauseIsImpossible resolving source controller legal gs clause =
 -- applyOneEffect arm performs, so the offer and the execution cannot disagree.
 -- An arm answering False is one whose instruction always does something, or
 -- one no printed "may" reaches.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 effectIsImpossible :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 effectIsImpossible resolving source controller legal gs effect = case effect of
   Effect.DealDamage {} -> False
