@@ -25,6 +25,7 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
@@ -49,6 +50,7 @@ import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
@@ -3225,8 +3227,17 @@ rewriteWhichCounters pairs which = case which of
 -- Insight's "discard a land card" and Hakbal of the Surging Soul's "a land card
 -- from your hand" come closest and are still not one -- no text changer's family
 -- names the land CARD TYPE (Parun.Types.WordFamily).
+--
+-- A tally's colour is the one word outside a Filter: Baron Helmut Zemo's "black
+-- mana symbols" is a colour word used as one, devotion's reading (CR 612.2).
 rewriteComponent :: [(TextWord.TextWord, TextWord.TextWord)] -> CostComponent.CostComponent Keyword.Type.Keyword -> CostComponent.CostComponent Keyword.Type.Keyword
-rewriteComponent pairs = overComponent (rewrite pairs) (rewriteWhichCounters pairs)
+rewriteComponent pairs component = case overComponent (rewrite pairs) (rewriteWhichCounters pairs) component of
+  CostComponent.ExileCardsTotalling exile -> CostComponent.ExileCardsTotalling exile {ExileCardsTotalling.tally = rewriteTally (ExileCardsTotalling.tally exile)}
+  rewritten -> rewritten
+  where
+    rewriteTally tally = case tally of
+      CardTally.ManaValue -> tally
+      CardTally.ManaSymbolsOf c -> CardTally.ManaSymbolsOf (TextWord.colorAfter pairs c)
 
 -- Every Filter and counter kind a cost component names, rewritten; the one
 -- descent rewriteComponent and bakeCost share.
@@ -3244,6 +3255,7 @@ overComponent onFilter onCounters component = case component of
   CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n (onFilter criterion))
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore (onFilter criterion))
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard (onFilter criterion)
+  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) -> CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally (onFilter criterion))
   -- Untouched: CR 701.59a describes the cards by a total and states no card type,
   -- so rule 612.1 finds no word in this component to swap.
   CostComponent.CollectEvidence _ -> component

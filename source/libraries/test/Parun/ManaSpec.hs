@@ -2472,10 +2472,10 @@ cryptexSpec s registry = Spec.describe s "Cryptex" $ do
 -- The cards the prompt says have mana value 3, wherever collect evidence
 -- asks: the Soil, where the default answer takes every candidate, the Elf the
 -- Skaab needs included. Test-local: the harness has no vocabulary for
--- ChooseCollectEvidence.
+-- ChooseExilesTotalling.
 collectWorthThree :: Prompt.Prompt r -> r
 collectWorthThree p = case p of
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList [candidate | (candidate, value) <- candidates, value == 3]
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates _ -> Set.fromList [candidate | (candidate, value) <- candidates, value == 3]
   _ -> S.identityAnswer p
 
 -- Alice's Cryptex and two Islands, Bloodbraid Elf and the named card in her

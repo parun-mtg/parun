@@ -10,6 +10,7 @@ import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
@@ -178,6 +179,10 @@ data CostComponent keyword
     -- mana value of the permanents CR 601.2c's targets name
     -- (Parun.Engine.Cost.fixComputed).
     CollectEvidenceOfTargets
+  | -- | CR 406.2 / Baron Helmut Zemo: exile any number of matching cards from
+    -- the payer's graveyard whose tally reaches the threshold; CollectEvidence's
+    -- payment without CR 701.59a's keyword action.
+    ExileCardsTotalling (ExileCardsTotalling.ExileCardsTotalling keyword)
   | -- | CR 406.2 out of a hidden zone / Cadaverous Bloom, March of Wretched
     -- Sorrow: the paying player exiles this many cards matching the Filter from
     -- their own hand, which the payer chooses.

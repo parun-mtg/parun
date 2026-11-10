@@ -237,6 +237,7 @@ import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.ExileMaterials as ExileMaterials
@@ -1080,6 +1081,7 @@ costComponentNames asking onKeyword x = case x of
   CostComponent.ExileTopFromGraveyard filter_ -> filterNames asking filter_
   CostComponent.CollectEvidence _natural -> mempty
   CostComponent.CollectEvidenceOfTargets -> mempty
+  CostComponent.ExileCardsTotalling exileCardsTotalling -> exileCardsTotallingNames asking exileCardsTotalling
   CostComponent.ExileCardsFromHand exileCardsFromHand -> exileCardsFromHandNames asking exileCardsFromHand
   CostComponent.RevealCardFromHand filter_ -> filterNames asking filter_
   CostComponent.Behold behold -> beholdNames asking behold
@@ -1690,6 +1692,10 @@ exileCardsFromHandNames asking x = case x of
 exileCardsFromGraveyardNames :: (Monoid r) => Asking r -> ExileCardsFromGraveyard.ExileCardsFromGraveyard keyword -> r
 exileCardsFromGraveyardNames asking x = case x of
   ExileCardsFromGraveyard.MkExileCardsFromGraveyard _count whichCards -> filterNames asking whichCards
+
+exileCardsTotallingNames :: (Monoid r) => Asking r -> ExileCardsTotalling.ExileCardsTotalling keyword -> r
+exileCardsTotallingNames asking x = case x of
+  ExileCardsTotalling.MkExileCardsTotalling _threshold _tally whichCards -> filterNames asking whichCards
 
 exileHauntingNames :: (Monoid r) => Asking r -> ExileHaunting.ExileHaunting -> r
 exileHauntingNames asking x = case x of

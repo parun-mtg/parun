@@ -15,6 +15,7 @@ import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -794,14 +795,14 @@ data Prompt r where
   -- from the pool and the number alone, and an engine that guessed would be
   -- choosing how many to exile for the payer.
   ChooseMaterials :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Bool -> Prompt (Set.Set ObjectId.ObjectId)
-  -- | CR 701.59a: which cards are exiled from the payer\'s graveyard to collect
-  -- evidence, the Natural the TOTAL MANA VALUE they must reach rather than how
-  -- many. The arm above\'s payload read as a threshold, which is
+  -- | CR 701.59a / 406.2: which cards are exiled from the payer\'s graveyard to
+  -- pay a threshold cost, the Natural the TOTAL of the CardTally they must reach
+  -- rather than how many. The arm above\'s payload read as a threshold, which is
   -- ChooseTapsForTotalPower\'s relation to ChooseTaps -- and NEVER elided for its
   -- reason: whether the answer is forced is a question about subsets, so eliding
-  -- it would decide for the player. Each candidate carries its mana value, so
-  -- the answerer can judge a total without reading the board.
-  ChooseCollectEvidence :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
+  -- it would decide for the player. Each candidate carries its tally, so the
+  -- answerer can judge a total without reading the board.
+  ChooseExilesTotalling :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> CardTally.CardTally -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Any number of the candidates, the empty set included, at most the Natural
   -- where there is one; the AnyNumberOf says what they are and what is done to
   -- them. Asked at one candidate, where declining is a second answer, and
@@ -829,7 +830,7 @@ data Prompt r where
   -- | CR 702.122a: which untapped permanents are tapped to crew, the Natural a
   -- power threshold rather than a size (Parun.Engine.Cost validates the sum).
   -- Never elided, forcedness being a question about subsets. Answers as
-  -- Response.ChoseTaps. Each candidate carries its power, ChooseCollectEvidence\'s
+  -- Response.ChoseTaps. Each candidate carries its power, ChooseExilesTotalling\'s
   -- reason.
   ChooseTapsForTotalPower :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [(ObjectId.ObjectId, Integer)] -> Natural.Natural -> Prompt (Set.Set ObjectId.ObjectId)
   -- | Which permanents are tapped to pay a cost naming how many (CR 601.2f);

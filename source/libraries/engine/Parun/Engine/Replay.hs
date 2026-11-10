@@ -241,7 +241,7 @@ encode p answer = case p of
   Prompt.ChooseReplacement {} -> Response.ChoseReplacement answer
   Prompt.ChooseSacrifices {} -> Response.ChoseSacrifices answer
   Prompt.ChooseExilesFromGraveyard {} -> Response.ChoseExilesFromGraveyard answer
-  Prompt.ChooseCollectEvidence {} -> Response.ChoseExilesFromGraveyard answer
+  Prompt.ChooseExilesTotalling {} -> Response.ChoseExilesFromGraveyard answer
   Prompt.ChooseMaterials {} -> Response.ChoseMaterials answer
   Prompt.ChoosePermanent {} -> Response.ChosePermanent answer
   Prompt.ChooseTapsForTotalPower {} -> Response.ChoseTaps answer
@@ -686,7 +686,7 @@ decode p response = case p of
   Prompt.ChooseExilesFromGraveyard {} -> case response of
     Response.ChoseExilesFromGraveyard ids -> Just ids
     _ -> Nothing
-  Prompt.ChooseCollectEvidence {} -> case response of
+  Prompt.ChooseExilesTotalling {} -> case response of
     Response.ChoseExilesFromGraveyard ids -> Just ids
     _ -> Nothing
   Prompt.ChooseMaterials {} -> case response of
@@ -1309,7 +1309,7 @@ defaultAnswer p = case p of
   -- (CR 202.3), so dragging every one in can only raise the total, and the whole
   -- graveyard is a legal answer whenever the cost is payable at all. A
   -- deterministic fallback, not a recommendation.
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   -- CR 608.2d: the head of the offer, ChooseCardInGraveyard's fallback. Every
   -- candidate was pre-filtered by the engine, so the head is a legal answer. A
   -- deterministic fallback, not a recommendation.

@@ -222,7 +222,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseSacrifices decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseExilesFromGraveyard decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseMaterials decider _ _ _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChooseCollectEvidence decider _ _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseExilesTotalling decider _ _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChoosePermanent decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTapsForTotalPower decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseTaps decider _ _ _ _ -> Just (Decider.unwrap decider)

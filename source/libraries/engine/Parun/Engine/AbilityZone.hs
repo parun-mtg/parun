@@ -147,6 +147,7 @@ zoneOfComponent component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing
+  CostComponent.ExileCardsTotalling _ -> Nothing
   CostComponent.CollectEvidenceOfTargets -> Nothing
   -- Nothing for the arms above's reason and one more: CR 702.167a's component
   -- moves objects out of TWO zones, so there is no single zone to name even if

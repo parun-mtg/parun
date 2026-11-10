@@ -51,6 +51,12 @@ rulesTextSymbols = go . Text.unpack
          in foldMap pure (symbol (Text.pack inside)) <> go (drop 1 after)
       _ : rest -> go rest
 
+-- CR 107.4a / 107.4e / 107.4f: how many of these symbols are of this colour,
+-- each counted once whatever else it is -- Drought's coloured symbols and Baron
+-- Helmut Zemo's black mana symbols.
+symbolsOfColor :: Color.Color -> [ManaSymbol.ManaSymbol] -> Int
+symbolsOfColor color = length . filter (elem color . symbolColors)
+
 -- CR 202.2b: only a coloured mana symbol carries a colour; colourless is not a
 -- colour (CR 105.2c). A list, since a hybrid is all of its colours (CR 107.4e).
 --
