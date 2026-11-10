@@ -1,19 +1,50 @@
 {
   "faces": [
     {
-      "keywords": [{ "type": "Flying" }],
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
       "manaCost": [
-        { "type": "Generic", "value": 1 },
-        { "type": "OfType", "value": { "type": "Colored", "value": "White" } },
-        { "type": "OfType", "value": { "type": "Colored", "value": "Blue" } }
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
       ],
       "name": "The Mighty Thor, Jane Foster",
       "oracleText": "Flying\nWhenever The Mighty Thor attacks, exile up to one target nontoken artifact or creature, then return that card to the battlefield tapped under its owner's control.\nWhenever an Equipment you control enters, draw a card.",
-      "power": { "type": "Literal", "value": 3 },
-      "toughness": { "type": "Literal", "value": 3 },
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
       "triggeredAbilities": [
         {
-          "condition": { "type": "Attacks", "value": { "type": "Attacker", "value": {} } },
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
           "modal": {
             "modes": [
               {
@@ -22,13 +53,28 @@
                     "effects": [
                       {
                         "type": "MoveToZone",
-                        "value": { "ref": { "type": "InSlot", "value": "target" }, "slot": "exiled", "zone": "Exile" }
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
                       },
                       {
                         "type": "MoveToZone",
                         "value": {
-                          "ref": { "type": "InSlot", "value": "exiled" },
-                          "riders": { "tapped": "Tapped", "under": { "type": "Owner" } },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "riders": {
+                            "tapped": "Tapped",
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
                           "zone": "Battlefield"
                         }
                       }
@@ -37,21 +83,40 @@
                 ],
                 "targetSlots": {
                   "target": {
-                    "count": { "type": "Printed", "value": { "least": 0, "most": 1 } },
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
                     "filter": {
                       "type": "And",
                       "value": [
-                        { "type": "Not", "value": { "type": "IsToken" } },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsToken"
+                          }
+                        },
                         {
                           "type": "Or",
                           "value": [
-                            { "type": "HasCardType", "value": "Artifact" },
-                            { "type": "HasCardType", "value": "Creature" }
+                            {
+                              "type": "HasCardType",
+                              "value": "Artifact"
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
                           ]
                         }
                       ]
                     },
-                    "pool": { "type": "Permanents" }
+                    "pool": {
+                      "type": "Permanents"
+                    }
                   }
                 }
               }
@@ -67,8 +132,17 @@
                 "value": {
                   "type": "And",
                   "value": [
-                    { "type": "HasSubtype", "value": "Equipment" },
-                    { "type": "HeldBy", "value": { "holder": "Controller", "relation": "You" } }
+                    {
+                      "type": "HasSubtype",
+                      "value": "Equipment"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
                   ]
                 }
               }
@@ -82,7 +156,16 @@
                     "effects": [
                       {
                         "type": "Draw",
-                        "value": { "player": { "type": "Relative", "value": "You" }, "quantity": { "type": "Literal", "value": 1 } }
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
                       }
                     ]
                   }
@@ -93,9 +176,17 @@
         }
       ],
       "typeLine": {
-        "subtypes": ["Human", "God", "Hero"],
-        "supertypes": ["Legendary"],
-        "types": ["Creature"]
+        "subtypes": [
+          "Human",
+          "God",
+          "Hero"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
       }
     }
   ]

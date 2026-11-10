@@ -4,10 +4,23 @@
       "activatedAbilities": [
         {
           "cost": {
-            "components": [{ "type": "DiscardThis" }],
+            "components": [
+              {
+                "type": "DiscardThis"
+              }
+            ],
             "mana": [
-              { "type": "Generic", "value": 1 },
-              { "type": "OfType", "value": { "type": "Colored", "value": "Black" } }
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Black"
+                }
+              }
             ]
           },
           "modal": {
@@ -20,10 +33,22 @@
                         "type": "Search",
                         "value": {
                           "destination": "RevealThenHand",
-                          "filter": { "type": "HasSubtype", "value": "Plan" },
-                          "owner": { "type": "Relative", "value": "You" },
-                          "quantity": { "type": "Literal", "value": 1 },
-                          "searcher": { "type": "Relative", "value": "You" }
+                          "filter": {
+                            "type": "HasSubtype",
+                            "value": "Plan"
+                          },
+                          "owner": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "searcher": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
                         }
                       }
                     ]
@@ -35,12 +60,24 @@
         }
       ],
       "manaCost": [
-        { "type": "Generic", "value": 5 },
-        { "type": "OfType", "value": { "type": "Colored", "value": "Black" } }
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
       ],
       "name": "The Masters of Evil",
       "oracleText": "Other Villains you control get +2/+1.\n{1}{B}, Discard this card: Search your library for a Plan card, reveal it, put it into your hand, then shuffle.",
-      "power": { "type": "Literal", "value": 5 },
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
       "staticAbilities": [
         {
           "affected": {
@@ -48,9 +85,23 @@
             "value": {
               "type": "And",
               "value": [
-                { "type": "Not", "value": { "type": "IsSource" } },
-                { "type": "HasSubtype", "value": "Villain" },
-                { "type": "HeldBy", "value": { "holder": "Controller", "relation": "You" } }
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                },
+                {
+                  "type": "HasSubtype",
+                  "value": "Villain"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
               ]
             }
           },
@@ -58,18 +109,34 @@
             {
               "type": "ModifyPowerToughness",
               "value": {
-                "power": { "type": "Literal", "value": 2 },
-                "toughness": { "type": "Literal", "value": 1 }
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
               }
             }
           ]
         }
       ],
-      "toughness": { "type": "Literal", "value": 6 },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
       "typeLine": {
-        "subtypes": ["Human", "Villain"],
-        "supertypes": ["Legendary"],
-        "types": ["Creature"]
+        "subtypes": [
+          "Human",
+          "Villain"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
       }
     }
   ]

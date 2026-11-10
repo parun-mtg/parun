@@ -3,7 +3,12 @@
     {
       "costReductions": [
         {
-          "amount": [{ "type": "Generic", "value": 2 }],
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ],
           "condition": {
             "type": "Compares",
             "value": {
@@ -11,27 +16,68 @@
               "measured": {
                 "type": "Count",
                 "value": {
-                  "aggregation": { "type": "Members" },
+                  "aggregation": {
+                    "type": "Members"
+                  },
                   "filter": {
                     "type": "And",
                     "value": [
-                      { "type": "HasSubtype", "value": "Vehicle" },
-                      { "type": "HeldBy", "value": { "holder": "Controller", "relation": "You" } }
+                      {
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
                     ]
                   },
-                  "scope": { "type": "InZone", "value": { "player": { "type": "Relative", "value": "AnyPlayer" }, "zone": "Battlefield" } }
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
                 }
               },
-              "threshold": { "type": "Literal", "value": 1 }
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
             }
           },
-          "perEach": { "type": "Literal", "value": 1 }
+          "perEach": {
+            "type": "Literal",
+            "value": 1
+          }
         }
       ],
       "manaCost": [
-        { "type": "Generic", "value": 2 },
-        { "type": "OfType", "value": { "type": "Colored", "value": "Red" } },
-        { "type": "OfType", "value": { "type": "Colored", "value": "Red" } }
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
       ],
       "name": "Truck Toss",
       "oracleText": "This spell costs {2} less to cast if you control a Vehicle.\nTruck Toss deals 4 damage to any target.",
@@ -43,16 +89,39 @@
                 "effects": [
                   {
                     "type": "DealDamage",
-                    "value": { "parts": [{ "quantity": { "type": "Literal", "value": 4 }, "ref": { "type": "InSlot", "value": "target" } }] }
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 4
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      ]
+                    }
                   }
                 ]
               }
             ],
-            "targetSlots": { "target": { "pool": { "type": "AnyTarget" } } }
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "AnyTarget"
+                }
+              }
+            }
           }
         ]
       },
-      "typeLine": { "types": ["Instant"] }
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
     }
   ]
 }

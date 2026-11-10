@@ -241,13 +241,7 @@
     },
     {
       "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": "Pass"
-    },
-    {
-      "turn": 3,
-      "step": "DeclareAttackers",
+      "step": "EndOfCombat",
       "player": "alice",
       "check": {
         "Count": {

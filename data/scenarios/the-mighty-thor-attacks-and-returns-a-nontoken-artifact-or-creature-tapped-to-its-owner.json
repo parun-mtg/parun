@@ -1,44 +1,240 @@
 {
-  "description": "CR 508.1m, 603.2, 610.3c, 400.7, 111.1: The Mighty Thor, Jane Foster's attack trigger exiles a target nontoken artifact or creature and returns that card tapped under its owner's control",
-  "note": "Turn 1: alice controls bob's Hill Giant, untapped; bob's Grizzly Bears token is no legal target, and the Giant returns tapped under bob, its owner. Turn 3: Thor targets bob's untapped Mind Stone, an artifact that is not a creature, which returns tapped.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
-          { "card": "The Mighty Thor, Jane Foster", "label": "thor", "ready": true }
+          {
+            "card": "The Mighty Thor, Jane Foster",
+            "label": "thor",
+            "ready": true
+          }
         ],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
-          { "card": "Hill Giant", "label": "giant", "controller": "alice" },
-          { "card": "Grizzly Bears", "label": "token", "token": true },
-          { "card": "Mind Stone", "label": "stone" }
+          {
+            "card": "Hill Giant",
+            "controller": "alice",
+            "label": "giant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "token",
+            "token": true
+          },
+          {
+            "card": "Mind Stone",
+            "label": "stone"
+          }
         ],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 508.1m, 603.2, 406.1, 400.7, 111.1: The Mighty Thor, Jane Foster's attack trigger exiles a target nontoken artifact or creature and returns that card tapped under its owner's control",
+  "note": "Turn 1: alice controls bob's Hill Giant, untapped; bob's Grizzly Bears token is no legal target, and the Giant returns tapped under bob, its owner. Turn 3: Thor targets bob's untapped Mind Stone, an artifact that is not a creature, which returns tapped.",
   "timeline": [
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$thor"] } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$token"] } } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "target": ["$giant"] } } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Controller", "object": "$giant", "is": "alice" } } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 0 } } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "Hill Giant", "tapped": true } } },
-    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$stone", "tapped": false } } },
-    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
-    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
-    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$thor"] } },
-    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "target": ["$stone"] } } },
-    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
-    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Mind Stone", "count": 1 } } },
-    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "Mind Stone", "tapped": true } } }
+    {
+      "do": {
+        "Attack": [
+          "$thor"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$token"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$giant",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Hill Giant",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$stone",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$thor"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$stone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mind Stone",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Mind Stone",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    }
   ]
 }
