@@ -34,7 +34,10 @@
               },
               "scaling": {
                 "type": "AddMore",
-                "value": 1
+                "value": {
+                  "type": "Literal",
+                  "value": 1
+                }
               }
             }
           }

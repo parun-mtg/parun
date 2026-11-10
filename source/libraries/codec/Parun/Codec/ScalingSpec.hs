@@ -3,6 +3,7 @@ module Parun.Codec.ScalingSpec where
 import qualified Parun.Codec.Scaling as Scaling
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Scaling as Scaling
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -17,8 +18,8 @@ spec s = Spec.describe s "Parun.Codec.Scaling" $ do
     Common.assertCodec
       s
       Scaling.codec
-      (Scaling.AddMore 1)
-      " {\"type\":\"AddMore\",\"value\":1} "
+      (Scaling.AddMore (Quantity.Literal 1))
+      " {\"type\":\"AddMore\",\"value\":{\"type\":\"Literal\",\"value\":1}} "
   Spec.it s "Subtract" $
     Common.assertCodec
       s

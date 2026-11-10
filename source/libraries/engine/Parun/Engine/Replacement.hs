@@ -576,7 +576,7 @@ applicable asOf gs event =
 changesLoss :: GameState -> ProposedEvent -> ReplacementCandidate -> Bool
 changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, event) of
   (ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ rewrite), ProposedEvent.WouldLoseLife _ pid n) ->
-    breaches gs (ReplacementCandidate.controller candidate) rewrite pid n
+    breaches gs candidate rewrite pid n
   _ -> True
 
 -- CR 106.12b: the type each ManaR row applying to this permanent being tapped
@@ -1061,7 +1061,7 @@ matchesPrinted viewOf gs event candidate =
         -- spent under CR 614.5.
         (ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose rewrite), ProposedEvent.WouldGainLife pid n) ->
           matchesPlayer gs candidate whose pid
-            && resizes rewrite n
+            && resizes gs candidate rewrite n
         -- CR 121.6 / 614.11: whose card draws the row watches (CR 109.5's "you",
         -- or Plagiarize's target player, baked by CR 601.2c's resolution).
         -- The whole of the pattern, there being nothing else about a draw to
@@ -1218,8 +1218,8 @@ stocked gs rewrite pid = case rewrite of
   DrawRewrite.KeepOneOfTopThenDraw _ -> True
   DrawRewrite.MaySkipFor _ -> True
 
-breaches :: GameState -> Maybe PlayerId -> LifeLossRewrite.LifeLossRewrite -> PlayerId -> Natural -> Bool
-breaches gs you rewrite pid n = case rewrite of
+breaches :: GameState -> ReplacementCandidate -> LifeLossRewrite.LifeLossRewrite -> PlayerId -> Natural -> Bool
+breaches gs candidate rewrite pid n = case rewrite of
   -- Read off the LIVE board rather than off the event, because the event carries
   -- only the loss and the rule's threshold is on the resulting TOTAL. A player
   -- already at or below the floor answers True -- the loss would still take them
@@ -1239,7 +1239,7 @@ breaches gs you rewrite pid n = case rewrite of
   -- its own -- the CR states applicability only for the floor case -- and no
   -- printing in data/cards/ scales a life loss by an identity, so the refusal is a
   -- fence rather than a proved behaviour.
-  LifeLossRewrite.Scaled scaling -> scale scaling n /= n
+  LifeLossRewrite.Scaled scaling -> scale gs candidate scaling n /= n
   -- Ashiok, Wicked Manipulator's "while your library has at least that many cards
   -- in it". Its own ruling states the other side: "If you would pay life while
   -- you control Ashiok and your library does not have at least that many cards in
@@ -1250,7 +1250,7 @@ breaches gs you rewrite pid n = case rewrite of
   -- library's cards (CR 108.2) in top-first order, and Parun.Engine.Event's
   -- arm takes its cards off the front of that same list.
   LifeLossRewrite.ExileFromTopOfYourLibrary ->
-    maybe False (\owner -> Natural.length (Game.cardsIn Zone.Library owner gs) >= n) you
+    maybe False (\owner -> Natural.length (Game.cardsIn Zone.Library owner gs) >= n) (ReplacementCandidate.controller candidate)
   -- Strong, the Brutish Thespian's clause states no applicability at all: a loss
   -- turned into a gain of the same size always changes the event, and rule 614.6
   -- removes it whatever the board says. Event.resolveLifeLoss never proposes a
@@ -1266,9 +1266,9 @@ breaches gs you rewrite pid n = case rewrite of
 -- which is `breaches`' Scaled arm carried over word for word: a fence rather than
 -- a proved behaviour, no printing in data/cards/ scaling a life gain by an
 -- identity.
-resizes :: LifeGainRewrite.LifeGainRewrite -> Natural -> Bool
-resizes rewrite n = case rewrite of
-  LifeGainRewrite.Scaled scaling -> scale scaling n /= n
+resizes :: GameState -> ReplacementCandidate -> LifeGainRewrite.LifeGainRewrite -> Natural -> Bool
+resizes gs candidate rewrite n = case rewrite of
+  LifeGainRewrite.Scaled scaling -> scale gs candidate scaling n /= n
   LifeGainRewrite.DrawInstead -> True
   LifeGainRewrite.LoseInstead -> True
 
@@ -2024,10 +2024,17 @@ matchingEnteringCounters gs candidate pat oid =
 -- the same operation with different data, and so is Furnace of Rath's doubling
 -- -- which is why CounterR, TokenR (CR 614.16's two shapes) and DamageR all
 -- rewrite through this one function.
-scale :: Scaling.Scaling -> Natural -> Natural
-scale s n = case s of
+--
+-- AddMore's quantity is read against the row's own context as the event would
+-- happen, and CR 107.1b floors the total at zero: Hawkeye, Young Avenger at
+-- negative power adds that negative number. Proved by the scenario
+-- hawkeye-adds-his-power-to-a-shock-at-an-opponent.
+scale :: GameState -> ReplacementCandidate -> Scaling.Scaling -> Natural -> Natural
+scale gs candidate s n = case s of
   Scaling.Multiply m -> n * m
-  Scaling.AddMore m -> n + m
+  Scaling.AddMore quantity ->
+    let more = Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) (candidateContext gs candidate) gs (ReplacementCandidate.source candidate) quantity)
+     in Integer.toNaturalSaturating (toInteger n + more)
   -- CR 122.1: saturating, for the reason Parun.Types.Scaling gives -- and one of
   -- the two scalings that can answer zero.
   Scaling.Subtract m -> Natural.minusSaturating n m
@@ -2370,16 +2377,17 @@ readsApplier re = case re of
   -- controller. Two under different controllers leave the same damage either
   -- way, but not the same CR 615.13 preventions: X=3 then X=1 against 2 damage
   -- is one prevention, the other order two.
-  ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite _) -> countedCeiling rewrite
+  ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite _) -> computedAmount rewrite
   -- CR 701.19a acts on the creature being destroyed and names no player.
   ReplacementEffect.DestructionR _ -> False
   -- The scaling is the effect's, and it rewrites the count on the object the
-  -- event already named (Hardened Scales, Doubling Season).
-  ReplacementEffect.CounterR {} -> False
+  -- event already named (Hardened Scales, Doubling Season); a computed AddMore
+  -- is read against the candidate's Context, computedScaling's answer.
+  ReplacementEffect.CounterR r -> computedScaling (CounterR.scaling r)
   -- CR 614.16, the same shape one event class over: the player the tokens are
   -- created FOR rides the EVENT, not the candidate, so Doubling Season doubles
-  -- the same player's tokens whoever's row applies.
-  ReplacementEffect.TokenR {} -> False
+  -- the same player's tokens whoever's row applies, CounterR's answer.
+  ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r)
   -- CR 702.37b via CR 614.1e: the counter kind and count are the effect's own
   -- fields and they land on the object the event already named, which is
   -- WithCounters' answer one event class over. The inner sum is cased so a
@@ -2413,7 +2421,7 @@ readsApplier re = case re of
   -- that DOES read the applier has to be decided here rather than inheriting this
   -- answer, and nothing else in this module would break its build.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.LeaveAtLeast _)) -> False
-  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled _)) -> False
+  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> computedScaling scaling
   -- CR 616.1 / 109.5: the exile comes off the CANDIDATE's own controller's
   -- library, so two rows alike in `effect` and unlike in `you` empty different
   -- libraries -- and `breaches` asks that same seat's count, so one may apply
@@ -2434,7 +2442,7 @@ readsApplier re = case re of
   -- The gain side's whole rewrite sum, and the two resizing loss arms' answer:
   -- the scaling is the effect's own field and the player is the one the event
   -- named. Cased on the inner sum, LifeLossR's discipline above for its reason.
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled _)) -> False
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
   -- The drawer is the player the EVENT named and the count is the event's own,
   -- the arm above's answer.
   ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ LifeGainRewrite.DrawInstead) -> False
@@ -2482,7 +2490,7 @@ readsApplier re = case re of
   -- two rows under different controllers make different players its cause.
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.DiscardThenDrawOrMill) -> True
   -- The looker is the drawer the EVENT named. A baked count reads nothing of the
-  -- row; any other is read against its Context, countedCeiling's answer.
+  -- row; any other is read against its Context, computedAmount's answer.
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw (Quantity.Type.Literal _))) -> False
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw _)) -> True
   -- CR 109.5: the effects run under the row's controller, GameLossR's answer.
@@ -2530,7 +2538,7 @@ instructionRewriteReadsApplier rewrite = case rewrite of
   -- "they mill twice that many" names the milling player and nobody else, and
   -- Eligeth's drawer is the scryer. LifeGainRewrite.Scaled's answer, and for its
   -- reason.
-  InstructionRewrite.Scaled _ -> False
+  InstructionRewrite.Scaled scaling -> computedScaling scaling
   InstructionRewrite.DrawInstead -> False
   -- Pokey's "you may" is asked of the row's controller, who is the flipper its
   -- "you" names: the seat the EVENT named.
@@ -2576,11 +2584,11 @@ instructionRewriteSubstitutes rewrite = case rewrite of
   InstructionRewrite.RollD20Instead -> True
   InstructionRewrite.DrawFirst -> False
 
--- Is this a CR 702.64a ceiling whose amount is not a literal, so that
--- Event.apply evaluates it against the applying candidate's Context? No
--- wildcard, readsApplier's discipline.
-countedCeiling :: Rewrite -> Bool
-countedCeiling rewrite = case rewrite of
+-- Is this rewrite's amount not a literal -- a CR 702.64a ceiling, or a computed
+-- AddMore -- so that Event.apply evaluates it against the applying candidate's
+-- Context? No wildcard, readsApplier's discipline.
+computedAmount :: Rewrite -> Bool
+computedAmount rewrite = case rewrite of
   DamageRewrite.PreventUpTo (Quantity.Type.Literal _) -> False
   DamageRewrite.PreventUpTo _ -> True
   DamageRewrite.PreventAll -> False
@@ -2589,7 +2597,7 @@ countedCeiling rewrite = case rewrite of
   DamageRewrite.PreventNext _ -> False
   DamageRewrite.PreventAllBut _ -> False
   DamageRewrite.SetAmount _ -> False
-  DamageRewrite.Scale _ -> False
+  DamageRewrite.Scale scaling -> computedScaling scaling
   DamageRewrite.Redirect _ -> False
   DamageRewrite.RedirectNext _ _ -> False
   DamageRewrite.RedirectMatching _ -> False
@@ -2597,6 +2605,18 @@ countedCeiling rewrite = case rewrite of
   DamageRewrite.TurnFaceUp -> False
   DamageRewrite.AlsoToSourceController -> False
   DamageRewrite.HealSourceFirst -> False
+
+-- CR 616.1: is this scaling's amount read off the board rather than printed?
+-- Hawkeye, Young Avenger's AddMore reads the candidate's source's power, so two
+-- such rows of different power resize differently beside a doubler, and both
+-- readsApplier and readsSource answer True for it.
+computedScaling :: Scaling.Scaling -> Bool
+computedScaling scaling = case scaling of
+  Scaling.AddMore (Quantity.Type.Literal _) -> False
+  Scaling.AddMore _ -> True
+  Scaling.Multiply _ -> False
+  Scaling.Subtract _ -> False
+  Scaling.Halve -> False
 
 -- Does applying this effect read the candidate's SOURCE -- the object the row
 -- was minted onto -- so that two rows alike in `effect` leave different boards?
@@ -2658,19 +2678,23 @@ readsSource effect = case effect of
   -- creature's controller is asked which applies last.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.AsCopy _)) -> True
   ReplacementEffect.EntryR {} -> False
+  -- A computed scaling reads the source (computedScaling); nothing else here does.
+  ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.Scale scaling) _) -> computedScaling scaling
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.DestructionR _ -> False
-  ReplacementEffect.CounterR {} -> False
-  ReplacementEffect.TokenR {} -> False
+  ReplacementEffect.CounterR r -> computedScaling (CounterR.scaling r)
+  ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r)
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.UntapR _ -> False
+  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> computedScaling scaling
   ReplacementEffect.LifeLossR {} -> False
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
   ReplacementEffect.LifeGainR {} -> False
   ReplacementEffect.DrawCountR {} -> False
-  ReplacementEffect.InstructionR {} -> False
+  ReplacementEffect.InstructionR r -> instructionRewriteReadsSource (InstructionR.rewrite r)
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.PerformerR {} -> False
+  ReplacementEffect.PerformerR r -> instructionRewriteReadsSource (PerformerR.rewrite r)
   ReplacementEffect.ManaR {} -> False
   -- CR 113.7: the effects run with the candidate's source as theirs, so one
   -- naming its source reaches a different object under each.
@@ -2681,6 +2705,13 @@ readsSource effect = case effect of
   ReplacementEffect.PhaseR (PhaseR.MkPhaseR _ PhaseRewrite.Skip) -> False
   -- The effects run from the row's source, GameLossR's answer.
   ReplacementEffect.PhaseR (PhaseR.MkPhaseR _ (PhaseRewrite.MaySkipFor _)) -> True
+
+instructionRewriteReadsSource :: InstructionRewrite.InstructionRewrite -> Bool
+instructionRewriteReadsSource rewrite = case rewrite of
+  InstructionRewrite.Scaled scaling -> computedScaling scaling
+  InstructionRewrite.DrawInstead -> False
+  InstructionRewrite.RollD20Instead -> False
+  InstructionRewrite.DrawFirst -> False
 
 -- CR 616.1: the affected object's controller (or its owner if it has none), or
 -- the affected player, chooses one to apply. Anything not elided below prompts.

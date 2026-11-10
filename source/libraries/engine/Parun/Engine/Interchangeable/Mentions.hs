@@ -183,6 +183,7 @@ import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstructionR as InstructionR
+import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -193,8 +194,10 @@ import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeGainR as LifeGainR
+import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
+import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
@@ -266,6 +269,7 @@ import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SlotCount as SlotCount
@@ -828,7 +832,7 @@ counterPatternNames asking x = case x of
 
 counterRNames :: (Monoid r) => Asking r -> CounterR.CounterR -> r
 counterRNames asking x = case x of
-  CounterR.MkCounterR matching _scaling -> counterPatternNames asking matching
+  CounterR.MkCounterR matching scaling -> counterPatternNames asking matching <> scalingNames asking scaling
 
 counterRestrictionNames :: (Monoid r) => Asking r -> CounterRestriction.CounterRestriction -> r
 counterRestrictionNames asking x = case x of
@@ -891,7 +895,7 @@ damageRewriteNames asking onEffect x = case x of
   DamageRewrite.PreventAllBut _natural -> mempty
   DamageRewrite.PreventUpTo quantity -> quantityNames asking quantity
   DamageRewrite.SetAmount _natural -> mempty
-  DamageRewrite.Scale _scaling -> mempty
+  DamageRewrite.Scale scaling -> scalingNames asking scaling
   DamageRewrite.Redirect recipient -> recipientNames asking recipient
   DamageRewrite.RedirectNext _natural recipient -> recipientNames asking recipient
   DamageRewrite.RedirectMatching filter_ -> filterNames asking filter_
@@ -1243,9 +1247,16 @@ inZoneNames :: (Monoid r) => Asking r -> InZone.InZone -> r
 inZoneNames asking x = case x of
   InZone.MkInZone _zone player -> playerRefNames asking player
 
+instructionRewriteNames :: (Monoid r) => Asking r -> InstructionRewrite.InstructionRewrite -> r
+instructionRewriteNames asking x = case x of
+  InstructionRewrite.Scaled scaling -> scalingNames asking scaling
+  InstructionRewrite.DrawInstead -> mempty
+  InstructionRewrite.RollD20Instead -> mempty
+  InstructionRewrite.DrawFirst -> mempty
+
 instructionRNames :: (Monoid r) => Asking r -> InstructionR.InstructionR -> r
 instructionRNames asking x = case x of
-  InstructionR.MkInstructionR _instruction whose _rewrite -> controllerRelationNames asking whose
+  InstructionR.MkInstructionR _instruction whose rewrite -> controllerRelationNames asking whose <> instructionRewriteNames asking rewrite
 
 keywordNames :: (Monoid r) => Asking r -> Keyword.Keyword -> r
 keywordNames asking x = case x of
@@ -1480,9 +1491,22 @@ libraryPlacementNames asking x = case x of
   LibraryPlacement.Beneath quantity -> quantityNames asking quantity
   LibraryPlacement.BeneathOrBottom quantity -> quantityNames asking quantity
 
+lifeGainRewriteNames :: (Monoid r) => Asking r -> LifeGainRewrite.LifeGainRewrite -> r
+lifeGainRewriteNames asking x = case x of
+  LifeGainRewrite.Scaled scaling -> scalingNames asking scaling
+  LifeGainRewrite.DrawInstead -> mempty
+  LifeGainRewrite.LoseInstead -> mempty
+
+lifeLossRewriteNames :: (Monoid r) => Asking r -> LifeLossRewrite.LifeLossRewrite -> r
+lifeLossRewriteNames asking x = case x of
+  LifeLossRewrite.Scaled scaling -> scalingNames asking scaling
+  LifeLossRewrite.LeaveAtLeast _floor -> mempty
+  LifeLossRewrite.ExileFromTopOfYourLibrary -> mempty
+  LifeLossRewrite.GainInstead -> mempty
+
 lifeGainRNames :: (Monoid r) => Asking r -> LifeGainR.LifeGainR -> r
 lifeGainRNames asking x = case x of
-  LifeGainR.MkLifeGainR whose _rewrite -> controllerRelationNames asking whose
+  LifeGainR.MkLifeGainR whose rewrite -> controllerRelationNames asking whose <> lifeGainRewriteNames asking rewrite
 
 lifeLossPatternNames :: (Monoid r) => Asking r -> LifeLossPattern.LifeLossPattern -> r
 lifeLossPatternNames asking x = case x of
@@ -1490,7 +1514,7 @@ lifeLossPatternNames asking x = case x of
 
 lifeLossRNames :: (Monoid r) => Asking r -> LifeLossR.LifeLossR -> r
 lifeLossRNames asking x = case x of
-  LifeLossR.MkLifeLossR matching _rewrite -> lifeLossPatternNames asking matching
+  LifeLossR.MkLifeLossR matching rewrite -> lifeLossPatternNames asking matching <> lifeLossRewriteNames asking rewrite
 
 limitUnlessNames :: (Monoid r) => Asking r -> LimitUnless.LimitUnless -> r
 limitUnlessNames asking x = case x of
@@ -1894,6 +1918,13 @@ protectionNames asking x = case x of
 -- Every slot, PlayerRef, Scope, Filter, keyword and nested quantity through
 -- Parun.Engine.Children; the arms below are the history reads (CR 733.3) and
 -- prevention reads (CR 615.13) a quantity makes of its own, beside them.
+scalingNames :: (Monoid r) => Asking r -> Scaling.Scaling -> r
+scalingNames asking x = case x of
+  Scaling.AddMore quantity -> quantityNames asking quantity
+  Scaling.Multiply _factor -> mempty
+  Scaling.Subtract _amount -> mempty
+  Scaling.Halve -> mempty
+
 quantityNames :: (Monoid r) => Asking r -> Quantity.Quantity -> r
 quantityNames asking x =
   let own = case x of
@@ -1982,7 +2013,7 @@ replacementEffectNames asking onCard onAbility onEffect x = case x of
   ReplacementEffect.DrawCountR drawCountR -> drawCountRNames asking drawCountR
   ReplacementEffect.InstructionR instructionR -> instructionRNames asking instructionR
   ReplacementEffect.DieRollR dieRollR -> dieRollRNames asking dieRollR
-  ReplacementEffect.PerformerR row -> filterNames asking (PerformerR.performer row)
+  ReplacementEffect.PerformerR row -> filterNames asking (PerformerR.performer row) <> instructionRewriteNames asking (PerformerR.rewrite row)
   ReplacementEffect.ManaR (ManaR.MkManaR matching _) -> filterNames asking matching
   ReplacementEffect.GameLossR (GameLossR.MkGameLossR whose effects) -> controllerRelationNames asking whose <> foldMap onEffect effects
   ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR whose _cause rewrite) ->
@@ -2101,7 +2132,7 @@ tokenPlusNames _asking onCard x = case x of
 
 tokenRNames :: (Monoid r) => Asking r -> (card -> r) -> TokenR.TokenR card -> r
 tokenRNames asking onCard x = case x of
-  TokenR.MkTokenR matching _scaling plus -> tokenPatternNames asking matching <> foldMap (tokenPlusNames asking onCard) plus
+  TokenR.MkTokenR matching scaling plus -> tokenPatternNames asking matching <> foldMap (scalingNames asking) scaling <> foldMap (tokenPlusNames asking onCard) plus
 
 topOfLibraryNames :: (Monoid r) => Asking r -> TopOfLibrary.TopOfLibrary -> r
 topOfLibraryNames asking x = case x of

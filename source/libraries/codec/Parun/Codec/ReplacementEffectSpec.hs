@@ -304,10 +304,10 @@ spec s =
                         CounterPattern.onWhat = Filter.HasCardType CardType.Creature,
                         CounterPattern.onWho = Nothing
                       }
-                    (Scaling.AddMore 1)
+                    (Scaling.AddMore (Quantity.Literal 1))
                 )
             )
-            " {\"type\":\"CounterR\",\"value\":{\"matching\":{\"whichKind\":{\"type\":\"PlusOnePlusOne\"},\"subject\":{\"type\":\"ByAnything\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"scaling\":{\"type\":\"AddMore\",\"value\":1}}} "
+            " {\"type\":\"CounterR\",\"value\":{\"matching\":{\"whichKind\":{\"type\":\"PlusOnePlusOne\"},\"subject\":{\"type\":\"ByAnything\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"scaling\":{\"type\":\"AddMore\",\"value\":{\"type\":\"Literal\",\"value\":1}}}} "
         -- whichKind = Nothing means any kind, never "no kind", and the trivial filter
         -- matches every permanent. An absent whichKind key is what that Nothing
         -- means.

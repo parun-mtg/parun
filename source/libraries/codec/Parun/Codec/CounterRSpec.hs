@@ -11,6 +11,7 @@ import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterSubject as CounterSubject
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Scaling as Scaling
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -29,8 +30,8 @@ spec s = Spec.describe s "Parun.Codec.CounterR" $ do
                   CounterPattern.onWhat = Filter.HasCardType CardType.Creature,
                   CounterPattern.onWho = Nothing
                 },
-            CounterR.scaling = Scaling.AddMore 1
+            CounterR.scaling = Scaling.AddMore (Quantity.Literal 1)
           }
       )
-      " {\"matching\":{\"whichKind\":{\"type\":\"PlusOnePlusOne\"},\"subject\":{\"type\":\"ByAnything\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"scaling\":{\"type\":\"AddMore\",\"value\":1}} "
+      " {\"matching\":{\"whichKind\":{\"type\":\"PlusOnePlusOne\"},\"subject\":{\"type\":\"ByAnything\"},\"whose\":{\"type\":\"You\"},\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"scaling\":{\"type\":\"AddMore\",\"value\":{\"type\":\"Literal\",\"value\":1}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CounterR.codec

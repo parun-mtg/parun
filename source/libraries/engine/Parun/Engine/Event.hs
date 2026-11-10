@@ -4379,7 +4379,8 @@ apply settle batch applied batchPrevented candidate event =
       -- doubling means one thing across every event class.
       DamageRewrite.Scale scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (dealing de {DamageEvent.amount = Replacement.scale scaling (DamageEvent.amount de)})
+        gs <- State.get
+        pure (dealing de {DamageEvent.amount = Replacement.scale gs candidate scaling (DamageEvent.amount de)})
       -- CR 614.9: a redirection effect replaces the damage's RECIPIENT with
       -- another and nothing else -- "the same damage dealt to another battle,
       -- creature, planeswalker, or player". Every other field rides along for
@@ -4643,7 +4644,8 @@ apply settle batch applied batchPrevented candidate event =
       -- they resize, not in how.
       LifeLossRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (Just (ProposedEvent.WouldLoseLife cause pid (Replacement.scale scaling n)))
+        gs <- State.get
+        pure (Just (ProposedEvent.WouldLoseLife cause pid (Replacement.scale gs candidate scaling n)))
       -- CR 614.6 with CR 119.4: Ashiok, Wicked Manipulator's "exile that many
       -- cards from the top of your library instead". A CANCELLING ARM, as
       -- GainInstead below is:
@@ -4706,7 +4708,8 @@ apply settle batch applied batchPrevented candidate event =
       -- Scaled arm's.
       LifeGainRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (Just (ProposedEvent.WouldGainLife pid (Replacement.scale scaling n)))
+        gs <- State.get
+        pure (Just (ProposedEvent.WouldGainLife pid (Replacement.scale gs candidate scaling n)))
       -- CR 614.6: Lich's "draw that many cards instead". The gain never
       -- happens, so no life total moves and no GameEvent.LifeGained is
       -- recorded; the player the event named draws through CR 121's funnel, one
@@ -5095,7 +5098,8 @@ apply settle batch applied batchPrevented candidate event =
     (ReplacementEffect.InstructionR row, ProposedEvent.WouldThrow throw) -> case InstructionR.rewrite row of
       InstructionRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale scaling) (Throw.units throw)}))
+        gs <- State.get
+        pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale gs candidate scaling) (Throw.units throw)}))
       -- Unreachable: the same lint admits DrawInstead on a scry alone, and
       -- DrawFirst on an instruction a WouldPerform carries.
       InstructionRewrite.DrawInstead -> pure (Just event)
@@ -5210,7 +5214,8 @@ apply settle batch applied batchPrevented candidate event =
     -- CR 122.6/614.1: Hardened Scales/Doubling Season scale a counter placement.
     (ReplacementEffect.CounterR (CounterR.MkCounterR _ scaling), ProposedEvent.WouldPutCounters cause oid kind n) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
-      pure (Just (ProposedEvent.WouldPutCounters cause oid kind (Replacement.scale scaling n)))
+      gs <- State.get
+      pure (Just (ProposedEvent.WouldPutCounters cause oid kind (Replacement.scale gs candidate scaling n)))
     -- CR 122.1: the same rewrite against a player -- Vorinclex, Monstrous Raider's
     -- "on a permanent or player". Through the same `scale`, so the two recipients
     -- cannot disagree about what doubling or halving means.
@@ -5220,7 +5225,8 @@ apply settle batch applied batchPrevented candidate event =
     -- this row; putPlayerCounters is what declines to write a zero.
     (ReplacementEffect.CounterR (CounterR.MkCounterR _ scaling), ProposedEvent.WouldPutPlayerCounters cause pid kind n) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
-      pure (Just (ProposedEvent.WouldPutPlayerCounters cause pid kind (Replacement.scale scaling n)))
+      gs <- State.get
+      pure (Just (ProposedEvent.WouldPutPlayerCounters cause pid kind (Replacement.scale gs candidate scaling n)))
     -- CR 614.16 at the ENTRY level: the counters this permanent is entering with,
     -- scaled where they sit -- in the pending map, before flushEnteringCounters
     -- places them. The same rewrite as the arm above, one level up, which is what
@@ -5250,7 +5256,7 @@ apply settle batch applied batchPrevented candidate event =
     (ReplacementEffect.CounterR (CounterR.MkCounterR pat scaling), ProposedEvent.WouldEnter oid) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
-      let scaled = fmap (fmap (Replacement.scale scaling)) (Replacement.matchingEnteringCounters gs candidate pat oid)
+      let scaled = fmap (fmap (Replacement.scale gs candidate scaling)) (Replacement.matchingEnteringCounters gs candidate pat oid)
       State.modify' $ \gs2 ->
         gs2 {GameState.enteringCounters = Map.adjust (Map.unionWith Map.union scaled) oid (GameState.enteringCounters gs2)}
       pure (Just event)
@@ -5277,7 +5283,7 @@ apply settle batch applied batchPrevented candidate event =
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
       let scaleLot factor lot
-            | Replacement.reachesLot pat lot = lot {TokenLot.count = Replacement.scale factor (TokenLot.count lot)}
+            | Replacement.reachesLot pat lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
             | otherwise = lot
           scaled = maybe lots (\factor -> fmap (scaleLot factor) lots) scaling
           lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True}
@@ -6878,7 +6884,8 @@ performRewritten settle candidate event rewrite = case event of
   ProposedEvent.WouldPerform instruction performer pid n -> case rewrite of
     InstructionRewrite.Scaled scaling -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
-      pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale scaling n)))
+      gs <- State.get
+      pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale gs candidate scaling n)))
     InstructionRewrite.DrawInstead -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       drawInstruction pid n
@@ -6987,9 +6994,9 @@ keepCoin flipper faces =
   -- against the candidates, where an object choice would.
   case ListUtils.nubOrd faces of
     -- Unreachable: a unit starts at one coin, and the same lint admits only a
-    -- scaling that cannot reach zero (Multiply by one or more, AddMore). A row
-    -- that did reach zero would be wrong here too: this asks rule 705.1's one
-    -- coin anyway.
+    -- scaling that cannot reach zero (Multiply by one or more, AddMore of a
+    -- non-negative literal). A row that did reach zero would be wrong here too:
+    -- this asks rule 705.1's one coin anyway.
     [] -> Game.ask Prompt.FlipCoin
     -- One face is not a choice: with every coin agreeing, which one is ignored is
     -- indistinguishable, so where the rules leave nothing to ask, don't prompt.

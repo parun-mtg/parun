@@ -278,6 +278,8 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.InstructionR as InstructionR
+import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
@@ -289,8 +291,12 @@ import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LifeGainR as LifeGainR
+import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeLossCause as LifeLossCause
+import qualified Parun.Types.LifeLossR as LifeLossR
+import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LoopMembers as LoopMembers
@@ -338,6 +344,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -408,6 +415,7 @@ import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchDestination as SearchDestination
@@ -5263,8 +5271,8 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- CR 122.1b's kind, which may be a whole Keyword carrying a Filter; see #2728.
   -- `whichKind` is a Maybe, and Nothing there is Doubling Season's ANY kind
   -- rather than a kind holding nothing.
-  ReplacementEffect.CounterR (CounterR.MkCounterR counterPattern _) ->
-    unframed [CounterPattern.onWhat counterPattern] <> concatMap counterKindFilters (Maybe.maybeToList (CounterPattern.whichKind counterPattern))
+  ReplacementEffect.CounterR (CounterR.MkCounterR counterPattern scaling) ->
+    unframed [CounterPattern.onWhat counterPattern] <> concatMap counterKindFilters (Maybe.maybeToList (CounterPattern.whichKind counterPattern)) <> scalingFilters scaling
   ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ _ _ _ _ _) -> unframed [ZoneChangePattern.whatObject zoneChangePattern]
   ReplacementEffect.EntryR (EntryR.MkEntryR entryPattern entryRewrite) -> unframed [entryPattern] <> entryRewriteFilters entryRewrite
   -- CR 615.1's shields narrow by their source, which is a Filter over the object
@@ -5283,12 +5291,15 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- CR 111.1: what the token being created is (Queen Allenal of Ruadach's
   -- "creature tokens"). The appended token's own Filters are the MINTED
   -- object's, and reach the sweep through replacementMintedCards instead.
-  ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern _ _) -> unframed [TokenPattern.whatToken tokenPattern]
+  ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern scaling _) -> unframed [TokenPattern.whatToken tokenPattern] <> foldMap scalingFilters scaling
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR turnUpPattern _ _ turnUpRewrite) -> unframed [turnUpPattern] <> turnUpRewriteFilters turnUpRewrite
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.AsCopy asCopy)) -> unframed [attachPattern] <> asCopyFilters asCopy
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality _)) -> unframed [attachPattern]
   ReplacementEffect.UntapR _ -> []
+  -- A computed scaling's Quantity is the one Filter a life row can hold.
+  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeLossR {} -> []
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeGainR {} -> []
   -- The pattern is one ControllerRelation; the wish filter a FromOutsideTheGame
   -- rewrite carries is the one Filter a draw row can hold (Ring of Maʼrûf) beside
@@ -5306,8 +5317,10 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw quantity)) -> quantityFilters quantity
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor _)) -> []
   ReplacementEffect.DrawCountR {} -> []
+  ReplacementEffect.InstructionR (InstructionR.MkInstructionR _ _ (InstructionRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.InstructionR {} -> []
   ReplacementEffect.DieRollR {} -> []
+  ReplacementEffect.PerformerR (PerformerR.MkPerformerR _ _ (InstructionRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.PerformerR {} -> []
   ReplacementEffect.ManaR r -> unframed [ManaR.matching r]
   ReplacementEffect.GameLossR {} -> []
@@ -5333,7 +5346,7 @@ damageRewriteFilters rewrite = case rewrite of
   DamageRewrite.PreventAllBut _ -> []
   DamageRewrite.PreventUpTo quantity -> quantityFilters quantity
   DamageRewrite.SetAmount _ -> []
-  DamageRewrite.Scale _ -> []
+  DamageRewrite.Scale scaling -> scalingFilters scaling
   -- CR 614.1a's instead-effects hold no Filter of their own; the ones inside
   -- them are reached as ordinary effect filters, through cardResolutionEffects
   -- -- EntryRewrite.RunEffects' answer, and for its reason.
@@ -5341,6 +5354,14 @@ damageRewriteFilters rewrite = case rewrite of
   DamageRewrite.TurnFaceUp -> []
   DamageRewrite.AlsoToSourceController -> []
   DamageRewrite.HealSourceFirst -> []
+
+-- A computed AddMore's Quantity, the one Filter a scaling can hold.
+scalingFilters :: Scaling.Scaling -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+scalingFilters scaling = case scaling of
+  Scaling.AddMore quantity -> quantityFilters quantity
+  Scaling.Multiply _ -> []
+  Scaling.Subtract _ -> []
+  Scaling.Halve -> []
 
 -- A face's printed replacement ability reaches a Filter on a second axis beside
 -- the rewrite's: CR 604.2's "as long as" clause counts objects, exactly as the
