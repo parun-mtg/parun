@@ -200,8 +200,8 @@
       "typeLine": {
         "subtypes": [
           "God",
-          "Warrior",
-          "Hero"
+          "Hero",
+          "Warrior"
         ],
         "supertypes": [
           "Legendary"

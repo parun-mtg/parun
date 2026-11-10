@@ -85,9 +85,9 @@
       },
       "typeLine": {
         "subtypes": [
+          "Hero",
           "Mutant",
-          "Warlock",
-          "Hero"
+          "Warlock"
         ],
         "supertypes": [
           "Legendary"

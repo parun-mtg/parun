@@ -273,8 +273,8 @@
                                 ],
                                 "typeLine": {
                                   "subtypes": [
-                                    "Elder",
-                                    "Alien"
+                                    "Alien",
+                                    "Elder"
                                   ],
                                   "supertypes": [
                                     "Legendary"

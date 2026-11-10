@@ -121,12 +121,10 @@
                         }
                       },
                       {
-                        "type": "AttachTarget",
+                        "type": "AttachBound",
                         "value": {
-                          "filter": {
-                            "type": "IsSource"
-                          },
-                          "slot": "shield"
+                          "destination": "self",
+                          "subject": "shield"
                         }
                       }
                     ]

@@ -6,10 +6,10 @@
           "type": "Flying"
         },
         {
-          "type": "Vigilance"
+          "type": "Indestructible"
         },
         {
-          "type": "Indestructible"
+          "type": "Vigilance"
         }
       ],
       "manaCost": [

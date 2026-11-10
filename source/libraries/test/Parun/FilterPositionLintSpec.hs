@@ -1933,8 +1933,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- JUDGED (Parun.Engine.Target.jointlyJudged); Synthetic Measured Refrain, whose
     -- bound folds over what a sibling slot names (Parun.TargetSpec's "CR 700.2d a
     -- repeated mode's computed bound measures its own occurrence's sibling
-    -- slot"); and Blighted Nightmare and Tameshi, Reality Architect, on ACTIVATED
-    -- abilities, whose X CR 602.2b announces.
+    -- slot"); The Super Hero Civil War, whose second slot's bound is six less
+    -- the total mana value its first slot names; and Blighted Nightmare and
+    -- Tameshi, Reality Architect, on ACTIVATED abilities, whose X CR 602.2b
+    -- announces.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Tamiyo, Compleated
     -- Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
@@ -1966,6 +1968,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Stir the Grave", 1),
         ("Synthetic Borrowed Exhumation", 1),
         ("Synthetic Measured Refrain", 1),
+        ("The Super Hero Civil War", 1),
         ("Blighted Nightmare", 1),
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
