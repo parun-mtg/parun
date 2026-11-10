@@ -151,6 +151,7 @@ import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TappedForMana as TappedForMana
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.Transformed as Transformed
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -681,6 +682,7 @@ movedOf event = case event of
   GameEvent.BecameAttacked _ -> Nothing
   GameEvent.AttackersDeclared _ -> Nothing
   GameEvent.BecameTapped _ -> Nothing
+  GameEvent.TappedToPay _ -> Nothing
   GameEvent.BecameUntapped _ -> Nothing
   GameEvent.TappedForMana _ -> Nothing
   GameEvent.ManaAdded _ -> Nothing
@@ -838,6 +840,7 @@ participants event =
         GameEvent.ClassLevelSet c -> one (ClassLevelChange.object c)
         GameEvent.Plotted oid -> one oid
         GameEvent.BecameTapped oid -> one oid
+        GameEvent.TappedToPay t -> one (TappedToPay.permanent t)
         GameEvent.BecameUntapped oid -> one oid
         GameEvent.TappedForMana t -> one (TappedForMana.permanent t)
         GameEvent.ManaAdded m -> ([ManaAdded.source m], [ManaAdded.player m])
@@ -1560,6 +1563,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameAttacked _ -> Map.empty
         GameEvent.AttackersDeclared _ -> Map.empty
         GameEvent.BecameTapped _ -> Map.empty
+        GameEvent.TappedToPay _ -> Map.empty
         GameEvent.BecameUntapped _ -> Map.empty
         GameEvent.TappedForMana _ -> Map.empty
         GameEvent.ManaAdded _ -> Map.empty
@@ -1941,6 +1945,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameAttacked _ -> Map.empty
         GameEvent.AttackersDeclared _ -> Map.empty
         GameEvent.BecameTapped _ -> Map.empty
+        GameEvent.TappedToPay _ -> Map.empty
         GameEvent.BecameUntapped _ -> Map.empty
         GameEvent.TappedForMana _ -> Map.empty
         GameEvent.ManaAdded _ -> Map.empty
@@ -2148,6 +2153,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameAttacked _ -> Map.empty
         GameEvent.AttackersDeclared _ -> Map.empty
         GameEvent.BecameTapped _ -> Map.empty
+        GameEvent.TappedToPay _ -> Map.empty
         GameEvent.BecameUntapped _ -> Map.empty
         GameEvent.TappedForMana _ -> Map.empty
         GameEvent.ManaAdded _ -> Map.empty
@@ -2262,6 +2268,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.BecameAttacked _ -> Map.empty
         GameEvent.AttackersDeclared _ -> Map.empty
         GameEvent.BecameTapped _ -> Map.empty
+        GameEvent.TappedToPay _ -> Map.empty
         GameEvent.BecameUntapped _ -> Map.empty
         GameEvent.TappedForMana _ -> Map.empty
         GameEvent.ManaAdded _ -> Map.empty
@@ -3960,6 +3967,7 @@ resnapshot gs without event =
         GameEvent.ClassLevelSet {} -> Just event
         GameEvent.Plotted {} -> Just event
         GameEvent.BecameTapped {} -> Just event
+        GameEvent.TappedToPay {} -> Just event
         GameEvent.BecameUntapped {} -> Just event
         GameEvent.TappedForMana {} -> Just event
         GameEvent.ManaAdded {} -> Just event

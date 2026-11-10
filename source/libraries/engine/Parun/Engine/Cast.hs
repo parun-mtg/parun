@@ -126,6 +126,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
@@ -4152,6 +4153,29 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                                     )
                                 )
                             )
+                          -- CR 601.2h: each permanent a keyword's optional
+                          -- cost tapped became tapped to pay that cost (Agent
+                          -- Maria Hill's teamwork), recorded at the payment for
+                          -- the convoke record's reason. A case on the rule-702
+                          -- keyword's minted cost, never on an effect; teamwork is
+                          -- the one optional cost carrying TapForTotalPower, so
+                          -- that slot's set is its tappers alone.
+                          paidKeywords <- State.gets (maybe Map.empty Object.paidCosts . Game.lookupObject sid)
+                          let tapsForTotalPower component = case component of
+                                CostComponent.TapForTotalPower {} -> True
+                                _ -> False
+                              tappingFamilies =
+                                Set.fromList
+                                  [ family
+                                  | (keyword, perInstance) <- Map.toList paidKeywords,
+                                    sum perInstance > 0,
+                                    Just (optional, _) <- [Keyword.optionalCost keyword],
+                                    any tapsForTotalPower (Cost.Type.components optional),
+                                    Just family <- [Keyword.familyOf keyword]
+                                  ]
+                              tappedToPay = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedForTotalPower (Binding.targetsOf bound))))
+                              paidTaps = [GameEvent.TappedToPay TappedToPay.MkTappedToPay {TappedToPay.permanent = tapped, TappedToPay.keyword = family} | family <- Set.toAscList tappingFamilies, tapped <- Set.toAscList tappedToPay]
+                          Monad.unless (null paidTaps) (Event.simultaneously (Monad.mapM_ (State.modify' . Event.recordEvent) paidTaps))
                           -- CR 601.2i / 611.3d: the permission's rider is an
                           -- effect that modifies the spell as it is cast, so it
                           -- is stored before the event below snapshots the spell.

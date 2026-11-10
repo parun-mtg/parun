@@ -1642,6 +1642,8 @@ library codec
     Parun.Codec.TappedIsSpec
     Parun.Codec.TappedPermanent
     Parun.Codec.TappedPermanentSpec
+    Parun.Codec.TappedToPay
+    Parun.Codec.TappedToPaySpec
     Parun.Codec.TapPermanents
     Parun.Codec.TapPermanentsSpec
     Parun.Codec.TapSpec
@@ -3471,6 +3473,7 @@ library types
     Parun.Types.TappedForManaTrigger
     Parun.Types.TappedIs
     Parun.Types.TappedPermanent
+    Parun.Types.TappedToPay
     Parun.Types.TapPermanents
     Parun.Types.TapState
     Parun.Types.TargetCount

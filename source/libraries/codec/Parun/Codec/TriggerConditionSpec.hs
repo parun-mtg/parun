@@ -261,21 +261,21 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence))
+      (TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence Nothing))
       " {\"type\":\"BecomesTapState\",\"value\":{\"actor\":{\"type\":\"Self\"},\"status\":\"Tapped\"}} "
   -- CR 701.26b's untap of a permanent the Filter admits.
   Spec.it s "BecomesTapState round-trips a Filter" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Untapped (ActingPermanent.Matching (Filter.HasSubtype Subtype.Island)) Batching.EachOccurrence))
+      (TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Untapped (ActingPermanent.Matching (Filter.HasSubtype Subtype.Island)) Batching.EachOccurrence Nothing))
       " {\"type\":\"BecomesTapState\",\"value\":{\"actor\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Island\"}},\"status\":\"Untapped\"}} "
   -- CR 701.26a's tap by a bystander, batch-read (CR 603.2c).
   Spec.it s "BecomesTapState round-trips a batch over a Filter" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Not Filter.IsToken)) Batching.OneOrMore))
+      (TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Not Filter.IsToken)) Batching.OneOrMore Nothing))
       " {\"type\":\"BecomesTapState\",\"value\":{\"actor\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"IsToken\"}}},\"status\":\"Tapped\",\"batching\":\"OneOrMore\"}} "
   -- CR 106.12a's tap for mana read off the attachment link, Wild Growth's: that
   -- link is board state, so the subject alone names it.

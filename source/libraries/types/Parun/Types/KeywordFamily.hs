@@ -312,8 +312,8 @@ data KeywordFamily
   | -- | CR 702.96a: overload [cost]; the family Quantity.CastUsing names for
     -- Cyclonic Rift's two readings.
     Overload
-  | -- | CR 702.194a: teamwork N. No card in the pool asks yet, and it is owed at
-    -- the keyword rather than at the first asker.
+  | -- | CR 702.194a: teamwork N; the family Agent Maria Hill's "tapped to pay a
+    -- teamwork cost" names.
     Teamwork
   | -- | CR 702.188a: web-slinging [cost]; the family Quantity.CastUsing names for
     -- Spiders-Man, Heroic Horde's "if they were cast using web-slinging".

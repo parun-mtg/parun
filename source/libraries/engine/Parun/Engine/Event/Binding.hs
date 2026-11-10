@@ -108,6 +108,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -605,6 +606,9 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameTapped tapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
         Binding.setTapStatePermanent TapState.Tapped tapped Map.empty
+  (TriggerCondition.BecomesTapState watched, GameEvent.TappedToPay paid)
+    | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
+        Binding.setTapStatePermanent TapState.Tapped (TappedToPay.permanent paid) Map.empty
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameUntapped untapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Untapped ->
         Binding.setTapStatePermanent TapState.Untapped untapped Map.empty

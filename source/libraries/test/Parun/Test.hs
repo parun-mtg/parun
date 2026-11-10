@@ -775,6 +775,7 @@ import qualified Parun.Codec.TappedForManaSpec
 import qualified Parun.Codec.TappedForManaTriggerSpec
 import qualified Parun.Codec.TappedIsSpec
 import qualified Parun.Codec.TappedPermanentSpec
+import qualified Parun.Codec.TappedToPaySpec
 import qualified Parun.Codec.TargetCountSpec
 import qualified Parun.Codec.TargetRestrictionSpec
 import qualified Parun.Codec.TargetSlotSpec
@@ -1811,6 +1812,7 @@ spec s registry corpus = do
   Parun.Codec.TapForManaSpec.spec s
   Parun.Codec.TapForTotalPowerSpec.spec s
   Parun.Codec.TappedForManaSpec.spec s
+  Parun.Codec.TappedToPaySpec.spec s
   Parun.Codec.TappedIsSpec.spec s
   Parun.Codec.TapPermanentsSpec.spec s
   Parun.Codec.TapStateSpec.spec s
