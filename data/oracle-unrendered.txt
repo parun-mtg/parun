@@ -3375,6 +3375,7 @@ the-great-goblin
 the-hive
 the-karst-enchanted
 the-kenriths-royal-funeral
+the-kingpin-of-crime
 the-legend-of-kuruk-avatar-kuruk
 the-lonely-mountain
 the-lord-of-the-eagles

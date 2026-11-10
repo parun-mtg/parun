@@ -868,8 +868,8 @@ cardTypesAfter m types = case m of
 --
 -- Only Affected.TheseObjects is answered, and that is the whole domain: the one
 -- producer stores its effect through Effect.ModifyTarget, whose affected set is
--- always CR 611.2c's frozen id set. A matching set would be a card that
--- exchanged text boxes with a described object, which nothing prints.
+-- CR 611.2c's frozen id set for any text change. A matching set would be a card
+-- that exchanged text boxes with a described object, which nothing prints.
 exchangePartner :: ObjectId -> Affected.Affected -> Maybe ObjectId
 exchangePartner oid a = case a of
   Affected.TheseObjects s -> case Set.toList (Set.delete oid s) of
