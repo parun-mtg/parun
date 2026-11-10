@@ -1910,6 +1910,7 @@ lava-burst
 lavinia-foil-to-conspiracy
 lead-golem
 lead-the-stampede
+leader-super-genius
 leafkin-avenger
 leave-chance
 leeches

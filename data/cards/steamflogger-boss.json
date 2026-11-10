@@ -23,22 +23,32 @@
       "replacementEffects": [
         {
           "effect": {
-            "type": "AssembleR",
+            "type": "PerformerR",
             "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasSubtype",
-                  "value": "Rigger"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
+              "instruction": "Assemble",
+              "performer": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasSubtype",
+                    "value": "Rigger"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
                   }
+                ]
+              },
+              "rewrite": {
+                "type": "Scaled",
+                "value": {
+                  "type": "Multiply",
+                  "value": 2
                 }
-              ]
+              }
             }
           }
         }

@@ -21,4 +21,8 @@ data InstructionRewrite
     -- is rolled for each of its coins, read back as that coin's face. Counts as
     -- rolling a die.
     RollD20Instead
+  | -- | Leader, Super-Genius's "instead you draw a card, then that creature
+    -- connives" (CR 614.1a): the replacement's controller draws a card, then
+    -- the instruction happens as it stood, CR 614.5 keeping this row off it.
+    DrawFirst
   deriving (Eq, Ord, Show)

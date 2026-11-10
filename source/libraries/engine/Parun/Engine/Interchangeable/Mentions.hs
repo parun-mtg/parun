@@ -257,6 +257,7 @@ import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
@@ -2063,7 +2064,7 @@ replacementEffectNames asking onCard onAbility onEffect x = case x of
   ReplacementEffect.DrawCountR drawCountR -> drawCountRNames asking drawCountR
   ReplacementEffect.InstructionR instructionR -> instructionRNames asking instructionR
   ReplacementEffect.DieRollR dieRollR -> dieRollRNames asking dieRollR
-  ReplacementEffect.AssembleR matching -> filterNames asking matching
+  ReplacementEffect.PerformerR row -> filterNames asking (PerformerR.performer row)
   ReplacementEffect.ManaR (ManaR.MkManaR matching _) -> filterNames asking matching
   ReplacementEffect.GameLossR (GameLossR.MkGameLossR whose effects) -> controllerRelationNames asking whose <> foldMap onEffect effects
   ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR whose _cause rewrite) ->

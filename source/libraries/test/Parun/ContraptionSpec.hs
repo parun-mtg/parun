@@ -2,7 +2,7 @@
 
 -- Covers: Unstable's Contraptions, from the Unstable FAQ since CR 701.45a leaves
 -- them out of the rules -- Parun.Engine.Contraption's assemble and crank,
--- Effect.Assemble, ReplacementEffect.AssembleR, the Contraption deck
+-- Effect.Assemble, ReplacementEffect.PerformerR, the Contraption deck
 -- (SideDeck.Contraption), the sprockets (Designation.Sprocket1..3) and the
 -- scrapyard (Event.toJunkyard).
 --

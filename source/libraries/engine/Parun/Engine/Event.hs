@@ -238,6 +238,7 @@ import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffec
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import Parun.Types.PendingTrigger (PendingTrigger)
 import qualified Parun.Types.PendingTrigger as PendingTrigger
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
@@ -2801,7 +2802,7 @@ shufflesAfter candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -5068,19 +5069,7 @@ apply settle batch applied batchPrevented candidate event =
     -- instruction (CR 614.6) -- for a scry, no CR 701.22d event -- and draws
     -- through CR 121.2a's instruction, so a draw replacement still gets its say
     -- (CR 616.2).
-    (ReplacementEffect.InstructionR row, ProposedEvent.WouldPerform instruction performer pid n) -> case InstructionR.rewrite row of
-      InstructionRewrite.Scaled scaling -> do
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale scaling n)))
-      InstructionRewrite.DrawInstead -> do
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid n)
-        Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries settle Set.empty))
-        pure Nothing
-      -- Unreachable: Parun.EffectLintSpec's "no card pairs an instruction with
-      -- a rewrite the engine cannot carry out" confines RollD20Instead to a
-      -- flip, which is a WouldThrow below.
-      InstructionRewrite.RollD20Instead -> pure (Just event)
+    (ReplacementEffect.InstructionR row, ProposedEvent.WouldPerform {}) -> performRewritten settle candidate event (InstructionR.rewrite row)
     -- CR 705.1 / 614.1a: Krark's Thumb's "instead flip two coins and ignore
     -- one", applied to EACH coin of the flip -- its ruling's "this replaces each
     -- individual coin flip" -- so a second Thumb leaves four coins of which one
@@ -5105,8 +5094,10 @@ apply settle batch applied batchPrevented candidate event =
       InstructionRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale scaling) (Throw.units throw)}))
-      -- Unreachable: the same lint admits DrawInstead on a scry alone.
+      -- Unreachable: the same lint admits DrawInstead on a scry alone, and
+      -- DrawFirst on an instruction a WouldPerform carries.
       InstructionRewrite.DrawInstead -> pure (Just event)
+      InstructionRewrite.DrawFirst -> pure (Just event)
       InstructionRewrite.RollD20Instead -> do
         exercised <- substitutes candidate
         pure . Just $
@@ -5155,14 +5146,12 @@ apply settle batch applied batchPrevented candidate event =
             else ProposedEvent.WouldThrow throw {Throw.kind = ThrowKind.Coins, Throw.instead = True}
     -- Unreachable: `applies` admits DieRollR only against WouldThrow.
     (ReplacementEffect.DieRollR {}, _) -> pure (Just event)
-    -- The Unstable FAQ with CR 614.1a: Steamflogger Boss's "it assembles two
-    -- Contraptions instead" leaves the event STANDING at a doubled count, the
-    -- InstructionR arm above for its reason.
-    (ReplacementEffect.AssembleR _, ProposedEvent.WouldPerform PlayerInstruction.Assemble performer pid n) -> do
-      Replacement.consume (ReplacementCandidate.identity candidate)
-      pure (Just (ProposedEvent.WouldPerform PlayerInstruction.Assemble performer pid (n * 2)))
-    -- Unreachable: `applies` admits AssembleR only against an assembly.
-    (ReplacementEffect.AssembleR {}, _) -> pure (Just event)
+    -- The InstructionR arm's rewrites, for a row judging the permanent:
+    -- Steamflogger Boss's "it assembles two Contraptions instead" leaves the
+    -- event STANDING at a doubled count, Leader, Super-Genius's draw comes first.
+    (ReplacementEffect.PerformerR row, ProposedEvent.WouldPerform {}) -> performRewritten settle candidate event (PerformerR.rewrite row)
+    -- Unreachable: `applies` admits PerformerR only against a WouldPerform.
+    (ReplacementEffect.PerformerR {}, _) -> pure (Just event)
     -- Unreachable: `applies` admits ManaR against no event (Replacement.manaRewrites).
     (ReplacementEffect.ManaR {}, _) -> pure (Just event)
     -- CR 104.3 / 614.1a: Lich's Mirror's "if you would lose the game, instead
@@ -6879,6 +6868,36 @@ resultOfFace :: CoinFace.CoinFace -> Natural
 resultOfFace face = case face of
   CoinFace.Tails -> 1
   CoinFace.Heads -> 20
+
+-- CR 614.1a: an InstructionR's or a PerformerR's rewrite of a WouldPerform,
+-- spending the row (CR 614.5); `apply`'s two arms say what each rewrite does.
+performRewritten :: Game () -> ReplacementCandidate -> ProposedEvent -> InstructionRewrite.InstructionRewrite -> Game (Maybe ProposedEvent)
+performRewritten settle candidate event rewrite = case event of
+  ProposedEvent.WouldPerform instruction performer pid n -> case rewrite of
+    InstructionRewrite.Scaled scaling -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale scaling n)))
+    InstructionRewrite.DrawInstead -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      drawInstruction pid n
+      pure Nothing
+    -- Leader, Super-Genius's "instead you draw a card, then that creature
+    -- connives": the row's controller (CR 109.5) draws through CR 121.2a's
+    -- instruction, then the instruction stands as it was. With no controller
+    -- the row's "you" names nobody, so nobody draws.
+    InstructionRewrite.DrawFirst -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      Foldable.for_ (ReplacementCandidate.controller candidate) (`drawInstruction` 1)
+      pure (Just event)
+    -- Unreachable: Parun.EffectLintSpec's "no card pairs an instruction with
+    -- a rewrite the engine cannot carry out" confines RollD20Instead to a
+    -- flip, which is a WouldThrow.
+    InstructionRewrite.RollD20Instead -> pure (Just event)
+  _ -> pure (Just event)
+  where
+    drawInstruction drawer count = do
+      outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing drawer count)
+      Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries settle Set.empty))
 
 -- Pokey, the Scallywagg's "you may" (CR 614.1a), asked of the row's controller,
 -- whose flip or roll its "you" watches; spent under CR 614.3 when taken. With no
