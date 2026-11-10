@@ -421,6 +421,7 @@ records reading event = case reading of
   HistoryRead.Casts -> Maybe.isJust (Game.castOf event)
   HistoryRead.CoinFlips -> coinFlipped event
   HistoryRead.Convokes -> convoked event
+  HistoryRead.CounterPlacements -> countersPut event
   HistoryRead.Crews -> crewed event
   HistoryRead.Damage -> dealtDamage event
   HistoryRead.Deaths -> Maybe.isJust (Game.diedChange event)
@@ -470,6 +471,11 @@ dealtDamage event = case event of
 actedAmong :: Set.Set PlayerAction.PlayerAction -> GameEvent -> Bool
 actedAmong acts event = case event of
   GameEvent.PlayerActed acted -> Set.member (PlayerActed.action acted) acts
+  _ -> False
+
+countersPut :: GameEvent -> Bool
+countersPut event = case event of
+  GameEvent.CountersPut {} -> True
   _ -> False
 
 milled :: GameEvent -> Bool

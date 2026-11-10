@@ -453,6 +453,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.DealtDamageThisTurn
       " {\"type\":\"DealtDamageThisTurn\"} "
+  Spec.it s "CountersPutThisTurn" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.CountersPutThisTurn PlayerRelation.You CounterKind.PlusOnePlusOne)
+      " {\"type\":\"CountersPutThisTurn\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"putter\":\"You\"}} "
   Spec.it s "DealtDamageTo" $
     Common.assertCodec
       s

@@ -174,6 +174,7 @@ objects pcs gs a b =
           Filter.Engine.crewedThisTurn view,
           Filter.Engine.convokedThisTurn view,
           Filter.Engine.saddledThisTurn view,
+          Filter.Engine.countersPutThisTurn view,
           Filter.Engine.dealtDamageTo view,
           Filter.Engine.dealtDamageEarlier view
         )

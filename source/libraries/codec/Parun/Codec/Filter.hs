@@ -44,6 +44,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.ControlMargin as ControlMargin
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
@@ -141,6 +142,7 @@ codec keywordCodec =
       Arm.nullary "DealtDamageThisTurn" Filter.DealtDamageThisTurn,
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),
       Arm.payload "EnteredThisTurn" EnteredZone.codec Filter.EnteredThisTurn (\x -> case x of Filter.EnteredThisTurn y -> Just y; _ -> Nothing),
+      Arm.payload "CountersPutThisTurn" (countersPutThisTurn keywordCodec) (uncurry Filter.CountersPutThisTurn) (\x -> case x of Filter.CountersPutThisTurn r k -> Just (r, k); _ -> Nothing),
       Arm.nullary "ControlledSinceTurnBegan" Filter.ControlledSinceTurnBegan,
       -- Recursive for Controls' reason: the payload describes the
       -- HOST, and a card author writes it exactly as they write any other filter.
@@ -214,6 +216,14 @@ ownsBound keywordCodec =
       <$> Fields.required "atLeast" Common.natural (\(n, _, _) -> n)
       <*> Fields.required "slot" SlotName.codec (\(_, y, _) -> y)
       <*> Fields.required "filter" (codec keywordCodec) (\(_, _, f) -> f)
+
+-- | Who put the counters, related to the perspective, and their kind.
+countersPutThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (PlayerRelation.PlayerRelation, CounterKind.CounterKind keyword)
+countersPutThisTurn keywordCodec =
+  Fields.object $
+    (,)
+      <$> Fields.required "putter" PlayerRelation.codec fst
+      <*> Fields.required "kind" (CounterKind.codec keywordCodec) snd
 
 -- | Which of the candidate's players, and how it relates to the perspective.
 heldBy :: Codec.Codec (Holder.Holder, PlayerRelation.PlayerRelation)
@@ -324,6 +334,7 @@ tagOf x = case x of
   Filter.DealtDamageThisTurn {} -> "DealtDamageThisTurn"
   Filter.DealtDamageTo {} -> "DealtDamageTo"
   Filter.EnteredThisTurn {} -> "EnteredThisTurn"
+  Filter.CountersPutThisTurn {} -> "CountersPutThisTurn"
   Filter.ControlledSinceTurnBegan {} -> "ControlledSinceTurnBegan"
   Filter.AttachedTo {} -> "AttachedTo"
   Filter.BeforeMove {} -> "BeforeMove"

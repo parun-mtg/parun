@@ -121,6 +121,7 @@ blackCreature =
       Filter.crewedThisTurn = Set.empty,
       Filter.convokedThisTurn = Set.empty,
       Filter.saddledThisTurn = Set.empty,
+      Filter.countersPutThisTurn = Set.empty,
       Filter.dealtDamageTo = Set.empty,
       Filter.dealtDamageEarlier = Set.empty,
       Filter.controlledSinceTurnBegan = False,
@@ -210,6 +211,7 @@ devoidBigCreature =
       Filter.crewedThisTurn = Set.empty,
       Filter.convokedThisTurn = Set.empty,
       Filter.saddledThisTurn = Set.empty,
+      Filter.countersPutThisTurn = Set.empty,
       Filter.dealtDamageTo = Set.empty,
       Filter.dealtDamageEarlier = Set.empty,
       Filter.controlledSinceTurnBegan = False,
@@ -1523,6 +1525,21 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 506.3: only a creature is ever declared as an attacker.
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.DeclaredAttackerThisCombat)) "player"
+
+  Spec.describe s "CountersPutThisTurn" $ do
+    let putBy pid kind = blackCreature {Filter.countersPutThisTurn = Set.singleton (PlayerId.MkPlayerId pid, kind)}
+        yours = Filter.Type.CountersPutThisTurn PlayerRelation.You CounterKind.PlusOnePlusOne
+    Spec.it s "CR 122.6a matches a candidate the perspective put the kind on" $ do
+      Spec.assertBool s (Filter.matches self (putBy 0 CounterKind.PlusOnePlusOne) yours) "you put one"
+    Spec.it s "CR 122.6a reads the putter against the perspective" $ do
+      Spec.assertBool s (not (Filter.matches self (putBy 1 CounterKind.PlusOnePlusOne) yours)) "an opponent put it"
+      Spec.assertBool s (Filter.matches self (putBy 1 CounterKind.PlusOnePlusOne) (Filter.Type.CountersPutThisTurn PlayerRelation.Opponent CounterKind.PlusOnePlusOne)) "an opponent's, asked so"
+    Spec.it s "CR 122.1 another kind is not the kind asked" $ do
+      Spec.assertBool s (not (Filter.matches self (putBy 0 CounterKind.MinusOneMinusOne) yours)) "-1/-1"
+    Spec.it s "counters merely on it were not put this turn" $ do
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.counters = Map.singleton CounterKind.PlusOnePlusOne 1}) yours)) "carried in"
+    Spec.it s "is vacuously false with no perspective" $ do
+      Spec.assertBool s (not (Filter.matches noPerspective (putBy 0 CounterKind.PlusOnePlusOne) (Filter.Type.CountersPutThisTurn PlayerRelation.AnyPlayer CounterKind.PlusOnePlusOne))) "no perspective"
 
   Spec.describe s "IsAttackingPlayer" $ do
     -- A creature attacking the named PLAYER: Parun.Engine.Projection fills
