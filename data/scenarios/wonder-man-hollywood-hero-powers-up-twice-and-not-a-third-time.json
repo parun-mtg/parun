@@ -1,0 +1,240 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wonder Man, Hollywood Hero",
+            "label": "wm",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m7",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m8",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m9",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m10",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m11",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m12",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m13",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m14",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m15",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m16",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m17",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m18",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m19",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m20",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m21",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.193a / 602.5b Wonder Man, Hollywood Hero: his own power-up activates twice and not a third time",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$wm",
+        "power": 8,
+        "toughness": 8
+      }
+    }
+  ],
+  "note": "Twenty-one Mountains pay three power-ups, so the seven left untapped show the third refused by its count rather than its cost.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5",
+            "$m6",
+            "$m7",
+            null
+          ],
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$m8",
+            "$m9",
+            "$m10",
+            "$m11",
+            "$m12",
+            "$m13",
+            "$m14",
+            null
+          ],
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $m15",
+            "ActivateManaAbility $m16",
+            "ActivateManaAbility $m17",
+            "ActivateManaAbility $m18",
+            "ActivateManaAbility $m19",
+            "ActivateManaAbility $m20",
+            "ActivateManaAbility $m21"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

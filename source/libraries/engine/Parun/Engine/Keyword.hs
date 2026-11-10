@@ -4704,8 +4704,8 @@ printedRiders keyword = case keyword of
     [ ActivationRestriction.DuringPhase (DuringPhase.MkDuringPhase (PhaseSelector.Step (Phase.Beginning BeginningStep.Upkeep)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))),
       ActivationRestriction.TimesEachTurn 1
     ]
-  Keyword.Exhaust -> [ActivationRestriction.OnlyOnce]
-  Keyword.PowerUp -> [ActivationRestriction.OnlyOnce]
+  Keyword.Exhaust -> [ActivationRestriction.TimesEver 1]
+  Keyword.PowerUp -> [ActivationRestriction.TimesEver 1]
   Keyword.ClassLevel level ->
     [ ActivationRestriction.OnlyIf
         ( Condition.Compares
@@ -4760,7 +4760,7 @@ countsActivations :: ActivatedAbility Card (GrantedAbility.GrantedAbility Card) 
 countsActivations = any counted . restrictionsOf
   where
     counted restriction = case restriction of
-      ActivationRestriction.OnlyOnce -> True
+      ActivationRestriction.TimesEver _ -> True
       ActivationRestriction.TimesEachTurn _ -> True
       ActivationRestriction.SorcerySpeed -> False
       ActivationRestriction.DuringPhase _ -> False

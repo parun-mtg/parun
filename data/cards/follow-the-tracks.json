@@ -90,7 +90,8 @@
                                     },
                                     "restrictions": [
                                       {
-                                        "type": "OnlyOnce"
+                                        "type": "TimesEver",
+                                        "value": 1
                                       }
                                     ]
                                   }
@@ -185,7 +186,8 @@
                                     },
                                     "restrictions": [
                                       {
-                                        "type": "OnlyOnce"
+                                        "type": "TimesEver",
+                                        "value": 1
                                       }
                                     ]
                                   }
@@ -280,7 +282,8 @@
                                     },
                                     "restrictions": [
                                       {
-                                        "type": "OnlyOnce"
+                                        "type": "TimesEver",
+                                        "value": 1
                                       }
                                     ]
                                   }
@@ -375,7 +378,8 @@
                                     },
                                     "restrictions": [
                                       {
-                                        "type": "OnlyOnce"
+                                        "type": "TimesEver",
+                                        "value": 1
                                       }
                                     ]
                                   }
@@ -470,7 +474,8 @@
                                     },
                                     "restrictions": [
                                       {
-                                        "type": "OnlyOnce"
+                                        "type": "TimesEver",
+                                        "value": 1
                                       }
                                     ]
                                   }

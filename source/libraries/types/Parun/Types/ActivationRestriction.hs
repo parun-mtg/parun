@@ -135,9 +135,11 @@ data ActivationRestriction
     -- 613.1f's named removal reads the abilities an object has, so the two are
     -- not interchangeable.
     OnlyIf Condition.Condition
-  | -- | CR 602.5b's "restriction on its use" counted rather than timed:
-    -- "Activate only once", which CR 702.177a's exhaust rewrites itself into
-    -- (Greenbelt Guardian).
+  | -- | CR 602.5b's "restriction on its use" counted rather than timed: at most
+    -- this many activations ever. "Activate only once" is 1, which CR 702.177a's
+    -- exhaust and CR 702.193a's power-up rewrite themselves into (Greenbelt
+    -- Guardian); a Parun.Types.RiderClause.AdditionalTime grant raises it
+    -- (Wonder Man, Hollywood Hero).
     --
     -- ONCE PER GAME, not per turn: rule 702.177a's sentence states no period, so
     -- nothing resets it. CR 602.5b keys it to the OBJECT -- "the restriction
@@ -156,14 +158,14 @@ data ActivationRestriction
     -- Loot's first is a MANA ability, which CR 605.3b keeps off the stack, so CR
     -- 605.3a's two windows read this arm through Parun.Types.ManaOption rather
     -- than through Parun.Engine.Activate.
-    OnlyOnce
+    TimesEver Natural
   | -- | CR 602.5b's own example of a "restriction on its use", counted: at most
     -- this many activations each turn. "Activate only once each turn" (Locust
     -- Swarm) is 1, and CR 702.142a's boast and CR 702.57b's forecast rewrite
     -- themselves into it; Vampire Bats' "Activate no more than twice each turn"
     -- is 2.
     --
-    -- PER TURN, so OnlyOnce above is not it: the two sentences differ only
+    -- PER TURN, so TimesEver above is not it: the two sentences differ only
     -- in the period, and this one resets at every turn handoff. Its memory is
     -- Parun.Types.GameState.activatedThisTurn rather than an object field for
     -- exactly that reason -- Parun.Engine.Engine.beginTurnOf clears it beside the

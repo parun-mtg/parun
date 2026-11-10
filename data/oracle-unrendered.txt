@@ -3862,6 +3862,7 @@ wolf-pack
 wolfir-silverheart
 wolfriders-saddle
 wolverine-fierce-fighter
+wonder-man-hollywood-hero
 wood-elemental
 woodland-bellower
 woodland-champion

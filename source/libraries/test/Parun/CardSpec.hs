@@ -957,7 +957,7 @@ restrictionConditions restriction = case restriction of
   ActivationRestriction.DuringCombatBefore _ -> []
   ActivationRestriction.BeforeStep _ -> []
   ActivationRestriction.OnlyIf condition -> [condition]
-  ActivationRestriction.OnlyOnce -> []
+  ActivationRestriction.TimesEver _ -> []
   ActivationRestriction.TimesEachTurn _ -> []
   ActivationRestriction.DuringThrow -> []
   ActivationRestriction.InstantSpeed -> []
