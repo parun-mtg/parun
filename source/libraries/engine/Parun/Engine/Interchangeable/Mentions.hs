@@ -43,7 +43,6 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
-import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -51,10 +50,6 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
-import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
-import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
-import qualified Parun.Types.AgainstSlot as AgainstSlot
-import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AloneUnless as AloneUnless
@@ -64,7 +59,6 @@ import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
-import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
@@ -110,7 +104,6 @@ import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardAbilities as CardAbilities
-import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
@@ -133,11 +126,9 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
-import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Compares as Compares
-import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
@@ -162,7 +153,6 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
@@ -197,7 +187,6 @@ import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
-import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DieRollR as DieRollR
@@ -207,7 +196,6 @@ import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
-import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
@@ -368,7 +356,6 @@ import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerCounters as PlayerCounters
-import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
@@ -378,7 +365,6 @@ import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
-import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
@@ -394,7 +380,6 @@ import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
-import qualified Parun.Types.Quotient as Quotient
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Recipient as Recipient
@@ -456,7 +441,6 @@ import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
-import qualified Parun.Types.Times as Times
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
@@ -482,7 +466,6 @@ import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
 import qualified Parun.Types.VotePlayers as VotePlayers
-import qualified Parun.Types.VotesReceived as VotesReceived
 import qualified Parun.Types.Ward as Ward
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -702,23 +685,6 @@ affectedUnlessNames :: (Monoid r) => Asking r -> AffectedUnless.AffectedUnless -
 affectedUnlessNames asking x = case x of
   AffectedUnless.MkAffectedUnless affected unless _name amount -> affectedNames asking affected <> foldMap (conditionNames asking) unless <> foldMap (quantityNames asking) amount
 
-againstLastCardExiledWithNames :: (Monoid r) => Asking r -> (quantity -> r) -> AgainstLastCardExiledWith.AgainstLastCardExiledWith quantity -> r
-againstLastCardExiledWithNames asking onQuantity x = case x of
-  AgainstLastCardExiledWith.MkAgainstLastCardExiledWith filter_ quantity -> filterNames asking filter_ <> onQuantity quantity
-
-againstSlotNames :: (Monoid r) => Asking r -> (quantity -> r) -> AgainstSlot.AgainstSlot quantity -> r
-againstSlotNames asking onQuantity x = case x of
-  AgainstSlot.MkAgainstSlot slot quantity -> slotNames asking slot <> onQuantity quantity
-
-aggregationNames :: (Monoid r) => Asking r -> (quantity -> r) -> Aggregation.Aggregation quantity -> r
-aggregationNames _asking onQuantity x = case x of
-  Aggregation.Members -> mempty
-  Aggregation.Distinct _ -> mempty
-  Aggregation.MostSharing _ -> mempty
-  Aggregation.DistinctNames -> mempty
-  Aggregation.Greatest quantity -> onQuantity quantity
-  Aggregation.Total quantity -> onQuantity quantity
-
 aloneUnlessNames :: (Monoid r) => Asking r -> AloneUnless.AloneUnless -> r
 aloneUnlessNames asking x = case x of
   AloneUnless.MkAloneUnless affected alongside _others unless _name -> affectedNames asking affected <> foldMap (filterNames asking) alongside <> foldMap (conditionNames asking) unless
@@ -752,14 +718,6 @@ anyNumberDiscardNames asking x = case x of
 anyNumberMatchingNames :: (Monoid r) => Asking r -> AnyNumberMatching.AnyNumberMatching -> r
 anyNumberMatchingNames asking x = case x of
   AnyNumberMatching.MkAnyNumberMatching filter_ atMost -> filterNames asking filter_ <> foldMap (quantityNames asking) atMost
-
-arithmeticNames :: (Monoid r) => Asking r -> (quantity -> r) -> Arithmetic.Arithmetic quantity -> r
-arithmeticNames asking onQuantity x = case x of
-  Arithmetic.Plus plus -> plusNames asking onQuantity plus
-  Arithmetic.Quotient quotient -> quotientNames asking onQuantity quotient
-  Arithmetic.Times times -> timesNames asking onQuantity times
-  Arithmetic.Negate quantity -> onQuantity quantity
-  Arithmetic.NonNegative quantity -> onQuantity quantity
 
 armDelayedTriggerNames :: (Monoid r) => Asking r -> (ability -> r) -> ArmDelayedTrigger.ArmDelayedTrigger ability -> r
 armDelayedTriggerNames asking onAbility x = case x of
@@ -877,10 +835,6 @@ cantBlockCreaturesNames asking x = case x of
 cardNames :: (Monoid r) => Asking r -> Card.Card -> r
 cardNames asking x = case x of
   Card.MkCard _layout faces -> foldMap (faceNames asking (cardNames asking)) faces
-
-castFromNames :: (Monoid r) => Asking r -> CastFrom.CastFrom -> r
-castFromNames asking x = case x of
-  CastFrom.MkCastFrom caster from -> playerRefNames asking caster <> inZoneNames asking from
 
 spendManaAsThoughNames :: (Monoid r) => Asking r -> SpendManaAsThough.SpendManaAsThough -> r
 spendManaAsThoughNames asking x = case x of
@@ -1007,10 +961,6 @@ combatRestrictionNames asking x = case x of
 comparesNames :: (Monoid r) => Asking r -> Compares.Compares -> r
 comparesNames asking x = case x of
   Compares.MkCompares measured _comparison threshold -> quantityNames asking measured <> quantityNames asking threshold
-
-completedDungeonNames :: (Monoid r) => Asking r -> CompletedDungeon.CompletedDungeon -> r
-completedDungeonNames asking x = case x of
-  CompletedDungeon.MkCompletedDungeon player _dungeon -> playerRefNames asking player
 
 conditionNames :: (Monoid r) => Asking r -> Condition.Condition -> r
 conditionNames asking x = case x of
@@ -1153,10 +1103,6 @@ costAmountNames asking x = case x of
 costReductionNames :: (Monoid r) => Asking r -> CostReduction.CostReduction -> r
 costReductionNames asking x = case x of
   CostReduction.MkCostReduction _amount perEach condition whichTargets _direction -> quantityNames asking perEach <> foldMap (conditionNames asking) condition <> foldMap (filterNames asking) whichTargets
-
-countNames :: (Monoid r) => Asking r -> (quantity -> r) -> Count.Count quantity -> r
-countNames asking onQuantity x = case x of
-  Count.MkCount scope filter_ aggregation -> scopeNames asking scope <> filterNames asking filter_ <> aggregationNames asking onQuantity aggregation
 
 countedDiscardNames :: (Monoid r) => Asking r -> CountedDiscard.CountedDiscard -> r
 countedDiscardNames asking x = case x of
@@ -1314,14 +1260,6 @@ destroyNames asking x = case x of
 destructionRNames :: (Monoid r) => Asking r -> DestructionR.DestructionR -> r
 destructionRNames asking x = case x of
   DestructionR.MkDestructionR matching _rewrite -> foldMap (filterNames asking) matching
-
-devotionNames :: (Monoid r) => Asking r -> Devotion.Devotion -> r
-devotionNames asking x = case x of
-  Devotion.MkDevotion player _colors -> playerRefNames asking player
-
-draftNoteTallyNames :: (Monoid r) => Asking r -> DraftNoteTally.DraftNoteTally -> r
-draftNoteTallyNames asking x = case x of
-  DraftNoteTally.MkDraftNoteTally player _card _fold -> playerRefNames asking player
 
 devourNames :: (Monoid r) => Asking r -> Devour.Devour keyword -> r
 devourNames asking x = case x of
@@ -1883,10 +1821,6 @@ grantedAbilityNames asking onCard x =
         GrantedAbility.SelfAlternativeCost alternativeCost -> alternativeCostNames own alternativeCost
         GrantedAbility.SelfSpendManaAsThough clause -> spendManaAsThoughNames own clause
 
-quotientNames :: (Monoid r) => Asking r -> (quantity -> r) -> Quotient.Quotient quantity -> r
-quotientNames _asking onQuantity x = case x of
-  Quotient.MkQuotient _rounding quantity divisor -> onQuantity quantity <> onQuantity divisor
-
 handActionNames :: (Monoid r) => Asking r -> (card -> r) -> HandAction.HandAction card -> r
 handActionNames asking onCard x = case x of
   HandAction.MkHandAction condition effects -> foldMap (conditionNames asking) condition <> foldMap (effectNames asking onCard (grantedAbilityNames asking onCard)) effects
@@ -2443,10 +2377,6 @@ playerCountersNames :: (Monoid r) => Asking r -> PlayerCounters.PlayerCounters -
 playerCountersNames asking x = case x of
   PlayerCounters.MkPlayerCounters player _kind quantity -> playerRefNames asking player <> quantityNames asking quantity
 
-playerDesignationTallyNames :: (Monoid r) => Asking r -> PlayerDesignationTally.PlayerDesignationTally -> r
-playerDesignationTallyNames asking x = case x of
-  PlayerDesignationTally.MkPlayerDesignationTally player _designation -> playerRefNames asking player
-
 activationCriteriaNames :: (Monoid r) => Asking r -> ActivationCriteria.ActivationCriteria -> r
 activationCriteriaNames asking x = case x of
   ActivationCriteria.MkActivationCriteria grantedBy _whichKind _whichLoyalty _whichAbility -> foldMap (keywordDesignatorNames asking) grantedBy
@@ -2596,10 +2526,6 @@ plotFromZoneNames :: (Monoid r) => Asking r -> PlotFromZone.PlotFromZone -> r
 plotFromZoneNames asking x = case x of
   PlotFromZone.MkPlotFromZone from matching -> inZoneNames asking from <> filterNames asking matching
 
-plusNames :: (Monoid r) => Asking r -> (quantity -> r) -> Plus.Plus quantity -> r
-plusNames _asking onQuantity x = case x of
-  Plus.MkPlus left right -> onQuantity left <> onQuantity right
-
 poolNames :: (Monoid r) => Asking r -> Pool.Pool -> r
 poolNames asking x = case x of
   Pool.Creatures -> mempty
@@ -2665,97 +2591,50 @@ putCountersFromNames :: (Monoid r) => Asking r -> PutCountersFrom.PutCountersFro
 putCountersFromNames asking x = case x of
   PutCountersFrom.MkPutCountersFrom from kind ref -> slotNames asking from <> foldMap (counterKindNames asking (keywordNames asking)) kind <> objectRefNames asking ref
 
+-- Every slot, PlayerRef, Scope, Filter, keyword and nested quantity through
+-- Parun.Engine.Children; the arms below are the history reads (CR 733.3) and
+-- prevention reads (CR 615.13) a quantity makes of its own, beside them.
 quantityNames :: (Monoid r) => Asking r -> Quantity.Quantity -> r
-quantityNames asking x = case x of
-  Quantity.Literal _integer -> mempty
-  Quantity.Measure _ -> mempty
-  Quantity.Intensity -> mempty
-  Quantity.InSlot slotName -> slotNames asking slotName
-  Quantity.Share slotName -> slotNames asking slotName
-  Quantity.WasBound slotName -> slotNames asking slotName
-  Quantity.BoundCount slotName -> slotNames asking slotName
-  Quantity.UniqueVowelsOnSticker slotName -> slotNames asking slotName
-  Quantity.VotesReceived votesReceived -> slotNames asking (VotesReceived.slot votesReceived) <> playerRefNames asking (VotesReceived.player votesReceived)
-  Quantity.Star -> mempty
-  Quantity.Arithmetic arithmetic -> arithmeticNames asking (quantityNames asking) arithmetic
-  Quantity.AtMost atMost -> foldMap (quantityNames asking) atMost
-  Quantity.Count count -> countNames asking (quantityNames asking) count
-  Quantity.ManaCount manaCount -> manaCountNames asking manaCount
-  Quantity.LifeTotal playerRef -> playerRefNames asking playerRef
-  Quantity.StartingLifeTotal playerRef -> playerRefNames asking playerRef
-  Quantity.StartingDeckSize playerRef -> playerRefNames asking playerRef
-  Quantity.Speed playerRef -> playerRefNames asking playerRef
-  Quantity.IsMonarch playerRef -> playerRefNames asking playerRef
-  Quantity.HasPlayerDesignation playerDesignationTally -> playerDesignationTallyNames asking playerDesignationTally
-  Quantity.IsStartingPlayer playerRef -> playerRefNames asking playerRef
-  Quantity.IsActivePlayer playerRef -> playerRefNames asking playerRef
-  Quantity.Devotion devotion -> devotionNames asking devotion
-  Quantity.PartySize playerRef -> playerRefNames asking playerRef
-  Quantity.PlayerCounters playerCounterTally -> playerCounterTallyNames asking playerCounterTally
-  Quantity.ObjectCounters counterKind -> counterKindNames asking (keywordNames asking) counterKind
-  Quantity.ObjectCountersOfAnyKind -> mempty
-  Quantity.LettersOnNameStickers _ -> mempty
-  Quantity.NameStickers -> mempty
-  Quantity.PowerOfStickers -> mempty
-  Quantity.ToughnessOfStickers -> mempty
-  Quantity.HasDesignation _designation -> mempty
-  Quantity.DesignationValue _designation -> mempty
-  Quantity.StoredResultsOfSameValue -> mempty
-  Quantity.ClassLevel -> mempty
-  Quantity.WasForetold -> mempty
-  Quantity.TributeWasPaid -> mempty
-  Quantity.TimesPaid designator -> keywordDesignatorNames asking designator
-  Quantity.CastUsing designator -> keywordDesignatorNames asking designator
-  Quantity.TagWasSpent _productionTag -> mempty
-  Quantity.TagWasSpentOfOwnColor _productionTag -> mempty
-  Quantity.ChosenColorsItIs -> mempty
-  Quantity.ChosenNumber -> mempty
-  Quantity.ManaSpent _ -> mempty
-  Quantity.WasToken -> mempty
-  Quantity.WasAttacking -> mempty
-  Quantity.WasBlocking -> mempty
-  Quantity.WasBlockedThisTurn -> history asking HistoryRead.Blocks
-  Quantity.ControlGained _ playerRef -> playerRefNames asking playerRef
-  Quantity.PlayedBy playerRef -> playerRefNames asking playerRef
-  Quantity.OpponentsAttacked playerRef -> playerRefNames asking playerRef
-  Quantity.AttackersDeclaredThisTurn playerRef -> history asking HistoryRead.Attacks <> playerRefNames asking playerRef
-  Quantity.AttackersDeclaredThisCombat -> mempty
-  Quantity.AttackedInLastTurnOf playerRef -> playerRefNames asking playerRef
-  Quantity.AttackersInTheirLastTurn playerRef -> history asking HistoryRead.Attacks <> playerRefNames asking playerRef
-  -- Draws and land plays read player-keyed tallies naming no object
-  -- (GameState.drawsThisTurn, GameState.landsPlayed), so no history.
-  Quantity.TalliedThisTurn tally playerRef ->
-    playerRefNames asking playerRef <> case tally of
-      TurnTally.CardsDiscarded -> history asking HistoryRead.Discards
-      TurnTally.CardsDrawn -> mempty
-      TurnTally.ActionsDone acts -> history asking (HistoryRead.Acts acts)
-      TurnTally.LandsPlayed -> mempty
-  Quantity.LifeChanged tally -> turnHistory asking (LifeTally.turn tally) (case LifeTally.direction tally of LifeDirection.Gained -> HistoryRead.LifeGains; LifeDirection.Lost -> HistoryRead.LifeLosses) <> playerRefNames asking (LifeTally.player tally)
-  Quantity.PlayersDealtDamage tally -> turnHistory asking (DamageTally.turn tally) HistoryRead.Damage <> playerRefNames asking (DealtDamage.recipient (DamageTally.dealt tally))
-  Quantity.DamageDealtToPlayersThisTurn tally -> history asking HistoryRead.Damage <> playerRefNames asking (DealtDamage.recipient tally)
-  Quantity.DamageDealtThisTurn _ -> history asking HistoryRead.Damage
-  Quantity.SpellsCast tally -> turnHistory asking (SpellTally.turn tally) HistoryRead.Casts <> playerRefNames asking (SpellTally.player tally)
-  Quantity.TimesThisTurn act -> history asking $ case act of
-    AbilityAct.Activated -> HistoryRead.Activations
-    AbilityAct.Resolved -> HistoryRead.Resolutions
-  Quantity.ActivationsThisTurn tally -> history asking HistoryRead.Activations <> playerRefNames asking (ActivationsThisTurn.activator tally) <> filterNames asking (ActivationsThisTurn.source tally) <> activationCriteriaNames asking (ActivationsThisTurn.criteria tally)
-  Quantity.PermanentsDiedThisTurn -> history asking HistoryRead.Deaths
-  Quantity.DamagePreventedThisWay -> prevention asking
-  Quantity.SpellsCastUsingThisTurn _keywordFamily -> history asking HistoryRead.Casts
-  Quantity.SubgamesThisMatch -> mempty
-  Quantity.DungeonsCompleted playerRef -> playerRefNames asking playerRef
-  Quantity.CommanderCasts playerRef -> playerRefNames asking playerRef
-  Quantity.CommanderColors (CommanderColors.MkCommanderColors player _colors) -> playerRefNames asking player
-  Quantity.CompletedDungeon completedDungeon -> completedDungeonNames asking completedDungeon
-  Quantity.DraftNotes tally -> draftNoteTallyNames asking tally
-  Quantity.EnteredThisTurn -> history asking HistoryRead.Entries
-  Quantity.EnteredFrom inZone -> history asking HistoryRead.Entries <> inZoneNames asking inZone
-  Quantity.WasCastFrom castFrom -> history asking HistoryRead.Entries <> history asking HistoryRead.Casts <> castFromNames asking castFrom
-  Quantity.BlockersBeyond _ -> mempty
-  Quantity.AgainstSlot againstSlot -> againstSlotNames asking (quantityNames asking) againstSlot
-  Quantity.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile _pile quantity) -> quantityNames asking quantity
-  Quantity.AgainstLastCardExiledWith againstLastCardExiledWith -> againstLastCardExiledWithNames asking (quantityNames asking) againstLastCardExiledWith
-  Quantity.StationMeasure -> mempty
+quantityNames asking x =
+  let own = case x of
+        Quantity.WasBlockedThisTurn -> history asking HistoryRead.Blocks
+        Quantity.AttackersDeclaredThisTurn _ -> history asking HistoryRead.Attacks
+        Quantity.AttackersInTheirLastTurn _ -> history asking HistoryRead.Attacks
+        -- Draws and land plays read player-keyed tallies naming no object
+        -- (GameState.drawsThisTurn, GameState.landsPlayed), so no history.
+        Quantity.TalliedThisTurn tally _ -> case tally of
+          TurnTally.CardsDiscarded -> history asking HistoryRead.Discards
+          TurnTally.CardsDrawn -> mempty
+          TurnTally.ActionsDone acts -> history asking (HistoryRead.Acts acts)
+          TurnTally.LandsPlayed -> mempty
+        Quantity.LifeChanged tally -> turnHistory asking (LifeTally.turn tally) (case LifeTally.direction tally of LifeDirection.Gained -> HistoryRead.LifeGains; LifeDirection.Lost -> HistoryRead.LifeLosses)
+        Quantity.PlayersDealtDamage tally -> turnHistory asking (DamageTally.turn tally) HistoryRead.Damage
+        Quantity.DamageDealtToPlayersThisTurn _ -> history asking HistoryRead.Damage
+        Quantity.DamageDealtThisTurn _ -> history asking HistoryRead.Damage
+        Quantity.SpellsCast tally -> turnHistory asking (SpellTally.turn tally) HistoryRead.Casts
+        Quantity.TimesThisTurn act -> history asking $ case act of
+          AbilityAct.Activated -> HistoryRead.Activations
+          AbilityAct.Resolved -> HistoryRead.Resolutions
+        Quantity.ActivationsThisTurn _ -> history asking HistoryRead.Activations
+        Quantity.PermanentsDiedThisTurn -> history asking HistoryRead.Deaths
+        Quantity.DamagePreventedThisWay -> prevention asking
+        Quantity.SpellsCastUsingThisTurn _ -> history asking HistoryRead.Casts
+        Quantity.EnteredThisTurn -> history asking HistoryRead.Entries
+        Quantity.EnteredFrom _ -> history asking HistoryRead.Entries
+        Quantity.WasCastFrom _ -> history asking HistoryRead.Entries <> history asking HistoryRead.Casts
+        _ -> mempty
+   in own
+        <> Const.getConst
+          ( Children.quantityChildren
+              (Children.descendingQuantities (Const.Const . quantityNames asking))
+                { Children.nest = Const.Const . filterNames asking,
+                  Children.keyword = Const.Const . keywordNames asking,
+                  Children.slot = \_arity slot -> Const.Const (slotNames asking slot),
+                  Children.scope = Const.Const . scopeNames asking,
+                  Children.player = Const.Const . playerRefNames asking
+                }
+              x
+          )
 
 randomCardInGraveyardNames :: (Monoid r) => Asking r -> RandomCardInGraveyard.RandomCardInGraveyard -> r
 randomCardInGraveyardNames asking x = case x of
@@ -3017,10 +2896,6 @@ targetSlotNames asking x = case x of
 theseDiscardNames :: (Monoid r) => Asking r -> TheseDiscard.TheseDiscard -> r
 theseDiscardNames asking x = case x of
   TheseDiscard.MkTheseDiscard cards discarded -> objectRefNames asking cards <> foldMap (slotNames asking) discarded
-
-timesNames :: (Monoid r) => Asking r -> (quantity -> r) -> Times.Times quantity -> r
-timesNames _asking onQuantity x = case x of
-  Times.MkTimes factor quantity -> onQuantity factor <> onQuantity quantity
 
 tokenPatternNames :: (Monoid r) => Asking r -> TokenPattern.TokenPattern -> r
 tokenPatternNames asking x = case x of

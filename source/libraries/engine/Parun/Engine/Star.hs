@@ -10,105 +10,23 @@
 -- reads a board and so sits above Game.
 module Parun.Engine.Star where
 
+import qualified Data.Functor.Identity as Identity
+import qualified Parun.Engine.Children as Children
 import Parun.Types.Quantity (Quantity)
 import qualified Parun.Types.Quantity as Quantity
 
 -- CR 208.2: resolve a printed star to the quantity a characteristic-defining
--- ability supplies, recursing through a calculation so 1+* becomes 1+<the count>.
+-- ability supplies, recursing through a calculation's operands so 1+* becomes
+-- 1+<the count>. No card prints one under anything but a Plus -- Malignus' star
+-- is the whole P/T box and its CDA carries the halving.
+--
+-- No descent into a count's per-member number or a payload aimed elsewhere:
+-- each reads against ANOTHER object, where a star would be that object's box
+-- and not this one's.
 substituteStar :: Quantity -> Quantity -> Quantity
 substituteStar star quantity = case quantity of
   Quantity.Star -> star
-  -- A printed star inside a calculation is still the value the CDA supplies.
-  -- No card prints one under anything but a Plus -- Malignus' star is the whole
-  -- P/T box and its CDA carries the halving.
-  Quantity.Arithmetic arithmetic -> Quantity.Arithmetic (fmap (substituteStar star) arithmetic)
-  Quantity.AtMost atMost -> Quantity.AtMost (fmap (substituteStar star) atMost)
-  Quantity.Literal _ -> quantity
-  Quantity.Measure _ -> quantity
-  Quantity.Intensity -> quantity
-  Quantity.InSlot _ -> quantity
-  Quantity.Share _ -> quantity
-  Quantity.WasBound _ -> quantity
-  Quantity.BoundCount _ -> quantity
-  Quantity.UniqueVowelsOnSticker _ -> quantity
-  Quantity.VotesReceived _ -> quantity
-  Quantity.Count _ -> quantity
-  Quantity.ManaCount _ -> quantity
-  Quantity.LifeTotal _ -> quantity
-  Quantity.StartingLifeTotal _ -> quantity
-  Quantity.StartingDeckSize _ -> quantity
-  Quantity.Speed _ -> quantity
-  Quantity.IsMonarch _ -> quantity
-  Quantity.HasPlayerDesignation {} -> quantity
-  Quantity.IsStartingPlayer _ -> quantity
-  Quantity.IsActivePlayer _ -> quantity
-  Quantity.PlayerCounters {} -> quantity
-  Quantity.Devotion {} -> quantity
-  Quantity.PartySize _ -> quantity
-  Quantity.ObjectCounters _ -> quantity
-  Quantity.ObjectCountersOfAnyKind -> quantity
-  Quantity.LettersOnNameStickers _ -> quantity
-  Quantity.NameStickers -> quantity
-  Quantity.PowerOfStickers -> quantity
-  Quantity.ToughnessOfStickers -> quantity
-  Quantity.HasDesignation _ -> quantity
-  Quantity.DesignationValue _ -> quantity
-  Quantity.StoredResultsOfSameValue -> quantity
-  Quantity.ClassLevel -> quantity
-  Quantity.WasForetold -> quantity
-  Quantity.TributeWasPaid -> quantity
-  -- CR 601.2b: the keywords it designates are identifiers Keyword.designates
-  -- matches, never instructions this traversal descends into.
-  Quantity.TimesPaid _ -> quantity
-  Quantity.CastUsing _ -> quantity
-  Quantity.TagWasSpent {} -> quantity
-  Quantity.TagWasSpentOfOwnColor {} -> quantity
-  Quantity.ChosenColorsItIs -> quantity
-  Quantity.ChosenNumber -> quantity
-  Quantity.ManaSpent _ -> quantity
-  Quantity.WasToken -> quantity
-  Quantity.WasAttacking -> quantity
-  Quantity.WasBlocking -> quantity
-  Quantity.WasBlockedThisTurn -> quantity
-  Quantity.ControlGained _ _ -> quantity
-  Quantity.PlayedBy _ -> quantity
-  Quantity.DamageDealtThisTurn _ -> quantity
-  Quantity.OpponentsAttacked _ -> quantity
-  Quantity.AttackersDeclaredThisTurn _ -> quantity
-  Quantity.AttackersDeclaredThisCombat -> quantity
-  Quantity.AttackedInLastTurnOf _ -> quantity
-  Quantity.AttackersInTheirLastTurn _ -> quantity
-  Quantity.TalliedThisTurn _ _ -> quantity
-  Quantity.LifeChanged _ -> quantity
-  Quantity.PlayersDealtDamage _ -> quantity
-  Quantity.DamageDealtToPlayersThisTurn _ -> quantity
-  Quantity.SpellsCast _ -> quantity
-  Quantity.TimesThisTurn _ -> quantity
-  Quantity.ActivationsThisTurn _ -> quantity
-  Quantity.PermanentsDiedThisTurn -> quantity
-  Quantity.DamagePreventedThisWay -> quantity
-  Quantity.SpellsCastUsingThisTurn _ -> quantity
-  Quantity.SubgamesThisMatch -> quantity
-  Quantity.DungeonsCompleted _ -> quantity
-  Quantity.CommanderCasts _ -> quantity
-  Quantity.CommanderColors _ -> quantity
-  Quantity.CompletedDungeon {} -> quantity
-  Quantity.DraftNotes {} -> quantity
-  Quantity.EnteredThisTurn -> quantity
-  Quantity.EnteredFrom _ -> quantity
-  Quantity.WasCastFrom _ -> quantity
-  Quantity.BlockersBeyond _ -> quantity
-  -- No card prints CR 702.184a's ability at all -- Keyword.Station mints it --
-  -- so a printed P/T box can never contain this arm.
-  Quantity.StationMeasure -> quantity
-  -- No descent, for the Count arm's reason: CR 604.3 makes a CDA a static
-  -- ability with no resolution and so no slots, and Parun.CardSpec's
-  -- powerToughnessSlots keeps a slot-naming quantity out of a printed P/T.
-  Quantity.AgainstSlot {} -> quantity
-  -- No descent, the Count arm's reason again: the payload is read against the
-  -- exiled card, where a star would be THAT card's box and not this one's.
-  Quantity.AgainstExiledPile {} -> quantity
-  Quantity.AgainstLastCardExiledWith {} -> quantity
+  _ -> Identity.runIdentity (Children.quantityChildren Children.leaves {Children.term = Identity.Identity . substituteStar star} quantity)
 
 -- Does a printed box hold CR 208.2's star anywhere inside it? A calculation
 -- descends for substituteStar's reason: *+1 is a star box, and the star is what

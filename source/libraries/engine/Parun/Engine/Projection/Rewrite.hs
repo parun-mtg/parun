@@ -5,10 +5,12 @@
 module Parun.Engine.Projection.Rewrite where
 
 import qualified Data.Char as Char
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.TextWord as TextWord.Engine
@@ -19,14 +21,9 @@ import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
-import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedUnless as AffectedUnless
-import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
-import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
-import qualified Parun.Types.AgainstSlot as AgainstSlot
-import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
@@ -106,7 +103,6 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
@@ -2434,110 +2430,31 @@ rewritePlacement pairs placement = case placement of
 rewritePerTarget :: [(TextWord.TextWord, TextWord.TextWord)] -> PerTarget.PerTarget -> PerTarget.PerTarget
 rewritePerTarget pairs (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTarget (Filter.rewrite pairs matching) (fmap (rewriteQuantity pairs) each)
 
+-- CR 612.1 through a quantity: every Filter it nests (a Count's, an activation
+-- tally's, a linked card's criterion) and every nested quantity, through
+-- Parun.Engine.Children, plus the text-bearing leaves below. The keywords
+-- TimesPaid and CastUsing designate are deliberately NOT rewritten:
+-- Parun.Engine.Cast keys the record it stamps by the keyword the spell had as
+-- CR 601.2b announced it (Cost.spellKeywords), which a later text change does
+-- not reach.
 rewriteQuantity :: [(TextWord.TextWord, TextWord.TextWord)] -> Quantity.Type.Quantity -> Quantity.Type.Quantity
 rewriteQuantity pairs quantity = case quantity of
-  Quantity.Type.Count c ->
-    Quantity.Type.Count
-      c
-        { Count.Type.filter = Filter.rewrite pairs (Count.Type.filter c),
-          Count.Type.aggregation = rewriteAggregation pairs (Count.Type.aggregation c)
-        }
-  Quantity.Type.Arithmetic arithmetic -> Quantity.Type.Arithmetic (fmap (rewriteQuantity pairs) arithmetic)
-  Quantity.Type.AtMost atMost -> Quantity.Type.AtMost (fmap (rewriteQuantity pairs) atMost)
-  Quantity.Type.Literal _ -> quantity
-  Quantity.Type.Measure _ -> quantity
-  Quantity.Type.Intensity -> quantity
-  Quantity.Type.InSlot _ -> quantity
-  Quantity.Type.Share _ -> quantity
-  Quantity.Type.WasBound _ -> quantity
-  Quantity.Type.BoundCount _ -> quantity
-  Quantity.Type.UniqueVowelsOnSticker _ -> quantity
-  Quantity.Type.VotesReceived _ -> quantity
-  Quantity.Type.Star -> quantity
   -- Omnath, Locus of Mana's "each unspent green mana": rewriteManaFilter's
   -- reading.
   Quantity.Type.ManaCount count -> Quantity.Type.ManaCount count {ManaCount.filter = rewriteManaFilter pairs (ManaCount.filter count)}
-  Quantity.Type.LifeTotal _ -> quantity
-  Quantity.Type.StartingLifeTotal _ -> quantity
-  Quantity.Type.StartingDeckSize _ -> quantity
-  Quantity.Type.Speed _ -> quantity
-  Quantity.Type.IsMonarch _ -> quantity
-  Quantity.Type.HasPlayerDesignation {} -> quantity
-  Quantity.Type.IsStartingPlayer _ -> quantity
-  Quantity.Type.IsActivePlayer _ -> quantity
-  Quantity.Type.HasDesignation _ -> quantity
-  Quantity.Type.DesignationValue _ -> quantity
-  Quantity.Type.StoredResultsOfSameValue -> quantity
-  Quantity.Type.ClassLevel -> quantity
-  Quantity.Type.WasForetold -> quantity
-  Quantity.Type.TributeWasPaid -> quantity
-  -- A LEAF like WasForetold above, and the Keyword it names is deliberately NOT
-  -- rewritten: Parun.Engine.Cast keys the record it stamps by the keyword the
-  -- spell had as CR 601.2b announced it (Cost.spellKeywords), and a later text
-  -- change does not reach that record, so rewriting the identifier here would
-  -- ask about a keyword no announcement was ever recorded under.
-  Quantity.Type.TimesPaid _ -> quantity
-  Quantity.Type.CastUsing _ -> quantity
-  Quantity.Type.TagWasSpent {} -> quantity
-  Quantity.Type.TagWasSpentOfOwnColor {} -> quantity
-  Quantity.Type.ChosenColorsItIs -> quantity
-  Quantity.Type.ChosenNumber -> quantity
-  Quantity.Type.ManaSpent _ -> quantity
-  Quantity.Type.WasToken -> quantity
-  Quantity.Type.WasAttacking -> quantity
-  Quantity.Type.WasBlocking -> quantity
-  Quantity.Type.WasBlockedThisTurn -> quantity
-  Quantity.Type.ControlGained _ _ -> quantity
-  Quantity.Type.PlayedBy _ -> quantity
-  Quantity.Type.DamageDealtThisTurn _ -> quantity
-  Quantity.Type.PlayerCounters {} -> quantity
-  -- CR 700.5's "devotion to black": a colour word used as one (CR 612.2). The
-  -- PlayerRef names no word.
+  -- CR 700.5's "devotion to black": a colour word used as one (CR 612.2).
   Quantity.Type.Devotion devotion -> Quantity.Type.Devotion devotion {Devotion.colors = Set.map (TextWord.Engine.colorAfter pairs) (Devotion.colors devotion)}
-  -- A leaf: CR 700.8's four types are the rule's, not printed words for CR
-  -- 612.2 to swap.
-  Quantity.Type.PartySize _ -> quantity
-  Quantity.Type.ObjectCounters _ -> quantity
-  Quantity.Type.ObjectCountersOfAnyKind -> quantity
-  Quantity.Type.LettersOnNameStickers _ -> quantity
-  Quantity.Type.NameStickers -> quantity
-  Quantity.Type.PowerOfStickers -> quantity
-  Quantity.Type.ToughnessOfStickers -> quantity
-  Quantity.Type.OpponentsAttacked _ -> quantity
-  Quantity.Type.AttackersDeclaredThisTurn _ -> quantity
-  Quantity.Type.AttackersDeclaredThisCombat -> quantity
-  Quantity.Type.AttackedInLastTurnOf _ -> quantity
-  Quantity.Type.AttackersInTheirLastTurn _ -> quantity
-  Quantity.Type.TalliedThisTurn _ _ -> quantity
-  Quantity.Type.LifeChanged _ -> quantity
-  Quantity.Type.PlayersDealtDamage _ -> quantity
-  Quantity.Type.DamageDealtToPlayersThisTurn _ -> quantity
-  Quantity.Type.SpellsCast _ -> quantity
-  Quantity.Type.TimesThisTurn _ -> quantity
-  Quantity.Type.ActivationsThisTurn tally -> Quantity.Type.ActivationsThisTurn tally {ActivationsThisTurn.source = Filter.rewrite pairs (ActivationsThisTurn.source tally)}
-  Quantity.Type.PermanentsDiedThisTurn -> quantity
-  Quantity.Type.DamagePreventedThisWay -> quantity
-  Quantity.Type.SpellsCastUsingThisTurn _ -> quantity
-  Quantity.Type.SubgamesThisMatch -> quantity
-  Quantity.Type.DungeonsCompleted _ -> quantity
-  Quantity.Type.CommanderCasts _ -> quantity
-  -- A leaf: "each color" enumerates CR 105.1's colours rather than printing
-  -- colour words for CR 612.2 to swap (Commander's Plate).
-  Quantity.Type.CommanderColors _ -> quantity
-  Quantity.Type.CompletedDungeon {} -> quantity
-  Quantity.Type.DraftNotes {} -> quantity
-  Quantity.Type.EnteredThisTurn -> quantity
-  Quantity.Type.EnteredFrom _ -> quantity
-  Quantity.Type.WasCastFrom _ -> quantity
-  Quantity.Type.BlockersBeyond _ -> quantity
-  -- A leaf like Power above: no subtype word to hide, whichever way it reads.
-  Quantity.Type.StationMeasure -> quantity
-  -- Not a leaf: the payload is a whole Quantity and may hide a Count.
-  Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot slot inner) -> Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot slot (rewriteQuantity pairs inner))
-  -- AgainstSlot's answer: not a leaf, and the payload may hide a Count.
-  Quantity.Type.AgainstExiledPile a -> Quantity.Type.AgainstExiledPile a {AgainstExiledPile.quantity = rewriteQuantity pairs (AgainstExiledPile.quantity a)}
-  -- And its filter, which may carry a creature type ("the last Goblin card").
-  Quantity.Type.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion inner) -> Quantity.Type.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith (Filter.rewrite pairs criterion) (rewriteQuantity pairs inner))
+  -- CR 903.4's "each color" enumerates CR 105.1's colours rather than printing
+  -- colour words, and CR 700.8's party types are the rule's: the traversal
+  -- leaves both alone.
+  _ ->
+    Identity.runIdentity
+      ( Children.quantityChildren
+          (Children.descendingQuantities (Identity.Identity . rewriteQuantity pairs))
+            { Children.nest = Identity.Identity . Filter.rewrite pairs
+            }
+          quantity
+      )
 
 -- CR 612.1 over a damage clause: the recipient's ref, and the amount CR 120.1
 -- has that recipient dealt.
@@ -2598,16 +2515,6 @@ swapSubtype pair typeLine = case pair of
   _ -> Nothing
   where
     subtypes = TypeLine.subtypes typeLine
-
--- Greatest and Total are the Aggregations carrying a Quantity.
-rewriteAggregation :: [(TextWord.TextWord, TextWord.TextWord)] -> Aggregation.Aggregation Quantity.Type.Quantity -> Aggregation.Aggregation Quantity.Type.Quantity
-rewriteAggregation pairs aggregation = case aggregation of
-  Aggregation.Greatest q -> Aggregation.Greatest (rewriteQuantity pairs q)
-  Aggregation.Total q -> Aggregation.Total (rewriteQuantity pairs q)
-  Aggregation.Members -> aggregation
-  Aggregation.Distinct _ -> aggregation
-  Aggregation.MostSharing _ -> aggregation
-  Aggregation.DistinctNames -> aggregation
 
 -- CR 612.1 through CR 208.2a's characteristic-defining power and toughness. Both
 -- boxes are rewritten rather than only the one a card fills, since seedCharacteristicPT

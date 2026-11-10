@@ -161,7 +161,7 @@ echo "FILE:     $file"
 echo "PATTERN:  $pattern"
 echo
 
-summary=$(grep -E '^(Passed all [0-9]+ tests|Failed [0-9]+ of [0-9]+ tests|Matched no tests) with seed [0-9]+\.$' "$log" || true)
+summary=$(grep -E '^(Passed all [0-9]+ tests|Failed [0-9]+ of [0-9]+ tests|Matched no tests) with seed [0-9a-f]+\.$' "$log" || true)
 
 if [ -z "$summary" ]; then
   echo 'MUTATION DID NOT COMPILE (or the suite never reported)'
