@@ -60,6 +60,7 @@ import qualified Parun.Codec.SpellWasCopied as SpellWasCopied
 import qualified Parun.Codec.StepBegan as StepBegan
 import qualified Parun.Codec.StickerPut as StickerPut
 import qualified Parun.Codec.TappedForMana as TappedForMana
+import qualified Parun.Codec.TappedToPay as TappedToPay
 import qualified Parun.Codec.Transformed as Transformed
 import qualified Parun.Codec.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Codec.TurnedFaceUp as TurnedFaceUp
@@ -143,6 +144,7 @@ codec =
       Arm.payload "ClassLevelSet" ClassLevelChange.codec GameEvent.ClassLevelSet (\x -> case x of GameEvent.ClassLevelSet y -> Just y; _ -> Nothing),
       Arm.payload "Plotted" ObjectId.codec GameEvent.Plotted (\x -> case x of GameEvent.Plotted y -> Just y; _ -> Nothing),
       Arm.payload "BecameTapped" ObjectId.codec GameEvent.BecameTapped (\x -> case x of GameEvent.BecameTapped y -> Just y; _ -> Nothing),
+      Arm.payload "TappedToPay" TappedToPay.codec GameEvent.TappedToPay (\x -> case x of GameEvent.TappedToPay y -> Just y; _ -> Nothing),
       Arm.payload "BecameUntapped" ObjectId.codec GameEvent.BecameUntapped (\x -> case x of GameEvent.BecameUntapped y -> Just y; _ -> Nothing),
       Arm.payload "TappedForMana" TappedForMana.codec GameEvent.TappedForMana (\x -> case x of GameEvent.TappedForMana y -> Just y; _ -> Nothing),
       Arm.payload "ManaAdded" ManaAdded.codec GameEvent.ManaAdded (\x -> case x of GameEvent.ManaAdded y -> Just y; _ -> Nothing),
@@ -222,6 +224,7 @@ tagOf x = case x of
   GameEvent.ClassLevelSet {} -> "ClassLevelSet"
   GameEvent.Plotted {} -> "Plotted"
   GameEvent.BecameTapped {} -> "BecameTapped"
+  GameEvent.TappedToPay {} -> "TappedToPay"
   GameEvent.BecameUntapped {} -> "BecameUntapped"
   GameEvent.TappedForMana {} -> "TappedForMana"
   GameEvent.ManaAdded {} -> "ManaAdded"

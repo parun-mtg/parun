@@ -127,6 +127,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.ClassLevelSet {} -> Visibility.Visible
   GameEvent.Plotted {} -> Visibility.Visible
   GameEvent.BecameTapped {} -> Visibility.Visible
+  GameEvent.TappedToPay {} -> Visibility.Visible
   GameEvent.BecameUntapped {} -> Visibility.Visible
   GameEvent.TappedForMana {} -> Visibility.Visible
   GameEvent.ManaAdded {} -> Visibility.Visible

@@ -58,6 +58,7 @@ import qualified Parun.Types.FacedDilemma as FacedDilemma
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.HalfUnlocked as HalfUnlocked
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LifeChange as LifeChange
@@ -97,6 +98,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.TappedForMana as TappedForMana
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -660,6 +662,14 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       s
       (Codec.encode GameEvent.codec (GameEvent.BecameTapped (ObjectId.MkObjectId 8)) /= Codec.encode GameEvent.codec (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert (ObjectId.MkObjectId 8))))
       "a tap and an exert of the same object encode differently"
+  -- CR 601.2h / 701.26a. The keyword is what separates it from the
+  -- BecameTapped the same tap wrote.
+  Spec.it s "TappedToPay" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.TappedToPay (TappedToPay.MkTappedToPay {TappedToPay.permanent = ObjectId.MkObjectId 8, TappedToPay.keyword = KeywordFamily.Teamwork}))
+      " {\"type\":\"TappedToPay\",\"value\":{\"permanent\":8,\"keyword\":\"Teamwork\"}} "
   -- CR 701.26b. BecameTapped's payload exactly, so the TAG is the whole
   -- difference between the two directions of one status.
   Spec.it s "BecameUntapped" $ do

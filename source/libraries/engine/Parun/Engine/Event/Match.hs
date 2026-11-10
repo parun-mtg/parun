@@ -167,6 +167,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.Transformed as Transformed
@@ -919,6 +920,7 @@ anyTriggerReads event = case event of
   GameEvent.ClassLevelSet {} -> True
   GameEvent.Plotted {} -> True
   GameEvent.BecameTapped {} -> True
+  GameEvent.TappedToPay {} -> True
   GameEvent.BecameUntapped {} -> True
   GameEvent.TappedForMana {} -> True
   GameEvent.ManaAdded {} -> True
@@ -1209,7 +1211,11 @@ armMatches bindings board gs bearer you cond event = case cond of
             Nothing -> False
             Just candidate -> Filter.matches bearerContext (Projection.sampledView board oid candidate gs) f
      in case event of
-          GameEvent.BecameTapped tapped -> BecomesTapState.status watched == TapState.Tapped && watches tapped
+          -- CR 601.2h: a cause narrows the tap to TappedToPay's for that keyword
+          -- (Agent Maria Hill), and a causeless condition reads only
+          -- BecameTapped, which the same tap also wrote.
+          GameEvent.BecameTapped tapped -> BecomesTapState.status watched == TapState.Tapped && Maybe.isNothing (BecomesTapState.paying watched) && watches tapped
+          GameEvent.TappedToPay paid -> BecomesTapState.status watched == TapState.Tapped && BecomesTapState.paying watched == Just (TappedToPay.keyword paid) && watches (TappedToPay.permanent paid)
           GameEvent.BecameUntapped untapped -> BecomesTapState.status watched == TapState.Untapped && watches untapped
           -- CR 106.12a's event is a DIFFERENT one, and stated rather than folded
           -- into the arm above: a mana activation writes both, and matching this

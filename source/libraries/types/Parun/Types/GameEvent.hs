@@ -55,6 +55,7 @@ import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StickerPut as StickerPut
 import qualified Parun.Types.TappedForMana as TappedForMana
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
@@ -482,9 +483,12 @@ data GameEvent
     -- Parun.Engine.Event.tap alone, the funnel every tapping route goes through,
     -- and only for a permanent that was untapped -- that rule's second sentence.
     -- CR 603.2e is the other exclusion: a permanent that ENTERS tapped never
-    -- transitioned. The id alone, no card in `data/cards/` distinguishing what
-    -- caused the tap.
+    -- transitioned. The id alone: TappedToPay below is the one cause a card
+    -- asks about.
     BecameTapped ObjectId.ObjectId
+  | -- | CR 601.2h / 701.26a: this permanent became tapped to pay a keyword
+    -- ability's cost, recorded by Parun.Engine.Cast beside its BecameTapped.
+    TappedToPay TappedToPay.TappedToPay
   | -- | CR 701.26b: this permanent BECAME UNTAPPED. Appended by
     -- Parun.Engine.Event.untap and by CR 502.3's batch in
     -- Parun.Engine.Engine.untapAll, the two roads that untap, and only for a
