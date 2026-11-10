@@ -1,0 +1,57 @@
+{
+  "description": "CR 715.2b, 715.2c, 715.3a, 715.3c: The Coming of Galactus' chapter I destroys up to one target nonland permanent, and chapters II and III each make each opponent lose 2 life",
+  "note": "Three seats so 'each opponent' reaches both bob and carol and spares alice. Bob's Forest is refused as chapter I's target (nonland); his Hill Giant is destroyed while carol's Sol Ring stays. Turns 4 and 7 are alice's.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Swamp", "label": "s0", "ready": true },
+          { "card": "Swamp", "label": "s1", "ready": true },
+          { "card": "Swamp", "label": "s2", "ready": true },
+          { "card": "Swamp", "label": "s3", "ready": true },
+          { "card": "Forest", "label": "f0", "ready": true }
+        ],
+        "hand": [{ "card": "The Coming of Galactus", "label": "saga" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Hill Giant", "label": "b-giant" },
+          { "card": "Forest", "label": "b-forest" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Sol Ring", "label": "c-ring" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$saga", "mana": ["$s0", "$s1", "$s2", "$s3", "$f0"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$b-forest"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$b-giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "The Coming of Galactus", "kind": { "type": "Lore" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Sol Ring", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "The Coming of Galactus", "kind": { "type": "Lore" }, "count": 2 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 16 } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 16 } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 7, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "The Coming of Galactus", "count": 1 } } }
+  ]
+}

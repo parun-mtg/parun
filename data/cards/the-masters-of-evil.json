@@ -1,0 +1,76 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [{ "type": "DiscardThis" }],
+            "mana": [
+              { "type": "Generic", "value": 1 },
+              { "type": "OfType", "value": { "type": "Colored", "value": "Black" } }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Search",
+                        "value": {
+                          "destination": "RevealThenHand",
+                          "filter": { "type": "HasSubtype", "value": "Plan" },
+                          "owner": { "type": "Relative", "value": "You" },
+                          "quantity": { "type": "Literal", "value": 1 },
+                          "searcher": { "type": "Relative", "value": "You" }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        { "type": "Generic", "value": 5 },
+        { "type": "OfType", "value": { "type": "Colored", "value": "Black" } }
+      ],
+      "name": "The Masters of Evil",
+      "oracleText": "Other Villains you control get +2/+1.\n{1}{B}, Discard this card: Search your library for a Plan card, reveal it, put it into your hand, then shuffle.",
+      "power": { "type": "Literal", "value": 5 },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                { "type": "Not", "value": { "type": "IsSource" } },
+                { "type": "HasSubtype", "value": "Villain" },
+                { "type": "HeldBy", "value": { "holder": "Controller", "relation": "You" } }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": { "type": "Literal", "value": 2 },
+                "toughness": { "type": "Literal", "value": 1 }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": { "type": "Literal", "value": 6 },
+      "typeLine": {
+        "subtypes": ["Human", "Villain"],
+        "supertypes": ["Legendary"],
+        "types": ["Creature"]
+      }
+    }
+  ]
+}

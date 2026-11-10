@@ -1,0 +1,50 @@
+{
+  "description": "CR 603.2, 603.6a, 301.5: The Mighty Thor, Jane Foster draws a card when an Equipment its controller controls enters, not for another artifact or an opponent's Equipment",
+  "note": "Alice's Ornithopter is an artifact that is not an Equipment and draws nothing; her Bonesplitter draws the Grizzly Bears on top. Bob's Bonesplitter, cast on his turn, draws alice nothing.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "C",
+        "battlefield": [{ "card": "The Mighty Thor, Jane Foster", "label": "thor" }],
+        "hand": [
+          { "card": "Ornithopter", "label": "thopter" },
+          { "card": "Bonesplitter", "label": "splitter" }
+        ],
+        "library": [
+          { "card": "Grizzly Bears" },
+          { "card": "Hill Giant" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Mind Stone", "label": "stone" }],
+        "hand": [{ "card": "Bonesplitter", "label": "bobsplitter" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$thopter" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Ornithopter", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$splitter" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Bonesplitter", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$bobsplitter", "mana": ["$stone"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Bonesplitter", "count": 1 } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0 } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Count": { "player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1 } } }
+  ]
+}
