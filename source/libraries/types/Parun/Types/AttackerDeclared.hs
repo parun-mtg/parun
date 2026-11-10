@@ -3,11 +3,12 @@ module Parun.Types.AttackerDeclared where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 508.1: a creature was declared attacking, whom it is attacking, what it
 -- was announced at, how many creatures that declaration named, the attacking
--- player who declared it, and its power as it attacked.
+-- player who declared it, and the creature as it attacked.
 
 -- The count is carried rather than counted out of the log, because CR 702.83b
 -- scopes "alone" to a given combat phase while the log is cleared per TURN: a
@@ -27,16 +28,17 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- player on the active team is an attacking player (CR 805.10a) and "you
 -- attacked" asks about one of them (CR 805.10c).
 --
--- `power` is read as the declaration is recorded, after CR 508.1k: Desert
--- Were-Worm's "total power" counts it there and never again (its ruling of
--- 2026-06-29), and a later declaration this turn reads an earlier one's off
--- the log.
+-- `snapshot` is read as the declaration is recorded, after CR 508.1k: Desert
+-- Were-Worm's "total power" counts its power there and never again (its ruling
+-- of 2026-06-29), and a later declaration this turn reads an earlier one's off
+-- the log; CR 608.2i's "attacked with a Hero this turn" asks its subtypes as
+-- they were then (Avengers Assemble!).
 data AttackerDeclared = MkAttackerDeclared
   { attacker :: ObjectId.ObjectId,
     defender :: PlayerId.PlayerId,
     target :: AttackTarget.AttackTarget,
     count :: Natural.Natural,
     attackingPlayer :: PlayerId.PlayerId,
-    power :: Integer
+    snapshot :: ObjectSnapshot.ObjectSnapshot
   }
   deriving (Eq, Ord, Show)

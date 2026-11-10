@@ -4,6 +4,7 @@ module Parun.Codec.Moved where
 
 import qualified Data.Sequence as Seq
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Codec.ZoneChange as ZoneChange
@@ -34,6 +35,8 @@ codec = Fields.object $ do
   seenArriving <- Fields.defaulted "seenArriving" False Common.boolean Moved.seenArriving
   -- Defaulted for the same reason: only a move an effect made sets it.
   causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe PlayerId.codec) Moved.causedBy
+  -- Defaulted for the same reason: a hand-built event leaves it unset.
+  arrived <- Fields.defaulted "arrived" Nothing (Common.maybe ObjectSnapshot.codec) Moved.arrived
   pure
     Moved.MkMoved
       { Moved.change = change,
@@ -43,5 +46,6 @@ codec = Fields.object $ do
         Moved.duringResolution = duringResolution,
         Moved.revealed = revealed,
         Moved.seenArriving = seenArriving,
-        Moved.causedBy = causedBy
+        Moved.causedBy = causedBy,
+        Moved.arrived = arrived
       }

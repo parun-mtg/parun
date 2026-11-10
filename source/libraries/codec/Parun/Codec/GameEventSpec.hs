@@ -75,6 +75,7 @@ import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganDeclared as MulliganDeclared
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
@@ -239,8 +240,11 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared (ObjectId.MkObjectId 3) (PlayerId.MkPlayerId 1) (AttackTarget.OfPlaneswalker (ObjectId.MkObjectId 5)) 4 (PlayerId.MkPlayerId 0) 0))
-      " {\"type\":\"AttackerDeclared\",\"value\":{\"attacker\":3,\"defender\":1,\"target\":{\"type\":\"OfPlaneswalker\",\"value\":5},\"count\":4,\"attackingPlayer\":0,\"power\":0}} "
+      (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared (ObjectId.MkObjectId 3) (PlayerId.MkPlayerId 1) (AttackTarget.OfPlaneswalker (ObjectId.MkObjectId 5)) 4 (PlayerId.MkPlayerId 0) (ObjectSnapshot.MkObjectSnapshot (ObjectId.MkObjectId 3) ProjectedCharacteristicsSpec.testCharacteristics (Just (PlayerId.MkPlayerId 0)) (PlayerId.MkPlayerId 0) Zone.Battlefield Zone.Battlefield Set.empty)))
+      ( " {\"type\":\"AttackerDeclared\",\"value\":{\"attacker\":3,\"defender\":1,\"target\":{\"type\":\"OfPlaneswalker\",\"value\":5},\"count\":4,\"attackingPlayer\":0,\"snapshot\":{\"object\":3,\"characteristics\":"
+          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
+          <> ",\"controller\":0,\"owner\":0,\"zone\":\"Battlefield\"}}} "
+      )
   -- AttackerDeclared's grouping sibling: the target and the player who declared,
   -- with no creature and no count -- CR 508.3b's subject beside CR 508.3e's.
   Spec.it s "BecameAttacked" $

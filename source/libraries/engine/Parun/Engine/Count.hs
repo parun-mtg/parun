@@ -726,7 +726,7 @@ slotPlayers context gs name = case Map.lookup name (Filter.slotPlayers context) 
 -- itself is: Parun.Engine.Projection imports this module.
 snapshotView :: ViewOf -> GameState -> EventShape.EventShape -> GameEvent.GameEvent -> Maybe Filter.View
 snapshotView viewOf gs shape event = case event of
-  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ _ _) -> case shape of
+  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ _ _ arrivedAs) -> case shape of
     EventShape.MovedBetween (MovedBetween.MkMovedBetween from to) ->
       if ZoneChange.from zc == from && ZoneChange.to zc == to then Just (departedView viewOf gs zc snapshot) else Nothing
     -- CR 603.6c: to another zone, so Event.recordMintedArrival's same-zone
@@ -742,11 +742,18 @@ snapshotView viewOf gs shape event = case event of
     --
     -- The DESTINATION, per the constructor's own note, and the origin only where
     -- the shape excludes one.
-    -- Not implemented: the arrival's characteristics as it entered, rather
-    -- than as it is or last was (#6859).
+    --
+    -- CR 608.2i: the arrival as it entered, off Moved.arrived: a land made an
+    -- artifact after it entered is no artifact entering (the scenario
+    -- iron-man-master-of-machines-draws-nothing-for-a-land-made-an-artifact-after-it-entered).
+    -- Where the event recorded none, the arrival as it is or last was, under
+    -- the controller it entered under. Either way over that view, which keeps
+    -- a token that ceased (CR 111.7) a token.
     EventShape.CardArrivedIn arrival ->
       if arrivalMatches arrival zc
-        then Just (asArrived gs (ZoneChange.object zc) (Maybe.fromMaybe (departedView viewOf gs zc snapshot) (orLastKnown viewOf gs (ZoneChange.object zc))))
+        then
+          let current = Maybe.fromMaybe (departedView viewOf gs zc snapshot) (orLastKnown viewOf gs (ZoneChange.object zc))
+           in Just (maybe (asArrived gs (ZoneChange.object zc) current) (\entered -> asSnapshotted gs entered current) arrivedAs)
         else Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
@@ -806,13 +813,16 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
-  -- CR 508.1a / 608.2i: the attacker as it is or last was, controlled by the
-  -- player who declared it, whom CR 508.1a requires to control it then.
-  --
-  -- Not implemented: its characteristics as declared, rather than as it is or
-  -- last was (#6859).
+  -- CR 508.1a / 608.2i: the attacker as it was declared, off the event's
+  -- snapshot, so a Hero that has since stopped being one still attacked (the
+  -- scenario avengers-assemble-draws-at-the-end-step-after-a-hero-attacked-and-stopped-being-one),
+  -- controlled by the player who declared it, whom CR 508.1a requires to
+  -- control it then.
   GameEvent.AttackerDeclared declared -> case shape of
-    EventShape.AttackerDeclared -> fmap (\view -> view {Filter.controller = Just (AttackerDeclared.attackingPlayer declared)}) (orLastKnown viewOf gs (AttackerDeclared.attacker declared))
+    EventShape.AttackerDeclared ->
+      fmap
+        (\view -> (asSnapshotted gs (AttackerDeclared.snapshot declared) view) {Filter.controller = Just (AttackerDeclared.attackingPlayer declared)})
+        (orLastKnown viewOf gs (AttackerDeclared.attacker declared))
     EventShape.MovedBetween {} -> Nothing
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
@@ -1577,11 +1587,11 @@ grantHeld lapsed = maybe True (`Set.notMember` lapsed) . ActivatedAbility.condit
 -- viewOfSnapshot's PC-derived set and not to this record update is silently read
 -- LIVE here, and neither -Werror nor any test says so. Keep the two in step.
 --
--- `lapsed` is the sample (CR 611.3a) beside the snapshot (viewOfSnapshot), and
--- the zone the battlefield, the only one a permanent turns over in.
-overlaySnapshot :: Bool -> Set.Set Condition.Condition -> PC.ProjectedCharacteristics -> Filter.View -> Filter.View
-overlaySnapshot deploy lapsed snapshot live =
-  let sampled = viewOfSnapshot deploy (Filter.controller live) (Filter.owner live) (Filter.token live) (Filter.counters live) Zone.Battlefield Zone.Battlefield lapsed snapshot
+-- `zone` with `home`, and `lapsed`, are viewOfSnapshot's, as they stood when
+-- the snapshot was taken.
+overlaySnapshot :: Bool -> Zone.Zone -> Zone.Zone -> Set.Set Condition.Condition -> PC.ProjectedCharacteristics -> Filter.View -> Filter.View
+overlaySnapshot deploy zone home lapsed snapshot live =
+  let sampled = viewOfSnapshot deploy (Filter.controller live) (Filter.owner live) (Filter.token live) (Filter.counters live) zone home lapsed snapshot
    in live
         { Filter.names = Filter.names sampled,
           Filter.cardTypes = Filter.cardTypes sampled,
@@ -1597,6 +1607,20 @@ overlaySnapshot deploy lapsed snapshot live =
           Filter.activatedAbilityKinds = Filter.activatedAbilityKinds sampled,
           Filter.grantsStationToughness = Filter.grantsStationToughness sampled
         }
+
+-- CR 608.2i: an object an event snapshotted, as the snapshot shows it -- its
+-- characteristics and controller then -- over `live`, its view now or as it
+-- last was, for what no snapshot holds. A look-back count over this turn's
+-- entries or attacks reads it.
+asSnapshotted :: GameState -> ObjectSnapshot.ObjectSnapshot -> Filter.View -> Filter.View
+asSnapshotted gs snapshot live =
+  overlaySnapshot
+    (deployIn gs (ObjectSnapshot.zone snapshot))
+    (ObjectSnapshot.zone snapshot)
+    (ObjectSnapshot.home snapshot)
+    (ObjectSnapshot.lapsedGrants snapshot)
+    (ObjectSnapshot.characteristics snapshot)
+    live {Filter.controller = ObjectSnapshot.controller snapshot}
 
 -- Does CR 804.2 reach an object snapshotted as it left, or while it was in,
 -- this zone? Only a permanent's (CR 109.2), and only in a game using the option.

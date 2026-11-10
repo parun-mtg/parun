@@ -4,6 +4,7 @@ module Parun.Codec.AttackerDeclared where
 
 import qualified Parun.Codec.AttackTarget as AttackTarget
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -20,7 +21,7 @@ codec = Fields.object $ do
   target <- Fields.required "target" AttackTarget.codec AttackerDeclared.target
   count <- Fields.required "count" Common.natural AttackerDeclared.count
   attackingPlayer <- Fields.required "attackingPlayer" PlayerId.codec AttackerDeclared.attackingPlayer
-  power <- Fields.required "power" Common.integer AttackerDeclared.power
+  snapshot <- Fields.required "snapshot" ObjectSnapshot.codec AttackerDeclared.snapshot
   pure
     AttackerDeclared.MkAttackerDeclared
       { AttackerDeclared.attacker = attacker,
@@ -28,5 +29,5 @@ codec = Fields.object $ do
         AttackerDeclared.target = target,
         AttackerDeclared.count = count,
         AttackerDeclared.attackingPlayer = attackingPlayer,
-        AttackerDeclared.power = power
+        AttackerDeclared.snapshot = snapshot
       }

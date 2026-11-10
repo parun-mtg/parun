@@ -1165,7 +1165,7 @@ permanentsDieSpec s registry =
         Set.fromList
           ( Maybe.mapMaybe
               ( \logged -> case LoggedEvent.event logged of
-                  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _)
+                  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)
                     | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Graveyard -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
@@ -1434,7 +1434,7 @@ arrivedLaterSpec s registry =
         Set.fromList
           ( Maybe.mapMaybe
               ( \logged -> case LoggedEvent.event logged of
-                  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _)
+                  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)
                     | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Graveyard -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
@@ -1947,7 +1947,7 @@ representativeEvents cond =
           -- own controller: eventBindings binds this field under `thatPlayer`,
           -- so an arm that bound the attacking side instead would still agree
           -- with eventBindingSlots here if the two coincided.
-          AttackTrigger.Attacker _ -> one (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared departed S.carol (AttackTarget.OfPlayer S.carol) 1 S.alice 0))
+          AttackTrigger.Attacker _ -> one (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared departed S.carol (AttackTarget.OfPlayer S.carol) 1 S.alice (S.attackerSnapshot departed S.alice 0)))
           -- CR 508.3e's ATTACKED player is bob here and not the carol who
           -- declared, so an arm that bound the attacking side under `thatPlayer`
           -- would disagree with eventBindingSlots on this event. A Source
