@@ -1236,6 +1236,7 @@ damageRewriteNames asking onEffect x = case x of
   DamageRewrite.RunEffects seq_ -> foldMap onEffect seq_
   DamageRewrite.TurnFaceUp -> mempty
   DamageRewrite.AlsoToSourceController -> mempty
+  DamageRewrite.HealSourceFirst -> mempty
 
 dealDamageNames :: (Monoid r) => Asking r -> DealDamage.DealDamage -> r
 dealDamageNames asking x = case x of

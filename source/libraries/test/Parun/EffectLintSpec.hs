@@ -885,6 +885,7 @@ engineMintedDamage rewrite = case rewrite of
   -- it instead.
   DamageRewrite.TurnFaceUp -> True
   DamageRewrite.AlsoToSourceController -> True
+  DamageRewrite.HealSourceFirst -> False
 
 -- The destruction half of the same question. CR 701.19a's regeneration IS printed
 -- (Drudge Skeletons), where CR 122.1c's removal and CR 702.89a's umbra armor are
@@ -1033,6 +1034,7 @@ preventsDamage rewrite = case rewrite of
   -- Illusionary Mask's damage is dealt, to or from the face-up permanent.
   DamageRewrite.TurnFaceUp -> False
   DamageRewrite.AlsoToSourceController -> False
+  DamageRewrite.HealSourceFirst -> False
 
 -- The non-vacuity half of riderWithoutPreventionOffends' lint, isPhaseR's shape.
 hasRider :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool

@@ -42,7 +42,8 @@ codec effectCodec =
       Arm.payload "RedirectMatching" (Filter.codec Keyword.codec) DamageRewrite.RedirectMatching (\x -> case x of DamageRewrite.RedirectMatching y -> Just y; _ -> Nothing),
       Arm.payload "RunEffects" (Common.seq effectCodec) DamageRewrite.RunEffects (\x -> case x of DamageRewrite.RunEffects y -> Just y; _ -> Nothing),
       Arm.nullary "TurnFaceUp" DamageRewrite.TurnFaceUp,
-      Arm.nullary "AlsoToSourceController" DamageRewrite.AlsoToSourceController
+      Arm.nullary "AlsoToSourceController" DamageRewrite.AlsoToSourceController,
+      Arm.nullary "HealSourceFirst" DamageRewrite.HealSourceFirst
     ]
 
 -- | The counted redirection's two halves keyed by name rather than positional,
@@ -70,3 +71,4 @@ tagOf x = case x of
   DamageRewrite.RunEffects {} -> "RunEffects"
   DamageRewrite.TurnFaceUp {} -> "TurnFaceUp"
   DamageRewrite.AlsoToSourceController {} -> "AlsoToSourceController"
+  DamageRewrite.HealSourceFirst {} -> "HealSourceFirst"

@@ -190,4 +190,7 @@ data DamageRewrite effect
   | -- | CR 614.1a: the event still happens, and the row's source also deals that
     -- much to the damage source's controller (Eye for an Eye). Engine-baked.
     AlsoToSourceController
+  | -- | CR 614.1a / 701.69a: the event still happens, and the row's own
+    -- permanent's marked damage is healed first (Wolverine, Fierce Fighter).
+    HealSourceFirst
   deriving (Eq, Ord, Show)

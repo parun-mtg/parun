@@ -1834,6 +1834,7 @@ damageRewriteRecipients rewrite = case rewrite of
   -- The row's own permanent is its source, which is no baked id of the rewrite's.
   DamageRewrite.TurnFaceUp -> []
   DamageRewrite.AlsoToSourceController -> []
+  DamageRewrite.HealSourceFirst -> []
 
 -- What one object on the stack refers to: its CR 113.7 source object, and every
 -- object its bindings name.

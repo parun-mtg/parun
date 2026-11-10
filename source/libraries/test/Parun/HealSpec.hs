@@ -7,9 +7,9 @@
 -- Synthetic Mending Light ({W} Instant, "Damage already dealt to target
 -- creature is healed.") is the fixture: the keyword action is its whole text,
 -- so every assertion below is about rule 701.69a. It is synthetic because
--- Wolverine, Fierce Fighter (gap #3906) states the action inside a replacement
--- shape parun cannot yet express. Pyramids, the destruction-replacement printing,
--- has its own group below.
+-- Wolverine, Fierce Fighter heals inside a damage replacement
+-- (DamageRewrite.HealSourceFirst) rather than as an effect. Pyramids, the
+-- destruction-replacement printing, has its own group below.
 --
 -- THE BOARD SHAPE that makes the pair discriminating. Barkhide Mauler is a 4/4
 -- carrying 2 marked damage, and the same Lightning Bolt deals it 3 on both

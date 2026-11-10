@@ -2868,6 +2868,7 @@ applyInertly candidate rewrite event = do
     DamageRewrite.RunEffects _ -> pure ()
     DamageRewrite.TurnFaceUp -> pure ()
     DamageRewrite.AlsoToSourceController -> pure ()
+    DamageRewrite.HealSourceFirst -> pure ()
   pure (Just event)
 
 -- CR 120.8: a damage event an amount rewrite left at 0 is no event at all, so
@@ -4494,6 +4495,17 @@ apply settle batch applied batchPrevented candidate event =
       -- of the second damage's payer: chooseAndApply takes the rest.
       DamageRewrite.AlsoToSourceController -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
+        pure (Just event)
+      -- CR 614.1a / 701.69a: Wolverine, Fierce Fighter's "instead that damage is
+      -- dealt, but all other damage already dealt to him is healed". The heal is
+      -- a direct write, as Resolve's healArm makes it, and lands here, before
+      -- CR 120.3e marks the event, so it spares the damage it rides on. A CR
+      -- 510.2 batch settles every event before marking any, so its simultaneous
+      -- hits all survive (the scenario
+      -- wolverine-fierce-fighter-keeps-both-simultaneous-blockers-damage).
+      DamageRewrite.HealSourceFirst -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        State.modify' (\gs -> gs {GameState.objects = Map.adjust (\obj -> obj {Object.damage = 0}) (ReplacementCandidate.source candidate) (GameState.objects gs)})
         pure (Just event)
     -- Unreachable: `applies` admits DamageR only against WouldDealDamage.
     (ReplacementEffect.DamageR {}, _) -> pure (Just event)
