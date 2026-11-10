@@ -894,8 +894,8 @@ rewriteReplacementEffect pairs =
           Children.replacementCopy = Identity.Identity . rewriteAsCopy pairs
         }
 
--- CR 612.1 through CR 707.9's "except ..." clause. Exhaustive for
--- rewriteReplacementEffect's reason.
+-- CR 612.1 through CR 707.9's "except ..." clause. Exhaustive rather than a
+-- wildcard, so a later arm carrying a word fails to compile here.
 --
 -- NO BOARD OBSERVES IT, an entry option's keywords' position: what changes
 -- is a keyword that CARRIES a word, a quoted ability, or CR 707.9b's subtype
