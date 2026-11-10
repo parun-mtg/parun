@@ -23,7 +23,6 @@ import qualified Parun.Codec.Affected as Affected
 import qualified Parun.Codec.AlternativeCost as AlternativeCost
 import qualified Parun.Codec.AttachRestriction as AttachRestriction
 import qualified Parun.Codec.AttackCost as AttackCost
-import qualified Parun.Codec.AttackPermission as AttackPermission
 import qualified Parun.Codec.AttackRequirement as AttackRequirement
 import qualified Parun.Codec.BlockCost as BlockCost
 import qualified Parun.Codec.BlockPermission as BlockPermission
@@ -60,6 +59,7 @@ import qualified Parun.Codec.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Codec.Power as Power
 import qualified Parun.Codec.PrintedReplacement as PrintedReplacement
 import qualified Parun.Codec.Quantity as Quantity
+import qualified Parun.Codec.RulePermission as RulePermission
 import qualified Parun.Codec.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Codec.SpecialAction as SpecialAction
 import qualified Parun.Codec.StaticAbility as StaticAbility
@@ -156,7 +156,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   untapRestrictions <- Fields.defaulted "untapRestrictions" [] (Common.list UntapRestriction.codec) Face.untapRestrictions
   crewRestrictions <- Fields.defaulted "crewRestrictions" [] (Common.list CrewRestriction.codec) Face.crewRestrictions
   targetRestrictions <- Fields.defaulted "targetRestrictions" [] (Common.list (TargetRestriction.codec Affected.codec)) Face.targetRestrictions
-  attackPermissions <- Fields.defaulted "attackPermissions" [] (Common.list AttackPermission.codec) Face.attackPermissions
+  rulePermissions <- Fields.defaulted "rulePermissions" [] (Common.list RulePermission.codec) Face.rulePermissions
   attachRestrictions <- Fields.defaulted "attachRestrictions" [] (Common.list AttachRestriction.codec) Face.attachRestrictions
   counterRestrictions <- Fields.defaulted "counterRestrictions" [] (Common.list CounterRestriction.codec) Face.counterRestrictions
   activationProhibitions <- Fields.defaulted "activationProhibitions" [] (Common.list ActivationProhibition.codec) Face.activationProhibitions
@@ -243,7 +243,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.untapRestrictions = untapRestrictions,
         Face.crewRestrictions = crewRestrictions,
         Face.targetRestrictions = targetRestrictions,
-        Face.attackPermissions = attackPermissions,
+        Face.rulePermissions = rulePermissions,
         Face.attachRestrictions = attachRestrictions,
         Face.counterRestrictions = counterRestrictions,
         Face.activationProhibitions = activationProhibitions,

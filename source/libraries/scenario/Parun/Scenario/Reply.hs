@@ -453,7 +453,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseSacrifices {} -> setOf object
   Prompt.ChooseExilesFromGraveyard {} -> setOf object
   Prompt.ChooseMaterials {} -> setOf object
-  Prompt.ChooseCollectEvidence {} -> setOf object
+  Prompt.ChooseExilesTotalling {} -> setOf object
   Prompt.ChoosePermanent {} -> object
   Prompt.ChooseTapsForTotalPower {} -> setOf object
   Prompt.ChooseTaps {} -> setOf object

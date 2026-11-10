@@ -9,4 +9,7 @@ data ModeMemory
     NoMemory
   | -- | "that hasn't been chosen": barred while it is the same object (CR 400.7).
     ObjectLifetime
+  | -- | "that hasn't been chosen this turn": barred while it is the same object,
+    -- until the turn ends (Monument to Endurance's rulings).
+    ThisTurn
   deriving (Bounded, Enum, Eq, Ord, Show)

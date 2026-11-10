@@ -24,9 +24,7 @@ import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCostScope as AttackCostScope
-import qualified Parun.Types.AttackPermission as AttackPermission
 import qualified Parun.Types.AttackRequirement as AttackRequirement
-import qualified Parun.Types.AttackWaiver as AttackWaiver
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
@@ -83,6 +81,8 @@ import qualified Parun.Types.ProhibitedCost as ProhibitedCost
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequirementArity as RequirementArity
+import qualified Parun.Types.RulePermission as RulePermission
+import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -184,7 +184,7 @@ baseFace =
       Face.counterRestrictions = [],
       Face.crewRestrictions = [],
       Face.targetRestrictions = [],
-      Face.attackPermissions = [],
+      Face.rulePermissions = [],
       Face.activationProhibitions = [],
       Face.entryRestrictions = [],
       Face.attackCosts = [],
@@ -260,7 +260,7 @@ minimalFace =
       Face.counterRestrictions = [],
       Face.crewRestrictions = [],
       Face.targetRestrictions = [],
-      Face.attackPermissions = [],
+      Face.rulePermissions = [],
       Face.activationProhibitions = [],
       Face.entryRestrictions = [],
       Face.attackCosts = [],
@@ -454,9 +454,9 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
     Spec.it s "targetRestrictions (CR 115/101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.targetRestrictions <$> decodeFace v) (Right [])
-    Spec.it s "attackPermissions (CR 702.3b) defaults to the empty list" $ do
+    Spec.it s "rulePermissions (CR 702.3b) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
-      Spec.assertEq s (Face.attackPermissions <$> decodeFace v) (Right [])
+      Spec.assertEq s (Face.rulePermissions <$> decodeFace v) (Right [])
     Spec.it s "attachRestrictions (CR 303.4/301.5/101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.attachRestrictions <$> decodeFace v) (Right [])
@@ -612,13 +612,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         decodeFace
         baseFace {Face.targetRestrictions = [TargetRestriction.MkTargetRestriction Affected.Attached StackObjectKind.Spell (Filter.And [])]}
         (init baseFaceJson <> ",\"targetRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":\"Spell\"}]}")
-    Spec.it s "attackPermissions" $
+    Spec.it s "rulePermissions" $
       Common.assertJsonCodec
         s
         encodeFace
         decodeFace
-        baseFace {Face.attackPermissions = [AttackPermission.MkAttackPermission Affected.Attached Nothing AttackWaiver.Defender]}
-        (init baseFaceJson <> ",\"attackPermissions\":[{\"affected\":{\"type\":\"Attached\"}}]}")
+        baseFace {Face.rulePermissions = [RulePermission.MkRulePermission Affected.Attached Nothing RuleWaiver.Defender]}
+        (init baseFaceJson <> ",\"rulePermissions\":[{\"affected\":{\"type\":\"Attached\"}}]}")
     Spec.it s "attachRestrictions" $
       Common.assertJsonCodec
         s

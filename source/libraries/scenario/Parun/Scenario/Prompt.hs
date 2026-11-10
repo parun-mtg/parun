@@ -168,7 +168,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseSacrifices {} -> "ChooseSacrifices"
   Prompt.ChooseExilesFromGraveyard {} -> "ChooseExilesFromGraveyard"
   Prompt.ChooseMaterials {} -> "ChooseMaterials"
-  Prompt.ChooseCollectEvidence {} -> "ChooseCollectEvidence"
+  Prompt.ChooseExilesTotalling {} -> "ChooseExilesTotalling"
   Prompt.ChoosePermanent {} -> "ChoosePermanent"
   Prompt.ChooseTapsForTotalPower {} -> "ChooseTapsForTotalPower"
   Prompt.ChooseTaps {} -> "ChooseTaps"

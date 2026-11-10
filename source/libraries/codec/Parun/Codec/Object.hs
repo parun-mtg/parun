@@ -169,7 +169,7 @@ codec = Fields.object $ do
   -- Common.repeats rather than multiset: a spend count never falls to zero,
   -- and one entry per spend is the array this field was before it counted.
   activatedOnce <- Fields.defaulted "activatedOnce" (Object.activatedOnce defaults) (Common.repeats (ActivatedAbility.codec Card.codec (GrantedAbility.codec Card.codec))) Object.activatedOnce
-  chosenModes <- Fields.defaulted "chosenModes" (Object.chosenModes defaults) (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.set ModeIndex.codec))) Object.chosenModes
+  chosenModes <- Fields.defaulted "chosenModes" (Object.chosenModes defaults) (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.naturalMap ModeIndex.codec Common.natural))) Object.chosenModes
   pure
     Object.MkObject
       { Object.owner = owner,

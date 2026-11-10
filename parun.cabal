@@ -266,8 +266,6 @@ library codec
     Parun.Codec.AttackMeasureSpec
     Parun.Codec.AttackOption
     Parun.Codec.AttackOptionSpec
-    Parun.Codec.AttackPermission
-    Parun.Codec.AttackPermissionSpec
     Parun.Codec.AttackRequirement
     Parun.Codec.AttackRequirementSpec
     Parun.Codec.AttackTarget
@@ -278,8 +276,6 @@ library codec
     Parun.Codec.AttackTargetSpec
     Parun.Codec.AttackTrigger
     Parun.Codec.AttackTriggerSpec
-    Parun.Codec.AttackWaiver
-    Parun.Codec.AttackWaiverSpec
     Parun.Codec.Audience
     Parun.Codec.AudienceSpec
     Parun.Codec.Backup
@@ -362,6 +358,8 @@ library codec
     Parun.Codec.CardSelection
     Parun.Codec.CardSelectionSpec
     Parun.Codec.CardSpec
+    Parun.Codec.CardTally
+    Parun.Codec.CardTallySpec
     Parun.Codec.CardType
     Parun.Codec.CardTypeSpec
     Parun.Codec.CastFrom
@@ -831,6 +829,8 @@ library codec
     Parun.Codec.ExileCardsFromGraveyardSpec
     Parun.Codec.ExileCardsFromHand
     Parun.Codec.ExileCardsFromHandSpec
+    Parun.Codec.ExileCardsTotalling
+    Parun.Codec.ExileCardsTotallingSpec
     Parun.Codec.ExiledPile
     Parun.Codec.ExiledPileSpec
     Parun.Codec.ExileFromGraveyard
@@ -1499,6 +1499,10 @@ library codec
     Parun.Codec.RuleAbilitiesSpec
     Parun.Codec.RuleFamily
     Parun.Codec.RuleFamilySpec
+    Parun.Codec.RulePermission
+    Parun.Codec.RulePermissionSpec
+    Parun.Codec.RuleWaiver
+    Parun.Codec.RuleWaiverSpec
     Parun.Codec.Sacrifice
     Parun.Codec.SacrificeAnyNumber
     Parun.Codec.SacrificeAnyNumberSpec
@@ -1830,7 +1834,6 @@ library engine
     Parun.Engine.Attach
     Parun.Engine.AttachRestriction
     Parun.Engine.AttackCost
-    Parun.Engine.AttackPermission
     Parun.Engine.AttackRequirement
     Parun.Engine.Attraction
     Parun.Engine.Battle
@@ -1944,6 +1947,7 @@ library engine
     Parun.Engine.Room
     Parun.Engine.RuleAbilities
     Parun.Engine.RuleFamily
+    Parun.Engine.RulePermission
     Parun.Engine.SacrificeRestriction
     Parun.Engine.Saga
     Parun.Engine.Sba
@@ -2673,13 +2677,11 @@ library types
     Parun.Types.AttackLimitUnless
     Parun.Types.AttackMeasure
     Parun.Types.AttackOption
-    Parun.Types.AttackPermission
     Parun.Types.AttackRequirement
     Parun.Types.AttackTarget
     Parun.Types.AttackTargetKind
     Parun.Types.AttackTargetRef
     Parun.Types.AttackTrigger
-    Parun.Types.AttackWaiver
     Parun.Types.Audience
     Parun.Types.Backup
     Parun.Types.Ballot
@@ -2727,6 +2729,7 @@ library types
     Parun.Types.CardIdentity
     Parun.Types.CardName
     Parun.Types.CardSelection
+    Parun.Types.CardTally
     Parun.Types.CardType
     Parun.Types.CarryOver
     Parun.Types.CastFrom
@@ -2988,6 +2991,7 @@ library types
     Parun.Types.ExchangeZones
     Parun.Types.ExileCardsFromGraveyard
     Parun.Types.ExileCardsFromHand
+    Parun.Types.ExileCardsTotalling
     Parun.Types.ExiledPile
     Parun.Types.ExileFromGraveyard
     Parun.Types.ExileHaunting
@@ -3383,6 +3387,8 @@ library types
     Parun.Types.RowSource
     Parun.Types.RuleAbilities
     Parun.Types.RuleFamily
+    Parun.Types.RulePermission
+    Parun.Types.RuleWaiver
     Parun.Types.Sacrifice
     Parun.Types.SacrificeAnyNumber
     Parun.Types.SacrificeEffect

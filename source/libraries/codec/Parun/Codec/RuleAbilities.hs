@@ -6,7 +6,6 @@ import qualified Parun.Codec.ActivationProhibition as ActivationProhibition
 import qualified Parun.Codec.Affected as Affected
 import qualified Parun.Codec.AttachRestriction as AttachRestriction
 import qualified Parun.Codec.AttackCost as AttackCost
-import qualified Parun.Codec.AttackPermission as AttackPermission
 import qualified Parun.Codec.AttackRequirement as AttackRequirement
 import qualified Parun.Codec.BlockCost as BlockCost
 import qualified Parun.Codec.BlockPermission as BlockPermission
@@ -15,6 +14,7 @@ import qualified Parun.Codec.CombatRestriction as CombatRestriction
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
 import qualified Parun.Codec.CrewRestriction as CrewRestriction
 import qualified Parun.Codec.EntryRestriction as EntryRestriction
+import qualified Parun.Codec.RulePermission as RulePermission
 import qualified Parun.Codec.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Codec.TargetRestriction as TargetRestriction
 import qualified Parun.Codec.UntapRestriction as UntapRestriction
@@ -30,7 +30,7 @@ codec = Fields.object $ do
   activationProhibitions <- Fields.defaulted "activationProhibitions" [] (Common.list ActivationProhibition.codec) RuleAbilities.activationProhibitions
   attachRestrictions <- Fields.defaulted "attachRestrictions" [] (Common.list AttachRestriction.codec) RuleAbilities.attachRestrictions
   attackCosts <- Fields.defaulted "attackCosts" [] (Common.list AttackCost.codec) RuleAbilities.attackCosts
-  attackPermissions <- Fields.defaulted "attackPermissions" [] (Common.list AttackPermission.codec) RuleAbilities.attackPermissions
+  rulePermissions <- Fields.defaulted "rulePermissions" [] (Common.list RulePermission.codec) RuleAbilities.rulePermissions
   attackRequirements <- Fields.defaulted "attackRequirements" [] (Common.list AttackRequirement.codec) RuleAbilities.attackRequirements
   blockCosts <- Fields.defaulted "blockCosts" [] (Common.list BlockCost.codec) RuleAbilities.blockCosts
   blockPermissions <- Fields.defaulted "blockPermissions" [] (Common.list BlockPermission.codec) RuleAbilities.blockPermissions
@@ -47,7 +47,7 @@ codec = Fields.object $ do
       { RuleAbilities.activationProhibitions = activationProhibitions,
         RuleAbilities.attachRestrictions = attachRestrictions,
         RuleAbilities.attackCosts = attackCosts,
-        RuleAbilities.attackPermissions = attackPermissions,
+        RuleAbilities.rulePermissions = rulePermissions,
         RuleAbilities.attackRequirements = attackRequirements,
         RuleAbilities.blockCosts = blockCosts,
         RuleAbilities.blockPermissions = blockPermissions,

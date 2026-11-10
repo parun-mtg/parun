@@ -8,7 +8,9 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.CardSelection as CardSelection
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ComputedLife as ComputedLife
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -21,6 +23,7 @@ import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
@@ -292,6 +295,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       CostComponent.CollectEvidenceOfTargets
       " {\"type\":\"CollectEvidenceOfTargets\"} "
+  -- CR 406.2 with a threshold: Baron Helmut Zemo's fifteen black mana symbols.
+  Spec.it s "ExileCardsTotalling" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling 15 (CardTally.ManaSymbolsOf Color.Black) (Filter.HasColor Color.Black)))
+      " {\"type\":\"ExileCardsTotalling\",\"value\":{\"tally\":{\"type\":\"ManaSymbolsOf\",\"value\":\"Black\"},\"threshold\":15,\"whichCards\":{\"type\":\"HasColor\",\"value\":\"Black\"}}} "
   -- CR 406.2 out of the hand: a count and a criterion.
   Spec.it s "ExileCardsFromHand" $
     Common.assertCodec

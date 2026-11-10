@@ -1,35 +1,6 @@
 {
   "faces": [
     {
-      "attackPermissions": [
-        {
-          "affected": {
-            "type": "Matching",
-            "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasCardType",
-                  "value": "Creature"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                },
-                {
-                  "type": "HasKeyword",
-                  "value": {
-                    "type": "Defender"
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ],
       "keywords": [
         {
           "type": "Flying"
@@ -71,6 +42,35 @@
         "type": "Literal",
         "value": 3
       },
+      "rulePermissions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "HasKeyword",
+                  "value": {
+                    "type": "Defender"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
       "staticAbilities": [
         {
           "affected": {

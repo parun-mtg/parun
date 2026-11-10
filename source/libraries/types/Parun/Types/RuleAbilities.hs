@@ -4,7 +4,6 @@ import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackPermission as AttackPermission
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockPermission as BlockPermission
@@ -13,6 +12,7 @@ import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.EntryRestriction as EntryRestriction
+import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.UntapRestriction as UntapRestriction
@@ -38,8 +38,8 @@ data RuleAbilities = MkRuleAbilities
     -- | CR 508.1h: Ghostly Prison's {2} per attacking creature.
     attackCosts :: [AttackCost.AttackCost],
     -- | CR 702.3b / 302.6: "this creature can attack as though it didn't have
-    -- defender" (Prison Barricade kicked).
-    attackPermissions :: [AttackPermission.AttackPermission],
+    -- defender" (Prison Barricade kicked), "as though it had haste".
+    rulePermissions :: [RulePermission.RulePermission],
     -- | CR 508.1d: "creatures ... attack each combat if able" (Curse of the
     -- Nightly Hunt).
     attackRequirements :: [AttackRequirement.AttackRequirement],
@@ -84,7 +84,7 @@ instance Semigroup RuleAbilities where
       { activationProhibitions = activationProhibitions left <> activationProhibitions right,
         attachRestrictions = attachRestrictions left <> attachRestrictions right,
         attackCosts = attackCosts left <> attackCosts right,
-        attackPermissions = attackPermissions left <> attackPermissions right,
+        rulePermissions = rulePermissions left <> rulePermissions right,
         attackRequirements = attackRequirements left <> attackRequirements right,
         blockCosts = blockCosts left <> blockCosts right,
         blockPermissions = blockPermissions left <> blockPermissions right,
@@ -107,7 +107,7 @@ instance Monoid RuleAbilities where
       { activationProhibitions = [],
         attachRestrictions = [],
         attackCosts = [],
-        attackPermissions = [],
+        rulePermissions = [],
         attackRequirements = [],
         blockCosts = [],
         blockPermissions = [],

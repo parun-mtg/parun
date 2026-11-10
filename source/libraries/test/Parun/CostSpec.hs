@@ -2211,7 +2211,7 @@ kindleBoard s registry inHand extra = do
 -- either. bob's Goblin Piker is the 2/1 the ability aims at. The only two
 -- numbers here that coincide are the threshold and the Soil's mana value, which
 -- is the point of the second case; everything else is distinct.
-forensicResearcherSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+forensicResearcherSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 forensicResearcherSpec s registry =
   Spec.describe s "Forensic Researcher" $ do
     -- CR 701.59b, against the first case's board one Bolt short: two mana value 1
@@ -2225,6 +2225,18 @@ forensicResearcherSpec s registry =
           (after, _) = afterCollecting srcId buried victimId gs
       Spec.assertEqWith s "CR 701.59b the activation is not offered" (filter (collectsEvidenceFrom srcId) (Action.legalActions S.alice gs)) []
       Spec.assertEqWith s "so bob's Piker is untapped" (fmap Object.tapped (Game.lookupObject victimId after)) (Just TapState.Untapped)
+      Spec.assertEqWith s "and nothing was exiled" (length (Game.zoneMembers Zone.Exile S.alice after)) 0
+    -- CR 701.59a's "or greater", against a board that can pay: an answer of the
+    -- Bolt alone totals 1, so the payment is refused and nothing moves.
+    Spec.it s "CR 701.59a an answer totalling 1 leaves collect evidence 3 unpaid" $ do
+      researcher <- S.printingOf s registry "Forensic Researcher"
+      bolt <- S.printingOf s registry "Lightning Bolt"
+      soil <- S.printingOf s registry "Acidic Soil"
+      piker <- S.printingOf s registry "Goblin Piker"
+      let (srcId, victimId, buried, gs) = forensicResearcherBoard researcher piker [bolt, soil]
+          (after, offers) = afterCollecting srcId (take 1 buried) victimId gs
+      Spec.assertEqWith s "the whole graveyard is offered" offers [buried]
+      Spec.assertEqWith s "bob's Piker is untapped" (fmap Object.tapped (Game.lookupObject victimId after)) (Just TapState.Untapped)
       Spec.assertEqWith s "and nothing was exiled" (length (Game.zoneMembers Zone.Exile S.alice after)) 0
 
 -- The Researcher alice's only permanent, bob's Piker the only other creature,
@@ -2278,7 +2290,7 @@ collecting srcId picks victim p = case p of
         State.put (1, offers)
         pure offer
       _ -> pure Action.Type.Pass
-  Prompt.ChooseCollectEvidence _ _ _ valued _ -> do
+  Prompt.ChooseExilesTotalling _ _ _ _ valued _ -> do
     let candidates = fmap fst valued
     State.modify' (\(taken, offers) -> (taken, offers <> [candidates]))
     pure (Set.fromList (filter (`List.elem` picks) candidates))
@@ -2445,7 +2457,7 @@ necropsyAnswer victim p =
    in case p of
         Prompt.AnnounceTargets _ _ _ asked -> fmap (\(_, legal) -> if Set.null (named legal) then 0 else 1) asked
         Prompt.ChooseTargets _ _ _ asked -> fmap (named . snd) asked
-        Prompt.ChooseCollectEvidence _ _ _ candidates owed -> if owed == 0 then Set.empty else Set.fromList (fmap fst candidates)
+        Prompt.ChooseExilesTotalling _ _ _ _ candidates owed -> if owed == 0 then Set.empty else Set.fromList (fmap fst candidates)
         _ -> S.identityAnswer p
 
 -- `card` in alice's hand over `lands` Forests and a Swamp, two Acidic Soils in
@@ -2476,7 +2488,7 @@ evidenceBoard s registry card lands = do
 collectingEvidence :: Bool -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 collectingEvidence collects victim p = case p of
   Prompt.ChooseToPay {} -> if collects then PaymentDecision.Pays else PaymentDecision.Declines
-  Prompt.ChooseCollectEvidence _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates _ -> Set.fromList (fmap fst candidates)
   _ -> announcing collects victim p
 
 -- collectingEvidence, recording every CR 609.7a source-choice offer in order.

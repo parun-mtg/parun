@@ -27,6 +27,7 @@ import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -848,8 +849,8 @@ combatReplaySpec s =
         -- beside them is read, so a cross-decode is sound here where it is not
         -- between the exile and the sacrifice. What the second assertion pins is
         -- that a ChooseSacrifices entry still does not answer it.
-        Spec.it s "ChooseCollectEvidence records and replays a Set ObjectId" $ do
-          let p = Prompt.ChooseCollectEvidence decider S.alice oid [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3
+        Spec.it s "ChooseExilesTotalling records and replays a Set ObjectId" $ do
+          let p = Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3
               answer = Set.singleton (ObjectId.MkObjectId 8)
           Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p answer)) (Just answer)
           Spec.assertEqWith
@@ -864,7 +865,7 @@ combatReplaySpec s =
           Spec.assertEqWith
             s
             "every candidate"
-            (Replay.defaultAnswer (Prompt.ChooseCollectEvidence decider S.alice oid [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3))
+            (Replay.defaultAnswer (Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue [(oid, 1), (ObjectId.MkObjectId 8, 2)] 3))
             (Set.fromList [oid, ObjectId.MkObjectId 8])
         -- CR 702.167a does NOT share Response.ChoseExilesFromGraveyard with the
         -- two prompts above, unlike the pair just above each other: its pool

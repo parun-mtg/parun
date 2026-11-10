@@ -1,7 +1,31 @@
 {
   "faces": [
     {
-      "attackPermissions": [
+      "keywords": [
+        {
+          "type": "Defender"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Drowsing Tyrannodon",
+      "oracleText": "Defender (This creature can't attack.)\nAs long as you control a creature with power 4 or greater, this creature can attack as though it didn't have defender.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "rulePermissions": [
         {
           "affected": {
             "type": "Matching",
@@ -66,30 +90,6 @@
           }
         }
       ],
-      "keywords": [
-        {
-          "type": "Defender"
-        }
-      ],
-      "manaCost": [
-        {
-          "type": "Generic",
-          "value": 1
-        },
-        {
-          "type": "OfType",
-          "value": {
-            "type": "Colored",
-            "value": "Green"
-          }
-        }
-      ],
-      "name": "Drowsing Tyrannodon",
-      "oracleText": "Defender (This creature can't attack.)\nAs long as you control a creature with power 4 or greater, this creature can attack as though it didn't have defender.",
-      "power": {
-        "type": "Literal",
-        "value": 3
-      },
       "toughness": {
         "type": "Literal",
         "value": 3

@@ -1,0 +1,99 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wolverine, Fierce Fighter",
+            "label": "wolverine",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 510.2 / 614.1a: two blockers' damage to Wolverine, Fierce Fighter is dealt at once, so neither is already dealt when the other heals him, and both are marked",
+  "note": "Wolverine, a 3/5, attacks and is blocked by Grizzly Bears and Hill Giant. Both events are replaced before either is marked, so he is marked 5 and dies. Marking the Bears' 2 before healing for the Giant's 3 would leave him alive with 3.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$wolverine"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$bears": [
+            "$wolverine"
+          ],
+          "$giant": [
+            "$wolverine"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "AssignDamage": {
+          "$bears": 3
+        }
+      },
+      "player": "alice",
+      "source": "$wolverine",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wolverine, Fierce Fighter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

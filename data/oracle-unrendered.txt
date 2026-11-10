@@ -285,6 +285,7 @@ bard-the-bowman
 bards-company
 barkhide-troll
 barls-cage
+baron-helmut-zemo
 barrin
 barrin-tolarian-archmage
 bartered-cow
@@ -2209,6 +2210,7 @@ monica-rambeau-photon-living-light
 monks-fist
 monomania
 monstrous-war-leech
+monument-to-endurance
 moon-girl-and-devil-dinosaur
 moonlace
 moonmist
@@ -2976,6 +2978,7 @@ shadowgrange-archfiend
 shadows-of-the-past
 shahrazad
 shahrazad-and-sindbad
+shang-chi-master-of-kung-fu
 shapeshifter
 shared-summons
 shattered-ego
@@ -3202,6 +3205,7 @@ storage-matrix
 storm-cauldron
 storm-of-memories
 storm-the-festival
+storm-windrider
 stormchasers-talent
 stormtide-leviathan
 stormwild-capridor
@@ -3375,6 +3379,7 @@ the-great-goblin
 the-hive
 the-karst-enchanted
 the-kenriths-royal-funeral
+the-kingpin-of-crime
 the-legend-of-kuruk-avatar-kuruk
 the-lonely-mountain
 the-lord-of-the-eagles
@@ -3428,6 +3433,7 @@ thornvault-forager
 thought-distortion
 thoughtlace
 thoughtleech
+thousand-year-elixir
 thousand-year-storm
 thraben-gargoyle-stonewing-antagonizer
 thraben-inspector
@@ -3843,6 +3849,7 @@ wolf-in-_-clothing
 wolf-pack
 wolfir-silverheart
 wolfriders-saddle
+wolverine-fierce-fighter
 wood-elemental
 woodland-bellower
 woodland-champion

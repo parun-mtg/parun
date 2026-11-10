@@ -238,7 +238,7 @@ data LastKnown = MkLastKnown
     -- | CR 700.2b / 113.7a: the modes its triggered abilities had chosen --
     -- Object.chosenModes as it left, so a trigger whose source is gone before
     -- CR 603.3 places it still bars them (Parun.Engine.Engine.placeBorne).
-    chosenModes :: !(Map.Map (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) (Set.Set ModeIndex.ModeIndex)),
+    chosenModes :: !(Map.Map (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) (Map.Map ModeIndex.ModeIndex Natural.Natural)),
     -- | CR 702.30a: how far each player's echo window had run on it --
     -- Object.controlClock as it left. Not a characteristic (CR 109.3's list has
     -- no clock), and per-INCARNATION, so CR 400.7 deletes the only copy of it

@@ -1,7 +1,27 @@
 {
   "faces": [
     {
-      "attackPermissions": [
+      "keywords": [
+        {
+          "type": "Defender"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Novice Knight",
+      "oracleText": "Defender (This creature can't attack.)\nAs long as this creature is enchanted or equipped, it can attack as though it didn't have defender.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "rulePermissions": [
         {
           "affected": {
             "type": "Matching",
@@ -32,26 +52,6 @@
           }
         }
       ],
-      "keywords": [
-        {
-          "type": "Defender"
-        }
-      ],
-      "manaCost": [
-        {
-          "type": "OfType",
-          "value": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      ],
-      "name": "Novice Knight",
-      "oracleText": "Defender (This creature can't attack.)\nAs long as this creature is enchanted or equipped, it can attack as though it didn't have defender.",
-      "power": {
-        "type": "Literal",
-        "value": 2
-      },
       "toughness": {
         "type": "Literal",
         "value": 3

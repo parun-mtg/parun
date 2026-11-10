@@ -1889,6 +1889,7 @@ damageRewriteEffects rewrite = case rewrite of
   DamageRewrite.RedirectMatching _ -> []
   DamageRewrite.TurnFaceUp -> []
   DamageRewrite.AlsoToSourceController -> []
+  DamageRewrite.HealSourceFirst -> []
 
 -- What a damage REWRITE reads, entryRewriteReads' twin: CR 614.9's printed
 -- destination, a Filter, and CR 702.64a's ceiling, a Quantity read against the
@@ -1913,6 +1914,7 @@ damageRewriteReads rewrite = case rewrite of
   DamageRewrite.RunEffects _ -> ([], [])
   DamageRewrite.TurnFaceUp -> ([], [])
   DamageRewrite.AlsoToSourceController -> ([], [])
+  DamageRewrite.HealSourceFirst -> ([], [])
 
 -- One Filter's slot reads, each at the arity its atom reads it with
 -- (Filter.slotArities): Many for an atom taking the whole set, which since

@@ -78,7 +78,7 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseCollectEvidence",
+          "prompt": "ChooseExilesTotalling",
           "with": [
             "$wurm"
           ]

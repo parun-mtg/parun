@@ -216,7 +216,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.doesNotUntapFor = 2,
           Object.exertedBy = Set.singleton (PlayerId.MkPlayerId 23),
           Object.activatedOnce = Map.singleton ActivatedAbilitySourceSpec.ability 1,
-          Object.chosenModes = Map.singleton TriggeredAbilitySourceSpec.ability (Set.singleton (ModeIndex.MkModeIndex 2))
+          Object.chosenModes = Map.singleton TriggeredAbilitySourceSpec.ability (Map.singleton (ModeIndex.MkModeIndex 2) 3)
         }
       ( " {\"owner\":1,\"identity\":{\"serial\":9,\"startingOwner\":7},\"enteredUnder\":2,\"source\":{\"type\":\"OfToken\",\"value\":3}"
           <> ",\"zone\":\"Battlefield\",\"tapped\":\"Tapped\""
@@ -270,7 +270,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"doesNotUntapFor\":2,\"exertedBy\":[23]"
           <> ",\"activatedOnce\":[{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}"
           <> ",\"modal\":{\"modes\":[{}]}}]"
-          <> ",\"chosenModes\":[{\"key\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"value\":[2]}]} "
+          <> ",\"chosenModes\":[{\"key\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"value\":{\"2\":3}}]} "
       )
   Spec.it s "has a schema" $
     Common.assertHasSchema s Object.codec

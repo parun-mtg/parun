@@ -44,6 +44,7 @@ import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
@@ -482,7 +483,7 @@ spec s registry = Spec.describe s "Bot" $ do
         reaching :: [Integer] -> Integer -> Set.Set (Set.Set ObjectId.ObjectId)
         reaching values threshold = Set.fromList [Set.fromList (fmap fst group) | group <- List.subsequences (valued values), sum (fmap snd group) >= threshold]
     Spec.assertEqWith s "crews" (drawn (Prompt.ChooseTapsForTotalPower decider S.alice oid (valued [2, 1, -1, 3]) 3)) (reaching [2, 1, -1, 3] 3)
-    Spec.assertEqWith s "collects" (drawn (Prompt.ChooseCollectEvidence decider S.alice oid (valued [0, 2, 3, 1]) 4)) (reaching [0, 2, 3, 1] 4)
+    Spec.assertEqWith s "collects" (drawn (Prompt.ChooseExilesTotalling decider S.alice oid CardTally.ManaValue (valued [0, 2, 3, 1]) 4)) (reaching [0, 2, 3, 1] 4)
     Spec.assertEqWith s "out of reach" (drawn (Prompt.ChooseTapsForTotalPower decider S.alice oid (valued [1, 1, -1, 0]) 3)) (Set.singleton (Set.fromList candidates))
 
   -- CR 615.7: a shield with 3 left over hits of 2 and 3 spends all 3, each

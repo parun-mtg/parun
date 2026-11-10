@@ -101,13 +101,11 @@ import qualified Parun.Codec.AttackLimitScopeSpec
 import qualified Parun.Codec.AttackLimitUnlessSpec
 import qualified Parun.Codec.AttackMeasureSpec
 import qualified Parun.Codec.AttackOptionSpec
-import qualified Parun.Codec.AttackPermissionSpec
 import qualified Parun.Codec.AttackRequirementSpec
 import qualified Parun.Codec.AttackTargetKindSpec
 import qualified Parun.Codec.AttackTargetRefSpec
 import qualified Parun.Codec.AttackTargetSpec
 import qualified Parun.Codec.AttackTriggerSpec
-import qualified Parun.Codec.AttackWaiverSpec
 import qualified Parun.Codec.AttackedSubjectSpec
 import qualified Parun.Codec.AttackedTriggerSpec
 import qualified Parun.Codec.AttackerBlockedSpec
@@ -155,6 +153,7 @@ import qualified Parun.Codec.CardIdentitySpec
 import qualified Parun.Codec.CardNameSpec
 import qualified Parun.Codec.CardSelectionSpec
 import qualified Parun.Codec.CardSpec
+import qualified Parun.Codec.CardTallySpec
 import qualified Parun.Codec.CardTypeSpec
 import qualified Parun.Codec.CastFromSpec
 import qualified Parun.Codec.CastFromZoneSpec
@@ -383,6 +382,7 @@ import qualified Parun.Codec.ExchangeZonesSpec
 import qualified Parun.Codec.ExchangedValueSpec
 import qualified Parun.Codec.ExileCardsFromGraveyardSpec
 import qualified Parun.Codec.ExileCardsFromHandSpec
+import qualified Parun.Codec.ExileCardsTotallingSpec
 import qualified Parun.Codec.ExileFromGraveyardSpec
 import qualified Parun.Codec.ExileHauntingSpec
 import qualified Parun.Codec.ExileLinkSpec
@@ -704,6 +704,8 @@ import qualified Parun.Codec.RoomIndexSpec
 import qualified Parun.Codec.RoundingSpec
 import qualified Parun.Codec.RuleAbilitiesSpec
 import qualified Parun.Codec.RuleFamilySpec
+import qualified Parun.Codec.RulePermissionSpec
+import qualified Parun.Codec.RuleWaiverSpec
 import qualified Parun.Codec.SacrificeAnyNumberSpec
 import qualified Parun.Codec.SacrificeEffectSpec
 import qualified Parun.Codec.SacrificeRestrictionSpec
@@ -1139,8 +1141,8 @@ spec s registry corpus = do
   Parun.Codec.AttackLimitScopeSpec.spec s
   Parun.Codec.AttackLimitUnlessSpec.spec s
   Parun.Codec.AttackOptionSpec.spec s
-  Parun.Codec.AttackPermissionSpec.spec s
-  Parun.Codec.AttackWaiverSpec.spec s
+  Parun.Codec.RulePermissionSpec.spec s
+  Parun.Codec.RuleWaiverSpec.spec s
   Parun.Codec.AttackRequirementSpec.spec s
   Parun.Codec.AttackTargetKindSpec.spec s
   Parun.Codec.AttackTargetRefSpec.spec s
@@ -1194,6 +1196,7 @@ spec s registry corpus = do
   Parun.Codec.CastObligationSpec.spec s
   Parun.Codec.CastOfferSpec.spec s
   Parun.Codec.CastRepetitionSpec.spec s
+  Parun.Codec.CardTallySpec.spec s
   Parun.Codec.CastWindowSpec.spec s
   Parun.Codec.ChangeWordSpec.spec s
   Parun.Codec.ChangeTextSpec.spec s
@@ -1417,6 +1420,7 @@ spec s registry corpus = do
   Parun.Codec.ExchangeValuesSpec.spec s
   Parun.Codec.ExchangeZonesSpec.spec s
   Parun.Codec.ExileCardsFromGraveyardSpec.spec s
+  Parun.Codec.ExileCardsTotallingSpec.spec s
   Parun.Codec.ExileCardsFromHandSpec.spec s
   Parun.Codec.CardAbilitiesSpec.spec s
   Parun.Codec.ExiledPileSpec.spec s

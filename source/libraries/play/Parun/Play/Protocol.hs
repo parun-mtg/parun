@@ -74,6 +74,7 @@ import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -498,8 +499,8 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseMaterials _ _ source candidates count orMore -> subset (Just source) [] (if orMore then (Just count, Nothing) else exactly count candidates) (fmap object candidates)
   -- CR 702.122a: any of them, whose total power the engine judges.
   Prompt.ChooseTapsForTotalPower _ _ source candidates power -> subset (Just source) [("power", natural power)] (Nothing, Nothing) (fmap (object . fst) candidates)
-  -- CR 701.59a: any of them, whose total mana value the engine judges.
-  Prompt.ChooseCollectEvidence _ _ source candidates total -> subset (Just source) [("manaValue", natural total)] (Nothing, Nothing) (fmap (object . fst) candidates)
+  -- CR 701.59a / 406.2: any of them, whose total tally the engine judges.
+  Prompt.ChooseExilesTotalling _ _ source tally candidates total -> subset (Just source) [(tallyKey tally, natural total)] (Nothing, Nothing) (fmap (object . fst) candidates)
   -- CR 608.2d: up to the most where there is one; CR 101.4b: what earlier
   -- choosers picked.
   Prompt.ChooseAnyNumber _ _ source purpose candidates most earlier ->
@@ -756,6 +757,13 @@ objects = Reply.encode (Reply.list Reply.object) namer
 
 natural :: Natural -> R.Reply
 natural = Reply.encode Reply.natural namer
+
+-- | The field a threshold exile's total is told under: "manaValue", or
+-- "blackManaSymbols" for Baron Helmut Zemo's boast.
+tallyKey :: CardTally.CardTally -> String
+tallyKey tally = case tally of
+  CardTally.ManaValue -> "manaValue"
+  CardTally.ManaSymbolsOf color -> fmap Char.toLower (show color) <> "ManaSymbols"
 
 -- | CR 103.1: whether this seat plays first rather than draws, asked over the
 -- line before the game begins, so with no view; asked again with the problem
