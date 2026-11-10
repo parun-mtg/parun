@@ -28,8 +28,9 @@
 --
 -- A tree reads the history through the arm of the construct whose engine read
 -- site consults GameState.events or GameState.activationsThisTurn -- and a
--- keyword's arm, where the engine EXPANDS the keyword into one or gates its
--- cost on one (Parun.Engine.Keyword, Parun.Engine.Cost.candidateCostsGiven).
+-- keyword's keywordLooksBack in Parun.Engine.Children, where the engine
+-- EXPANDS the keyword into one or gates its cost on one (Parun.Engine.Keyword,
+-- Parun.Engine.Cost.candidateCostsGiven).
 module Parun.Engine.Interchangeable.Mentions where
 
 import qualified Data.Functor.Const as Const
