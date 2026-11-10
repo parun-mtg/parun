@@ -2365,7 +2365,7 @@ conditionChildren c condition = case condition of
   Condition.Compares (Compares.MkCompares measured comparison threshold) -> fmap Condition.Compares (Compares.MkCompares <$> conditionQuantity c measured <*> pure comparison <*> conditionQuantity c threshold)
   Condition.Any conditions -> Condition.Any <$> traverse (conditionNested c) conditions
   Condition.All conditions -> Condition.All <$> traverse (conditionNested c) conditions
-  Condition.During (DuringPhase.MkDuringPhase window scope) -> fmap Condition.During (DuringPhase.MkDuringPhase window <$> conditionTurn c scope)
+  Condition.During (DuringPhase.MkDuringPhase window turns) -> fmap Condition.During (DuringPhase.MkDuringPhase window <$> conditionTurn c turns)
 
 -- | One visitor per kind of child a duration (CR 611.2) holds.
 data DurationChildren f = MkDurationChildren
@@ -2402,18 +2402,18 @@ durationChildren c duration = case duration of
   Duration.Indefinite -> pure duration
   Duration.Perpetual -> pure duration
   Duration.UntilYourNextTurn -> pure duration
-  Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step player) -> fmap Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step <$> durationPlayer c player)
+  Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step whose) -> fmap Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step <$> durationPlayer c whose)
   Duration.UntilEndOfYourNextTurn -> pure duration
-  Duration.UntilEndOfNextTurnOf player -> Duration.UntilEndOfNextTurnOf <$> durationPlayer c player
-  Duration.DuringNextTurnOf player -> Duration.DuringNextTurnOf <$> durationPlayer c player
-  Duration.DuringNextUntapStepOf player -> Duration.DuringNextUntapStepOf <$> durationPlayer c player
+  Duration.UntilEndOfNextTurnOf whose -> Duration.UntilEndOfNextTurnOf <$> durationPlayer c whose
+  Duration.DuringNextTurnOf whose -> Duration.DuringNextTurnOf <$> durationPlayer c whose
+  Duration.DuringNextUntapStepOf whose -> Duration.DuringNextUntapStepOf <$> durationPlayer c whose
   Duration.DuringYourNextTurn -> pure duration
   Duration.DuringThatExtraTurn -> pure duration
   Duration.ForAsLongAs condition -> Duration.ForAsLongAs <$> durationCondition c condition
   Duration.UntilEndOfCombat -> pure duration
   Duration.UntilEndOfCombatOnYourNextTurn -> pure duration
   Duration.UntilPaid (UntilPaid.MkUntilPaid payer cost) -> fmap Duration.UntilPaid (UntilPaid.MkUntilPaid <$> durationPlayer c payer <*> durationCost c cost)
-  Duration.UntilUsed slot -> Duration.UntilUsed <$> traverse (durationSlot c) slot
+  Duration.UntilUsed used -> Duration.UntilUsed <$> traverse (durationSlot c) used
   Duration.UntilEvent event -> Duration.UntilEvent <$> durationEventChildren c event
 
 -- | The event that ends a duration (CR 611.2a): a filter, a slot or a baked card.
@@ -2424,7 +2424,7 @@ durationEventChildren c event = case event of
   DurationEvent.Planeswalked -> pure event
   DurationEvent.SourceExiledCard -> pure event
   DurationEvent.SourceLeftBattlefield -> pure event
-  DurationEvent.BoundCardCast slot -> DurationEvent.BoundCardCast <$> durationSlot c slot
+  DurationEvent.BoundCardCast bound -> DurationEvent.BoundCardCast <$> durationSlot c bound
   DurationEvent.CardCast card -> DurationEvent.CardCast <$> durationObject c card
 
 -- | A set's members, each through a visitor; members the visitor maps together merge.
