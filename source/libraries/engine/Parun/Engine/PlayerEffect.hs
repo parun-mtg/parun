@@ -1034,7 +1034,7 @@ prohibitsCounters pid kind gs =
         -- Every other arm is about casting, playing, targeting, countering,
         -- searching, paying, keeping mana, gaining or losing life, rule 702
         -- protection or how a coin flip came out. CR 122.1's counters are placed by an effect that has
-        -- already resolved or by a rule, so none of them reaches one -- Silence
+        -- already resolved, by a rule or by a cost, so none of them reaches one -- Silence
         -- stops the spell, never the counters a resolved one puts on a player.
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False

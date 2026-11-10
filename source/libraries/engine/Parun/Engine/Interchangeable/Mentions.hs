@@ -814,6 +814,7 @@ costComponentNames asking onKeyword x = case x of
   CostComponent.RemoveCountersFromThis countersOnThis -> countersOnThisNames asking onKeyword countersOnThis
   CostComponent.RemoveCounters countersFromPermanents -> countersFromPermanentsNames asking onKeyword countersFromPermanents
   CostComponent.PutCountersOnThis countersOnThis -> countersOnThisNames asking onKeyword countersOnThis
+  CostComponent.PutCountersOnPayer _ -> mempty
   CostComponent.Blight amount -> costAmountNames asking amount
   CostComponent.Forage -> mempty
   CostComponent.FlipCoin -> mempty

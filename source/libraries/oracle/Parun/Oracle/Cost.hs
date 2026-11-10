@@ -18,6 +18,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
+import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
@@ -134,6 +135,9 @@ component self named c = case c of
            other <- singular named card right
          ]
   CostComponent.Blight (CostAmount.Fixed n) -> [Text.pack ("Blight " <> show n)]
+  -- Each PlayerCounterKind constructor is named for its counter's word.
+  CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer kind n) ->
+    fmap (Text.pack "Get " <>) (counted (Text.toLower (Text.pack (show kind)) <> Text.pack " ") (toInteger n))
   -- A loyalty symbol, its minus a minus sign (CR 107.7, CR 606.4).
   CostComponent.AddLoyaltyToThis 0 -> [Text.pack "[0]"]
   CostComponent.AddLoyaltyToThis n -> [Text.pack ("[+" <> show n <> "]")]
