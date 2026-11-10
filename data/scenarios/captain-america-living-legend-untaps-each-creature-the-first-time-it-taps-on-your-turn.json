@@ -196,14 +196,6 @@
       "player": "alice",
       "step": "DeclareAttackers",
       "turn": 1
-    },
-    {
-      "do": {
-        "Block": {}
-      },
-      "player": "bob",
-      "step": "DeclareBlockers",
-      "turn": 1
     }
   ]
 }

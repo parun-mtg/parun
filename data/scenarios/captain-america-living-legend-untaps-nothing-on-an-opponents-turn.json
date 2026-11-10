@@ -122,14 +122,6 @@
       "player": "alice",
       "step": "DeclareAttackers",
       "turn": 2
-    },
-    {
-      "do": {
-        "Block": {}
-      },
-      "player": "bob",
-      "step": "DeclareBlockers",
-      "turn": 2
     }
   ]
 }
