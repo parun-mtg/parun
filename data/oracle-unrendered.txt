@@ -2589,6 +2589,7 @@ questing-druid-seek-the-beast
 quicken
 quickling
 quicksilver-amulet
+quicksilver-brash-blur
 quicksilver-gargantuan
 quilled-greatwurm
 quina-qu-gourmet
@@ -2603,6 +2604,7 @@ radiate
 radiating-lightning
 raffine-scheming-seer
 raffines-informant
+raft-security-officer
 rag-man
 rage-into-the-valley
 ragged-short-spear
@@ -2628,6 +2630,7 @@ ransom-note
 rapacious-dragon
 raphael-fiendish-savior
 rapid-fire
+rapid-rescue
 rat-out
 ratchet-bomb
 ratchet-field-medic-ratchet-rescue-racer
@@ -2657,8 +2660,11 @@ reckless-brute
 reclusive-artificer
 recursive-recruitment
 red-cliffs-armada
+red-guardian-super-soldier
+red-hulk
 red-mana-battery
 red-priest-of-yawgmoth
+red-room-recruit
 red-ward
 redcap-gutter-dweller
 redeem
@@ -2687,6 +2693,8 @@ repeat-offender
 repeated-reverberation
 reprisal
 reprocess
+reptil-dinomorpher
+repulsor-blast
 repurposed-enforcer
 research-development
 resistance-fighter
@@ -2695,6 +2703,7 @@ resourceful-defense
 resplendent-angel
 rest-in-peace
 restock
+restorative-technique
 retaliate
 retraction-helix
 retribution-of-the-ancients
@@ -2709,6 +2718,7 @@ reverse-damage
 reverse-polarity
 reverse-the-sands
 revoke-privileges
+rewrite-history
 rewrite-regrets
 rhovanion-rampager
 rhox
@@ -2718,6 +2728,7 @@ rhystic-cave
 rhystic-circle
 rhythm-of-the-wild
 richlau-headmaster
+rick-jones-destined-sidekick
 riddleform
 riddles-in-the-dark
 rienne-angel-of-rebirth
@@ -2751,6 +2762,7 @@ riveteers-charm
 riveteers-requisitioner
 roads-go-ever-ever-on
 roaring-furnace-steaming-sauna
+robot-domination
 rocco-street-chef
 rock-hydra
 rocket-launcher
@@ -2760,6 +2772,7 @@ rogues-gloves
 roiling-horror
 roll-roll-roll-roll
 rolling-stones
+ronin-shadow-stalker
 rooftop-nuisance
 room-of-refuge
 root-maze
@@ -2771,6 +2784,7 @@ rope
 rout
 rowdy-crew
 rowen
+roxxon-brutes
 rubblebelt-recluse
 ruby-daring-tracker
 ruhan-of-the-fomori
@@ -2795,6 +2809,8 @@ ruric-thar-biomagus
 ruric-thar-magecrusher
 rust-goliath
 rustic-clachan
+s-h-i-e-l-d-flying-car
+s-h-i-e-l-d-spy-kit
 sabertooth-mauler
 sabin-master-monk
 sacred-boon
@@ -2839,6 +2855,7 @@ satyr-piper
 satyr-wayfinder
 sauroform-hybrid
 savage-gorger
+savage-land-dinosaur
 savage-summoning
 savage-ventmaw
 savanti-romero-times-exile

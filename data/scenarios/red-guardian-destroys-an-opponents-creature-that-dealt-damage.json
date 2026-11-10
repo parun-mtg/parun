@@ -1,0 +1,35 @@
+{
+  "description": "CR 603.6a / 120.1 / 701.8a: Red Guardian, flashed in after combat, destroys the one creature an opponent controls that dealt damage this turn",
+  "note": "Bob's Hill Giant dealt Alice combat damage; his Serra Angel stayed home, and Alice's own Hill Giant dealt damage blocking his Grizzly Bears. Only Bob's Giant is a legal target, so the target is bound unasked: a second candidate would raise an unscheduled target prompt.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [{"card": "Red Guardian, Super-Soldier", "label": "guardian"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}],
+        "battlefield": [{"card": "Hill Giant", "label": "agiant"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}],
+        "battlefield": [{"card": "Hill Giant", "label": "bgiant", "ready": true}, {"card": "Grizzly Bears", "label": "bbears", "ready": true}, {"card": "Serra Angel", "label": "angel", "ready": true}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$bgiant", "$bbears"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Block": {"$agiant": ["$bbears"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 17}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "$guardian", "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Serra Angel", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}}
+  ]
+}
