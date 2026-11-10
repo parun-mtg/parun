@@ -2354,14 +2354,18 @@ everyTriggerCondition =
     TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.while = Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))}),
     -- Every subject, with and without an attacking player: the slots are a
     -- function of both.
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Enchanted)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Source)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer))),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer))),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You))),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.AnyPlayer) (AttackedSubject.Related PlayerRelation.Opponent))),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Enchanted)),
-    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Source)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Enchanted Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Source Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.Opponent) (AttackedSubject.Related PlayerRelation.You) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.AnyPlayer) (AttackedSubject.Related PlayerRelation.Opponent) Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Enchanted Nothing)),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) AttackedSubject.Source Nothing)),
+    -- A count with and without an attacking player: eventBindings stamps the
+    -- admitted creatures in place of every creature attacking the target.
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing (AttackedSubject.Related PlayerRelation.AnyPlayer) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))))),
+    TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just PlayerRelation.You) (AttackedSubject.Related PlayerRelation.AnyPlayer) (Just (AttackCount.MkAttackCount AttackMeasure.Creatures 1 (Filter.Type.And []))))),
     -- ALL THREE relations, each with and without a count: an eventBindings arm
     -- that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed.

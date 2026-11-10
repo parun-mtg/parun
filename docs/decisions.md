@@ -1686,3 +1686,20 @@ Entries are ordered by the first rule each cites.
   `Player.draftNotes` alone. Proved by `Parun.SetupSpec`'s "CR 905.2b
   createDeck records the draft notes, and a subgame keeps them".
 - **Issue**: #4006.
+
+## Whom Attuma's Merfolk attack
+
+- **Question**: Attuma, Atlantean Warlord's "whenever one or more Merfolk you
+  control attack a player" in multiplayer: once per declaration, or once per
+  player the Merfolk attack?
+- **Rules**: CR 508.3b, 508.3d, 508.3e (CR of 2026-11-06); the card has no
+  rulings.
+- **Decision**: Once per player attacked by at least one of your Merfolk, CR
+  508.3e's arity with the attackers narrowed: "attack a player" names the
+  attacked, as "[a player] attacks [another player]" does.
+- **Rejected**: Once per declaration, CR 508.3d's arity: that rule's wording
+  names no attacked player.
+- **Site**: `Parun.Engine.Event.Match.attacks`' Attacked arm, its count read
+  over `Parun.Engine.Event.Binding.attackedBy`. Proved by the scenario
+  `attuma-draws-once-per-player-its-merfolk-attack`.
+- **Issue**: #6820.

@@ -730,7 +730,7 @@ seiferSpec s registry =
 -- Rule 508.3e's condition, read off the log entry CR 603.2 writes for a trigger.
 isPlayerAttacksPlayer :: TriggerCondition.TriggerCondition -> Bool
 isPlayerAttacksPlayer condition = case condition of
-  TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just _) _)) -> True
+  TriggerCondition.Attacks (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger (Just _) _ _)) -> True
   _ -> False
 
 -- CR 508.3e's SECOND subject named, with Lulu, Stern Guardian {2}{U} Legendary

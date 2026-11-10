@@ -1312,17 +1312,20 @@ leavesBindings gs bearerBecame t event
       | otherwise = setBecameArrivals m Map.empty
     departed oid = maybe id (Binding.setTriggerPlayer . LastKnown.owner) (Game.lastKnownOf oid gs) . Binding.setDepartedPermanent oid
 
--- CR 508.3b / 508.3e: the creatures declared attacking the target, and for
--- 508.3e only the attacking player's -- Garruk, Curse Breaker's "those
--- creatures". CR 508.4's creature put onto the battlefield attacking is not in
+-- CR 508.3b / 508.3e: the creatures declared attacking the event's target, for
+-- 508.3e only the attacking player's (Garruk, Curse Breaker's "those
+-- creatures"), and only those the trigger's count admits (Attuma, Atlantean
+-- Warlord's "Merfolk you control"), read as admittedAttackers reads them.
+-- CR 508.4's creature put onto the battlefield attacking is not in
 -- Combat.declaredAttackers.
-attackersOf :: GameState -> Bool -> PlayerId -> AttackTarget.AttackTarget -> Seq.Seq ObjectId
-attackersOf gs attackersOnly attacker target = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
+attackedBy :: GameState -> ObjectId -> PlayerId -> AttackedTrigger.AttackedTrigger -> BecameAttacked.BecameAttacked -> Seq.Seq ObjectId
+attackedBy gs bearer you t (BecameAttacked.MkBecameAttacked attacker target) = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
   where
     combat = GameState.combat gs
     admits oid =
       Map.lookup oid (Combat.attackers combat) == Just target
-        && (not attackersOnly || Map.lookup oid (Combat.joinedUnder combat) == Just attacker)
+        && (Maybe.isNothing (AttackedTrigger.attacker t) || Map.lookup oid (Combat.joinedUnder combat) == Just attacker)
+        && maybe True (\count -> admitsAttacker gs bearer you (AttackCount.filter count) oid) (AttackedTrigger.attackers t)
 
 -- CR 508.3: attackSlots, stamped. A Source subject binds no "that player":
 -- the match has already pinned the attacked to the bearer.
@@ -1330,13 +1333,13 @@ attackBindings :: GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigg
 attackBindings gs bearer you trigger event = case (trigger, event) of
   (AttackTrigger.Attacker _, GameEvent.AttackerDeclared d) ->
     Binding.setTriggerPlayer (AttackerDeclared.defender d) (Binding.setAttackingCreature (AttackerDeclared.attacker d) Map.empty)
-  (AttackTrigger.Attacked t, GameEvent.BecameAttacked (BecameAttacked.MkBecameAttacked attacker target)) ->
+  (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload@(BecameAttacked.MkBecameAttacked attacker target)) ->
     let attacked = case (AttackedTrigger.attacked t, target) of
           (AttackedSubject.Source, _) -> id
           (_, AttackTarget.OfPlayer player) -> Binding.setTriggerPlayer player
           _ -> id
         attacking = maybe id (const (Binding.setAttackingPlayer attacker)) (AttackedTrigger.attacker t)
-     in attacking (attacked (Binding.setAttackingCreatures (attackersOf gs (Maybe.isJust (AttackedTrigger.attacker t)) attacker target) Map.empty))
+     in attacking (attacked (Binding.setAttackingCreatures (attackedBy gs bearer you t payload) Map.empty))
   (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) -> case DeclarationTrigger.attackers t of
     Nothing -> Binding.setAttackingPlayer attacker Map.empty
     Just count -> Binding.setAttackingPlayer attacker (Binding.setAttackingCreatures (admittedAttackers gs bearer you (AttackCount.filter count) attacker) Map.empty)

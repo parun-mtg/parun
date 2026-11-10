@@ -101,6 +101,7 @@ import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
+import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
@@ -4699,8 +4700,9 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- CR 508.3 names a quality of the attacker (rule 702.83a's "a creature you
   -- control"), of the permanent attacked (Thrashing Frontliner's "a battle"), of
   -- the other attackers (CR 702.149a's "power greater than this creature's
-  -- power") and of the creatures a declaration counts (Hermes, Overseer of
-  -- Elpis' "Birds"); players carry none.
+  -- power") and of the creatures a declaration or an attacked target counts
+  -- (Hermes, Overseer of Elpis' "Birds", Attuma, Atlantean Warlord's
+  -- "Merfolk"); players carry none.
   TriggerCondition.Attacks trigger -> case trigger of
     AttackTrigger.Attacker (AttackerTrigger.MkAttackerTrigger creature target company _ while_) ->
       unframed
@@ -4709,7 +4711,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
               <> [f | AttackCompany.WithAnother f <- [company]]
         )
         <> foldMap (frame Unframed . conditionFilters) while_
-    AttackTrigger.Attacked _ -> []
+    AttackTrigger.Attacked t -> unframed [AttackCount.filter count | Just count <- [AttackedTrigger.attackers t]]
     AttackTrigger.Declaration t ->
       unframed [AttackCount.filter count | Just count <- [DeclarationTrigger.attackers t]]
         <> foldMap (frame Unframed . conditionFilters) (DeclarationTrigger.while t)

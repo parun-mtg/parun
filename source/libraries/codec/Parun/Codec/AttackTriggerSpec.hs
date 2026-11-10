@@ -26,7 +26,7 @@ spec s = Spec.describe s "Parun.Codec.AttackTrigger" $ do
     Common.assertCodec
       s
       AttackTrigger.codec
-      (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Source))
+      (AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger Nothing AttackedSubject.Source Nothing))
       " {\"type\":\"Attacked\",\"value\":{\"attacked\":{\"type\":\"Source\"}}} "
   Spec.it s "Declaration" $
     Common.assertCodec
