@@ -23,6 +23,7 @@
     { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Counters": { "object": "$thing", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
     { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "Activate": { "object": "$hawkeye", "ability": 0, "targets": ["$bob"] } } },
     { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
     { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Counters": { "object": "$thing", "kind": { "type": "PlusOnePlusOne" }, "count": 2 } } }
   ]
