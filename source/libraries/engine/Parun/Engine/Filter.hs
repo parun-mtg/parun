@@ -254,10 +254,10 @@ data View = MkView
     -- battlefield, a player, a cast's snapshot -- the vacuous posture power and
     -- controller take.
     attacking :: Bool,
-    -- CR 506.5: is this candidate attacking alone right now -- attacking, with
-    -- no other creature attacking? Read off the same map as `attacking`, and
-    -- False wherever that is.
-    attackingAlone :: Bool,
+    -- CR 506.5 / 506.6: among which attackers is this candidate attacking alone
+    -- right now? Read off the same map as `attacking`, and empty wherever that
+    -- is False.
+    attackingAlone :: Set.Set AloneAmong.AloneAmong,
     -- CR 508.1b: WHICH PLAYER is this candidate attacking? Read from
     -- GameState.combat like `attacking` above and off the same map, but off its
     -- VALUE rather than its keys: Combat.attackers records what each attacker was
@@ -916,7 +916,7 @@ playerView pid =
       playerIdentity = Just pid,
       -- CR 506.3: only a creature can attack, and a player is not one.
       attacking = False,
-      attackingAlone = False,
+      attackingAlone = Set.empty,
       -- CR 506.3 again: a player attacks nothing, so there is no player it is
       -- attacking either.
       attackingPlayer = Nothing,
@@ -2305,11 +2305,10 @@ matches context view predicate = case predicate of
   Filter.OwnsBoundAtLeast {} -> False
   -- CR 508.1k: a creature stays attacking until it is removed from combat or the
   -- combat phase ends, so this is a live read of the combat record, never a stamp
-  -- on the object. CR 506.5's "attacking alone" reads the same record.
+  -- on the object. CR 506.5's and CR 506.6's "attacking alone" read the same
+  -- record.
   Filter.IsAttacking Nothing -> attacking view
-  Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> attackingAlone view
-  -- Not implemented (#6873).
-  Filter.IsAttacking (Just AloneAmong.AttackersOfItsPlayer) -> False
+  Filter.IsAttacking (Just among) -> Set.member among (attackingAlone view)
   -- CR 508.1b: the same live read one field over, and the relation is answered
   -- against the perspective here rather than baked, exactly as HeldBy's is
   -- -- CR 109.5's "you" is what the match is framed by, not a fact about the
