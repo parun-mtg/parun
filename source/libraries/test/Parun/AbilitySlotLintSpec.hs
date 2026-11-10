@@ -557,7 +557,7 @@ modalTrigger condition modes =
   Mint.triggerOf
     condition
     Nothing
-    (Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory)
+    (Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
 
 -- The slots an ARMING carrier declares as targets: the three carriers above that
 -- can arm a CR 603.7 delayed ability, which is all of them except the delayed

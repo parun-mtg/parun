@@ -1961,7 +1961,7 @@ optionalEffectSpec s registry =
               before = S.handSize S.alice gs
               -- S.identityAnswer declines every optional prompt, so this is the
               -- declining half with no bespoke answerer needed.
-              after = S.runPure S.identityAnswer gs (Resolve.resolveModes stackId stackId [(ModeInstance.MkModeInstance 0 (ModeIndex.MkModeIndex 0) 0, mode)])
+              after = S.runPure S.identityAnswer gs (Resolve.resolveModes stackId stackId [(ModeInstance.MkModeInstance 0 (ModeIndex.MkModeIndex 0) 0 False, mode)])
           Spec.assertEqWith s "the mandatory clause drew, the declined one did not" (S.handSize S.alice after) (before + 1)
         -- The same pair on the ABILITY clause loop, from a real trigger: the
         -- mandatory mill is observable, so declining the "may" is told apart

@@ -529,7 +529,7 @@ data Keyword
     -- the counters are put rather than copied here. No printing grants awaken to
     -- another object, which is what makes the two spellings observably the same.
     -- Rule 702.113b's "the spell is cast as if it didn't have that target" is
-    -- Parun.Engine.Cast.trimModeTargetSlots, proved by Parun.CastSpec's "CR
+    -- Parun.Engine.Cast.trimModal, proved by Parun.CastSpec's "CR
     -- 702.113b the awaken-only land target is asked only on the awakened cast".
     Awaken (Cost.Cost Keyword)
   | Devoid -- 702.114

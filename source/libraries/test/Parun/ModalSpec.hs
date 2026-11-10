@@ -44,6 +44,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as ModalT
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.ModeInstance as ModeInstance
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Moved as Moved
@@ -203,7 +204,8 @@ modalReaderSpec s = Spec.describe s "M4h Modal reader" $ do
                 ]
             )
             (ModeSelection.ChooseExactly 1)
-            ModeMemory.NoMemory ::
+            ModeMemory.NoMemory
+            Seq.empty ::
             ModalT.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
         chosen = Seq.singleton (ModeIndex.MkModeIndex 1)
     Spec.assertEqWith s "only mode 1's effect" (Modal.modesEffects chosen m) [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing)]
@@ -890,6 +892,19 @@ combinationsSpec s = Spec.describe s "Combinations (CR 700.2d)" $ do
   Spec.it s "one option satisfies any count only under the exception" $ do
     Spec.assertEqWith s "default: none" (Modal.combinations 3 "a") []
     Spec.assertEqWith s "exception: one" (Modal.combinationsWithRepeats 3 "a") ["aaa"]
+
+  -- CR 608.2c / 700.2d: the shared clauses' view reads every chosen instance of
+  -- their own text under its printed name, and no spliced card's. Call Damage
+  -- Control's scenario drives occurrence 0; a repeated instance and a splice
+  -- (CR 702.47d) are what no pool card brings with shared clauses.
+  Spec.it s "the shared instance reads every chosen instance under its printed name" $ do
+    let name = SlotName.MkSlotName . Text.pack
+        slot = TargetSlot.required Pool.Creatures Nothing
+        allSlots = Map.fromList [(name "target", slot), (name "target#1", slot), (name "target#splice1", slot)]
+        env = Map.fromList [(name "target", Set.singleton (1 :: Int)), (name "target#1", Set.singleton 2), (name "target#splice1", Set.singleton 3), (name "x", Set.singleton 9)]
+        shared = ModeInstance.MkModeInstance 0 (ModeIndex.MkModeIndex 1) 0 True
+    Spec.assertEqWith s "main text" (Map.fromList [(name "target", Set.fromList [1, 2]), (name "x", Set.singleton 9)]) (Modal.instanceView allSlots shared Map.empty env)
+    Spec.assertEqWith s "spliced text" (Map.fromList [(name "target", Set.singleton 3), (name "x", Set.singleton 9)]) (Modal.instanceView allSlots shared {ModeInstance.splice = 1} Map.empty env)
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Modal" $ do

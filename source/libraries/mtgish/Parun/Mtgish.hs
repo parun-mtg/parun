@@ -987,7 +987,7 @@ modal context value = do
   let declared = concatMap (Map.keys . Mode.targetSlots) modes
   Monad.unless (length declared == Set.size (Set.fromList declared)) (Node.untranslated n)
   let memory = if Node.tag n == "Modal_ChooseOneThatHasntBeenChosen" then ModeMemory.ObjectLifetime else ModeMemory.NoMemory
-  pure Modal.MkModal {Modal.modes = Seq.fromList modes, Modal.selection = ModeSelection.ChooseExactly 1, Modal.memory = memory}
+  pure Modal.MkModal {Modal.modes = Seq.fromList modes, Modal.selection = ModeSelection.ChooseExactly 1, Modal.memory = memory, Modal.shared = Seq.empty}
 
 -- | A spell's or activated ability's modal, refused where it remembers its
 -- modes.

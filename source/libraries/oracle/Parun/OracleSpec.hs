@@ -875,19 +875,19 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- mode one line; CR 700.2d lets a mode be chosen more than once. Modes that
   -- each only add mana read as one choice of mana (Skyshroud Elf).
   Spec.it s "render prints modes as a bulleted list" $ do
-    let chosen selection modes = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList modes) selection ModeMemory.NoMemory, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
+    let chosen selection modes = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList modes) selection ModeMemory.NoMemory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
         destroying t = Mode.MkMode (Seq.singleton (clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable])) (Map.singleton target (TargetSlot.required Pool.Permanents (Just (Filter.HasCardType t))))
         drawing = Mode.MkMode (Seq.singleton (clause [draw (PlayerRef.Relative PlayerRelation.You) 1])) Map.empty
     Spec.assertEq s (Just (Text.pack "Choose one \8212\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactly 1) [destroying CardType.Artifact, drawing]))
     Spec.assertEq s (Just (Text.pack "Choose one or both \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.")) (Oracle.render (chosen (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2)) [destroying CardType.Artifact, destroying CardType.Land]))
     Spec.assertEq s (Just (Text.pack "Choose three. You may choose the same mode more than once.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactlyWithRepeats 3) [destroying CardType.Land, drawing]))
-    let remembering memory = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList [destroying CardType.Artifact, drawing]) (ModeSelection.ChooseExactly 1) memory, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
+    let remembering memory = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList [destroying CardType.Artifact, drawing]) (ModeSelection.ChooseExactly 1) memory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
     Spec.assertEq s (Just (Text.pack "Choose one that hasn't been chosen this turn \8212\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (remembering ModeMemory.ThisTurn))
     let three = [destroying CardType.Artifact, destroying CardType.Land, drawing]
     Spec.assertEq s (Just (Text.pack "Choose two \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactly 2) three))
     Spec.assertEq s (Just (Text.pack "Choose one or more \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 3)) three))
     let adding c = Mode.MkMode (Seq.singleton (clause [Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored c)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing)])) Map.empty
-        elf = ActivatedAbility.MkActivatedAbility (mana [ManaSymbol.Generic 1]) [] [] 0 Nothing (Modal.MkModal (Seq.fromList [adding Color.Red, adding Color.White]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+        elf = ActivatedAbility.MkActivatedAbility (mana [ManaSymbol.Generic 1]) [] [] 0 Nothing (Modal.MkModal (Seq.fromList [adding Color.Red, adding Color.White]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
     Spec.assertEq s (Just (Text.pack "{1}: Add {R} or {W}.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [elf]})))
 
   -- CR 608.2c: three or more instructions read one or two at a time (Frantic
@@ -958,9 +958,9 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints a choice of mana followed by the same instructions" $ do
     let added colour = Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored colour)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing)
         mode' colour = Mode.MkMode (Seq.singleton (clause [added colour, damage [(you, 1)]])) Map.empty
-        pain = (activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis]) (addMana 1)) {ActivatedAbility.modal = Modal.MkModal (Seq.fromList [mode' Color.White, mode' Color.Blue]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory}
+        pain = (activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis]) (addMana 1)) {ActivatedAbility.modal = Modal.MkModal (Seq.fromList [mode' Color.White, mode' Color.Blue]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty}
     Spec.assertEq s [[Text.pack "{T}: Add {W} or {U}. Spark deals 1 damage to you.", Text.pack "{T}: Add {W} or {U}. Then Spark deals 1 damage to you."]] (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [pain]})))
-    let uneven = pain {ActivatedAbility.modal = Modal.MkModal (Seq.fromList [mode' Color.White, Mode.MkMode (Seq.singleton (clause [added Color.Blue, damage [(you, 2)]])) Map.empty]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory}
+    let uneven = pain {ActivatedAbility.modal = Modal.MkModal (Seq.fromList [mode' Color.White, Mode.MkMode (Seq.singleton (clause [added Color.Blue, damage [(you, 2)]])) Map.empty]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty}
     Spec.assertEq s False (any (any (Text.isInfixOf (Text.pack "{W} or {U}"))) (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [uneven]}))))
 
   -- CR 602.5: the clauses restricting an activation, joined by "and only".
@@ -1217,7 +1217,7 @@ clause effects = Clause.MkClause Nothing Nothing Nothing Optionality.Mandatory N
 
 -- A payload of one mode, of these clauses and target slots.
 payload :: [Clause.Clause Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> [(SlotName.SlotName, TargetSlot.TargetSlot)] -> Modal.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card)
-payload clauses slots = Modal.MkModal (Seq.singleton (Mode.MkMode (Seq.fromList clauses) (Map.fromList slots))) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory
+payload clauses slots = Modal.MkModal (Seq.singleton (Mode.MkMode (Seq.fromList clauses) (Map.fromList slots))) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty
 
 -- An instant named Spark whose spell is this payload.
 spell :: [Clause.Clause Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> [(SlotName.SlotName, TargetSlot.TargetSlot)] -> Card.Card

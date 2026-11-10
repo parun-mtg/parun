@@ -2221,7 +2221,8 @@ ruleAbilitiesCounts rules =
 -- is not there for mode B to read.
 modalSlotsOffend :: (Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName) -> Set.Set SlotName.SlotName -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 modalSlotsOffend armedReads abilityBound modal =
-  let modeOffends mode =
+  let -- What a mode reads, less what it defines and what the ability binds.
+      unboundReads mode =
         let effects = Foldable.toList (Mode.allEffects mode)
             -- A slot DEFINED in this mode (a Create's minted token, or a
             -- PlaySubgame's bound subgame outcome) and then read by a later
@@ -2242,8 +2243,15 @@ modalSlotsOffend armedReads abilityBound modal =
             -- delayed ability the mode arms reads of the objects it refers to
             -- (CR 603.7c), Hunter's Insight's "that creature".
             wanted = Set.union (Map.keysSet (Resolve.modeSlots mode)) (armedReads mode)
-         in Set.difference (Set.difference wanted defined) abilityBound /= Map.keysSet (Mode.targetSlots mode)
-   in any modeOffends (Modal.modes modal)
+         in Set.difference (Set.difference wanted defined) abilityBound
+      -- CR 608.2c: the shared clauses read every mode's slots, so a mode's slot
+      -- they read is read, and they may read no other.
+      sharedReads = unboundReads (Modal.sharedMode modal)
+      declared = foldMap (Map.keysSet . Mode.targetSlots) (Modal.modes modal)
+      modeOffends mode =
+        let own = Map.keysSet (Mode.targetSlots mode)
+         in Set.union (unboundReads mode) (Set.intersection sharedReads own) /= own
+   in any modeOffends (Modal.modes modal) || not (Set.isSubsetOf sharedReads declared)
 
 -- What performing a hand action binds, and the whole of it:
 -- Parun.Engine.Resolve.Effect.performHandAction hands applyEffect an environment holding
@@ -2862,7 +2870,7 @@ modalActivated modes =
   ActivatedAbility.MkActivatedAbility
     { ActivatedAbility.costChoices = [],
       ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
-      ActivatedAbility.modal = Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory,
+      ActivatedAbility.modal = Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty,
       ActivatedAbility.maximumX = [],
       ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
@@ -6988,6 +6996,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- exercises: the pair differs in the conjured spell declaring its slot.
     Spec.assertBool s (sweeps (mintingSpell conjureCard (conjuredReading []))) "a conjured spell reading a slot it never declares is caught"
     Spec.assertBool s (not (sweeps (mintingSpell conjureCard (conjuredReading [slot])))) "and one declaring it is accepted"
+    -- CR 608.2c: shared clauses (Call Damage Control's) read the modes' slots,
+    -- and only those. The first reading is a mode's slot only they read; the
+    -- second is a name no mode declares, beside a mode reading its own.
+    let tapping read_ = Effect.Tap (Tap.plain (ObjectRef.InSlot read_))
+        sharedReading own read_ = oneFaced ((vanillaFace "Shared" instantLine) {Face.spell = (lintModal own [slot]) {Modal.shared = Seq.singleton (Mint.mandatory (Seq.singleton (tapping read_)))}})
+    Spec.assertBool s (not (sweeps (sharedReading [] slot))) "shared clauses reading a mode's slot are accepted"
+    Spec.assertBool s (sweeps (sharedReading [tapping slot] (SlotName.MkSlotName (Text.pack "other")))) "shared clauses reading no mode's slot are caught"
   -- The ENCHANT half, which the sweep above cannot reach: CR 303.4a's slot is
   -- declared on the FACE beside the modes (Card.enchantSlotMap), so it is in no
   -- mode's targetSlots and Resolve.modeSlots never folds it.
@@ -8131,7 +8146,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Not vacuous: the pool declares slots at all, and the check really rejects.
     Spec.assertBool
       s
-      (Text.isInfixOf hash (SlotName.unwrap (Modal.instanceSlot (ModeInstance.MkModeInstance 0 (ModeIndex.MkModeIndex 0) 1) (SlotName.MkSlotName (Text.pack "creature")))))
+      (Text.isInfixOf hash (SlotName.unwrap (Modal.instanceSlot (ModeInstance.MkModeInstance 0 (ModeIndex.MkModeIndex 0) 1 False) (SlotName.MkSlotName (Text.pack "creature")))))
       "instanceSlot's second occurrence really uses the separator"
   -- The sweep above's other half: declaring a reserved slot as a target is not
   -- the only way a card names one. Four opcodes carry a SlotName they

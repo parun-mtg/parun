@@ -24,6 +24,9 @@ data ModeInstance = MkModeInstance
     -- onto it, in the order its controller chose.
     splice :: Natural.Natural,
     index :: ModeIndex.ModeIndex,
-    occurrence :: Natural.Natural
+    occurrence :: Natural.Natural,
+    -- | CR 608.2c: True for the instance running Parun.Types.Modal's `shared`
+    -- clauses, whose `index` is one past its text's last mode.
+    shared :: Bool
   }
   deriving (Eq, Ord, Show)

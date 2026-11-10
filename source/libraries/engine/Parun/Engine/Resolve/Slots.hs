@@ -3545,12 +3545,14 @@ poolSlot pool = case pool of
     ZoneScope.ControllerOfBound slot -> oneSlot slot
     ZoneScope.BoundPlayer _ -> Map.empty
 
--- Every slot a TRIGGERED ability reads: each mode's (modeSlots) and its CR
--- 603.4 intervening "if"'s. CR 805.4d's "refers to that player" is asked of it.
+-- Every slot a TRIGGERED ability reads: each mode's (modeSlots), its shared
+-- clauses', and its CR 603.4 intervening "if"'s. CR 805.4d's "refers to that
+-- player" is asked of it.
 triggeredAbilitySlots :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Map.Map SlotName SlotArity
 triggeredAbilitySlots ability =
   joinSlots
     ( maybe Map.empty conditionSlots (TriggeredAbility.intervening ability)
+        : modeSlots (Mode.MkMode {Mode.clauses = Modal.shared (TriggeredAbility.modal ability), Mode.targetSlots = Map.empty})
         : fmap modeSlots (Foldable.toList (Modal.modes (TriggeredAbility.modal ability)))
     )
 

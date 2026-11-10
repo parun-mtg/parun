@@ -140,9 +140,10 @@ data Mana
 -- each add mana read as one choice of mana: "Add {R} or {W}." (Skyshroud
 -- Elf), and modes that each add mana and then do the same thing read as that
 -- choice and then the rest: "Add {W} or {U}. This land deals 1 damage to
--- you." (Adarkar Wastes).
+-- you." (Adarkar Wastes). Not rendered: shared clauses (Modal.shared).
 modal :: Target.Context -> Modal.Modal Card.Card Continuous.Ability -> [Text.Text]
 modal context m = case (Foldable.toList (Modal.modes m), Modal.selection m) of
+  _ | not (null (Modal.shared m)) -> []
   ([only], ModeSelection.ChooseExactly 1) | Modal.memory m == ModeMemory.NoMemory -> mode context only
   (modes@(_ : _ : _), selection)
     | Just added' <- traverse manaMode modes,

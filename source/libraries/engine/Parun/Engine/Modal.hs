@@ -51,9 +51,19 @@ modeEffects :: Modal.Modal card ability -> [[Effect card ability]]
 modeEffects m = fmap (Foldable.toList . Mode.allEffects) (Foldable.toList (Modal.modes m))
 
 -- Every effect across all modes, printed (mode, then written) order (CR
--- 608.2c).
+-- 608.2c), then the shared clauses'.
 allEffects :: Modal.Modal card ability -> [Effect card ability]
-allEffects m = concat (modeEffects m)
+allEffects m = concat (modeEffects m) <> Foldable.toList (Mode.allEffects (sharedMode m))
+
+-- CR 608.2c: the shared clauses (Modal.shared) as a mode declaring no target
+-- slot of its own, which is how chosenModes hands them to the resolvers.
+sharedMode :: Modal.Modal card ability -> Mode.Mode card ability
+sharedMode m = Mode.MkMode {Mode.clauses = Modal.shared m, Mode.targetSlots = Map.empty}
+
+-- The instance sharedMode runs as: one past the last printed mode, so it sorts
+-- after them (CR 608.2c) and its answers are keyed apart from theirs.
+sharedInstance :: Modal.Modal card ability -> ModeInstance.ModeInstance
+sharedInstance m = ModeInstance.MkModeInstance {ModeInstance.splice = 0, ModeInstance.index = ModeIndex.MkModeIndex (modeCount m), ModeInstance.occurrence = 0, ModeInstance.shared = True}
 
 -- CR 700.2/700.2a: every way this payload's SELECTION could be satisfied -- one
 -- inner list per legal set of modes, each already flattened into printed (mode,
@@ -79,7 +89,8 @@ selectionClauses :: Modal.Modal card ability -> [[Clause.Clause card ability]]
 selectionClauses m =
   let enumerate = if allowsRepeats m then combinationsWithRepeats else combinations
       modeClauses = fmap (Foldable.toList . Mode.clauses) (Foldable.toList (Modal.modes m))
-   in fmap concat (concatMap (\n -> enumerate n modeClauses) (selectionSizes (modeCount m) (Modal.selection m)))
+      withShared picked = concat picked <> (if null picked then [] else Foldable.toList (Modal.shared m))
+   in fmap withShared (concatMap (\n -> enumerate n modeClauses) (selectionSizes (modeCount m) (Modal.selection m)))
 
 -- CR 700.2d: "If a player is allowed to choose more than one mode for a modal
 -- spell or ability, that player normally can't choose the same mode more than
@@ -168,8 +179,9 @@ perPlayerMark :: Text.Text
 perPlayerMark = Text.pack "#player"
 
 -- CR 608.2c/700.2: the CHOSEN modes themselves, each with the ModeInstance
--- naming which mode it is and which occurrence of it, in printed order. Out-of-
--- range indices contribute nothing (total via Seq.lookup).
+-- naming which mode it is and which occurrence of it, in printed order, then
+-- the shared clauses (sharedMode) when any mode was chosen. Out-of-range
+-- indices contribute nothing (total via Seq.lookup).
 --
 -- The ORDER is what CR 702.42b demands of an entwined spell, and what CR 700.2d
 -- demands of a repeated one ("treated as if that mode appeared that many times in
@@ -185,7 +197,8 @@ perPlayerMark = Text.pack "#player"
 chosenModes :: Seq.Seq ModeIndex.ModeIndex -> Modal.Modal card ability -> [(ModeInstance.ModeInstance, Mode.Mode card ability)]
 chosenModes chosen m =
   let modeAt mi = fmap ((,) mi) (modeAtIndex (ModeInstance.index mi) m)
-   in Maybe.mapMaybe modeAt (instancesOf chosen)
+      shared = [(sharedInstance m, sharedMode m) | not (Seq.null (Modal.shared m)), not (Seq.null chosen)]
+   in Maybe.mapMaybe modeAt (instancesOf chosen) <> shared
 
 -- The chosen indices numbered by occurrence, sorted (CR 608.2c). Split out
 -- because the slots and the modes must agree instance for instance, and both
@@ -195,8 +208,15 @@ instancesOf chosen =
   let number _ [] = []
       number seen (idx : rest) =
         let k = Maybe.fromMaybe 0 (Map.lookup idx seen)
-         in ModeInstance.MkModeInstance 0 idx k : number (Map.insert idx (k + 1) seen) rest
+         in ModeInstance.MkModeInstance 0 idx k False : number (Map.insert idx (k + 1) seen) rest
    in number Map.empty (List.sort (Foldable.toList chosen))
+
+-- modeAtIndex, answering sharedMode at sharedInstance's index: the mode a
+-- resolving instance runs, by its index.
+resolvingModeAt :: ModeIndex.ModeIndex -> Modal.Modal card ability -> Maybe (Mode.Mode card ability)
+resolvingModeAt idx m
+  | idx == ModeInstance.index (sharedInstance m), not (Seq.null (Modal.shared m)) = Just (sharedMode m)
+  | otherwise = modeAtIndex idx m
 
 -- One mode by index, or Nothing when the index is out of range (total).
 modeAtIndex :: ModeIndex.ModeIndex -> Modal.Modal card ability -> Maybe (Mode.Mode card ability)
@@ -353,11 +373,34 @@ instanceZoneScope rename scope = case scope of
 -- A "for each opponent" slot's per-player copies (perPlayerSlot) are folded back
 -- under the slot's own name first, with (<>): the effect acts on every copy's
 -- target. `allSlots` is the UNSPLIT map, naming the slot and not its copies.
+--
+-- The shared instance (ModeInstance.shared) reads instead every chosen
+-- instance of its own text, each folded back under its printed name with (<>):
+-- "those cards" are all of them.
 instanceView :: (Semigroup v) => Map SlotName TargetSlot -> ModeInstance.ModeInstance -> Map SlotName TargetSlot -> Map SlotName v -> Map SlotName v
 instanceView allSlots mi printed env =
   let gathered = Map.mapKeysWith (<>) (\slot -> maybe slot fst (perPlayerOf slot)) env
       renamed = Maybe.mapMaybe (\slot -> fmap ((,) slot) (Map.lookup (instanceSlot mi slot) gathered)) (Map.keys printed)
-   in Map.union (Map.fromList renamed) (Map.withoutKeys gathered (Map.keysSet allSlots))
+      ownText slot = case instanceOf slot of
+        (base, splice, _) | splice == ModeInstance.splice mi -> Just base
+        _ -> Nothing
+      folded = Map.fromListWith (<>) (Maybe.mapMaybe (\(slot, v) -> fmap (\base -> (base, v)) (ownText slot)) (Map.toList (Map.restrictKeys gathered (Map.keysSet allSlots))))
+   in if ModeInstance.shared mi
+        then Map.union folded (Map.withoutKeys gathered (Map.keysSet allSlots))
+        else Map.union (Map.fromList renamed) (Map.withoutKeys gathered (Map.keysSet allSlots))
+
+-- instanceSlot's inverse: the printed name, the splice and the occurrence. A
+-- printed name holds no '#' (Parun.CardSpec), so each suffix is the text after
+-- one.
+instanceOf :: SlotName -> (SlotName, Natural, Natural)
+instanceOf name =
+  let suffixed :: Text.Text -> Text.Text -> (Text.Text, Natural)
+      suffixed tag text = case Text.breakOnEnd (Text.pack "#") text of
+        (prefix, digits) | Just stem <- Text.stripSuffix (Text.pack "#") prefix, Just k <- Text.stripPrefix tag digits, Just n <- Read.readMaybe (Text.unpack k) -> (stem, n)
+        _ -> (text, 0)
+   in case suffixed Text.empty (SlotName.unwrap name) of
+        (rest, occurrence) -> case suffixed (Text.pack "splice") rest of
+          (base, splice) -> (SlotName.MkSlotName base, splice, occurrence)
 
 -- The target slots of one mode by index (CR 700.2c: only the chosen mode's
 -- slots). Nothing if the index is out of range (total).

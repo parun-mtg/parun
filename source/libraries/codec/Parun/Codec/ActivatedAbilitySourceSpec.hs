@@ -33,7 +33,7 @@ ability =
     []
     0
     Nothing
-    (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory)
+    (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
     []
     (Activator.Related PlayerRelation.You)
     Nothing
