@@ -22,8 +22,8 @@ import qualified Parun.Types.SlotName as SlotName
 data Children keyword f = MkChildren
   { -- | An operand of And, Or, Not or Unwritten, judged of the same candidate.
     connective :: Filter.Filter keyword -> f (Filter.Filter keyword),
-    -- | A Filter an atom or an anchor nests, judged of some other object (CR
-    -- 109.2): a host, a target, a source, a counted permanent.
+    -- | A Filter an atom or an anchor nests, judged of some other object: a
+    -- host, a target, a source, a counted permanent.
     nest :: Filter.Filter keyword -> f (Filter.Filter keyword),
     -- | A keyword an atom holds, bare or inside a counter kind (CR 122.1b) or
     -- a designator.

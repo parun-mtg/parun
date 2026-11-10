@@ -463,14 +463,14 @@ bakePerspective viewOf context gs candidate predicate =
         -- from this side.
         Filter.Type.HasAttached f ->
           truth (any (\view -> Filter.matches context view f) (Maybe.mapMaybe viewOf (attachersOfPlayer gs candidate)))
-        -- Descended into through the connectives alone. Every nest is asked of
+        -- Descended into through the connectives alone. Every nest describes
         -- some other OBJECT -- a target, a host, a source, a represented card,
-        -- an anchored permanent -- and `candidate` here is a PLAYER (the sole
-        -- caller folds this over playerView): CR 115.1 puts no player on the
-        -- stack and CR 303.4b makes a player enchanted rather than attached, so
-        -- Parun.Engine.Filter answers those atoms False for a player whatever
-        -- the nest says, and baking the nest would bake a question about that
-        -- object against a player who is not it.
+        -- an anchored permanent -- and never this PLAYER candidate (the sole
+        -- caller folds this over playerView), so baking one would bake a
+        -- question about that object against a player who is not it. CR 115.1
+        -- puts no player on the stack and CR 303.4b makes a player enchanted
+        -- rather than attached, so most of those atoms answer False for a
+        -- player whatever the nest says.
         _ -> Identity.runIdentity (Children.filterChildren Children.leaves {Children.connective = Identity.Identity . recur} predicate)
 
 -- A baked answer as a Filter. `And []` is the trivial predicate by
