@@ -12,6 +12,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.TextWord as TextWord
@@ -54,8 +55,6 @@ import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MovedBetween as MovedBetween
@@ -2053,16 +2052,10 @@ matches context view predicate = case predicate of
   Filter.ManaCostRepeatsSymbol ->
     let symbols = foldMap ManaCost.unwrap (manaCost view)
      in length (ListUtils.nubOrd symbols) < length symbols
-  -- CR 107.3 / 107.4g over the mana cost's symbols, CR 709.4b's combined cost
-  -- included; an object with no mana cost has none. {H} is either Phyrexian
-  -- shape (CR 107.4f).
+  -- Over the mana cost's symbols, CR 709.4b's combined cost included; an
+  -- object with no mana cost has none.
   Filter.ManaCostHasSymbol kind ->
-    let isKind symbol = case (kind, symbol) of
-          (ManaSymbolKind.VariableSymbol, ManaSymbol.Variable) -> True
-          (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.Phyrexian _) -> True
-          (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.HybridPhyrexian _) -> True
-          _ -> False
-     in any isKind (foldMap ManaCost.unwrap (manaCost view))
+    any (ManaSymbolText.isOfKind kind) (foldMap ManaCost.unwrap (manaCost view))
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and

@@ -180,7 +180,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       s
       codec
       (Filter.ManaCostHasSymbol ManaSymbolKind.PhyrexianSymbol)
-      " {\"type\":\"ManaCostHasSymbol\",\"value\":\"PhyrexianSymbol\"} "
+      " {\"type\":\"ManaCostHasSymbol\",\"value\":{\"type\":\"PhyrexianSymbol\"}} "
   Spec.it s "ManaValueParity" $
     Common.assertCodec
       s

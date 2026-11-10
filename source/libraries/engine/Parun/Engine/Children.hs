@@ -565,6 +565,7 @@ quantityChildren children quantity = case quantity of
   Quantity.Literal _ -> pure quantity
   Quantity.Measure _ -> pure quantity
   Quantity.Intensity -> pure quantity
+  Quantity.ManaSymbolCount _ -> pure quantity
   -- AMOUNT, for each of the six: the slot's number (Binding.amountOf), its
   -- division (CR 601.2d), whether it is bound at all (CR 701.4b), or a tally,
   -- never one recipient, so none reaches Filter.slotOneObject.

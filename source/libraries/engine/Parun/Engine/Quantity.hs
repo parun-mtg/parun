@@ -217,6 +217,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Alchemy's intensity, read off the same view in every zone: Static
         -- Discharge reads its own on the stack.
         Quantity.Intensity -> mView >>= Filter.intensity
+        -- Off the same view, so a copy reads its copiable cost (CR 707.2) and a
+        -- countered spell its last known one (CR 608.2h); CR 709.4b's combined
+        -- cost included, and no mana cost holds none.
+        Quantity.ManaSymbolCount kind -> fmap (toInteger . length . filter (ManaSymbolText.isOfKind kind) . foldMap ManaCost.unwrap . Filter.manaCost) mView
         -- A value bound into the slot, read off the effect's SOURCE, then off the
         -- object on the stack, then out of the announcement the context carries, and
         -- last out of the ambient channel. Nothing when none of the four holds an
@@ -1612,6 +1616,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.Literal _ -> False
   Quantity.Measure _ -> False
   Quantity.Intensity -> False
+  Quantity.ManaSymbolCount _ -> False
   Quantity.Star -> False
   Quantity.ManaCount _ -> False
   Quantity.LifeTotal _ -> False

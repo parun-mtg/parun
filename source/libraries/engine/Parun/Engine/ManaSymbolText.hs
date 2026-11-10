@@ -10,6 +10,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.ManaType as ManaType
 import qualified Text.Read as Read
 
@@ -56,6 +57,17 @@ rulesTextSymbols = go . Text.unpack
 -- Helmut Zemo's black mana symbols.
 symbolsOfColor :: Color.Color -> [ManaSymbol.ManaSymbol] -> Int
 symbolsOfColor color = length . filter (elem color . symbolColors)
+
+-- CR 107.3 / 107.4g: {X}, or {H}, either Phyrexian shape (CR 107.4f). A
+-- coloured kind is symbolColors', so a hybrid or Phyrexian symbol of that
+-- colour is one (CR 107.4e / 107.4f).
+isOfKind :: ManaSymbolKind.ManaSymbolKind -> ManaSymbol.ManaSymbol -> Bool
+isOfKind kind manaSymbol = case (kind, manaSymbol) of
+  (ManaSymbolKind.VariableSymbol, ManaSymbol.Variable) -> True
+  (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.Phyrexian _) -> True
+  (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.HybridPhyrexian _) -> True
+  (ManaSymbolKind.ColoredSymbol color, _) -> elem color (symbolColors manaSymbol)
+  _ -> False
 
 -- CR 202.2b: only a coloured mana symbol carries a colour; colourless is not a
 -- colour (CR 105.2c). A list, since a hybrid is all of its colours (CR 107.4e).

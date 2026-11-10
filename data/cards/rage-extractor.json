@@ -39,7 +39,9 @@
                     },
                     {
                       "type": "ManaCostHasSymbol",
-                      "value": "PhyrexianSymbol"
+                      "value": {
+                        "type": "PhyrexianSymbol"
+                      }
                     }
                   ]
                 }
