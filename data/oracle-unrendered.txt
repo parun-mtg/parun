@@ -2532,6 +2532,7 @@ possessed-skaab
 power-leak
 power-play
 power-sink
+powerful-broker
 pox
 prayer-of-binding
 precursor-golem

@@ -67,6 +67,13 @@ spec s = Spec.describe s "Parun.Codec.Pool" $ do
       Pool.codec
       Pool.PlayersAndPlaneswalkers
       " {\"type\":\"PlayersAndPlaneswalkers\"} "
+  -- CR 115.2: battlefield permanents plus clause (a)'s "or a player".
+  Spec.it s "PermanentsAndPlayers" $
+    Common.assertCodec
+      s
+      Pool.codec
+      Pool.PermanentsAndPlayers
+      " {\"type\":\"PermanentsAndPlayers\"} "
   -- CR 404.1: the cards in a graveyard, tagged with WHOSE.
   Spec.it s "CardsInGraveyard" $
     Common.assertCodec

@@ -1060,7 +1060,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.LaterPayment (LaterPayment.MkLaterPayment Duration.UntilEndOfTurn (Cost.MkCost Nothing []) (Seq.singleton Effect.Proliferate)))
+      (Effect.LaterPayment (LaterPayment.MkLaterPayment Duration.UntilEndOfTurn (Cost.MkCost Nothing []) (Seq.singleton (Effect.Proliferate Nothing))))
       " {\"type\":\"LaterPayment\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"cost\":{\"mana\":null},\"effects\":[{\"type\":\"Proliferate\"}]}} "
   -- CR 615.7.
   Spec.it s "PreventNextDamage" $
@@ -2444,8 +2444,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      Effect.Proliferate
+      (Effect.Proliferate Nothing)
       " {\"type\":\"Proliferate\"} "
+  -- CR 115.1: Powerful Broker's targeted form.
+  Spec.it s "Proliferate targeted" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Proliferate (Just (SlotName.MkSlotName (Text.pack "target"))))
+      " {\"type\":\"Proliferate\",\"value\":\"target\"} "
   Spec.it s "Rethrow" $
     Common.assertJsonCodec
       s

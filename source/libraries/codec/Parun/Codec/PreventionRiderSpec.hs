@@ -25,7 +25,7 @@ spec s = Spec.describe s "Parun.Codec.PreventionRider" $ do
       s
       PreventionRider.codec
       PreventionRider.MkPreventionRider
-        { PreventionRider.effects = Seq.fromList [Effect.Proliferate],
+        { PreventionRider.effects = Seq.fromList [Effect.Proliferate Nothing],
           PreventionRider.targets =
             Map.singleton
               (SlotName.MkSlotName (Text.pack "target"))

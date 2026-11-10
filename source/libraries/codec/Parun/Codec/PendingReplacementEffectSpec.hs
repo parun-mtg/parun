@@ -24,7 +24,7 @@ spec s = Spec.describe s "Parun.Codec.PendingReplacementEffect" $ do
       s
       PendingReplacementEffect.codec
       PendingReplacementEffect.MkPendingReplacementEffect
-        { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate],
+        { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
           PendingReplacementEffect.targets = Map.singleton (SlotName.MkSlotName (Text.pack "creature")) (Set.singleton (Recipient.ToObject (ObjectId.MkObjectId 5))),
           PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
           PendingReplacementEffect.source = ObjectId.MkObjectId 3

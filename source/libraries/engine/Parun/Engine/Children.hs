@@ -963,7 +963,7 @@ effectChildren c effect = case effect of
     fmap Effect.Guess (Guess.MkGuess <$> onObjectRef c subject <*> onSlot c named <*> onPlayer c guesser <*> onFilter c proposition <*> onSlot c right)
   Effect.ExileHandThenDraw -> pure effect
   Effect.NoteManaSpent -> pure effect
-  Effect.Proliferate -> pure effect
+  Effect.Proliferate named -> fmap Effect.Proliferate (traverse (onSlot c) named)
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among)
   Effect.ChooseQuality _ -> pure effect

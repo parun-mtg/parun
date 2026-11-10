@@ -21,7 +21,7 @@ spec s = Spec.describe s "Parun.Codec.PendingEntryEffect" $ do
       PendingEntryEffect.MkPendingEntryEffect
         { PendingEntryEffect.object = ObjectId.MkObjectId 3,
           PendingEntryEffect.controller = PlayerId.MkPlayerId 1,
-          PendingEntryEffect.effects = Seq.fromList [Effect.Proliferate]
+          PendingEntryEffect.effects = Seq.fromList [Effect.Proliferate Nothing]
         }
       " {\"object\":3,\"controller\":1,\"effects\":[{\"type\":\"Proliferate\"}]} "
   Spec.it s "has a schema" $

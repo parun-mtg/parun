@@ -668,7 +668,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.RemoveCounters payload -> Counters.removeCounters resolving source controller legal payload
   Effect.RemoveCountersAmong payload -> Counters.removeCountersAmong resolving source controller legal payload
   Effect.MoveCounters payload -> Counters.moveCounters resolving source controller legal payload
-  Effect.Proliferate -> Counters.proliferate source controller
+  Effect.Proliferate payload -> Counters.proliferate source controller legal payload
   Effect.Bolster payload -> Counters.bolster resolving source controller legal payload
   Effect.Earthbend payload -> Counters.earthbendArm applyEffectWith runSubgame resolving source controller legal chosen payload
   Effect.Airbend payload -> Counters.airbend applyEffectWith runSubgame resolving source controller legal chosen payload

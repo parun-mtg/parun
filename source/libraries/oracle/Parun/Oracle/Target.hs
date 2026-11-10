@@ -477,6 +477,7 @@ heads :: Context -> TargetSlot.TargetSlot -> [(Text.Text, Text.Text)]
 heads context slot = case (TargetSlot.pool slot, TargetSlot.filter slot) of
   (Pool.AnyTarget, Nothing) -> [(Text.pack "any target", Text.pack "targets")]
   (Pool.PlayersAndPlaneswalkers, Nothing) -> [(Text.pack "target player or planeswalker", Text.pack "target players and/or planeswalkers")]
+  (Pool.PermanentsAndPlayers, Nothing) -> [(Text.pack "target permanent or player", Text.pack "target permanents and/or players")]
   _ -> fmap (Bifunctor.bimap (targeted (Text.pack "another target ")) (targeted (Text.pack "other target "))) (described context slot)
   where
     -- "other" stands before "target", as "another" in the singular.
