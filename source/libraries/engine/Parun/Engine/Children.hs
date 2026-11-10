@@ -8,9 +8,12 @@ import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.AffectPlayers as AffectPlayers
+import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
@@ -18,6 +21,7 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
+import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Ante as Ante
@@ -87,8 +91,10 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChange as CostChange
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
+import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count
@@ -189,6 +195,7 @@ import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
+import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HexproofExemption as HexproofExemption
@@ -233,6 +240,7 @@ import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
+import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyTarget as ModifyTarget
@@ -277,10 +285,12 @@ import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
+import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
+import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.PutCounters as PutCounters
@@ -307,6 +317,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
@@ -328,6 +339,7 @@ import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StatedFlip as StatedFlip
+import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Surveil as Surveil
@@ -348,6 +360,8 @@ import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
+import qualified Parun.Types.TriggerLimit as TriggerLimit
+import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -2435,6 +2449,153 @@ durationEventChildren c event = case event of
   DurationEvent.SourceLeftBattlefield -> pure event
   DurationEvent.BoundCardCast bound -> DurationEvent.BoundCardCast <$> durationSlot c bound
   DurationEvent.CardCast card -> DurationEvent.CardCast <$> durationObject c card
+
+-- | One visitor per kind of child an ability record holds: an activated (CR
+-- 602), triggered (CR 603) or static (CR 604) ability, a printed replacement
+-- (CR 614), a player static ability, a self cost reduction (CR 601.2f) or an
+-- alternative cost (CR 118.9).
+data AbilityChildren card ability effect f = MkAbilityChildren
+  { -- | A cost: an activation cost (CR 602.1a), a choice inside one, an alternative cost.
+    abilityCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | A Quantity: a ceiling on X or a defined X (CR 101.1, 107.3c), a reduction's multiplier.
+    abilityQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | The modes an activated or triggered ability chooses among (CR 700.2), whole.
+    abilityModal :: Modal.Modal card ability -> f (Modal.Modal card ability),
+    -- | A clause of an "activate only" rider (CR 602.5b), whole.
+    abilityRestriction :: ActivationRestriction.ActivationRestriction -> f ActivationRestriction.ActivationRestriction,
+    -- | An "as long as" gate (CR 611.3a) or an intervening "if" (CR 603.4), whole.
+    abilityCondition :: Condition.Condition -> f Condition.Condition,
+    -- | The keyword an activated ability is under (CR 702), whole.
+    abilityKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | A triggered ability's trigger condition (CR 603.1), whole.
+    abilityTrigger :: TriggerCondition.TriggerCondition -> f TriggerCondition.TriggerCondition,
+    -- | A triggered ability's "only once" rider (CR 603.2h).
+    abilityLimit :: TriggerLimit.TriggerLimit -> f TriggerLimit.TriggerLimit,
+    -- | The objects a static ability affects (CR 611.3a), whole.
+    abilityAffected :: Affected.Affected -> f Affected.Affected,
+    -- | How long a static ability's effect lingers after its source leaves (CR 611.2).
+    abilityDuration :: Duration.Duration -> f Duration.Duration,
+    -- | A static ability's continuous effect (CR 613.1), whole.
+    abilityModification :: Modification.Modification ability -> f (Modification.Modification ability),
+    -- | A player static ability's effect (CR 613.10), whole.
+    abilityPlayerEffect :: PlayerEffect.PlayerEffect -> f PlayerEffect.PlayerEffect,
+    -- | A printed replacement's effect (CR 614.1), whole.
+    abilityReplacement :: ReplacementEffect.ReplacementEffect card ability effect -> f (ReplacementEffect.ReplacementEffect card ability effect),
+    -- | The targets a self cost reduction asks for (CR 601.2c).
+    abilityFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A granted rule-affecting static ability (CR 613.11), whole.
+    abilityRules :: RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities,
+    -- | A granted permission about the mana spent to cast its object (CR 609.4b), whole.
+    abilitySpendMana :: SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough
+  }
+
+-- | Every child of an ability record left as it is: the base a walk overrides.
+abilityLeaves :: (Applicative f) => AbilityChildren card ability effect f
+abilityLeaves =
+  MkAbilityChildren
+    { abilityCost = pure,
+      abilityQuantity = pure,
+      abilityModal = pure,
+      abilityRestriction = pure,
+      abilityCondition = pure,
+      abilityKeyword = pure,
+      abilityTrigger = pure,
+      abilityLimit = pure,
+      abilityAffected = pure,
+      abilityDuration = pure,
+      abilityModification = pure,
+      abilityPlayerEffect = pure,
+      abilityReplacement = pure,
+      abilityFilter = pure,
+      abilityRules = pure,
+      abilitySpendMana = pure
+    }
+
+-- | An activated ability's children. Each choice's costs go to abilityCost.
+activatedAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> ActivatedAbility.ActivatedAbility card ability -> f (ActivatedAbility.ActivatedAbility card ability)
+activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX minimumX definedX modal restrictions activator condition name stamp) =
+  ActivatedAbility.MkActivatedAbility
+    <$> abilityCost c cost
+    <*> traverse (fmap CostChoice.MkCostChoice . traverse (abilityCost c) . CostChoice.unwrap) costChoices
+    <*> traverse (abilityQuantity c) maximumX
+    <*> pure minimumX
+    <*> traverse (abilityQuantity c) definedX
+    <*> abilityModal c modal
+    <*> traverse (abilityRestriction c) restrictions
+    <*> pure activator
+    <*> traverse (abilityCondition c) condition
+    <*> pure name
+    <*> traverse (abilityKeyword c) stamp
+
+-- | A triggered ability's children.
+triggeredAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> TriggeredAbility.TriggeredAbility card ability -> f (TriggeredAbility.TriggeredAbility card ability)
+triggeredAbilityChildren c (TriggeredAbility.MkTriggeredAbility condition modal intervening name limit functionsFrom) =
+  TriggeredAbility.MkTriggeredAbility
+    <$> abilityTrigger c condition
+    <*> abilityModal c modal
+    <*> traverse (abilityCondition c) intervening
+    <*> pure name
+    <*> abilityLimit c limit
+    <*> pure functionsFrom
+
+-- | A static ability's children.
+staticAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> StaticAbility.StaticAbility ability -> f (StaticAbility.StaticAbility ability)
+staticAbilityChildren c (StaticAbility.MkStaticAbility affected condition functionsFrom lingers name modifications) =
+  StaticAbility.MkStaticAbility
+    <$> abilityAffected c affected
+    <*> traverse (abilityCondition c) condition
+    <*> pure functionsFrom
+    <*> traverse (abilityDuration c) lingers
+    <*> pure name
+    <*> traverse (abilityModification c) modifications
+
+-- | A player static ability's children.
+playerStaticAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> PlayerStaticAbility.PlayerStaticAbility -> f PlayerStaticAbility.PlayerStaticAbility
+playerStaticAbilityChildren c (PlayerStaticAbility.MkPlayerStaticAbility players condition name effect) =
+  PlayerStaticAbility.MkPlayerStaticAbility players
+    <$> traverse (abilityCondition c) condition
+    <*> pure name
+    <*> abilityPlayerEffect c effect
+
+-- | A printed replacement's children.
+printedReplacementChildren :: (Applicative f) => AbilityChildren card ability effect f -> PrintedReplacement.PrintedReplacement card ability effect -> f (PrintedReplacement.PrintedReplacement card ability effect)
+printedReplacementChildren c (PrintedReplacement.MkPrintedReplacement condition effect functionsFrom name) =
+  PrintedReplacement.MkPrintedReplacement
+    <$> traverse (abilityCondition c) condition
+    <*> abilityReplacement c effect
+    <*> pure functionsFrom
+    <*> pure name
+
+-- | A self cost reduction's children.
+costReductionChildren :: (Applicative f) => AbilityChildren card ability effect f -> CostReduction.CostReduction -> f CostReduction.CostReduction
+costReductionChildren c (CostReduction.MkCostReduction amount perEach condition whichTargets direction) =
+  CostReduction.MkCostReduction amount
+    <$> abilityQuantity c perEach
+    <*> traverse (abilityCondition c) condition
+    <*> traverse (abilityFilter c) whichTargets
+    <*> pure direction
+
+-- | An alternative cost's children.
+alternativeCostChildren :: (Applicative f) => AbilityChildren card ability effect f -> AlternativeCost.AlternativeCost -> f AlternativeCost.AlternativeCost
+alternativeCostChildren c (AlternativeCost.MkAlternativeCost condition cost) =
+  AlternativeCost.MkAlternativeCost
+    <$> traverse (abilityCondition c) condition
+    <*> abilityCost c cost
+
+-- | A granted ability (CR 113.3), its record descended with the same visitors.
+-- An ability nested inside it (a mode's grant, a modification's) is reached
+-- through abilityModal or abilityModification and not descended here.
+grantedAbilityChildren :: (Applicative f) => AbilityChildren card (GrantedAbility.GrantedAbility card) (Effect.Effect card (GrantedAbility.GrantedAbility card)) f -> GrantedAbility.GrantedAbility card -> f (GrantedAbility.GrantedAbility card)
+grantedAbilityChildren c granted = case granted of
+  GrantedAbility.Activated activated -> GrantedAbility.Activated <$> activatedAbilityChildren c activated
+  GrantedAbility.Triggered triggered -> GrantedAbility.Triggered <$> triggeredAbilityChildren c triggered
+  GrantedAbility.Static static -> GrantedAbility.Static <$> staticAbilityChildren c static
+  GrantedAbility.Rules rules -> GrantedAbility.Rules <$> abilityRules c rules
+  GrantedAbility.Replacement printed -> GrantedAbility.Replacement <$> printedReplacementChildren c printed
+  GrantedAbility.Player playerStatic -> GrantedAbility.Player <$> playerStaticAbilityChildren c playerStatic
+  GrantedAbility.SelfCostReduction reduction -> GrantedAbility.SelfCostReduction <$> costReductionChildren c reduction
+  GrantedAbility.SelfAlternativeCost alternative -> GrantedAbility.SelfAlternativeCost <$> alternativeCostChildren c alternative
+  GrantedAbility.SelfSpendManaAsThough clause -> GrantedAbility.SelfSpendManaAsThough <$> abilitySpendMana c clause
 
 -- | A set's members, each through a visitor; members the visitor maps together merge.
 traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)

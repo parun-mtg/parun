@@ -20,7 +20,6 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.AloneUnless as AloneUnless
-import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Arithmetic as Arithmetic
@@ -52,7 +51,6 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CostChoice as CostChoice
-import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
@@ -116,7 +114,6 @@ import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
-import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.WhenSpent as WhenSpent
@@ -608,22 +605,15 @@ rewriteFace pairs face =
 
 -- A whole static ability under CR 612.1, for the defined-card walk above. A
 -- permanent's own statics are reached piecemeal instead, being read per layer.
+-- The lingering duration (CR 611.2) names a window, not a word, and is left
+-- alone, as are the zones it functions from.
 rewriteStaticAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card) -> StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteStaticAbility pairs sa =
-  sa
-    { StaticAbility.affected = rewriteAffected pairs (StaticAbility.affected sa),
-      StaticAbility.condition = fmap (rewriteCondition pairs) (StaticAbility.condition sa),
-      StaticAbility.modifications = fmap (rewriteModification pairs) (StaticAbility.modifications sa)
-    }
+rewriteStaticAbility pairs = Identity.runIdentity . Children.staticAbilityChildren (abilityRewrites pairs)
 
 -- A player static ability under CR 612.1: its clause and its effect, the two
 -- halves Parun.Engine.PlayerEffect.printedRows rewrites.
 rewritePlayerStaticAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> PlayerStaticAbility.PlayerStaticAbility -> PlayerStaticAbility.PlayerStaticAbility
-rewritePlayerStaticAbility pairs ability =
-  ability
-    { PlayerStaticAbility.condition = fmap (rewriteCondition pairs) (PlayerStaticAbility.condition ability),
-      PlayerStaticAbility.effect = rewritePlayerEffect pairs (PlayerStaticAbility.effect ability)
-    }
+rewritePlayerStaticAbility pairs = Identity.runIdentity . Children.playerStaticAbilityChildren (abilityRewrites pairs)
 
 -- CR 613.11's fifteen families under CR 612.1, each at the positions its
 -- gatherer module rewrites (Parun.Engine.CombatRestriction and its siblings), so
@@ -769,83 +759,67 @@ rewriteManaRestriction pairs restriction =
 rewriteManaRider :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaRider.ManaRider -> ManaRider.ManaRider
 rewriteManaRider pairs rider = rider {ManaRider.condition = Filter.rewrite pairs (ManaRider.condition rider)}
 
--- CR 612.1 over an ACTIVATED ability printed on a permanent: the payload, CR
--- 702.178a's "as long as" gate, and the ACTIVATION COST (CR 118.1, CR 602.1a),
--- so a Magical Hack naming Forest moves which land Dark Heart of the Wood's cost
--- demands.
+-- CR 612.1 over an ability record's children: Parun.Engine.Children's
+-- traversal at Identity, shared by every kind of ability below. Every Cost takes
+-- Filter.rewriteCost (CR 118.1, CR 602.1a), so a Magical Hack naming Forest
+-- moves which land Dark Heart of the Wood's cost demands. Every Condition takes
+-- rewriteCondition: CR 702.178a's "as long as" gate, CR 603.4's intervening
+-- "if", a reduction's or an alternative cost's. CR 602.5's "activate only if"
+-- rider is printed text like any other: Parun.ManaSpec's "Nimbus Maze text
+-- change" is what proves it, a Magical Hack naming Island moving which land the
+-- {W} route's rider counts. A CR 603.8 trigger condition is where a triggered
+-- ability's word usually is.
 --
--- CR 602.5's "activate only if" rider is here too, being printed text like any
--- other: Parun.ManaSpec's "Nimbus Maze text change" is what proves it, a Magical
--- Hack naming Island moving which land the {W} route's rider counts.
-rewriteActivatedAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteActivatedAbility pairs ability =
-  ability
-    { ActivatedAbility.modal = rewriteModal pairs (ActivatedAbility.modal ability),
-      ActivatedAbility.condition = fmap (rewriteCondition pairs) (ActivatedAbility.condition ability),
-      ActivatedAbility.cost = Filter.rewriteCost pairs (ActivatedAbility.cost ability),
-      ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.rewriteCost pairs) . CostChoice.unwrap) (ActivatedAbility.costChoices ability),
-      ActivatedAbility.restrictions = fmap (rewriteRestriction pairs) (ActivatedAbility.restrictions ability),
-      -- CR 101.1's ceiling on this ability's X, exactly as Face.maximumX above
-      -- carries a spell's. A regression fence for that field's reason: no
-      -- printing pairs a bounded X on an activated ability with a Quantity
-      -- naming a land type word, so no board can tell this line from its
-      -- absence.
-      ActivatedAbility.maximumX = fmap (rewriteQuantity pairs) (ActivatedAbility.maximumX ability),
-      -- CR 107.3c's defined X, the ceiling's fence for its reason.
-      ActivatedAbility.definedX = fmap (rewriteQuantity pairs) (ActivatedAbility.definedX ability)
+-- CR 101.1's ceiling on an activated ability's X and CR 107.3c's defined X are
+-- Quantities, rewritten as Face.maximumX above is. A regression fence: no
+-- printing pairs a bounded or defined X on an activated ability with a Quantity
+-- naming a land type word, so no board can tell those positions from their
+-- absence.
+--
+-- Left as written, as before this walk was shared: an activated ability's
+-- keyword stamp (an origin, CR 702), a trigger's "only once" rider and a static
+-- ability's lingering duration (a window). A granted rule ability (CR 613.11) is rewritten where its
+-- gatherer reads it, off its source's text changes, and no card in data/cards
+-- quotes one in a grant this walk reaches. Backup's is expanded at resolution
+-- (Parun.Engine.Resolve.Common.expandGrant) and stored, where no rewrite runs.
+abilityRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.AbilityChildren Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) Identity.Identity
+abilityRewrites pairs =
+  Children.abilityLeaves
+    { Children.abilityCost = Identity.Identity . Filter.rewriteCost pairs,
+      Children.abilityQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.abilityModal = Identity.Identity . rewriteModal pairs,
+      Children.abilityRestriction = Identity.Identity . rewriteRestriction pairs,
+      Children.abilityCondition = Identity.Identity . rewriteCondition pairs,
+      Children.abilityTrigger = Identity.Identity . rewriteTriggerCondition pairs,
+      Children.abilityAffected = Identity.Identity . rewriteAffected pairs,
+      Children.abilityModification = Identity.Identity . rewriteModification pairs,
+      Children.abilityPlayerEffect = Identity.Identity . rewritePlayerEffect pairs,
+      Children.abilityReplacement = Identity.Identity . rewriteReplacementEffect pairs,
+      Children.abilityFilter = Identity.Identity . Filter.rewrite pairs,
+      Children.abilitySpendMana = Identity.Identity . rewriteSpendManaAsThough pairs
     }
+
+-- CR 612.1 over an ACTIVATED ability printed on a permanent.
+rewriteActivatedAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+rewriteActivatedAbility pairs = Identity.runIdentity . Children.activatedAbilityChildren (abilityRewrites pairs)
 
 -- CR 612.1 over a GRANTED ability (CR 613.1f), whichever of CR 113.3's kinds it
 -- is. The words are printed on the GRANTER, so a text change affecting that
 -- permanent rewrites them before layer 6 hands them over.
 rewriteGrantedAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> GrantedAbility.GrantedAbility Card.Type.Card -> GrantedAbility.GrantedAbility Card.Type.Card
-rewriteGrantedAbility pairs granted = case granted of
-  GrantedAbility.Activated a -> GrantedAbility.Activated (rewriteActivatedAbility pairs a)
-  GrantedAbility.Triggered t -> GrantedAbility.Triggered (rewriteTriggeredAbility pairs t)
-  GrantedAbility.Static sa -> GrantedAbility.Static (rewriteStaticAbility pairs sa)
-  -- Left as written: a printed rule ability is rewritten where its gatherer
-  -- reads it, off its source's text changes, and no card in data/cards quotes
-  -- one in a grant this walk reaches. Backup's is expanded at resolution
-  -- (Parun.Engine.Resolve.Common.expandGrant) and stored, where no rewrite runs.
-  GrantedAbility.Rules rules -> GrantedAbility.Rules rules
-  GrantedAbility.Replacement r -> GrantedAbility.Replacement (rewritePrintedReplacement pairs r)
-  GrantedAbility.Player p -> GrantedAbility.Player (rewritePlayerStaticAbility pairs p)
-  GrantedAbility.SelfCostReduction r ->
-    GrantedAbility.SelfCostReduction
-      r
-        { CostReduction.perEach = rewriteQuantity pairs (CostReduction.perEach r),
-          CostReduction.condition = fmap (rewriteCondition pairs) (CostReduction.condition r),
-          CostReduction.whichTargets = fmap (Filter.rewrite pairs) (CostReduction.whichTargets r)
-        }
-  GrantedAbility.SelfAlternativeCost a ->
-    GrantedAbility.SelfAlternativeCost
-      a
-        { AlternativeCost.condition = fmap (rewriteCondition pairs) (AlternativeCost.condition a),
-          AlternativeCost.cost = Filter.rewriteCost pairs (AlternativeCost.cost a)
-        }
-  GrantedAbility.SelfSpendManaAsThough clause -> GrantedAbility.SelfSpendManaAsThough (rewriteSpendManaAsThough pairs clause)
+rewriteGrantedAbility pairs = Identity.runIdentity . Children.grantedAbilityChildren (abilityRewrites pairs)
 
--- CR 612.1 over a TRIGGERED ability printed on a permanent. Three parts, not
--- just the payload: the CR 603.8 condition is where the word usually is, and CR
--- 603.4's intervening "if" shares rewriteCondition.
+-- CR 612.1 over a TRIGGERED ability printed on a permanent: its condition, its
+-- intervening "if" and its payload.
 rewriteTriggeredAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteTriggeredAbility pairs ability =
-  ability
-    { TriggeredAbility.condition = rewriteTriggerCondition pairs (TriggeredAbility.condition ability),
-      TriggeredAbility.intervening = fmap (rewriteCondition pairs) (TriggeredAbility.intervening ability),
-      TriggeredAbility.modal = rewriteModal pairs (TriggeredAbility.modal ability)
-    }
+rewriteTriggeredAbility pairs = Identity.runIdentity . Children.triggeredAbilityChildren (abilityRewrites pairs)
 
 -- CR 612.1 over a REPLACEMENT effect printed on a permanent, which CR 604.2
 -- makes a static ability's continuous effect and so text in the same text box as
 -- a triggered ability's. Two carriers: the ability's own "as long as" clause, and
 -- the effect itself.
 rewritePrintedReplacement :: [(TextWord.TextWord, TextWord.TextWord)] -> PrintedReplacement.PrintedReplacement Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> PrintedReplacement.PrintedReplacement Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-rewritePrintedReplacement pairs printed =
-  printed
-    { PrintedReplacement.condition = fmap (rewriteCondition pairs) (PrintedReplacement.condition printed),
-      PrintedReplacement.effect = rewriteReplacementEffect pairs (PrintedReplacement.effect printed)
-    }
+rewritePrintedReplacement pairs = Identity.runIdentity . Children.printedReplacementChildren (abilityRewrites pairs)
 
 -- CR 612.1 through the replacement effect itself: Parun.Engine.Children's
 -- traversal at Identity. Every Filter takes Filter.rewrite (the moving,

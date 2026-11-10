@@ -16,7 +16,10 @@
 -- type that later gains one owes every discard of it here a function. A type
 -- with a traversal in Parun.Engine.Children (Filter, Quantity, Effect,
 -- TriggerCondition, Keyword, Cost, PlayerEffect, ReplacementEffect, Condition,
--- Duration) is matched there instead, its leaf types discarded there.
+-- Duration, and the ability records: ActivatedAbility, TriggeredAbility,
+-- StaticAbility, PlayerStaticAbility, PrintedReplacement, CostReduction,
+-- AlternativeCost, GrantedAbility) is matched there instead, its leaf types
+-- discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -369,8 +372,7 @@ filterNames asking criterion = case criterion of
         criterion
 
 activatedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> ActivatedAbility.ActivatedAbility card ability -> r
-activatedAbilityNames asking onCard onAbility x = case x of
-  ActivatedAbility.MkActivatedAbility cost costChoices maximumX _minimumX definedX modal restrictions _activator condition _name keyword -> costNames asking (keywordNames asking) cost <> foldMap (costChoiceNames asking) costChoices <> foldMap (quantityNames asking) maximumX <> foldMap (quantityNames asking) definedX <> modalNames asking onCard onAbility modal <> foldMap (activationRestrictionNames asking) restrictions <> foldMap (conditionNames asking) condition <> foldMap (keywordNames asking) keyword
+activatedAbilityNames asking onCard onAbility = Const.getConst . Children.activatedAbilityChildren (abilityVisitors asking onCard onAbility (const mempty))
 
 activationProhibitionNames :: (Monoid r) => Asking r -> ActivationProhibition.ActivationProhibition -> r
 activationProhibitionNames asking x = case x of
@@ -430,8 +432,7 @@ aimedPlayersNames asking x = case x of
   AimedPlayers.BoundPlayer _playerId -> mempty
 
 alternativeCostNames :: (Monoid r) => Asking r -> AlternativeCost.AlternativeCost -> r
-alternativeCostNames asking x = case x of
-  AlternativeCost.MkAlternativeCost condition cost -> foldMap (conditionNames asking) condition <> costNames asking (keywordNames asking) cost
+alternativeCostNames asking = Const.getConst . Children.alternativeCostChildren (abilityVisitors asking (const mempty) (const mempty) (const mempty))
 
 onsetNames :: (Monoid r) => Asking r -> Onset.Onset -> r
 onsetNames asking x = case x of
@@ -649,8 +650,7 @@ costVisitors asking onKeyword =
     }
 
 costReductionNames :: (Monoid r) => Asking r -> CostReduction.CostReduction -> r
-costReductionNames asking x = case x of
-  CostReduction.MkCostReduction _amount perEach condition whichTargets _direction -> quantityNames asking perEach <> foldMap (conditionNames asking) condition <> foldMap (filterNames asking) whichTargets
+costReductionNames asking = Const.getConst . Children.costReductionChildren (abilityVisitors asking (const mempty) (const mempty) (const mempty))
 
 counterKindNames :: (Monoid r) => Asking r -> (keyword -> r) -> CounterKind.CounterKind keyword -> r
 counterKindNames _asking onKeyword x = case x of
@@ -871,18 +871,35 @@ fullTextNames asking onAbility x = case x of
 -- Eq compares. So inside one, every slot read is Searched, whatever the row
 -- granting it stores.
 grantedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> GrantedAbility.GrantedAbility card -> r
-grantedAbilityNames asking onCard x =
+grantedAbilityNames asking onCard =
   let own = asking {context = mempty}
-   in case x of
-        GrantedAbility.Activated activatedAbility -> activatedAbilityNames own onCard (grantedAbilityNames own onCard) activatedAbility
-        GrantedAbility.Triggered triggeredAbility -> triggeredAbilityNames own onCard (grantedAbilityNames own onCard) triggeredAbility
-        GrantedAbility.Static staticAbility -> staticAbilityNames own (grantedAbilityNames own onCard) staticAbility
-        GrantedAbility.Rules ruleAbilities -> ruleAbilitiesNames own ruleAbilities
-        GrantedAbility.Replacement printedReplacement -> printedReplacementNames own onCard (grantedAbilityNames own onCard) (effectNames own onCard (grantedAbilityNames own onCard)) printedReplacement
-        GrantedAbility.Player playerStaticAbility -> playerStaticAbilityNames own playerStaticAbility
-        GrantedAbility.SelfCostReduction costReduction -> costReductionNames own costReduction
-        GrantedAbility.SelfAlternativeCost alternativeCost -> alternativeCostNames own alternativeCost
-        GrantedAbility.SelfSpendManaAsThough clause -> spendManaAsThoughNames own clause
+      onAbility = grantedAbilityNames own onCard
+   in Const.getConst . Children.grantedAbilityChildren (abilityVisitors own onCard onAbility (effectNames own onCard onAbility))
+
+-- An ability record's children, each through its own walk; card, ability and
+-- effect are answered by the functions the caller passes for them. The history
+-- reads sit in the children (a trigger's "only once" rider, a restriction's
+-- step), so no record answers one itself.
+abilityVisitors :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> Children.AbilityChildren card ability effect (Const.Const r)
+abilityVisitors asking onCard onAbility onEffect =
+  Children.MkAbilityChildren
+    { Children.abilityCost = Const.Const . costNames asking (keywordNames asking),
+      Children.abilityQuantity = Const.Const . quantityNames asking,
+      Children.abilityModal = Const.Const . modalNames asking onCard onAbility,
+      Children.abilityRestriction = Const.Const . activationRestrictionNames asking,
+      Children.abilityCondition = Const.Const . conditionNames asking,
+      Children.abilityKeyword = Const.Const . keywordNames asking,
+      Children.abilityTrigger = Const.Const . triggerConditionNames asking,
+      Children.abilityLimit = Const.Const . triggerLimitNames asking,
+      Children.abilityAffected = Const.Const . affectedNames asking,
+      Children.abilityDuration = Const.Const . durationNames asking,
+      Children.abilityModification = Const.Const . modificationNames asking onAbility,
+      Children.abilityPlayerEffect = Const.Const . playerEffectNames asking,
+      Children.abilityReplacement = Const.Const . replacementEffectNames asking onCard onAbility onEffect,
+      Children.abilityFilter = Const.Const . filterNames asking,
+      Children.abilityRules = Const.Const . ruleAbilitiesNames asking,
+      Children.abilitySpendMana = Const.Const . spendManaAsThoughNames asking
+    }
 
 handActionNames :: (Monoid r) => Asking r -> (card -> r) -> HandAction.HandAction card -> r
 handActionNames asking onCard x = case x of
@@ -1176,8 +1193,7 @@ playerRefNames asking x = case x of
   PlayerRef.InRole _ -> mempty
 
 playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.PlayerStaticAbility -> r
-playerStaticAbilityNames asking x = case x of
-  PlayerStaticAbility.MkPlayerStaticAbility _scope condition _name effect -> foldMap (conditionNames asking) condition <> playerEffectNames asking effect
+playerStaticAbilityNames asking = Const.getConst . Children.playerStaticAbilityChildren (abilityVisitors asking (const mempty) (const mempty) (const mempty))
 
 poolNames :: (Monoid r) => Asking r -> Pool.Pool -> r
 poolNames asking x = case x of
@@ -1209,8 +1225,7 @@ preventionRiderNames asking x = case x of
   PreventionRider.MkPreventionRider effects targets _controller source -> foldMap (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effects <> foldMap (slotNames asking) (Map.keys targets) <> foldMap (foldMap (recipientNames asking)) targets <> names asking (== source)
 
 printedReplacementNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> PrintedReplacement.PrintedReplacement card ability effect -> r
-printedReplacementNames asking onCard onAbility onEffect x = case x of
-  PrintedReplacement.MkPrintedReplacement condition effect _functionsFrom _name -> foldMap (conditionNames asking) condition <> replacementEffectNames asking onCard onAbility onEffect effect
+printedReplacementNames asking onCard onAbility onEffect = Const.getConst . Children.printedReplacementChildren (abilityVisitors asking onCard onAbility onEffect)
 
 projectedCharacteristicsNames :: (Monoid r) => Asking r -> ProjectedCharacteristics.ProjectedCharacteristics -> r
 projectedCharacteristicsNames asking x = case x of
@@ -1355,8 +1370,7 @@ duringPhaseNames asking x = case x of
   DuringPhase.MkDuringPhase _window scope -> turnScopeNames asking scope
 
 staticAbilityNames :: (Monoid r) => Asking r -> (ability -> r) -> StaticAbility.StaticAbility ability -> r
-staticAbilityNames asking onAbility x = case x of
-  StaticAbility.MkStaticAbility affected condition _functionsFrom lingers _name modifications -> affectedNames asking affected <> foldMap (conditionNames asking) condition <> foldMap (durationNames asking) lingers <> foldMap (modificationNames asking onAbility) modifications
+staticAbilityNames asking onAbility = Const.getConst . Children.staticAbilityChildren (abilityVisitors asking (const mempty) onAbility (const mempty))
 
 targetSlotNames :: (Monoid r) => Asking r -> TargetSlot.TargetSlot -> r
 targetSlotNames asking x = case x of
@@ -1416,8 +1430,7 @@ triggerLimitNames asking x = case x of
   TriggerLimit.OncePerGame -> mempty
 
 triggeredAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> TriggeredAbility.TriggeredAbility card ability -> r
-triggeredAbilityNames asking onCard onAbility x = case x of
-  TriggeredAbility.MkTriggeredAbility condition modal intervening _name limit _functionsFrom -> triggerLimitNames asking limit <> triggerConditionNames asking condition <> modalNames asking onCard onAbility modal <> foldMap (conditionNames asking) intervening
+triggeredAbilityNames asking onCard onAbility = Const.getConst . Children.triggeredAbilityChildren (abilityVisitors asking onCard onAbility (const mempty))
 
 untapRestrictionNames :: (Monoid r) => Asking r -> UntapRestriction.UntapRestriction -> r
 untapRestrictionNames asking x = case x of
