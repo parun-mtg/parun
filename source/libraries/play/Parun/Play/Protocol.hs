@@ -510,7 +510,7 @@ offerOf gs prompt = case prompt of
   -- CR 700.2a: the legal modes by index, each named, as many as the selection
   -- takes, and (CR 700.2d) whether one may be chosen again.
   Prompt.ChooseModes _ _ source legal selection ->
-    subset (Just source) (("names", R.Array (fmap (modeName gs source) (Set.toList legal))) : [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection]) (Just (Modal.leastOf selection), Just (Modal.mostOf selection)) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
+    subset (Just source) (("names", R.Array (fmap (modeName gs source) (Set.toList legal))) : [("repeats", R.Boolean True) | Modal.allowsRepeatsIn selection]) (Just (Modal.leastOf selection), Modal.mostOf selection) (fmap (natural . ModeIndex.unwrap) (Set.toList legal))
   -- CR 702.47b: the cards in the order the answer names them, the first
   -- happening first, and under @"costs"@ the splice cost each adds.
   Prompt.ChooseSplice _ _ source offers -> subset (Just source) [("costs", R.Array (fmap (payment . snd) offers))] (Just 0, Nothing) (fmap (object . fst) offers)

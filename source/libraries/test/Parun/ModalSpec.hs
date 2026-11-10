@@ -207,7 +207,7 @@ modalReaderSpec s = Spec.describe s "M4h Modal reader" $ do
             ModalT.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
         chosen = Seq.singleton (ModeIndex.MkModeIndex 1)
     Spec.assertEqWith s "only mode 1's effect" (Modal.modesEffects chosen m) [Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing)]
-    Spec.assertEqWith s "an exact instruction's two bounds are its count" (fmap ($ ModalT.selection m) [Modal.leastOf, Modal.mostOf]) [1, 1]
+    Spec.assertEqWith s "an exact instruction's two bounds are its count" (Modal.leastOf (ModalT.selection m), Modal.mostOf (ModalT.selection m)) (1, Just 1)
 
 -- M4h task 4: CR 602.2b -- the activation path prompts ChooseModes exactly like
 -- Cast.castSpell does, gated by a synthetic modal activated ability (no real one
@@ -491,7 +491,7 @@ chooseTwoSpec s registry = Spec.describe s "ChooseTwo (CR 700.2)" $ do
     let (board, spellId, _) = crypticBoard island crypticCommand piker
         (_, gs) = S.spellOnStack slaughterDrone S.bob board
         modal = Face.spell (S.combinedFace crypticCommand)
-    Spec.assertEqWith s "the selection demands two" (fmap ($ ModalT.selection modal) [Modal.leastOf, Modal.mostOf]) [2, 2]
+    Spec.assertEqWith s "the selection demands two" (Modal.leastOf (ModalT.selection modal), Modal.mostOf (ModalT.selection modal)) (2, Just 2)
     Spec.assertEqWith
       s
       "with a spell on the stack and permanents in play, all four modes are fillable"
@@ -805,7 +805,7 @@ chooseOneOrBothSpec s registry = Spec.describe s "ChooseOneOrBoth (CR 700.2)" $ 
     vandalize <- S.printingOf s registry "Vandalize"
     let modal = Face.spell (S.combinedFace vandalize)
     Spec.assertEqWith s "one through both" (ModalT.selection modal) (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2))
-    Spec.assertEqWith s "the two bounds differ" (fmap ($ ModalT.selection modal) [Modal.leastOf, Modal.mostOf]) [1, 2]
+    Spec.assertEqWith s "the two bounds differ" (Modal.leastOf (ModalT.selection modal), Modal.mostOf (ModalT.selection modal)) (1, Just 2)
 
   -- The ceiling, read directly off Modal.selectionSatisfiedBy because no card in the
   -- pool can observe it: this range ends at the printed mode count, so any answer

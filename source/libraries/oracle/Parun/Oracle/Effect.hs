@@ -175,6 +175,8 @@ choose memory selection count = case (memory, selection) of
     ModeSelection.ChooseExactlyWithRepeats n -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack ". You may choose the same mode more than once."]
     ModeSelection.ChooseBetween b
       | ChooseBetween.least b == 1, toInteger (ChooseBetween.most b) == toInteger count -> [Text.pack (if count == 2 then "Choose one or both \8212" else "Choose one or more \8212")]
+    ModeSelection.ChooseUpTo (Quantity.InSlot slot)
+      | slot == Target.xSlot -> [Text.pack "Choose up to X \8212"]
     _ -> []
 
 -- | The symbols a mode adds, when adding mana is all it does and it names no

@@ -22,6 +22,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Companion as Companion
+import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Conspiracy as Conspiracy
 import qualified Parun.Engine.Contraption as Contraption
 import qualified Parun.Engine.Cost as Cost
@@ -999,7 +1000,18 @@ placeBorne srcId pending = do
       -- CR 612.1: a text change rewrites the ability, not which ability it is.
       memoryKey = Projection.printedTriggeredAbility srcId gs ability
       legal = Set.difference (Target.fillableModes StackObjectKind.TriggeredAbility Nothing (Just controller) bound srcId Map.empty modal gs) remembered
-      selection = Modal.Type.selection modal
+      -- CR 603.3c: the instruction as the modes are announced, with its
+      -- condition and its computed ceiling read then (Modal.settle). The ceiling
+      -- reads the X inherited above, so The Ruinous Wrecking Crew's "choose up to
+      -- X" counts the X its spell announced, which
+      -- data/scenarios/the-ruinous-wrecking-crew-chooses-up-to-the-x-its-spell-announced.json
+      -- proves.
+      seed = Map.unionWith Binding.mergeBinding (Binding.fromChoices Map.empty enteredX Seq.empty) bound
+      selection =
+        Modal.settle
+          (Condition.holds (Projection.fullView gs) (Target.slotContext Nothing (Just controller) False seed (Game.acquisitionFor Nothing srcId gs) srcId Nothing gs) gs srcId)
+          (Target.countingBy Nothing (Just controller) seed srcId gs)
+          (Modal.Type.selection modal)
       obj =
         Object.newSettled
           controller
@@ -1039,7 +1051,7 @@ placeBorne srcId pending = do
         if Modal.selectionSatisfiedBy legal selection answer
           then pure (Just answer)
           else
-            let key = Seq.take (Natural.toIntSaturating (Modal.mostOf selection + 1)) (Seq.filter (`Set.member` legal) answer)
+            let key = Seq.take (Natural.toIntSaturating (Maybe.fromMaybe (Natural.length legal) (Modal.mostOf selection) + 1)) (Seq.filter (`Set.member` legal) answer)
              in if Set.member key rejected
                   then pure Nothing
                   else askModes (Set.insert key rejected)
@@ -1050,6 +1062,9 @@ placeBorne srcId pending = do
   case answeredModes of
     -- CR 603.3c: no selection satisfies the instruction, or none was made.
     Nothing -> State.modify' (Game.cease abilId)
+    -- CR 603.3c: "If no mode is chosen, the ability is removed from the stack",
+    -- which only an instruction whose floor is zero admits.
+    Just chosenModes | Seq.null chosenModes -> State.modify' (Game.cease abilId)
     Just chosenModes -> do
       -- CR 700.17: the controller faced a dilemma.
       Monad.when (Modal.facesDilemma chosenModes modal) $

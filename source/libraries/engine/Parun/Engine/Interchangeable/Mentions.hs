@@ -1619,6 +1619,7 @@ modeSelectionNames asking x = case x of
   ModeSelection.ChooseExactlyWithRepeats _ -> mempty
   ModeSelection.ChooseBetween _ -> mempty
   ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> conditionNames asking condition <> modeSelectionNames asking ordinary <> modeSelectionNames asking instead
+  ModeSelection.ChooseUpTo quantity -> quantityNames asking quantity
 
 modeNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Mode.Mode card ability -> r
 modeNames asking onCard onAbility x = case x of

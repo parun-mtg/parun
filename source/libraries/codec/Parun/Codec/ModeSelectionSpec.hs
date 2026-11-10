@@ -13,6 +13,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
@@ -49,6 +50,14 @@ spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
       ModeSelection.codec
       (ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead (Condition.Compares (Compares.MkCompares (Quantity.Literal 1) Comparison.AtLeast (Quantity.Literal 0))) (ModeSelection.ChooseExactly 1) (ModeSelection.ChooseExactly 2)))
       " {\"type\":\"ChooseInstead\",\"value\":{\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":1},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":0}}},\"ordinary\":{\"type\":\"ChooseExactly\",\"value\":1},\"instead\":{\"type\":\"ChooseExactly\",\"value\":2}}} "
+
+  -- The Ruinous Wrecking Crew (data/cards/the-ruinous-wrecking-crew.json).
+  Spec.it s "ChooseUpTo" $
+    Common.assertCodec
+      s
+      ModeSelection.codec
+      (ModeSelection.ChooseUpTo (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))
+      " {\"type\":\"ChooseUpTo\",\"value\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
 
   Spec.it s "has a schema" $ Common.assertHasSchema s ModeSelection.codec
 
