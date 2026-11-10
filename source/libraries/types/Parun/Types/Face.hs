@@ -23,7 +23,6 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackPermission as AttackPermission
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockPermission as BlockPermission
@@ -63,6 +62,7 @@ import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -569,11 +569,13 @@ data Face card = MkFace
     -- spells" (Dense Foliage); read by Parun.Engine.TargetRestriction, rewritten
     -- by no layer, for blockRequirements' CR 613.11 reason.
     targetRestrictions :: [TargetRestriction.TargetRestriction Affected.Affected],
-    -- | CR 604.1/604.2 / 702.3b / 302.6: this face's printed ATTACKING
-    -- PERMISSIONS -- "can attack as though it didn't have defender"; read by
-    -- Parun.Engine.AttackPermission, rewritten by no layer, for
+    -- | CR 604.1/604.2 / 702.3b / 302.6: this face's printed RULE
+    -- PERMISSIONS -- "can attack as though it didn't have defender", "you may
+    -- activate abilities of creatures you control as though those creatures
+    -- had haste"; read by
+    -- Parun.Engine.RulePermission, rewritten by no layer, for
     -- blockRequirements' CR 613.11 reason.
-    attackPermissions :: [AttackPermission.AttackPermission],
+    rulePermissions :: [RulePermission.RulePermission],
     -- | CR 604.1/604.2 / 303.4 / 301.5 / 101.2: this face's printed ATTACHMENT
     -- PROHIBITIONS -- "enchanted land ... can't be enchanted by other Auras"
     -- (Consecrate Land), "this creature can't be equipped" (Goblin Brawler);

@@ -1,29 +1,6 @@
 {
   "faces": [
     {
-      "attackPermissions": [
-        {
-          "affected": {
-            "type": "Matching",
-            "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasCardType",
-                  "value": "Creature"
-                },
-                {
-                  "type": "HeldBy",
-                  "value": {
-                    "holder": "Controller",
-                    "relation": "You"
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ],
       "costReductions": [
         {
           "amount": [
@@ -91,6 +68,29 @@
         "type": "Literal",
         "value": 0
       },
+      "rulePermissions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
       "staticAbilities": [
         {
           "affected": {

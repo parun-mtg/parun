@@ -101,13 +101,11 @@ import qualified Parun.Codec.AttackLimitScopeSpec
 import qualified Parun.Codec.AttackLimitUnlessSpec
 import qualified Parun.Codec.AttackMeasureSpec
 import qualified Parun.Codec.AttackOptionSpec
-import qualified Parun.Codec.AttackPermissionSpec
 import qualified Parun.Codec.AttackRequirementSpec
 import qualified Parun.Codec.AttackTargetKindSpec
 import qualified Parun.Codec.AttackTargetRefSpec
 import qualified Parun.Codec.AttackTargetSpec
 import qualified Parun.Codec.AttackTriggerSpec
-import qualified Parun.Codec.AttackWaiverSpec
 import qualified Parun.Codec.AttackedSubjectSpec
 import qualified Parun.Codec.AttackedTriggerSpec
 import qualified Parun.Codec.AttackerBlockedSpec
@@ -704,6 +702,8 @@ import qualified Parun.Codec.RoomIndexSpec
 import qualified Parun.Codec.RoundingSpec
 import qualified Parun.Codec.RuleAbilitiesSpec
 import qualified Parun.Codec.RuleFamilySpec
+import qualified Parun.Codec.RulePermissionSpec
+import qualified Parun.Codec.RuleWaiverSpec
 import qualified Parun.Codec.SacrificeAnyNumberSpec
 import qualified Parun.Codec.SacrificeEffectSpec
 import qualified Parun.Codec.SacrificeRestrictionSpec
@@ -1139,8 +1139,8 @@ spec s registry corpus = do
   Parun.Codec.AttackLimitScopeSpec.spec s
   Parun.Codec.AttackLimitUnlessSpec.spec s
   Parun.Codec.AttackOptionSpec.spec s
-  Parun.Codec.AttackPermissionSpec.spec s
-  Parun.Codec.AttackWaiverSpec.spec s
+  Parun.Codec.RulePermissionSpec.spec s
+  Parun.Codec.RuleWaiverSpec.spec s
   Parun.Codec.AttackRequirementSpec.spec s
   Parun.Codec.AttackTargetKindSpec.spec s
   Parun.Codec.AttackTargetRefSpec.spec s

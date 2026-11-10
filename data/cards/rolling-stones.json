@@ -1,7 +1,22 @@
 {
   "faces": [
     {
-      "attackPermissions": [
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Rolling Stones",
+      "oracleText": "Wall creatures can attack as though they didn't have defender.",
+      "rulePermissions": [
         {
           "affected": {
             "type": "Matching",
@@ -21,21 +36,6 @@
           }
         }
       ],
-      "manaCost": [
-        {
-          "type": "Generic",
-          "value": 1
-        },
-        {
-          "type": "OfType",
-          "value": {
-            "type": "Colored",
-            "value": "White"
-          }
-        }
-      ],
-      "name": "Rolling Stones",
-      "oracleText": "Wall creatures can attack as though they didn't have defender.",
       "typeLine": {
         "types": [
           "Enchantment"
