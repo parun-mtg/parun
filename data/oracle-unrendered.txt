@@ -499,6 +499,7 @@ canopy-stalker
 cant-stay-away
 cantankerous-keepers
 capricious-efreet
+captain-america-living-legend
 captain-america-super-soldier
 captain-america-wings-of-freedom
 captain-americas-shield
