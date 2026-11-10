@@ -1,5 +1,9 @@
 module Parun.Engine.Children where
 
+import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
+import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
@@ -20,15 +24,27 @@ import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachTarget as AttachTarget
+import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
+import qualified Parun.Types.AttackCompany as AttackCompany
+import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
+import qualified Parun.Types.AttackTrigger as AttackTrigger
+import qualified Parun.Types.AttackedTrigger as AttackedTrigger
+import qualified Parun.Types.AttackerTarget as AttackerTarget
+import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.BecomeCopy as BecomeCopy
+import qualified Parun.Types.BecomesTapState as BecomesTapState
+import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.Blight as Blight
+import qualified Parun.Types.BlockCount as BlockCount
+import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
+import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseCardName as ChooseCardName
@@ -38,6 +54,7 @@ import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
+import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
@@ -56,21 +73,30 @@ import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
+import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterTrigger as CounterTrigger
+import qualified Parun.Types.CounteringTrigger as CounteringTrigger
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.CreateEmblem as CreateEmblem
+import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamageTally as DamageTally
+import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
+import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.DiscardSubject as DiscardSubject
+import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
@@ -78,6 +104,7 @@ import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
@@ -87,6 +114,7 @@ import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileHaunting as ExileHaunting
+import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Fight as Fight
 import qualified Parun.Types.Filter as Filter
@@ -102,17 +130,25 @@ import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
+import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.LaterPayment as LaterPayment
+import qualified Parun.Types.LeavesTrigger as LeavesTrigger
+import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
+import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeTally as LifeTally
+import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LookAt as LookAt
+import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
+import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
@@ -133,18 +169,28 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
+import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
+import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
+import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Types.PlayerEffect as PlayerEffect
+import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
+import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
+import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RedirectDamage as RedirectDamage
@@ -161,6 +207,7 @@ import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Reveal as Reveal
+import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scope as Scope
@@ -173,12 +220,21 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
+import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
+import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
+import qualified Parun.Types.TappedPermanent as TappedPermanent
+import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
+import qualified Parun.Types.TransformTrigger as TransformTrigger
+import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
+import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
@@ -1119,3 +1175,230 @@ castRepetitionChildren c repetition = case repetition of
   CastRepetition.AnyNumber -> pure repetition
   CastRepetition.WithinTotalManaValue quantity -> fmap CastRepetition.WithinTotalManaValue (onQuantity c quantity)
   CastRepetition.UpTo quantity -> fmap CastRepetition.UpTo (onQuantity c quantity)
+
+-- | One visitor per kind of child a trigger condition (CR 603.1) holds. Its
+-- payloads are matched positionally in triggerConditionChildren; a type
+-- visited whole has walks of its own outside the trigger.
+data TriggerChildren f = MkTriggerChildren
+  { -- | A Filter a field holds, judged of the objects it describes.
+    triggerFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A nested trigger condition: AnyOf's (CR 603.1b), CausedBy's (CR 609.1).
+    triggerNested :: TriggerCondition.TriggerCondition -> f TriggerCondition.TriggerCondition,
+    -- | A state trigger's condition (CR 603.8), or an attack trigger's, whole.
+    triggerState :: Condition.Condition -> f Condition.Condition,
+    -- | A slot a bound subject reads (CR 603.7c).
+    triggerSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The turn an event must fall in (CR 102.1), whole.
+    triggerTurn :: TurnScope.TurnScope -> f TurnScope.TurnScope,
+    -- | An "Nth time each turn" count, with the events it counts.
+    triggerOrdinal :: HistoryRead.HistoryRead -> Natural.Natural -> f Natural.Natural,
+    -- | How often the event counts (CR 603.2c), with the events it counts.
+    triggerFrequency :: HistoryRead.HistoryRead -> TriggerFrequency.TriggerFrequency -> f TriggerFrequency.TriggerFrequency,
+    -- | Which counters a counter trigger watches (CR 122.6), whole.
+    triggerCounters :: WhichCounters.WhichCounters Keyword.Keyword -> f (WhichCounters.WhichCounters Keyword.Keyword),
+    -- | Which mana a mana trigger watches (CR 106.12a), whole.
+    triggerMana :: ManaSpecification.ManaSpecification -> f ManaSpecification.ManaSpecification
+  }
+
+-- | Every child of a trigger condition left as it is: the base a walk
+-- overrides.
+triggerLeaves :: (Applicative f) => TriggerChildren f
+triggerLeaves =
+  MkTriggerChildren
+    { triggerFilter = pure,
+      triggerNested = pure,
+      triggerState = pure,
+      triggerSlot = pure,
+      triggerTurn = pure,
+      triggerOrdinal = const pure,
+      triggerFrequency = const pure,
+      triggerCounters = pure,
+      triggerMana = pure
+    }
+
+-- | A TriggerCondition's immediate children, each through its visitor. A
+-- nested condition is handed to triggerNested and not descended here.
+triggerConditionChildren :: (Applicative f) => TriggerChildren f -> TriggerCondition.TriggerCondition -> f TriggerCondition.TriggerCondition
+triggerConditionChildren c condition = case condition of
+  TriggerCondition.Enters (EntersTrigger.MkEntersTrigger permanent batching) -> fmap TriggerCondition.Enters (EntersTrigger.MkEntersTrigger <$> actingChildren c permanent <*> pure batching)
+  TriggerCondition.StepBegins (StepBegins.MkStepBegins phase ordinal turn) -> fmap TriggerCondition.StepBegins (StepBegins.MkStepBegins phase <$> traverse (triggerOrdinal c HistoryRead.StepBegins) ordinal <*> triggerTurn c turn)
+  TriggerCondition.StateIs state -> fmap TriggerCondition.StateIs (triggerState c state)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients) -> fmap (\renamed -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind recipients)) (actingChildren c actor)
+  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching) ->
+    fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching)) (actingChildren c recipient)
+  TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)
+  TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer filter_ recipient oneOrMore) ->
+    fmap (\renamed -> TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer renamed recipient oneOrMore)) (triggerFilter c filter_)
+  TriggerCondition.CreatureDealtCombatDamageToMonarch -> pure condition
+  TriggerCondition.CreaturesDealtCombatDamageToInitiative -> pure condition
+  TriggerCondition.PlayerTookInitiative -> pure condition
+  TriggerCondition.SelfRevealedForMiracle -> pure condition
+  TriggerCondition.RevealedThisWay (RevealedThisWay.MkRevealedThisWay card timing) -> fmap (\renamed -> TriggerCondition.RevealedThisWay (RevealedThisWay.MkRevealedThisWay renamed timing)) (triggerFilter c card)
+  TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger subject way batching) ->
+    fmap
+      (\renamed -> TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger renamed way batching))
+      ( case subject of
+          DiscardSubject.Self -> pure subject
+          DiscardSubject.Discarder acts -> fmap DiscardSubject.Discarder (playerActsOnChildren c acts)
+      )
+  TriggerCondition.PlayerDrawsNthCard (PlayerDrawsNthCard.MkPlayerDrawsNthCard _ _) -> pure condition
+  TriggerCondition.Attacks trigger -> fmap TriggerCondition.Attacks (attackTriggerChildren c trigger)
+  TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger role creature count) ->
+    fmap
+      TriggerCondition.Blocks
+      ( BlockTrigger.MkBlockTrigger role
+          <$> triggerFilter c creature
+          <*> ( case count of
+                  BlockCount.Once -> pure count
+                  BlockCount.EachCreature others -> fmap BlockCount.EachCreature (triggerFilter c others)
+                  BlockCount.AtLeast floor_ others -> fmap (BlockCount.AtLeast floor_) (triggerFilter c others)
+              )
+      )
+  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations batching) ->
+    fmap
+      (\renamed -> TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger renamed destinations batching))
+      ( case permanent of
+          LeavingPermanent.Self -> pure permanent
+          LeavingPermanent.Matching filter_ -> fmap LeavingPermanent.Matching (triggerFilter c filter_)
+          LeavingPermanent.Attached -> pure permanent
+          LeavingPermanent.Haunted -> pure permanent
+          LeavingPermanent.Bound slot_ -> fmap LeavingPermanent.Bound (triggerSlot c slot_)
+      )
+  TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger card from to whose turn batching) ->
+    fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)
+  TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger card from to turn duringResolution batching) ->
+    fmap TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> triggerTurn c turn <*> pure duringResolution <*> pure batching)
+  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying) -> fmap (\renamed -> TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status renamed batching paying)) (actingChildren c actor)
+  TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger permanent who mana) ->
+    fmap
+      TriggerCondition.TappedForMana
+      ( TappedForManaTrigger.MkTappedForManaTrigger
+          <$> ( case permanent of
+                  TappedPermanent.Attached -> pure permanent
+                  TappedPermanent.Matching filter_ -> fmap TappedPermanent.Matching (triggerFilter c filter_)
+              )
+          <*> pure who
+          <*> triggerMana c mana
+      )
+  TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who source mana) -> fmap TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who <$> triggerFilter c source <*> triggerMana c mana)
+  TriggerCondition.SelfManaAbilityResolves -> pure condition
+  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger _ _) -> pure condition
+  TriggerCondition.DamageToPlayerPrevented _ -> pure condition
+  TriggerCondition.SelfPreventsDamage filter_ -> fmap TriggerCondition.SelfPreventsDamage (triggerFilter c filter_)
+  TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction who turn batching frequency) ->
+    fmap
+      TriggerCondition.LifeChanges
+      ( LifeTrigger.MkLifeTrigger direction who
+          <$> triggerTurn c turn
+          <*> pure batching
+          <*> triggerFrequency
+            c
+            ( case direction of
+                LifeDirection.Gained -> HistoryRead.LifeGains
+                LifeDirection.Lost -> HistoryRead.LifeLosses
+            )
+            frequency
+      )
+  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind motion holder threshold grouping) ->
+    fmap
+      TriggerCondition.CountersChange
+      ( CounterTrigger.MkCounterTrigger
+          <$> triggerCounters c kind
+          <*> pure motion
+          <*> ( case holder of
+                  CounterHolder.Self -> pure holder
+                  CounterHolder.Permanent filter_ -> fmap CounterHolder.Permanent (triggerFilter c filter_)
+              )
+          <*> pure threshold
+          <*> pure grouping
+      )
+  TriggerCondition.SelfBecomesClassLevel _ -> pure condition
+  TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies) ->
+    fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies)
+  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ kind) -> fmap (\renamed -> TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger renamed kind)) (triggerFilter c filter_)
+  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kind batching) ->
+    fmap
+      (\renamed -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kind batching))
+      ( case subject of
+          TargetedSubject.Permanent permanent -> fmap TargetedSubject.Permanent (actingChildren c permanent)
+          TargetedSubject.You -> pure subject
+          TargetedSubject.YouOrPermanent permanent -> fmap TargetedSubject.YouOrPermanent (actingChildren c permanent)
+      )
+  TriggerCondition.SelfHalfUnlocked _ -> pure condition
+  TriggerCondition.RoomFullyUnlocked _ -> pure condition
+  TriggerCondition.AnyOf conditions -> fmap TriggerCondition.AnyOf (traverse (triggerNested c) conditions)
+  TriggerCondition.CausedBy (CausedBy.MkCausedBy controller narrowed) -> fmap (TriggerCondition.CausedBy . CausedBy.MkCausedBy controller) (triggerNested c narrowed)
+  TriggerCondition.TurnedFaceUp permanent -> fmap TriggerCondition.TurnedFaceUp (actingChildren c permanent)
+  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent into) -> fmap (\renamed -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger renamed into)) (actingChildren c permanent)
+  TriggerCondition.FaceDownPermanentLeavesRevealed -> pure condition
+  TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated designation filter_) ->
+    fmap (TriggerCondition.PermanentBecomesDesignated . PermanentBecomesDesignated.MkPermanentBecomesDesignated designation) (triggerFilter c filter_)
+  TriggerCondition.AttachedCreatureMentors -> pure condition
+  TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger exploiter exploited) -> fmap TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger <$> actingChildren c exploiter <*> triggerFilter c exploited)
+  TriggerCondition.Crews role -> case role of
+    CrewRole.Vehicle frequency -> fmap (TriggerCondition.Crews . CrewRole.Vehicle) (triggerFrequency c HistoryRead.Crews frequency)
+    CrewRole.Crewer -> pure condition
+  TriggerCondition.PermanentSacrificed acts -> fmap TriggerCondition.PermanentSacrificed (playerActsOnChildren c acts)
+  TriggerCondition.SagaFinalChapterTriggers _ -> pure condition
+  TriggerCondition.PlayerBecomesMonarch _ -> pure condition
+  TriggerCondition.LosesControl subject -> case subject of
+    LostPermanent.Self -> pure condition
+    LostPermanent.Bound slot_ -> fmap (TriggerCondition.LosesControl . LostPermanent.Bound) (triggerSlot c slot_)
+  TriggerCondition.RoomEntered _ -> pure condition
+  TriggerCondition.PlayerLosesGame _ -> pure condition
+  TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand who from filter_) -> fmap (TriggerCondition.PlayerPlaysLand . PlaysLand.MkPlaysLand who from) (triggerFilter c filter_)
+  TriggerCondition.PlayerManifestsDread _ -> pure condition
+  TriggerCondition.PlayerFacesDilemma _ -> pure condition
+  TriggerCondition.ChaosEnsues -> pure condition
+  TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
+  TriggerCondition.SelfTurnedUpOffDeck -> pure condition
+  TriggerCondition.SelfPlaneswalkedAwayFrom -> pure condition
+  TriggerCondition.PlayerRollsResult (DieResult.MkDieResult _ _) -> pure condition
+  TriggerCondition.Visit -> pure condition
+  TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger _ _) -> pure condition
+  TriggerCondition.SelfBecomesPlotted -> pure condition
+  TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> fmap (TriggerCondition.AttachmentChanges . AttachmentTrigger.MkAttachmentTrigger end direction) (triggerFilter c other)
+  TriggerCondition.Reflexive -> pure condition
+  TriggerCondition.PermanentActs (PermanentActed.MkPermanentActed action permanent) -> fmap (TriggerCondition.PermanentActs . PermanentActed.MkPermanentActed action) (actingChildren c permanent)
+  TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed _ _) -> pure condition
+  TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker placer kinds stickered) -> fmap (TriggerCondition.PlacesSticker . PlacesSticker.MkPlacesSticker placer kinds) (triggerFilter c stickered)
+
+attackTriggerChildren :: (Applicative f) => TriggerChildren f -> AttackTrigger.AttackTrigger -> f AttackTrigger.AttackTrigger
+attackTriggerChildren c trigger = case trigger of
+  AttackTrigger.Attacker (AttackerTrigger.MkAttackerTrigger creature target company frequency while_) ->
+    fmap
+      AttackTrigger.Attacker
+      ( AttackerTrigger.MkAttackerTrigger
+          <$> triggerFilter c creature
+          <*> ( case target of
+                  AttackerTarget.AnyTarget -> pure target
+                  AttackerTarget.Defending _ -> pure target
+                  AttackerTarget.Permanent filter_ -> fmap AttackerTarget.Permanent (triggerFilter c filter_)
+                  AttackerTarget.PlayerWithMostLife -> pure target
+              )
+          <*> ( case company of
+                  AttackCompany.AnyCompany -> pure company
+                  AttackCompany.Alone _ -> pure company
+                  AttackCompany.WithAnother filter_ -> fmap AttackCompany.WithAnother (triggerFilter c filter_)
+              )
+          <*> triggerFrequency c HistoryRead.Attacks frequency
+          <*> traverse (triggerState c) while_
+      )
+  AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger _ _) -> pure trigger
+  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger who attackers frequency while_) ->
+    fmap
+      AttackTrigger.Declaration
+      ( DeclarationTrigger.MkDeclarationTrigger who
+          <$> traverse (\(AttackCount.MkAttackCount measure floor_ filter_) -> AttackCount.MkAttackCount measure floor_ <$> triggerFilter c filter_) attackers
+          <*> triggerFrequency c HistoryRead.Attacks frequency
+          <*> traverse (triggerState c) while_
+      )
+  AttackTrigger.Unblocked filter_ -> fmap AttackTrigger.Unblocked (triggerFilter c filter_)
+
+actingChildren :: (Applicative f) => TriggerChildren f -> ActingPermanent.ActingPermanent -> f ActingPermanent.ActingPermanent
+actingChildren c permanent = case permanent of
+  ActingPermanent.Self -> pure permanent
+  ActingPermanent.Matching filter_ -> fmap ActingPermanent.Matching (triggerFilter c filter_)
+
+playerActsOnChildren :: (Applicative f) => TriggerChildren f -> PlayerActsOn.PlayerActsOn -> f PlayerActsOn.PlayerActsOn
+playerActsOnChildren c (PlayerActsOn.MkPlayerActsOn who filter_) = fmap (PlayerActsOn.MkPlayerActsOn who) (triggerFilter c filter_)

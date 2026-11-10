@@ -1412,6 +1412,9 @@ setBecameArrivals m = case Moved.arrivals m of
 -- coincide, matchesTrigger having already pinned the destination or recipient.
 -- A Leaves admitting a hidden destination is where they come apart, and gets
 -- the floor.
+--
+-- Exhaustive, not over Parun.Engine.Children: a classification of the slots an
+-- event binds, not a walk of the slots a condition reads.
 eventBindingSlots :: TriggerCondition -> Set.Set SlotName.SlotName
 eventBindingSlots cond = case cond of
   -- CR 309.4c names nothing but the room, and the room is in the condition rather

@@ -14,9 +14,6 @@ import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.TextWord as TextWord.Engine
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
-import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
-import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
@@ -32,22 +29,12 @@ import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachedToBound as AttachedToBound
-import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
-import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
-import qualified Parun.Types.AttackTrigger as AttackTrigger
-import qualified Parun.Types.AttackerTarget as AttackerTarget
-import qualified Parun.Types.AttackerTrigger as AttackerTrigger
-import qualified Parun.Types.BecomesTapState as BecomesTapState
-import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.BlockCost as BlockCost
-import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
-import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
@@ -56,7 +43,6 @@ import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
-import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
@@ -76,23 +62,16 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterRestriction as CounterRestriction
-import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
-import qualified Parun.Types.DamageTrigger as DamageTrigger
-import qualified Parun.Types.DealtDamage as DealtDamage
-import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devotion as Devotion
-import qualified Parun.Types.DiscardSubject as DiscardSubject
-import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Duration as Duration
@@ -102,7 +81,6 @@ import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryFlip as EntryFlip
@@ -114,7 +92,6 @@ import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
-import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
@@ -126,9 +103,6 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
-import qualified Parun.Types.LeavesTrigger as LeavesTrigger
-import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
-import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
@@ -152,31 +126,22 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
-import qualified Parun.Types.PermanentActed as PermanentActed
-import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
-import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
-import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
-import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
-import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
-import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.RemovalCount as RemovalCount
 import Parun.Types.ReplacementEffect (ReplacementEffect)
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
-import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
@@ -184,22 +149,17 @@ import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SlotCount as SlotCount
-import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TapForMana as TapForMana
-import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
-import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
-import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
-import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -1040,8 +1000,8 @@ rewritePrintedReplacement pairs printed =
 
 -- CR 612.1 through the replacement effect itself: the EVENT PATTERN saying which
 -- objects it watches, and the REWRITE it applies to one. Exhaustive rather than a
--- wildcard, in rewriteTriggerCondition's posture -- a later arm carrying a word
--- fails to compile here instead of silently keeping the printed one.
+-- wildcard, so a later arm carrying a word fails to compile here instead of
+-- silently keeping the printed one.
 --
 -- Classification, not identity: every arm is a CR 614.1 event class, and the
 -- descent is by the field shapes those classes carry.
@@ -1518,174 +1478,20 @@ rewriteTargetSlot pairs slot =
     }
 
 -- CR 612.1 over a counter trigger's holder: the Filter, where there is one.
-rewriteCounterHolder :: [(TextWord.TextWord, TextWord.TextWord)] -> CounterHolder.CounterHolder -> CounterHolder.CounterHolder
-rewriteCounterHolder pairs holder = case holder of
-  CounterHolder.Self -> holder
-  CounterHolder.Permanent f -> CounterHolder.Permanent (Filter.rewrite pairs f)
-
--- CR 612.1 through a trigger's own condition. Exhaustive rather than a wildcard,
--- so a later condition carrying a Filter fails to compile here instead of
--- silently keeping the printed word.
+-- CR 612.1 through a trigger's own condition (CR 603.1): its Filters, its
+-- conditions and a printed colour of mana. A counter kind, a slot name and a
+-- turn scope hold no word Parun.Types.ChangeText's pairs swap, and a
+-- transform's face is a card name (CR 612.2), so the leaves keep them.
 rewriteTriggerCondition :: [(TextWord.TextWord, TextWord.TextWord)] -> TriggerCondition.TriggerCondition -> TriggerCondition.TriggerCondition
-rewriteTriggerCondition pairs condition = case condition of
-  TriggerCondition.StateIs c -> TriggerCondition.StateIs (rewriteCondition pairs c)
-  -- Positional, so a later field fails to compile here rather than riding a
-  -- record update unrewritten.
-  TriggerCondition.Enters (EntersTrigger.MkEntersTrigger permanent batching) -> TriggerCondition.Enters (EntersTrigger.MkEntersTrigger (acting permanent) batching)
-  TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger card from to whose scope batching) -> TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger (acting card) from to whose scope batching)
-  TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger card from to scope duringResolution batching) -> TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger (acting card) from to scope duringResolution batching)
-  -- The holder's Filter is rewritten and the counter kind is not: CR 612.1's
-  -- pairs swap SUBTYPE words, and a counter kind names none.
-  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind motion holder threshold grouping) -> TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind motion (rewriteCounterHolder pairs holder) threshold grouping)
-  -- The TurnScope is carried through untouched, not dropped: a rebuild that
-  -- forgot the field would reset a text-changed trigger to firing every turn.
-  TriggerCondition.SpellCast (SpellCast.MkSpellCast subject scope fromZone ordinal window copies) -> TriggerCondition.SpellCast (SpellCast.MkSpellCast (acting subject) scope fromZone ordinal window copies)
-  TriggerCondition.StepBegins {} -> condition
-  -- Positional, so a field the record gains stops the build here: a kind and a
-  -- card type name no word for Parun.Types.ChangeText's pairs to swap.
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients) -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (acting actor) kind recipients)
-  TriggerCondition.IsDealtDamage watched -> TriggerCondition.IsDealtDamage watched {PermanentIsDealtDamage.dealt = (PermanentIsDealtDamage.dealt watched) {DealtDamage.recipient = acting (DealtDamage.recipient (PermanentIsDealtDamage.dealt watched))}}
-  TriggerCondition.PlayerIsDealtDamage _ -> condition
-  TriggerCondition.PermanentsDealCombatDamageToPlayer p -> TriggerCondition.PermanentsDealCombatDamageToPlayer p {PermanentsDealCombatDamageToPlayer.filter = Filter.rewrite pairs (PermanentsDealCombatDamageToPlayer.filter p)}
-  TriggerCondition.CreatureDealtCombatDamageToMonarch -> condition
-  TriggerCondition.CreaturesDealtCombatDamageToInitiative -> condition
-  TriggerCondition.PlayerTookInitiative -> condition
-  TriggerCondition.SelfRevealedForMiracle -> condition
-  TriggerCondition.RevealedThisWay r -> TriggerCondition.RevealedThisWay r {RevealedThisWay.card = Filter.rewrite pairs (RevealedThisWay.card r)}
-  TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger subject way batching) -> case subject of
-    DiscardSubject.Self -> condition
-    DiscardSubject.Discarder payload -> TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder payload {PlayerActsOn.filter = Filter.rewrite pairs (PlayerActsOn.filter payload)}) way batching)
-  TriggerCondition.AbilityActivated t -> TriggerCondition.AbilityActivated t {AbilityActivatedTrigger.filter = Filter.rewrite pairs (AbilityActivatedTrigger.filter t)}
-  TriggerCondition.BecomesTargeted c ->
-    TriggerCondition.BecomesTargeted
-      c
-        { BecomesTargetedTrigger.subject = case BecomesTargetedTrigger.subject c of
-            TargetedSubject.Permanent p -> TargetedSubject.Permanent (acting p)
-            TargetedSubject.You -> TargetedSubject.You
-            TargetedSubject.YouOrPermanent p -> TargetedSubject.YouOrPermanent (acting p)
+rewriteTriggerCondition pairs =
+  Identity.runIdentity
+    . Children.triggerConditionChildren
+      Children.triggerLeaves
+        { Children.triggerFilter = Identity.Identity . Filter.rewrite pairs,
+          Children.triggerNested = Identity.Identity . rewriteTriggerCondition pairs,
+          Children.triggerState = Identity.Identity . rewriteCondition pairs,
+          Children.triggerMana = Identity.Identity . rewriteManaSpecification pairs
         }
-  TriggerCondition.PlayerDrawsNthCard {} -> condition
-  TriggerCondition.PlayerBecomesMonarch _ -> condition
-  TriggerCondition.Attacks t -> TriggerCondition.Attacks (rewriteAttackTrigger pairs t)
-  TriggerCondition.Blocks t -> TriggerCondition.Blocks (rewriteBlockTrigger pairs t)
-  -- Positional, so a later field fails to compile here rather than riding a
-  -- record update unrewritten. A slot name is card data but not card TEXT, so
-  -- no CR 612.1 swap reaches it.
-  TriggerCondition.Leaves (LeavesTrigger.MkLeavesTrigger permanent destinations batching) ->
-    TriggerCondition.Leaves
-      ( LeavesTrigger.MkLeavesTrigger
-          ( case permanent of
-              LeavingPermanent.Matching f -> LeavingPermanent.Matching (Filter.rewrite pairs f)
-              LeavingPermanent.Self -> permanent
-              LeavingPermanent.Attached -> permanent
-              LeavingPermanent.Haunted -> permanent
-              LeavingPermanent.Bound _ -> permanent
-          )
-          destinations
-          batching
-      )
-  TriggerCondition.Countered _ -> condition
-  TriggerCondition.DamageToPlayerPrevented _ -> condition
-  TriggerCondition.SelfPreventsDamage f -> TriggerCondition.SelfPreventsDamage (Filter.rewrite pairs f)
-  TriggerCondition.LifeChanges _ -> condition
-  TriggerCondition.SelfBecomesClassLevel _ -> condition
-  TriggerCondition.SelfHalfUnlocked _ -> condition
-  TriggerCondition.RoomFullyUnlocked _ -> condition
-  TriggerCondition.AnyOf conditions -> TriggerCondition.AnyOf (fmap (rewriteTriggerCondition pairs) conditions)
-  TriggerCondition.CausedBy narrowed -> TriggerCondition.CausedBy narrowed {CausedBy.condition = rewriteTriggerCondition pairs (CausedBy.condition narrowed)}
-  TriggerCondition.TurnedFaceUp permanent -> TriggerCondition.TurnedFaceUp (acting permanent)
-  -- CR 701.27f's face is a NAME, which CR 612.2's second sentence keeps a swap
-  -- off, so only the subject is rewritten. SelfHalfUnlocked's answer for its own
-  -- door.
-  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent into) -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger (acting permanent) into)
-  TriggerCondition.FaceDownPermanentLeavesRevealed -> condition
-  TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated d f) -> TriggerCondition.PermanentBecomesDesignated (PermanentBecomesDesignated.MkPermanentBecomesDesignated d (Filter.rewrite pairs f))
-  TriggerCondition.PermanentActs acts ->
-    TriggerCondition.PermanentActs
-      acts {PermanentActed.permanent = acting (PermanentActed.permanent acts)}
-  TriggerCondition.AttachedCreatureMentors -> condition
-  TriggerCondition.BecomesTapState watched -> TriggerCondition.BecomesTapState watched {BecomesTapState.actor = acting (BecomesTapState.actor watched)}
-  TriggerCondition.TappedForMana payload ->
-    TriggerCondition.TappedForMana
-      payload
-        { TappedForManaTrigger.permanent = case TappedForManaTrigger.permanent payload of
-            TappedPermanent.Attached -> TappedPermanent.Attached
-            TappedPermanent.Matching f -> TappedPermanent.Matching (Filter.rewrite pairs f),
-          TappedForManaTrigger.mana = rewriteManaSpecification pairs (TappedForManaTrigger.mana payload)
-        }
-  TriggerCondition.AbilityAddsMana payload -> TriggerCondition.AbilityAddsMana payload {AbilityAddsMana.source = Filter.rewrite pairs (AbilityAddsMana.source payload), AbilityAddsMana.mana = rewriteManaSpecification pairs (AbilityAddsMana.mana payload)}
-  TriggerCondition.SelfManaAbilityResolves -> condition
-  TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger exploiter exploited) -> TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger (acting exploiter) (Filter.rewrite pairs exploited))
-  TriggerCondition.Crews _ -> condition
-  TriggerCondition.PermanentSacrificed payload -> TriggerCondition.PermanentSacrificed payload {PlayerActsOn.filter = Filter.rewrite pairs (PlayerActsOn.filter payload)}
-  TriggerCondition.SagaFinalChapterTriggers _ -> condition
-  -- CR 603.7's slot name is card data but not card TEXT, so no CR 612.1 swap
-  -- reaches it; what the slot holds is read off the projection instead.
-  TriggerCondition.LosesControl _ -> condition
-  TriggerCondition.RoomEntered _ -> condition
-  TriggerCondition.PlayerActs _ -> condition
-  TriggerCondition.PlayerLosesGame _ -> condition
-  TriggerCondition.PlacesSticker p -> TriggerCondition.PlacesSticker p {PlacesSticker.object = Filter.rewrite pairs (PlacesSticker.object p)}
-  TriggerCondition.PlayerPlaysLand payload -> TriggerCondition.PlayerPlaysLand payload {PlaysLand.filter = Filter.rewrite pairs (PlaysLand.filter payload)}
-  TriggerCondition.PlayerManifestsDread _ -> condition
-  TriggerCondition.PlayerFacesDilemma _ -> condition
-  TriggerCondition.PlayerRollsResult _ -> condition
-  TriggerCondition.Visit -> condition
-  TriggerCondition.ChaosEnsues -> condition
-  TriggerCondition.PlayerRollsPlaneswalker _ -> condition
-  TriggerCondition.SelfTurnedUpOffDeck -> condition
-  TriggerCondition.SelfPlaneswalkedAwayFrom -> condition
-  TriggerCondition.FlipsCoin _ -> condition
-  TriggerCondition.SelfBecomesPlotted -> condition
-  TriggerCondition.AttachmentChanges t -> TriggerCondition.AttachmentChanges t {AttachmentTrigger.other = Filter.rewrite pairs (AttachmentTrigger.other t)}
-  -- CR 603.12's reflexive carries nothing at all, so there is no subtype to swap.
-  TriggerCondition.Reflexive -> condition
-  where
-    acting watched = case watched of
-      ActingPermanent.Self -> ActingPermanent.Self
-      ActingPermanent.Matching f -> ActingPermanent.Matching (Filter.rewrite pairs f)
-
--- CR 612.1 through both ends of a pairwise block trigger.
--- CR 612.1 through an attack trigger's Filters and condition, each of which
--- can name a creature type (CR 508.3c's "attacks with one or more Birds").
--- Relations name none.
-rewriteAttackTrigger :: [(TextWord.TextWord, TextWord.TextWord)] -> AttackTrigger.AttackTrigger -> AttackTrigger.AttackTrigger
-rewriteAttackTrigger pairs trigger = case trigger of
-  AttackTrigger.Attacker (AttackerTrigger.MkAttackerTrigger creature target company frequency while_) ->
-    AttackTrigger.Attacker
-      ( AttackerTrigger.MkAttackerTrigger
-          (Filter.rewrite pairs creature)
-          ( case target of
-              AttackerTarget.AnyTarget -> target
-              AttackerTarget.Defending _ -> target
-              AttackerTarget.Permanent f -> AttackerTarget.Permanent (Filter.rewrite pairs f)
-              AttackerTarget.PlayerWithMostLife -> target
-          )
-          ( case company of
-              AttackCompany.AnyCompany -> company
-              AttackCompany.Alone {} -> company
-              AttackCompany.WithAnother f -> AttackCompany.WithAnother (Filter.rewrite pairs f)
-          )
-          frequency
-          (fmap (rewriteCondition pairs) while_)
-      )
-  AttackTrigger.Attacked _ -> trigger
-  AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger player attackers frequency while_) ->
-    AttackTrigger.Declaration
-      ( DeclarationTrigger.MkDeclarationTrigger
-          player
-          (fmap (\(AttackCount.MkAttackCount measure n f) -> AttackCount.MkAttackCount measure n (Filter.rewrite pairs f)) attackers)
-          frequency
-          (fmap (rewriteCondition pairs) while_)
-      )
-  AttackTrigger.Unblocked f -> AttackTrigger.Unblocked (Filter.rewrite pairs f)
-
-rewriteBlockTrigger :: [(TextWord.TextWord, TextWord.TextWord)] -> BlockTrigger.BlockTrigger -> BlockTrigger.BlockTrigger
-rewriteBlockTrigger pairs (BlockTrigger.MkBlockTrigger role creature count) =
-  BlockTrigger.MkBlockTrigger role (Filter.rewrite pairs creature) $ case count of
-    BlockCount.Once -> BlockCount.Once
-    BlockCount.EachCreature others -> BlockCount.EachCreature (Filter.rewrite pairs others)
-    BlockCount.AtLeast n others -> BlockCount.AtLeast n (Filter.rewrite pairs others)
 
 -- CR 612.1 through a casting permission's one condition.
 rewriteCastingPermission :: [(TextWord.TextWord, TextWord.TextWord)] -> CastingPermission.CastingPermission -> CastingPermission.CastingPermission
@@ -1713,11 +1519,11 @@ rewriteCondition pairs condition = case condition of
 -- CR 612.1 through ONE clause of an activated ability's CR 602.5 "activate only
 -- ..." rider, which is printed text like the rest of the ability.
 --
--- Exhaustive rather than a wildcard, for rewriteTriggerCondition's reason: a new
--- arm carrying a Condition or a Filter must break this build. Only the board
--- condition and SpendOnly's printed colour hold a word -- every other arm names
--- a phase, a turn, the combat record, or a count of activations, and CR 612.1's
--- swap finds nothing in one to act on.
+-- Exhaustive rather than a wildcard, so a new arm carrying a Condition or a
+-- Filter must break this build. Only the board condition and SpendOnly's
+-- printed colour hold a word -- every other arm names a phase, a turn, the
+-- combat record, or a count of activations, and CR 612.1's swap finds nothing
+-- in one to act on.
 rewriteRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> ActivationRestriction.ActivationRestriction -> ActivationRestriction.ActivationRestriction
 rewriteRestriction pairs restriction = case restriction of
   ActivationRestriction.OnlyIf condition -> ActivationRestriction.OnlyIf (rewriteCondition pairs condition)
@@ -1747,8 +1553,8 @@ rewriteManaSpecification pairs specified = case specified of
 -- other, so the words inside its Condition are reachable. Every other arm is a
 -- turn-structure window and names none.
 --
--- Exhaustive rather than a wildcard, for rewriteTriggerCondition's reason: a new
--- arm carrying a Condition or a Filter must break this build.
+-- Exhaustive rather than a wildcard, so a new arm carrying a Condition or a
+-- Filter must break this build.
 rewriteDuration :: [(TextWord.TextWord, TextWord.TextWord)] -> Duration.Duration -> Duration.Duration
 rewriteDuration pairs duration = case duration of
   Duration.ForAsLongAs condition -> Duration.ForAsLongAs (rewriteCondition pairs condition)
