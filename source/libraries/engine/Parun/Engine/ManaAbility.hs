@@ -409,6 +409,7 @@ manaProduced effect = case effect of
   Effect.CreateCopy {} -> Nothing
   Effect.BecomeCopy {} -> Nothing
   Effect.CopyStackObject {} -> Nothing
+  Effect.SetX {} -> Nothing
   Effect.Replace {} -> Nothing
   Effect.SkipPhase {} -> Nothing
   -- CR 615.5's rider is not descended into, the same stop Effect.Create makes at
@@ -615,6 +616,7 @@ playerChoice effect = case effect of
   Effect.CreateCopy {} -> Nothing
   Effect.BecomeCopy {} -> Nothing
   Effect.CopyStackObject {} -> Nothing
+  Effect.SetX {} -> Nothing
   Effect.Replace {} -> Nothing
   Effect.SkipPhase {} -> Nothing
   Effect.PreventNextDamage {} -> Nothing
@@ -898,6 +900,7 @@ movesLibraryCard effect = case effect of
   -- CR 707.10's copy is put onto the stack, not moved there from a zone, and it
   -- is no card at all (CR 112.1a).
   Effect.CopyStackObject {} -> False
+  Effect.SetX {} -> False
   Effect.Replace {} -> False
   Effect.SkipPhase {} -> False
   -- CR 615.5's rider is not descended into, the same stop `manaProduced` makes:

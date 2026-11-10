@@ -45,6 +45,7 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CopyCoverage as CopyCoverage
+import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -74,6 +75,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import Parun.Types.Mana (Mana)
 import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Mode as Mode
@@ -2701,6 +2703,25 @@ activatedAbilityKind oid gs = case lookupObject oid gs of
         Source.OfEmblem _ -> Nothing
         Source.OfSpellCopy _ -> Nothing
         Source.OfCardCopy _ -> Nothing
+
+-- CR 602.2b: the mana in the activation cost of the activated ability on the
+-- stack `oid` names, read off its Source as activatedAbilityKind reads its kind.
+-- Nothing for every other object, and for a cost with no mana.
+activationCost :: ObjectId -> GameState -> Maybe ManaCost.ManaCost
+activationCost oid gs = do
+  obj <- lookupObject oid gs
+  Monad.guard (Object.zone obj == Zone.Stack)
+  case Object.source obj of
+    Source.OfAbility activated -> Cost.mana (ActivatedAbility.cost (ActivatedAbilitySource.ability activated))
+    Source.OfTrigger _ -> Nothing
+    Source.OfInherentTrigger _ -> Nothing
+    Source.OfCard _ -> Nothing
+    Source.OfMeld _ -> Nothing
+    Source.OfMerge _ -> Nothing
+    Source.OfToken _ -> Nothing
+    Source.OfEmblem _ -> Nothing
+    Source.OfSpellCopy _ -> Nothing
+    Source.OfCardCopy _ -> Nothing
 
 -- CR 112.1 / 113.3b / 113.3c: which of CR 115.1's three kinds a spell or ability
 -- is, off its KIND (its Source) alone, isSpell's and isAbility's reading

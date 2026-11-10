@@ -184,6 +184,7 @@ import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
 import qualified Parun.Types.Object as Object
@@ -243,6 +244,7 @@ import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotArity (SlotArity)
@@ -816,6 +818,7 @@ effectPlayerRefs effect = case effect of
   Effect.CreateCopy {} -> []
   Effect.BecomeCopy x -> foldMap durationPlayerRefs (BecomeCopy.duration x)
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ _ copier _) -> [copier]
+  Effect.SetX {} -> []
   Effect.Replace x -> durationPlayerRefs (Replace.duration x)
   Effect.SkipPhase (SkipPhase.MkSkipPhase ref _ _ duration _) -> ref : durationPlayerRefs duration
   Effect.PreventNextDamage x -> durationPlayerRefs (PreventNextDamage.duration x)
@@ -1215,6 +1218,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- effectObjectRefs' half.
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationSlots duration
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> quantitySlots quantity
+  Effect.SetX (SetX.MkSetX value _) -> joinSlots (fmap quantitySlots (NewX.quantities value))
   -- The Duration and Condition each carry Quantities; a Quantity.InSlot is a read.
   -- The ROW's own Filters and Quantities are READS too (replacementRowReads):
   -- Filter.IsBound in one names an object an earlier effect of this same
@@ -2067,6 +2071,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _) -> all Quantity.slotsAreExhaustive (quantity : riderQuantities riders)
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> all durationSlotsAreExhaustive duration
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> Quantity.slotsAreExhaustive quantity
+  Effect.SetX (SetX.MkSetX value _) -> all Quantity.slotsAreExhaustive (NewX.quantities value)
   -- The ReplacementEffect's own reads are replacementRowReads', and slotsOf
   -- reports them through replacementRowSlots: its Filters name no target slot, and
   -- the Quantities a counter rewrite counts with are asked here. The effects a
@@ -2361,6 +2366,7 @@ hasRead wanted =
         Effect.Create (Create.MkCreate quantity card riders _ _ _) -> any (Quantity.hasRead wanted) (quantity : riderQuantities riders <> tokenBoxQuantities card)
         Effect.Conjure conjure -> any (Quantity.hasRead wanted) (conjureQuantities conjure)
         Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> Quantity.hasRead wanted quantity
+        Effect.SetX (SetX.MkSetX value _) -> any (Quantity.hasRead wanted) (NewX.quantities value)
         Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _) -> any (Quantity.hasRead wanted) (quantity : riderQuantities riders)
         Effect.BecomeCopy {} -> False
         -- CR 601.2b's X reaches the effects a rewrite or a CR 615.5 rider nests,
@@ -2502,6 +2508,7 @@ boundSlots effect = case effect of
   -- Binds nothing: no new object comes into existence.
   Effect.BecomeCopy {} -> Set.empty
   Effect.CopyStackObject {} -> Set.empty
+  Effect.SetX {} -> Set.empty
   -- CR 730.1b: the subgame's winner, reported rather than chosen.
   Effect.PlaySubgame slot -> Set.singleton slot
   -- CR 608.2d: the player this effect chose.

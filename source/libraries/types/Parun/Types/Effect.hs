@@ -107,6 +107,7 @@ import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotName as SlotName
@@ -385,6 +386,10 @@ data Effect card ability
     -- Major), and CR 707.10's own answer to who puts the copy onto the stack
     -- (Meletis Charlatan).
     CopyStackObject (CopyStackObject.CopyStackObject ability)
+  | -- | CR 107.3a: the announced X of each spell or ability on the stack the
+    -- reference names takes a new value (Unbound Flourishing, Glava,
+    -- Five-Advents Mage).
+    SetX SetX.SetX
   | -- | CR 614.3 / 615.3: install a floating replacement effect for a duration,
     -- with a use count, an origin and an optional condition asked as the event
     -- would happen (CR 614.1). Targetless.

@@ -1450,6 +1450,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 113.3b: a snapshot holds characteristics rather than an
       -- object on the stack, so there is no ability here to be either kind.
       Filter.activatedAbility = Nothing,
+      Filter.activationCost = Nothing,
       -- CR 113.1c, the line above widened: still no ability on the stack here to
       -- be one of either kind.
       Filter.ability = False,

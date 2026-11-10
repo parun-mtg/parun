@@ -620,6 +620,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.CreateCopy payload -> Objects.createCopy (runReplacementEffects runSubgame) resolving source controller legal chosen payload
   Effect.BecomeCopy payload -> Objects.becomeCopy resolving source controller legal payload
   Effect.CopyStackObject payload -> Objects.copyStackObject resolving source controller legal payload
+  Effect.SetX payload -> Objects.setX resolving source controller legal payload
   Effect.ChooseNewTargets payload -> Objects.chooseNewTargets resolving source controller legal payload
   Effect.ChangeTargets payload -> Objects.changeTargets resolving source controller legal payload
   Effect.ArmDelayedTrigger payload -> Objects.armDelayedTrigger resolving source controller legal payload

@@ -119,6 +119,7 @@ import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.Mentored as Mentored
 import qualified Parun.Types.MonarchTarget as MonarchTarget
+import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.Object as Object
@@ -152,6 +153,7 @@ import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
@@ -868,6 +870,22 @@ changeTargets resolving source controller legal (ChangeTargets.MkChangeTargets r
   gs <- State.get
   let named = fmap (Set.fromList . objectRefObjects legal resolving controller source gs) onto
   Common.retargetEach (Common.changeTargetsFor named source controller) legal resolving controller source ref
+
+-- CR 107.3a: each named object still on the stack takes its new X; one that
+-- left keeps no X to change. A stated quantity is read once, as the
+-- instruction begins (CR 608.2h), and a negative one is CR 107.1b's 0; a
+-- multiple is of each object's own X as it is applied.
+setX :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SetX.SetX -> Game ()
+setX resolving source controller legal (SetX.MkSetX value ref) = do
+  gs <- State.get
+  let evaluated quantity = fmap Integer.toNaturalSaturating (Quantity.evaluateFor (effectViewOf resolving source legal gs) (effectContext gs resolving controller source legal (slotBindings resolving gs)) gs resolving source quantity)
+      newX = case value of
+        NewX.Becomes quantity -> const (evaluated quantity)
+        NewX.Multiplied factor -> \obj -> Just (factor * Maybe.fromMaybe 0 (Binding.amountOf Binding.variableX (Object.bindings obj)))
+      put obj = maybe obj (\n -> obj {Object.bindings = Map.insert Binding.variableX (Binding.toAmount n) (Object.bindings obj)}) (newX obj)
+      onStack oid = elem oid (GameState.stack gs)
+      named = filter onStack (objectRefObjects legal resolving controller source gs ref)
+  State.modify (\g -> g {GameState.objects = Foldable.foldl' (flip (Map.adjust put)) (GameState.objects g) named})
 
 armDelayedTrigger :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ArmDelayedTrigger.ArmDelayedTrigger (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArmDelayedTrigger name onset duration _) = do

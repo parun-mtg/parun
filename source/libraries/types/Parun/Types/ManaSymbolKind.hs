@@ -1,6 +1,7 @@
 module Parun.Types.ManaSymbolKind where
 
--- | Which kind of mana symbol Filter.ManaCostHasSymbol looks for in a mana cost.
+-- | Which kind of mana symbol Filter.ManaCostHasSymbol looks for in a mana or
+-- activation cost.
 data ManaSymbolKind
   = -- | CR 107.3: {X} (Zaxara, the Exemplary; Gaddock Teeg).
     VariableSymbol

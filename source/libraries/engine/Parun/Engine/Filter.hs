@@ -568,6 +568,12 @@ data View = MkView
     -- builder says so at its own site. Otherwise CR 606.2's side of it, for
     -- IsActivatedAbility's kind.
     activatedAbility :: Maybe LoyaltyKind.LoyaltyKind,
+    -- CR 602.2b: the mana in an activated ability's activation cost, its analog
+    -- of a spell's mana cost, which ManaCostHasSymbol reads beside `manaCost`
+    -- (Unbound Flourishing's "that ability's activation cost contains {X}").
+    -- Read off Object.source as `activatedAbility` above is, and Nothing
+    -- wherever it is, or where the cost has no mana.
+    activationCost :: Maybe ManaCost.ManaCost,
     -- CR 113.1c: is this candidate an ability on the stack AT ALL, of either of
     -- CR 113.3's kinds? The field above widened, filled from the same record
     -- (Parun.Engine.Game.isAbility) and never from a projection, for the same
@@ -1005,6 +1011,7 @@ playerView pid =
       -- CR 111.1: a token represents a PERMANENT, and a player is not one.
       token = False,
       activatedAbility = Nothing,
+      activationCost = Nothing,
       -- CR 113.1c again, one kind wider: a player is not an object at all (CR
       -- 109.1), so it is no ability on the stack either.
       ability = False,
@@ -2055,14 +2062,16 @@ matches context view predicate = case predicate of
      in length (ListUtils.nubOrd symbols) < length symbols
   -- CR 107.3 / 107.4g over the mana cost's symbols, CR 709.4b's combined cost
   -- included; an object with no mana cost has none. {H} is either Phyrexian
-  -- shape (CR 107.4f).
+  -- shape (CR 107.4f). An activated ability's activation cost stands in for
+  -- the mana cost (CR 602.2b), Glava, Five-Advents Mage's "an ability with {X}
+  -- in its activation cost".
   Filter.ManaCostHasSymbol kind ->
     let isKind symbol = case (kind, symbol) of
           (ManaSymbolKind.VariableSymbol, ManaSymbol.Variable) -> True
           (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.Phyrexian _) -> True
           (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.HybridPhyrexian _) -> True
           _ -> False
-     in any isKind (foldMap ManaCost.unwrap (manaCost view))
+     in any isKind (foldMap ManaCost.unwrap (manaCost view) <> foldMap ManaCost.unwrap (activationCost view))
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and

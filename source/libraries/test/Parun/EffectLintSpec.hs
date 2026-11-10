@@ -173,6 +173,7 @@ import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.ObjectId as ObjectId
@@ -238,6 +239,7 @@ import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
@@ -389,6 +391,7 @@ ownQuantities effect = case effect of
   Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _) -> quantity : Resolve.riderQuantities riders
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationQuantities duration
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> [quantity]
+  Effect.SetX (SetX.MkSetX value _) -> NewX.quantities value
   Effect.Replace (Replace.MkReplace duration _ _ condition _) -> durationQuantities duration <> foldMap Resolve.conditionQuantities condition
   Effect.SkipPhase (SkipPhase.MkSkipPhase _ _ _ duration count) -> count : durationQuantities duration
   Effect.LaterPayment (LaterPayment.MkLaterPayment duration _ _) -> durationQuantities duration
@@ -1674,6 +1677,7 @@ effectObjectRefs effect =
         Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _) -> read_ [ref]
         Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> read_ (case original of CopyOriginal.OfObject ref -> [ref, subject]; CopyOriginal.Named _ -> [subject])
         Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _) -> read_ (ref : copyTargetsRefs targets)
+        Effect.SetX (SetX.MkSetX _ ref) -> read_ [ref]
         Effect.Replace {} -> []
         Effect.SkipPhase {} -> []
         Effect.LaterPayment {} -> []

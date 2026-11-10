@@ -335,6 +335,7 @@ import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectId as ObjectId
@@ -423,6 +424,7 @@ import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetOwner as SetOwner
+import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
@@ -760,6 +762,7 @@ objectRefPositions =
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
         ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
+        ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
         ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] False), [plantedRef "cc"]),
         ("become-copy", Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.OfObject (plantedRef "bc-original")) (plantedRef "bc-subject") Nothing [] False), [plantedRef "bc-original", plantedRef "bc-subject"]),
@@ -1407,6 +1410,7 @@ ownCounts effect = case effect of
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationCounts duration
   -- CR 702.40a's "for each" count is card data like CreateCopy's.
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> quantityCounts quantity
+  Effect.SetX (SetX.MkSetX value _) -> concatMap quantityCounts (NewX.quantities value)
   -- The Condition is Galvanic Blast's and Synthetic Voltaic Surge's "if you
   -- control three or more artifacts", and its Counts are as much card data as a
   -- Duration's.
@@ -1866,6 +1870,7 @@ effectNestedEffects effect = case effect of
   Effect.CreateCopy {} -> []
   Effect.BecomeCopy {} -> []
   Effect.CopyStackObject {} -> []
+  Effect.SetX {} -> []
   Effect.CreateEmblem {} -> []
   Effect.BecomeMonarch {} -> []
   Effect.TakeTheInitiative {} -> []
@@ -2446,6 +2451,7 @@ effectReplacements effect = case effect of
   Effect.CreateCopy {} -> []
   Effect.BecomeCopy {} -> []
   Effect.CopyStackObject {} -> []
+  Effect.SetX {} -> []
   Effect.CreateEmblem emblem -> overFaces cardReplacementEffects (CreateEmblem.card emblem)
   Effect.DealDamage (DealDamage.MkDealDamage {}) -> []
   Effect.ModifyTarget {} -> []
@@ -3030,6 +3036,7 @@ effectMintedFaces effect = case effect of
   Effect.BecomeCopy {} -> []
   -- Mints no face either: the copy's text is the copied spell's.
   Effect.CopyStackObject {} -> []
+  Effect.SetX {} -> []
   Effect.CreateEmblem emblem -> fmap ((,) MintedEmblem) (NonEmpty.toList (Card.Type.faces (CreateEmblem.card emblem)))
   Effect.Replace (Replace.MkReplace _ _ _ _ replacement) -> concatMap effectMintedFaces (replacementEffectRiders replacement) <> replacementMintedFaces replacement
   Effect.DealDamage (DealDamage.MkDealDamage {}) -> []
@@ -6180,6 +6187,7 @@ effectFilters effect = case effect of
   -- BOTH refs, CreateCopy's arm above: an EachMatching Filter is card text, and
   -- CR 707.10d's candidates are named by one.
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity _ exceptions) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref <> copyTargetsFilters targets) <> concatMap copyExceptionFilters exceptions
+  Effect.SetX (SetX.MkSetX value ref) -> frame Unframed (concatMap quantityFilters (NewX.quantities value)) <> frame SourceHostFramed (objectRefFilters ref)
   -- The ROW's own Filters are framed for printedReplacementFilters' reason: a
   -- stored row is read through the same
   -- Parun.Engine.Replacement.candidateContext a printed one is, where the
