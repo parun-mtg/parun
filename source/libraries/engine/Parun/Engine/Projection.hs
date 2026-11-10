@@ -104,6 +104,7 @@ import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
@@ -1246,18 +1247,17 @@ viewOfSpell caster oid gs = viewOfCharacteristics (fullView gs) oid (project oid
 -- CR 605.3b: the view of an activated ability that put nothing on the stack --
 -- a mana ability, or one activated inside a die roll's window -- read as
 -- viewOfSpell reads an ability that did: no characteristics, the activator its
--- controller (CR 602.2a), CR 606.2's kind, and its source through CR 113.7a's
--- last known information, as viewOfCharacteristics' abilitySource. The record
--- is playerView's with no player behind it.
---
--- Not implemented: the activation cost, so ManaCostHasSymbol misses a mana
--- ability's {X} (#6894).
-viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> LoyaltyKind.LoyaltyKind -> GameState -> Filter.View
-viewOfUnstackedAbility activator source kind gs =
+-- controller (CR 602.2a), CR 606.2's kind, the mana in its activation cost
+-- (CR 602.2b, Game.activationCost's reading, passed in off the event), and its
+-- source through CR 113.7a's last known information, as viewOfCharacteristics'
+-- abilitySource. The record is playerView's with no player behind it.
+viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> LoyaltyKind.LoyaltyKind -> Maybe ManaCost.ManaCost -> GameState -> Filter.View
+viewOfUnstackedAbility activator source kind cost gs =
   (Filter.playerView activator)
     { Filter.playerIdentity = Nothing,
       Filter.controller = Just activator,
       Filter.activatedAbility = Just kind,
+      Filter.activationCost = cost,
       Filter.ability = True,
       Filter.abilitySource = fmap (lastZoned gs source) (Count.orLastKnown (fullView gs) gs source)
     }

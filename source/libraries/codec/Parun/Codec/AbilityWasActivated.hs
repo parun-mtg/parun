@@ -3,6 +3,7 @@
 module Parun.Codec.AbilityWasActivated where
 
 import qualified Parun.Codec.AbilityKind as AbilityKind
+import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
@@ -19,11 +20,13 @@ codec = Fields.object $ do
   source <- Fields.required "source" ObjectId.codec AbilityWasActivated.source
   loyalty <- Fields.required "loyalty" Common.boolean AbilityWasActivated.loyalty
   kind <- Fields.required "kind" AbilityKind.codec AbilityWasActivated.kind
+  activationCost <- Fields.defaulted "activationCost" Nothing (Common.maybe ManaCost.codec) AbilityWasActivated.activationCost
   pure
     AbilityWasActivated.MkAbilityWasActivated
       { AbilityWasActivated.player = player,
         AbilityWasActivated.ability = ability,
         AbilityWasActivated.source = source,
         AbilityWasActivated.loyalty = loyalty,
-        AbilityWasActivated.kind = kind
+        AbilityWasActivated.kind = kind,
+        AbilityWasActivated.activationCost = activationCost
       }

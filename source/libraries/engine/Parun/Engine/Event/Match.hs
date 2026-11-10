@@ -1549,7 +1549,9 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- elrond-moon-reader-draws-once-when-a-creature-s-mana-ability-is-activated
   -- proves the mana road, and
   -- runic-armasaur-draws-when-an-opponent-rerolls-with-goblin-bookie the
-  -- roll window's.
+  -- roll window's, and
+  -- unbound-flourishing-triggers-on-wizard-s-rockets-mana-ability-and-copies-nothing
+  -- the activation cost the event carries.
   TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger f kind) -> case event of
     GameEvent.AbilityActivated activated ->
       let activator = AbilityWasActivated.player activated
@@ -1557,7 +1559,7 @@ armMatches bindings board gs bearer you cond event = case cond of
        in all (== AbilityWasActivated.kind activated) kind
             && case AbilityWasActivated.ability activated of
               Just abilId -> Maybe.isJust (Game.lookupObject abilId gs) && Filter.matches bearerContext (Projection.viewOfSpell activator abilId gs) f
-              Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) loyaltyKind gs) f
+              Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) loyaltyKind (AbilityWasActivated.activationCost activated) gs) f
     _ -> False
   -- CR 601.2c / 603.2c: a permanent or a player became the target of a spell or
   -- ability. A Self subject is the bearer, a bare comparison of ids in a Self

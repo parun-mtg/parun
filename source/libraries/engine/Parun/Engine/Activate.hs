@@ -487,7 +487,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
                 -- and the log lives in that state, so no rejected activation
                 -- can leave a record behind.
                 Payment.Paid bound -> do
-                  State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Just abilId, AbilityWasActivated.source = srcId, AbilityWasActivated.loyalty = Loyalty.isLoyaltyCost (ActivatedAbility.cost ability), AbilityWasActivated.kind = AbilityKind.NonManaAbility}))
+                  State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Just abilId, AbilityWasActivated.source = srcId, AbilityWasActivated.loyalty = Loyalty.isLoyaltyCost (ActivatedAbility.cost ability), AbilityWasActivated.kind = AbilityKind.NonManaAbility, AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}))
                   -- CR 608.2h: the slots the PAYMENT bound -- the permanent a
                   -- Sacrifice component put in a graveyard -- folded onto the
                   -- ability object, so "the sacrificed creature's power" has a

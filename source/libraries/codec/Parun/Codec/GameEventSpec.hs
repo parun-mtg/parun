@@ -315,7 +315,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated (PlayerId.MkPlayerId 1) (Just (ObjectId.MkObjectId 8)) (ObjectId.MkObjectId 7) True AbilityKind.NonManaAbility))
+      (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated (PlayerId.MkPlayerId 1) (Just (ObjectId.MkObjectId 8)) (ObjectId.MkObjectId 7) True AbilityKind.NonManaAbility Nothing))
       " {\"type\":\"AbilityActivated\",\"value\":{\"player\":1,\"ability\":8,\"source\":7,\"loyalty\":true,\"kind\":\"NonManaAbility\"}} "
   Spec.it s "LifeLost" $
     Common.assertCodec

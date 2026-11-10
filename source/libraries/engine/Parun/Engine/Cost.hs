@@ -6583,7 +6583,7 @@ tapForManaWith perform window inFlight refused activator oid = do
               -- CR 602.2b / 605.3b: the activation, at the same moment and for
               -- the same reason, with no stack object to name; CR 605.1a keeps
               -- it off the loyalty side.
-              State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = controller, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.loyalty = False, AbilityWasActivated.kind = AbilityKind.ManaAbility}))
+              State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = controller, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.loyalty = False, AbilityWasActivated.kind = AbilityKind.ManaAbility, AbilityWasActivated.activationCost = Cost.mana . ActivatedAbility.cost =<< ManaOption.ability chosen}))
               (_, _, shares, producedUnits) <- Monad.foldM step (Map.empty, Map.empty, [], []) (zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (zip [0 :: Int ..] (ManaOption.steps pricedChosen)))
               -- CR 605.1b's "mana being added to a player's mana pool", one event
               -- per player whose pool this activation filled, and CR 106.12a's
