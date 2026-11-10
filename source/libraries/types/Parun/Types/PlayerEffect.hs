@@ -43,10 +43,10 @@ import qualified Parun.Types.TurnScope as TurnScope
 -- machine has run. There is no Layer constructor here.
 --
 -- Open-half card data. Parun.Engine.PlayerEffect is the only module that may case
--- on it to ask what an effect MEANS. Parun.Engine.Projection cases on it in
--- rewritePlayerEffect alone, and only for CR 612.1's word swap, which walks the
--- STRUCTURE for a Filter and asks nothing else -- the same standing rewriteEffect
--- has over Parun.Types.Effect.
+-- on it to ask what an effect MEANS. Parun.Engine.Children.playerEffectChildren
+-- cases on it too and reads nothing -- the structural walks' traversal, which
+-- reconstructs every arm, the same standing effectChildren has over
+-- Parun.Types.Effect.
 data PlayerEffect
   = -- | CR 601.3 / Silence: this player can't cast spells at all.
     CantCastSpells
