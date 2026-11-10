@@ -5328,6 +5328,7 @@ damageRewriteFilters rewrite = case rewrite of
   DamageRewrite.RunEffects _ -> []
   DamageRewrite.TurnFaceUp -> []
   DamageRewrite.AlsoToSourceController -> []
+  DamageRewrite.HealSourceFirst -> []
 
 -- A face's printed replacement ability reaches a Filter on a second axis beside
 -- the rewrite's: CR 604.2's "as long as" clause counts objects, exactly as the
