@@ -85,6 +85,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.HandActionPerformer as HandActionPerformer
+import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
@@ -304,16 +305,25 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
   -- Mirkwood Trapper's "that player chooses an attacking creature. It gets
   -- +2/+0" is the reader.
   affected <- Common.askingObjects resolving source controller legal chosen ref
+  -- CR 611.2c's third sentence: an effect modifying no characteristic and no
+  -- controller (CR 613.11's layer, a classification) keeps a described group
+  -- live, so a creature matching only later is in it, and the effect is stored
+  -- even while nothing matches. One frozen value serves every member, so a
+  -- per-object `each` keeps the frozen sets.
+  let live = case (ref, each) of
+        (ObjectRef.EachMatching f, Nothing) | Projection.layer modification == Layer.Rules -> Just f
+        _ -> Nothing
   State.modify' $ \gs ->
-    case Common.frozenAffected gs affected of
-      [] -> gs
-      targets -> case Expiry.arm resolving legal controller source duration gs of
+    case (live, Common.frozenAffected gs affected) of
+      (Nothing, []) -> gs
+      (_, targets) -> case Expiry.arm resolving legal controller source duration gs of
         -- CR 611.2b: the duration never started, so nothing is stored.
         Nothing -> gs
         Just expiry ->
           -- CR 611.2c: the swept ids are frozen into the stored effect, so the
-          -- set never changes afterwards. ONE effect over the whole set, which
-          -- is one timestamp for CR 613.7 to order.
+          -- set never changes afterwards, unless `live` kept it a class. ONE
+          -- effect over the whole set, which is one timestamp for CR 613.7 to
+          -- order.
           --
           -- CR 608.2h / 611.2d: the VALUE is locked here too, against the
           -- SOURCE (CR 113.7a) and its controller, not an affected object.
@@ -353,7 +363,7 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
                           ContinuousEffect.timestamp = ts,
                           ContinuousEffect.expiry = expiry,
                           ContinuousEffect.modification = m,
-                          ContinuousEffect.affected = Affected.TheseObjects (Set.fromList objs)
+                          ContinuousEffect.affected = maybe (Affected.TheseObjects (Set.fromList objs)) (Affected.Matching . Common.liveClass legal resolving controller source gs) live
                         }
                  in g1 {GameState.continuousEffects = eff : GameState.continuousEffects g1}
               storeSet g (objs, frozen) = case frozen of

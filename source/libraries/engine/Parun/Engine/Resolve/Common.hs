@@ -1639,6 +1639,16 @@ storedClass legal resolving controller source gs =
     bindings = slotBindings resolving gs
     related pids relation = Set.fromList [q | q <- Game.stillPlaying gs, any (\p -> PlayerRelation.holds (Game.teams gs) relation p q) pids]
 
+-- CR 611.2c / 109.5: a rules-modifying continuous effect's class, storedClass's
+-- bake with its HeldBy relations read from the resolving controller too. The
+-- stored effect's "you" is that controller, where the projection would read
+-- its source's, a card that may have left the battlefield since (the scenario
+-- the-kingpin-of-crime-s-effect-outlasts-the-kingpin).
+liveClass :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Filter.Type.Filter Keyword.Type.Keyword -> Filter.Type.Filter Keyword.Type.Keyword
+liveClass legal resolving controller source gs =
+  Filter.bakeRelations (\relation -> [q | q <- Game.stillPlaying gs, PlayerRelation.holds (Game.teams gs) relation controller q])
+    . storedClass legal resolving controller source gs
+
 -- CR 601.2c / 615.12: the same bake one carrier over. A stored CR 615.12 or CR
 -- 614.17 prohibition narrows the damage event by a DamagePattern too, and a card
 -- that aims its sentence at the recipient its own resolution chose

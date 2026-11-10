@@ -11,7 +11,9 @@ import qualified Parun.Types.ObjectId as ObjectId
 -- id the effect no longer names, unless the effect is Alchemy's "perpetually",
 -- which Parun.Engine.Event.perpetuate re-anchors to every incarnation that
 -- arrives -- CR 713.8c's two, where a melded permanent left the battlefield).
--- A static ability's set is DYNAMIC: Matching,
+-- A static ability's set is DYNAMIC, and so is CR 611.2c's class for a resolution
+-- effect modifying no characteristic and no controller, stored as Matching
+-- (The Kingpin of Crime). Matching,
 -- MatchingAnywhere and MatchingOffBattlefield (any object currently matching a
 -- Filter, respectively on the battlefield, in any zone, and in any zone but the
 -- battlefield), Attached (the one object the source is attached to, if any) and

@@ -149,7 +149,8 @@ data Effect card ability
     -- condition on the pair rather than two independent damage instructions.
     Fight Fight.Fight
   | -- | CR 611: create a continuous effect on the objects the ObjectRef names,
-    -- for a duration, over the set CR 611.2c freezes as the effect begins.
+    -- for a duration, over the set CR 611.2c freezes as the effect begins, or
+    -- the class it keeps live for a rules-modifying effect.
     ModifyTarget (ModifyTarget.ModifyTarget ability)
   | -- | CR 612: rewrite subtype words in the target spell or permanent, the
     -- pair announced as the effect applies (CR 608.2d).

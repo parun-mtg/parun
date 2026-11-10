@@ -3328,6 +3328,14 @@ bakeBound players objects controllers predicate = case predicate of
   Filter.ControllerRelatesToBound relation Hop.Itself slot -> maybe predicate (\related -> Filter.Or (fmap (Filter.HeldByPlayer Holder.Controller) (Set.toList (related relation)))) (Map.lookup slot controllers)
   _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeBound players objects controllers)) predicate)
 
+-- CR 109.5: every HeldBy relation named outright, as the players `related`
+-- answers for it, so a class stored past its resolution keeps the "you" it was
+-- read for. bakeBound's descent, and its reason for not entering a keyword.
+bakeRelations :: (PlayerRelation.PlayerRelation -> [PlayerId.PlayerId]) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
+bakeRelations related predicate = case predicate of
+  Filter.HeldBy holder relation -> Filter.Or (fmap (Filter.HeldByPlayer holder) (related relation))
+  _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeRelations related)) predicate)
+
 -- The mana-value LITERALS a Filter compares against: every `n` a Measures atom
 -- compares the candidate's mana value with, at any depth.
 --
