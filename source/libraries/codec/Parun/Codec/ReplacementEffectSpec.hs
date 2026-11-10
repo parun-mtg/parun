@@ -52,6 +52,7 @@ import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -260,13 +261,14 @@ spec s =
             codec
             (ReplacementEffect.DieRollR (DieRollR.MkDieRollR (ControllerRelation.Related PlayerRelation.You) DieRollRewrite.ExtraIgnoringLowest))
             " {\"type\":\"DieRollR\",\"value\":{\"whose\":{\"type\":\"You\"},\"rewrite\":\"ExtraIgnoringLowest\"}} "
-        -- The Unstable FAQ: Steamflogger Boss.
-        Spec.it s "AssembleR (Steamflogger Boss)" $
+        -- The Unstable FAQ: Steamflogger Boss, its Filter trimmed to the subtype,
+        -- with Leader, Super-Genius's instruction and rewrite.
+        Spec.it s "PerformerR" $
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.AssembleR (Filter.HasSubtype Subtype.Rigger))
-            " {\"type\":\"AssembleR\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Rigger\"}} "
+            (ReplacementEffect.PerformerR (PerformerR.MkPerformerR PlayerInstruction.Connive (Filter.HasSubtype Subtype.Rigger) InstructionRewrite.DrawFirst))
+            " {\"type\":\"PerformerR\",\"value\":{\"instruction\":\"Connive\",\"performer\":{\"type\":\"HasSubtype\",\"value\":\"Rigger\"},\"rewrite\":{\"type\":\"DrawFirst\"}}} "
         -- CR 106.12b: Naked Singularity's Plains.
         Spec.it s "ManaR (Naked Singularity)" $
           Common.assertCodec

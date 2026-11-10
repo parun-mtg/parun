@@ -129,6 +129,7 @@ import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -1127,16 +1128,18 @@ matchesPrinted viewOf gs event candidate =
               && case rewrite of
                 DieRollRewrite.ExtraIgnoringLowest -> True
                 DieRollRewrite.FlipCoinInstead -> sides == 20
-        -- The Unstable FAQ with CR 614.1a: the permanent assembling, judged by
-        -- the row's Filter (Steamflogger Boss's "a Rigger you control"). An
-        -- instruction a player carries out names no permanent, so no row of
-        -- this shape reaches it. No `admits`: doubling always changes the count.
+        -- CR 614.1a: which instruction the row watches and the permanent
+        -- carrying it out, judged by the row's Filter (Steamflogger Boss's "a
+        -- Rigger you control", Leader, Super-Genius's "a creature you
+        -- control"). An instruction a player carries out names no permanent, so
+        -- no row of this shape reaches it. No `admits`, InstructionR's reason.
         --
-        -- Read through last known information (CR 608.2h): a Rigger that left
-        -- before its "it assembles" resolved still assembles, as the Rigger it
-        -- last was -- matchesDamageSource's fallback.
-        (ReplacementEffect.AssembleR matching, ProposedEvent.WouldPerform PlayerInstruction.Assemble (Just oid) _ _) ->
-          Filter.matches (candidateContext gs candidate) (Maybe.fromMaybe (viewOf oid) (Projection.viewWithLastKnownAnywhere gs oid)) matching
+        -- Read through last known information (CR 608.2h, CR 701.50b): a
+        -- Rigger that left before its "it assembles" resolved still assembles,
+        -- as the Rigger it last was -- matchesDamageSource's fallback.
+        (ReplacementEffect.PerformerR row, ProposedEvent.WouldPerform instruction (Just oid) _ _) ->
+          PerformerR.instruction row == instruction
+            && Filter.matches (candidateContext gs candidate) (Maybe.fromMaybe (viewOf oid) (Projection.viewWithLastKnownAnywhere gs oid)) (PerformerR.performer row)
         -- CR 104.3 / 614.1a: whose losses of the game the row watches -- Lich's
         -- Mirror's "you".
         (ReplacementEffect.GameLossR pat, ProposedEvent.WouldLoseGame pid) ->
@@ -1165,7 +1168,7 @@ matchesPrinted viewOf gs event candidate =
         (ReplacementEffect.DrawCountR {}, _) -> False
         (ReplacementEffect.InstructionR {}, _) -> False
         (ReplacementEffect.DieRollR {}, _) -> False
-        (ReplacementEffect.AssembleR {}, _) -> False
+        (ReplacementEffect.PerformerR {}, _) -> False
         -- No ProposedEvent carries a mana production: manaRewrites reads ManaR.
         (ReplacementEffect.ManaR {}, _) -> False
         (ReplacementEffect.GameLossR {}, _) -> False
@@ -2190,7 +2193,7 @@ bucketOfEffect re = case re of
   ReplacementEffect.DieRollR {} -> ReplacementBucket.Other
   -- CR 616.1b-d are all about entries and copies; assembling is none of them, so
   -- CR 616.1e.
-  ReplacementEffect.AssembleR {} -> ReplacementBucket.Other
+  ReplacementEffect.PerformerR {} -> ReplacementBucket.Other
   -- CR 616.1e: producing mana is neither an entry nor a copy.
   ReplacementEffect.ManaR {} -> ReplacementBucket.Other
   -- CR 616.1b-d are all about entering the battlefield and copying; losing
@@ -2493,18 +2496,7 @@ readsApplier re = case re of
   -- under different controllers are told apart, and the drawer chooses" is what
   -- proves the drawer is asked which one applies.
   ReplacementEffect.DrawCountR (DrawCountR.MkDrawCountR _ _ DrawCountRewrite.EachDrawOne) -> True
-  -- The instruction is carried out by the seat the EVENT named, and a resized
-  -- count is the effect's own field, so two rows alike in `effect` leave the same
-  -- player the same instruction whoever holds them -- Bruvac the Grandiloquent's
-  -- "they mill twice that many" names the milling player and nobody else, and
-  -- Eligeth's drawer is the scryer. LifeGainRewrite.Scaled's answer, and for its
-  -- reason; the inner sum is cased so a rewrite that DOES read the applier has to
-  -- be decided here.
-  ReplacementEffect.InstructionR (InstructionR.MkInstructionR _ _ (InstructionRewrite.Scaled _)) -> False
-  ReplacementEffect.InstructionR (InstructionR.MkInstructionR _ _ InstructionRewrite.DrawInstead) -> False
-  -- Pokey's "you may" is asked of the row's controller, who is the flipper its
-  -- "you" names: the seat the EVENT named.
-  ReplacementEffect.InstructionR (InstructionR.MkInstructionR _ _ InstructionRewrite.RollD20Instead) -> False
+  ReplacementEffect.InstructionR row -> instructionRewriteReadsApplier (InstructionR.rewrite row)
   -- The dice are thrown by the seat the EVENT named and the extra die is the
   -- effect's own field, so two rows alike in `effect` leave the same roller the
   -- same number of dice and the same number ignored whoever holds them.
@@ -2512,7 +2504,7 @@ readsApplier re = case re of
   ReplacementEffect.DieRollR (DieRollR.MkDieRollR _ DieRollRewrite.ExtraIgnoringLowest) -> False
   -- InstructionR's RollD20Instead answer, and for its reason.
   ReplacementEffect.DieRollR (DieRollR.MkDieRollR _ DieRollRewrite.FlipCoinInstead) -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR row -> instructionRewriteReadsApplier (PerformerR.rewrite row)
   ReplacementEffect.ManaR {} -> False
   -- CR 109.5: the effects run as the row's own controller, the reset's "you".
   ReplacementEffect.GameLossR {} -> True
@@ -2529,6 +2521,23 @@ readsApplier re = case re of
   -- GameLossR's answer.
   ReplacementEffect.PhaseR (PhaseR.MkPhaseR _ (PhaseRewrite.MaySkipFor _)) -> True
 
+-- readsApplier's answer for an InstructionR's or a PerformerR's rewrite.
+instructionRewriteReadsApplier :: InstructionRewrite.InstructionRewrite -> Bool
+instructionRewriteReadsApplier rewrite = case rewrite of
+  -- The instruction is carried out by the seat the EVENT named, and a resized
+  -- count is the effect's own field, so two rows alike in `effect` leave the same
+  -- player the same instruction whoever holds them -- Bruvac the Grandiloquent's
+  -- "they mill twice that many" names the milling player and nobody else, and
+  -- Eligeth's drawer is the scryer. LifeGainRewrite.Scaled's answer, and for its
+  -- reason.
+  InstructionRewrite.Scaled _ -> False
+  InstructionRewrite.DrawInstead -> False
+  -- Pokey's "you may" is asked of the row's controller, who is the flipper its
+  -- "you" names: the seat the EVENT named.
+  InstructionRewrite.RollD20Instead -> False
+  -- CR 109.5: Leader, Super-Genius's "you draw a card" is the row's controller.
+  InstructionRewrite.DrawFirst -> True
+
 -- CR 614.6: does applying this effect replace a coin flip with a die roll or a
 -- roll with a flip (Pokey, the Scallywagg), so the funnel that proposed one has
 -- to carry out the other? Parun.Engine.Event.flipOneCoin keeps such a row out of
@@ -2536,10 +2545,8 @@ readsApplier re = case re of
 -- constructor and no wildcard, readsApplier's discipline.
 substitutesAction :: ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Bool
 substitutesAction effect = case effect of
-  ReplacementEffect.InstructionR row -> case InstructionR.rewrite row of
-    InstructionRewrite.Scaled _ -> False
-    InstructionRewrite.DrawInstead -> False
-    InstructionRewrite.RollD20Instead -> True
+  ReplacementEffect.InstructionR row -> instructionRewriteSubstitutes (InstructionR.rewrite row)
+  ReplacementEffect.PerformerR row -> instructionRewriteSubstitutes (PerformerR.rewrite row)
   ReplacementEffect.DieRollR row -> case DieRollR.rewrite row of
     DieRollRewrite.ExtraIgnoringLowest -> False
     DieRollRewrite.FlipCoinInstead -> True
@@ -2556,11 +2563,18 @@ substitutesAction effect = case effect of
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
   ReplacementEffect.DrawCountR {} -> False
-  ReplacementEffect.AssembleR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
   ReplacementEffect.PhaseR _ -> False
+
+-- substitutesAction's answer for an InstructionR's or a PerformerR's rewrite.
+instructionRewriteSubstitutes :: InstructionRewrite.InstructionRewrite -> Bool
+instructionRewriteSubstitutes rewrite = case rewrite of
+  InstructionRewrite.Scaled _ -> False
+  InstructionRewrite.DrawInstead -> False
+  InstructionRewrite.RollD20Instead -> True
+  InstructionRewrite.DrawFirst -> False
 
 -- Is this a CR 702.64a ceiling whose amount is not a literal, so that
 -- Event.apply evaluates it against the applying candidate's Context? No
@@ -2656,7 +2670,7 @@ readsSource effect = case effect of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   -- CR 113.7: the effects run with the candidate's source as theirs, so one
   -- naming its source reaches a different object under each.
@@ -2848,7 +2862,7 @@ recordsAChoice effect = case effect of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -4414,7 +4428,7 @@ contestedResource gs candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.DieRollR {} -> Nothing
   -- Doubling a count of Contraptions is arithmetic on whatever arrives.
   -- InstructionR's answer.
-  ReplacementEffect.AssembleR {} -> Nothing
+  ReplacementEffect.PerformerR {} -> Nothing
   ReplacementEffect.ManaR {} -> Nothing
   -- `contested` asks only about a damage batch.
   ReplacementEffect.GameLossR {} -> Nothing

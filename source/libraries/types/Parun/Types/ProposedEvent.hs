@@ -201,8 +201,9 @@ data ProposedEvent
     -- a differently-shaped event.
     --
     -- The ObjectId is the permanent carrying the instruction out for its player,
-    -- where one is (a Rigger's "it assembles"): CR 801.13a's affected object, and
-    -- what Parun.Types.ReplacementEffect's AssembleR judges.
+    -- where one is (a Rigger's "it assembles", CR 701.50a's conniver): CR
+    -- 801.13a's affected object, and what Parun.Types.ReplacementEffect's
+    -- PerformerR judges.
     WouldPerform PlayerInstruction.PlayerInstruction (Maybe ObjectId.ObjectId) PlayerId.PlayerId Natural.Natural
   | -- | CR 705.1 / 706.1 / 614.1a: this player would be instructed to flip
     -- coins or roll dice, as Parun.Types.Throw describes. Raised by

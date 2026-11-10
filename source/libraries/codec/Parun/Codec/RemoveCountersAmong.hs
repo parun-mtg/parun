@@ -19,11 +19,11 @@ import qualified Parun.Types.WhichCounters as WhichCounters.Type
 -- written by Parun.Codec.Effect's RemoveCountersAmong arm. The tally slot is
 -- elided when absent, Parun.Codec.RemoveCounters' posture.
 --
--- Counters of any kind are accepted at "any number" (Eventide's Shadow), "up
--- to" a count (Mabel, Bitter Recluse) and "all" (Suncleanser), and refused at
--- an exact count, which no printing writes ('Fields.objectWith''s check). "All"
--- of one kind is refused: it is Parun.Types.RemoveCounters at that kind's count
--- (Ashling the Pilgrim).
+-- Counters of any kind are accepted at every count: an exact one (Spinal
+-- Parasite), "any number" (Eventide's Shadow), "up to" a count (Mabel, Bitter
+-- Recluse) and "all" (Suncleanser). "All" of one kind is refused
+-- ('Fields.objectWith''s check): it is Parun.Types.RemoveCounters at that
+-- kind's count (Ashling the Pilgrim).
 codec :: Codec.Codec RemoveCountersAmong.RemoveCountersAmong
 codec = Fields.objectWith check $ do
   count <- Fields.required "count" RemovalCount.codec RemoveCountersAmong.count
@@ -39,9 +39,6 @@ codec = Fields.objectWith check $ do
       }
   where
     check removal = case (RemoveCountersAmong.kind removal, RemoveCountersAmong.count removal) of
-      (WhichCounters.Type.OfAnyKind, RemovalCount.Type.AnyNumber) -> Right removal
-      (WhichCounters.Type.OfAnyKind, RemovalCount.Type.All) -> Right removal
-      (WhichCounters.Type.OfAnyKind, RemovalCount.Type.UpTo _) -> Right removal
-      (WhichCounters.Type.OfAnyKind, RemovalCount.Type.Exactly _) -> Left (Text.pack "RemoveCountersAmong: counters of any kind are not removed at an exact count")
+      (WhichCounters.Type.OfAnyKind, _) -> Right removal
       (WhichCounters.Type.OfKind _, RemovalCount.Type.All) -> Left (Text.pack "RemoveCountersAmong: all counters of one kind are RemoveCounters at that count")
       (WhichCounters.Type.OfKind _, _) -> Right removal

@@ -42,4 +42,9 @@ data PlayerInstruction
   | -- | The Unstable FAQ: assemble this many Contraptions. Raised once per
     -- instruction by Parun.Engine.Contraption.assemble.
     Assemble
+  | -- | CR 701.50a / 701.50d: connive N, carried out by the conniving
+    -- permanent for its controller. Raised once per conniver by
+    -- Parun.Engine.Resolve.Common.conniveOne, for a positive N only (CR
+    -- 701.50e).
+    Connive
   deriving (Bounded, Enum, Eq, Ord, Show)

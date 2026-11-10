@@ -29,4 +29,11 @@ spec s = Spec.describe s "Parun.Codec.InstructionRewrite" $ do
       InstructionRewrite.codec
       InstructionRewrite.RollD20Instead
       " {\"type\":\"RollD20Instead\"} "
+  -- Leader, Super-Genius's "instead you draw a card, then that creature connives".
+  Spec.it s "DrawFirst" $
+    Common.assertCodec
+      s
+      InstructionRewrite.codec
+      InstructionRewrite.DrawFirst
+      " {\"type\":\"DrawFirst\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s InstructionRewrite.codec

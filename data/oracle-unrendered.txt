@@ -48,6 +48,7 @@ aetherspouts
 affectionate-indrik
 afterlife-from-the-loam
 agent-13-sharon-carter
+agent-maria-hill
 agent-of-treachery
 agents-of-s-h-i-e-l-d
 agents-toolkit
@@ -286,6 +287,7 @@ bards-company
 barkhide-troll
 barls-cage
 baron-helmut-zemo
+baron-strucker-hydra-overlord
 barrin
 barrin-tolarian-archmage
 bartered-cow
@@ -1186,6 +1188,7 @@ fellwar-stone
 feral-deathgorger-dusk-sight
 feral-lightning
 ferocity-of-the-hunt
+ferropede
 fertile-ground
 fertilids-favor
 fervent-charge
@@ -1308,6 +1311,7 @@ furor-of-the-bitten
 future-sight
 fyndhorn-druid
 fynn-the-fangbearer
+gaddock-teeg
 gadrak-the-crown-scourge
 gaeas-blessing
 gaeas-herald
@@ -1790,6 +1794,7 @@ jared-carthalion-true-heir
 jazal-goldmane
 jeering-homunculus
 jegantha-the-wellspring
+jennifer-walters-the-sensational-she-hulk
 jessica-jones-private-eye
 jesters-cap
 jet-medallion
@@ -1908,6 +1913,7 @@ lava-burst
 lavinia-foil-to-conspiracy
 lead-golem
 lead-the-stampede
+leader-super-genius
 leafkin-avenger
 leave-chance
 leeches
@@ -2626,6 +2632,7 @@ raffine-scheming-seer
 raffines-informant
 raft-security-officer
 rag-man
+rage-extractor
 rage-into-the-valley
 ragged-short-spear
 raging-river
@@ -3137,6 +3144,7 @@ spike-cannibal
 spiked-corridor-torture-pit
 spikeshell-harrier
 spin-into-myth
+spinal-parasite
 spinebiter
 spinner-of-souls
 spirit-link
@@ -3454,6 +3462,7 @@ throne-of-eldraine
 throne-of-empires
 through-the-forest-gate
 throwing-knife
+thrull-parasite
 thrull-surgeon
 thud
 thunderbolts-conspiracy
@@ -3805,6 +3814,7 @@ wiccan-young-avenger
 wicker-picker
 wickersmiths-tools
 wicks-patrol
+widows-bite
 wild-evocation
 wild-growth
 wild-guess
@@ -3906,6 +3916,7 @@ yuriko-the-tigers-shadow
 yurlok-of-scorch-thrash
 zada-hedron-grinder
 zameck-guildmage
+zaxara-the-exemplary
 zealous-conscripts
 zealous-inquisitor
 zhao-ruthless-admiral

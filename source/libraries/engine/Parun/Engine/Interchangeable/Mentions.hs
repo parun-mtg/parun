@@ -80,6 +80,7 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -208,6 +209,7 @@ import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
@@ -229,6 +231,7 @@ import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -271,6 +274,7 @@ import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -1537,7 +1541,14 @@ measuresNames asking x = case x of
 
 modalNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Modal.Modal card ability -> r
 modalNames asking onCard onAbility x = case x of
-  Modal.MkModal modes _selection _memory -> foldMap (modeNames asking onCard onAbility) modes
+  Modal.MkModal modes selection _memory -> foldMap (modeNames asking onCard onAbility) modes <> modeSelectionNames asking selection
+
+modeSelectionNames :: (Monoid r) => Asking r -> ModeSelection.ModeSelection -> r
+modeSelectionNames asking x = case x of
+  ModeSelection.ChooseExactly _ -> mempty
+  ModeSelection.ChooseExactlyWithRepeats _ -> mempty
+  ModeSelection.ChooseBetween _ -> mempty
+  ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> conditionNames asking condition <> modeSelectionNames asking ordinary <> modeSelectionNames asking instead
 
 modeNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Mode.Mode card ability -> r
 modeNames asking onCard onAbility x = case x of
@@ -1965,7 +1976,7 @@ replacementEffectNames asking onCard onAbility onEffect x = case x of
   ReplacementEffect.DrawCountR drawCountR -> drawCountRNames asking drawCountR
   ReplacementEffect.InstructionR instructionR -> instructionRNames asking instructionR
   ReplacementEffect.DieRollR dieRollR -> dieRollRNames asking dieRollR
-  ReplacementEffect.AssembleR matching -> filterNames asking matching
+  ReplacementEffect.PerformerR row -> filterNames asking (PerformerR.performer row)
   ReplacementEffect.ManaR (ManaR.MkManaR matching _) -> filterNames asking matching
   ReplacementEffect.GameLossR (GameLossR.MkGameLossR whose effects) -> controllerRelationNames asking whose <> foldMap onEffect effects
   ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR whose _cause rewrite) ->
@@ -2133,7 +2144,9 @@ triggerFrequencyNames asking events x = case x of
 triggerLimitNames :: (Monoid r) => Asking r -> TriggerLimit.TriggerLimit -> r
 triggerLimitNames asking x = case x of
   TriggerLimit.Unlimited -> mempty
-  TriggerLimit.OncePerTurn -> history asking HistoryRead.Triggers
+  TriggerLimit.OncePerTurn SpentOn.Triggering -> history asking HistoryRead.Triggers
+  -- GameState.instructionsTakenThisTurn, which Parun.Engine.Fragmented.digest keeps.
+  TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> mempty
   -- GameState.triggeredThisGame, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerGame -> mempty
 

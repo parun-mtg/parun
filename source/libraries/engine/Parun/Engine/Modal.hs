@@ -7,6 +7,7 @@
 -- which imports Parun.Engine.Card.
 module Parun.Engine.Modal where
 
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.Map.Strict (Map)
@@ -21,7 +22,9 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.Condition as Condition
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
@@ -368,6 +371,7 @@ leastOf selection = case selection of
   ModeSelection.ChooseExactly n -> n
   ModeSelection.ChooseExactlyWithRepeats n -> n
   ModeSelection.ChooseBetween cb -> ChooseBetween.least cb
+  ModeSelection.ChooseInstead ci -> min (leastOf (ChooseInstead.ordinary ci)) (leastOf (ChooseInstead.instead ci))
 
 -- CR 700.2: the MOST modes a selection satisfying this instruction may name --
 -- leastOf's counterpart, and the same number for every exact instruction.
@@ -376,6 +380,7 @@ mostOf selection = case selection of
   ModeSelection.ChooseExactly n -> n
   ModeSelection.ChooseExactlyWithRepeats n -> n
   ModeSelection.ChooseBetween cb -> ChooseBetween.most cb
+  ModeSelection.ChooseInstead ci -> max (mostOf (ChooseInstead.ordinary ci)) (mostOf (ChooseInstead.instead ci))
 
 -- CR 700.2d: does this instruction print "You may choose the same mode more than
 -- once"? False is that rule's default -- "that player normally can't choose the
@@ -390,11 +395,26 @@ allowsRepeatsIn selection = case selection of
   ModeSelection.ChooseExactly _ -> False
   ModeSelection.ChooseExactlyWithRepeats _ -> True
   ModeSelection.ChooseBetween {} -> False
+  ModeSelection.ChooseInstead ci -> allowsRepeatsIn (ChooseInstead.ordinary ci) || allowsRepeatsIn (ChooseInstead.instead ci)
 
 -- Every size a selection satisfying the printed instruction may have, ascending.
--- One element for an exact instruction, `most - least + 1` for a range.
+-- One element for an exact instruction, `most - least + 1` for a range, and
+-- either instruction's for an unsettled ChooseInstead.
 selectionSizes :: ModeSelection.ModeSelection -> [Natural]
-selectionSizes selection = [leastOf selection .. mostOf selection]
+selectionSizes selection = case selection of
+  ModeSelection.ChooseInstead ci -> Set.toAscList (Set.fromList (selectionSizes (ChooseInstead.ordinary ci) <> selectionSizes (ChooseInstead.instead ci)))
+  _ -> [leastOf selection .. mostOf selection]
+
+-- CR 601.4: the instruction an unsettled ChooseInstead stands for once its
+-- condition can be read, `holds` reading it. Every other selection is already
+-- settled. Until then, every other function here reads it as EITHER
+-- instruction: the player may announce modes only the replacing one allows, and
+-- the announcement is judged once the choices it depends on are made
+-- (Parun.Engine.Cast).
+settle :: (Condition.Condition -> Bool) -> ModeSelection.ModeSelection -> ModeSelection.ModeSelection
+settle holds selection = case selection of
+  ModeSelection.ChooseInstead ci -> settle holds (if holds (ChooseInstead.condition ci) then ChooseInstead.instead ci else ChooseInstead.ordinary ci)
+  _ -> selection
 
 -- allowsRepeatsIn over the payload's own printed selection.
 allowsRepeats :: Modal.Modal card ability -> Bool
@@ -424,6 +444,10 @@ allowsRepeats = allowsRepeatsIn . Modal.selection
 -- two answers.
 forcedSelection :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Maybe (Seq.Seq ModeIndex.ModeIndex)
 forcedSelection legal selection
+  -- Forced only where both instructions force the same answer.
+  | ModeSelection.ChooseInstead ci <- selection =
+      let ordinary = forcedSelection legal (ChooseInstead.ordinary ci)
+       in if ordinary == forcedSelection legal (ChooseInstead.instead ci) then ordinary else Nothing
   -- "Choose zero" names nothing whatever is legal. No printing says it; the arm
   -- is here so the two below may assume a positive ceiling.
   | mostOf selection == 0 = Just Seq.empty
@@ -444,6 +468,7 @@ forcedSelection legal selection
 -- two, since choosing one is an answer the instruction allows.
 selectionPossible :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Bool
 selectionPossible legal selection
+  | ModeSelection.ChooseInstead ci <- selection = selectionPossible legal (ChooseInstead.ordinary ci) || selectionPossible legal (ChooseInstead.instead ci)
   | mostOf selection == 0 = True
   | allowsRepeatsIn selection = not (Set.null legal)
   | otherwise = Natural.length legal >= leastOf selection
@@ -454,6 +479,7 @@ selectionPossible legal selection
 -- and no mode is named twice unless CR 700.2d's exception is printed. The
 -- reject-not-repair gate every announcement path runs before it stamps anything.
 selectionSatisfiedBy :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Seq.Seq ModeIndex.ModeIndex -> Bool
+selectionSatisfiedBy legal (ModeSelection.ChooseInstead ci) chosen = selectionSatisfiedBy legal (ChooseInstead.ordinary ci) chosen || selectionSatisfiedBy legal (ChooseInstead.instead ci) chosen
 selectionSatisfiedBy legal selection chosen =
   let distinct = Set.fromList (Foldable.toList chosen)
       size = Natural.length chosen
@@ -467,6 +493,7 @@ selectionSatisfiedBy legal selection chosen =
 -- consider when a cost reads the targets they bring (Parun.Engine.Cast.castAimable).
 -- Exponential in the mode count, which no printing takes past five.
 selections :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> [Seq.Seq ModeIndex.ModeIndex]
+selections legal (ModeSelection.ChooseInstead ci) = ListUtils.nubOrd (selections legal (ChooseInstead.ordinary ci) <> selections legal (ChooseInstead.instead ci))
 selections legal selection =
   let choose :: Natural -> [ModeIndex.ModeIndex] -> [[ModeIndex.ModeIndex]]
       choose n pool

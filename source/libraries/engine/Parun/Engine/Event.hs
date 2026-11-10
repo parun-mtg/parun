@@ -238,6 +238,7 @@ import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffec
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import Parun.Types.PendingTrigger (PendingTrigger)
 import qualified Parun.Types.PendingTrigger as PendingTrigger
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
@@ -289,6 +290,7 @@ import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
+import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -309,6 +311,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -1261,6 +1264,7 @@ damageOf event = case event of
   GameEvent.BecameAttacked _ -> Nothing
   GameEvent.AttackersDeclared _ -> Nothing
   GameEvent.BecameTapped _ -> Nothing
+  GameEvent.TappedToPay _ -> Nothing
   GameEvent.BecameUntapped _ -> Nothing
   GameEvent.TappedForMana _ -> Nothing
   GameEvent.ManaAdded _ -> Nothing
@@ -1337,6 +1341,7 @@ revealOf event = case event of
   GameEvent.BecameAttacked _ -> Nothing
   GameEvent.AttackersDeclared _ -> Nothing
   GameEvent.BecameTapped _ -> Nothing
+  GameEvent.TappedToPay _ -> Nothing
   GameEvent.BecameUntapped _ -> Nothing
   GameEvent.TappedForMana _ -> Nothing
   GameEvent.ManaAdded _ -> Nothing
@@ -2799,7 +2804,7 @@ shufflesAfter candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -5066,19 +5071,7 @@ apply settle batch applied batchPrevented candidate event =
     -- instruction (CR 614.6) -- for a scry, no CR 701.22d event -- and draws
     -- through CR 121.2a's instruction, so a draw replacement still gets its say
     -- (CR 616.2).
-    (ReplacementEffect.InstructionR row, ProposedEvent.WouldPerform instruction performer pid n) -> case InstructionR.rewrite row of
-      InstructionRewrite.Scaled scaling -> do
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale scaling n)))
-      InstructionRewrite.DrawInstead -> do
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid n)
-        Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries settle Set.empty))
-        pure Nothing
-      -- Unreachable: Parun.EffectLintSpec's "no card pairs an instruction with
-      -- a rewrite the engine cannot carry out" confines RollD20Instead to a
-      -- flip, which is a WouldThrow below.
-      InstructionRewrite.RollD20Instead -> pure (Just event)
+    (ReplacementEffect.InstructionR row, ProposedEvent.WouldPerform {}) -> performRewritten settle candidate event (InstructionR.rewrite row)
     -- CR 705.1 / 614.1a: Krark's Thumb's "instead flip two coins and ignore
     -- one", applied to EACH coin of the flip -- its ruling's "this replaces each
     -- individual coin flip" -- so a second Thumb leaves four coins of which one
@@ -5103,8 +5096,10 @@ apply settle batch applied batchPrevented candidate event =
       InstructionRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale scaling) (Throw.units throw)}))
-      -- Unreachable: the same lint admits DrawInstead on a scry alone.
+      -- Unreachable: the same lint admits DrawInstead on a scry alone, and
+      -- DrawFirst on an instruction a WouldPerform carries.
       InstructionRewrite.DrawInstead -> pure (Just event)
+      InstructionRewrite.DrawFirst -> pure (Just event)
       InstructionRewrite.RollD20Instead -> do
         exercised <- substitutes candidate
         pure . Just $
@@ -5153,14 +5148,12 @@ apply settle batch applied batchPrevented candidate event =
             else ProposedEvent.WouldThrow throw {Throw.kind = ThrowKind.Coins, Throw.instead = True}
     -- Unreachable: `applies` admits DieRollR only against WouldThrow.
     (ReplacementEffect.DieRollR {}, _) -> pure (Just event)
-    -- The Unstable FAQ with CR 614.1a: Steamflogger Boss's "it assembles two
-    -- Contraptions instead" leaves the event STANDING at a doubled count, the
-    -- InstructionR arm above for its reason.
-    (ReplacementEffect.AssembleR _, ProposedEvent.WouldPerform PlayerInstruction.Assemble performer pid n) -> do
-      Replacement.consume (ReplacementCandidate.identity candidate)
-      pure (Just (ProposedEvent.WouldPerform PlayerInstruction.Assemble performer pid (n * 2)))
-    -- Unreachable: `applies` admits AssembleR only against an assembly.
-    (ReplacementEffect.AssembleR {}, _) -> pure (Just event)
+    -- The InstructionR arm's rewrites, for a row judging the permanent:
+    -- Steamflogger Boss's "it assembles two Contraptions instead" leaves the
+    -- event STANDING at a doubled count, Leader, Super-Genius's draw comes first.
+    (ReplacementEffect.PerformerR row, ProposedEvent.WouldPerform {}) -> performRewritten settle candidate event (PerformerR.rewrite row)
+    -- Unreachable: `applies` admits PerformerR only against a WouldPerform.
+    (ReplacementEffect.PerformerR {}, _) -> pure (Just event)
     -- Unreachable: `applies` admits ManaR against no event (Replacement.manaRewrites).
     (ReplacementEffect.ManaR {}, _) -> pure (Just event)
     -- CR 104.3 / 614.1a: Lich's Mirror's "if you would lose the game, instead
@@ -6877,6 +6870,36 @@ resultOfFace :: CoinFace.CoinFace -> Natural
 resultOfFace face = case face of
   CoinFace.Tails -> 1
   CoinFace.Heads -> 20
+
+-- CR 614.1a: an InstructionR's or a PerformerR's rewrite of a WouldPerform,
+-- spending the row (CR 614.5); `apply`'s two arms say what each rewrite does.
+performRewritten :: Game () -> ReplacementCandidate -> ProposedEvent -> InstructionRewrite.InstructionRewrite -> Game (Maybe ProposedEvent)
+performRewritten settle candidate event rewrite = case event of
+  ProposedEvent.WouldPerform instruction performer pid n -> case rewrite of
+    InstructionRewrite.Scaled scaling -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale scaling n)))
+    InstructionRewrite.DrawInstead -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      drawInstruction pid n
+      pure Nothing
+    -- Leader, Super-Genius's "instead you draw a card, then that creature
+    -- connives": the row's controller (CR 109.5) draws through CR 121.2a's
+    -- instruction, then the instruction stands as it was. With no controller
+    -- the row's "you" names nobody, so nobody draws.
+    InstructionRewrite.DrawFirst -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      Foldable.for_ (ReplacementCandidate.controller candidate) (`drawInstruction` 1)
+      pure (Just event)
+    -- Unreachable: Parun.EffectLintSpec's "no card pairs an instruction with
+    -- a rewrite the engine cannot carry out" confines RollD20Instead to a
+    -- flip, which is a WouldThrow.
+    InstructionRewrite.RollD20Instead -> pure (Just event)
+  _ -> pure (Just event)
+  where
+    drawInstruction drawer count = do
+      outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing drawer count)
+      Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries settle Set.empty))
 
 -- Pokey, the Scallywagg's "you may" (CR 614.1a), asked of the row's controller,
 -- whose flip or roll its "you" watches; spent under CR 614.3 when taken. With no
@@ -11998,7 +12021,9 @@ triggeredSources boards gs =
 -- trigger too. Keyed on the SOURCE and the ABILITY, so two permanents with the
 -- same printed ability spend separate limits (CR 113.7), one that leaves and
 -- returns re-arms (CR 400.7), and two DISTINCT abilities of one source spend
--- separate limits; a change of CONTROL spends nothing. Spent on TRIGGERING.
+-- separate limits; a change of CONTROL spends nothing. Spent on TRIGGERING,
+-- except CR 603.2h's rider, which GameState.instructionsTakenThisTurn spends as
+-- its instruction is taken (instructionTaken).
 --
 -- COUNTED against PendingTrigger.copies, as stateTriggers counts CR 603.8's
 -- suppression: CR 113.2c makes two value-identical instances on one source two
@@ -12010,7 +12035,7 @@ triggeredSources boards gs =
 withinTriggerLimit :: GameState -> [PendingTrigger.PendingTrigger] -> [PendingTrigger.PendingTrigger]
 withinTriggerLimit gs =
   let spentKey record = limitKey (AbilityTriggered.source record) (AbilityTriggered.controller record) (AbilityTriggered.ability record)
-      perTurn record = TriggeredAbility.limit (AbilityTriggered.ability record) == TriggerLimit.OncePerTurn
+      perTurn record = TriggeredAbility.limit (AbilityTriggered.ability record) == TriggerLimit.OncePerTurn SpentOn.Triggering
       tally :: [LimitKey] -> Map LimitKey Natural
       tally = List.foldl' (\m key -> Map.insertWith (+) key 1 m) Map.empty
       go _ [] = []
@@ -12023,13 +12048,14 @@ withinTriggerLimit gs =
         ( tally
             ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (GameState.events gs))))
                 <> fmap spentKey (Foldable.toList (GameState.triggeredThisGame gs))
+                <> fmap spentKey (Foldable.toList (GameState.instructionsTakenThisTurn gs))
             )
         )
 
 -- What ONE INSTANCE of a triggered ability is, for the rider's purposes: what it
 -- hangs on and which ability it is -- the discriminator Parun.Types.TriggerEntry
 -- carries, and its haddock argues for the ability VALUE over an ordinal -- plus
--- the controller for a SOURCELESS ability and only for one. Rule 726.2 and rule
+-- the controller for a SOURCELESS ability or CR 603.2h's rider. Rule 726.2 and rule
 -- 702.179d give each player their own instance of one inherent ability with no
 -- object to tell them apart, where an object-borne ability is CR 113.7's one
 -- instance whoever controls it.
@@ -12037,6 +12063,8 @@ withinTriggerLimit gs =
 -- The controller component is proved by Parun.TeamSpec's "CR 702.179d each
 -- active teammate's speed rises once": under the shared team turns option two
 -- active players each spend their own instance of rule 702.179d's ability.
+-- CR 603.2h's by Parun.EventTriggerSpec's "CR 603.2h a taken instruction is
+-- spent only for the player who took it".
 --
 -- A grant is told apart by its name, drawn from its granter
 -- (Binding.acquiredFrom), so a new granter's grant is unspent; the Well Rested
@@ -12048,7 +12076,13 @@ limitKey src ctrl ability =
   ( src,
     case src of
       TriggerSource.Sourceless -> Just ctrl
-      TriggerSource.OfObject _ -> Nothing,
+      TriggerSource.OfObject _ -> case TriggeredAbility.limit ability of
+        -- CR 603.2h: what "its source's controller" has taken, so a new
+        -- controller's instance is unspent.
+        TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> Just ctrl
+        TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
+        TriggerLimit.Unlimited -> Nothing
+        TriggerLimit.OncePerGame -> Nothing,
     ability
   )
 
@@ -12059,8 +12093,41 @@ limitedKey pending =
   let key = limitKey (PendingTrigger.source pending) (PendingTrigger.controller pending) (PendingTrigger.ability pending)
    in case TriggeredAbility.limit (PendingTrigger.ability pending) of
         TriggerLimit.Unlimited -> Nothing
-        TriggerLimit.OncePerTurn -> Just key
+        TriggerLimit.OncePerTurn _ -> Just key
         TriggerLimit.OncePerGame -> Just key
+
+-- CR 603.2h: the record a resolving triggered ability spends by taking its
+-- "Do this only once each turn" instruction, keyed as limitedKey keys a pending
+-- trigger, or Nothing when its ability prints no such rider. `controller` is the
+-- ability's (CR 603.3a). Only an object-borne ability reaches the stack as a
+-- Parun.Types.TriggeredAbilitySource, so the source is always an object.
+instructionRecord :: PlayerId -> TriggeredAbilitySource.TriggeredAbilitySource -> Maybe AbilityTriggered.AbilityTriggered
+instructionRecord controller src =
+  let ability = TriggeredAbilitySource.ability src
+   in case TriggeredAbility.limit ability of
+        TriggerLimit.OncePerTurn SpentOn.TakingInstruction ->
+          Just
+            AbilityTriggered.MkAbilityTriggered
+              { AbilityTriggered.source = TriggerSource.OfObject (TriggeredAbilitySource.source src),
+                AbilityTriggered.controller = controller,
+                AbilityTriggered.ability = ability
+              }
+        TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
+        TriggerLimit.Unlimited -> Nothing
+        TriggerLimit.OncePerGame -> Nothing
+
+-- CR 603.2h: has this instruction been taken this turn? An instance that
+-- triggered before it was taken does nothing as it resolves (Nykthos Paragon's
+-- ruling of 2021-06-18), so the resolution asks this as well as
+-- withinTriggerLimit.
+instructionSpent :: GameState -> AbilityTriggered.AbilityTriggered -> Bool
+instructionSpent gs record =
+  let key r = limitKey (AbilityTriggered.source r) (AbilityTriggered.controller r) (AbilityTriggered.ability r)
+   in any ((== key record) . key) (GameState.instructionsTakenThisTurn gs)
+
+-- CR 603.2h: spend the instruction's turn.
+instructionTaken :: AbilityTriggered.AbilityTriggered -> GameState -> GameState
+instructionTaken record gs = gs {GameState.instructionsTakenThisTurn = GameState.instructionsTakenThisTurn gs Seq.|> record}
 
 -- `triggeredEvent` read back: the record an event carries if it is one ability
 -- triggering (CR 603.3b), and nothing otherwise.
@@ -12129,6 +12196,7 @@ abilityTriggeredOf event = case event of
   GameEvent.BecameAttacked _ -> Nothing
   GameEvent.AttackersDeclared _ -> Nothing
   GameEvent.BecameTapped _ -> Nothing
+  GameEvent.TappedToPay _ -> Nothing
   GameEvent.BecameUntapped _ -> Nothing
   GameEvent.TappedForMana _ -> Nothing
   GameEvent.ManaAdded _ -> Nothing

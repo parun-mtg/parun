@@ -1,6 +1,7 @@
 module Parun.Codec.ModeSelection where
 
 import qualified Parun.Codec.ChooseBetween as ChooseBetween
+import qualified Parun.Codec.ChooseInstead as ChooseInstead
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -18,7 +19,9 @@ codec =
       -- rather than a field on the one above, so a card printing the ordinary
       -- instruction encodes exactly as it always did.
       Arm.payload "ChooseExactlyWithRepeats" Common.natural ModeSelection.ChooseExactlyWithRepeats (\x -> case x of ModeSelection.ChooseExactlyWithRepeats y -> Just y; _ -> Nothing),
-      Arm.payload "ChooseBetween" ChooseBetween.codec ModeSelection.ChooseBetween (\x -> case x of ModeSelection.ChooseBetween y -> Just y; _ -> Nothing)
+      Arm.payload "ChooseBetween" ChooseBetween.codec ModeSelection.ChooseBetween (\x -> case x of ModeSelection.ChooseBetween y -> Just y; _ -> Nothing),
+      -- Recurses on 'codec' itself, Parun.Codec.Condition's reason.
+      Arm.payload "ChooseInstead" (ChooseInstead.codec codec) ModeSelection.ChooseInstead (\x -> case x of ModeSelection.ChooseInstead y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ModeSelection.ModeSelection -> String
@@ -26,3 +29,4 @@ tagOf x = case x of
   ModeSelection.ChooseExactly {} -> "ChooseExactly"
   ModeSelection.ChooseExactlyWithRepeats {} -> "ChooseExactlyWithRepeats"
   ModeSelection.ChooseBetween {} -> "ChooseBetween"
+  ModeSelection.ChooseInstead {} -> "ChooseInstead"

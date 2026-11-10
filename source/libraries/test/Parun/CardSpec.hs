@@ -2341,7 +2341,7 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR {} -> []
   ReplacementEffect.DieRollR {} -> []
-  ReplacementEffect.AssembleR {} -> []
+  ReplacementEffect.PerformerR {} -> []
   ReplacementEffect.ManaR {} -> []
   -- CR 614.1a's instead for a loss of the game (Lich's Mirror's reset).
   ReplacementEffect.GameLossR (GameLossR.MkGameLossR _ effects) -> Foldable.toList effects
@@ -2374,7 +2374,7 @@ replacementEffectRiders replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR {} -> []
   ReplacementEffect.DieRollR {} -> []
-  ReplacementEffect.AssembleR {} -> []
+  ReplacementEffect.PerformerR {} -> []
   ReplacementEffect.ManaR {} -> []
   ReplacementEffect.GameLossR {} -> []
   ReplacementEffect.PlaneswalkR {} -> []
@@ -2404,7 +2404,7 @@ replacementMintedCards replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR {} -> []
   ReplacementEffect.DieRollR {} -> []
-  ReplacementEffect.AssembleR {} -> []
+  ReplacementEffect.PerformerR {} -> []
   ReplacementEffect.ManaR {} -> []
   ReplacementEffect.GameLossR {} -> []
   ReplacementEffect.PlaneswalkR {} -> []
@@ -2913,6 +2913,7 @@ reservedSlots =
       Binding.manaSource,
       Binding.castSpell,
       Binding.castSpellTargets,
+      Binding.castSpellX,
       Binding.thisAbility,
       Binding.announcedTargets,
       Binding.targetingObject,
@@ -5301,7 +5302,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR {} -> []
   ReplacementEffect.DieRollR {} -> []
-  ReplacementEffect.AssembleR {} -> []
+  ReplacementEffect.PerformerR {} -> []
   ReplacementEffect.ManaR r -> unframed [ManaR.matching r]
   ReplacementEffect.GameLossR {} -> []
   ReplacementEffect.PlaneswalkR {} -> []

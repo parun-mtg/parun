@@ -345,7 +345,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
                   TriggerLimit.Unlimited -> t
-                  TriggerLimit.OncePerTurn -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
+                  TriggerLimit.OncePerTurn _ -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
                   TriggerLimit.OncePerGame -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
              in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named]}
           GrantedAbility.Static sa -> case affected of
@@ -4249,6 +4249,7 @@ filterReads f = case f of
   -- Modification writes.
   Filter.Type.ManaValueParity _ -> Set.empty
   Filter.Type.ManaCostRepeatsSymbol -> Set.empty
+  Filter.Type.ManaCostHasSymbol _ -> Set.empty
   Filter.Type.And fs -> foldMap filterReads fs
   Filter.Type.Or fs -> foldMap filterReads fs
   Filter.Type.Not g -> filterReads g
@@ -4432,6 +4433,7 @@ filterReadsPeers f = case f of
   Filter.Type.Stickered -> False
   Filter.Type.ManaValueParity _ -> False
   Filter.Type.ManaCostRepeatsSymbol -> False
+  Filter.Type.ManaCostHasSymbol _ -> False
 
 -- filterReadsPeers through an affected set. TheseObjects names ids (CR 611.2c)
 -- and Attached reads its source's attachment (CR 303.4m); neither builds a view.

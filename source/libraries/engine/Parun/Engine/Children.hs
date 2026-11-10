@@ -314,6 +314,7 @@ filterChildren children predicate = case predicate of
   Filter.Measures measures -> fmap Filter.Measures (measuresChildren children measures)
   Filter.ManaValueParity _ -> pure predicate
   Filter.ManaCostRepeatsSymbol -> pure predicate
+  Filter.ManaCostHasSymbol _ -> pure predicate
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.ControlledByRole _ -> pure predicate
@@ -1267,7 +1268,7 @@ triggerConditionChildren c condition = case condition of
     fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)
   TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger card from to turn duringResolution batching) ->
     fmap TriggerCondition.PutIntoZone (PutIntoZoneTrigger.MkPutIntoZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> triggerTurn c turn <*> pure duringResolution <*> pure batching)
-  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching) -> fmap (\renamed -> TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status renamed batching)) (actingChildren c actor)
+  TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status actor batching paying) -> fmap (\renamed -> TriggerCondition.BecomesTapState (BecomesTapState.MkBecomesTapState status renamed batching paying)) (actingChildren c actor)
   TriggerCondition.TappedForMana (TappedForManaTrigger.MkTappedForManaTrigger permanent who mana) ->
     fmap
       TriggerCondition.TappedForMana

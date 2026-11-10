@@ -8,6 +8,7 @@ import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.TapState as TapState
 
@@ -20,7 +21,8 @@ spec s = Spec.describe s "Parun.Codec.BecomesTapState" $ do
       ( BecomesTapState.MkBecomesTapState
           { BecomesTapState.status = TapState.Untapped,
             BecomesTapState.actor = ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You),
-            BecomesTapState.batching = Batching.EachOccurrence
+            BecomesTapState.batching = Batching.EachOccurrence,
+            BecomesTapState.paying = Nothing
           }
       )
       " {\"actor\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"status\":\"Untapped\"} "
@@ -29,6 +31,13 @@ spec s = Spec.describe s "Parun.Codec.BecomesTapState" $ do
     Common.assertCodec
       s
       BecomesTapState.codec
-      (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Not Filter.IsToken)) Batching.OneOrMore)
+      (BecomesTapState.MkBecomesTapState TapState.Tapped (ActingPermanent.Matching (Filter.Not Filter.IsToken)) Batching.OneOrMore Nothing)
       " {\"actor\":{\"type\":\"Matching\",\"value\":{\"type\":\"Not\",\"value\":{\"type\":\"IsToken\"}}},\"status\":\"Tapped\",\"batching\":\"OneOrMore\"} "
+  -- Agent Maria Hill's "to pay a teamwork cost", the paying key written.
+  Spec.it s "MkBecomesTapState, paying a keyword's cost" $
+    Common.assertCodec
+      s
+      BecomesTapState.codec
+      (BecomesTapState.MkBecomesTapState TapState.Tapped ActingPermanent.Self Batching.EachOccurrence (Just KeywordFamily.Teamwork))
+      " {\"actor\":{\"type\":\"Self\"},\"status\":\"Tapped\",\"paying\":\"Teamwork\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s BecomesTapState.codec

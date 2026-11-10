@@ -5,6 +5,7 @@ module Parun.Codec.TurnRegisters where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
 import qualified Parun.Codec.ActivatedAbility as ActivatedAbility
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CastFromZone as CastFromZone
@@ -53,6 +54,7 @@ codec = Fields.object $ do
   activationsThisTurn <- Fields.defaulted "activationsThisTurn" Seq.empty (Common.seq PastActivation.codec) TurnRegisters.activationsThisTurn
   castPermissionsUsedThisTurn <- Fields.defaulted "castPermissionsUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set CastFromZone.codec)) TurnRegisters.castPermissionsUsedThisTurn
   rollModifiersUsedThisTurn <- Fields.defaulted "rollModifiersUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set ModifiedRoll.codec)) TurnRegisters.rollModifiersUsedThisTurn
+  instructionsTakenThisTurn <- Fields.defaulted "instructionsTakenThisTurn" Seq.empty (Common.seq AbilityTriggered.codec) TurnRegisters.instructionsTakenThisTurn
   turnResume <- Fields.defaulted "turnResume" TurnResume.Type.AtStepStart TurnResume.codec TurnRegisters.turnResume
   pure
     TurnRegisters.MkTurnRegisters
@@ -78,5 +80,6 @@ codec = Fields.object $ do
         TurnRegisters.activationsThisTurn = activationsThisTurn,
         TurnRegisters.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,
         TurnRegisters.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
+        TurnRegisters.instructionsTakenThisTurn = instructionsTakenThisTurn,
         TurnRegisters.turnResume = turnResume
       }

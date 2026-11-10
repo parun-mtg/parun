@@ -85,6 +85,7 @@ import qualified Parun.Types.ManaAbilityResolved as ManaAbilityResolved
 import qualified Parun.Types.ManifestedDread as ManifestedDread
 import qualified Parun.Types.Mentored as Mentored
 import qualified Parun.Types.Moved as Moved
+import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OwnedZone as OwnedZone
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -108,6 +109,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -156,6 +158,11 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- both, to re-ask its subject of each card that left.
 eventBindings :: GameState -> Maybe ObjectId -> Map.Map ObjectId ObjectId -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Map.Map SlotName.SlotName Binding
 eventBindings = eventBindingsOver Map.empty
+
+-- CR 107.3e / 601.2b: the X a spell on the stack was cast with, off its own
+-- bindings while it is still there; 0 where it announced none.
+castX :: GameState -> ObjectId -> Numeric.Natural.Natural
+castX gs spell = Maybe.fromMaybe 0 (Game.lookupObject spell gs >>= Binding.amountOf Binding.variableX . Object.bindings)
 
 -- CR 122: the object a counter event names and how many counters moved, on or
 -- off. Each record exists only where its count changed (GameEvent.CountersPut,
@@ -469,11 +476,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- stack object now for the reason the caster is a slot: Storm, Windrider's
   -- "those creatures" are the ones the cast targeted.
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ _ _ _)) ->
-    Binding.setTriggerPlayer caster (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs spell) (Binding.setCastSpell spell Map.empty))
+    Binding.setTriggerPlayer caster (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs spell) (Binding.setCastSpellX (castX gs spell) (Binding.setCastSpell spell Map.empty)))
   -- Magecraft's "or copy" binds the same three off its own event (CR 707.10):
   -- the copy, the player who copied it, and the copy's targets.
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
-    Binding.setTriggerPlayer copier (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs copy) (Binding.setCastSpell copy Map.empty))
+    Binding.setTriggerPlayer copier (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs copy) (Binding.setCastSpellX (castX gs copy) (Binding.setCastSpell copy Map.empty)))
   -- CR 602.2b's "that ability" and "that player": the ability on the stack and
   -- its activator (CR 602.2a). Unconditional given a match. An activation that
   -- put nothing on the stack leaves "that ability" unbound, so a copy of it
@@ -605,6 +612,9 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameTapped tapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
         Binding.setTapStatePermanent TapState.Tapped tapped Map.empty
+  (TriggerCondition.BecomesTapState watched, GameEvent.TappedToPay paid)
+    | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Tapped ->
+        Binding.setTapStatePermanent TapState.Tapped (TappedToPay.permanent paid) Map.empty
   (TriggerCondition.BecomesTapState watched, GameEvent.BecameUntapped untapped)
     | BecomesTapState.batching watched == Batching.EachOccurrence && BecomesTapState.status watched == TapState.Untapped ->
         Binding.setTapStatePermanent TapState.Untapped untapped Map.empty
@@ -1703,7 +1713,7 @@ eventBindingSlots cond = case cond of
   -- that subject and its fallthrough answers the same.
   TriggerCondition.SpellCast c -> case SpellCast.spell c of
     ActingPermanent.Self -> Set.empty
-    ActingPermanent.Matching _ -> Set.fromList [Binding.castSpell, Binding.castSpellTargets, Binding.triggerPlayer]
+    ActingPermanent.Matching _ -> Set.fromList [Binding.castSpell, Binding.castSpellTargets, Binding.castSpellX, Binding.triggerPlayer]
   -- The activated ability and its activator, both on every event the condition
   -- admits.
   TriggerCondition.AbilityActivated _ -> Set.fromList [Binding.activatedAbility, Binding.triggerPlayer]

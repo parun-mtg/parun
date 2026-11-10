@@ -401,6 +401,8 @@ library codec
     Parun.Codec.ChooseCardName
     Parun.Codec.ChooseGroup
     Parun.Codec.ChooseGroupSpec
+    Parun.Codec.ChooseInstead
+    Parun.Codec.ChooseInsteadSpec
     Parun.Codec.ChooseNumber
     Parun.Codec.ChooseNumberSpec
     Parun.Codec.ChoosePermanents
@@ -1095,6 +1097,8 @@ library codec
     Parun.Codec.ManaSpent
     Parun.Codec.ManaSpentSpec
     Parun.Codec.ManaSymbol
+    Parun.Codec.ManaSymbolKind
+    Parun.Codec.ManaSymbolKindSpec
     Parun.Codec.ManaSymbolSpec
     Parun.Codec.ManaType
     Parun.Codec.ManaTypeSpec
@@ -1247,6 +1251,7 @@ library codec
     Parun.Codec.PendingSkipEffect
     Parun.Codec.PendingSkipEffectSpec
     Parun.Codec.PerCreature
+    Parun.Codec.PerformerR
     Parun.Codec.PermanentActed
     Parun.Codec.PermanentAction
     Parun.Codec.PermanentActionSpec
@@ -1582,6 +1587,8 @@ library codec
     Parun.Codec.SpendManaAsThoughSpec
     Parun.Codec.SpendTrigger
     Parun.Codec.SpendTriggerSpec
+    Parun.Codec.SpentOn
+    Parun.Codec.SpentOnSpec
     Parun.Codec.Splice
     Parun.Codec.SpliceSpec
     Parun.Codec.StackedAbility
@@ -1642,6 +1649,8 @@ library codec
     Parun.Codec.TappedIsSpec
     Parun.Codec.TappedPermanent
     Parun.Codec.TappedPermanentSpec
+    Parun.Codec.TappedToPay
+    Parun.Codec.TappedToPaySpec
     Parun.Codec.TapPermanents
     Parun.Codec.TapPermanentsSpec
     Parun.Codec.TapSpec
@@ -2753,6 +2762,7 @@ library types
     Parun.Types.ChooseBetween
     Parun.Types.ChooseCardName
     Parun.Types.ChooseGroup
+    Parun.Types.ChooseInstead
     Parun.Types.ChooseNumber
     Parun.Types.ChoosePermanents
     Parun.Types.ChoosePlayer
@@ -3150,6 +3160,7 @@ library types
     Parun.Types.ManaSpending
     Parun.Types.ManaSpent
     Parun.Types.ManaSymbol
+    Parun.Types.ManaSymbolKind
     Parun.Types.ManaType
     Parun.Types.ManaUnit
     Parun.Types.ManaWindow
@@ -3242,6 +3253,7 @@ library types
     Parun.Types.PendingSkipEffect
     Parun.Types.PendingTrigger
     Parun.Types.PerCreature
+    Parun.Types.PerformerR
     Parun.Types.PermanentActed
     Parun.Types.PermanentAction
     Parun.Types.PermanentBecomesDesignated
@@ -3432,6 +3444,7 @@ library types
     Parun.Types.SpellWasCopied
     Parun.Types.SpendManaAsThough
     Parun.Types.SpendTrigger
+    Parun.Types.SpentOn
     Parun.Types.Splice
     Parun.Types.StackedAbility
     Parun.Types.StackObjectKind
@@ -3471,6 +3484,7 @@ library types
     Parun.Types.TappedForManaTrigger
     Parun.Types.TappedIs
     Parun.Types.TappedPermanent
+    Parun.Types.TappedToPay
     Parun.Types.TapPermanents
     Parun.Types.TapState
     Parun.Types.TargetCount

@@ -35,6 +35,7 @@ import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
+import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
@@ -173,6 +174,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.ManaCostRepeatsSymbol
       " {\"type\":\"ManaCostRepeatsSymbol\"} "
+  Spec.it s "ManaCostHasSymbol" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.ManaCostHasSymbol ManaSymbolKind.PhyrexianSymbol)
+      " {\"type\":\"ManaCostHasSymbol\",\"value\":\"PhyrexianSymbol\"} "
   Spec.it s "ManaValueParity" $
     Common.assertCodec
       s

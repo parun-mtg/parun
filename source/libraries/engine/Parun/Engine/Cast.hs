@@ -126,6 +126,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
@@ -3634,6 +3635,13 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               (\(keyword, count) -> let entries = Map.findWithDefault Map.empty keyword paid in maybe False (sum entries >) (Keyword.paymentLimit count keyword) || (Keyword.paidPerInstance keyword && maybe False (\each -> any (> each) entries) (snd =<< Keyword.optionalCost keyword)))
               optionalOffers
           withKicker = withOptionalPayments paid
+          -- CR 601.4: a candidate is offered only if the chosen modes satisfy
+          -- the instruction its announcement settles an unsettled one to
+          -- (Modal.settle), so Widow's Bite naming both modes without teamwork,
+          -- or one with it, has no candidate and rewinds below.
+          settledFor candidate =
+            let proposed = stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)
+             in Modal.selectionSatisfiedBy legal (Modal.settle (Condition.holds (Projection.fullView proposed) (Projection.sourceContext proposed (Just pid) sid) proposed sid) selection) chosenModes
           -- CR 702.27a's cost is additional too, so it rides the same fold.
           withBuyback candidate = maybe candidate (Cost.plus candidate) boughtBack
           -- CR 702.47a's costs are additional too, one per spliced card.
@@ -3659,7 +3667,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- reduction once it is.
           payableCandidates =
             filter
-              (\candidate -> any (\(extra, less, wayGives) -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (CandidateCost.cost candidate))) (wayCosts (permissions (CandidateCost.keyword candidate))))
+              (\candidate -> settledFor candidate && any (\(extra, less, wayGives) -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (CandidateCost.cost candidate))) (wayCosts (permissions (CandidateCost.keyword candidate))))
               (fmap (\candidate -> candidate {CandidateCost.cost = withSplice (withBuyback (withKicker (withModeCost (withEscalate (withEntwine (CandidateCost.cost candidate))))))}) candidateCosts)
       if null payableCandidates || overKickerLimit || not spliceValid
         then reject
@@ -4152,6 +4160,29 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                                     )
                                 )
                             )
+                          -- CR 601.2h: each permanent a keyword's optional
+                          -- cost tapped became tapped to pay that cost (Agent
+                          -- Maria Hill's teamwork), recorded at the payment for
+                          -- the convoke record's reason. A case on the rule-702
+                          -- keyword's minted cost, never on an effect; teamwork is
+                          -- the one optional cost carrying TapForTotalPower, so
+                          -- that slot's set is its tappers alone.
+                          paidKeywords <- State.gets (maybe Map.empty Object.paidCosts . Game.lookupObject sid)
+                          let tapsForTotalPower component = case component of
+                                CostComponent.TapForTotalPower {} -> True
+                                _ -> False
+                              tappingFamilies =
+                                Set.fromList
+                                  [ family
+                                  | (keyword, perInstance) <- Map.toList paidKeywords,
+                                    sum perInstance > 0,
+                                    Just (optional, _) <- [Keyword.optionalCost keyword],
+                                    any tapsForTotalPower (Cost.Type.components optional),
+                                    Just family <- [Keyword.familyOf keyword]
+                                  ]
+                              tappedToPay = Set.fromList (Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Map.lookup Binding.tappedForTotalPower (Binding.targetsOf bound))))
+                              paidTaps = [GameEvent.TappedToPay TappedToPay.MkTappedToPay {TappedToPay.permanent = tapped, TappedToPay.keyword = family} | family <- Set.toAscList tappingFamilies, tapped <- Set.toAscList tappedToPay]
+                          Monad.unless (null paidTaps) (Event.simultaneously (Monad.mapM_ (State.modify' . Event.recordEvent) paidTaps))
                           -- CR 601.2i / 611.3d: the permission's rider is an
                           -- effect that modifies the spell as it is cast, so it
                           -- is stored before the event below snapshots the spell.

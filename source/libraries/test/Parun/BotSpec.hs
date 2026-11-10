@@ -77,6 +77,7 @@ import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.HybridPayment as HybridPayment
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandOrNonland as LandOrNonland
@@ -99,12 +100,14 @@ import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PhyrexianPayment as PhyrexianPayment
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PrintingId as PrintingId
@@ -115,6 +118,7 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StickerKind as StickerKind
@@ -545,7 +549,7 @@ spec s registry = Spec.describe s "Bot" $ do
   Spec.it s "picks any index into the offer" $ do
     let gained who = GameEvent.LifeGained (LifeChange.MkLifeChange who 4 True)
         shape power = EntryOption.MkEntryOption {EntryOption.power = power, EntryOption.toughness = 3, EntryOption.keywords = Set.empty, EntryOption.subtypes = Set.empty}
-        entry source = ReplacementEntry.MkReplacementEntry (ObjectId.MkObjectId source) (ReplacementEffect.AssembleR (Filter.And []))
+        entry source = ReplacementEntry.MkReplacementEntry (ObjectId.MkObjectId source) (ReplacementEffect.PerformerR (PerformerR.MkPerformerR PlayerInstruction.Assemble (Filter.And []) (InstructionRewrite.Scaled (Scaling.Multiply 2))))
     Spec.assertEqWith s "occurrences" (drawn (Prompt.ChooseDelayedTriggerEvent decider S.alice oid (gained S.alice NonEmpty.:| [gained S.bob]))) (Set.fromList [0, 1])
     Spec.assertEqWith s "die results" (drawn (Prompt.ChooseDieResult decider S.alice Nothing (3 NonEmpty.:| [5, 5]))) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "entry options" (drawn (Prompt.ChooseEntryOption decider S.alice oid [shape 3, shape 2])) (Set.fromList [0, 1])

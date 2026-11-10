@@ -11,7 +11,7 @@ import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 -- A bare ControllerRelation and nothing else to narrow by: each of these
 -- instructions concerns the player it names and has no source, amount or
 -- destination -- CR 705.2's last sentence says so outright of a flip. A row that
--- needs more is its own arm: DrawCountR's threshold, AssembleR's permanent.
+-- needs more is its own arm: DrawCountR's threshold, PerformerR's permanent.
 data InstructionR = MkInstructionR
   { instruction :: PlayerInstruction.PlayerInstruction,
     whose :: ControllerRelation.ControllerRelation,

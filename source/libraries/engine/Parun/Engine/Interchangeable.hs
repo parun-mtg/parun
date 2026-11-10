@@ -576,7 +576,7 @@ affectedNames oid source gs affected = case affected of
 --     revealedTops (CR 401.6) and outsideCopies (CR 400.11), each keyed by the
 --     object it is about; and
 --     the logs triggeredThisGame (a "triggers only once" rider's spent
---     triggerings), activationsThisTurn (CR 602.2) and attacksInOwnLastTurn (CR
+--     triggerings), instructionsTakenThisTurn (CR 603.2h), activationsThisTurn (CR 602.2) and attacksInOwnLastTurn (CR
 --     508.1a), by the object each entry names.
 --
 -- phasedOut and a crowning watch can never name a CANDIDATE through the one
@@ -637,6 +637,7 @@ namedByRelation oid gs =
         || elem oid (GameState.revealedTops gs)
         || Set.member oid (GameState.outsideCopies gs)
         || any (triggeredNames oid) (GameState.triggeredThisGame gs)
+        || any (triggeredNames oid) (GameState.instructionsTakenThisTurn gs)
         || any (triggeredNames oid) [record | GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs))]
         || any (any (spentActivationNames oid) . Map.keys) (Map.elems (GameState.activatedThisTurn gs))
         || any (any (spentActivationNames oid) . Map.keys . Object.activatedOnce) (Map.elems (GameState.objects gs))
@@ -646,6 +647,7 @@ namedByRelation oid gs =
         || any (keyed . TurnRegisters.stackedIn) parked
         || any (keyed . TurnRegisters.castPermissionsUsedThisTurn) parked
         || any (keyed . TurnRegisters.rollModifiersUsedThisTurn) parked
+        || any (any (triggeredNames oid) . TurnRegisters.instructionsTakenThisTurn) parked
         || any (triggeredNames oid) [record | r <- parked, GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events r))]
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked
         || any (any (activationNames oid) . TurnRegisters.activationsThisTurn) parked

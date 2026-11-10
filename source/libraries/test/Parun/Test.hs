@@ -173,6 +173,7 @@ import qualified Parun.Codec.CheckSpec
 import qualified Parun.Codec.ChoicesSpec
 import qualified Parun.Codec.ChooseBetweenSpec
 import qualified Parun.Codec.ChooseGroupSpec
+import qualified Parun.Codec.ChooseInsteadSpec
 import qualified Parun.Codec.ChooseNumberSpec
 import qualified Parun.Codec.ChoosePermanentsSpec
 import qualified Parun.Codec.ChoosePlayerAtRandomSpec
@@ -511,6 +512,7 @@ import qualified Parun.Codec.ManaSpec
 import qualified Parun.Codec.ManaSpecificationSpec
 import qualified Parun.Codec.ManaSpendingSpec
 import qualified Parun.Codec.ManaSpentSpec
+import qualified Parun.Codec.ManaSymbolKindSpec
 import qualified Parun.Codec.ManaSymbolSpec
 import qualified Parun.Codec.ManaTypeSpec
 import qualified Parun.Codec.ManaUnitSpec
@@ -745,6 +747,7 @@ import qualified Parun.Codec.SpellWasCastSpec
 import qualified Parun.Codec.SpellWasCopiedSpec
 import qualified Parun.Codec.SpendManaAsThoughSpec
 import qualified Parun.Codec.SpendTriggerSpec
+import qualified Parun.Codec.SpentOnSpec
 import qualified Parun.Codec.SpliceSpec
 import qualified Parun.Codec.StackObjectKindSpec
 import qualified Parun.Codec.StackedAbilitySpec
@@ -775,6 +778,7 @@ import qualified Parun.Codec.TappedForManaSpec
 import qualified Parun.Codec.TappedForManaTriggerSpec
 import qualified Parun.Codec.TappedIsSpec
 import qualified Parun.Codec.TappedPermanentSpec
+import qualified Parun.Codec.TappedToPaySpec
 import qualified Parun.Codec.TargetCountSpec
 import qualified Parun.Codec.TargetRestrictionSpec
 import qualified Parun.Codec.TargetSlotSpec
@@ -1205,6 +1209,7 @@ spec s registry corpus = do
   Parun.Codec.CheckSpec.spec s
   Parun.Codec.ChoicesSpec.spec s
   Parun.Codec.ChooseBetweenSpec.spec s
+  Parun.Codec.ChooseInsteadSpec.spec s
   Parun.Codec.ChooseNumberSpec.spec s
   Parun.Codec.ChooseGroupSpec.spec s
   Parun.Codec.ChoosePermanentsSpec.spec s
@@ -1547,6 +1552,7 @@ spec s registry corpus = do
   Parun.Codec.ManaSpec.spec s
   Parun.Codec.ManaSpecificationSpec.spec s
   Parun.Codec.ManaSpendingSpec.spec s
+  Parun.Codec.ManaSymbolKindSpec.spec s
   Parun.Codec.ManaSymbolSpec.spec s
   Parun.Codec.ManaTypeSpec.spec s
   Parun.Codec.ManaUnitSpec.spec s
@@ -1811,6 +1817,7 @@ spec s registry corpus = do
   Parun.Codec.TapForManaSpec.spec s
   Parun.Codec.TapForTotalPowerSpec.spec s
   Parun.Codec.TappedForManaSpec.spec s
+  Parun.Codec.TappedToPaySpec.spec s
   Parun.Codec.TappedIsSpec.spec s
   Parun.Codec.TapPermanentsSpec.spec s
   Parun.Codec.TapStateSpec.spec s
@@ -1837,6 +1844,7 @@ spec s registry corpus = do
   Parun.Codec.TriggeredAbilitySpec.spec s
   Parun.Codec.TriggerFrequencySpec.spec s
   Parun.Codec.TriggerLimitSpec.spec s
+  Parun.Codec.SpentOnSpec.spec s
   Parun.Codec.ModeMemorySpec.spec s
   Parun.Codec.TriggerSourceSpec.spec s
   Parun.Codec.TurnedFaceUpSpec.spec s

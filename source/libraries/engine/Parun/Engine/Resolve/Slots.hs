@@ -195,6 +195,7 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -1580,7 +1581,7 @@ replacementRowReads re = case re of
   -- One ControllerRelation and one nullary rewrite: no read at all, DrawCountR's
   -- answer and for its reason.
   ReplacementEffect.DieRollR {} -> ([], [])
-  ReplacementEffect.AssembleR matching -> ([matching], [])
+  ReplacementEffect.PerformerR row -> ([PerformerR.performer row], [])
   ReplacementEffect.ManaR r -> ([ManaR.matching r], [])
   -- One ControllerRelation; the effects run instead are replacementRowEffects'.
   ReplacementEffect.GameLossR {} -> ([], [])
@@ -1768,7 +1769,7 @@ overRelations f re = case re of
   ReplacementEffect.DrawCountR r -> (\w -> ReplacementEffect.DrawCountR r {DrawCountR.whose = w}) <$> f (DrawCountR.whose r)
   ReplacementEffect.InstructionR r -> (\w -> ReplacementEffect.InstructionR r {InstructionR.whose = w}) <$> f (InstructionR.whose r)
   ReplacementEffect.DieRollR r -> (\w -> ReplacementEffect.DieRollR r {DieRollR.whose = w}) <$> f (DieRollR.whose r)
-  ReplacementEffect.AssembleR _ -> pure re
+  ReplacementEffect.PerformerR _ -> pure re
   ReplacementEffect.ManaR _ -> pure re
   ReplacementEffect.GameLossR r -> (\w -> ReplacementEffect.GameLossR r {GameLossR.whose = w}) <$> f (GameLossR.whose r)
   ReplacementEffect.PlaneswalkR r -> (\w -> ReplacementEffect.PlaneswalkR r {PlaneswalkR.whose = w}) <$> f (PlaneswalkR.whose r)
@@ -1827,7 +1828,7 @@ replacementRowEffects re = case re of
   ReplacementEffect.DrawCountR _ -> []
   ReplacementEffect.InstructionR _ -> []
   ReplacementEffect.DieRollR _ -> []
-  ReplacementEffect.AssembleR _ -> []
+  ReplacementEffect.PerformerR _ -> []
   ReplacementEffect.ManaR _ -> []
   -- CR 614.1a's "instead [do something]" for a loss of the game (Lich's Mirror).
   ReplacementEffect.GameLossR (GameLossR.MkGameLossR _ effects) -> Foldable.toList effects

@@ -57,7 +57,9 @@
                   "condition": {
                     "type": "SelfManaAbilityResolves"
                   },
-                  "limit": "OncePerTurn",
+                  "limit": {
+                    "type": "OncePerTurn"
+                  },
                   "modal": {
                     "modes": [
                       {

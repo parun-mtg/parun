@@ -447,6 +447,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.AttackerUnblocked {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
   GameEvent.BecameTapped {} -> Nothing
+  GameEvent.TappedToPay {} -> Nothing
   GameEvent.BecameUntapped {} -> Nothing
   GameEvent.TappedForMana {} -> Nothing
   GameEvent.ManaAdded {} -> Nothing

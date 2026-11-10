@@ -1074,6 +1074,13 @@ castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 castSpellTargets :: SlotName
 castSpellTargets = SlotName.MkSlotName (Text.pack "thatSpellsTargets")
 
+-- CR 107.3e: the reserved slot holding the X the spell under `castSpell` was
+-- cast or copied with (CR 707.10), 0 where it has none -- Zaxara, the
+-- Exemplary's "put X +1/+1 counters". Read off the stack object when the
+-- trigger binds, so countering the spell first changes nothing (CR 601.2b).
+castSpellX :: SlotName
+castSpellX = SlotName.MkSlotName (Text.pack "thatSpellsX")
+
 -- CR 602.2a / 603.3: the reserved slot under which an ABILITY'S OWN STACK
 -- OBJECT is bound -- the printed "this ability" in Forsworn Paladin's "if mana
 -- from a Treasure was spent to activate this ability" and in Ashling the
@@ -1510,6 +1517,10 @@ setDepartedPermanent oid = Map.insert departedPermanent (toObject oid)
 -- Bind an object under the reserved castSpell slot (CR 601.2i).
 setCastSpell :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setCastSpell oid = Map.insert castSpell (toObject oid)
+
+-- Bind a spell's X under the reserved castSpellX slot (CR 107.3e).
+setCastSpellX :: Natural -> Map SlotName Binding -> Map SlotName Binding
+setCastSpellX n = Map.insert castSpellX (toAmount n)
 
 -- Bind a spell's object targets under the reserved castSpellTargets slot (CR
 -- 115.1).
