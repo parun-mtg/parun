@@ -29,25 +29,19 @@ import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
-import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
-import qualified Parun.Types.Craft as Craft
-import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DiscardCards as DiscardCards
-import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EnteredZone as EnteredZone
-import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
@@ -56,32 +50,24 @@ import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter
-import qualified Parun.Types.ForetellCost as ForetellCost
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
-import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.Keyword as Keyword.Type
-import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordInstance as KeywordInstance
-import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
-import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
-import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.NameChooser as NameChooser
-import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Pairing as Pairing
@@ -90,28 +76,23 @@ import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
-import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StickerContent as StickerContent
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
-import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRole as TurnRole
-import qualified Parun.Types.Ward as Ward
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -2743,451 +2724,30 @@ rewriteCounterKind pairs kind = case kind of
 -- other and a text-changing effect reaches it. Magical Hack's own reminder text
 -- is that example -- "you may change 'swampwalk' to 'plainswalk'".
 --
--- Casing on Keyword is legitimate for the reason Parun.Types.Keyword's comment
--- gives: rule 702 is part of the rulebook, so a keyword is a citation rather than
--- an effect's identity.
+-- Children.keywordChildren's descent: every Filter a keyword prints
+-- takes `rewrite`, which answers CR 702.14a's SECOND clause for free -- of CR
+-- 702.14c's shapes only a land type is a HasSubtype atom, so Vectis Gloves'
+-- artifact landwalk comes back unchanged and Legions of Lim-Dûl's snow
+-- swampwalk has its Swamp swapped and keeps its Snow. Every Cost takes
+-- rewriteCost: rule 702 states those costs as part of the keyword, printed in
+-- the text box exactly as an activation cost is (Parun.ActivateSpec's Dark
+-- Heart of the Wood proves rewriteCost itself). A gift's creature type is
+-- CR 612.2a's word naming the token (docs/decisions.md, "What a gift does after
+-- a text change swaps its creature type").
 --
--- The whole descent is `rewrite` over the Filters a keyword carries, which
--- answers CR 702.14a's SECOND clause for free -- the [type] "can also be the card
--- type land plus any combination of land types, card types, and/or supertypes",
--- and of those four shapes (CR 702.14c) only a land type is a HasSubtype atom.
--- Vectis Gloves' artifact landwalk and Dryad Sophisticate's nonbasic landwalk come
--- back unchanged because their criteria hold no subtype word, not because this
--- function recognizes which shape it was handed; Legions of Lim-Dûl's snow
--- swampwalk has its Swamp swapped and keeps its Snow, which is the case a
--- shape-aware version would have had to get right on purpose.
---
--- Exhaustive rather than a wildcard, unlike Combat.landwalkAllowsGiven's single
--- named constructor: this CLASSIFIES every keyword by whether it holds a word,
--- so a new one carrying a Filter must break this build rather than silently keep
--- the printed word.
---
--- Every Cost a keyword carries goes through rewriteCost below, for CR 612.1's own
--- reason: rule 702 states those costs as part of the keyword, so they are printed
--- in the text box exactly as an activated ability's activation cost is. No
--- printing pairs one of those costs with a basic land type, so each of those arms
--- is a regression fence rather than a proven path -- Parun.ActivateSpec's Dark
--- Heart of the Wood is what proves rewriteCost itself.
+-- Left as written: backup's printed abilities, compared against the COPIABLE
+-- keywords (CR 707.2) that no text change reaches; a count's scope and player,
+-- which hold no word, as rewriteQuantity leaves Count's. Every other word a
+-- keyword's ability uses is rule 702's own, which no swap reaches (CR 702.1).
 rewriteKeyword :: [(TextWord.TextWord, TextWord.TextWord)] -> Keyword.Type.Keyword -> Keyword.Type.Keyword
-rewriteKeyword pairs keyword = case keyword of
-  -- CR 702.14a's "[type]walk".
-  Keyword.Type.Landwalk criterion -> Keyword.Type.Landwalk (rewrite pairs criterion)
-  -- CR 702.29e's "[Type]cycling", rule 702's other "[type]": "usually a subtype
-  -- (as in 'mountaincycling')", so it holds a basic land type exactly as
-  -- swampwalk does.
-  Keyword.Type.Cycling (Cycling.MkCycling cost criterion) -> Keyword.Type.Cycling (Cycling.MkCycling (rewriteCost pairs cost) (fmap (rewrite pairs) criterion))
-  -- CR 702.11d's "hexproof from [quality]", rule 702's third carrier of a word.
-  -- Not a "[type]" like the two above -- CR 702.11d's quality is any quality, and
-  -- the ones cards actually print tend to name a card type or a colour -- but CR
-  -- 612.2 asks the same question of it either way, and `rewrite` answers it: a
-  -- quality naming a creature type or a colour is a word used as one and is
-  -- swapped; Elenda, Saint of Dusk's "hexproof from instants" comes back
-  -- unchanged because its atom holds no such word. CR 702.11b's unqualified
-  -- hexproof is the Nothing, which `fmap` leaves standing.
-  Keyword.Type.Hexproof quality -> Keyword.Type.Hexproof (fmap (rewrite pairs) quality)
-  -- CR 702.16a's "[quality]", which CR 612.2 asks the same question of: a
-  -- protection quality naming a creature type or a colour is swapped, so a
-  -- Sleight of Mind turns Apostle of Purifying Light's protection from black
-  -- into protection from blue. Rule 702.16a always states a
-  -- quality, so there is no Nothing to leave standing there; rule 702.16n's
-  -- exception is the Nothing, which `fmap` leaves standing, and it is a word on
-  -- the same card so CR 612.2 reaches it too.
-  Keyword.Type.Protection protection ->
-    Keyword.Type.Protection
-      Protection.MkProtection
-        { Protection.quality = rewrite pairs (Protection.quality protection),
-          Protection.spares = fmap (rewrite pairs) (Protection.spares protection)
+rewriteKeyword pairs =
+  Identity.runIdentity
+    . Children.keywordChildren
+      Children.keywordLeaves
+        { Children.keywordFilter = Identity.Identity . rewrite pairs,
+          Children.keywordCost = Identity.Identity . rewriteCost pairs,
+          Children.keywordSubtype = Identity.Identity . TextWord.subtypeAfter pairs
         }
-  Keyword.Type.Deathtouch -> keyword
-  Keyword.Type.Defender -> keyword
-  Keyword.Type.DoubleStrike -> keyword
-  Keyword.Type.FirstStrike -> keyword
-  Keyword.Type.Flash -> keyword
-  Keyword.Type.Banding -> keyword
-  Keyword.Type.Flanking -> keyword
-  Keyword.Type.Haunt -> keyword
-  Keyword.Type.Phasing -> keyword
-  Keyword.Type.Shadow -> keyword
-  Keyword.Type.Horsemanship -> keyword
-  Keyword.Type.Skulk -> keyword
-  Keyword.Type.SpaceSculptor -> keyword
-  Keyword.Type.Melee -> keyword
-  -- CR 702.124h and CR 702.124i name no colour, type or quality CR 612.2 could
-  -- swap; CR 702.124k names only the Background enchantment type, and CR
-  -- 702.124m only the Time Lord and Doctor creature types. None of these is a
-  -- word this function carries, since none of these keywords holds a Filter.
-  Keyword.Type.Partner -> keyword
-  Keyword.Type.PartnerText _ -> keyword
-  Keyword.Type.ChooseABackground -> keyword
-  Keyword.Type.DoctorsCompanion -> keyword
-  -- CR 702.124j's payload is a card NAME, which CR 612.2 says outright a
-  -- subtype- or colour-word change cannot touch.
-  Keyword.Type.PartnerWith _ -> keyword
-  -- CR 702.23a's N is a number and not a word, so CR 612.2 has nothing to swap.
-  Keyword.Type.Rampage _ -> keyword
-  Keyword.Type.Aftermath -> keyword
-  Keyword.Type.JumpStart -> keyword
-  -- CR 702.130a's N is a number and not a word, so CR 612.2 has nothing to swap.
-  Keyword.Type.Afflict _ -> keyword
-  Keyword.Type.Flying -> keyword
-  Keyword.Type.Haste -> keyword
-  Keyword.Type.Indestructible -> keyword
-  Keyword.Type.Lifelink -> keyword
-  Keyword.Type.LivingMetal -> keyword
-  Keyword.Type.Reach -> keyword
-  Keyword.Type.Shroud -> keyword
-  Keyword.Type.Trample -> keyword
-  Keyword.Type.TrampleOverPlaneswalkers -> keyword
-  Keyword.Type.Vigilance -> keyword
-  -- CR 702.21a states its cost as part of the keyword too, so CR 612.1 reaches it
-  -- the same way -- a ward cost naming a basic land type is the unprinted case
-  -- the arms below are also a fence for.
-  --
-  -- CR 702.21b's perEach is a KeywordCount, descended as mobilize's N is.
-  Keyword.Type.Ward w -> Keyword.Type.Ward (Ward.MkWard (rewriteCost pairs (Ward.cost w)) (fmap (rewriteKeywordCount pairs) (Ward.perEach w)))
-  -- CR 702.33a, CR 702.33c, CR 702.34a, CR 702.37a and CR 702.42a: each states a
-  -- cost as part of the keyword, so rewriteCost carries CR 612.1 into it.
-  Keyword.Type.Kicker cost -> Keyword.Type.Kicker (rewriteCost pairs cost)
-  Keyword.Type.Multikicker cost -> Keyword.Type.Multikicker (rewriteCost pairs cost)
-  Keyword.Type.StickerKicker cost -> Keyword.Type.StickerKicker (rewriteCost pairs cost)
-  Keyword.Type.Flashback cost -> Keyword.Type.Flashback (rewriteCost pairs cost)
-  -- CR 702.162a states its cost as part of the keyword too.
-  Keyword.Type.MoreThanMeetsTheEye cost -> Keyword.Type.MoreThanMeetsTheEye (rewriteCost pairs cost)
-  -- CR 702.103a states its cost as part of the keyword too.
-  Keyword.Type.Bestow cost -> Keyword.Type.Bestow (rewriteCost pairs cost)
-  Keyword.Type.Mutate cost -> Keyword.Type.Mutate (rewriteCost pairs cost)
-  Keyword.Type.Fear -> keyword
-  Keyword.Type.Intimidate -> keyword
-  Keyword.Type.Morph (Morph.MkMorph cost variant) -> Keyword.Type.Morph (Morph.MkMorph (rewriteCost pairs cost) variant)
-  Keyword.Type.Entwine cost -> Keyword.Type.Entwine (rewriteCost pairs cost)
-  -- CR 702.120a states its cost as part of the keyword too.
-  Keyword.Type.Escalate cost -> Keyword.Type.Escalate (rewriteCost pairs cost)
-  -- CR 702.27a states its cost as part of the keyword too.
-  Keyword.Type.Buyback cost -> Keyword.Type.Buyback (rewriteCost pairs cost)
-  -- CR 702.45a's N is a number and not a word, so CR 612.2 has nothing to swap.
-  Keyword.Type.Bushido _ -> keyword
-  -- CR 702.46a's N is a number and not a word, and "Spirit" is rule 702.46a's
-  -- word, not the card's, so CR 612.2 has nothing to swap (CR 702.1; Glamerdye's
-  -- ruling of 2008-08-01).
-  Keyword.Type.Soulshift _ -> keyword
-  Keyword.Type.Dredge _ -> keyword
-  -- CR 702.104a's N is a number and not a word, so CR 612.2 has nothing to swap.
-  Keyword.Type.Tribute _ -> keyword
-  -- CR 702.54a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- "+1/+1 counter" is the rule's own noun and no card prints it.
-  Keyword.Type.Bloodthirst _ -> keyword
-  -- CR 702.61a names no word CR 612.2 can swap: "mana ability" is CR 605.1a's
-  -- own classification and "the stack" is a zone.
-  Keyword.Type.SplitSecond -> keyword
-  -- CR 702.62a states a cost, so rewriteCost reaches it as flashback's does. The
-  -- N is a number and not a word, and "time counter" is the rule's own noun.
-  Keyword.Type.Suspend payload -> Keyword.Type.Suspend (fmap (\(Suspend.MkSuspend n cost) -> Suspend.MkSuspend n (rewriteCost pairs cost)) payload)
-  -- CR 702.77a states a cost, so rewriteCost reaches it as flashback's does. The
-  -- N is a number and not a word, and "+1/+1 counter" is in the ability
-  -- Parun.Engine.Keyword.reinforce mints rather than in this value.
-  Keyword.Type.Reinforce (Reinforce.MkReinforce n cost) -> Keyword.Type.Reinforce (Reinforce.MkReinforce n (rewriteCost pairs cost))
-  -- CR 702.43a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- "+1/+1 counter" is the rule's own noun and no card prints it.
-  Keyword.Type.Modular _ -> keyword
-  Keyword.Type.Sunburst -> keyword
-  -- CR 702.63a's N is a number and not a word -- and rule 702.63b's is absent
-  -- altogether -- so CR 612.2 has nothing to swap here. "Time counter" is the
-  -- rule's own noun; where a card does print it (Tidewalker) it rides that card's
-  -- own entry rewrite and its CDA rather than this value.
-  Keyword.Type.Vanishing _ -> keyword
-  -- CR 702.32a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- "fade counter" is in the replacement and the ability Parun.Engine.Keyword mints
-  -- rather than in this value.
-  Keyword.Type.Fading _ -> keyword
-  -- CR 702.68a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- the bonus is in the ability Parun.Engine.Keyword.frenzy mints.
-  Keyword.Type.Frenzy _ -> keyword
-  -- CR 702.58a's and CR 702.64a's Ns are numbers too -- a count of counters and
-  -- an amount of damage -- so CR 612.2 finds no word in either to swap.
-  Keyword.Type.Graft _ -> keyword
-  Keyword.Type.Absorb _ -> keyword
-  Keyword.Type.Poisonous _ -> keyword
-  -- CR 702.72a's [object] is a printed word, so CR 612.2 swaps inside it: under
-  -- "Merfolk becomes Goblin" Wanderwine Prophets champions a Goblin, and the
-  -- entry ability Parun.Engine.Keyword.championEnters mints reads the rewritten
-  -- quality.
-  Keyword.Type.Champion quality -> Keyword.Type.Champion (rewrite pairs quality)
-  Keyword.Type.Offering quality -> Keyword.Type.Offering (rewrite pairs quality)
-  Keyword.Type.Renown _ -> keyword
-  -- CR 702.85a is payload-free, so CR 612.2 has nothing to swap; the walk's
-  -- nonland filter is in the ability Parun.Engine.Keyword.cascade mints.
-  Keyword.Type.Cascade -> keyword
-  -- CR 702.60a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- the same-name filter its minted ability carries names no word either -- it
-  -- reads the source's own name (Parun.Engine.Keyword.ripple).
-  Keyword.Type.Ripple _ -> keyword
-  -- CR 702.40a is payload-free too.
-  Keyword.Type.Storm -> keyword
-  -- CR 702.69a is payload-free as well, and CR 702.78a's creatures are in the
-  -- cost Parun.Engine.Keyword.conspireCost mints.
-  Keyword.Type.Gravestorm -> keyword
-  Keyword.Type.Conspire -> keyword
-  -- CR 702.153a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- the creature it names is in the cost Parun.Engine.Keyword.casualtyCost mints.
-  Keyword.Type.Casualty _ -> keyword
-  -- CR 702.166a is payload-free and CR 702.194a's N is a number, so CR 612.2 has
-  -- nothing to swap in either; the permanents they name are in the costs
-  -- Parun.Engine.Keyword.bargainCost and .teamworkCost mint.
-  Keyword.Type.Bargain -> keyword
-  Keyword.Type.Teamwork _ -> keyword
-  -- CR 702.188a's and CR 702.190a's costs, flashback's shape: CR 612.2 swaps
-  -- whatever a component of the PRINTED cost names. The creature each rule's own
-  -- return names is not there to swap -- Parun.Engine.Keyword.plainAlternativeCosts
-  -- appends that component when the cost is offered, off the rule rather than off
-  -- the card.
-  Keyword.Type.WebSlinging cost -> Keyword.Type.WebSlinging (rewriteCost pairs cost)
-  Keyword.Type.Sneak cost -> Keyword.Type.Sneak (rewriteCost pairs cost)
-  -- CR 702.86a's N is a number and not a word, so CR 612.2 has nothing to swap.
-  Keyword.Type.Annihilator _ -> keyword
-  -- CR 702.181a's and CR 702.189a's N is a number, or a count whose Filter the
-  -- CARD writes (Avenger of the Fallen's creature cards), so CR 612.2 swaps
-  -- whatever word that Filter names. Mobilize's "red Warrior" is rule
-  -- 702.181a's text, not the card's, so no swap reaches it (CR 702.1), and
-  -- firebending's {R} is a mana symbol.
-  Keyword.Type.Mobilize n -> Keyword.Type.Mobilize (rewriteKeywordCount pairs n)
-  Keyword.Type.Firebending n -> Keyword.Type.Firebending (rewriteKeywordCount pairs n)
-  -- CR 702.75a's N is a number and not a word, so CR 612.2 has nothing to swap;
-  -- the look and the exile are in the ability Parun.Engine.Keyword.hideaway mints.
-  Keyword.Type.Hideaway _ -> keyword
-  Keyword.Type.Infect -> keyword
-  Keyword.Type.Wither -> keyword
-  -- CR 702.82c's [quality] is a Filter the CARD writes (Caprichrome's artifacts),
-  -- so CR 612.2 swaps whatever word it names. Rule 702.82a's bare "creatures" is
-  -- Nothing here and in the row Parun.Engine.Keyword mints instead, and the count
-  -- beside it is a number rather than a word.
-  Keyword.Type.Devour devour -> Keyword.Type.Devour devour {Devour.quality = fmap (rewrite pairs) (Devour.quality devour)}
-  -- CR 702.38a's payload is a count too, and its "share a creature type with
-  -- it" names no word at all: the types are the entering object's own, which CR
-  -- 612.1 reaches by changing that object rather than this keyword.
-  Keyword.Type.Amplify _ -> keyword
-  Keyword.Type.Exalted -> keyword
-  -- CR 702.92a, 702.163a and 702.182a are nullary: their creature-type words
-  -- (Germ, Rebel, Hero) are the rule's, in the token Parun.Engine.Keyword mints,
-  -- and no CR 612.2 text change reaches them (CR 702.1).
-  Keyword.Type.LivingWeapon -> keyword
-  Keyword.Type.ForMirrodin -> keyword
-  Keyword.Type.JobSelect -> keyword
-  -- CR 702.172a and 702.183a are nullary: what they name is the card's mode
-  -- selection and CR 700.2h's per-mode costs, and a cost holds no word CR 612.2
-  -- swaps.
-  Keyword.Type.Spree -> keyword
-  Keyword.Type.Tiered -> keyword
-  Keyword.Type.Mentor -> keyword
-  -- CR 702.135a's N is a number and not a word, and "white and black Spirit" is
-  -- rule 702.135a's text, not the card's, so CR 612.2 has nothing to swap
-  -- (CR 702.1).
-  Keyword.Type.Afterlife _ -> keyword
-  Keyword.Type.Provoke -> keyword
-  Keyword.Type.Training -> keyword
-  Keyword.Type.BattleCry -> keyword
-  Keyword.Type.Evolve -> keyword
-  Keyword.Type.Exploit -> keyword
-  Keyword.Type.Dethrone -> keyword
-  Keyword.Type.HiddenAgenda -> keyword
-  Keyword.Type.Fuse -> keyword
-  -- CR 702.6a's equip cost, level up's and outlast's shape, plus CR 702.6c's
-  -- quality, which is a Filter and so descends the way cycling's does. CR
-  -- 702.6e's target names no word CR 612.1 swaps; CR 702.67a's fortify cost is
-  -- the cost half alone.
-  Keyword.Type.Equip (Equip.MkEquip cost criterion onto) -> Keyword.Type.Equip (Equip.MkEquip (rewriteCost pairs cost) (fmap (rewrite pairs) criterion) onto)
-  Keyword.Type.Fortify cost -> Keyword.Type.Fortify (rewriteCost pairs cost)
-  Keyword.Type.AuraSwap cost -> Keyword.Type.AuraSwap (rewriteCost pairs cost)
-  -- CR 702.49a's ninjutsu cost, fortify's shape: a Cost whose components can
-  -- carry a Filter, and rule 702.49a's own return-an-unblocked-attacker component
-  -- is minted rather than written, so nothing of the engine's descends here.
-  Keyword.Type.Ninjutsu (Ninjutsu.MkNinjutsu cost variant) -> Keyword.Type.Ninjutsu (Ninjutsu.MkNinjutsu (rewriteCost pairs cost) variant)
-  Keyword.Type.CumulativeUpkeep cost -> Keyword.Type.CumulativeUpkeep (rewriteCost pairs cost)
-  Keyword.Type.Echo cost -> Keyword.Type.Echo (rewriteCost pairs cost)
-  Keyword.Type.LevelUp cost -> Keyword.Type.LevelUp (rewriteCost pairs cost)
-  Keyword.Type.Unearth cost -> Keyword.Type.Unearth (rewriteCost pairs cost)
-  Keyword.Type.Embalm cost -> Keyword.Type.Embalm (rewriteCost pairs cost)
-  Keyword.Type.Eternalize cost -> Keyword.Type.Eternalize (rewriteCost pairs cost)
-  Keyword.Type.Outlast cost -> Keyword.Type.Outlast (rewriteCost pairs cost)
-  Keyword.Type.Prowess -> keyword
-  Keyword.Type.Extort -> keyword
-  Keyword.Type.Increment -> keyword
-  Keyword.Type.Menace -> keyword
-  -- CR 702.73a names no word either: "every creature type" is CR 205.3m's
-  -- whole family, so a CR 612.2 swap inside it has nothing to rewrite.
-  Keyword.Type.Changeling -> keyword
-  Keyword.Type.Devoid -> keyword
-  -- CR 702.115a is payload-free, so it holds no word to swap: the library it
-  -- names is "their" own, written into the rule rather than into the keyword.
-  Keyword.Type.Ingest -> keyword
-  -- CR 702.116a is payload-free too, and the seats its loop names are the
-  -- rule's own words rather than the keyword's.
-  Keyword.Type.Myriad -> keyword
-  -- CR 702.122a's N is a number and not a word, so CR 612.2 has nothing to swap.
-  Keyword.Type.Crew _ -> keyword
-  Keyword.Type.Saddle _ -> keyword
-  Keyword.Type.Fabricate _ -> keyword
-  Keyword.Type.Riot -> keyword
-  Keyword.Type.Escape cost -> Keyword.Type.Escape (rewriteCost pairs cost)
-  Keyword.Type.Evoke cost -> Keyword.Type.Evoke (rewriteCost pairs cost)
-  Keyword.Type.Dash cost -> Keyword.Type.Dash (rewriteCost pairs cost)
-  Keyword.Type.Blitz cost -> Keyword.Type.Blitz (rewriteCost pairs cost)
-  Keyword.Type.Reconfigure cost -> Keyword.Type.Reconfigure (rewriteCost pairs cost)
-  Keyword.Type.Warp cost -> Keyword.Type.Warp (rewriteCost pairs cost)
-  Keyword.Type.Disturb cost -> Keyword.Type.Disturb (rewriteCost pairs cost)
-  Keyword.Type.Harmonize cost -> Keyword.Type.Harmonize (rewriteCost pairs cost)
-  Keyword.Type.BeamMeUp cost -> Keyword.Type.BeamMeUp (rewriteCost pairs cost)
-  Keyword.Type.Cleave cost -> Keyword.Type.Cleave (rewriteCost pairs cost)
-  Keyword.Type.Overload cost -> Keyword.Type.Overload (rewriteCost pairs cost)
-  Keyword.Type.Awaken cost -> Keyword.Type.Awaken (rewriteCost pairs cost)
-  -- CR 702.119b's quality rides the payload beside the cost, so both halves
-  -- take rule 612.2's swap.
-  Keyword.Type.Emerge (Emerge.MkEmerge cost criterion) -> Keyword.Type.Emerge (Emerge.MkEmerge (rewriteCost pairs cost) (fmap (rewrite pairs) criterion))
-  Keyword.Type.Surge cost -> Keyword.Type.Surge (rewriteCost pairs cost)
-  Keyword.Type.Spectacle cost -> Keyword.Type.Spectacle (rewriteCost pairs cost)
-  Keyword.Type.Prowl cost -> Keyword.Type.Prowl (rewriteCost pairs cost)
-  Keyword.Type.Freerunning cost -> Keyword.Type.Freerunning (rewriteCost pairs cost)
-  Keyword.Type.Impending (Impending.MkImpending n cost) -> Keyword.Type.Impending (Impending.MkImpending n (rewriteCost pairs cost))
-  Keyword.Type.Unleash -> keyword
-  -- CR 702.150a names no word CR 612.2 can swap: it is written about loyalty
-  -- counters and Phyrexian mana symbols, both the rules' own vocabulary.
-  Keyword.Type.Compleated -> keyword
-  Keyword.Type.ReadAhead -> keyword
-  Keyword.Type.Demonstrate -> keyword
-  Keyword.Type.Daybound -> keyword
-  Keyword.Type.Nightbound -> keyword
-  -- CR 702.147a names no word CR 612.2 can swap: "end of combat" is the rules'
-  -- own step and the ability it arms is written in Parun.Engine.Keyword.
-  Keyword.Type.Decayed -> keyword
-  -- CR 719.1's inset frame is a mana cost and a printed box: no word for CR
-  -- 612.1 to change.
-  Keyword.Type.Prototype _ -> keyword
-  Keyword.Type.Toxic _ -> keyword
-  -- CR 702.165a names no word CR 612.2 can swap: the count is a number, and
-  -- printedAbove is compared against the COPIABLE keywords (CR 707.2), which no
-  -- text change reaches, so it is left as written.
-  Keyword.Type.Backup _ -> keyword
-  -- CR 702.168a states a cost, so rewriteCost reaches it as morph's does. The
-  -- ward {2} rule 702.168b lists is NOT reached from here: that keyword is on the
-  -- face-down object's own characteristics (Parun.Types.FaceDownCharacteristics),
-  -- and a text-changing effect that reached this ability would find no word in it
-  -- to swap either.
-  Keyword.Type.Disguise cost -> Keyword.Type.Disguise (rewriteCost pairs cost)
-  -- CR 702.170a states a cost, so rewriteCost reaches it as flashback's does.
-  Keyword.Type.Plot cost -> Keyword.Type.Plot (rewriteCost pairs cost)
-  -- CR 702.56a states a cost, so rewriteCost reaches it as flashback's does.
-  Keyword.Type.Replicate cost -> Keyword.Type.Replicate (rewriteCost pairs cost)
-  Keyword.Type.Recover cost -> Keyword.Type.Recover (rewriteCost pairs cost)
-  Keyword.Type.Ravenous -> keyword
-  Keyword.Type.Squad cost -> Keyword.Type.Squad (rewriteCost pairs cost)
-  Keyword.Type.Offspring cost -> Keyword.Type.Offspring (rewriteCost pairs cost)
-  -- CR 612.2a: "a tapped Fish" and "an Octopus" print a creature type that names
-  -- the token the gift makes, so the swap reaches it (docs/decisions.md, "What a
-  -- gift does after a text change swaps its creature type").
-  Keyword.Type.Gift (Gift.TappedFish subtype) -> Keyword.Type.Gift (Gift.TappedFish (TextWord.subtypeAfter pairs subtype))
-  Keyword.Type.Gift (Gift.Octopus subtype) -> Keyword.Type.Gift (Gift.Octopus (TextWord.subtypeAfter pairs subtype))
-  Keyword.Type.Gift Gift.Card -> keyword
-  Keyword.Type.Gift Gift.Food -> keyword
-  Keyword.Type.Gift Gift.Treasure -> keyword
-  -- CR 702.143a states a cost too, so it is reached the same way. A cost read
-  -- off the card's own mana cost prints no word to swap.
-  Keyword.Type.Foretell (ForetellCost.Stated cost) -> Keyword.Type.Foretell (ForetellCost.Stated (rewriteCost pairs cost))
-  Keyword.Type.Foretell (ForetellCost.ManaCostReducedBy _) -> keyword
-  -- CR 702.139a states a CONDITION rather than a cost, so `rewrite` reaches it
-  -- as landwalk's criterion is reached. No text-changing effect can be in play
-  -- when it is read (CR 103.2b runs before the game begins), so this descent is
-  -- structural rather than something a board exercises.
-  Keyword.Type.Companion (CompanionCondition.EachCard condition) -> Keyword.Type.Companion (CompanionCondition.EachCard (rewrite pairs condition))
-  Keyword.Type.Companion (CompanionCondition.CardsOverMinimum _) -> keyword
-  Keyword.Type.Companion (CompanionCondition.DifferentNames condition) -> Keyword.Type.Companion (CompanionCondition.DifferentNames (rewrite pairs condition))
-  Keyword.Type.Companion (CompanionCondition.SharedCardType condition) -> Keyword.Type.Companion (CompanionCondition.SharedCardType (rewrite pairs condition))
-  -- CR 702.94a states a cost too, so it is reached the same way.
-  Keyword.Type.Miracle cost -> Keyword.Type.Miracle (rewriteCost pairs cost)
-  Keyword.Type.Ascend -> keyword
-  Keyword.Type.Storied -> keyword
-  -- CR 702.132a names no quality and carries no cost: the mana it speaks about
-  -- is the spell's own total cost, so CR 612.2 has nothing here to swap.
-  Keyword.Type.Assist -> keyword
-  -- CR 702.177a names no quality and carries no cost: what it adds is a rider on
-  -- the ability printed after it, so CR 612.2 has nothing here to swap.
-  Keyword.Type.Exhaust -> keyword
-  -- CR 702.142a, exhaust's reason one rule over: what boast adds is a rider on
-  -- the ability printed after it, so CR 612.2 has nothing here to swap.
-  Keyword.Type.Boast -> keyword
-  Keyword.Type.Forecast -> keyword
-  Keyword.Type.PowerUp -> keyword
-  -- CR 717.2 names no quality: the level is a number, so CR 612.2 has nothing
-  -- here to swap.
-  Keyword.Type.ClassLevel _ -> keyword
-  Keyword.Type.StartYourEngines -> keyword
-  -- CR 701.43d names no quality and carries no cost, so CR 612.2 has nothing here
-  -- to swap.
-  Keyword.Type.Exert -> keyword
-  Keyword.Type.Enlist -> keyword
-  Keyword.Type.Persist -> keyword
-  Keyword.Type.Undying -> keyword
-  Keyword.Type.Soulbond -> keyword
-  -- CR 702.184a's ability names "creature" and "charge counters", both the rules'
-  -- own vocabulary; the criterion is written in Parun.Engine.Keyword rather than
-  -- on the card, so CR 612.2 has no printed word here to swap.
-  Keyword.Type.Station -> keyword
-  Keyword.Type.UmbraArmor -> keyword
-  -- CR 702.51a and CR 702.126a name "creature", "artifact" and a mana symbol's
-  -- own color, and CR 702.66a names no quality at all -- all the rules' own
-  -- vocabulary, and the criteria they produce are written in Parun.Engine.Keyword
-  -- rather than on the card, so CR 612.2 has no printed word here to swap.
-  Keyword.Type.Epic -> keyword
-  Keyword.Type.Paradigm -> keyword
-  Keyword.Type.Cipher -> keyword
-  Keyword.Type.Convoke -> keyword
-  Keyword.Type.Delve -> keyword
-  Keyword.Type.Improvise -> keyword
-  -- CR 702.41a's [text] is a printed quality, so `rewrite` reaches it as
-  -- landwalk's criterion is reached. Affinity's reader,
-  -- Parun.Engine.Cost.selfReductions, takes the projected keywords, so the
-  -- rewritten quality is the one counted.
-  Keyword.Type.Affinity quality -> Keyword.Type.Affinity (rewrite pairs quality)
-  -- CR 702.125a counts OPPONENTS, so there is no printed word here to swap.
-  Keyword.Type.Undaunted -> keyword
-  -- CR 702.81a names "a land card", the rules' own vocabulary, and the criterion
-  -- is written in Parun.Engine.Cost rather than on the card -- so CR 612.2 has no
-  -- printed word here to swap.
-  Keyword.Type.Retrace -> keyword
-  -- CR 702.187b's cost, where there is one, is printed, so its components take the same descent
-  -- flashback's do.
-  Keyword.Type.Mayhem cost -> Keyword.Type.Mayhem (fmap (rewriteCost pairs) cost)
-  -- CR 702.35a's cost, where it is stated, is printed, so its components take
-  -- the same descent mayhem's do; the card's own mana cost names no word.
-  Keyword.Type.Madness (MadnessCost.Stated cost) -> Keyword.Type.Madness (MadnessCost.Stated (rewriteCost pairs cost))
-  Keyword.Type.Madness MadnessCost.OwnManaCost -> keyword
-  -- CR 702.88a takes no parameter and prints no cost, retrace's position: rule
-  -- 702.88a's exile, upkeep and free cast are all the rule's, so CR 612.2 has no
-  -- printed word here to swap.
-  Keyword.Type.Rebound -> keyword
-  -- CR 702.97a's and CR 702.141a's costs are printed, so their components take
-  -- the same descent embalm's does.
-  Keyword.Type.Scavenge cost -> Keyword.Type.Scavenge (rewriteCost pairs cost)
-  Keyword.Type.Encore cost -> Keyword.Type.Encore (rewriteCost pairs cost)
-  Keyword.Type.Transmute cost -> Keyword.Type.Transmute (rewriteCost pairs cost)
-  Keyword.Type.Transfigure cost -> Keyword.Type.Transfigure (rewriteCost pairs cost)
-  -- CR 702.167a's payload is not a bare Cost: its cost and
-  -- its [materials] criterion are both printed, so both halves descend.
-  Keyword.Type.Craft crafting ->
-    let materials = Craft.materials crafting
-        swapped = ExileMaterials.MkExileMaterials (ExileMaterials.count materials) (ExileMaterials.orMore materials) (rewrite pairs (ExileMaterials.whichObjects materials))
-     in Keyword.Type.Craft (Craft.MkCraft (rewriteCost pairs (Craft.cost crafting)) swapped)
-  -- CR 702.47a's [quality] and [cost] are both printed, so both halves descend,
-  -- craft's reason.
-  Keyword.Type.Splice splicing -> Keyword.Type.Splice (Splice.MkSplice (rewrite pairs (Splice.onto splicing)) (rewriteCost pairs (Splice.cost splicing)))
-
--- rewriteKeyword's descent into mobilize's, firebending's and ward's N: only a tally
--- carries a Filter, and its scope holds no word, as rewriteQuantity leaves
--- Count's.
-rewriteKeywordCount :: [(TextWord.TextWord, TextWord.TextWord)] -> KeywordCount.KeywordCount Keyword.Type.Keyword -> KeywordCount.KeywordCount Keyword.Type.Keyword
-rewriteKeywordCount pairs n = case n of
-  KeywordCount.Tally tally -> KeywordCount.Tally tally {KeywordTally.filter = rewrite pairs (KeywordTally.filter tally)}
-  KeywordCount.Fixed _ -> n
-  KeywordCount.Power -> n
-  KeywordCount.PlayerCounters _ -> n
 
 -- CR 612.1's word swap inside a COST. CR 118.1 makes a cost "an action or payment
 -- necessary to take another action", and the one on an activated ability is

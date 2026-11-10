@@ -733,7 +733,7 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: No effect, since CR 702.174b defines the effect by the [something]
   listed and nothing defines this one: it makes a legal text change disarm the
   keyword.
-- **Site**: `Parun.Engine.Filter.rewriteKeyword`'s Gift arms, proved by
+- **Site**: `Parun.Engine.Filter.rewriteKeyword`'s `keywordSubtype` visitor, proved by
   `Parun.CounterspellSpec`'s "CR 612.2a an Evolution swapping Fish for Elf on a
   promised Into the Flood Maw gives bob a tapped 1/1 blue Elf Token".
 - **Issue**: #4819.
