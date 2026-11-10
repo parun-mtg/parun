@@ -567,9 +567,9 @@ rewriteManaProduction pairs production = case production of
 -- Coffers; an entry rider's keys by Parun.CounterspellSpec's Synthetic Warded
 -- Homecoming; a floating replacement by its evolved Moonmist; a counter kind
 -- by its Synthetic Warding Sigil and Synthetic Erode the Warding; the shields'
--- recipient and source Filters by Parun.ReplacementSpec's "Synthetic Warding
--- Chant (CR 612.1)", "Pack Leader (CR 611.2c)" and "Synthetic Turn the Blade
--- (CR 612.1)". Every
+-- recipient and source Filters by data/scenarios/prevention's CR 612.1
+-- scenarios (Synthetic Warding Chant, Pack Leader, the redirection's chosen
+-- source). Every
 -- other position is a regression fence: no card in data/cards/ writes a word
 -- a text changer's family (Parun.Types.WordFamily) can swap there.
 rewriteEffect :: [(TextWord.TextWord, TextWord.TextWord)] -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)

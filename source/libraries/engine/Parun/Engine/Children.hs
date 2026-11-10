@@ -582,7 +582,7 @@ data EffectChildren card ability f = MkEffectChildren
     onCard :: card -> f card,
     -- | A card a conjure names by its Oracle reference (CR 108.1).
     onConjured :: card -> f card,
-    -- | The combined back face a meld puts onto the battlefield (CR 712.4).
+    -- | The combined back face a meld puts onto the battlefield (CR 713.1a).
     onMelded :: card -> f card,
     -- | An ability this effect quotes or grants.
     onAbility :: ability -> f ability,
