@@ -3422,6 +3422,7 @@ the-stasis-coffin
 the-super-hero-civil-war
 the-ten-rings
 the-theorist-jace-beleren
+the-thing-ben-grimm
 the-unagi-of-kyoshi-island
 the-underworld-cookbook
 the-valeyard
