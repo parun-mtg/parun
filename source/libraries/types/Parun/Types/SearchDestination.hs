@@ -8,7 +8,7 @@ module Parun.Types.SearchDestination where
 -- card behind them. This type names the WHOLE instruction, one arm per sentence.
 data SearchDestination
   = -- | Nature's Lore's "put that card onto the battlefield", with no rider on
-    -- how it enters.
+    -- how it enters beyond the counters Parun.Types.Search.counters names.
     --
     -- The arm is named for the sentence rather than for the state it lands in:
     -- the card says only where the found card goes, and CR 110.5b is what makes

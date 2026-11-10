@@ -593,7 +593,7 @@ moveMana settle resolving source controller legal (MoveMana.MkMoveMana fromRef t
   Mana.moveMana settle (Common.apnapPlayersOf fromRef legal resolving source controller gs) (foldMap (\ref -> Common.apnapPlayersOf ref legal resolving source controller gs) toRef)
 
 search :: Game () -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
-search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination subject foundSlot handSlot differentIn exactly andOr) =
+search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot differentIn exactly andOr) =
   -- CR 701.23a: match each candidate through its own CR 613 projection --
   -- rule 613.1 names no zone, so a card in any of the searched zones is folded
   -- exactly as a permanent is, and CR 208.2a's characteristic-defining power
@@ -713,6 +713,9 @@ search settle performManaAbility runSubgame resolving source controller legal (S
             -- by what the searched zones hold, which is CR 701.23a's "all cards
             -- in that zone".
             cap = fmap evaluateCap quantity
+            -- CR 608.2h: what a found card enters with (Search.counters, CR
+            -- 122.6) is determined once, on the board the cap reads.
+            entering = Common.freezeCounters (effectViewOf resolving source legal gs0) (effectContext gs0 resolving controller source legal (slotBindings resolving gs0)) gs0 resolving source counters
             evaluateCap q = case Quantity.evaluateFor (effectViewOf resolving source legal gs0) (effectContext gs0 resolving controller source legal (slotBindings resolving gs0)) gs0 resolving source q of
               Just n | n > 0 -> Integer.toNaturalSaturating n
               _ -> 0
@@ -971,7 +974,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
             present <- State.gets (`stillThere` oid)
             moved <- case (present, exiler) of
               (False, _) -> pure []
-              (True, Nothing) -> Common.putFound settle resolving before searcher host destination oid
+              (True, Nothing) -> Common.putFound settle resolving before searcher host destination entering oid
               (True, Just agent) -> [] <$ (Common.exileFoundFor agent =<< Event.changeZoneInBatchReturning settle before oid Zone.Exile)
             pure (moved, if List.elem oid (Game.zoneMembers Zone.Hand owner before) then moved else [])
           -- CR 400.11b: a card found outside the game is brought in rather

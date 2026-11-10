@@ -1086,6 +1086,7 @@ searched context s
         && Search.zones s == Set.singleton Zone.Library
         && not (Search.outsideTheGame s)
         && not (Search.upTo s)
+        && Map.null (Search.counters s)
         && Maybe.isNothing (Search.subject s)
         && Maybe.isNothing (Search.slot s)
         && Maybe.isNothing (Search.handSlot s)

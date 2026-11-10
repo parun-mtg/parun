@@ -3708,6 +3708,7 @@ vine-snare
 vinelasher-adept
 violent-echoes
 viral-spawning
+vision-quest
 visions
 visions-of-beyond
 visions-of-villainy

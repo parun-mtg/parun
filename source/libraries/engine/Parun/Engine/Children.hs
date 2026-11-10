@@ -1,5 +1,6 @@
 module Parun.Engine.Children where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
@@ -761,7 +762,7 @@ effectChildren c effect = case effect of
   Effect.AddMana addition -> fmap Effect.AddMana (onManaAddition c addition)
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities who filter_) -> fmap Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities <$> onPlayer c who <*> onFilter c filter_)
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> fmap Effect.MoveMana (MoveMana.MkMoveMana <$> onPlayer c from <*> traverse (onPlayer c) to)
-  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination subject named handSlot differentIn exactly andOr) ->
+  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot differentIn exactly andOr) ->
     fmap
       Effect.Search
       ( Search.MkSearch
@@ -774,6 +775,7 @@ effectChildren c effect = case effect of
           <*> traverse (onFilter c) descriptions
           <*> pure upTo
           <*> pure destination
+          <*> fmap Map.fromList (traverse (\(kind, count) -> (,) <$> onCounterKind c kind <*> onQuantity c count) (Map.toList counters))
           <*> traverse (onSlot c) subject
           <*> traverse (onSlot c) named
           <*> traverse (onSlot c) handSlot

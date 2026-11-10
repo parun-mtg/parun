@@ -1800,6 +1800,7 @@ cycling cost searchFor =
                 -- the search under CR 701.23b anyway, so this value is unobservable.
                 Search.upTo = False,
                 Search.destination = SearchDestination.RevealThenHand,
+                Search.counters = Map.empty,
                 -- CR 702.29e's destination attaches nothing and its filter asks no
                 -- CR 701.3a question, so no object is fixed for one to be about.
                 Search.subject = Nothing,
@@ -1988,6 +1989,7 @@ searchForSameManaValue cost filter_ destination =
               -- cycling's reading.
               Search.upTo = False,
               Search.destination = destination,
+              Search.counters = Map.empty,
               -- Neither destination attaches anything and neither filter asks a
               -- CR 701.3a question, so no object is fixed for one to be about.
               Search.subject = Nothing,
@@ -7376,6 +7378,7 @@ partnerWith name =
               -- searchForSameManaValue's reading.
               Search.upTo = False,
               Search.destination = SearchDestination.RevealThenHand,
+              Search.counters = Map.empty,
               -- Nothing attaches and the filter asks no CR 701.3a question.
               Search.subject = Nothing,
               Search.slot = Nothing,

@@ -1937,15 +1937,27 @@ freezeRiders ::
   EntryRiders.EntryRiders Quantity.Type.Quantity ability ->
   EntryRiders.EntryRiders Natural ability
 freezeRiders viewOf context gs resolving source riders =
-  let frozen quantity = case Quantity.evaluateFor viewOf context gs resolving source quantity of
-        Just n | n > 0 -> Just (Integer.toNaturalSaturating n)
-        _ -> Nothing
-   in riders
-        { EntryRiders.counters = Map.mapMaybe frozen (EntryRiders.counters riders),
-          -- CR 608.2h / 611.2d, ModifyTarget's freeze: a quantity that cannot
-          -- be evaluated now leaves its effect unstored.
-          EntryRiders.characteristics = Seq.fromList (Maybe.mapMaybe (Projection.freezeQuantities viewOf gs resolving source context) (Foldable.toList (EntryRiders.characteristics riders)))
-        }
+  riders
+    { EntryRiders.counters = freezeCounters viewOf context gs resolving source (EntryRiders.counters riders),
+      -- CR 608.2h / 611.2d, ModifyTarget's freeze: a quantity that cannot
+      -- be evaluated now leaves its effect unstored.
+      EntryRiders.characteristics = Seq.fromList (Maybe.mapMaybe (Projection.freezeQuantities viewOf gs resolving source context) (Foldable.toList (EntryRiders.characteristics riders)))
+    }
+
+-- freezeRiders' counts alone, for a carrier of entry counters that is not an
+-- EntryRiders: Search.counters.
+freezeCounters ::
+  (ObjectId -> Maybe Filter.View) ->
+  Filter.Context ->
+  GameState ->
+  ObjectId ->
+  ObjectId ->
+  Map.Map kind Quantity.Type.Quantity ->
+  Map.Map kind Natural
+freezeCounters viewOf context gs resolving source =
+  Map.mapMaybe $ \quantity -> case Quantity.evaluateFor viewOf context gs resolving source quantity of
+    Just n | n > 0 -> Just (Integer.toNaturalSaturating n)
+    _ -> Nothing
 
 -- The amount ONE RECIPIENT of a per-player instruction reads, which need not be
 -- the amount the rest of the table reads (Stronghold Discipline). Every opcode
@@ -4220,14 +4232,15 @@ differingValues :: Set.Set DifferentIn.DifferentIn -> GameState -> ObjectId -> M
 differingValues axes gs oid = Event.differingOf axes (Projection.viewOfObject oid gs)
 
 -- One found card's move, a member of the search's batch whose board is `asOf`
--- (Event.changeZoneInBatch).
-putFound :: Game () -> ObjectId -> GameState -> PlayerId -> Maybe ObjectId -> SearchDestination.SearchDestination -> ObjectId -> Game [ObjectId]
-putFound settle resolving asOf searcher subject destination cardId = case destination of
+-- (Event.changeZoneInBatch). `counters` is Search.counters, frozen: what a card
+-- put onto the battlefield enters with (CR 122.6).
+putFound :: Game () -> ObjectId -> GameState -> PlayerId -> Maybe ObjectId -> SearchDestination.SearchDestination -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
+putFound settle resolving asOf searcher subject destination counters cardId = case destination of
   -- Nature's Lore's "put that card onto the battlefield", and Evolving Wilds'
   -- "put it onto the battlefield tapped": CR 110.5b's default, or the card's
   -- own rider, is the one difference between the two arms.
-  SearchDestination.Battlefield -> putOntoBattlefield settle asOf searcher TapState.Untapped cardId
-  SearchDestination.BattlefieldTapped -> putOntoBattlefield settle asOf searcher TapState.Tapped cardId
+  SearchDestination.Battlefield -> putOntoBattlefield settle asOf searcher TapState.Untapped counters cardId
+  SearchDestination.BattlefieldTapped -> putOntoBattlefield settle asOf searcher TapState.Tapped counters cardId
   -- The reveal comes FIRST, in the card's own order, and CR 701.20b makes that an
   -- order rather than decoration: revealing does not move the card. The two lines
   -- do not commute -- swapped, CR 400.7 has already ceased `cardId` and the
@@ -4245,7 +4258,7 @@ putFound settle resolving asOf searcher subject destination cardId = case destin
   -- ran the search -- the same value its filter asked CR 701.3a about, so the
   -- offer and the move cannot name different hosts. A subject naming no object
   -- is attachFound's undefined host.
-  SearchDestination.BattlefieldAttached -> attachFound settle asOf searcher subject cardId
+  SearchDestination.BattlefieldAttached -> attachFound settle asOf searcher subject counters cardId
   -- The arm above with the card's second sentence added: "If this creature is
   -- still on the battlefield ... Otherwise, reveal the Aura card and put it into
   -- your hand."
@@ -4266,7 +4279,7 @@ putFound settle resolving asOf searcher subject destination cardId = case destin
   SearchDestination.BattlefieldAttachedOrHand -> do
     gs <- State.get
     if maybe False (\host -> Set.member host (GameState.battlefield gs)) subject
-      then attachFound settle asOf searcher subject cardId
+      then attachFound settle asOf searcher subject counters cardId
       else do
         -- CR 701.20b makes the order matter, for RevealThenHand's reason above:
         -- swapped, CR 400.7 has already ceased `cardId` and the reveal shows
@@ -4317,16 +4330,16 @@ putFound settle resolving asOf searcher subject destination cardId = case destin
 -- zone" for an Aura, and CR 301.5e / 303.4h's unattached entry for anything
 -- else: Danitha, Benalia's Hope's Equipment with Danitha gone, which the attach
 -- scenario named for CR 301.5e proves.
-attachFound :: Game () -> GameState -> PlayerId -> Maybe ObjectId -> ObjectId -> Game [ObjectId]
-attachFound settle asOf searcher host cardId = do
+attachFound :: Game () -> GameState -> PlayerId -> Maybe ObjectId -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
+attachFound settle asOf searcher host counters cardId = do
   gs <- State.get
   case host >>= \h -> Attach.entryAttachmentFor searcher cardId (Recipient.ToObject h) gs of
     Nothing
       | Set.member Subtype.Aura (Projection.subtypesOf cardId gs) -> pure []
-      | otherwise -> putOntoBattlefield settle asOf searcher TapState.Untapped cardId
+      | otherwise -> putOntoBattlefield settle asOf searcher TapState.Untapped counters cardId
     Just seed ->
       Foldable.toList
-        <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue (Just seed) TapState.Untapped Map.empty (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
+        <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue (Just seed) TapState.Untapped counters (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
 
 -- Put a found card onto the battlefield, untapped or tapped as the card says.
 --
@@ -4338,10 +4351,10 @@ attachFound settle asOf searcher host cardId = do
 -- The tap state rides the move rather than a write after it, for CR 603.2e's
 -- reason: this is the permanent ENTERING tapped, and an ability that triggers
 -- when a permanent "becomes tapped" doesn't trigger if it enters in that state.
-putOntoBattlefield :: Game () -> GameState -> PlayerId -> TapState.TapState -> ObjectId -> Game [ObjectId]
-putOntoBattlefield settle asOf searcher tapped cardId =
+putOntoBattlefield :: Game () -> GameState -> PlayerId -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> ObjectId -> Game [ObjectId]
+putOntoBattlefield settle asOf searcher tapped counters cardId =
   Foldable.toList
-    <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue Nothing tapped Map.empty (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
+    <$> Event.changeZoneAttaching settle (Just asOf) Set.empty cardId Zone.Battlefield LibraryPosition.defaultValue Nothing tapped counters (Just searcher) Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
 
 -- Write a whole new order back to a player's library: CR 701.22a's scry, CR
 -- 701.25a's surveil and CR 701.29a's fateseal, CR 401.4's arrangement and CR
