@@ -3536,6 +3536,7 @@ undead-servant
 under-construction-skyscraper
 undercity
 undercover-operative
+undercover-skrull
 underdark-rift
 undergrowth-scavenger
 underworld-dreams
@@ -3550,6 +3551,7 @@ unflinching-hortimancer
 unholy-indenture
 unleash-fury
 unlicensed-hearse
+unliving-legionnaire
 unlucky-witness
 unsettled-mariner
 unstable-shapeshifter
@@ -3612,6 +3614,7 @@ vigorspore-wurm
 vile-entomber
 vilis-broker-of-blood
 village-rites
+villainous-hideout
 villainous-ogre
 vindictive-triumph
 vine-snare
@@ -3620,9 +3623,11 @@ violent-echoes
 viral-spawning
 visions
 visions-of-beyond
+visions-of-villainy
 vitalizing-cascade
 vito-thorn-of-the-dusk-rose
 vitu-ghazi-inspector
+viv-vision-teen-synthezoid
 vivien-arkbow-ranger
 vivien-natures-avenger
 vivien-reid
@@ -3641,6 +3646,7 @@ voidpouncer
 volatile-rift
 volcanic-eruption
 volcanic-salvo
+volcanic-villain
 volraths-curse
 volraths-shapeshifter
 volt-charge
@@ -3654,6 +3660,7 @@ vow-to-erebor
 vraska-soul-of-stone
 vraska-the-cutting-glare
 vulshok-battlemaster
+wakandan-royal-guard
 wake-the-reflections
 wake-thrasher
 waker-of-waves
@@ -3669,6 +3676,7 @@ wand-of-denial
 wanderguard-sentry
 wanderwine-prophets
 war-falcon
+war-machine-legacy-of-iron
 war-room
 warbreak-trumpeter
 warden-of-evos-isle
@@ -3703,9 +3711,11 @@ way-of-the-paradox
 way-of-the-pyromancer
 way-of-the-warlord
 way-of-the-wildspeaker
+we-say-thee-nay
 wear-tear
 weathered-wayfarer
 weaver-of-lies
+web-up
 wee-champion
 wei-assassins
 weight-of-conscience
@@ -3715,6 +3725,7 @@ well-rested
 wheel-of-fortune
 wheel-of-sun-and-moon
 whim-of-volrath
+whiplash-vengeful-engineer
 whiplash-wordsmith-vicious-verse
 whippoorwill
 whirling-dervish
@@ -3728,6 +3739,7 @@ white-tiger-ava-ayala
 white-ward
 whtz-the-bibliophile
 wibbly-wobbly-timey-wimey
+wiccan-rising-magician
 wiccan-young-avenger
 wicker-picker
 wickersmiths-tools
@@ -3757,6 +3769,7 @@ winged-words
 wings-of-velis-vel
 winter-blast
 winter-orb
+winter-soldier-icy-assassin
 winter-tormented-loner
 wire-surgeons
 wishclaw-talisman
@@ -3787,6 +3800,7 @@ words-of-worship
 workhorse
 worldfire
 worldly-counsel
+worlds-within-worlds
 worldslayer
 wormfang-crab
 worms-of-the-earth
