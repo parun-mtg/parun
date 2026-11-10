@@ -2605,6 +2605,7 @@ library types
     Parun.Types.AbilityTriggered
     Parun.Types.AbilityView
     Parun.Types.AbilityWasActivated
+    Parun.Types.AbilityWord
     Parun.Types.Acquisition
     Parun.Types.ActingPermanent
     Parun.Types.Action

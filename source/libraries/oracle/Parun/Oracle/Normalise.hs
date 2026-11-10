@@ -2,13 +2,16 @@
 -- stamped text and what Parun.Oracle renders for it. Everything this absorbs
 -- goes unchecked, so it absorbs only what the DSL does not record: reminder
 -- text, the order of lines and of a line's comma-separated pieces, letter
--- case, and how the card names itself.
+-- case, and how the card names itself. 'withoutFlavorWords' absorbs, on the
+-- stamped side alone, one more thing the DSL does not record.
 module Parun.Oracle.Normalise where
 
 import qualified Control.Monad as Monad
 import qualified Data.Char as Char
 import qualified Data.List as List
+import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Parun.Types.AbilityWord as AbilityWord
 import qualified Parun.Types.CardName as CardName
 
 -- | Oracle text as a multiset of lowercase pieces: reminder text dropped (CR
@@ -73,3 +76,25 @@ withoutReminders = Text.pack . go (0 :: Int) . Text.unpack
       '(' : rest -> go (depth + 1) rest
       ')' : rest | depth > 0 -> go (depth - 1) rest
       c : rest -> if depth > 0 && c /= '\n' then go depth rest else c : go depth rest
+
+-- | Oracle text with the flavor word heading each line dropped (CR 207.2d):
+-- what precedes a line's first " \8212 ", when that is a phrase (it opens with
+-- a letter and holds no sentence or reminder punctuation) that is neither an
+-- ability word (CR 207.2c), which the renderer prints, nor a chapter symbol's
+-- numeral (CR 715.2). Only the stamped side goes through this, so a heading the
+-- renderer prints that is not an ability word fails the check until it is
+-- exempted here.
+withoutFlavorWords :: Text.Text -> Text.Text
+withoutFlavorWords = Text.intercalate (Text.pack "\n") . fmap unheaded . Text.splitOn (Text.pack "\n")
+  where
+    unheaded line = case Text.breakOn dash line of
+      (heading, rest) | not (Text.null rest), flavorWord heading -> Text.drop (Text.length dash) rest
+      _ -> line
+    dash = Text.pack " \8212 "
+    flavorWord heading =
+      maybe False (Char.isAlpha . fst) (Text.uncons heading)
+        && not (Text.any (`elem` ".,:;(\"{") heading)
+        && not (Text.all (`elem` "IVX") heading)
+        && Set.notMember (key heading) abilityWords
+    key = Text.toLower . Text.filter Char.isAlphaNum
+    abilityWords = Set.fromList (fmap (key . Text.pack . show) [minBound .. maxBound :: AbilityWord.AbilityWord])

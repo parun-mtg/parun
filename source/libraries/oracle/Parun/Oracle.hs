@@ -89,7 +89,8 @@ renderable card = case (Card.layout card, Card.faces card) of
 
 -- | Whether the text says what the card's face of that name says: each of
 -- the face's abilities takes one of its wordings' pieces from the text's,
--- modulo 'Normalise.normalise', and none is left over. A card some part of
+-- modulo 'Normalise.normalise' and the text's flavor words
+-- ('Normalise.withoutFlavorWords'), and none is left over. A card some part of
 -- which is not rendered yet says nothing; nor does a name no face has.
 says :: Card.Card -> CardName.CardName -> Text.Text -> Bool
 says card name text =
@@ -103,7 +104,7 @@ says card name text =
 -- 'Normalise.normalise' sorts lines; a spell's wording is treated as one
 -- unit across paragraphs, so it takes pieces from several lines.
 leftovers :: CardName.CardName -> Text.Text -> [[Text.Text]] -> [[Text.Text]]
-leftovers name text = Monad.foldM taken (Normalise.normalise name text)
+leftovers name text = Monad.foldM taken (Normalise.normalise name (Normalise.withoutFlavorWords text))
   where
     taken pieces = Maybe.mapMaybe (without pieces . Normalise.normalise name)
 

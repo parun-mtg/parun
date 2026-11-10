@@ -1,7 +1,7 @@
--- Covers Parun.Engine.Subtype's families, Parun.Types.CardType and
--- Parun.Types.Supertype against the closed lists data/comprehensive-rules.txt
--- names, so a rules update that adds a type turns the suite red until the enum
--- has it.
+-- Covers Parun.Engine.Subtype's families, Parun.Types.CardType,
+-- Parun.Types.Supertype and Parun.Types.AbilityWord against the closed lists
+-- data/comprehensive-rules.txt names, so a rules update that adds a type or
+-- an ability word turns the suite red until the enum has it.
 module Parun.SubtypeSpec where
 
 import qualified Data.ByteString as ByteString
@@ -14,6 +14,7 @@ import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityWord as AbilityWord
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
@@ -24,6 +25,8 @@ spec s = Spec.describe s "Parun.Engine.Subtype" $ do
     agrees s "205.2a" ["The card types are "] (named (enumerate :: [CardType.CardType]))
   Spec.it s "CR 205.4a the supertypes are exactly Supertype" $
     agrees s "205.4a" ["The supertypes are "] (named (enumerate :: [Supertype.Supertype]))
+  Spec.it s "CR 207.2c the ability words are exactly AbilityWord" $
+    agrees s "207.2c" ["The ability words are "] (named (enumerate :: [AbilityWord.AbilityWord]))
   mapM_
     ( \(rule, markers, cardTypes) ->
         Spec.it s ("CR " <> rule <> " the subtypes it lists are exactly those correlatedCardTypes files under " <> show cardTypes) $
