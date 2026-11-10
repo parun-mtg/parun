@@ -60,9 +60,7 @@
     {
       "do": {
         "Cast": {
-          "mana": [
-            null
-          ],
+          "mana": [],
           "object": "$hulk"
         }
       },
@@ -114,9 +112,7 @@
               }
             }
           ],
-          "mana": [
-            null
-          ],
+          "mana": [],
           "object": "$bears"
         }
       },
