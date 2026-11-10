@@ -179,14 +179,9 @@ data CostComponent keyword
     -- mana value of the permanents CR 601.2c's targets name
     -- (Parun.Engine.Cost.fixComputed).
     CollectEvidenceOfTargets
-  | -- | CR 406.2 with a threshold / Baron Helmut Zemo: the paying player exiles
-    -- any number of cards matching the Filter from their own graveyard whose
-    -- tally reaches the threshold.
-    --
-    -- CollectEvidence's payment over a filter and a tally, sharing its code in
-    -- Parun.Engine.Cost; not that arm, since paying this is not CR 701.59a's
-    -- keyword action. BINDS the cards' exile incarnations under
-    -- Parun.Engine.Binding.totalledExiles, for "copy those exiled cards".
+  | -- | CR 406.2 / Baron Helmut Zemo: exile any number of matching cards from
+    -- the payer's graveyard whose tally reaches the threshold; CollectEvidence's
+    -- payment without CR 701.59a's keyword action.
     ExileCardsTotalling (ExileCardsTotalling.ExileCardsTotalling keyword)
   | -- | CR 406.2 out of a hidden zone / Cadaverous Bloom, March of Wretched
     -- Sorrow: the paying player exiles this many cards matching the Filter from
