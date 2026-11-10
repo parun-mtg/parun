@@ -33,6 +33,7 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.TypeLine as TypeLine
+import qualified System.Directory as Directory
 
 spec :: (Monad n) => Spec.Spec IO n -> [(FilePath, Either Text.Text Card.Card)] -> n ()
 spec s corpus = Spec.describe s "Parun.Ingest" $ do
@@ -52,16 +53,16 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
     Spec.assertBool s (not (null rendered)) "no card renders"
     Spec.assertEq s [] disagreements
 
-  -- The check above passes over a card that does not render, so the cards
-  -- that do not are listed, one slug a line in byte order, so that parallel
-  -- branches adding slugs touch different lines: a card that stops rendering
-  -- fails here, and one that starts is struck off the list. Not implemented:
-  -- checking the abilities that do render on a listed card (#5488).
+  -- The check above passes over a card that does not render, so each card
+  -- that does not has an empty marker, data/oracle-unrendered/SLUG.txt, one
+  -- path per card so that parallel branches cannot conflict: a card that
+  -- stops rendering fails here, and one that starts loses its marker. Not
+  -- implemented: checking the abilities that do render on a listed card
+  -- (#5488).
   Spec.it s "the cards that do not render are exactly those listed" $ do
     root <- Registry.defaultRoot
-    slugs <- fmap (filter (not . null) . lines) (readFile (root <> "/../oracle-unrendered.txt"))
-    let listed = Set.fromList slugs
-    Spec.assertEqWith s "listed out of byte order (script/sort-lines.sh fix)" [] [(a, b) | (a, b) <- zip slugs (drop 1 slugs), a >= b]
+    markers <- Directory.listDirectory (root <> "/../oracle-unrendered")
+    let listed = Set.fromList [Text.unpack (Maybe.fromMaybe name (Text.stripSuffix (Text.pack ".txt") name)) | name <- fmap Text.pack markers]
     let unrendered = Set.fromList [Text.unpack (Slug.unwrap (Registry.filedAs card)) | entry@(_, Right card) <- corpus, Maybe.isJust (Registry.referenceCard entry), Maybe.isNothing (Oracle.render card)]
     Spec.assertEqWith s "listed, but renders or is no pool card" [] (Set.toList (Set.difference listed unrendered))
     Spec.assertEqWith s "does not render, but unlisted" [] (Set.toList (Set.difference unrendered listed))
