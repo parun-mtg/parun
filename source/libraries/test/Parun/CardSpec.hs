@@ -137,6 +137,7 @@ import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
@@ -2286,13 +2287,24 @@ handActionSlotsOffend card =
 -- TARGET SLOT's count -- "each of X target creatures" (Rot-Curse Rakshasa),
 -- "up to X target artifacts and/or enchantments" (Pest Infestation) -- or
 -- through a slot's CR 202.3 computed BOUND, "mana value X or less" (Stir the
--- Grave) -- or through CR 601.2d's divided TOTAL (Rolling Thunder)? Three
--- readers Resolve.hasRead cannot see, that one walking effects and these sitting
--- on the slot, so the two reads-equal-declares lints below ask all four.
+-- Grave) -- or through CR 601.2d's divided TOTAL (Rolling Thunder) -- or
+-- through CR 700.2's mode count, "choose up to X" (Synthetic Tiered Relay)?
+-- Four readers Resolve.hasRead cannot see, that one walking effects and these
+-- sitting on the slot or the selection, so the two reads-equal-declares lints
+-- below ask all five.
 modalReadsAnnouncedX :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-modalReadsAnnouncedX =
-  any (\slot -> countReadsX (TargetSlot.count slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.amount slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.divided slot))
-    . Modal.allTargetSlots
+modalReadsAnnouncedX modal =
+  selectionReadsX (Modal.selection modal)
+    || any (\slot -> countReadsX (TargetSlot.count slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.amount slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.divided slot)) (Modal.allTargetSlots modal)
+
+-- CR 700.2: does this mode count read the announced X?
+selectionReadsX :: ModeSelection.ModeSelection -> Bool
+selectionReadsX selection = case selection of
+  ModeSelection.ChooseExactly _ -> False
+  ModeSelection.ChooseExactlyWithRepeats _ -> False
+  ModeSelection.ChooseBetween _ -> False
+  ModeSelection.ChooseInstead ci -> selectionReadsX (ChooseInstead.ordinary ci) || selectionReadsX (ChooseInstead.instead ci)
+  ModeSelection.ChooseUpTo quantity -> Set.member Binding.variableX (QuantitySlot.slots quantity)
 
 -- CR 601.2c with CR 601.2b: does this slot's COUNT read the announced X?
 countReadsX :: SlotCount.SlotCount -> Bool

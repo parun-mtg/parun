@@ -9,6 +9,7 @@ import qualified Data.Set as Set
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.ActivationRestriction as ActivationRestriction
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
@@ -292,6 +293,18 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           seed = Binding.fromChoices Map.empty mAmount Seq.empty
           sets = Target.legalSets StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) False seed srcId slots gs
           aimable = [(Target.aimingRanges (ActivatedAbility.name ability) (Just pid) srcId (Just (Maybe.fromMaybe 0 mAmount)) slots sets gs, fmap Activatable.recipientObjects sets)]
+          -- CR 601.4 via CR 602.2b: the chosen modes judged against the
+          -- instruction as the announcement settles it (Modal.settle), its
+          -- ceiling reading the X just announced, so Synthetic Tiered Relay's
+          -- "choose up to X" refuses more modes than the X paid, which
+          -- data/scenarios/synthetic-tiered-relay-chooses-up-to-the-x-its-activation-announced.json
+          -- proves. The modes were checked above against no ceiling, CR 601.2b
+          -- choosing them before X.
+          settledSelection =
+            Modal.settle
+              (Condition.holds (Projection.fullView gs) (Target.slotContext (ActivatedAbility.name ability) (Just pid) False seed (Game.acquisitionFor (ActivatedAbility.name ability) srcId gs) srcId Nothing gs) gs srcId)
+              (Target.countingBy (ActivatedAbility.name ability) (Just pid) seed srcId gs)
+              selection
       -- CR 602.2: an activation a player cannot comply with is illegal, and the
       -- game returns to the moment before it started. The X just named is where
       -- that can first become true: `activatable` measured the cost at the
@@ -320,7 +333,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- one predicate over one cost instead of two spellings of when the gate
       -- applies.
       -- An answer outside the offered costs is rejected, ChooseCost's contract.
-      if overCeiling || underFloor || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
+      if overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
         then reject -- the whole activation is a no-op
         else do
           -- CR 118.13a's announcement, which names an activated ability's
