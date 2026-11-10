@@ -1054,6 +1054,16 @@ assimilatedCards = SlotName.MkSlotName (Text.pack "thoseAssimilatedCards")
 castSpell :: SlotName
 castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 
+-- CR 115.1 / 601.2c: the reserved slot naming, as one group, every OBJECT the
+-- spell under `castSpell` targeted as it became cast or copied -- Storm,
+-- Windrider's "those creatures". Players are left out: no printing names them
+-- through it. Read off the stack object when the trigger binds, so a target
+-- changed later (CR 115.7) is not seen (docs/decisions.md, "Which objects a
+-- cast trigger's "those creatures" names"). An empty group where the spell
+-- targets no object. Not a target, `castSpell`'s posture.
+castSpellTargets :: SlotName
+castSpellTargets = SlotName.MkSlotName (Text.pack "thatSpellsTargets")
+
 -- CR 602.2a / 603.3: the reserved slot under which an ABILITY'S OWN STACK
 -- OBJECT is bound -- the printed "this ability" in Forsworn Paladin's "if mana
 -- from a Treasure was spent to activate this ability" and in Ashling the
@@ -1490,6 +1500,11 @@ setDepartedPermanent oid = Map.insert departedPermanent (toObject oid)
 -- Bind an object under the reserved castSpell slot (CR 601.2i).
 setCastSpell :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setCastSpell oid = Map.insert castSpell (toObject oid)
+
+-- Bind a spell's object targets under the reserved castSpellTargets slot (CR
+-- 115.1).
+setCastSpellTargets :: Set Recipient -> Map SlotName Binding -> Map SlotName Binding
+setCastSpellTargets targets = Map.insert castSpellTargets (toObjects (Seq.fromList (Maybe.mapMaybe Recipient.objectOf (Set.toAscList targets))))
 
 -- Bind an object under the reserved thisAbility slot (CR 602.2a, 603.3).
 setThisAbility :: ObjectId -> Map SlotName Binding -> Map SlotName Binding

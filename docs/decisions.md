@@ -143,6 +143,24 @@ Entries are ordered by the first rule each cites.
   proves it.
 - **Issue**: #4627.
 
+## Which objects a cast trigger's "those creatures" names
+
+- **Question**: Storm, Windrider gives flying to "those creatures" a spell you
+  cast targets. If the spell's targets change before the trigger resolves
+  (Speedball, New Warrior's "choose new targets for that spell"), does it
+  read the targets as cast or as they stand at resolution?
+- **Rules**: CR 115.1, 115.7, 601.2c, 603.2, 608.2h (CR of 2026-11-06); the
+  card has no rulings.
+- **Decision**: As cast. "Those creatures" refers back to the trigger event,
+  so the trigger records the spell's object targets when it triggers.
+- **Rejected**: As they stand at resolution: CR 608.2h reads current
+  information of a specific object, but which objects are meant is fixed by
+  the event the ability triggered on, not by a later change to the spell.
+- **Site**: `Parun.Engine.Event.Binding.eventBindingsOver`' SpellCast arm,
+  binding `Binding.castSpellTargets`. Proved by the scenario
+  `storm-windrider-gives-flying-to-the-creatures-the-spell-targeted-as-it-was-cast`.
+- **Issue**: #6779.
+
 ## Whether a concession restarts the pass count
 
 - **Question**: CR 117.4 resolves the top object once all players pass in

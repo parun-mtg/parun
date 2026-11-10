@@ -464,12 +464,16 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   --
   -- A Self subject binds nothing (eventBindingSlots' arm says why), so it falls
   -- to the fallthrough.
+  --
+  -- The spell's object targets too (Binding.castSpellTargets), read off the
+  -- stack object now for the reason the caster is a slot: Storm, Windrider's
+  -- "those creatures" are the ones the cast targeted.
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ _ _ _)) ->
-    Binding.setTriggerPlayer caster (Binding.setCastSpell spell Map.empty)
-  -- Magecraft's "or copy" binds the same pair off its own event (CR 707.10):
-  -- the copy, and the player who copied it.
+    Binding.setTriggerPlayer caster (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs spell) (Binding.setCastSpell spell Map.empty))
+  -- Magecraft's "or copy" binds the same three off its own event (CR 707.10):
+  -- the copy, the player who copied it, and the copy's targets.
   (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
-    Binding.setTriggerPlayer copier (Binding.setCastSpell copy Map.empty)
+    Binding.setTriggerPlayer copier (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs copy) (Binding.setCastSpell copy Map.empty))
   -- CR 602.2b's "that ability" and "that player": the ability on the stack and
   -- its activator (CR 602.2a). Unconditional given a match. An activation that
   -- put nothing on the stack leaves "that ability" unbound, so a copy of it
@@ -1696,7 +1700,7 @@ eventBindingSlots cond = case cond of
   -- that subject and its fallthrough answers the same.
   TriggerCondition.SpellCast c -> case SpellCast.spell c of
     ActingPermanent.Self -> Set.empty
-    ActingPermanent.Matching _ -> Set.fromList [Binding.castSpell, Binding.triggerPlayer]
+    ActingPermanent.Matching _ -> Set.fromList [Binding.castSpell, Binding.castSpellTargets, Binding.triggerPlayer]
   -- The activated ability and its activator, both on every event the condition
   -- admits.
   TriggerCondition.AbilityActivated _ -> Set.fromList [Binding.activatedAbility, Binding.triggerPlayer]
