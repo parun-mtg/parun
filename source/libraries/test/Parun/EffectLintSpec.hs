@@ -234,6 +234,7 @@ import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Search as Search
+import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
@@ -306,7 +307,7 @@ ownQuantities effect = case effect of
   Effect.Firebend _ -> []
   Effect.ActivateManaAbilities _ -> []
   Effect.MoveMana _ -> []
-  Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> Maybe.maybeToList quantity
+  Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ counters _ _ _ _ _ _) -> Maybe.maybeToList quantity <> Map.elems counters
   Effect.ExileAllGraveyards -> []
   Effect.Proliferate _ -> []
   Effect.Rethrow -> []
@@ -3249,6 +3250,21 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 111.2 / 110.2a: a token enters under the player who created it, whom
   -- Effect.Create names in its own field, so its rider's instructed player is
   -- read by nothing; only the MoveToZone arm resolves one.
+  -- CR 122.6: Search.counters are what a found card enters the battlefield
+  -- with, read only by putFound's battlefield arms.
+  Spec.it s "no search carries entry counters unless it puts its find onto the battlefield" $ do
+    ps <- S.allPrintings s corpus
+    let onto = Set.fromList [SearchDestination.Battlefield, SearchDestination.BattlefieldTapped, SearchDestination.BattlefieldAttached, SearchDestination.BattlefieldAttachedOrHand]
+        counted effect = case effect of
+          Effect.Search search -> not (Map.null (Search.counters search))
+          _ -> False
+        offends effect = case effect of
+          Effect.Search search -> counted effect && Set.notMember (Search.destination search) onto
+          _ -> False
+        offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps
+    -- Guards against a vacuous sweep. Vision Quest is the card that prints one.
+    Spec.assertBool s (any (anyFace (any counted . cardResolutionEffects) . Printing.card) ps) "the pool has a search whose find enters with counters"
+    Spec.assertEqWith s "entry counters ride a battlefield destination" (fmap (S.nameOf . Printing.card) offenders) []
   Spec.it s "no Create names an instructed player in its entry rider" $ do
     ps <- S.allPrintings s corpus
     let offends effect = case effect of

@@ -1,5 +1,6 @@
 module Parun.Codec.SearchSpec where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -7,6 +8,7 @@ import qualified Parun.Codec.Search as Search
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -37,6 +39,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.descriptions = Seq.fromList [Filter.HasCardType CardType.Creature, Filter.HasCardType CardType.Artifact],
             Search.upTo = True,
             Search.destination = SearchDestination.BattlefieldTapped,
+            Search.counters = Map.singleton CounterKind.PlusOnePlusOne (Quantity.Literal 2),
             Search.subject = Nothing,
             Search.slot = Just (SlotName.MkSlotName (Text.pack "found")),
             Search.handSlot = Just (SlotName.MkSlotName (Text.pack "hand")),
@@ -45,13 +48,13 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.andOr = True
           }
       )
-      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"slot\":\"found\",\"handSlot\":\"hand\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true} "
+      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true} "
   -- The other reading of the same count: no "upTo" key means the quantity is a
   -- quota. Paired with the case above so each key's absence is asserted, not
   -- just its presence -- a required key would have made every card file
   -- rewrite. "zones" is the same shape: absent means the library alone, which is
   -- what every card file written before Delivery Moogle says.
-  Spec.it s "an absent upTo, zones, outsideTheGame, andOr, descriptions, differentIn and exactly take their defaults and are not written back" $
+  Spec.it s "an absent upTo, zones, outsideTheGame, andOr, descriptions, counters, differentIn and exactly take their defaults and are not written back" $
     Common.assertCodec
       s
       Search.codec
@@ -65,6 +68,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.descriptions = Seq.empty,
             Search.upTo = False,
             Search.destination = SearchDestination.BattlefieldTapped,
+            Search.counters = Map.empty,
             Search.subject = Nothing,
             Search.slot = Nothing,
             Search.handSlot = Nothing,
@@ -92,6 +96,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.descriptions = Seq.empty,
             Search.upTo = False,
             Search.destination = SearchDestination.Exile,
+            Search.counters = Map.empty,
             Search.subject = Nothing,
             Search.slot = Nothing,
             Search.handSlot = Nothing,

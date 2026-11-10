@@ -2,9 +2,11 @@
 
 module Parun.Codec.Search where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.DifferentIn as DifferentIn
+import qualified Parun.Codec.EntryRiders as EntryRiders
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRef as PlayerRef
@@ -48,6 +50,8 @@ codec = Fields.object $ do
   -- written gets.
   upTo <- Fields.defaulted "upTo" False Common.boolean Search.upTo
   destination <- Fields.required "destination" SearchDestination.codec Search.destination
+  -- Defaulted: an absent key is a search whose find enters with no counters.
+  counters <- Fields.defaulted "counters" Map.empty (Common.keyedList EntryRiders.counter) Search.counters
   -- Defaulted rather than required: an absent key is a card whose "it" is its own
   -- source, which is every card file already written and the reading CR 113.7
   -- gives a search that names no slot.
@@ -73,6 +77,7 @@ codec = Fields.object $ do
         Search.descriptions = descriptions,
         Search.upTo = upTo,
         Search.destination = destination,
+        Search.counters = counters,
         Search.subject = subject,
         Search.slot = slot,
         Search.handSlot = handSlot,

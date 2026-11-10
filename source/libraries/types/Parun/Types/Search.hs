@@ -1,7 +1,9 @@
 module Parun.Types.Search where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
@@ -112,6 +114,12 @@ data Search = MkSearch
     -- landing in CR 701.23b's branch.
     upTo :: Bool,
     destination :: SearchDestination.SearchDestination,
+    -- | CR 122.6: the counters a found card enters the battlefield with, said by
+    -- the search's own sentence -- Vision Quest's "put it onto the battlefield
+    -- with X additional +1/+1 counters on it". EntryRiders.counters' shape and
+    -- reading, frozen once on resolution (CR 608.2h); empty for every other
+    -- search. Battlefield destinations only, which Parun.EffectLintSpec fences.
+    counters :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Quantity.Quantity,
     -- | The object this one instruction fixes for CR 701.3a -- the "it" in
     -- Auratouched Mage's "an Aura card that could enchant it" and the "that
     -- creature" in Sovereigns of Lost Alara's -- named as a slot the resolution
