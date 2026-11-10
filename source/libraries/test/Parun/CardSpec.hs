@@ -4371,6 +4371,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.Literal _ -> []
   Quantity.Type.Measure _ -> []
   Quantity.Type.Intensity -> []
+  Quantity.Type.ManaSymbolCount _ -> []
   Quantity.Type.InSlot _ -> []
   Quantity.Type.Share _ -> []
   Quantity.Type.WasBound _ -> []

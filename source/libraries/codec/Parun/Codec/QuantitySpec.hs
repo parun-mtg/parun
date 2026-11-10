@@ -45,6 +45,7 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -101,6 +102,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.Intensity
       " {\"type\":\"Intensity\"} "
+  Spec.it s "ManaSymbolCount" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.ManaSymbolCount (ManaSymbolKind.ColoredSymbol Color.Blue))
+      " {\"type\":\"ManaSymbolCount\",\"value\":{\"type\":\"ColoredSymbol\",\"value\":\"Blue\"}} "
   -- A number an earlier effect of the same resolution bound into a slot. Unlike
   -- X it carries the slot name on the wire, nested under Plus here since
   -- composition is where a recursive decoder loses a payload.
