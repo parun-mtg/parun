@@ -240,6 +240,7 @@ aven-trailblazer
 aven-windreader
 avenge
 avenger-of-the-fallen
+avengers-assemble
 avengers-disassembled
 avengers-tower
 avengers-under-siege
@@ -1754,6 +1755,7 @@ iron-hills-blacksmith
 iron-hills-stalwart
 iron-lad-diverging-destiny
 iron-man-armor
+iron-man-master-of-machines
 iron-monger-sadistic-tycoon
 ironclaw-buzzardiers
 ironclaw-curse

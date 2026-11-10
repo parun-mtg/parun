@@ -1177,6 +1177,7 @@ eventShapeNames asking x = case x of
   EventShape.MovedFrom _zone -> history asking HistoryRead.Moves
   EventShape.CardArrivedIn _cardArrivedIn -> history asking HistoryRead.Moves
   EventShape.SpellCast _castWindow -> history asking HistoryRead.Casts
+  EventShape.AttackerDeclared -> history asking HistoryRead.Attacks
 
 eventExpiryNames :: (Monoid r) => Asking r -> EventExpiry.EventExpiry -> r
 eventExpiryNames asking x = case x of
