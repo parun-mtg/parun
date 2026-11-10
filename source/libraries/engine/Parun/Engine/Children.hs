@@ -1386,16 +1386,24 @@ attackTriggerChildren c trigger = case trigger of
           <*> triggerFrequency c HistoryRead.Attacks frequency
           <*> traverse (triggerState c) while_
       )
-  AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger _ _) -> pure trigger
+  AttackTrigger.Attacked (AttackedTrigger.MkAttackedTrigger who attacked attackers) ->
+    fmap
+      AttackTrigger.Attacked
+      (AttackedTrigger.MkAttackedTrigger who attacked <$> traverse (attackCountChildren c) attackers)
   AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger who attackers frequency while_) ->
     fmap
       AttackTrigger.Declaration
       ( DeclarationTrigger.MkDeclarationTrigger who
-          <$> traverse (\(AttackCount.MkAttackCount measure floor_ filter_) -> AttackCount.MkAttackCount measure floor_ <$> triggerFilter c filter_) attackers
+          <$> traverse (attackCountChildren c) attackers
           <*> triggerFrequency c HistoryRead.Attacks frequency
           <*> traverse (triggerState c) while_
       )
   AttackTrigger.Unblocked filter_ -> fmap AttackTrigger.Unblocked (triggerFilter c filter_)
+
+-- CR 508.3: an attack trigger's count of declared creatures, its Filter the one
+-- child.
+attackCountChildren :: (Applicative f) => TriggerChildren f -> AttackCount.AttackCount -> f AttackCount.AttackCount
+attackCountChildren c (AttackCount.MkAttackCount measure floor_ filter_) = AttackCount.MkAttackCount measure floor_ <$> triggerFilter c filter_
 
 actingChildren :: (Applicative f) => TriggerChildren f -> ActingPermanent.ActingPermanent -> f ActingPermanent.ActingPermanent
 actingChildren c permanent = case permanent of

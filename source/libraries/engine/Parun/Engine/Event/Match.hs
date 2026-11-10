@@ -16,7 +16,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
-import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, combatDamagerOn, postEventView)
+import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, attackedBy, combatDamagerOn, postEventView)
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -234,7 +234,13 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
           (AttackedSubject.Source, AttackTarget.OfPlaneswalker attacked) -> attacked == bearer
           (AttackedSubject.Source, AttackTarget.OfBattle attacked) -> attacked == bearer
           _ -> False
-     in attackerHolds && attackedHolds
+        -- The count reads only the creatures attacking this target (and for
+        -- CR 508.3e only the attacking player's), so each target asks it
+        -- apart (docs/decisions.md, "Whom Attuma's Merfolk attack").
+        countHolds = case AttackedTrigger.attackers t of
+          Nothing -> True
+          Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (attackedBy gs bearer you t payload)))
+     in attackerHolds && attackedHolds && countHolds
   -- CR 508.3c / 508.3d: once per declaration, the declaring player read off the
   -- event rather than GameState.activePlayer: under the shared team turns
   -- option each player on the active team is an attacking player (CR 805.10a).
