@@ -194,6 +194,13 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [] (Normalise.normalise x (Text.pack "({T}: Add {G}.)"))
     Spec.assertEq s (fmap Text.pack ["haste", "horsemanship"]) (Normalise.normalise x (Text.pack "Haste; horsemanship (This creature can't be blocked except by creatures with horsemanship.)"))
 
+  -- CR 207.2c / 207.2d / 715.2: a flavor word goes, an ability word or a
+  -- chapter numeral stays, and so does a dash that heads no phrase.
+  Spec.it s "withoutFlavorWords drops a flavor word alone" $ do
+    let kept = Text.pack "Enrage \8212 Whenever this creature is dealt damage, draw a card.\nI \8212 Draw a card.\nAt the beginning of combat, each opponent faces a villainous choice \8212 Draw a card."
+    Spec.assertEq s kept (Normalise.withoutFlavorWords kept)
+    Spec.assertEq s (Text.pack "Whenever ~ attacks, draw a card.\n{1}: Draw a card.") (Normalise.withoutFlavorWords (Text.pack "Do You Like Squirrels? \8212 Whenever ~ attacks, draw a card.\nI LOVE Squirrels! \8212 {1}: Draw a card."))
+
   -- CR 201.5 / 201.5c / 700.7: a card names itself by its name, a legendary one by
   -- the part before the comma or the word before " of ", and newer Oracle text
   -- as "this creature".
