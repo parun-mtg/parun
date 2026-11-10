@@ -393,6 +393,11 @@ data Filter keyword
     -- battlefield this turn". Read off the log's zone changes, so phasing in (CR
     -- 702.26d) and turning face up (CR 708.8) never count.
     EnteredThisTurn EnteredZone.EnteredZone
+  | -- | CR 122.6 / 122.6a: a player this relation admits PUT counters of this
+    -- kind on the candidate earlier this turn, as the object it is now -- Kid
+    -- Loki's "that you've put one or more +1/+1 counters on this turn". Read
+    -- off the log's GameEvent.CountersPut.
+    CountersPutThisTurn PlayerRelation.PlayerRelation (CounterKind.CounterKind keyword)
   | -- | CR 302.6: the candidate's CONTROLLER has controlled it continuously since
     -- their most recent turn began -- Total War's "creatures the player hasn't
     -- controlled continuously since the beginning of the turn", negated. Reads

@@ -4102,6 +4102,7 @@ filterReads f = case f of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
     _ -> Set.empty
   Filter.Type.EnteredThisTurn _ -> Set.empty
+  Filter.Type.CountersPutThisTurn _ _ -> Set.empty
   Filter.Type.CrewedSourceThisTurn -> Set.empty
   Filter.Type.ConvokedSourceThisTurn -> Set.empty
   Filter.Type.SaddledSourceThisTurn -> Set.empty
@@ -4397,6 +4398,7 @@ filterReadsPeers f = case f of
   Filter.Type.DealtDamageThisTurn -> False
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
+  Filter.Type.CountersPutThisTurn _ _ -> False
   Filter.Type.CrewedSourceThisTurn -> False
   Filter.Type.ConvokedSourceThisTurn -> False
   Filter.Type.SaddledSourceThisTurn -> False

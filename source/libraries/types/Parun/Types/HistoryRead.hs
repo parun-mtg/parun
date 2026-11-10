@@ -24,6 +24,8 @@ data HistoryRead
     CoinFlips
   | -- | Spells convoked (CR 702.51a).
     Convokes
+  | -- | Counters put on objects (CR 122.6).
+    CounterPlacements
   | -- | Vehicles crewed, and creatures crewing them (CR 702.122a).
     Crews
   | -- | Damage dealt (CR 120.1).

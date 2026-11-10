@@ -417,6 +417,11 @@ data View = MkView
     -- `crewedThisTurn` above's shape and laziness, one keyword over, and a field
     -- of its own so a saddler never satisfies CrewedSourceThisTurn.
     saddledThisTurn :: Set.Set ObjectId.ObjectId,
+    -- CR 122.6 / 122.6a: who put which kinds of counters on this candidate
+    -- earlier this turn? Every GameEvent.CountersPut naming it, LAZY for
+    -- `crewedThisTurn`'s reason; CountersPutThisTurn relates the putter to the
+    -- perspective, which the builders that fill this field do not hold.
+    countersPutThisTurn :: Set.Set (PlayerId.PlayerId, CounterKind.CounterKind Keyword.Type.Keyword),
     -- CR 120.1 / 608.2i: whom did this candidate deal damage to earlier this
     -- turn? Every recipient of a GameEvent.DamageDealt it was the source of,
     -- each beside that event's CR 510 / 608 kind, LAZY for `crewedThisTurn`'s
@@ -985,6 +990,7 @@ playerView pid =
       crewedThisTurn = Set.empty,
       convokedThisTurn = Set.empty,
       saddledThisTurn = Set.empty,
+      countersPutThisTurn = Set.empty,
       -- CR 120.2: any object can deal damage, but a player is not an object.
       dealtDamageTo = Set.empty,
       dealtDamageEarlier = Set.empty,
@@ -2450,6 +2456,13 @@ matches context view predicate = case predicate of
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to from) -> case arrivalThisTurn view of
     Just arrival -> MovedBetween.to arrival == to && (Set.null from || Set.member (MovedBetween.from arrival) from)
     Nothing -> False
+  -- CR 122.6 / 122.6a: the same look-back over the counter placements, the
+  -- putter answered against the perspective as IsAttackingPlayer's seat is. The
+  -- field holds the candidate's own id's placements, so CR 400.7's new object
+  -- starts with none. Vacuously False for a match no perspective frames.
+  Filter.CountersPutThisTurn relation kind -> case perspective context of
+    Just you -> any (\(putter, placed) -> placed == kind && PlayerRelation.holds (teams context) relation you putter) (countersPutThisTurn view)
+    Nothing -> False
   -- CR 702.122c: the same look-back asked of a RELATION rather than of one
   -- subject -- the candidate's own field says which Vehicles it crewed, and the
   -- SOURCE on the context says which one the card's "it" names. Vacuously False
@@ -3481,6 +3494,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DealtDamageThisTurn -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
+  Filter.CountersPutThisTurn _ _ -> []
   Filter.CrewedSourceThisTurn -> []
   Filter.ConvokedSourceThisTurn -> []
   Filter.SaddledSourceThisTurn -> []
@@ -3658,6 +3672,7 @@ statesAQuality predicate = case predicate of
   Filter.DealtDamageThisTurn -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
+  Filter.CountersPutThisTurn _ _ -> True
   Filter.CrewedSourceThisTurn -> True
   Filter.ConvokedSourceThisTurn -> True
   Filter.SaddledSourceThisTurn -> True
@@ -3831,6 +3846,7 @@ readsSourceValues predicate = case predicate of
   Filter.DealtDamageThisTurn -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False
+  Filter.CountersPutThisTurn _ _ -> False
   Filter.CrewedSourceThisTurn -> False
   Filter.ConvokedSourceThisTurn -> False
   Filter.SaddledSourceThisTurn -> False

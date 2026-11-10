@@ -50,6 +50,7 @@ import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -1053,6 +1054,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.crewedThisTurn = crewedThisTurn oid gs,
           Filter.convokedThisTurn = convokedThisTurn oid gs,
           Filter.saddledThisTurn = saddledThisTurn oid gs,
+          Filter.countersPutThisTurn = countersPutThisTurn oid gs,
           Filter.dealtDamageTo = dealtDamageTo oid gs,
           Filter.dealtDamageEarlier = dealtDamageEarlier oid gs,
           -- CR 603.10a: what was attached to it as it left, which the next CR
@@ -1145,6 +1147,17 @@ saddledThisTurn oid gs =
           | Set.member oid (Saddling.saddledBy saddled) -> Just (Saddling.mount saddled)
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe (saddledByIt . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
+
+-- CR 122.6 / 122.6a: who put which kinds of counters on this object this
+-- turn. Event.putCounters records a placement that landed nothing as no event,
+-- so a counter a replacement removed entirely was never put.
+countersPutThisTurn :: ObjectId -> GameState -> Set.Set (PlayerId, CounterKind.CounterKind Keyword.Type.Keyword)
+countersPutThisTurn oid gs =
+  let putOnIt event = case event of
+        GameEvent.CountersPut placed
+          | CountersPlaced.object placed == oid -> Just (CountersPlaced.putter placed, CountersPlaced.kind placed)
+        _ -> Nothing
+   in Set.fromList (Maybe.mapMaybe (putOnIt . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
 
 -- CR 120.1 / 608.2i: whom this object dealt damage to this turn -- every
 -- recipient of a damage event it was the source of, through
@@ -1376,6 +1389,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.crewedThisTurn = Set.empty,
       Filter.convokedThisTurn = Set.empty,
       Filter.saddledThisTurn = Set.empty,
+      Filter.countersPutThisTurn = Set.empty,
       Filter.dealtDamageTo = Set.empty,
       Filter.dealtDamageEarlier = Set.empty,
       -- CR 302.6 asks about an OBJECT under a player's control; this view
