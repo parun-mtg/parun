@@ -27,7 +27,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveLaterPayment" $ do
         { ActiveLaterPayment.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
           ActiveLaterPayment.payoff =
             PreventionRider.MkPreventionRider
-              { PreventionRider.effects = Seq.fromList [Effect.Proliferate],
+              { PreventionRider.effects = Seq.fromList [Effect.Proliferate Nothing],
                 PreventionRider.targets = Map.empty,
                 PreventionRider.controller = PlayerId.MkPlayerId 1,
                 PreventionRider.source = ObjectId.MkObjectId 9

@@ -366,7 +366,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.PhaseR (PhaseR.MkPhaseR PhasePattern.MkPhasePattern {PhasePattern.whichPhase = SkipWindow.WholeTurn, PhasePattern.whosePhase = ControllerRelation.Related PlayerRelation.You} (PhaseRewrite.MaySkipFor (Seq.singleton Effect.Type.Proliferate))))
+            (ReplacementEffect.PhaseR (PhaseR.MkPhaseR PhasePattern.MkPhasePattern {PhasePattern.whichPhase = SkipWindow.WholeTurn, PhasePattern.whosePhase = ControllerRelation.Related PlayerRelation.You} (PhaseRewrite.MaySkipFor (Seq.singleton (Effect.Type.Proliferate Nothing)))))
             " {\"type\":\"PhaseR\",\"value\":{\"whichPhase\":{\"type\":\"Turn\"},\"whosePhase\":{\"type\":\"You\"},\"rewrite\":{\"type\":\"MaySkipFor\",\"value\":[{\"type\":\"Proliferate\"}]}}} "
         -- CR 614.1e / 702.37b: megamorph's "as this permanent is turned face up, put a
         -- +1/+1 counter on it". Minted by Parun.Engine.Keyword rather than written by a

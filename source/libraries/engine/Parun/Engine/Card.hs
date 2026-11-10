@@ -2010,6 +2010,10 @@ poolWithin inner outer =
     (Pool.Players, Pool.AnyTarget) -> True
     (Pool.Players, Pool.PlayersAndPlaneswalkers) -> True
     (Pool.PlayersAndPlaneswalkers, Pool.AnyTarget) -> True
+    (Pool.Creatures, Pool.PermanentsAndPlayers) -> True
+    (Pool.Players, Pool.PermanentsAndPlayers) -> True
+    (Pool.Permanents, Pool.PermanentsAndPlayers) -> True
+    (Pool.PlayersAndPlaneswalkers, Pool.PermanentsAndPlayers) -> True
     (Pool.Permanents, Pool.SpellsAndPermanents) -> True
     (Pool.Spells, Pool.SpellsAndPermanents) -> True
     (Pool.CardsInGraveyard scope, Pool.CreaturesAndCardsInGraveyard scope') -> scope == scope'

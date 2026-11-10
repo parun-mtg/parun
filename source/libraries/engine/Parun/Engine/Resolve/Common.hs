@@ -175,6 +175,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerControl as PlayerControl
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import Parun.Types.PlayerRef (PlayerRef)
@@ -3709,44 +3710,58 @@ proliferateOnce source controller = do
   let reach = Plane.rangePerspective source controller gs
       everyone = Players.table reach gs
       grants = Projection.controlGrants gs
-      kindsOn oid = foldMap (Map.keys . Map.filter (> 0) . Object.counters) (Game.lookupObject oid gs)
-      kindsFor pid = foldMap (Map.keys . Map.filter (> 0) . Player.counters) (Map.lookup pid (GameState.players gs))
       -- zoneMembers slices the shared battlefield by OWNER, so the union over
       -- every seat is every permanent in play (CR 701.34a).
       onBattlefield = concatMap (\pid -> Game.zoneMembers Zone.Battlefield pid gs) (Game.stillPlaying gs)
       -- CR 801.10: a permanent in range, whoever owns it -- every one for CR
       -- 801.18's planar source.
-      permanents = filter (\oid -> not (null (kindsOn oid)) && all (\you -> Projection.objectInRangeGiven grants you oid gs) reach) onBattlefield
-      players = filter (not . null . kindsFor) everyone
+      permanents = filter (\oid -> not (null (objectKinds gs oid)) && all (\you -> Projection.objectInRangeGiven grants you oid gs) reach) onBattlefield
+      players = filter (not . null . playerKinds gs) everyone
   Monad.unless (null permanents && null players) $ do
     (pickedPermanents, pickedPlayers) <-
       Game.choose (Prompt.ChooseProliferate (Decide.deciderFor controller gs) controller permanents players)
     -- FILTERED, NOT TRUSTED: an answer naming something not offered is dropped.
-    let keptPermanents = filter (\oid -> Set.member oid pickedPermanents) permanents
-        keptPlayers = filter (\pid -> Set.member pid pickedPlayers) players
-    -- CR 122.6: object counters through the single funnel, so CR 614's counter
-    -- replacements apply to a proliferated counter as to a placed one. ONE
-    -- event, the PutCounters arm's CR 608.2f bracket, so a kind-free
-    -- per-permanent trigger sees a permanent's kinds together:
-    -- data/scenarios/the-great-goblin-pings-once-per-goblin-however-many-kinds-proliferate-adds.json
-    -- proves it.
-    Event.simultaneously . Monad.forM_ keptPermanents $ \oid ->
-      Monad.forM_ (kindsOn oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
-    -- CR 122.1: and player counters through their own funnel.
-    --
-    -- CR 701.34b: a kind a team shares (Game.counterSharers, Two-Headed Giant's
-    -- poison) gets one additional counter however many of its members were
-    -- chosen.
-    --
-    -- Not implemented: the proliferating player's choice of WHICH chosen
-    -- teammate gets that counter; the first in turn order does (#4795).
-    Monad.forM_ (zip [0 :: Int ..] keptPlayers) $ \(i, pid) ->
-      Monad.forM_ (kindsFor pid) $ \kind ->
-        Monad.unless (any (\earlier -> List.elem pid (Game.counterSharers kind earlier gs)) (take i keptPlayers)) $
-          Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
+    giveAnotherOfEachKind
+      controller
+      gs
+      (filter (\oid -> Set.member oid pickedPermanents) permanents)
+      (filter (\pid -> Set.member pid pickedPlayers) players)
   -- "Whenever you proliferate" fires even when nothing was chosen (Tekuthal,
   -- Inquiry Dominus's ruling), so the event is recorded outside the guard.
   State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Proliferate controller)))
+
+-- CR 122.1: the kinds of counter on a permanent, and on a player, in `gs`.
+objectKinds :: GameState -> ObjectId -> [CounterKind.CounterKind Keyword.Type.Keyword]
+objectKinds gs oid = foldMap (Map.keys . Map.filter (> 0) . Object.counters) (Game.lookupObject oid gs)
+
+playerKinds :: GameState -> PlayerId -> [PlayerCounterKind.PlayerCounterKind]
+playerKinds gs pid = foldMap (Map.keys . Map.filter (> 0) . Player.counters) (Map.lookup pid (GameState.players gs))
+
+-- Give each permanent and player one more counter of each kind it bears in
+-- `before` (CR 608.2h: read before any lands), `controller`'s effect doing it:
+-- the Effect.Proliferate arm's placement, chosen (CR 701.34a) or targeted.
+giveAnotherOfEachKind :: PlayerId -> GameState -> [ObjectId] -> [PlayerId] -> Game ()
+giveAnotherOfEachKind controller before permanents players = do
+  -- CR 122.6: object counters through the single funnel, so CR 614's counter
+  -- replacements apply to a proliferated counter as to a placed one. ONE
+  -- event, the PutCounters arm's CR 608.2f bracket, so a kind-free
+  -- per-permanent trigger sees a permanent's kinds together:
+  -- data/scenarios/the-great-goblin-pings-once-per-goblin-however-many-kinds-proliferate-adds.json
+  -- proves it.
+  Event.simultaneously . Monad.forM_ permanents $ \oid ->
+    Monad.forM_ (objectKinds before oid) $ \kind -> Event.putCounters (CounterCause.ByEffect controller) oid kind 1
+  -- CR 122.1: and player counters through their own funnel.
+  --
+  -- CR 701.34b: a kind a team shares (Game.counterSharers, Two-Headed Giant's
+  -- poison) gets one additional counter however many of its members were
+  -- chosen.
+  --
+  -- Not implemented: the proliferating player's choice of WHICH chosen
+  -- teammate gets that counter; the first in turn order does (#4795).
+  Monad.forM_ (zip [0 :: Int ..] players) $ \(i, pid) ->
+    Monad.forM_ (playerKinds before pid) $ \kind ->
+      Monad.unless (any (\earlier -> List.elem pid (Game.counterSharers kind earlier before)) (take i players)) $
+        Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
 
 -- CR 603.7c: stamp the land an earthbend animated onto the resolving object, so
 -- the environment the arming opcode captures next carries it. Parun.Engine.Earthbend's

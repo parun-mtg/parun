@@ -1,0 +1,117 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Powerful Broker",
+            "label": "broker",
+            "ready": true
+          }
+        ],
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 5
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 3
+          },
+          {
+            "key": "Energy",
+            "value": 1
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 2
+          }
+        ],
+        "name": "charlie"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 122.1 / 115.1: Powerful Broker gives its target player one more counter of each kind they have, and no other player one",
+  "note": "Bob's two kinds at distinct tallies show one counter per kind; alice and charlie hold poison a proliferate could choose, and keep theirs.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$broker",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 4,
+          "kind": "Poison",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 2,
+          "kind": "Energy",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 5,
+          "kind": "Poison",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PlayerCounters": {
+          "count": 2,
+          "kind": "Poison",
+          "player": "charlie"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

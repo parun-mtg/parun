@@ -308,7 +308,7 @@ ownQuantities effect = case effect of
   Effect.MoveMana _ -> []
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> Maybe.maybeToList quantity
   Effect.ExileAllGraveyards -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
@@ -1568,7 +1568,7 @@ effectObjectRefs effect =
         Effect.MoveMana {} -> []
         Effect.Search {} -> []
         Effect.ExileAllGraveyards -> []
-        Effect.Proliferate -> []
+        Effect.Proliferate _ -> []
         Effect.Rethrow -> []
         Effect.RerollStoredResults _ -> []
         Effect.ChooseCardName {} -> []
@@ -1969,6 +1969,7 @@ holdsPlayer pool = case pool of
   Pool.Players -> True
   Pool.AnyTarget -> True
   Pool.PlayersAndPlaneswalkers -> True
+  Pool.PermanentsAndPlayers -> True
   Pool.Creatures -> False
   Pool.Permanents -> False
   Pool.Spells -> False

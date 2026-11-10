@@ -160,7 +160,7 @@ codec cardCodec abilityCodec =
           Arm.payload "MoveMana" MoveMana.codec Effect.MoveMana (\x -> case x of Effect.MoveMana y -> Just y; _ -> Nothing),
           Arm.payload "Search" Search.codec Effect.Search (\x -> case x of Effect.Search y -> Just y; _ -> Nothing),
           Arm.nullary "ExileAllGraveyards" Effect.ExileAllGraveyards,
-          Arm.nullary "Proliferate" Effect.Proliferate,
+          Arm.optionalPayload "Proliferate" SlotName.codec Effect.Proliferate (\x -> case x of Effect.Proliferate y -> Just y; _ -> Nothing),
           Arm.nullary "Rethrow" Effect.Rethrow,
           Arm.payload "RerollStoredResults" SlotName.codec Effect.RerollStoredResults (\x -> case x of Effect.RerollStoredResults y -> Just y; _ -> Nothing),
           Arm.payload "ChooseCardName" ChooseCardName.codec Effect.ChooseCardName (\x -> case x of Effect.ChooseCardName y -> Just y; _ -> Nothing),

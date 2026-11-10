@@ -109,7 +109,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveReplacement" $ do
           ActiveReplacement.rider =
             Just
               PreventionRider.MkPreventionRider
-                { PreventionRider.effects = Seq.fromList [Effect.Proliferate],
+                { PreventionRider.effects = Seq.fromList [Effect.Proliferate Nothing],
                   PreventionRider.targets = Map.empty,
                   PreventionRider.controller = PlayerId.MkPlayerId 5,
                   PreventionRider.source = ObjectId.MkObjectId 4

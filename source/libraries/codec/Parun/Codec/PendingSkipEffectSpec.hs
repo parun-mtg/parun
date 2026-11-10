@@ -23,7 +23,7 @@ spec s = Spec.describe s "Parun.Codec.PendingSkipEffect" $ do
       PendingSkipEffect.MkPendingSkipEffect
         { PendingSkipEffect.pending =
             PendingReplacementEffect.MkPendingReplacementEffect
-              { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate],
+              { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
                 PendingReplacementEffect.targets = Map.empty,
                 PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
                 PendingReplacementEffect.source = ObjectId.MkObjectId 3
@@ -41,7 +41,7 @@ spec s = Spec.describe s "Parun.Codec.PendingSkipEffect" $ do
       PendingSkipEffect.MkPendingSkipEffect
         { PendingSkipEffect.pending =
             PendingReplacementEffect.MkPendingReplacementEffect
-              { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate],
+              { PendingReplacementEffect.effects = Seq.fromList [Effect.Proliferate Nothing],
                 PendingReplacementEffect.targets = Map.empty,
                 PendingReplacementEffect.controller = PlayerId.MkPlayerId 1,
                 PendingReplacementEffect.source = ObjectId.MkObjectId 3

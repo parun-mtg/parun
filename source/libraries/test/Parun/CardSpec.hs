@@ -1304,7 +1304,7 @@ ownCounts effect = case effect of
   -- count (Mana Severance) has none to reach.
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> foldMap quantityCounts quantity
   Effect.ExileAllGraveyards -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
@@ -1870,7 +1870,7 @@ effectNestedEffects effect = case effect of
   Effect.MoveMana {} -> []
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
@@ -2438,7 +2438,7 @@ effectReplacements effect = case effect of
   Effect.MoveMana _ -> []
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
@@ -3023,7 +3023,7 @@ effectMintedFaces effect = case effect of
   Effect.MoveMana _ -> []
   Effect.Search {} -> []
   Effect.ExileAllGraveyards -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName _ -> []
@@ -6000,7 +6000,7 @@ effectFilters effect = case effect of
   -- fixed for the whole evaluation and the Aura varies per candidate.
   Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ _ _ _ _ _ _) -> searchFramed (f : Foldable.toList descriptions)
   Effect.ExileAllGraveyards -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   -- CR 201.4a's restriction, and the WISH's frame: what judges it is

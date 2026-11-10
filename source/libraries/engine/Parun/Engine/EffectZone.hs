@@ -159,7 +159,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.MoveMana {} -> Set.empty
   Effect.Search {} -> Set.empty
   Effect.ExileAllGraveyards -> Set.empty
-  Effect.Proliferate -> Set.empty
+  Effect.Proliferate _ -> Set.empty
   Effect.Rethrow -> Set.empty
   Effect.RerollStoredResults _ -> Set.empty
   Effect.ChooseCardName _ -> Set.empty

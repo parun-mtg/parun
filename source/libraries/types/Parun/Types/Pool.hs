@@ -10,8 +10,8 @@ import qualified Parun.Types.ZoneScope as ZoneScope
 -- ZONE for one -- never with a card's own restriction, which is the Filter's job.
 -- A union of two admitted kinds is the one further shape a card can force, since
 -- CR 601.2c fixes one count per slot and a slot has one pool; SpellsAndPermanents,
--- SpellsAndAbilities, PlayersAndPlaneswalkers and CreaturesAndCardsInGraveyard
--- are those.
+-- SpellsAndAbilities, PlayersAndPlaneswalkers, PermanentsAndPlayers and
+-- CreaturesAndCardsInGraveyard are those.
 data Pool
   = Creatures -- CR 115.2: creatures on the battlefield (ToCreature).
   | Players -- CR 115: players still in the game (ToPlayer).
@@ -53,6 +53,9 @@ data Pool
     -- rather than the pool's; Parun.PlaneswalkerSpec's "CR 115.2 a 'player or
     -- planeswalker' spell offers neither Goblin" is what holds the two apart.
     PlayersAndPlaneswalkers
+  | -- | CR 115.2 clause (a) over Permanents: battlefield permanents (ToObject)
+    -- plus players (ToPlayer). Powerful Broker's "target permanent or player".
+    PermanentsAndPlayers
   | -- | CR 404.1: the cards in a graveyard (ToObject) -- Raise Dead's "target
     -- creature card in your graveyard". CR 115.2's OTHER escape hatch, the one
     -- Spells and Abilities above are not: those are its clause (b), and Players

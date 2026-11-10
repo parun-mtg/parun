@@ -394,7 +394,7 @@ proliferatesNothing p = case p of
 -- Resolve one Proliferate for alice against `gs`, answered by `answer`.
 proliferate :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 proliferate answer src gs =
-  S.runPure answer gs (Resolve.applyEffect src src S.alice Map.empty Map.empty Effect.Proliferate)
+  S.runPure answer gs (Resolve.applyEffect src src S.alice Map.empty Map.empty (Effect.Proliferate Nothing))
 
 proliferateSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 proliferateSpec s registry = Spec.describe s "Proliferate" $ do
@@ -504,7 +504,7 @@ proliferateSpec s registry = Spec.describe s "Proliferate" $ do
             State.modify (+ 1)
             pure (S.identityAnswer p)
           _ -> pure (S.identityAnswer p)
-        asks g = State.execState (Engine.runGame countingAnswer g (Resolve.applyEffect src src S.alice Map.empty Map.empty Effect.Proliferate)) 0
+        asks g = State.execState (Engine.runGame countingAnswer g (Resolve.applyEffect src src S.alice Map.empty Map.empty (Effect.Proliferate Nothing))) 0
     Spec.assertEqWith s "nobody has a counter: nothing to ask" (asks gs) 0
     Spec.assertEqWith s "someone does: one real decision" (asks (S.addCounter CounterKind.PlusOnePlusOne 1 src gs)) 1
   -- CR 614.5 / 616.1f: each Tekuthal gets one opportunity, the second on the
@@ -524,7 +524,7 @@ proliferateSpec s registry = Spec.describe s "Proliferate" $ do
             State.modify (+ 1)
             pure (Set.fromList oids, Set.fromList pids)
           _ -> pure (S.identityAnswer p)
-        (after, asked) = State.runState (Engine.runGame counting gs (Resolve.applyEffect src src S.alice Map.empty Map.empty Effect.Proliferate)) 0
+        (after, asked) = State.runState (Engine.runGame counting gs (Resolve.applyEffect src src S.alice Map.empty Map.empty (Effect.Proliferate Nothing))) 0
     Spec.assertEqWith s "CR 701.34a: one counter became five" (S.counterOf CounterKind.PlusOnePlusOne src (snd after)) 5
     Spec.assertEqWith s "four proliferate choices" asked 4
 
