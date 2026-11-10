@@ -2,6 +2,7 @@
 
 module Parun.Codec.Ward where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.KeywordCount as KeywordCount
@@ -12,10 +13,12 @@ import qualified Parun.Types.Ward as Ward
 
 -- | A bare object keyed by the record's field names, Parun.Codec.Cycling's
 -- shape. @perEach@ is defaulted rather than required, so a ward whose cost is a
--- printed number still writes nothing but its cost. The keyword codec is a
+-- printed number still writes nothing but its cost. `cost` is the first option
+-- and `orCosts` the rest, Parun.Codec.PayGate's spelling. The keyword codec is a
 -- PARAMETER; see Parun.Codec.Filter's header.
 codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Ward.Ward keyword)
 codec keywordCodec = Fields.object $ do
-  cost <- Fields.required "cost" (Cost.codec keywordCodec) Ward.cost
+  cost <- Fields.required "cost" (Cost.codec keywordCodec) (NonEmpty.head . Ward.cost)
+  orCosts <- Fields.defaulted "orCosts" [] (Common.list (Cost.codec keywordCodec)) (NonEmpty.tail . Ward.cost)
   perEach <- Fields.defaulted "perEach" Nothing (Common.maybe (KeywordCount.codec keywordCodec)) Ward.perEach
-  pure Ward.MkWard {Ward.cost = cost, Ward.perEach = perEach}
+  pure Ward.MkWard {Ward.cost = cost NonEmpty.:| orCosts, Ward.perEach = perEach}

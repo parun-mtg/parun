@@ -50,7 +50,8 @@ ability =
   let slot = TargetSlot.required Pool.Players (Just (Filter.IsPlayer PlayerRelation.Teammate))
       effect = Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching Filter.IsSource) (PlayerRef.InSlot teammate))
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis],
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis],
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton teammate slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],

@@ -1,5 +1,6 @@
 module Parun.Codec.KeywordSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.Keyword as Keyword
@@ -260,7 +261,7 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
   -- ward's is paid by an OPPONENT as the minted trigger resolves, where every
   -- other cost-bearing keyword names a cost its own controller pays.
   Spec.it s "Ward carries its cost, and is not Flashback" $ do
-    let ward n = Keyword.Ward (Ward.MkWard (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) Nothing)
+    let ward n = Keyword.Ward (Ward.MkWard (NonEmpty.singleton (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) [])) Nothing)
         flashbackOf n = Keyword.Flashback (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) [])
     Common.assertCodec
       s
@@ -1077,7 +1078,7 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
       Keyword.codec
       (upkeep 1)
       " {\"type\":\"CumulativeUpkeep\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}} "
-    Spec.assertBool s (Codec.encode Keyword.codec (upkeep 2) /= Codec.encode Keyword.codec (Keyword.Ward (Ward.MkWard (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []) Nothing))) "and is not ward"
+    Spec.assertBool s (Codec.encode Keyword.codec (upkeep 2) /= Codec.encode Keyword.codec (Keyword.Ward (Ward.MkWard (NonEmpty.singleton (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) Nothing))) "and is not ward"
   -- CR 702.30a's payload is a Cost too, and the tag must not collide with the
   -- upkeep cost above: what a permanent owes at the first upkeep after it came
   -- under your control is not what it owes at every upkeep thereafter. No arm of

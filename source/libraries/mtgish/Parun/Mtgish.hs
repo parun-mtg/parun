@@ -439,7 +439,8 @@ triple n = do
 activatedAbility :: Cost.Cost Keyword.Keyword -> Modal -> ActivatedAbility.ActivatedAbility Card.Card Ability
 activatedAbility c m =
   ActivatedAbility.MkActivatedAbility
-    { ActivatedAbility.cost = c,
+    { ActivatedAbility.costChoices = [],
+      ActivatedAbility.cost = c,
       ActivatedAbility.maximumX = [],
       ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,

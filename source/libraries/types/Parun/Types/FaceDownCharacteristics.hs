@@ -1,5 +1,6 @@
 module Parun.Types.FaceDownCharacteristics where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Set as Set
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Cost as Cost
@@ -116,10 +117,11 @@ disguisedValue =
           ( Keyword.Ward
               Ward.MkWard
                 { Ward.cost =
-                    Cost.MkCost
-                      { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2]),
-                        Cost.components = []
-                      },
+                    NonEmpty.singleton
+                      Cost.MkCost
+                        { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2]),
+                          Cost.components = []
+                        },
                   Ward.perEach = Nothing
                 }
           )

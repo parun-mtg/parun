@@ -1,5 +1,6 @@
 module Parun.Codec.WardSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Ward as Ward
 import qualified Parun.JsonCodec.Codec as Codec
@@ -31,11 +32,25 @@ spec s = Spec.describe s "Parun.Codec.Ward" $ do
       s
       codec
       ( Ward.MkWard
-          { Ward.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2]), Cost.components = []},
+          { Ward.cost = NonEmpty.singleton Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2]), Cost.components = []},
             Ward.perEach = Nothing
           }
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}} "
+  -- CR 702.21a's cost as a choice, Titania, Rugged Rumbler's shape: the first
+  -- option is `cost`, the rest `orCosts`.
+  Spec.it s "MkWard with a choice of costs" $
+    Common.assertCodec
+      s
+      codec
+      ( Ward.MkWard
+          { Ward.cost =
+              Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.PayLife (CostAmount.Fixed 2)]}
+                NonEmpty.:| [Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2]), Cost.components = []}],
+            Ward.perEach = Nothing
+          }
+      )
+      " {\"cost\":{\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}],\"mana\":[]},\"orCosts\":[{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}]} "
   -- CR 702.21b: Minthara, Merciless Soul's ward {X}, one {1} per experience
   -- counter.
   Spec.it s "MkWard with CR 702.21b's X" $
@@ -43,7 +58,7 @@ spec s = Spec.describe s "Parun.Codec.Ward" $ do
       s
       codec
       ( Ward.MkWard
-          { Ward.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
+          { Ward.cost = NonEmpty.singleton Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
             Ward.perEach =
               Just
                 ( KeywordCount.PlayerCounters
@@ -62,7 +77,7 @@ spec s = Spec.describe s "Parun.Codec.Ward" $ do
       s
       codec
       ( Ward.MkWard
-          { Ward.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.PayLife (CostAmount.Fixed 1)]},
+          { Ward.cost = NonEmpty.singleton Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.PayLife (CostAmount.Fixed 1)]},
             Ward.perEach = Just KeywordCount.Power
           }
       )

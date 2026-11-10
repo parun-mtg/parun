@@ -8,6 +8,7 @@ import qualified Parun.Codec.ActivationRestriction as ActivationRestriction
 import qualified Parun.Codec.Activator as Activator
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.Cost as Cost
+import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Modal as Modal
 import qualified Parun.Codec.Quantity as Quantity
@@ -23,6 +24,8 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 codec :: (Typeable.Typeable card, Eq card, Typeable.Typeable ability, Eq ability) => Codec.Codec card -> Codec.Codec ability -> Codec.Codec (ActivatedAbility.ActivatedAbility card ability)
 codec cardCodec abilityCodec = Fields.object $ do
   cost <- Fields.required "cost" (Cost.codec Keyword.codec) ActivatedAbility.cost
+  -- CR 602.2b: emitted only for a cost that prints a choice.
+  costChoices <- Fields.defaulted "costChoices" [] (Common.list CostChoice.codec) ActivatedAbility.costChoices
   -- CR 101.1: the ceilings this ability's own words put on CR 602.2b's announced
   -- X (Parun.Types.ActivatedAbility), emitted only for an ability that states one.
   maximumX <- Fields.defaulted "maximumX" [] (Common.list Quantity.codec) ActivatedAbility.maximumX
@@ -55,6 +58,7 @@ codec cardCodec abilityCodec = Fields.object $ do
   pure
     ActivatedAbility.MkActivatedAbility
       { ActivatedAbility.cost = cost,
+        ActivatedAbility.costChoices = costChoices,
         ActivatedAbility.maximumX = maximumX,
         ActivatedAbility.minimumX = minimumX,
         ActivatedAbility.definedX = definedX,

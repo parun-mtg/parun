@@ -1543,7 +1543,7 @@ denethorBoard s registry = do
       (srcId, gs1) = S.addPermanent denethor S.alice lands
       ability = case Face.activatedAbilities (S.combinedFace denethor) of
         ab : _ -> ab
-        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
   pure (ability, srcId, S.withMonarch S.alice (gs1 {GameState.priority = Just S.alice}))
 
 -- CR 726.1: "The monarch is a designation a player can have. There is no monarch

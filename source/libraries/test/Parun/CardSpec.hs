@@ -29,6 +29,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as TextEncoding
 import qualified Parun.Codec.CastOffer as CastOffer
 import qualified Parun.Codec.Subtype as Subtype
+import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
@@ -37,6 +38,7 @@ import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as KeywordEngine
+import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Mulligan as Mulligan
@@ -2814,7 +2816,8 @@ oneEffectActivated ::
   ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 oneEffectActivated mana effect =
   ActivatedAbility.MkActivatedAbility
-    { ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = mana, Cost.Type.components = []},
+    { ActivatedAbility.costChoices = [],
+      ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = mana, Cost.Type.components = []},
       ActivatedAbility.modal =
         Mint.oneMode (Seq.singleton effect),
       ActivatedAbility.maximumX = [],
@@ -2848,7 +2851,8 @@ lintSlots = Map.fromList . fmap (\slot -> (slot, TargetSlot.required Pool.AnyTar
 modalActivated :: [Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 modalActivated modes =
   ActivatedAbility.MkActivatedAbility
-    { ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
+    { ActivatedAbility.costChoices = [],
+      ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
       ActivatedAbility.modal = Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory,
       ActivatedAbility.maximumX = [],
       ActivatedAbility.minimumX = 0,
@@ -3673,7 +3677,7 @@ keywordPayloadFilters keyword = case keyword of
   Keyword.Companion (CompanionCondition.DifferentNames predicate) -> [predicate]
   Keyword.Companion (CompanionCondition.SharedCardType predicate) -> [predicate]
   -- CR 702.21a's cost, and rule 702.21b's perEach as mobilize's N.
-  Keyword.Ward w -> costFilters (Ward.cost w) <> foldMap keywordCountFilters (Ward.perEach w)
+  Keyword.Ward w -> concatMap costFilters (Ward.cost w) <> foldMap keywordCountFilters (Ward.perEach w)
   -- CR 702.94a's payload is a Cost too, so its filters are reached the same way.
   Keyword.Miracle cost -> costFilters cost
   -- CR 702.37a: the morph cost, whose components may hold a Filter exactly as
@@ -6618,6 +6622,11 @@ triggeredAbilityFilters ability =
     <> frame StandingHostFramed (concatMap conditionFilters (Maybe.maybeToList (TriggeredAbility.intervening ability)))
     <> modalFilters (TriggeredAbility.modal ability)
 
+-- | Every cost an activation may announce off its printed cost, one per way of
+-- paying its cost choices (Parun.Engine.Activatable.costsFor's printed half).
+activationCostsOf :: ActivatedAbility.ActivatedAbility card ability -> [Cost.Type.Cost Keyword.Keyword]
+activationCostsOf ability = Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability)
+
 activatedAbilityFilters :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 activatedAbilityFilters ability =
   -- CR 602.2b sends an activation through CR 601.2c before CR 601.2h, and
@@ -6627,7 +6636,7 @@ activatedAbilityFilters ability =
   -- Altar). See SlotlessCostFramed for the positions where it does not. Its own
   -- tag only for CR 607.2d's chosen values, which no other Unframed position
   -- answers.
-  fmap ((,) ActivationCostFramed) (costFilters (ActivatedAbility.cost ability))
+  fmap ((,) ActivationCostFramed) (concatMap costFilters (activationCostsOf ability))
     -- CR 101.1's ceiling on this ability's own X, through a Count -- cardFilters'
     -- treatment of Face.maximumX one type over (Blighted Nightmare).
     <> frame Unframed (concatMap quantityFilters (ActivatedAbility.maximumX ability))
@@ -7679,7 +7688,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     let declared f = Set.fromList (concatMap Cost.announcedCounts (spellCostsOf f))
         targeted f = foldMap (Map.keysSet . Mode.targetSlots) (Modal.modes (Face.spell f))
         read_ f = Set.difference (Set.delete Binding.variableX (foldMap (QuantitySlot.slots . CostReduction.perEach) (Face.costReductions f))) (targeted f)
-        activated f = concatMap (Cost.announcedCounts . ActivatedAbility.cost) (Face.activatedAbilities f)
+        activated f = concatMap (concatMap Cost.announcedCounts . activationCostsOf) (Face.activatedAbilities f)
         offends f = declared f /= read_ f || not (null (activated f))
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "a count is read iff declared" (fmap (S.nameOf . Printing.card) offenders) []
@@ -7715,7 +7724,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     ps <- S.allPrintings s corpus
     let unrefusable c = declaresVariable c && not (Cost.demandGrowsWithX c)
         unrefusableX = any unrefusable . spellCostsOf
-        unrefusableAbility ab = unrefusable (ActivatedAbility.cost ab)
+        unrefusableAbility ab = any unrefusable (activationCostsOf ab)
         unbounded f =
           (unrefusableX f && null (Face.maximumX f))
             || any (\ab -> unrefusableAbility ab && null (ActivatedAbility.maximumX ab)) (Face.activatedAbilities f)
@@ -7768,10 +7777,24 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           let modal = ActivatedAbility.modal ab
            in length (Modal.modes modal) /= 1
                 || not (all (null . Mode.targetSlots) (Modal.modes modal))
-                || declaresVariable (ActivatedAbility.cost ab)
+                || any declaresVariable (activationCostsOf ab)
                 || Modal.allEffects modal /= [Effect.Rethrow]
     Spec.assertBool s (not (null windowed)) "the pool has such an ability"
     Spec.assertEqWith s "an untargeted rethrow alone" (fmap fst (filter offends windowed)) []
+  -- ActivatedAbility.costChoices is offered by Parun.Engine.Activatable.costsFor
+  -- alone: a mana ability's route (CR 605.3b), a die-roll window's payment, CR
+  -- 302.6's sickness gate and CR 113.6m's zone (AbilityZone.costZones) all read
+  -- ActivatedAbility.cost.
+  Spec.it s "CR 602.2b a cost choice is printed only on a stack ability, and its {T} and zone stay in the shared cost" $ do
+    ps <- S.allPrintings s corpus
+    let abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (Face.activatedAbilities (S.combinedFace p))
+        choosing = concatMap (filter (not . null . ActivatedAbility.costChoices . snd) . abilitiesOf) ps
+        offends (_, ab) =
+          ManaAbility.isManaAbility ab
+            || elem ActivationRestriction.DuringThrow (ActivatedAbility.restrictions ab)
+            || any (any (\option -> Cost.requiresSicknessCheck option || not (Set.null (AbilityZone.costZones option))) . CostChoice.unwrap) (ActivatedAbility.costChoices ab)
+    Spec.assertBool s (not (null choosing)) "the pool has such an ability (Bullseye, Death Dealer)"
+    Spec.assertEqWith s "none is a mana ability or a rethrow, or taps or names a zone in one option" (fmap fst (filter offends choosing)) []
   Spec.it s "CR 602.2b every activated ability that reads X declares {X} in its own cost" $ do
     ps <- S.allPrintings s corpus
     let abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (Face.activatedAbilities (S.combinedFace p))
@@ -7793,7 +7816,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         offends (_, ab) =
           let effectsReadIt = Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (ActivatedAbility.modal ab)) || modalReadsAnnouncedX (ActivatedAbility.modal ab) || any declaresVariable (announcedGateCostsOf (ActivatedAbility.modal ab))
               readsIt = effectsReadIt || defined ab
-              declared = declaresVariable (ActivatedAbility.cost ab)
+              declared = any declaresVariable (activationCostsOf ab)
            in (readsIt /= declared && not (declared && notesSpent ab)) || (defined ab && effectsReadIt)
     -- Guards the sweep against passing vacuously, in both directions: an empty
     -- pool of abilities, and a pool in which no activation cost declares an X at

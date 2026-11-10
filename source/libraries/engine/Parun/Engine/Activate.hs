@@ -248,16 +248,17 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           floorX = Activatable.leastX pid srcId ability gs
       -- CR 601.2b / 118.9 through CR 602.2b: announce which cost is paid, the
       -- printed activation cost or an alternative an effect offers in its place
-      -- (Kíli the Resourceful's {0} for an equip cost) -- after the modes and
-      -- before X and targets, Cast.castSpellWith's position for a spell's
-      -- alternative cost. Only the payable ones are offered, as the gate
+      -- (Kíli the Resourceful's {0} for an equip cost), and which option of each
+      -- choice printed inside it (ActivatedAbility.costChoices) -- after the
+      -- modes and before X and targets, Cast.castSpellWith's position for a
+      -- spell's alternative cost. Only the payable ones are offered, as the gate
       -- measured them, and a question with one answer is not asked. The
       -- printed cost is FIRST, so a default answer pays it.
       let offeredCosts = filter (Activatable.payableCostAt aimableUnannounced floorX stamp (ActivatedAbility.name ability) spendable pid srcId gs) (Activatable.costsFor (PlayerEffect.applying pid gs) pid ability gs)
       printedCost <- case offeredCosts of
         _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
         [only] -> pure only
-        [] -> pure (ActivatedAbility.cost ability)
+        [] -> pure (Maybe.fromMaybe (ActivatedAbility.cost ability) (Maybe.listToMaybe (Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability))))
       mAmount <-
         if Cost.hasVariable printedCost
           then maybe (fmap Just (Game.choose (Prompt.ChooseX decider pid abilId Binding.variableX floorX (Activatable.affordableX mCeiling aimableUnannounced stamp (ActivatedAbility.name ability) spendable pid srcId gs printedCost)))) (pure . Just) defined

@@ -7,7 +7,9 @@ import qualified Parun.Types.Keyword as Keyword
 -- | CR 118.8 / 601.2b: one printed additional cost whose payment offers the
 -- payer a CHOICE -- Caustic Exhale's "behold a Dragon or pay {1}". Also CR
 -- 118.12's resolution-time cost (Parun.Types.PayGate.cost), where the choice is
--- made as the cost is offered rather than at CR 601.2b.
+-- made as the cost is offered rather than at CR 601.2b, and a choice printed
+-- inside an activation cost (Parun.Types.ActivatedAbility.costChoices), which CR
+-- 602.2b announces as a spell's is.
 --
 -- A list of whole Costs and not of Parun.Types.CostComponents, because a branch
 -- can be MANA: CR 601.2f splits a cost into a mana part and the non-mana
