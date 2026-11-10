@@ -705,14 +705,15 @@ asksAgain answered kind =
 
 -- | Whether a prompt is one a cast or activation asks its own decider between
 -- the ChooseAction that began it and its completion (CR 601.2b-h, CR 602.2b).
--- A target prompt is only while the move still holds targets: once they are
--- spent, the next one is a triggered ability's (CR 603.3d).
+-- A target or mode prompt is only while the move still holds targets or modes:
+-- once they are spent, or a resolution payment never held any, the next one is
+-- a triggered ability's (CR 603.3c-d).
 subChoiceFor :: When.When -> Prompt.Type.Prompt r -> Maybe Label.Label -> Choices.Choices -> Bool
 subChoiceFor key prompt decider choices =
   decider == Just (When.player key) && case prompt of
     Prompt.Type.ChooseTargets {} -> holdsTargets
     Prompt.Type.AnnounceTargets {} -> holdsTargets
-    Prompt.Type.ChooseModes {} -> True
+    Prompt.Type.ChooseModes {} -> Maybe.isJust (Choices.modes choices)
     -- X alone: a count announced beside it (CR 601.2b) is an Answer's.
     Prompt.Type.ChooseX _ _ _ variable _ _ -> variable == Binding.variableX
     Prompt.Type.ChooseCost {} -> True
