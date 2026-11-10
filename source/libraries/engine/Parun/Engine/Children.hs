@@ -110,6 +110,7 @@ filterChildren children predicate = case predicate of
   Filter.Measures measures -> fmap Filter.Measures (measuresChildren children measures)
   Filter.ManaValueParity _ -> pure predicate
   Filter.ManaCostRepeatsSymbol -> pure predicate
+  Filter.ManaCostHasSymbol _ -> pure predicate
   Filter.HeldBy _ _ -> pure predicate
   Filter.ControllerIsOwner -> pure predicate
   Filter.ControlledByRole _ -> pure predicate

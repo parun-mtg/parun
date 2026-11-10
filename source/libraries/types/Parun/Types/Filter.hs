@@ -22,6 +22,7 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
+import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
@@ -105,6 +106,9 @@ data Filter keyword
   | -- | CR 107.4 / 202.1: some mana symbol appears more than once in the
     -- candidate's mana cost (Jegantha, the Wellspring).
     ManaCostRepeatsSymbol
+  | -- | CR 107.3 / 107.4g: a symbol of this kind appears in the candidate's mana
+    -- cost (Zaxara, the Exemplary's {X}, Rage Extractor's {H}).
+    ManaCostHasSymbol ManaSymbolKind.ManaSymbolKind
   | -- | CR 108.3 / 108.4 / 110.2: the candidate's holder relates thus to the
     -- perspective; False where it has none (CR 108.4, 109.1).
     HeldBy Holder.Holder PlayerRelation.PlayerRelation
