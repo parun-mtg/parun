@@ -2073,7 +2073,7 @@ representativeEvents cond =
           noTable (GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice arrived S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty))
             NonEmpty.:| [noTable (GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied S.alice arrived)) | copies]
         -- CR 602.2b's activation, binding the ability and its activator.
-        TriggerCondition.AbilityActivated _ -> one (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated S.alice (Just arrived) departed False AbilityKind.NonManaAbility))
+        TriggerCondition.AbilityActivated _ -> one (GameEvent.AbilityActivated (AbilityWasActivated.MkAbilityWasActivated S.alice (Just arrived) departed False AbilityKind.NonManaAbility Nothing))
         -- CR 601.2c's event. Under a Self subject, the bearer is the targeted
         -- object and alice the targeting object's controller -- an event BOTH
         -- relations admit, since matchesTrigger reads `you` from the bearer's
