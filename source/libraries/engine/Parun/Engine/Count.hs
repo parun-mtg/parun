@@ -46,6 +46,7 @@ import qualified Parun.Types.CardArrivedIn as CardArrivedIn
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Count as Count.Type
@@ -159,6 +160,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
                 EventShape.MovedBetween {} -> []
                 EventShape.MovedFrom {} -> []
                 EventShape.CardArrivedIn {} -> []
+                EventShape.AttackerDeclared -> []
               views = Maybe.mapMaybe (snapshotView viewOf gs shape) (earlier <> logged)
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
            in aggregate quantityOf aggregation kept
@@ -739,11 +741,14 @@ snapshotView viewOf gs shape event = case event of
     --
     -- The DESTINATION, per the constructor's own note, and the origin only where
     -- the shape excludes one.
+    -- Not implemented: the arrival's characteristics as it entered, rather
+    -- than as it is or last was (#6859).
     EventShape.CardArrivedIn arrival ->
       if arrivalMatches arrival zc
-        then Just (Maybe.fromMaybe (departedView viewOf gs zc snapshot) (orLastKnown viewOf gs (ZoneChange.object zc)))
+        then Just (asArrived gs (ZoneChange.object zc) (Maybe.fromMaybe (departedView viewOf gs zc snapshot) (orLastKnown viewOf gs (ZoneChange.object zc))))
         else Nothing
     EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared -> Nothing
   GameEvent.DamageDealt _ -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
   -- characteristics, so there is nothing for a Filter to look at.
@@ -779,6 +784,7 @@ snapshotView viewOf gs shape event = case event of
     -- but the Moved event the same cast emits is what says so, and answering here
     -- too would count one cast twice.
     EventShape.CardArrivedIn {} -> Nothing
+    EventShape.AttackerDeclared -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
       -- data/cards/ asks a cast whether it had an activated ability.
@@ -799,9 +805,17 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.Looked {} -> Nothing
   GameEvent.Voted {} -> Nothing
   GameEvent.VotesRevealed {} -> Nothing
-  -- The same reason, with no snapshot to offer either: no EventShape names an
-  -- attacker being declared (CR 508.2b).
-  GameEvent.AttackerDeclared {} -> Nothing
+  -- CR 508.1a / 608.2i: the attacker as it is or last was, controlled by the
+  -- player who declared it, whom CR 508.1a requires to control it then.
+  --
+  -- Not implemented: its characteristics as declared, rather than as it is or
+  -- last was (#6859).
+  GameEvent.AttackerDeclared declared -> case shape of
+    EventShape.AttackerDeclared -> fmap (\view -> view {Filter.controller = Just (AttackerDeclared.attackingPlayer declared)}) (orLastKnown viewOf gs (AttackerDeclared.attacker declared))
+    EventShape.MovedBetween {} -> Nothing
+    EventShape.MovedFrom {} -> Nothing
+    EventShape.CardArrivedIn {} -> Nothing
+    EventShape.SpellCast _ -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
   GameEvent.AttackerBlocked {} -> Nothing
@@ -911,6 +925,18 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedBetween {} -> Nothing
     EventShape.MovedFrom {} -> Nothing
     EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared -> Nothing
+
+-- CR 110.2 / 608.2i: an arrival under the controller it entered under, so
+-- "entered the battlefield under your control this turn" still counts one
+-- since taken (Iron Man, Master of Machines): the `before` of its first
+-- control change, else the view's own controller. A move to any zone but the
+-- battlefield mints an id no change can name.
+asArrived :: GameState -> ObjectId -> Filter.View -> Filter.View
+asArrived gs oid view =
+  case Game.controlChangesThisTurn oid gs of
+    first : _ -> view {Filter.controller = Just (ControlChanged.before first)}
+    [] -> view
 
 -- CR 713.8e's destination narrowed by the printed clause's origin: the arrival
 -- landed in the named zone, and it did not come from one this shape excludes. An

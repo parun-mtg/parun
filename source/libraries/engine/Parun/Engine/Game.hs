@@ -43,6 +43,7 @@ import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ComponentCard as ComponentCard
+import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -3515,6 +3516,13 @@ enteredBattlefield = fmap ZoneChange.object . enteredBattlefieldChange
 -- EnteredThisTurn and Parun.Engine.Saga's read ahead ask here.
 enteredThisTurn :: ObjectId -> GameState -> Bool
 enteredThisTurn oid gs = fmap MovedBetween.to (arrivalThisTurn oid gs) == Just Zone.Battlefield
+
+-- CR 110.2 / 608.2i: this turn's control changes of this permanent, oldest
+-- first. The first one's `before` is the player it entered under, if it
+-- entered this turn: an entry mints none (Parun.Engine.Event.sampleControl).
+controlChangesThisTurn :: ObjectId -> GameState -> [ControlChanged.ControlChanged]
+controlChangesThisTurn oid gs =
+  [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)), ControlChanged.object change == oid]
 
 -- CR 400.7 / 608.2i: the zone change this turn that made this object the object
 -- it is now, keyed on the ARRIVAL's id. Every arrival counts: a move's leading

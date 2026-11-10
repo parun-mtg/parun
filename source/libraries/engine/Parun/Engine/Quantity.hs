@@ -1785,7 +1785,7 @@ partySizeOf viewOf pid gs =
 -- else `current`, the controller it has or last had.
 controlGainedThisTurn :: GameState -> PlayerId.PlayerId -> ObjectId -> Maybe PlayerId.PlayerId -> Bool
 controlGainedThisTurn gs pid oid current =
-  let changes = [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)), ControlChanged.object change == oid]
+  let changes = Game.controlChangesThisTurn oid gs
       enteredUnder = maybe current (Just . ControlChanged.before) (Maybe.listToMaybe changes)
    in any ((== pid) . ControlChanged.after) changes || (Game.enteredThisTurn oid gs && enteredUnder == Just pid)
 
