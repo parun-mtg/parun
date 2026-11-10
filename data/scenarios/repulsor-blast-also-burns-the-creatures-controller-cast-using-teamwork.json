@@ -1,0 +1,46 @@
+{
+  "description": "CR 702.194a / 608.2c: Repulsor Blast deals 5 to its creature, and 2 to that creature's controller only when cast using teamwork",
+  "note": "Three seats: cast without teamwork at Bob's Hill Giant, Bob stays at 20; cast with teamwork (the Bears tapped) at Carol's, Carol drops to 18 while Bob and Alice stay at 20.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [{"card": "Repulsor Blast", "label": "blast1"}, {"card": "Repulsor Blast", "label": "blast2"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}],
+        "battlefield": [
+          {"card": "Grizzly Bears", "label": "bear", "ready": true},
+          {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"},
+          {"card": "Mountain", "label": "m5"}, {"card": "Mountain", "label": "m6"}, {"card": "Mountain", "label": "m7"}, {"card": "Mountain", "label": "m8"}
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}],
+        "battlefield": [{"card": "Hill Giant", "label": "g1"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}],
+        "battlefield": [{"card": "Hill Giant", "label": "g2"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseKicker", "with": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$blast1", "targets": ["$g1"], "mana": ["$m1", "$m2", "$m3", "$m4", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 20}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseKicker", "with": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseTapsForTotalPower", "with": ["$bear"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$blast2", "targets": ["$g2"], "mana": ["$m5", "$m6", "$m7", "$m8"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$bear", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "carol", "life": 18}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 20}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 20}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}}
+  ]
+}
