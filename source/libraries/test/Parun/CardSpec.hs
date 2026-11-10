@@ -96,7 +96,6 @@ import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
-import qualified Parun.Types.AttackPermission as AttackPermission
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
@@ -400,6 +399,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
@@ -524,7 +524,7 @@ vanillaFace name typeLine =
       Face.counterRestrictions = [],
       Face.crewRestrictions = [],
       Face.targetRestrictions = [],
-      Face.attackPermissions = [],
+      Face.rulePermissions = [],
       Face.activationProhibitions = [],
       Face.entryRestrictions = [],
       Face.attackCosts = [],
@@ -2152,7 +2152,7 @@ ruleAbilitiesCounts :: RuleAbilities.RuleAbilities -> [Count.Type.Count Quantity
 ruleAbilitiesCounts rules =
   concatMap combatRestrictionCounts (RuleAbilities.combatRestrictions rules)
     <> concatMap blockPermissionCounts (RuleAbilities.blockPermissions rules)
-    <> concatMap (foldMap conditionCounts . AttackPermission.while) (RuleAbilities.attackPermissions rules)
+    <> concatMap (foldMap conditionCounts . RulePermission.while) (RuleAbilities.rulePermissions rules)
     -- CR 508.1d's "or that it attacks if some condition is met", the same CR
     -- 604.2 clause blockPermissionCounts reads one field over (Otarian
     -- Juggernaut counts its controller's graveyard). The requirement's SUBJECT
@@ -6401,8 +6401,8 @@ ruleAbilitiesFilters rules =
         <> concatMap (unframed . affectedFilters . CrewRestriction.affected) (RuleAbilities.crewRestrictions rules)
         <> concatMap (unframed . affectedFilters . TargetRestriction.affected) (RuleAbilities.targetRestrictions rules)
         <> concatMap (unframed . pure . TargetRestriction.aimers) (RuleAbilities.targetRestrictions rules)
-        <> concatMap (unframed . affectedFilters . AttackPermission.affected) (RuleAbilities.attackPermissions rules)
-        <> concatMap (concatMap conditionFilters . Maybe.maybeToList . AttackPermission.while) (RuleAbilities.attackPermissions rules)
+        <> concatMap (unframed . affectedFilters . RulePermission.affected) (RuleAbilities.rulePermissions rules)
+        <> concatMap (concatMap conditionFilters . Maybe.maybeToList . RulePermission.while) (RuleAbilities.rulePermissions rules)
         <> concatMap (unframed . attachRestrictionFilters) (RuleAbilities.attachRestrictions rules)
         <> concatMap (unframed . affectedFilters . EntryRestriction.affected) (RuleAbilities.entryRestrictions rules)
         <> concatMap (unframed . affectedFilters . CounterRestriction.affected) (RuleAbilities.counterRestrictions rules)
@@ -6667,7 +6667,7 @@ activatedAbilityFilters ability =
 --     701.21a / 101.2), `untapRestrictions` (CR 502.3 / 101.2),
 --     `crewRestrictions` (CR 702.122d / 101.2),
 --     `targetRestrictions` (CR 115 / 101.2),
---     `attackPermissions` (CR 702.3b / 302.6),
+--     `rulePermissions` (CR 702.3b / 302.6),
 --     `entryRestrictions` (CR 400.4a / 101.2),
 --     `counterRestrictions` (CR 122.6 / 101.2),
 --     `activationProhibitions` (CR 602.2 / 101.2),

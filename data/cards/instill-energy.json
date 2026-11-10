@@ -45,14 +45,6 @@
           ]
         }
       ],
-      "attackPermissions": [
-        {
-          "affected": {
-            "type": "Attached"
-          },
-          "waives": "SummoningSickness"
-        }
-      ],
       "enchant": [
         {
           "pool": {
@@ -71,6 +63,14 @@
       ],
       "name": "Instill Energy",
       "oracleText": "Enchant creature\nEnchanted creature can attack as though it had haste.\n{0}: Untap enchanted creature. Activate only during your turn and only once each turn.",
+      "rulePermissions": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "waives": "AttackSickness"
+        }
+      ],
       "typeLine": {
         "subtypes": [
           "Aura"

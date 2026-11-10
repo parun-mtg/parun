@@ -65,6 +65,7 @@ import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Reversal as Reversal
+import qualified Parun.Engine.RulePermission as RulePermission
 import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.Subtype as Subtype
@@ -177,6 +178,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealWindow as RevealWindow
 import Parun.Types.RowSource (RowSource)
+import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -2218,13 +2220,21 @@ requiresSicknessCheck cost =
 -- recent turn began, which differs where an effect lets another player tap it
 -- for mana (Piracy, `pid` standing in only where it has no controller).
 --
+-- A RuleWaiver.ActivationSickness permission (Thousand-Year Elixir) lifts the
+-- gate without granting haste, so it stays out of Summoning.settledOrHastyGiven,
+-- whose attack and enlist readers must not relax. Its "you may activate" is the
+-- controller's alone, so `pid` must be the creature's controller.
+--
 -- `grants` is the board's Projection.controlGrants, which an enumeration takes
 -- once rather than once per ability (#1448).
 sicknessOkGiven :: [Projection.ControlGrant] -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Bool
 sicknessOkGiven grants pcs pid oid cost gs =
   not (requiresSicknessCheck cost)
     || not (Set.member CardType.Creature (Projection.cardTypesGiven pcs oid gs))
-    || Summoning.settledOrHastyGiven pcs (Maybe.fromMaybe pid (Projection.controllerOfGiven grants oid gs)) oid gs
+    || Summoning.settledOrHastyGiven pcs controller oid gs
+    || (pid == controller && Set.member (oid, RuleWaiver.ActivationSickness) (RulePermission.waivers [oid] gs))
+  where
+    controller = Maybe.fromMaybe pid (Projection.controllerOfGiven grants oid gs)
 
 -- CR 606.5: multiple costs to add or remove loyalty counters are combined into a
 -- single one. Carth the Lion's added [+1] on Jace Beleren's printed [-10] is one

@@ -75,7 +75,7 @@
                     {
                       "type": "Rules",
                       "value": {
-                        "attackPermissions": [
+                        "rulePermissions": [
                           {
                             "affected": {
                               "type": "Matching",

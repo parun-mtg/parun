@@ -46,7 +46,6 @@ import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
-import qualified Parun.Types.AttackPermission as AttackPermission
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
@@ -267,6 +266,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
@@ -1435,7 +1435,7 @@ rewriteRuleAbilities pairs abilities =
         { RuleAbilities.activationProhibitions = fmap (\x -> x {ActivationProhibition.affected = affected (ActivationProhibition.affected x)}) (RuleAbilities.activationProhibitions abilities),
           RuleAbilities.attachRestrictions = fmap (\x -> x {AttachRestriction.affected = affected (AttachRestriction.affected x), AttachRestriction.attachers = Filter.rewrite pairs (AttachRestriction.attachers x)}) (RuleAbilities.attachRestrictions abilities),
           RuleAbilities.attackCosts = fmap (rewriteAttackCost pairs) (RuleAbilities.attackCosts abilities),
-          RuleAbilities.attackPermissions = fmap (\x -> x {AttackPermission.affected = affected (AttackPermission.affected x), AttackPermission.while = condition (AttackPermission.while x)}) (RuleAbilities.attackPermissions abilities),
+          RuleAbilities.rulePermissions = fmap (\x -> x {RulePermission.affected = affected (RulePermission.affected x), RulePermission.while = condition (RulePermission.while x)}) (RuleAbilities.rulePermissions abilities),
           RuleAbilities.attackRequirements = fmap (\x -> x {AttackRequirement.subject = affected (AttackRequirement.subject x), AttackRequirement.while = condition (AttackRequirement.while x)}) (RuleAbilities.attackRequirements abilities),
           RuleAbilities.blockCosts = fmap (rewriteBlockCost pairs) (RuleAbilities.blockCosts abilities),
           RuleAbilities.blockPermissions = fmap (\x -> x {BlockPermission.affected = affected (BlockPermission.affected x), BlockPermission.additional = fmap (rewriteQuantity pairs) (BlockPermission.additional x), BlockPermission.while = condition (BlockPermission.while x)}) (RuleAbilities.blockPermissions abilities),

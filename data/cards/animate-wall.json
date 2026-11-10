@@ -1,28 +1,6 @@
 {
   "faces": [
     {
-      "attackPermissions": [
-        {
-          "affected": {
-            "type": "Matching",
-            "value": {
-              "type": "And",
-              "value": [
-                {
-                  "type": "HasSubtype",
-                  "value": "Wall"
-                },
-                {
-                  "type": "HasAttached",
-                  "value": {
-                    "type": "IsSource"
-                  }
-                }
-              ]
-            }
-          }
-        }
-      ],
       "enchant": [
         {
           "filter": {
@@ -45,6 +23,28 @@
       ],
       "name": "Animate Wall",
       "oracleText": "Enchant Wall\nEnchanted Wall can attack as though it didn't have defender.",
+      "rulePermissions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasSubtype",
+                  "value": "Wall"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
       "typeLine": {
         "subtypes": [
           "Aura"
