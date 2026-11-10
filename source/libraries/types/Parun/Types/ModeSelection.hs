@@ -2,6 +2,7 @@ module Parun.Types.ModeSelection where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 
 -- | CR 700.2: the instruction preceding the bulleted list ("Choose one --"),
 -- carrying both halves of CR 700.2d. That rule states a default and an exception:
@@ -23,6 +24,12 @@ import qualified Parun.Types.ChooseBetween as ChooseBetween
 -- Parun.Engine.Modal may read `most` where it means "the count" on the repeating
 -- arm.
 --
+-- 'ChooseInstead' is the fourth: one instruction replaced by another while a
+-- condition holds (CR 700.2; Parun.Types.ChooseInstead). Parun.Engine.Modal reads
+-- it as either instruction until something settles the condition, which
+-- Parun.Engine.Cast does once the costs are announced (CR 601.4). Settling it for
+-- a triggered or activated ability is not implemented (#5308).
+--
 -- CR 700.2i's pawprint is a future constructor: it bounds a WEIGHTED total
 -- rather than a number of modes, so no range over mode counts states it.
 --
@@ -43,4 +50,5 @@ data ModeSelection
   = ChooseExactly Natural.Natural
   | ChooseExactlyWithRepeats Natural.Natural
   | ChooseBetween ChooseBetween.ChooseBetween
+  | ChooseInstead (ChooseInstead.ChooseInstead ModeSelection)
   deriving (Eq, Ord, Show)

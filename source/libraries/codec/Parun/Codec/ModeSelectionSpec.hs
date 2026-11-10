@@ -7,7 +7,12 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChooseInstead as ChooseInstead
+import qualified Parun.Types.Compares as Compares
+import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.Quantity as Quantity
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
@@ -36,6 +41,14 @@ spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
       ModeSelection.codec
       (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2))
       " {\"type\":\"ChooseBetween\",\"value\":{\"least\":1,\"most\":2}} "
+
+  -- Widow's Bite (data/cards/widows-bite.json), nesting the tag's own codec.
+  Spec.it s "ChooseInstead" $
+    Common.assertCodec
+      s
+      ModeSelection.codec
+      (ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead (Condition.Compares (Compares.MkCompares (Quantity.Literal 1) Comparison.AtLeast (Quantity.Literal 0))) (ModeSelection.ChooseExactly 1) (ModeSelection.ChooseExactly 2)))
+      " {\"type\":\"ChooseInstead\",\"value\":{\"condition\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":1},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":0}}},\"ordinary\":{\"type\":\"ChooseExactly\",\"value\":1},\"instead\":{\"type\":\"ChooseExactly\",\"value\":2}}} "
 
   Spec.it s "has a schema" $ Common.assertHasSchema s ModeSelection.codec
 

@@ -92,6 +92,7 @@ import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -236,6 +237,7 @@ import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
@@ -1609,7 +1611,14 @@ measuresNames asking x = case x of
 
 modalNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Modal.Modal card ability -> r
 modalNames asking onCard onAbility x = case x of
-  Modal.MkModal modes _selection _memory -> foldMap (modeNames asking onCard onAbility) modes
+  Modal.MkModal modes selection _memory -> foldMap (modeNames asking onCard onAbility) modes <> modeSelectionNames asking selection
+
+modeSelectionNames :: (Monoid r) => Asking r -> ModeSelection.ModeSelection -> r
+modeSelectionNames asking x = case x of
+  ModeSelection.ChooseExactly _ -> mempty
+  ModeSelection.ChooseExactlyWithRepeats _ -> mempty
+  ModeSelection.ChooseBetween _ -> mempty
+  ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> conditionNames asking condition <> modeSelectionNames asking ordinary <> modeSelectionNames asking instead
 
 modeNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Mode.Mode card ability -> r
 modeNames asking onCard onAbility x = case x of
