@@ -68,7 +68,7 @@ data EventShape
   | -- | CR 508.1a / 608.2i: a creature was declared as an attacker -- "you
     -- attacked with a Hero this turn" (Avengers Assemble!). Each member is the
     -- attacker as it is or last was, controlled by the player who attacked
-    -- with it; CR 508.4's creature put onto the battlefield attacking never
-    -- was one (CR 508.3a).
+    -- with it. A creature put onto the battlefield attacking never "attacked"
+    -- (CR 508.4).
     AttackerDeclared
   deriving (Eq, Ord, Show)
