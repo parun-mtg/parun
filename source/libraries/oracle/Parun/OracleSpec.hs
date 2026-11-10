@@ -989,7 +989,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
 
   -- CR 701.23a: a search of your library for one card, and where it goes.
   Spec.it s "render prints a search of your library" $ do
-    let search f destination = Effect.Search (Search.MkSearch (PlayerRef.Relative PlayerRelation.You) (PlayerRef.Relative PlayerRelation.You) (Set.singleton Zone.Library) False (Just (Quantity.Literal 1)) f Seq.empty False destination Nothing Nothing Nothing Set.empty False False)
+    let search f destination = Effect.Search (Search.MkSearch (PlayerRef.Relative PlayerRelation.You) (PlayerRef.Relative PlayerRelation.You) (Set.singleton Zone.Library) False (Just (Quantity.Literal 1)) f Seq.empty False destination Map.empty Nothing Nothing Nothing Set.empty False False)
         searching f destination = Oracle.abilities (spell [clause [search f destination]] [])
     Spec.assertEq s [[Text.pack "Search your library for a card, put that card into your hand, then shuffle.", Text.pack "Search your library for a card, put it into your hand, then shuffle."]] (searching (Filter.And []) SearchDestination.Hand)
     Spec.assertEq s [[Text.pack "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.", Text.pack "Search your library for an artifact or enchantment card, reveal it, then shuffle and put the card on top."]] (searching (Filter.Or [Filter.HasCardType CardType.Artifact, Filter.HasCardType CardType.Enchantment]) SearchDestination.RevealThenTop)
@@ -1062,6 +1062,10 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Target creature can't be blocked this turn.")) (Oracle.render (unblocked Duration.UntilEndOfTurn (Filter.And [])))
     Spec.assertEq s (Just (Text.pack "Target creature can't be blocked this turn except by Walls.")) (Oracle.render (unblocked Duration.UntilEndOfTurn (Filter.Not (Filter.HasSubtype Subtype.Wall))))
     Spec.assertEq s Nothing (Oracle.render (unblocked Duration.UntilEndOfCombat (Filter.And [])))
+    -- A second instruction naming the first's target again drops the subject
+    -- (Pym Particles).
+    let vigilant = spell [clause [modify (ObjectRef.InSlot target) Duration.UntilEndOfTurn (Modification.GainKeyword Keyword.Vigilance), Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked Duration.UntilEndOfTurn (Filter.IsBound target) (Filter.And []))]] [(target, TargetSlot.required Pool.Creatures Nothing)]
+    Spec.assertEq s (Just (Text.pack "Target creature gains vigilance until end of turn and can't be blocked this turn.")) (Oracle.render vigilant)
 
   -- CR 506.8a: a time before attackers are declared follows the turn it is
   -- in after a comma.

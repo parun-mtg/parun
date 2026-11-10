@@ -2307,6 +2307,7 @@ neverwinter-hydra
 new-horizons
 new-way-forward
 nexus-of-fate
+nick-fury-agent-of-s-h-i-e-l-d
 nicol-bolas-planeswalker
 nicol-bolas-the-ravager-nicol-bolas-the-arisen
 night-nurse-healer-of-heroes
@@ -3707,6 +3708,7 @@ vine-snare
 vinelasher-adept
 violent-echoes
 viral-spawning
+vision-quest
 visions
 visions-of-beyond
 visions-of-villainy

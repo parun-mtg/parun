@@ -79,12 +79,14 @@ data Context = MkContext
   }
 
 -- | Words that name something, with the target slots they announce (each slot
--- is named exactly once in a mode's text, CR 601.2c) and their number, which
--- a later pronoun agrees with.
+-- is named exactly once in a mode's text, CR 601.2c), their number, which
+-- a later pronoun agrees with, and the target slots they name again without
+-- announcing ("it" for an earlier "target creature").
 data Reference = MkReference
   { wording :: Text.Text,
     mentions :: [SlotName.SlotName],
-    number :: Filter.Number
+    number :: Filter.Number,
+    antecedents :: [SlotName.SlotName]
   }
   deriving (Eq, Show)
 
@@ -288,13 +290,13 @@ object context determiner ref = case ref of
   _
     | elem ref (earlier context) -> case ref of
         ObjectRef.InSlot s
-          | s == selfSlot -> [MkReference (Text.pack "it") [] Filter.Singular]
+          | s == selfSlot -> [MkReference (Text.pack "it") [] Filter.Singular []]
           | Just slot <- Map.lookup s (slots context),
             fmap number (target context s) == [Filter.Singular] -> case (TargetSlot.pool slot, pooled slot) of
-              (Pool.Players, _) -> [MkReference (Text.pack "that player") [] Filter.Singular]
+              (Pool.Players, _) -> [MkReference (Text.pack "that player") [] Filter.Singular [s]]
               -- Free: "it" (Cryogenic Stasis) or "that creature" (Burning
               -- Cloak).
-              (_, nouns@(_ : _)) -> MkReference (Text.pack "it") [] Filter.Singular : fmap (\noun -> MkReference (Text.pack "that " <> noun) [] Filter.Singular) nouns
+              (_, nouns@(_ : _)) -> MkReference (Text.pack "it") [] Filter.Singular [s] : fmap (\noun -> MkReference (Text.pack "that " <> noun) [] Filter.Singular [s]) nouns
               -- A target that may be a player or an object named again is
               -- not spelled out here.
               _ -> []
@@ -304,23 +306,23 @@ object context determiner ref = case ref of
         -- objects named again anywhere else are not spelled out here.
         _
           | determiner == Affected,
-            [MkReference _ _ Filter.Plural] <- object context {earlier = []} determiner ref ->
-              MkReference (Text.pack "they") [] Filter.Plural : [MkReference (Text.pack "those " <> Filter.cardType Filter.Plural t) [] Filter.Plural | ObjectRef.EachMatching f <- [ref], t <- Maybe.mapMaybe Filter.cardTypeOf (conjuncts f)]
+            [MkReference _ _ Filter.Plural _] <- object context {earlier = []} determiner ref ->
+              MkReference (Text.pack "they") [] Filter.Plural [] : [MkReference (Text.pack "those " <> Filter.cardType Filter.Plural t) [] Filter.Plural [] | ObjectRef.EachMatching f <- [ref], t <- Maybe.mapMaybe Filter.cardTypeOf (conjuncts f)]
           where
             conjuncts f = case f of
               Filter.Type.And fs -> fs
               _ -> [f]
         _ -> []
   ObjectRef.InSlot s
-    | s == selfSlot -> [MkReference (self context) [] Filter.Singular]
-    | s == youSlot -> [MkReference (Text.pack "you") [] Filter.Singular]
-    | Just word <- Map.lookup s (bound context) -> [MkReference word [] Filter.Singular]
+    | s == selfSlot -> [MkReference (self context) [] Filter.Singular []]
+    | s == youSlot -> [MkReference (Text.pack "you") [] Filter.Singular []]
+    | Just word <- Map.lookup s (bound context) -> [MkReference word [] Filter.Singular []]
     | otherwise -> do
         named <- target context s
         case (determiner, number named) of
           (Each, Filter.Plural) -> [named {wording = Text.pack "each of " <> wording named}]
           _ -> [named]
-  ObjectRef.EachMatching Filter.Type.IsHostOfSource -> fmap (\h -> MkReference h [] Filter.Singular) (host context)
+  ObjectRef.EachMatching Filter.Type.IsHostOfSource -> fmap (\h -> MkReference h [] Filter.Singular []) (host context)
   ObjectRef.EachMatching f -> case determiner of
     -- Free for a disjunction: one description (Magmaquake's "each creature
     -- without flying or planeswalker", or Iron Spider, Stark Upgrade's "each
@@ -332,38 +334,38 @@ object context determiner ref = case ref of
       let whole = do
             p <- ListUtils.nubOrd (Filter.phrase f (keyword context) <> Filter.phraseJoining Filter.Inclusive f (keyword context))
             text <- Filter.describe Filter.Singular permanent p
-            [MkReference (Text.pack "each " <> text) [] Filter.Plural]
+            [MkReference (Text.pack "each " <> text) [] Filter.Plural []]
           apart = case f of
             Filter.Type.Or fs@(_ : _ : _) -> do
               texts <- traverse (\g -> Filter.phrase g (keyword context) >>= Filter.describe Filter.Singular permanent) fs
-              [MkReference (Prose.listing "and" (fmap (Text.pack "each " <>) texts)) [] Filter.Plural]
+              [MkReference (Prose.listing "and" (fmap (Text.pack "each " <>) texts)) [] Filter.Plural []]
             _ -> []
           conjoined = do
             p <- Filter.phraseJoining Filter.Conjoined f (keyword context)
             text <- Filter.describe Filter.Singular permanent p {Filter.qualifiers = []}
             after <- traverse (Filter.agreeing Filter.Plural) (Filter.qualifiers p)
             let wording' = Text.unwords (Text.pack "each " <> text : after)
-            [MkReference wording' [] Filter.Plural | wording' `notElem` fmap wording whole]
+            [MkReference wording' [] Filter.Plural [] | wording' `notElem` fmap wording whole]
        in whole <> apart <> conjoined
     All -> do
       p <- Filter.phrase f (keyword context)
       text <- Filter.describe Filter.Plural permanent p
-      [MkReference (Text.pack "all " <> text) [] Filter.Plural]
+      [MkReference (Text.pack "all " <> text) [] Filter.Plural []]
     Affected -> do
       p <- Filter.phrase f (keyword context)
       text <- Filter.describe Filter.Plural permanent p
       let bare = null (Filter.adjectives p) && null (Filter.qualifiers p)
-      [MkReference w [] Filter.Plural | w <- if bare then [Text.pack "all " <> text, text] else [text]]
+      [MkReference w [] Filter.Plural [] | w <- if bare then [Text.pack "all " <> text, text] else [text]]
   ObjectRef.EachCardInGraveyard e
     | determiner == All,
       EachCardInGraveyard.filter e == Filter.Type.And [],
       EachCardInGraveyard.graveyards e == ZoneScope.Scoped (PlayerScope.Related PlayerRelation.Opponent) ->
-        [MkReference (Text.pack "each opponent's graveyard") [] Filter.Singular]
+        [MkReference (Text.pack "each opponent's graveyard") [] Filter.Singular []]
     | determiner == All -> do
         p <- Filter.phrase (EachCardInGraveyard.filter e) (keyword context)
         from <- graveyard (EachCardInGraveyard.graveyards e) Nothing
         text <- Filter.describe Filter.Plural permanent (Filter.merge p (Filter.MkPhrase [] [card] [from]))
-        [MkReference (Text.pack "all " <> text) [] Filter.Plural]
+        [MkReference (Text.pack "all " <> text) [] Filter.Plural []]
   ObjectRef.ChosenPermanents c
     | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield -> do
         p <- Filter.phrase (ChosenPermanents.filter c) (keyword context)
@@ -371,10 +373,10 @@ object context determiner ref = case ref of
         many <- Filter.describe Filter.Plural permanent p
         case ChosenPermanents.count c of
           -- "another permanent", as Parun.Oracle.Cost.some reads "other" (Invasive Species).
-          HowMany.Exactly (Quantity.Literal 1) -> [MkReference (maybe (Prose.article one <> Text.pack " " <> one) (Text.pack "another " <>) (Text.stripPrefix (Text.pack "other ") one)) [] Filter.Singular]
-          HowMany.Exactly (Quantity.Literal n) | n > 1 -> [MkReference (Prose.cardinal n <> Text.pack " " <> many) [] Filter.Plural]
-          HowMany.UpTo (Just (Quantity.Literal 1)) -> [MkReference (Text.pack "up to one " <> one) [] Filter.Singular]
-          HowMany.UpTo (Just (Quantity.Literal n)) | n > 1 -> [MkReference (Text.pack "up to " <> Prose.cardinal n <> Text.pack " " <> many) [] Filter.Plural]
+          HowMany.Exactly (Quantity.Literal 1) -> [MkReference (maybe (Prose.article one <> Text.pack " " <> one) (Text.pack "another " <>) (Text.stripPrefix (Text.pack "other ") one)) [] Filter.Singular []]
+          HowMany.Exactly (Quantity.Literal n) | n > 1 -> [MkReference (Prose.cardinal n <> Text.pack " " <> many) [] Filter.Plural []]
+          HowMany.UpTo (Just (Quantity.Literal 1)) -> [MkReference (Text.pack "up to one " <> one) [] Filter.Singular []]
+          HowMany.UpTo (Just (Quantity.Literal n)) | n > 1 -> [MkReference (Text.pack "up to " <> Prose.cardinal n <> Text.pack " " <> many) [] Filter.Plural []]
           _ -> []
   -- Objects one wording names alike read as it: "that creature" for the
   -- creature the source blocks or is blocked by (Inferno Elemental).
@@ -382,9 +384,9 @@ object context determiner ref = case ref of
     r : rs <- traverse (object context determiner) (NonEmpty.toList refs)
     Monad.guard (all (== r) rs && null (mentions r) && number r == Filter.Singular)
     [r]
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.You) Nothing) -> [MkReference (Text.pack "you") [] Filter.Singular]
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing) -> [MkReference (Text.pack "each player") [] Filter.Plural]
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing) -> [MkReference (Text.pack "each opponent") [] Filter.Plural]
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.You) Nothing) -> [MkReference (Text.pack "you") [] Filter.Singular []]
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing) -> [MkReference (Text.pack "each player") [] Filter.Plural []]
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing) -> [MkReference (Text.pack "each opponent") [] Filter.Plural []]
   _ -> []
 
 -- | A player as the subject of a sentence, and whether the verb takes the
@@ -397,27 +399,27 @@ data Person
 -- | The players a reference names, as a subject.
 player :: Context -> PlayerRef.PlayerRef -> [(Reference, Person)]
 player context ref = case ref of
-  PlayerRef.Relative PlayerRelation.You -> [(MkReference (Text.pack "you") [] Filter.Singular, Second)]
-  PlayerRef.Relative PlayerRelation.Opponent -> [(MkReference (Text.pack "each opponent") [] Filter.Plural, Third)]
-  PlayerRef.Relative PlayerRelation.AnyPlayer -> [(MkReference (Text.pack "each player") [] Filter.Plural, Third)]
+  PlayerRef.Relative PlayerRelation.You -> [(MkReference (Text.pack "you") [] Filter.Singular [], Second)]
+  PlayerRef.Relative PlayerRelation.Opponent -> [(MkReference (Text.pack "each opponent") [] Filter.Plural [], Third)]
+  PlayerRef.Relative PlayerRelation.AnyPlayer -> [(MkReference (Text.pack "each player") [] Filter.Plural [], Third)]
   PlayerRef.InSlot s
-    | s == youSlot -> [(MkReference (Text.pack "you") [] Filter.Singular, Second)]
-    | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular, Third)]
+    | s == youSlot -> [(MkReference (Text.pack "you") [] Filter.Singular [], Second)]
+    | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular [], Third)]
     | otherwise -> fmap (\r -> (r, Third)) (target context s)
   -- CR 701.55a's facing player, one at a time.
-  PlayerRef.EachInSlot s | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular, Third)]
-  PlayerRef.HolderOfBound holder Hop.Itself s -> (MkReference (possessor <> Text.pack (holderWord holder)) [] Filter.Singular, Third) : thatNoun <> thatPlayer
+  PlayerRef.EachInSlot s | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular [], Third)]
+  PlayerRef.HolderOfBound holder Hop.Itself s -> (MkReference (possessor <> Text.pack (holderWord holder)) [] Filter.Singular [], Third) : thatNoun <> thatPlayer
     where
       -- "that artifact's controller" (Crumble), once the slot's announcement
       -- has said "target artifact".
       thatNoun =
-        [ (MkReference (Text.pack "that " <> noun <> Text.pack "'s " <> Text.pack (holderWord holder)) [] Filter.Singular, Third)
+        [ (MkReference (Text.pack "that " <> noun <> Text.pack "'s " <> Text.pack (holderWord holder)) [] Filter.Singular [], Third)
         | announced <- target context s,
           Just noun <- [Text.stripPrefix (Text.pack "target ") (wording announced)]
         ]
       -- Free: "its controller" or "that player" (Massacre Wurm), "its owner"
       -- or "that player" (Recoil).
-      thatPlayer = [(MkReference (Text.pack "that player") [] Filter.Singular, Third)]
+      thatPlayer = [(MkReference (Text.pack "that player") [] Filter.Singular [], Third)]
       possessor = case Map.lookup s (bound context) of
         Just word | word /= Text.pack "it" -> word <> Text.pack "'s "
         _ -> Text.pack "its "
@@ -438,7 +440,7 @@ target context s = case Map.lookup s (slots context) of
       Maybe.isNothing (TargetSlot.divided slot) -> do
         (one, many) <- heads context slot
         (text, n) <- counted (TargetSlot.count slot) one many
-        [MkReference text [s] n]
+        [MkReference text [s] n []]
   _ -> []
 
 -- | A slot whose damage is divided (CR 601.2d), as "among" reads it: "one or
@@ -457,7 +459,7 @@ among context s = case Map.lookup s (slots context) of
             | most > 1 -> [Prose.listing "or" (fmap (Prose.cardinal . toInteger) [1 .. most]) <> Text.pack " " <> many]
           SlotCount.Printed (TargetCount.MkTargetCount 0 Nothing) -> [Text.pack "any number of " <> many]
           _ -> []
-        [(MkReference text [s] Filter.Plural, total)]
+        [(MkReference text [s] Filter.Plural [], total)]
   _ -> []
 
 -- | The noun a slot's pool names its objects by, which "that" names one of

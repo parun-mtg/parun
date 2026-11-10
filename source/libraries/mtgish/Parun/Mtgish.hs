@@ -1378,6 +1378,7 @@ searchLibrary who steps = case steps of
               Search.descriptions = Seq.empty,
               Search.upTo = False,
               Search.destination = destination,
+              Search.counters = Map.empty,
               Search.subject = Nothing,
               Search.slot = Nothing,
               Search.handSlot = Nothing,

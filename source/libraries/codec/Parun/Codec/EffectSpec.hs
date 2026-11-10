@@ -370,6 +370,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               Search.descriptions = Seq.empty,
               Search.upTo = False,
               Search.destination = SearchDestination.BattlefieldTapped,
+              Search.counters = Map.empty,
               Search.subject = Nothing,
               Search.slot = Nothing,
               Search.handSlot = Nothing,

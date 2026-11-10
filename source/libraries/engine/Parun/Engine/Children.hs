@@ -1,5 +1,6 @@
 module Parun.Engine.Children where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
@@ -37,12 +38,14 @@ import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
+import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
@@ -57,6 +60,7 @@ import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
@@ -72,6 +76,8 @@ import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
@@ -81,6 +87,8 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CounteringTrigger as CounteringTrigger
+import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
+import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
@@ -101,6 +109,7 @@ import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Divide as Divide
@@ -121,8 +130,12 @@ import qualified Parun.Types.ExchangeSides as ExchangeSides
 import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
+import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
+import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.ExileMaterials as ExileMaterials
+import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Fight as Fight
@@ -179,6 +192,7 @@ import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
+import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
@@ -225,9 +239,11 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
+import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
@@ -248,6 +264,8 @@ import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapForTotalPower as TapForTotalPower
+import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TargetedSubject as TargetedSubject
@@ -761,7 +779,7 @@ effectChildren c effect = case effect of
   Effect.AddMana addition -> fmap Effect.AddMana (onManaAddition c addition)
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities who filter_) -> fmap Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities <$> onPlayer c who <*> onFilter c filter_)
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> fmap Effect.MoveMana (MoveMana.MkMoveMana <$> onPlayer c from <*> traverse (onPlayer c) to)
-  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination subject named handSlot differentIn exactly andOr) ->
+  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot differentIn exactly andOr) ->
     fmap
       Effect.Search
       ( Search.MkSearch
@@ -774,6 +792,7 @@ effectChildren c effect = case effect of
           <*> traverse (onFilter c) descriptions
           <*> pure upTo
           <*> pure destination
+          <*> fmap Map.fromList (traverse (\(kind, count) -> (,) <$> onCounterKind c kind <*> onQuantity c count) (Map.toList counters))
           <*> traverse (onSlot c) subject
           <*> traverse (onSlot c) named
           <*> traverse (onSlot c) handSlot
@@ -1691,3 +1710,109 @@ keywordCountChildren c n = case n of
   KeywordCount.Power -> pure n
   KeywordCount.Tally (KeywordTally.MkKeywordTally within filter_) -> fmap KeywordCount.Tally (KeywordTally.MkKeywordTally <$> keywordScope c within <*> keywordFilter c filter_)
   KeywordCount.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally whose kind) -> fmap (\counted -> KeywordCount.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally counted kind)) (keywordPlayer c whose)
+
+-- | One visitor per kind of child a Cost holds (CR 118.1). Its own record:
+-- a cost is generic in its keyword, and its children (a counter kind, a
+-- tally's colour) are not another record's.
+data CostChildren keyword f = MkCostChildren
+  { -- | A Filter a component holds, judged of the objects paid with.
+    costFilter :: Filter.Filter keyword -> f (Filter.Filter keyword),
+    -- | A counter kind a component adds or removes (CR 122.1), whole.
+    costCounterKind :: CounterKind.CounterKind keyword -> f (CounterKind.CounterKind keyword),
+    -- | The slot an unannounced amount is bound under (CR 107.3a, 601.2b).
+    costSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The colour of mana symbols a tally counts (CR 202.1).
+    costColor :: Color.Color -> f Color.Color,
+    -- | The events the engine looks back over to pay the component.
+    costLooksBack :: HistoryRead.HistoryRead -> f ()
+  }
+
+-- | Every child of a cost left as it is: the base a walk overrides.
+costLeaves :: (Applicative f) => CostChildren keyword f
+costLeaves =
+  MkCostChildren
+    { costFilter = pure,
+      costCounterKind = pure,
+      costSlot = pure,
+      costColor = pure,
+      costLooksBack = const (pure ())
+    }
+
+-- | A Cost's children: its components', each through costComponentChildren.
+-- The mana part holds no child.
+costChildren :: (Applicative f) => CostChildren keyword f -> Cost.Cost keyword -> f (Cost.Cost keyword)
+costChildren c (Cost.MkCost mana components) = Cost.MkCost mana <$> traverse (costComponentChildren c) components
+
+-- | A CostComponent's children, its payload matched positionally.
+costComponentChildren :: (Applicative f) => CostChildren keyword f -> CostComponent.CostComponent keyword -> f (CostComponent.CostComponent keyword)
+costComponentChildren c component = case component of
+  CostComponent.TapThis -> pure component
+  CostComponent.UntapThis -> pure component
+  CostComponent.SacrificeThis -> pure component
+  CostComponent.ReturnThis -> pure component
+  CostComponent.PayLife amount -> CostComponent.PayLife <$> costAmountChildren c amount
+  CostComponent.PayComputedLife _ -> pure component
+  CostComponent.Sacrifice (Sacrifice.MkSacrifice n criterion) -> fmap CostComponent.Sacrifice (Sacrifice.MkSacrifice <$> objectCountChildren c n <*> costFilter c criterion)
+  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power criterion) -> fmap CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power <$> costFilter c criterion)
+  CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing) -> fmap CostComponent.TapPermanents (TapPermanents.MkTapPermanents <$> costAmountChildren c n <*> costFilter c criterion <*> pure sharing)
+  CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n criterion) -> fmap CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n <$> costFilter c criterion)
+  CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) -> fmap CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n <$> costFilter c criterion)
+  CostComponent.DiscardCards (DiscardCards.MkDiscardCards n criterion selection) -> fmap CostComponent.DiscardCards (DiscardCards.MkDiscardCards <$> objectCountChildren c n <*> costFilter c criterion <*> pure selection)
+  CostComponent.DiscardThis _ -> pure component
+  CostComponent.PutCardFromHandOntoBattlefield criterion -> CostComponent.PutCardFromHandOntoBattlefield <$> costFilter c criterion
+  CostComponent.PayEnergy amount -> CostComponent.PayEnergy <$> costAmountChildren c amount
+  -- CR 606.3: once per turn, so paying reads the turn's loyalty activations.
+  CostComponent.AddLoyaltyToThis _ -> component <$ costLooksBack c HistoryRead.LoyaltyActivations
+  CostComponent.RemoveLoyaltyFromThis amount -> CostComponent.RemoveLoyaltyFromThis <$ costLooksBack c HistoryRead.LoyaltyActivations <*> costAmountChildren c amount
+  CostComponent.RemoveCountersFromThis counters -> CostComponent.RemoveCountersFromThis <$> countersOnThisChildren c counters
+  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n which criterion spread) -> fmap CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents <$> costAmountChildren c n <*> whichCountersChildren c which <*> costFilter c criterion <*> pure spread)
+  CostComponent.PutCountersOnThis counters -> CostComponent.PutCountersOnThis <$> countersOnThisChildren c counters
+  CostComponent.PutCountersOnPayer _ -> pure component
+  CostComponent.Blight amount -> CostComponent.Blight <$> costAmountChildren c amount
+  CostComponent.Forage -> pure component
+  CostComponent.FlipCoin -> pure component
+  CostComponent.ExileThisFrom _ -> pure component
+  CostComponent.ExileThis -> pure component
+  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> fmap CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n <$> costFilter c criterion)
+  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
+  CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
+  CostComponent.CollectEvidence _ -> pure component
+  CostComponent.CollectEvidenceOfTargets -> pure component
+  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold <$> cardTallyChildren c tally <*> costFilter c criterion)
+  CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
+  CostComponent.RevealCardFromHand criterion -> CostComponent.RevealCardFromHand <$> costFilter c criterion
+  CostComponent.Behold (Behold.MkBehold n criterion) -> fmap CostComponent.Behold (Behold.MkBehold n <$> costFilter c criterion)
+  CostComponent.BeholdAndExile criterion -> CostComponent.BeholdAndExile <$> costFilter c criterion
+  CostComponent.MillCards _ -> pure component
+  CostComponent.RevealTopOfLibrary _ -> pure component
+  CostComponent.ChooseOpponent _ -> pure component
+  CostComponent.Waterbend amount -> CostComponent.Waterbend <$> costAmountChildren c amount
+  CostComponent.WaterbendInstead _ -> pure component
+
+-- | An amount a cost component names: only an announced one holds a slot.
+costAmountChildren :: (Applicative f) => CostChildren keyword f -> CostAmount.CostAmount -> f CostAmount.CostAmount
+costAmountChildren c amount = case amount of
+  CostAmount.Fixed _ -> pure amount
+  CostAmount.Announced announced -> CostAmount.Announced <$> costSlot c announced
+
+-- | How many objects a component takes: only an exact amount holds a child.
+objectCountChildren :: (Applicative f) => CostChildren keyword f -> ObjectCount.ObjectCount -> f ObjectCount.ObjectCount
+objectCountChildren c n = case n of
+  ObjectCount.Exactly amount -> ObjectCount.Exactly <$> costAmountChildren c amount
+  ObjectCount.Every -> pure n
+
+-- | Which counters a removal takes: only a named kind holds a child.
+whichCountersChildren :: (Applicative f) => CostChildren keyword f -> WhichCounters.WhichCounters keyword -> f (WhichCounters.WhichCounters keyword)
+whichCountersChildren c which = case which of
+  WhichCounters.OfKind kind -> WhichCounters.OfKind <$> costCounterKind c kind
+  WhichCounters.OfAnyKind -> pure which
+
+-- | Counters put on or removed from the object the cost is on.
+countersOnThisChildren :: (Applicative f) => CostChildren keyword f -> CountersOnThis.CountersOnThis keyword -> f (CountersOnThis.CountersOnThis keyword)
+countersOnThisChildren c (CountersOnThis.MkCountersOnThis kind n) = CountersOnThis.MkCountersOnThis <$> costCounterKind c kind <*> pure n
+
+-- | What an exile-totalling cost sums: only a colour tally holds a child.
+cardTallyChildren :: (Applicative f) => CostChildren keyword f -> CardTally.CardTally -> f CardTally.CardTally
+cardTallyChildren c tally = case tally of
+  CardTally.ManaValue -> pure tally
+  CardTally.ManaSymbolsOf color -> CardTally.ManaSymbolsOf <$> costColor c color
