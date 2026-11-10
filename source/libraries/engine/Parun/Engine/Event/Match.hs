@@ -130,6 +130,7 @@ import qualified Parun.Types.Mentored as Mentored
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.OwnedZone as OwnedZone
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
@@ -262,7 +263,7 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
         TriggerFrequency.FirstTimeEachTurn ->
           let qualifies declared = case DeclarationTrigger.attackers t of
                 Nothing -> True
-                Just count -> reachesFloor count [AttackerDeclared.power d | d <- declared, admitsAttacker gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
+                Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
            in length (filter qualifies (declarationsBy attacker gs)) <= 1
       -- As the Attacker arm's: asked of the live board, never re-checked (CR 603.4).
       && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) context gs bearer) (DeclarationTrigger.while t)
@@ -288,10 +289,14 @@ reachesFloor count powers = case AttackCount.measure count of
 declaredPower :: GameState -> ObjectId -> Integer
 declaredPower gs oid =
   Maybe.fromMaybe 0 . Maybe.listToMaybe $
-    [ AttackerDeclared.power d
+    [ stampedPower d
     | GameEvent.AttackerDeclared d <- reverse (fmap LoggedEvent.event (Foldable.toList (GameState.events gs))),
       AttackerDeclared.attacker d == oid
     ]
+
+-- The power stamped on a declaration's snapshot, which a creature has (CR 302.4).
+stampedPower :: AttackerDeclared.AttackerDeclared -> Integer
+stampedPower = Maybe.fromMaybe 0 . PC.power . ObjectSnapshot.characteristics . AttackerDeclared.snapshot
 
 -- CR 508.3c: each declaration `attacker` made this turn, oldest first: the
 -- turn's AttackerDeclared events for that player, cut at each
@@ -640,7 +645,7 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 -- Parun.Types.EventGroup is what fires it once (CR 603.2c).
 leaves :: Map.Map SlotName.SlotName Binding -> Filter.Context -> GameState -> ObjectId -> PlayerId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Bool
 leaves bindings context gs bearer you t event = case event of
-  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _) ->
+  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) ->
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
       && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)
@@ -1707,7 +1712,7 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- characteristic to the instant the turn finished, and a wholly live read
   -- would answer wrong for a permanent that turned twice before the CR 117.5
   -- scan, which is the argument Parun.Types.Transformed makes for carrying the
-  -- sample.
+  -- sample. Its zone is the battlefield, the only one a permanent turns over in.
   --
   -- The CONTROLLER and the ATTACHMENTS come off the event too, and for CR
   -- 603.10's reason rather than CR 701.27f's: that rule pins the whole appearance
@@ -1744,6 +1749,8 @@ armMatches bindings board gs bearer you cond event = case cond of
                   let sampled =
                         Count.overlaySnapshot
                           (Count.deployIn gs Zone.Battlefield)
+                          Zone.Battlefield
+                          Zone.Battlefield
                           (Transformed.lapsedGrants transformed)
                           (Transformed.characteristics transformed)
                           live {Filter.controller = Transformed.controller transformed}

@@ -2796,16 +2796,18 @@ attemptAttackDeclaration perform pid asked forced rejected = do
               -- apart, its falsifier being the same board with the announcement
               -- aimed at the protector instead.
               --
-              -- And each creature's power as it attacked, which a total-power
-              -- attack trigger sums (Desert Were-Worm's ruling): every survivor
-              -- is a creature on the battlefield, so the 0 is never read.
+              -- And each creature as it attacked, whose power a total-power
+              -- attack trigger sums (Desert Were-Worm's ruling) and whose
+              -- characteristics a CR 608.2i look-back reads: every survivor is a
+              -- creature on the battlefield, so the snapshot always exists.
               State.modify'
                 ( \g ->
                     let declared = Natural.length survivors
                         record h oid = Maybe.fromMaybe h $ do
                           t <- Map.lookup oid kept
                           d <- Defender.playerOf Projection.controllerWithLastKnown t g
-                          pure (Event.recordEvent (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid d t declared (attackerOf oid) (Maybe.fromMaybe 0 (Projection.powerOf oid g)))) h)
+                          snapshot <- Projection.objectSnapshot oid g
+                          pure (Event.recordEvent (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid d t declared (attackerOf oid) snapshot)) h)
                      in List.foldl' record g survivors
                 )
               -- CR 508.3e's arity, which is the declaration's rather than the

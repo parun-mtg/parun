@@ -291,7 +291,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.PutIntoZone t, GameEvent.CardArrived zc)
     | bindsArrival t -> Binding.setBecame (ZoneChange.object zc) Map.empty
   -- CR 603.6a: entersSlots' slots, off the entry matched.
-  (TriggerCondition.Enters t, GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _)) -> entersBindings gs t zc
+  (TriggerCondition.Enters t, GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)) -> entersBindings gs t zc
   -- CR 708.7 through CR 603.2. A Matching subject binds Pine Walker's "that
   -- creature" (CR 603.2): the permanent that was turned face up, which it
   -- untaps. The bearer is a bystander here -- CR 113.7a's source slot names the

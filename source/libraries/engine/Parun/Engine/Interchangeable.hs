@@ -709,10 +709,10 @@ activationNames oid entry = case entry of
 
 -- Whether an attack declared in its player's last turn (CR 508.1a) names this
 -- object, as the attacker or the planeswalker or battle attacked. Positional
--- for phasedOutNames' reason.
+-- for phasedOutNames' reason; the snapshot names the attacker again.
 attackedLastTurnNames :: ObjectId -> AttackerDeclared.AttackerDeclared -> Bool
 attackedLastTurnNames oid entry = case entry of
-  AttackerDeclared.MkAttackerDeclared attacker _defender target _count _attackingPlayer _power ->
+  AttackerDeclared.MkAttackerDeclared attacker _defender target _count _attackingPlayer _snapshot ->
     attacker == oid || attackTargetNames oid target
 
 -- Whether any OTHER object names this one: an Aura or Equipment attached to it,

@@ -2930,7 +2930,7 @@ groupAttachCardsSpec s registry =
               (carrier, g2) = S.addPermanent piker S.alice g1
               (split, g3) = S.addPermanent bonesplitter S.alice g2
               (worn, g4) = S.addPermanent husk S.alice g3
-              staged = S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared carrier S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice 0)] (S.attach worn carrier (S.attach split carrier g4))
+              staged = S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared carrier S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.attackerSnapshot carrier S.alice 0))] (S.attach worn carrier (S.attach split carrier g4))
               answer :: Prompt.Prompt r -> r
               answer p = case p of
                 Prompt.ChooseOptional {} -> OptionalDecision.Exercises
