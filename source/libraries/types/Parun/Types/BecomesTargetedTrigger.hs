@@ -1,5 +1,6 @@
 module Parun.Types.BecomesTargetedTrigger where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.Filter as Filter
@@ -16,19 +17,20 @@ import qualified Parun.Types.TargetedSubject as TargetedSubject
 data BecomesTargetedTrigger = MkBecomesTargetedTrigger
   { -- | The targets the condition watches: the bearer (CR 702.21a's ward), a
     -- permanent the Filter admits, read off CR 603.10's sample of the
-    -- battlefield at the announcement (Event.becameTarget), CR 109.5's "you"
-    -- (Dormant Gomazoa), or "you or a permanent you control" (Leyline of
-    -- Combustion, Unsettled Mariner).
+    -- battlefield at the announcement (Event.becameTarget), a player (Dormant
+    -- Gomazoa's "you"), or either (Leyline of Combustion, Loki, God of
+    -- Mischief).
     subject :: TargetedSubject.TargetedSubject,
     -- | How the TARGETING object's controller (CR 405.4, recorded on
     -- Parun.Types.BecameTarget) stands to CR 109.5's "you". AnyPlayer is
     -- Venerated Rotpriest's unnarrowed "a spell"; Opponent is ward's, Diffusion
     -- Sliver's and Amulet of Safekeeping's.
     relation :: PlayerRelation.PlayerRelation,
-    -- | Which of CR 601.2c's announcement roads. Nothing is "a spell or
-    -- ability"; Just Spell is Dormant Gomazoa's, so Ravenous Rats' targeted
-    -- discard does not untap it; Just ActivatedAbility is Professor Hojo's.
-    kind :: Maybe StackObjectKind.StackObjectKind,
+    -- | Which of CR 601.2c's announcement roads. Every kind is "a spell or
+    -- ability"; Spell alone is Dormant Gomazoa's, so Ravenous Rats' targeted
+    -- discard does not untap it; ActivatedAbility alone is Professor Hojo's;
+    -- both abilities are Loki, God of Mischief's "an ability" (CR 113.3).
+    kinds :: Set.Set StackObjectKind.StackObjectKind,
     -- | Once per targeted permanent (Venerated Rotpriest) or once for the whole
     -- announcement (Professor Hojo's "one or more").
     batching :: Batching.Batching
@@ -43,7 +45,7 @@ defaultValue =
   MkBecomesTargetedTrigger
     { subject = TargetedSubject.Permanent ActingPermanent.Self,
       relation = PlayerRelation.AnyPlayer,
-      kind = Nothing,
+      kinds = Set.fromList [minBound .. maxBound],
       batching = Batching.EachOccurrence
     }
 

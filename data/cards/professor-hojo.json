@@ -88,7 +88,9 @@
             "type": "BecomesTargeted",
             "value": {
               "batching": "OneOrMore",
-              "kind": "ActivatedAbility",
+              "kinds": [
+                "ActivatedAbility"
+              ],
               "subject": {
                 "type": "Permanent",
                 "value": {

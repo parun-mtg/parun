@@ -47,16 +47,19 @@
               "batching": "OneOrMore",
               "relation": "Opponent",
               "subject": {
-                "type": "YouOrPermanent",
+                "type": "PlayerOrPermanent",
                 "value": {
-                  "type": "Matching",
-                  "value": {
-                    "type": "HeldBy",
+                  "permanent": {
+                    "type": "Matching",
                     "value": {
-                      "holder": "Controller",
-                      "relation": "You"
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
                     }
-                  }
+                  },
+                  "player": "You"
                 }
               }
             }

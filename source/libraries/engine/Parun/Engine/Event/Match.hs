@@ -1593,17 +1593,18 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- matchesTriggerGiven sees one event at a time and answers the same for both
   -- batchings, which is its contract.
   --
-  -- A subject including CR 109.5's "you" -- CR 603.3a's controller of the bearer
-  -- as the ability triggered, not the bearer -- admits that player named as a
-  -- target: Dormant Gomazoa's "whenever you become the target of a spell" alone,
-  -- and Leyline of Combustion's "you and/or at least one permanent you control"
-  -- beside a permanent.
+  -- A subject including a player admits one named as a target who stands in its
+  -- relation to CR 109.5's "you" -- CR 603.3a's controller of the bearer as the
+  -- ability triggered, not the bearer: Dormant Gomazoa's "whenever you become
+  -- the target of a spell" alone, Leyline of Combustion's "you and/or at least
+  -- one permanent you control" beside a permanent, and Loki, God of Mischief's
+  -- "a player or permanent" any player beside any permanent.
   TriggerCondition.BecomesTargeted c -> case event of
     GameEvent.BecameTarget t ->
-      maybe True (== BecameTarget.kind t) (BecomesTargetedTrigger.kind c)
+      Set.member (BecameTarget.kind t) (BecomesTargetedTrigger.kinds c)
         && PlayerRelation.holds (Game.teams gs) (BecomesTargetedTrigger.relation c) you (BecameTarget.controller t)
         && case (Recipient.playerOf (BecameTarget.targeted t), Recipient.objectOf (BecameTarget.targeted t)) of
-          (Just player, _) -> TargetedSubject.includesYou (BecomesTargetedTrigger.subject c) && player == you
+          (Just player, _) -> maybe False (\relation -> PlayerRelation.holds (Game.teams gs) relation you player) (TargetedSubject.playerOf (BecomesTargetedTrigger.subject c))
           (Nothing, Nothing) -> False
           (Nothing, Just oid) -> case TargetedSubject.permanentOf (BecomesTargetedTrigger.subject c) of
             Nothing -> False
