@@ -1,0 +1,84 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Hawkeye, Young Avenger",
+      "oracleText": "Reach\nIf a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, instead it deals that much damage plus X, where X is Hawkeye's power.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whatRecipient": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "Opponent"
+                  }
+                },
+                "whatSource": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "whichKind": "Noncombat",
+                "whoRecipient": "Opponent"
+              },
+              "rewrite": {
+                "type": "Scale",
+                "value": {
+                  "type": "AddMore",
+                  "value": {
+                    "type": "Measure",
+                    "value": "Power"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Archer",
+          "Hero",
+          "Human"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

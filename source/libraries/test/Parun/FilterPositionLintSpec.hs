@@ -2427,7 +2427,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         scaling kind onWhat =
           [ PrintedReplacement.MkPrintedReplacement
               Nothing
-              (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern (Just kind) CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) onWhat Nothing) (Scaling.AddMore 1)))
+              (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern (Just kind) CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) onWhat Nothing) (Scaling.AddMore (Quantity.Type.Literal 1))))
               Set.empty
               Nothing
           ]
@@ -2575,7 +2575,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Quantity.ObjectCounters' kind", holds (quantityFilters (Quantity.Type.ObjectCounters kind))),
             ("CR 715.2b's threshold", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 2) CounterGrouping.EachPermanent)))),
             ("CR 603.2c's batch placement", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.HasCardType CardType.Creature)) Nothing CounterGrouping.EachBatch)))),
-            ("CR 614.1's scaling pattern", holds (replacementEffectFilters (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern (Just kind) CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) (Filter.Type.HasCardType CardType.Creature) Nothing) (Scaling.AddMore 1))))),
+            ("CR 614.1's scaling pattern", holds (replacementEffectFilters (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern (Just kind) CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) (Filter.Type.HasCardType CardType.Creature) Nothing) (Scaling.AddMore (Quantity.Type.Literal 1)))))),
             ("CR 614.1c's as-enters sacrifice", holds (entryRewriteFilters (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) (Just kind) one)))),
             -- Its MULTIPLIER, a road of its own: the field is a Quantity, so the
             -- kind rides in a number here rather than in the row's own `kind`,
@@ -3151,7 +3151,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 { Face.replacementEffects =
                     [ PrintedReplacement.MkPrintedReplacement
                         Nothing
-                        (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern Nothing CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) buried Nothing) (Scaling.AddMore 1)))
+                        (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern Nothing CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) buried Nothing) (Scaling.AddMore (Quantity.Type.Literal 1))))
                         Set.empty
                         Nothing
                     ]

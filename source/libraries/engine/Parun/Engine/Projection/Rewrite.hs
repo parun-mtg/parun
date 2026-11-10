@@ -102,8 +102,14 @@ import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HowMany as HowMany
+import qualified Parun.Types.InstructionR as InstructionR
+import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LifeGainR as LifeGainR
+import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
+import qualified Parun.Types.LifeLossR as LifeLossR
+import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.ManaAddition as ManaAddition
@@ -147,6 +153,7 @@ import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
@@ -1043,22 +1050,20 @@ rewriteReplacementEffect pairs effect = case effect of
   -- so there is nothing to swap.
   ReplacementEffect.UntapR _ -> effect
   -- CR 614.1a / 120.4c: a LifeLossPattern is one CR 109.5 relation and one cause,
-  -- and no arm of the rewrite names a Filter or a card. No printed word, so
-  -- nothing to swap.
-  ReplacementEffect.LifeLossR {} -> effect
-  -- CR 614.1a / 119.10: a LifeGainR is one CR 109.5 relation and one rewrite
-  -- naming no Filter or card. No printed word, so nothing to swap.
-  ReplacementEffect.LifeGainR {} -> effect
+  -- so only a scaling's quantity holds a printed word.
+  ReplacementEffect.LifeLossR r -> ReplacementEffect.LifeLossR r {LifeLossR.rewrite = rewriteLifeLossRewrite pairs (LifeLossR.rewrite r)}
+  -- CR 614.1a / 119.10: a LifeGainR is one CR 109.5 relation and one rewrite,
+  -- so only a scaling's quantity holds a printed word.
+  ReplacementEffect.LifeGainR r -> ReplacementEffect.LifeGainR r {LifeGainR.rewrite = rewriteLifeGainRewrite pairs (LifeGainR.rewrite r)}
   -- CR 614.1a: an InstructionR is one instruction, one CR 109.5 relation and one
-  -- scaling or DrawInstead; no Filter and no card. LifeGainR's answer, and for
-  -- its reason.
-  ReplacementEffect.InstructionR {} -> effect
+  -- rewrite; LifeGainR's answer.
+  ReplacementEffect.InstructionR r -> ReplacementEffect.InstructionR r {InstructionR.rewrite = rewriteInstructionRewrite pairs (InstructionR.rewrite r)}
   -- CR 614.1a / 706.1: a DieRollR is one CR 109.5 relation and one nullary
   -- rewrite, so CR 612.1's text change has nothing to walk into.
   ReplacementEffect.DieRollR {} -> effect
   -- The Unstable FAQ: a PerformerR's Filter names a subtype (Steamflogger Boss's
   -- Rigger), which CR 612.1's text change reaches.
-  ReplacementEffect.PerformerR row -> ReplacementEffect.PerformerR row {PerformerR.performer = Filter.rewrite pairs (PerformerR.performer row)}
+  ReplacementEffect.PerformerR row -> ReplacementEffect.PerformerR row {PerformerR.performer = Filter.rewrite pairs (PerformerR.performer row), PerformerR.rewrite = rewriteInstructionRewrite pairs (PerformerR.rewrite row)}
   -- Naked Singularity's ruling of 2004-10-04: a text change reaches the land
   -- type a ManaR's Filter names.
   ReplacementEffect.ManaR r -> ReplacementEffect.ManaR r {ManaR.matching = Filter.rewrite pairs (ManaR.matching r)}
@@ -1081,7 +1086,8 @@ rewriteReplacementEffect pairs effect = case effect of
             (CounterR.matching r)
               { CounterPattern.whichKind = fmap (Filter.rewriteCounterKind pairs) (CounterPattern.whichKind (CounterR.matching r)),
                 CounterPattern.onWhat = Filter.rewrite pairs (CounterPattern.onWhat (CounterR.matching r))
-              }
+              },
+          CounterR.scaling = rewriteScaling pairs (CounterR.scaling r)
         }
   -- CR 612.1 through both printed halves: the pattern's Filter over what the
   -- token is (Queen Allenal of Ruadach's "creature tokens") and the appended
@@ -1090,7 +1096,8 @@ rewriteReplacementEffect pairs effect = case effect of
     ReplacementEffect.TokenR
       r
         { TokenR.matching = (TokenR.matching r) {TokenPattern.whatToken = Filter.rewrite pairs (TokenPattern.whatToken (TokenR.matching r))},
-          TokenR.plus = fmap (fmap (rewriteCard pairs)) (TokenR.plus r)
+          TokenR.plus = fmap (fmap (rewriteCard pairs)) (TokenR.plus r),
+          TokenR.scaling = fmap (rewriteScaling pairs) (TokenR.scaling r)
         }
   ReplacementEffect.TurnUpR r ->
     ReplacementEffect.TurnUpR
@@ -1140,7 +1147,7 @@ rewriteDamageRewrite pairs rewrite = case rewrite of
   DamageRewrite.PreventAllBut _ -> rewrite
   DamageRewrite.PreventUpTo quantity -> DamageRewrite.PreventUpTo (rewriteQuantity pairs quantity)
   DamageRewrite.SetAmount _ -> rewrite
-  DamageRewrite.Scale _ -> rewrite
+  DamageRewrite.Scale scaling -> DamageRewrite.Scale (rewriteScaling pairs scaling)
   -- CR 614.1a's "instead [do something]", the payload shared with an ability's
   -- clauses -- EntryRewrite.RunEffects' arm exactly.
   DamageRewrite.RunEffects es -> DamageRewrite.RunEffects (fmap (rewriteEffect pairs) es)
@@ -1635,6 +1642,34 @@ rewritePerTarget pairs (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTa
 -- CR 612.1 through a quantity: every Filter it nests (a Count's, an activation
 -- tally's, a linked card's criterion) and every nested quantity, through
 -- Parun.Engine.Children, plus the text-bearing leaves below. The keywords
+-- CR 612.1: AddMore's quantity is the one place a scaling holds a printed word.
+rewriteScaling :: [(TextWord.TextWord, TextWord.TextWord)] -> Scaling.Scaling -> Scaling.Scaling
+rewriteScaling pairs scaling = case scaling of
+  Scaling.AddMore quantity -> Scaling.AddMore (rewriteQuantity pairs quantity)
+  Scaling.Multiply _ -> scaling
+  Scaling.Subtract _ -> scaling
+  Scaling.Halve -> scaling
+
+rewriteInstructionRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> InstructionRewrite.InstructionRewrite -> InstructionRewrite.InstructionRewrite
+rewriteInstructionRewrite pairs rewrite = case rewrite of
+  InstructionRewrite.Scaled scaling -> InstructionRewrite.Scaled (rewriteScaling pairs scaling)
+  InstructionRewrite.DrawInstead -> rewrite
+  InstructionRewrite.RollD20Instead -> rewrite
+  InstructionRewrite.DrawFirst -> rewrite
+
+rewriteLifeLossRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> LifeLossRewrite.LifeLossRewrite -> LifeLossRewrite.LifeLossRewrite
+rewriteLifeLossRewrite pairs rewrite = case rewrite of
+  LifeLossRewrite.Scaled scaling -> LifeLossRewrite.Scaled (rewriteScaling pairs scaling)
+  LifeLossRewrite.LeaveAtLeast _ -> rewrite
+  LifeLossRewrite.ExileFromTopOfYourLibrary -> rewrite
+  LifeLossRewrite.GainInstead -> rewrite
+
+rewriteLifeGainRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> LifeGainRewrite.LifeGainRewrite -> LifeGainRewrite.LifeGainRewrite
+rewriteLifeGainRewrite pairs rewrite = case rewrite of
+  LifeGainRewrite.Scaled scaling -> LifeGainRewrite.Scaled (rewriteScaling pairs scaling)
+  LifeGainRewrite.DrawInstead -> rewrite
+  LifeGainRewrite.LoseInstead -> rewrite
+
 -- TimesPaid and CastUsing designate are deliberately NOT rewritten:
 -- Parun.Engine.Cast keys the record it stamps by the keyword the spell had as
 -- CR 601.2b announced it (Cost.spellKeywords), which a later text change does

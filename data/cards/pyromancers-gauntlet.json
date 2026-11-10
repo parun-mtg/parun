@@ -76,7 +76,10 @@
                 "type": "Scale",
                 "value": {
                   "type": "AddMore",
-                  "value": 2
+                  "value": {
+                    "type": "Literal",
+                    "value": 2
+                  }
                 }
               }
             }

@@ -772,7 +772,10 @@ instructionRowOffends replacement = case replacement of
       InstructionRewrite.DrawFirst -> instruction == PlayerInstruction.FlipCoin
       InstructionRewrite.Scaled scaling -> case scaling of
         Scaling.Multiply m -> m == 0
-        Scaling.AddMore _ -> False
+        -- A computed quantity can be negative (CR 107.1b) and so reach zero.
+        Scaling.AddMore quantity -> case quantity of
+          Quantity.Type.Literal n -> n < 0
+          _ -> True
         Scaling.Subtract _ -> True
         Scaling.Halve -> True
 
@@ -3340,7 +3343,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.FlipCoin) (rowsOf eligeth)) "while drawing instead of flipping a coin is rejected"
     Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.DrawCards) (rowsOf eligeth)) "and so is drawing instead of drawing"
     Spec.assertBool s (not (any instructionRowOffends (rowsOf thumb))) "Krark's Thumb's doubling is accepted"
-    Spec.assertBool s (not (any (instructionRowOffends . scaledBy (Scaling.AddMore 1)) (rowsOf thumb))) "and so is one more coin"
+    Spec.assertBool s (not (any (instructionRowOffends . scaledBy (Scaling.AddMore (Quantity.Type.Literal 1))) (rowsOf thumb))) "and so is one more coin"
     Spec.assertBool s (all (instructionRowOffends . scaledBy (Scaling.Subtract 1)) (rowsOf thumb)) "while one coin fewer is rejected"
     Spec.assertBool s (all (instructionRowOffends . scaledBy Scaling.Halve) (rowsOf thumb)) "and so is half as many"
     Spec.assertBool s (all (instructionRowOffends . scaledBy (Scaling.Multiply 0)) (rowsOf thumb)) "and so is none"

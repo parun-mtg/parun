@@ -1,6 +1,7 @@
 module Parun.Types.Scaling where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.Quantity as Quantity
 
 -- | CR 614.1: how a counting replacement rewrites the count. Corpsejack Menace
 -- and Doubling Season are Multiply 2 ("twice that many"); Hardened Scales is
@@ -9,7 +10,9 @@ import qualified Numeric.Natural as Natural
 -- whole point of this type existing instead of three effect constructors.
 data Scaling
   = Multiply Natural.Natural
-  | AddMore Natural.Natural
+  | -- | CR 107.1b: "that much plus" the quantity, read as the replacement
+    -- applies (Hawkeye, Young Avenger's power), the total floored at zero.
+    AddMore Quantity.Quantity
   | -- | CR 122.1: Vizier of Remedies' "that many -1\/-1 counters minus one".
     -- SATURATING at zero, because a counter count is a Natural and rule 122.1
     -- knows no negative number of them; Parun.Engine.Event's Compleated arm
