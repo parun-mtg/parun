@@ -1,5 +1,6 @@
 module Parun.Engine.Children where
 
+import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
@@ -32,6 +33,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
+import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
@@ -56,6 +58,7 @@ import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.CommanderColors as CommanderColors
+import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Conjure as Conjure
@@ -78,10 +81,12 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CounteringTrigger as CounteringTrigger
+import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.CreateEmblem as CreateEmblem
 import qualified Parun.Types.CrewRole as CrewRole
+import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DamageTrigger as DamageTrigger
@@ -93,6 +98,7 @@ import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardSubject as DiscardSubject
@@ -104,8 +110,10 @@ import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -114,6 +122,7 @@ import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileHaunting as ExileHaunting
+import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Fight as Fight
@@ -123,17 +132,22 @@ import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
+import qualified Parun.Types.ForetellCost as ForetellCost
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
+import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HistoryRead as HistoryRead
+import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
@@ -145,6 +159,7 @@ import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
+import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
@@ -156,12 +171,14 @@ import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MonarchTarget as MonarchTarget
+import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
+import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
@@ -188,12 +205,14 @@ import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prohibit as Prohibit
+import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RedirectDamage as RedirectDamage
+import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
@@ -222,8 +241,11 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
+import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StepBegins as StepBegins
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Surveil as Surveil
+import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
@@ -241,6 +263,7 @@ import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
 import qualified Parun.Types.VotePlayers as VotePlayers
 import qualified Parun.Types.VotesReceived as VotesReceived
+import qualified Parun.Types.Ward as Ward
 import qualified Parun.Types.WhichCounters as WhichCounters
 
 -- | One visitor per kind of child a DSL tree holds. The traversals below are
@@ -1412,3 +1435,259 @@ actingChildren c permanent = case permanent of
 
 playerActsOnChildren :: (Applicative f) => TriggerChildren f -> PlayerActsOn.PlayerActsOn -> f PlayerActsOn.PlayerActsOn
 playerActsOnChildren c (PlayerActsOn.MkPlayerActsOn who filter_) = fmap (PlayerActsOn.MkPlayerActsOn who) (triggerFilter c filter_)
+
+-- | One visitor per kind of child a keyword (CR 702) holds. Its payloads are
+-- matched positionally in keywordChildren; a type visited whole has walks of
+-- its own outside the keyword.
+data KeywordChildren f = MkKeywordChildren
+  { -- | A Filter the keyword prints: a quality, a criterion, a [type].
+    keywordFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A cost the keyword states (CR 118.1), whole.
+    keywordCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | A keyword named inside one: backup's printed abilities (CR 702.165a).
+    keywordNested :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | The creature type a gift's token prints (CR 702.174f, 702.174i).
+    keywordSubtype :: Subtype.Subtype -> f Subtype.Subtype,
+    -- | Where a count's tally looks, whole.
+    keywordScope :: Scope.Scope -> f Scope.Scope,
+    -- | The player whose counters a count reads (CR 122.1).
+    keywordPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | The events the engine looks back over to expand or pay the keyword.
+    keywordLooksBack :: HistoryRead.HistoryRead -> f ()
+  }
+
+-- | Every child of a keyword left as it is: the base a walk overrides.
+keywordLeaves :: (Applicative f) => KeywordChildren f
+keywordLeaves =
+  MkKeywordChildren
+    { keywordFilter = pure,
+      keywordCost = pure,
+      keywordNested = pure,
+      keywordSubtype = pure,
+      keywordScope = pure,
+      keywordPlayer = pure,
+      keywordLooksBack = const (pure ())
+    }
+
+-- | A Keyword's immediate children, each through its visitor. A nested
+-- keyword is handed to keywordNested and not descended here.
+keywordChildren :: (Applicative f) => KeywordChildren f -> Keyword.Keyword -> f Keyword.Keyword
+keywordChildren c keyword_ = case keyword_ of
+  Keyword.Deathtouch -> pure keyword_
+  Keyword.Defender -> pure keyword_
+  Keyword.DoubleStrike -> pure keyword_
+  Keyword.Equip (Equip.MkEquip cost quality onto) -> fmap Keyword.Equip (Equip.MkEquip <$> keywordCost c cost <*> traverse (keywordFilter c) quality <*> pure onto)
+  Keyword.FirstStrike -> pure keyword_
+  Keyword.Flash -> pure keyword_
+  Keyword.Flying -> pure keyword_
+  Keyword.Haste -> pure keyword_
+  Keyword.Hexproof quality -> fmap Keyword.Hexproof (traverse (keywordFilter c) quality)
+  Keyword.Indestructible -> pure keyword_
+  Keyword.Intimidate -> pure keyword_
+  Keyword.Landwalk filter_ -> fmap Keyword.Landwalk (keywordFilter c filter_)
+  Keyword.Lifelink -> pure keyword_
+  Keyword.LivingMetal -> pure keyword_
+  Keyword.MoreThanMeetsTheEye cost -> fmap Keyword.MoreThanMeetsTheEye (keywordCost c cost)
+  Keyword.Protection (Protection.MkProtection quality spares) -> fmap Keyword.Protection (Protection.MkProtection <$> keywordFilter c quality <*> traverse (keywordFilter c) spares)
+  Keyword.Reach -> pure keyword_
+  Keyword.Shroud -> pure keyword_
+  Keyword.Trample -> pure keyword_
+  Keyword.TrampleOverPlaneswalkers -> pure keyword_
+  Keyword.Vigilance -> pure keyword_
+  Keyword.Ward (Ward.MkWard cost perEach) -> fmap Keyword.Ward (Ward.MkWard <$> traverse (keywordCost c) cost <*> traverse (keywordCountChildren c) perEach)
+  Keyword.Banding -> pure keyword_
+  Keyword.Rampage _natural -> pure keyword_
+  Keyword.CumulativeUpkeep cost -> fmap Keyword.CumulativeUpkeep (keywordCost c cost)
+  Keyword.Flanking -> pure keyword_
+  Keyword.Phasing -> pure keyword_
+  Keyword.Buyback cost -> fmap Keyword.Buyback (keywordCost c cost)
+  Keyword.Shadow -> pure keyword_
+  Keyword.Cycling (Cycling.MkCycling cost searchFor) -> fmap Keyword.Cycling (Cycling.MkCycling <$> keywordCost c cost <*> traverse (keywordFilter c) searchFor)
+  Keyword.Echo cost -> fmap Keyword.Echo (keywordCost c cost)
+  Keyword.Horsemanship -> pure keyword_
+  Keyword.Fading _natural -> pure keyword_
+  Keyword.Kicker cost -> fmap Keyword.Kicker (keywordCost c cost)
+  Keyword.Multikicker cost -> fmap Keyword.Multikicker (keywordCost c cost)
+  Keyword.StickerKicker cost -> fmap Keyword.StickerKicker (keywordCost c cost)
+  Keyword.Flashback cost -> fmap Keyword.Flashback (keywordCost c cost)
+  Keyword.Fear -> pure keyword_
+  Keyword.Morph (Morph.MkMorph cost variant) -> fmap (\paid -> Keyword.Morph (Morph.MkMorph paid variant)) (keywordCost c cost)
+  Keyword.Amplify _natural -> pure keyword_
+  Keyword.Provoke -> pure keyword_
+  Keyword.Storm -> keyword_ <$ keywordLooksBack c HistoryRead.Casts
+  Keyword.Affinity filter_ -> fmap Keyword.Affinity (keywordFilter c filter_)
+  Keyword.Entwine cost -> fmap Keyword.Entwine (keywordCost c cost)
+  Keyword.Modular _natural -> pure keyword_
+  Keyword.Sunburst -> pure keyword_
+  Keyword.Bushido _natural -> pure keyword_
+  Keyword.Soulshift _natural -> pure keyword_
+  Keyword.Splice (Splice.MkSplice onto cost) -> fmap Keyword.Splice (Splice.MkSplice <$> keywordFilter c onto <*> keywordCost c cost)
+  Keyword.Offering filter_ -> fmap Keyword.Offering (keywordFilter c filter_)
+  Keyword.Ninjutsu (Ninjutsu.MkNinjutsu cost variant) -> fmap (\paid -> Keyword.Ninjutsu (Ninjutsu.MkNinjutsu paid variant)) (keywordCost c cost)
+  Keyword.Epic -> pure keyword_
+  Keyword.Paradigm -> pure keyword_
+  Keyword.Convoke -> pure keyword_
+  Keyword.Dredge _natural -> pure keyword_
+  Keyword.Bloodthirst _natural -> keyword_ <$ keywordLooksBack c HistoryRead.Damage
+  Keyword.Haunt -> pure keyword_
+  Keyword.Replicate cost -> fmap Keyword.Replicate (keywordCost c cost)
+  Keyword.Graft _natural -> pure keyword_
+  Keyword.Recover cost -> fmap Keyword.Recover (keywordCost c cost)
+  Keyword.Ripple _natural -> pure keyword_
+  Keyword.SplitSecond -> pure keyword_
+  Keyword.Suspend suspend -> fmap Keyword.Suspend (traverse (\(Suspend.MkSuspend counters cost) -> fmap (Suspend.MkSuspend counters) (keywordCost c cost)) suspend)
+  Keyword.Vanishing _natural -> pure keyword_
+  Keyword.Absorb _natural -> pure keyword_
+  Keyword.AuraSwap cost -> fmap Keyword.AuraSwap (keywordCost c cost)
+  Keyword.Delve -> pure keyword_
+  Keyword.Fortify cost -> fmap Keyword.Fortify (keywordCost c cost)
+  Keyword.Frenzy _natural -> pure keyword_
+  Keyword.Gravestorm -> keyword_ <$ keywordLooksBack c HistoryRead.Deaths
+  Keyword.Poisonous _natural -> pure keyword_
+  Keyword.Champion filter_ -> fmap Keyword.Champion (keywordFilter c filter_)
+  Keyword.Changeling -> pure keyword_
+  Keyword.Evoke cost -> fmap Keyword.Evoke (keywordCost c cost)
+  Keyword.Hideaway _natural -> pure keyword_
+  Keyword.Prowl cost -> keywordLooksBack c HistoryRead.Damage *> fmap Keyword.Prowl (keywordCost c cost)
+  Keyword.Reinforce (Reinforce.MkReinforce amount cost) -> fmap (Keyword.Reinforce . Reinforce.MkReinforce amount) (keywordCost c cost)
+  Keyword.Conspire -> pure keyword_
+  Keyword.Persist -> pure keyword_
+  Keyword.Wither -> pure keyword_
+  Keyword.Devour (Devour.MkDevour quality count) -> fmap (\narrowed -> Keyword.Devour (Devour.MkDevour narrowed count)) (traverse (keywordFilter c) quality)
+  Keyword.Exalted -> pure keyword_
+  Keyword.Unearth cost -> fmap Keyword.Unearth (keywordCost c cost)
+  Keyword.Cascade -> pure keyword_
+  Keyword.Annihilator _natural -> pure keyword_
+  Keyword.LevelUp cost -> fmap Keyword.LevelUp (keywordCost c cost)
+  Keyword.Infect -> pure keyword_
+  Keyword.BattleCry -> pure keyword_
+  Keyword.LivingWeapon -> pure keyword_
+  Keyword.Undying -> pure keyword_
+  Keyword.Miracle cost -> fmap Keyword.Miracle (keywordCost c cost)
+  Keyword.Soulbond -> pure keyword_
+  Keyword.Overload cost -> fmap Keyword.Overload (keywordCost c cost)
+  Keyword.Unleash -> pure keyword_
+  Keyword.Cipher -> pure keyword_
+  Keyword.Evolve -> pure keyword_
+  Keyword.Extort -> pure keyword_
+  Keyword.Fuse -> pure keyword_
+  Keyword.Tribute _natural -> pure keyword_
+  Keyword.Dethrone -> pure keyword_
+  Keyword.HiddenAgenda -> pure keyword_
+  Keyword.Outlast cost -> fmap Keyword.Outlast (keywordCost c cost)
+  Keyword.Prowess -> pure keyword_
+  Keyword.Dash cost -> fmap Keyword.Dash (keywordCost c cost)
+  Keyword.Exploit -> pure keyword_
+  Keyword.Menace -> pure keyword_
+  Keyword.Renown _natural -> pure keyword_
+  Keyword.Awaken cost -> fmap Keyword.Awaken (keywordCost c cost)
+  Keyword.Devoid -> pure keyword_
+  Keyword.Ingest -> pure keyword_
+  Keyword.Myriad -> pure keyword_
+  Keyword.Surge cost -> keywordLooksBack c HistoryRead.Casts *> fmap Keyword.Surge (keywordCost c cost)
+  Keyword.Skulk -> pure keyword_
+  Keyword.SpaceSculptor -> pure keyword_
+  Keyword.Emerge (Emerge.MkEmerge cost quality) -> fmap Keyword.Emerge (Emerge.MkEmerge <$> keywordCost c cost <*> traverse (keywordFilter c) quality)
+  Keyword.Escalate cost -> fmap Keyword.Escalate (keywordCost c cost)
+  Keyword.Melee -> pure keyword_
+  Keyword.Crew _natural -> pure keyword_
+  Keyword.Fabricate _natural -> pure keyword_
+  Keyword.Partner -> pure keyword_
+  Keyword.PartnerText _partnerText -> pure keyword_
+  Keyword.PartnerWith _cardName -> pure keyword_
+  Keyword.ChooseABackground -> pure keyword_
+  Keyword.DoctorsCompanion -> pure keyword_
+  Keyword.Undaunted -> pure keyword_
+  Keyword.Improvise -> pure keyword_
+  Keyword.Aftermath -> pure keyword_
+  Keyword.Embalm cost -> fmap Keyword.Embalm (keywordCost c cost)
+  Keyword.Eternalize cost -> fmap Keyword.Eternalize (keywordCost c cost)
+  Keyword.Afflict _natural -> pure keyword_
+  Keyword.Ascend -> pure keyword_
+  Keyword.Assist -> pure keyword_
+  Keyword.JumpStart -> pure keyword_
+  Keyword.Mentor -> pure keyword_
+  Keyword.Afterlife _natural -> pure keyword_
+  Keyword.Riot -> pure keyword_
+  Keyword.Spectacle cost -> keywordLooksBack c HistoryRead.LifeLosses *> fmap Keyword.Spectacle (keywordCost c cost)
+  Keyword.Escape cost -> fmap Keyword.Escape (keywordCost c cost)
+  Keyword.Companion (CompanionCondition.CardsOverMinimum _) -> pure keyword_
+  Keyword.Companion (CompanionCondition.EachCard filter_) -> fmap (Keyword.Companion . CompanionCondition.EachCard) (keywordFilter c filter_)
+  Keyword.Companion (CompanionCondition.DifferentNames filter_) -> fmap (Keyword.Companion . CompanionCondition.DifferentNames) (keywordFilter c filter_)
+  Keyword.Companion (CompanionCondition.SharedCardType filter_) -> fmap (Keyword.Companion . CompanionCondition.SharedCardType) (keywordFilter c filter_)
+  Keyword.Foretell (ForetellCost.Stated cost) -> fmap (Keyword.Foretell . ForetellCost.Stated) (keywordCost c cost)
+  Keyword.Foretell (ForetellCost.ManaCostReducedBy _) -> pure keyword_
+  Keyword.Demonstrate -> pure keyword_
+  Keyword.Daybound -> pure keyword_
+  Keyword.Nightbound -> pure keyword_
+  Keyword.Decayed -> pure keyword_
+  Keyword.Cleave cost -> fmap Keyword.Cleave (keywordCost c cost)
+  Keyword.Training -> pure keyword_
+  Keyword.Compleated -> pure keyword_
+  Keyword.Reconfigure cost -> fmap Keyword.Reconfigure (keywordCost c cost)
+  Keyword.Blitz cost -> fmap Keyword.Blitz (keywordCost c cost)
+  Keyword.Casualty _natural -> pure keyword_
+  Keyword.ReadAhead -> keyword_ <$ keywordLooksBack c HistoryRead.Entries
+  Keyword.Ravenous -> pure keyword_
+  Keyword.Squad cost -> fmap Keyword.Squad (keywordCost c cost)
+  Keyword.Prototype _prototype -> pure keyword_
+  Keyword.ForMirrodin -> pure keyword_
+  Keyword.Toxic _natural -> pure keyword_
+  Keyword.Backup (Backup.MkBackup count printedAbove) -> fmap (Keyword.Backup . Backup.MkBackup count . Set.fromList) (traverse (keywordNested c) (Set.toList printedAbove))
+  Keyword.Bargain -> pure keyword_
+  Keyword.Craft (Craft.MkCraft cost (ExileMaterials.MkExileMaterials count orMore whichObjects)) -> fmap Keyword.Craft (Craft.MkCraft <$> keywordCost c cost <*> fmap (ExileMaterials.MkExileMaterials count orMore) (keywordFilter c whichObjects))
+  Keyword.Disguise cost -> fmap Keyword.Disguise (keywordCost c cost)
+  Keyword.Plot cost -> fmap Keyword.Plot (keywordCost c cost)
+  Keyword.Saddle _natural -> pure keyword_
+  Keyword.Spree -> pure keyword_
+  Keyword.Offspring cost -> fmap Keyword.Offspring (keywordCost c cost)
+  Keyword.Gift (Gift.TappedFish subtype) -> fmap (Keyword.Gift . Gift.TappedFish) (keywordSubtype c subtype)
+  Keyword.Gift (Gift.Octopus subtype) -> fmap (Keyword.Gift . Gift.Octopus) (keywordSubtype c subtype)
+  Keyword.Gift Gift.Card -> pure keyword_
+  Keyword.Gift Gift.Food -> pure keyword_
+  Keyword.Gift Gift.Treasure -> pure keyword_
+  Keyword.Freerunning cost -> keywordLooksBack c HistoryRead.Damage *> fmap Keyword.Freerunning (keywordCost c cost)
+  Keyword.Impending (Impending.MkImpending counters cost) -> fmap (Keyword.Impending . Impending.MkImpending counters) (keywordCost c cost)
+  Keyword.Exhaust -> pure keyword_
+  Keyword.Boast -> keyword_ <$ keywordLooksBack c HistoryRead.Attacks
+  Keyword.PowerUp -> keyword_ <$ keywordLooksBack c HistoryRead.Entries
+  Keyword.ClassLevel _classLevel -> pure keyword_
+  Keyword.Forecast -> pure keyword_
+  Keyword.StartYourEngines -> pure keyword_
+  Keyword.JobSelect -> pure keyword_
+  Keyword.Tiered -> pure keyword_
+  Keyword.Exert -> pure keyword_
+  Keyword.Enlist -> pure keyword_
+  Keyword.Bestow cost -> fmap Keyword.Bestow (keywordCost c cost)
+  Keyword.Station -> pure keyword_
+  Keyword.Mutate cost -> fmap Keyword.Mutate (keywordCost c cost)
+  Keyword.UmbraArmor -> pure keyword_
+  Keyword.Retrace -> pure keyword_
+  Keyword.Mayhem cost -> keywordLooksBack c HistoryRead.Discards *> fmap Keyword.Mayhem (traverse (keywordCost c) cost)
+  Keyword.Madness (MadnessCost.Stated cost) -> fmap (Keyword.Madness . MadnessCost.Stated) (keywordCost c cost)
+  Keyword.Madness MadnessCost.OwnManaCost -> pure keyword_
+  Keyword.Rebound -> pure keyword_
+  Keyword.Scavenge cost -> fmap Keyword.Scavenge (keywordCost c cost)
+  Keyword.Encore cost -> fmap Keyword.Encore (keywordCost c cost)
+  Keyword.Teamwork _natural -> pure keyword_
+  Keyword.WebSlinging cost -> fmap Keyword.WebSlinging (keywordCost c cost)
+  Keyword.Sneak cost -> fmap Keyword.Sneak (keywordCost c cost)
+  Keyword.Increment -> pure keyword_
+  Keyword.Storied -> pure keyword_
+  Keyword.Mobilize n -> fmap Keyword.Mobilize (keywordCountChildren c n)
+  Keyword.Firebending n -> fmap Keyword.Firebending (keywordCountChildren c n)
+  Keyword.Transmute cost -> fmap Keyword.Transmute (keywordCost c cost)
+  Keyword.Transfigure cost -> fmap Keyword.Transfigure (keywordCost c cost)
+  Keyword.Warp cost -> fmap Keyword.Warp (keywordCost c cost)
+  Keyword.Disturb cost -> fmap Keyword.Disturb (keywordCost c cost)
+  Keyword.Harmonize cost -> fmap Keyword.Harmonize (keywordCost c cost)
+  Keyword.BeamMeUp cost -> fmap Keyword.BeamMeUp (keywordCost c cost)
+
+-- | A keyword's N (CR 702.21b, 702.181a, 702.189a): only a tally and a player
+-- count hold children.
+keywordCountChildren :: (Applicative f) => KeywordChildren f -> KeywordCount.KeywordCount Keyword.Keyword -> f (KeywordCount.KeywordCount Keyword.Keyword)
+keywordCountChildren c n = case n of
+  KeywordCount.Fixed _ -> pure n
+  KeywordCount.Power -> pure n
+  KeywordCount.Tally (KeywordTally.MkKeywordTally within filter_) -> fmap KeywordCount.Tally (KeywordTally.MkKeywordTally <$> keywordScope c within <*> keywordFilter c filter_)
+  KeywordCount.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally whose kind) -> fmap (\counted -> KeywordCount.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally counted kind)) (keywordPlayer c whose)
