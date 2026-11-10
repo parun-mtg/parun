@@ -15,8 +15,8 @@
 -- history read is a named discard, and that is the one site nothing forces: a
 -- type that later gains one owes every discard of it here a function. A type
 -- with a traversal in Parun.Engine.Children (Filter, Quantity, Effect,
--- TriggerCondition, Keyword) is matched there instead, its leaf types discarded
--- there.
+-- TriggerCondition, Keyword, Cost, PlayerEffect) is matched there instead, its
+-- leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -53,7 +53,6 @@ import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AloneUnless as AloneUnless
-import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AsCopy as AsCopy
@@ -77,7 +76,6 @@ import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardAbilities as CardAbilities
-import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
@@ -96,18 +94,13 @@ import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Cost as Cost
-import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostBasis as CostBasis
-import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
-import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
-import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterPattern as CounterPattern
-import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CounterSubject as CounterSubject
@@ -134,7 +127,6 @@ import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntersWith as EntersWith
-import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryController as EntryController
@@ -155,14 +147,12 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
-import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InZone as InZone
@@ -171,7 +161,6 @@ import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordInstance as KeywordInstance
-import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
@@ -182,8 +171,6 @@ import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LimitUnless as LimitUnless
-import qualified Parun.Types.LoyaltyClause as LoyaltyClause
-import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaProduction as ManaProduction
@@ -195,7 +182,6 @@ import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
-import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -211,7 +197,6 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PerCreature as PerCreature
-import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
 import qualified Parun.Types.PhasePattern as PhasePattern
@@ -224,7 +209,6 @@ import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
-import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prevention as Prevention
@@ -252,10 +236,8 @@ import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.SpentOn as SpentOn
-import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
-import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TokenPattern as TokenPattern
@@ -497,10 +479,6 @@ aimedPlayersNames asking x = case x of
   AimedPlayers.EachInSlot slotName -> slotNames asking slotName
   AimedPlayers.BoundPlayer _playerId -> mempty
 
-alternativeActivationCostNames :: (Monoid r) => Asking r -> AlternativeActivationCost.AlternativeActivationCost -> r
-alternativeActivationCostNames asking x = case x of
-  AlternativeActivationCost.MkAlternativeActivationCost grantedBy onlyFirst _cost -> keywordDesignatorNames asking grantedBy <> foldMap (\scope -> history asking HistoryRead.Activations <> turnScopeNames asking scope) onlyFirst
-
 alternativeCostNames :: (Monoid r) => Asking r -> AlternativeCost.AlternativeCost -> r
 alternativeCostNames asking x = case x of
   AlternativeCost.MkAlternativeCost condition cost -> foldMap (conditionNames asking) condition <> costNames asking (keywordNames asking) cost
@@ -588,10 +566,6 @@ cardNames asking x = case x of
 spendManaAsThoughNames :: (Monoid r) => Asking r -> SpendManaAsThough.SpendManaAsThough -> r
 spendManaAsThoughNames asking x = case x of
   SpendManaAsThough.MkSpendManaAsThough _which _asThough _only casting -> foldMap (filterNames asking) casting
-
-castFromZoneNames :: (Monoid r) => Asking r -> CastFromZone.CastFromZone -> r
-castFromZoneNames asking x = case x of
-  CastFromZone.MkCastFromZone from matching _limit _verb _pool additionalCosts _reduction _spending -> inZoneNames asking from <> filterNames asking matching <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts
 
 castingPermissionNames :: (Monoid r) => Asking r -> CastingPermission.CastingPermission -> r
 castingPermissionNames asking x = case x of
@@ -763,10 +737,6 @@ counterSubjectNames asking x = case x of
   CounterSubject.ByEffect -> mempty
   CounterSubject.ByPlayer controllerRelation -> controllerRelationNames asking controllerRelation
   CounterSubject.ByAnything -> mempty
-
-counterProhibitionNames :: (Monoid r) => Asking r -> CounterProhibition.CounterProhibition -> r
-counterProhibitionNames asking x = case x of
-  CounterProhibition.MkCounterProhibition countered counterers -> filterNames asking countered <> filterNames asking counterers
 
 commanderDeckRuleNames :: (Monoid r) => Asking r -> CommanderDeckRule.CommanderDeckRule -> r
 commanderDeckRuleNames asking x = case x of
@@ -1205,14 +1175,6 @@ manaCountNames :: (Monoid r) => Asking r -> ManaCount.ManaCount -> r
 manaCountNames asking x = case x of
   ManaCount.MkManaCount player _filter_ -> playerRefNames asking player
 
-hexproofExemptionNames :: (Monoid r) => Asking r -> HexproofExemption.HexproofExemption -> r
-hexproofExemptionNames asking x = case x of
-  HexproofExemption.MkHexproofExemption permanents _players -> filterNames asking permanents
-
-tapForManaNames :: (Monoid r) => Asking r -> TapForMana.TapForMana -> r
-tapForManaNames asking x = case x of
-  TapForMana.MkTapForMana permanents restriction -> filterNames asking permanents <> foldMap (manaRestrictionNames asking) restriction
-
 manaRestrictionNames :: (Monoid r) => Asking r -> ManaRestriction.ManaRestriction -> r
 manaRestrictionNames asking x = case x of
   ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp _prohibits _paysGeneric -> foldMap (filterNames asking) casts <> foldMap (filterNames asking) activations <> foldMap (keywordDesignatorNames asking) keywordActivations <> foldMap (filterNames asking) unlocks <> foldMap (filterNames asking) turnsFaceUp
@@ -1285,10 +1247,6 @@ modificationNames asking onAbility x = case x of
   Modification.MayAssignCombatDamage _option -> mempty
   Modification.GrantsStationToughness -> mempty
   Modification.Intensify quantity -> quantityNames asking quantity
-
-modifiedRollNames :: (Monoid r) => Asking r -> ModifiedRoll.ModifiedRoll -> r
-modifiedRollNames asking x = case x of
-  ModifiedRoll.MkModifiedRoll _sides _natural _modifier cost _limit -> foldMap (costNames asking (keywordNames asking)) cost
 
 modifyPowerToughnessNames :: (Monoid r) => Asking r -> ModifyPowerToughness.ModifyPowerToughness -> r
 modifyPowerToughnessNames asking x = case x of
@@ -1392,100 +1350,28 @@ activationCriteriaNames :: (Monoid r) => Asking r -> ActivationCriteria.Activati
 activationCriteriaNames asking x = case x of
   ActivationCriteria.MkActivationCriteria grantedBy _whichKind _whichLoyalty _whichAbility -> foldMap (keywordDesignatorNames asking) grantedBy
 
-costAdditionNames :: (Monoid r) => Asking r -> CostAddition.CostAddition -> r
-costAdditionNames asking x = case x of
-  CostAddition.MkCostAddition components _scale -> foldMap (costComponentNames asking (keywordNames asking)) components
-
-costChangeNames :: (Monoid r) => Asking r -> CostChange.CostChange -> r
-costChangeNames asking x = case x of
-  CostChange.Increase _manaCost -> mempty
-  CostChange.Reduce _appliedReduction -> mempty
-  CostChange.Add costAddition -> costAdditionNames asking costAddition
-
-perTargetNames :: (Monoid r) => Asking r -> PerTarget.PerTarget -> r
-perTargetNames asking x = case x of
-  PerTarget.MkPerTarget matching each -> filterNames asking matching <> foldMap (quantityNames asking) each
-
-costModifierNames :: (Monoid r) => Asking r -> CostModifier.CostModifier -> r
-costModifierNames asking x = case x of
-  CostModifier.MkCostModifier subject matching whichTargets perTarget perEach onlyFirst change -> foldMap (\scope -> history asking (costSubjectHistory subject) <> turnScopeNames asking scope) onlyFirst <> costSubjectNames asking subject <> filterNames asking matching <> foldMap (filterNames asking) whichTargets <> foldMap (perTargetNames asking) perTarget <> foldMap (quantityNames asking) perEach <> costChangeNames asking change
-
--- The turn's history a cost modifier's `onlyFirst` reads: CR 601.2i's casts
--- for a spell, CR 602.2's activations for an ability.
-costSubjectHistory :: CostSubject.CostSubject -> HistoryRead.HistoryRead
-costSubjectHistory x = case x of
-  CostSubject.Spells -> HistoryRead.Casts
-  CostSubject.Activations _ -> HistoryRead.Activations
-
-costSubjectNames :: (Monoid r) => Asking r -> CostSubject.CostSubject -> r
-costSubjectNames asking x = case x of
-  CostSubject.Spells -> mempty
-  CostSubject.Activations activationCriteria -> activationCriteriaNames asking activationCriteria
-
 playerEffectNames :: (Monoid r) => Asking r -> PlayerEffect.PlayerEffect -> r
-playerEffectNames asking x = case x of
-  PlayerEffect.CantCastSpells -> mempty
-  PlayerEffect.CantActivateAbilities keywordDesignator filter_ _kind -> foldMap (keywordDesignatorNames asking) keywordDesignator <> filterNames asking filter_
-  PlayerEffect.CantCastMoreThan _natural -> history asking HistoryRead.Casts
-  PlayerEffect.ModifyCost costModifier -> costModifierNames asking costModifier
-  PlayerEffect.AlternativeActivationCost alternativeActivationCost -> alternativeActivationCostNames asking alternativeActivationCost
-  PlayerEffect.PlayAdditionalLands _allowance -> mempty
-  PlayerEffect.NoMaximumHandSize -> mempty
-  PlayerEffect.SetMaximumHandSize _natural -> mempty
-  PlayerEffect.IncreaseMaximumHandSize _natural -> mempty
-  PlayerEffect.ReduceMaximumHandSize _natural -> mempty
-  PlayerEffect.DontLoseUnspentMana _manaFilter -> mempty
-  PlayerEffect.LoseLifeForUnspentMana -> mempty
-  PlayerEffect.MayPayLifeForMana {} -> mempty
-  PlayerEffect.SpendManaAsThough clause -> spendManaAsThoughNames asking clause
-  PlayerEffect.CantBeTargetedBy _playerScope quality -> foldMap (filterNames asking) quality
-  PlayerEffect.HasProtectionFrom filter_ -> filterNames asking filter_
-  PlayerEffect.CastAsThoughItHadFlash filter_ onlyFirst -> foldMap (\scope -> history asking HistoryRead.Casts <> turnScopeNames asking scope) onlyFirst <> filterNames asking filter_
-  PlayerEffect.NextSpell filter_ -> filterNames asking filter_
-  PlayerEffect.MayPlayAsThoughItHadFlash filter_ -> filterNames asking filter_
-  PlayerEffect.KeywordRiderGrant grant ->
-    keywordDesignatorNames asking (KeywordRiderGrant.abilities grant) <> filterNames asking (KeywordRiderGrant.permanents grant)
-  -- A once-per-turn grant is spent off CR 602.2's log, by activator
-  -- (Activatable.graceUsed).
-  PlayerEffect.LoyaltyGrant grant ->
-    filterNames asking (LoyaltyGrant.permanents grant) <> case LoyaltyGrant.relaxes grant of
-      LoyaltyClause.Window -> mempty
-      LoyaltyClause.OncePerTurn -> history asking HistoryRead.Activations
-  PlayerEffect.MayTapForMana tapForMana -> tapForManaNames asking tapForMana
-  PlayerEffect.CantBeCountered counterProhibition -> counterProhibitionNames asking counterProhibition
-  PlayerEffect.RestrictTargeting targetRestriction -> targetRestrictionNames asking (filterNames asking) targetRestriction
-  PlayerEffect.TargetPastHexproof hexproofExemption -> hexproofExemptionNames asking hexproofExemption
-  PlayerEffect.DamageCantBePrevented damagePattern -> damagePatternNames asking damagePattern
-  PlayerEffect.DamageCantBeRedirected damagePattern -> damagePatternNames asking damagePattern
-  PlayerEffect.CantSearchLibraries _cantSearchLibraries -> mempty
-  PlayerEffect.CantBecomeMonarch -> mempty
-  PlayerEffect.StateBasedActionDoesntApply _ -> mempty
-  PlayerEffect.CantSetSchemesInMotion -> mempty
-  PlayerEffect.EntriesTrigger entries -> filterNames asking (EntriesTrigger.entrants entries)
-  PlayerEffect.AdditionalTriggers bearers -> filterNames asking bearers
-  PlayerEffect.ControlledWhileSearching -> mempty
-  PlayerEffect.BlocksFromPiles -> mempty
-  PlayerEffect.YouChoose _declaration -> mempty
-  PlayerEffect.ExilesFoundWhileSearching -> mempty
-  PlayerEffect.CantAttackWithCreatures -> mempty
-  PlayerEffect.CantCastMatching filter_ -> filterNames asking filter_
-  PlayerEffect.CastOnlyAtSorcerySpeed -> mempty
-  PlayerEffect.CantPlayLands filter_ -> filterNames asking filter_
-  PlayerEffect.CastFrom castFromZone -> castFromZoneNames asking castFromZone
-  PlayerEffect.PlayLandsFrom inZone -> inZoneNames asking inZone
-  PlayerEffect.PlotFrom plotFromZone -> plotFromZoneNames asking plotFromZone
-  PlayerEffect.CastFromHandWithoutPayingManaCost freeCastFromHand -> freeCastFromHandNames asking freeCastFromHand
-  PlayerEffect.CantGetCounters _playerCounterKind -> mempty
-  PlayerEffect.StateCoinFlip statedFlip -> statedFlipNames asking statedFlip
-  PlayerEffect.ModifyDieRoll modifiedRoll -> modifiedRollNames asking modifiedRoll
-  PlayerEffect.AdditionalVotes _extraVotes -> mempty
-  PlayerEffect.AdditionalSurveilCards _natural -> mempty
-  PlayerEffect.PutTappedAsYouCascade filter_ -> filterNames asking filter_
-  PlayerEffect.CantGainLife -> mempty
-  PlayerEffect.CantLoseLife -> mempty
-  PlayerEffect.RevealsDraw _reveal -> mempty
-  PlayerEffect.Precluded _outcome -> mempty
-  PlayerEffect.Shows _shows -> mempty
+playerEffectNames asking =
+  Const.getConst
+    . Children.playerEffectChildren
+      Children.MkPlayerEffectChildren
+        { Children.playerFilter = Const.Const . filterNames asking,
+          Children.playerQuantity = Const.Const . quantityNames asking,
+          Children.playerCost = Const.Const . costNames asking (keywordNames asking),
+          Children.playerCostComponent = Const.Const . costComponentNames asking (keywordNames asking),
+          -- A colour of mana symbols names no object and reads no history.
+          Children.playerColor = const (Const.Const mempty),
+          Children.playerDesignator = Const.Const . keywordDesignatorNames asking,
+          Children.playerActivations = Const.Const . activationCriteriaNames asking,
+          Children.playerZone = Const.Const . inZoneNames asking,
+          Children.playerTurn = Const.Const . turnScopeNames asking,
+          -- Mana's type names no object and reads no history.
+          Children.playerManaFilter = const (Const.Const mempty),
+          Children.playerSpending = Const.Const . spendManaAsThoughNames asking,
+          Children.playerManaRestriction = Const.Const . manaRestrictionNames asking,
+          Children.playerDamage = Const.Const . damagePatternNames asking,
+          Children.playerLooksBack = Const.Const . history asking
+        }
 
 playerChoiceNames :: (Monoid r) => Asking r -> PlayerChoice.PlayerChoice -> r
 playerChoiceNames asking x = case x of
@@ -1516,14 +1402,6 @@ playerRefNames asking x = case x of
 playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.PlayerStaticAbility -> r
 playerStaticAbilityNames asking x = case x of
   PlayerStaticAbility.MkPlayerStaticAbility _scope condition _name effect -> foldMap (conditionNames asking) condition <> playerEffectNames asking effect
-
-freeCastFromHandNames :: (Monoid r) => Asking r -> FreeCastFromHand.FreeCastFromHand -> r
-freeCastFromHandNames asking x = case x of
-  FreeCastFromHand.MkFreeCastFromHand spells amount -> filterNames asking spells <> foldMap (quantityNames asking) amount
-
-plotFromZoneNames :: (Monoid r) => Asking r -> PlotFromZone.PlotFromZone -> r
-plotFromZoneNames asking x = case x of
-  PlotFromZone.MkPlotFromZone from matching -> inZoneNames asking from <> filterNames asking matching
 
 poolNames :: (Monoid r) => Asking r -> Pool.Pool -> r
 poolNames asking x = case x of
@@ -1713,10 +1591,6 @@ specialActionNames :: (Monoid r) => Asking r -> SpecialAction.SpecialAction -> r
 specialActionNames asking x = case x of
   SpecialAction.DiscardThisAnyTime -> mempty
   SpecialAction.IgnoreThisUntilEndOfTurn _abilityName cost -> costNames asking (keywordNames asking) cost
-
-statedFlipNames :: (Monoid r) => Asking r -> StatedFlip.StatedFlip -> r
-statedFlipNames asking x = case x of
-  StatedFlip.MkStatedFlip _face _wins firstEachTurn -> if firstEachTurn then history asking HistoryRead.CoinFlips else mempty
 
 -- CR 102.1: a named player's turn reads whatever its reference reads.
 turnScopeNames :: (Monoid r) => Asking r -> TurnScope.TurnScope -> r

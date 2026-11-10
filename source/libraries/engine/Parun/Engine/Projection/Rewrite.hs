@@ -41,7 +41,6 @@ import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
@@ -55,15 +54,10 @@ import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
-import qualified Parun.Types.CostAddition as CostAddition
-import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostChoice as CostChoice
-import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
-import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterPattern as CounterPattern
-import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
@@ -82,7 +76,6 @@ import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersWith as EntersWith
-import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryOption as EntryOption
@@ -95,23 +88,19 @@ import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.GrantedAbility as GrantedAbility
-import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
-import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LimitUnless as LimitUnless
-import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
@@ -124,13 +113,11 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.Modification as Modification
-import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
-import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
@@ -139,7 +126,6 @@ import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
-import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity.Type
@@ -159,7 +145,6 @@ import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype.Type
-import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
@@ -355,26 +340,26 @@ rewriteAffected pairs a = case a of
 -- printed on the permanent like any other.
 --
 -- HERE, beside the other printed-text rewrites, and NOT in
--- Parun.Engine.PlayerEffect, which is otherwise the only module that may case on
--- this type: rewriteEffect's descent into a player effect has to reach it for
--- a restriction a RESOLUTION stores (Liliana, Untouched by Death's -3), and
--- Parun.Engine.PlayerEffect imports this module rather than the other way round.
--- The exception is the same one rewriteEffect itself takes on the Effect type:
--- this cases on STRUCTURE -- does this arm carry a Filter a swap could reach --
--- and never on which player effect it is, so no rule in the closed half learns an
--- effect's identity from it. Every other reader still asks a typed question of
--- Parun.Engine.PlayerEffect and never sees a constructor, and this module's own
--- other handling of the rows stays opaque: they ride
--- ProjectedCharacteristics.playerAbilities so a copy acquires them (CR 707.2a),
--- and nothing there looks inside one.
+-- Parun.Engine.PlayerEffect: rewriteEffect's descent into a player effect has
+-- to reach it for a restriction a RESOLUTION stores (Liliana, Untouched by
+-- Death's -3), and Parun.Engine.PlayerEffect imports this module rather than
+-- the other way round. Children.playerEffectChildren cases on STRUCTURE and
+-- never on which player effect it is, so no rule in the closed half learns an
+-- effect's identity from it.
 --
--- The shape Parun.Engine.CombatRestriction takes for a restriction -- destructure
--- the type, hand each inner value to the module that owns it -- with
--- Parun.Engine.Filter.rewrite doing the descent.
---
--- Exhaustive rather than a catch-all, for rewriteModification's stated reason: a
--- later arm that can hold a word must break this build instead of silently
--- keeping the printed one.
+-- Children.playerEffectChildren's descent: every Filter takes Filter.rewrite
+-- (Thalia's "noncreature spells", Edgewalker's "Cleric spells" on the printed
+-- road, Liliana's "Zombie spells" on the stored one; a cost modifier's own
+-- criterion, its target criteria, its per-target and per-each counts and each
+-- component it adds), every Quantity rewriteQuantity, every cost and component
+-- Filter.rewriteCost's reading (Wall of Fortune's "tap an untapped Wall"; a
+-- component an effect adds), the mana a
+-- clause keeps or spends rewriteManaFilter's colour word (Celestial Dawn's
+-- "white mana"), and an addition's scale is Drought's "for each black mana
+-- symbol", a colour word used as one (CR 612.2). A rule-702 designator, CR
+-- 605.1a's and CR 606.2's classifications, a zone, a turn and a count name no
+-- word CR 612.2 reaches; CR 201.4's chosen names are read off the source, and
+-- CR 612.2's second sentence keeps a swap off a card name even if they were not.
 --
 -- CR 612.2's family gate is not restated at the Filter descent, for the reason
 -- Filter.rewrite's own comment gives: a HasSubtype atom may name a word of any
@@ -382,115 +367,20 @@ rewriteAffected pairs a = case a of
 -- exact lookup already asks CR 612.2's question. A Magical Hack's land-type pair
 -- therefore leaves Edgewalker's Cleric alone.
 rewritePlayerEffect :: [(TextWord.TextWord, TextWord.TextWord)] -> PlayerEffect.PlayerEffect -> PlayerEffect.PlayerEffect
-rewritePlayerEffect pairs effect = case effect of
-  -- The arms carrying a Filter, which is the only place in this type a subtype
-  -- word can hide. Thalia's "noncreature spells", Vedalken Orrery's "spells",
-  -- Prowling Serpopard's "creature spells", Heartstone's "activated abilities of
-  -- creatures", Damping Engine's "artifact, creature, or enchantment spells",
-  -- Oppressive Rays' "enchanted creature" and Yawgmoth's Will's "spells" and
-  -- Omniscience's "spells" name none today; Edgewalker's "Cleric spells" does on
-  -- the printed road, and Liliana, Untouched by Death's "Zombie spells" does on
-  -- the stored one.
-  --
-  -- A cost modifier has a word in up to FIVE places: its own criterion
-  -- ("nontoken Rebels"), the two target criteria (Dwarven Mauler's "that target
-  -- this creature", Kopala's "that target a MERFOLK"), the count it repeats by
-  -- (Sokka, Swordmaster's "for each ALLY you control") and the criterion inside
-  -- each component it adds ("sacrifice a SWAMP"). All descend, which is
-  -- Filter.rewriteCost's reading of CR 612.2 carried to a component added to a
-  -- cost rather than printed in one. The subject's criteria (a rule-702
-  -- designator, CR 605.1a's and CR 606.2's classifications) are no words CR
-  -- 612.2 reaches; an addition's scale is Drought's "for each black mana
-  -- symbol", a colour word used as one (CR 612.2).
-  PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject f targets perTarget perEach first change) ->
-    let change' = case change of
-          CostChange.Add (CostAddition.MkCostAddition components scale) -> CostChange.Add (CostAddition.MkCostAddition (fmap (Filter.rewriteComponent pairs) components) (rewriteCostScale pairs scale))
-          CostChange.Increase _ -> change
-          CostChange.Reduce _ -> change
-     in PlayerEffect.ModifyCost (CostModifier.MkCostModifier subject (Filter.rewrite pairs f) (fmap (Filter.rewrite pairs) targets) (fmap (rewritePerTarget pairs) perTarget) (fmap (rewriteQuantity pairs) perEach) first change')
-  -- No filter to rewrite: a rule-702 designator is not a word CR 612.1 swaps.
-  PlayerEffect.AlternativeActivationCost _ -> effect
-  PlayerEffect.CastAsThoughItHadFlash f first -> PlayerEffect.CastAsThoughItHadFlash (Filter.rewrite pairs f) first
-  PlayerEffect.NextSpell f -> PlayerEffect.NextSpell (Filter.rewrite pairs f)
-  PlayerEffect.MayPlayAsThoughItHadFlash f -> PlayerEffect.MayPlayAsThoughItHadFlash (Filter.rewrite pairs f)
-  -- A rule-702 designator is no word CR 612.1 swaps; the two grants' Filters
-  -- name the permanent, so they descend as CastAsThoughItHadFlash's does.
-  PlayerEffect.KeywordRiderGrant grant -> PlayerEffect.KeywordRiderGrant grant {KeywordRiderGrant.permanents = Filter.rewrite pairs (KeywordRiderGrant.permanents grant)}
-  PlayerEffect.LoyaltyGrant grant -> PlayerEffect.LoyaltyGrant grant {LoyaltyGrant.permanents = Filter.rewrite pairs (LoyaltyGrant.permanents grant)}
-  PlayerEffect.MayTapForMana grant -> PlayerEffect.MayTapForMana (TapForMana.MkTapForMana (Filter.rewrite pairs (TapForMana.permanents grant)) (fmap (rewriteManaRestriction pairs) (TapForMana.restriction grant)))
-  PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition countered counterers) -> PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition (Filter.rewrite pairs countered) (Filter.rewrite pairs counterers))
-  -- CR 612.2's colour word in Autumn's Veil's "blue or black spells", and the
-  -- word naming what is protected.
-  PlayerEffect.RestrictTargeting r -> PlayerEffect.RestrictTargeting r {TargetRestriction.affected = Filter.rewrite pairs (TargetRestriction.affected r), TargetRestriction.aimers = Filter.rewrite pairs (TargetRestriction.aimers r)}
-  PlayerEffect.TargetPastHexproof e -> PlayerEffect.TargetPastHexproof e {HexproofExemption.permanents = Filter.rewrite pairs (HexproofExemption.permanents e)}
-  PlayerEffect.CantCastMatching f -> PlayerEffect.CantCastMatching (Filter.rewrite pairs f)
-  PlayerEffect.PutTappedAsYouCascade f -> PlayerEffect.PutTappedAsYouCascade (Filter.rewrite pairs f)
-  -- CR 101.2's play-side prohibition, narrowed by the same kind of Filter.
-  PlayerEffect.CantPlayLands f -> PlayerEffect.CantPlayLands (Filter.rewrite pairs f)
-  PlayerEffect.CastFrom grant -> PlayerEffect.CastFrom grant {CastFromZone.matching = Filter.rewrite pairs (CastFromZone.matching grant), CastFromZone.additionalCosts = fmap (Filter.rewriteComponent pairs) (CastFromZone.additionalCosts grant)}
-  PlayerEffect.PlotFrom grant -> PlayerEffect.PlotFrom grant {PlotFromZone.matching = Filter.rewrite pairs (PlotFromZone.matching grant)}
-  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> PlayerEffect.CastFromHandWithoutPayingManaCost grant {FreeCastFromHand.spells = Filter.rewrite pairs (FreeCastFromHand.spells grant), FreeCastFromHand.amount = fmap (rewriteQuantity pairs) (FreeCastFromHand.amount grant)}
-  -- CR 702.16a's quality where the CARD states it, so a subtype word in it is a
-  -- word on the card and CR 612.1 swaps it; the chosen-name sibling below is the
-  -- arm CR 612.2's second sentence keeps a swap off.
-  PlayerEffect.HasProtectionFrom f -> PlayerEffect.HasProtectionFrom (Filter.rewrite pairs f)
-  -- CR 612.2's colour word in "white mana" (Celestial Dawn, Sunglasses of Urza)
-  -- and "green mana" (Omnath, Locus of Mana): rewriteManaFilter's reading.
-  PlayerEffect.DontLoseUnspentMana f -> PlayerEffect.DontLoseUnspentMana (rewriteManaFilter pairs f)
-  PlayerEffect.SpendManaAsThough clause -> PlayerEffect.SpendManaAsThough (rewriteSpendManaAsThough pairs clause)
-  -- CR 612.1 through the source and recipient criteria, as the replacement
-  -- arm's DamageR descent below. A REGRESSION FENCE: every printing in
-  -- `data/cards/` names a card type or none there.
-  PlayerEffect.DamageCantBePrevented p -> PlayerEffect.DamageCantBePrevented (rewriteDamagePattern pairs p)
-  PlayerEffect.DamageCantBeRedirected p -> PlayerEffect.DamageCantBeRedirected (rewriteDamagePattern pairs p)
-  -- The rest name no word a pair could reach. The two chosen-name arms carry
-  -- nothing at all -- CR 201.4's names are read off the source's
-  -- Object.chosenNames -- and CR 612.2's second sentence says a word swap could
-  -- not touch a card name even if they did. A count and a player scope are not
-  -- words either.
-  PlayerEffect.CantCastSpells -> effect
-  -- The designator is no word CR 612.1 swaps; the source Filter descends.
-  PlayerEffect.CantActivateAbilities designator f kind -> PlayerEffect.CantActivateAbilities designator (Filter.rewrite pairs f) kind
-  PlayerEffect.CantCastMoreThan _ -> effect
-  PlayerEffect.PlayAdditionalLands _ -> effect
-  PlayerEffect.NoMaximumHandSize -> effect
-  PlayerEffect.SetMaximumHandSize _ -> effect
-  PlayerEffect.IncreaseMaximumHandSize _ -> effect
-  PlayerEffect.ReduceMaximumHandSize _ -> effect
-  PlayerEffect.LoseLifeForUnspentMana -> effect
-  PlayerEffect.MayPayLifeForMana {} -> effect
-  -- CR 702.11d's quality is a word on the card, as for protection above.
-  PlayerEffect.CantBeTargetedBy scope quality -> PlayerEffect.CantBeTargetedBy scope (fmap (Filter.rewrite pairs) quality)
-  PlayerEffect.CantSearchLibraries _ -> effect
-  PlayerEffect.CantBecomeMonarch -> effect
-  PlayerEffect.StateBasedActionDoesntApply _ -> effect
-  PlayerEffect.CantSetSchemesInMotion -> effect
-  PlayerEffect.EntriesTrigger e -> PlayerEffect.EntriesTrigger e {EntriesTrigger.entrants = Filter.rewrite pairs (EntriesTrigger.entrants e)}
-  PlayerEffect.AdditionalTriggers bearers -> PlayerEffect.AdditionalTriggers (Filter.rewrite pairs bearers)
-  PlayerEffect.ControlledWhileSearching -> effect
-  PlayerEffect.BlocksFromPiles -> effect
-  PlayerEffect.YouChoose _ -> effect
-  PlayerEffect.ExilesFoundWhileSearching -> effect
-  PlayerEffect.CantAttackWithCreatures -> effect
-  PlayerEffect.CastOnlyAtSorcerySpeed -> effect
-  PlayerEffect.PlayLandsFrom _ -> effect
-  -- A counter KIND is not a word CR 612.2's pairs could reach either.
-  PlayerEffect.CantGetCounters _ -> effect
-  -- Nor is a coin's face, or the two flags beside it.
-  PlayerEffect.StateCoinFlip _ -> effect
-  -- Nor is a die's size, the number it came up, or which of CR 706.2b's two
-  -- buckets the modifier is in. Rule 706.2a's COST is text a swap reaches --
-  -- Wall of Fortune's "tap an untapped Wall you control" names a subtype -- so
-  -- it descends where the rest of the payload does not.
-  PlayerEffect.ModifyDieRoll modified ->
-    PlayerEffect.ModifyDieRoll modified {ModifiedRoll.cost = fmap (Filter.rewriteCost pairs) (ModifiedRoll.cost modified)}
-  PlayerEffect.AdditionalVotes _ -> effect
-  PlayerEffect.AdditionalSurveilCards _ -> effect
-  PlayerEffect.CantGainLife -> effect
-  PlayerEffect.CantLoseLife -> effect
-  PlayerEffect.RevealsDraw _ -> effect
-  PlayerEffect.Precluded _ -> effect
-  PlayerEffect.Shows _ -> effect
+rewritePlayerEffect pairs =
+  Identity.runIdentity
+    . Children.playerEffectChildren
+      Children.playerEffectLeaves
+        { Children.playerFilter = Identity.Identity . Filter.rewrite pairs,
+          Children.playerQuantity = Identity.Identity . rewriteQuantity pairs,
+          Children.playerCost = Identity.Identity . Filter.rewriteCost pairs,
+          Children.playerCostComponent = Identity.Identity . Filter.rewriteComponent pairs,
+          Children.playerColor = Identity.Identity . TextWord.Engine.colorAfter pairs,
+          Children.playerManaFilter = Identity.Identity . rewriteManaFilter pairs,
+          Children.playerSpending = Identity.Identity . rewriteSpendManaAsThough pairs,
+          Children.playerManaRestriction = Identity.Identity . rewriteManaRestriction pairs,
+          Children.playerDamage = Identity.Identity . rewriteDamagePattern pairs
+        }
 
 -- CR 612.1: AddMana's and Firebend's shared payload, each quantity and Filter
 -- in it rewritten.
@@ -625,13 +515,6 @@ rewriteDamagePattern pairs p =
     { DamagePattern.whatSource = Filter.rewrite pairs (DamagePattern.whatSource p),
       DamagePattern.whatRecipient = fmap (Filter.rewrite pairs) (DamagePattern.whatRecipient p)
     }
-
--- CR 612.2 over CostScale.PerColoredSymbol's colour, Drought's "black mana
--- symbol"; a regression fence, no test changing Drought's text.
-rewriteCostScale :: [(TextWord.TextWord, TextWord.TextWord)] -> CostScale.CostScale -> CostScale.CostScale
-rewriteCostScale pairs scale = case scale of
-  CostScale.Once -> scale
-  CostScale.PerColoredSymbol c -> CostScale.PerColoredSymbol (TextWord.Engine.colorAfter pairs c)
 
 -- CR 612.2 over one word whose family a card's text names rather than a
 -- constructor -- a ChangeText's forbidden-word set, an amass's creature type.
@@ -1634,11 +1517,6 @@ rewritePlacement pairs placement = case placement of
   LibraryPlacement.ArrangedBy _ -> placement
   LibraryPlacement.Beneath quantity -> LibraryPlacement.Beneath (rewriteQuantity pairs quantity)
   LibraryPlacement.BeneathOrBottom quantity -> LibraryPlacement.BeneathOrBottom (rewriteQuantity pairs quantity)
-
--- A per-target cost change's filter and count, each descended as
--- rewriteEffect descends its own (CR 612.1).
-rewritePerTarget :: [(TextWord.TextWord, TextWord.TextWord)] -> PerTarget.PerTarget -> PerTarget.PerTarget
-rewritePerTarget pairs (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTarget (Filter.rewrite pairs matching) (fmap (rewriteQuantity pairs) each)
 
 -- CR 612.1 through a quantity: every Filter it nests (a Count's, an activation
 -- tally's, a linked card's criterion) and every nested quantity, through
