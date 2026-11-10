@@ -1,0 +1,143 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Captain America, Living Legend",
+      "oracleText": "Vigilance\nWhenever a creature you control becomes tapped during your turn, if it's the first time that creature has become tapped this turn, untap it.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "BecomesTapState",
+            "value": {
+              "actor": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              },
+              "status": "Tapped"
+            }
+          },
+          "intervening": {
+            "type": "All",
+            "value": [
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "Exactly",
+                  "measured": {
+                    "type": "IsActivePlayer",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "Exactly",
+                  "measured": {
+                    "type": "AgainstSlot",
+                    "value": {
+                      "quantity": {
+                        "type": "TimesTappedThisTurn"
+                      },
+                      "slot": "thatTappedPermanent"
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "thatTappedPermanent"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Soldier",
+          "Hero"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

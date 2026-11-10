@@ -158,6 +158,7 @@ codec =
       -- one zone wider: the object is the one the quantity is evaluated against,
       -- and the answer comes off the log rather than off that object.
       Arm.nullary "WasBlockedThisTurn" Quantity.WasBlockedThisTurn,
+      Arm.nullary "TimesTappedThisTurn" Quantity.TimesTappedThisTurn,
       -- The window is the tag, Parun.Codec.Scope's OverBound posture.
       Arm.payload "ControlGainedSinceLastUpkeep" PlayerRef.codec (Quantity.ControlGained ControlWindow.SinceLastUpkeep) (\x -> case x of Quantity.ControlGained ControlWindow.SinceLastUpkeep y -> Just y; _ -> Nothing),
       Arm.payload "ControlGainedThisTurn" PlayerRef.codec (Quantity.ControlGained ControlWindow.ThisTurn) (\x -> case x of Quantity.ControlGained ControlWindow.ThisTurn y -> Just y; _ -> Nothing),
@@ -321,6 +322,7 @@ tagOf x = case x of
   Quantity.WasAttacking {} -> "WasAttacking"
   Quantity.WasBlocking {} -> "WasBlocking"
   Quantity.WasBlockedThisTurn {} -> "WasBlockedThisTurn"
+  Quantity.TimesTappedThisTurn {} -> "TimesTappedThisTurn"
   Quantity.ControlGained ControlWindow.SinceLastUpkeep _ -> "ControlGainedSinceLastUpkeep"
   Quantity.ControlGained ControlWindow.ThisTurn _ -> "ControlGainedThisTurn"
   Quantity.PlayedBy {} -> "PlayedBy"

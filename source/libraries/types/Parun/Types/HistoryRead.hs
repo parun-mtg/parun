@@ -56,6 +56,8 @@ data HistoryRead
     Saddles
   | -- | Steps and phases that began (CR 500.1).
     StepBegins
+  | -- | Permanents that became tapped (CR 701.26a).
+    Taps
   | -- | Abilities that triggered (CR 603.2).
     Triggers
   deriving (Eq, Ord, Show)

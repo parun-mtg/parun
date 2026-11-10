@@ -525,6 +525,12 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.WasBlockedThisTurn
       " {\"type\":\"WasBlockedThisTurn\"} "
+  Spec.it s "TimesTappedThisTurn" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      Quantity.TimesTappedThisTurn
+      " {\"type\":\"TimesTappedThisTurn\"} "
   -- CR 122.1, with BOTH halves on the wire: a PlayerRef saying whose and a
   -- PlayerCounterKind saying which. Rule 729.1's reading is the Relative one.
   Spec.it s "PlayerCounters, relative and from a slot" $ do

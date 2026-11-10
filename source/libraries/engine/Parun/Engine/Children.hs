@@ -547,6 +547,7 @@ quantityChildren children quantity = case quantity of
   Quantity.WasAttacking -> pure quantity
   Quantity.WasBlocking -> pure quantity
   Quantity.WasBlockedThisTurn -> pure quantity
+  Quantity.TimesTappedThisTurn -> pure quantity
   Quantity.ControlGained window ref -> fmap (Quantity.ControlGained window) (player children ref)
   Quantity.PlayedBy ref -> fmap Quantity.PlayedBy (player children ref)
   Quantity.OpponentsAttacked ref -> fmap Quantity.OpponentsAttacked (player children ref)

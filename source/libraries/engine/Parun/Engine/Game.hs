@@ -4162,6 +4162,16 @@ attackersInTheirLastTurn gs victim =
 wasBlockedThisTurn :: GameState -> ObjectId -> Bool
 wasBlockedThisTurn gs oid = any ((== Just oid) . blockedAttacker . LoggedEvent.event) (GameState.events gs)
 
+-- CR 701.26a: how many times this object became tapped this turn, off the log.
+timesTappedThisTurn :: GameState -> ObjectId -> Integer
+timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tappedOf . LoggedEvent.event) (GameState.events gs)))
+
+-- The permanent an event records becoming tapped (CR 701.26a).
+tappedOf :: GameEvent -> Maybe ObjectId
+tappedOf event = case event of
+  GameEvent.BecameTapped oid -> Just oid
+  _ -> Nothing
+
 -- The attacker an event records BECOMING blocked (CR 509.1h).
 --
 -- GameEvent.BecameBlocking is not a second arm: it names the creature that became

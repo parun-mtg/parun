@@ -4393,6 +4393,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.WasAttacking -> []
   Quantity.Type.WasBlocking -> []
   Quantity.Type.WasBlockedThisTurn -> []
+  Quantity.Type.TimesTappedThisTurn -> []
   Quantity.Type.ControlGained _ _ -> []
   Quantity.Type.PlayedBy _ -> []
   Quantity.Type.DamageDealtThisTurn _ -> []
