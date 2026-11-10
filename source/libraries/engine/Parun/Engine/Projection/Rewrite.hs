@@ -48,7 +48,6 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
-import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
@@ -60,7 +59,6 @@ import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Duration as Duration
-import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
@@ -1107,20 +1105,18 @@ rewriteCastingPermission pairs permission = case permission of
   CastingPermission.PlayFromGraveyard -> permission
   CastingPermission.CastFromLibraryWhileSearching -> permission
 
--- CR 612.1 through Condition's predicate vocabulary. A Condition reached through
--- a CR 611.2b duration comes here by way of rewriteDuration below.
+-- CR 612.1 through Condition's predicate vocabulary: its Quantities and nested
+-- conditions. A phase window's turn scope names a seat structurally and holds
+-- no word, so the leaves keep it. A Condition reached through a CR 611.2b
+-- duration comes here by way of rewriteDuration below.
 rewriteCondition :: [(TextWord.TextWord, TextWord.TextWord)] -> Condition.Type.Condition -> Condition.Type.Condition
-rewriteCondition pairs condition = case condition of
-  Condition.Type.Compares c ->
-    Condition.Type.Compares
-      c
-        { Compares.measured = rewriteQuantity pairs (Compares.measured c),
-          Compares.threshold = rewriteQuantity pairs (Compares.threshold c)
+rewriteCondition pairs =
+  Identity.runIdentity
+    . Children.conditionChildren
+      Children.conditionLeaves
+        { Children.conditionQuantity = Identity.Identity . rewriteQuantity pairs,
+          Children.conditionNested = Identity.Identity . rewriteCondition pairs
         }
-  Condition.Type.Any conditions -> Condition.Type.Any (fmap (rewriteCondition pairs) conditions)
-  Condition.Type.All conditions -> Condition.Type.All (fmap (rewriteCondition pairs) conditions)
-  -- A phase or step names no subtype.
-  Condition.Type.During _ -> condition
 
 -- CR 612.1 through ONE clause of an activated ability's CR 602.5 "activate only
 -- ..." rider, which is printed text like the rest of the ability.
@@ -1156,42 +1152,20 @@ rewriteManaSpecification pairs specified = case specified of
 
 -- CR 612.1 through a Duration, which Parun.Types.Duration holds as the card
 -- prints it: a CR 611.2b "for as long as ..." clause is rules text like any
--- other, so the words inside its Condition are reachable. Every other arm is a
--- turn-structure window and names none.
---
--- Exhaustive rather than a wildcard, so a new arm carrying a Condition or a
--- Filter must break this build.
+-- other, so the words inside its Condition are reachable, as is the Filter of
+-- the spells whose casting ends one. A PlayerRef names its seat structurally
+-- and a slot or a baked card holds no word. CR 116.2c's price is a Cost, left
+-- alone as an activated ability's own cost is: no Cost arm carries a subtype
+-- word outside a Filter, and the Filters a cost's non-mana components hold are
+-- matched where the cost is paid.
 rewriteDuration :: [(TextWord.TextWord, TextWord.TextWord)] -> Duration.Duration -> Duration.Duration
-rewriteDuration pairs duration = case duration of
-  Duration.ForAsLongAs condition -> Duration.ForAsLongAs (rewriteCondition pairs condition)
-  Duration.UntilEndOfTurn -> duration
-  Duration.Indefinite -> duration
-  Duration.Perpetual -> duration
-  Duration.UntilYourNextTurn -> duration
-  Duration.UntilNextStepOf _ -> duration
-  Duration.UntilEndOfYourNextTurn -> duration
-  -- A PlayerRef names its seat structurally -- by slot or by relation -- and
-  -- carries no word CR 612.1 can swap, so the reference is left alone.
-  Duration.UntilEndOfNextTurnOf _ -> duration
-  Duration.DuringNextTurnOf _ -> duration
-  Duration.DuringNextUntapStepOf _ -> duration
-  Duration.DuringYourNextTurn -> duration
-  Duration.DuringThatExtraTurn -> duration
-  Duration.UntilEndOfCombat -> duration
-  Duration.UntilEndOfCombatOnYourNextTurn -> duration
-  -- CR 116.2c's price, which is a Cost and not a Condition. An activated
-  -- ability's own cost is left alone by this descent for the same reason: no
-  -- Cost arm carries a subtype word outside a Filter, and the Filters a cost's
-  -- non-mana components hold are matched where the cost is paid.
-  Duration.UntilPaid _ -> duration
-  Duration.UntilUsed _ -> duration
-  Duration.UntilEvent DurationEvent.SourceTurnedFaceDown -> duration
-  Duration.UntilEvent DurationEvent.Planeswalked -> duration
-  Duration.UntilEvent DurationEvent.SourceExiledCard -> duration
-  Duration.UntilEvent DurationEvent.SourceLeftBattlefield -> duration
-  Duration.UntilEvent (DurationEvent.BoundCardCast _) -> duration
-  Duration.UntilEvent (DurationEvent.CardCast _) -> duration
-  Duration.UntilEvent (DurationEvent.SpellCast criterion) -> Duration.UntilEvent (DurationEvent.SpellCast (Filter.rewrite pairs criterion))
+rewriteDuration pairs =
+  Identity.runIdentity
+    . Children.durationChildren
+      Children.durationLeaves
+        { Children.durationCondition = Identity.Identity . rewriteCondition pairs,
+          Children.durationFilter = Identity.Identity . Filter.rewrite pairs
+        }
 
 -- CR 612.1 through the counters a CR 122.5 move carries: the count, and the
 -- kind wherever the CARD names one (MovedKinds.kindOf's three arms), since CR

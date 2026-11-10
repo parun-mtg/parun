@@ -69,6 +69,7 @@ import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CommanderColors as CommanderColors
 import qualified Parun.Types.CompanionCondition as CompanionCondition
+import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Conjure as Conjure
@@ -141,6 +142,8 @@ import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.DurationEvent as DurationEvent
+import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
@@ -242,6 +245,7 @@ import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
+import qualified Parun.Types.NextStepOf as NextStepOf
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectId as ObjectId
@@ -351,6 +355,7 @@ import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRewrite as UntapRewrite
+import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -2341,6 +2346,95 @@ howManyChildren :: (Applicative f) => ReplacementChildren card ability effect f 
 howManyChildren c count = case count of
   HowMany.Exactly n -> HowMany.Exactly <$> replacementQuantity c n
   HowMany.UpTo n -> HowMany.UpTo <$> traverse (replacementQuantity c) n
+
+-- | One visitor per kind of child a condition holds: a CR 611.2b "for as long
+-- as", a CR 603.8 state trigger's, a CR 603.4 intervening "if".
+data ConditionChildren f = MkConditionChildren
+  { -- | A Quantity a comparison measures or compares against.
+    conditionQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A nested condition: Any's or All's.
+    conditionNested :: Condition.Condition -> f Condition.Condition,
+    -- | The turns a phase window looks at (CR 102.1), whole.
+    conditionTurn :: TurnScope.TurnScope -> f TurnScope.TurnScope
+  }
+
+-- | Every child of a condition left as it is: the base a walk overrides.
+conditionLeaves :: (Applicative f) => ConditionChildren f
+conditionLeaves =
+  MkConditionChildren
+    { conditionQuantity = pure,
+      conditionNested = pure,
+      conditionTurn = pure
+    }
+
+-- | A Condition's immediate children, each through its visitor. A nested
+-- condition is handed to conditionNested and not descended here.
+conditionChildren :: (Applicative f) => ConditionChildren f -> Condition.Condition -> f Condition.Condition
+conditionChildren c condition = case condition of
+  Condition.Compares (Compares.MkCompares measured comparison threshold) -> fmap Condition.Compares (Compares.MkCompares <$> conditionQuantity c measured <*> pure comparison <*> conditionQuantity c threshold)
+  Condition.Any conditions -> Condition.Any <$> traverse (conditionNested c) conditions
+  Condition.All conditions -> Condition.All <$> traverse (conditionNested c) conditions
+  Condition.During (DuringPhase.MkDuringPhase window turns) -> fmap Condition.During (DuringPhase.MkDuringPhase window <$> conditionTurn c turns)
+
+-- | One visitor per kind of child a duration (CR 611.2) holds.
+data DurationChildren f = MkDurationChildren
+  { -- | The player whose turn or step ends the duration, or who may pay to end it.
+    durationPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | A "for as long as" condition (CR 611.2b), whole.
+    durationCondition :: Condition.Condition -> f Condition.Condition,
+    -- | The price that ends the duration (CR 116.2c), whole.
+    durationCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | A slot the duration reads: the effect it lasts until used, the card it lasts until cast.
+    durationSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The spells whose casting ends the duration (CR 601.2i).
+    durationFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | The card whose casting ends the duration, baked (CR 400.7).
+    durationObject :: ObjectId.ObjectId -> f ObjectId.ObjectId
+  }
+
+-- | Every child of a duration left as it is: the base a walk overrides.
+durationLeaves :: (Applicative f) => DurationChildren f
+durationLeaves =
+  MkDurationChildren
+    { durationPlayer = pure,
+      durationCondition = pure,
+      durationCost = pure,
+      durationSlot = pure,
+      durationFilter = pure,
+      durationObject = pure
+    }
+
+-- | A Duration's children, its payload matched positionally.
+durationChildren :: (Applicative f) => DurationChildren f -> Duration.Duration -> f Duration.Duration
+durationChildren c duration = case duration of
+  Duration.UntilEndOfTurn -> pure duration
+  Duration.Indefinite -> pure duration
+  Duration.Perpetual -> pure duration
+  Duration.UntilYourNextTurn -> pure duration
+  Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step whose) -> fmap Duration.UntilNextStepOf (NextStepOf.MkNextStepOf step <$> durationPlayer c whose)
+  Duration.UntilEndOfYourNextTurn -> pure duration
+  Duration.UntilEndOfNextTurnOf whose -> Duration.UntilEndOfNextTurnOf <$> durationPlayer c whose
+  Duration.DuringNextTurnOf whose -> Duration.DuringNextTurnOf <$> durationPlayer c whose
+  Duration.DuringNextUntapStepOf whose -> Duration.DuringNextUntapStepOf <$> durationPlayer c whose
+  Duration.DuringYourNextTurn -> pure duration
+  Duration.DuringThatExtraTurn -> pure duration
+  Duration.ForAsLongAs condition -> Duration.ForAsLongAs <$> durationCondition c condition
+  Duration.UntilEndOfCombat -> pure duration
+  Duration.UntilEndOfCombatOnYourNextTurn -> pure duration
+  Duration.UntilPaid (UntilPaid.MkUntilPaid payer cost) -> fmap Duration.UntilPaid (UntilPaid.MkUntilPaid <$> durationPlayer c payer <*> durationCost c cost)
+  Duration.UntilUsed used -> Duration.UntilUsed <$> traverse (durationSlot c) used
+  Duration.UntilEvent event -> Duration.UntilEvent <$> durationEventChildren c event
+
+-- | The event that ends a duration (CR 611.2a): a filter, a slot or a baked card.
+durationEventChildren :: (Applicative f) => DurationChildren f -> DurationEvent.DurationEvent -> f DurationEvent.DurationEvent
+durationEventChildren c event = case event of
+  DurationEvent.SourceTurnedFaceDown -> pure event
+  DurationEvent.SpellCast criterion -> DurationEvent.SpellCast <$> durationFilter c criterion
+  DurationEvent.Planeswalked -> pure event
+  DurationEvent.SourceExiledCard -> pure event
+  DurationEvent.SourceLeftBattlefield -> pure event
+  DurationEvent.BoundCardCast bound -> DurationEvent.BoundCardCast <$> durationSlot c bound
+  DurationEvent.CardCast card -> DurationEvent.CardCast <$> durationObject c card
 
 -- | A set's members, each through a visitor; members the visitor maps together merge.
 traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)
