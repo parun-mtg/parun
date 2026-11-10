@@ -77,19 +77,23 @@ withoutReminders = Text.pack . go (0 :: Int) . Text.unpack
       ')' : rest | depth > 0 -> go (depth - 1) rest
       c : rest -> if depth > 0 && c /= '\n' then go depth rest else c : go depth rest
 
--- | Oracle text with the flavor word heading each line dropped (CR 207.2d):
--- what precedes a line's first " \8212 ", when that is a phrase (it opens with
--- a letter and holds no sentence or reminder punctuation) that is neither an
--- ability word (CR 207.2c), which the renderer prints, nor a chapter symbol's
--- numeral (CR 715.2). Only the stamped side goes through this, so a heading the
+-- | Oracle text with the flavor word heading each line or mode dropped (CR
+-- 207.2d): what precedes a line's first " \8212 ", past a mode's bullet (The
+-- Vision), when that is a phrase (it opens with a letter and holds no sentence
+-- or reminder punctuation) that is neither an ability word (CR 207.2c), which
+-- the renderer prints, nor a chapter symbol's numeral (CR 715.2). Only the stamped side goes through this, so a heading the
 -- renderer prints that is not an ability word fails the check until it is
 -- exempted here.
 withoutFlavorWords :: Text.Text -> Text.Text
 withoutFlavorWords = Text.intercalate (Text.pack "\n") . fmap unheaded . Text.splitOn (Text.pack "\n")
   where
-    unheaded line = case Text.breakOn dash line of
+    unheaded line = case Text.stripPrefix bullet line of
+      Just mode -> bullet <> unbulleted mode
+      Nothing -> unbulleted line
+    unbulleted line = case Text.breakOn dash line of
       (heading, rest) | not (Text.null rest), flavorWord heading -> Text.drop (Text.length dash) rest
       _ -> line
+    bullet = Text.pack "\8226 "
     dash = Text.pack " \8212 "
     flavorWord heading =
       maybe False (Char.isAlpha . fst) (Text.uncons heading)
