@@ -1437,7 +1437,7 @@ rewriteModal pairs modal =
 -- producer: Magical Hack swaps the land type word, and CR 612.2 licenses it
 -- because the word is used as a land type.
 --
--- Written out field by field rather than as a record update, rewriteComponent's
+-- Written out field by field rather than as a record update, Children.costChildren's
 -- posture one level up: `cost` and `perEach` are the fields a printed word can
 -- reach -- `payer` names a player, `branch` and `obligation` name rules
 -- categories, and `offeredAt` is CR 608.2e's ordinal -- so a later field carrying

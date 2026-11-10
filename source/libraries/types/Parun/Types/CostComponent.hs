@@ -29,8 +29,8 @@ import qualified Parun.Types.Zone as Zone
 -- one: CR 605.1a's "its cost and effect don't move any card to or from a
 -- library" is Parun.Engine.ManaAbility.costMovesLibraryCard, which cannot route
 -- through Parun.Engine.Cost without a module cycle (see that function).
--- Parun.Engine.Filter.rewriteComponent cases on it too and reads nothing -- CR
--- 612.1's word swap is a traversal that reconstructs every arm.
+-- Parun.Engine.Children.costComponentChildren cases on it too and reads
+-- nothing -- the structural walks' traversal, which reconstructs every arm.
 --
 -- Either way what the rules core takes from it is a CLASSIFICATION (can this be
 -- paid? does it require the tap symbol? does it touch a library?) and never the
