@@ -163,11 +163,13 @@ modal context m = case (Foldable.toList (Modal.modes m), Modal.selection m) of
 -- | The instruction to choose modes (CR 700.2), given how many there are:
 -- "Choose one \8212", "Choose one or both \8212", "Choose three. You may
 -- choose the same mode more than once." (CR 700.2d), "Choose one that hasn't
--- been chosen \8212".
+-- been chosen \8212", "Choose one that hasn't been chosen this turn \8212".
 choose :: ModeMemory.ModeMemory -> ModeSelection.ModeSelection -> Int -> [Text.Text]
 choose memory selection count = case (memory, selection) of
   (ModeMemory.ObjectLifetime, ModeSelection.ChooseExactly n) -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack " that hasn't been chosen \8212"]
   (ModeMemory.ObjectLifetime, _) -> []
+  (ModeMemory.ThisTurn, ModeSelection.ChooseExactly n) -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack " that hasn't been chosen this turn \8212"]
+  (ModeMemory.ThisTurn, _) -> []
   (ModeMemory.NoMemory, _) -> case selection of
     ModeSelection.ChooseExactly n -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack " \8212"]
     ModeSelection.ChooseExactlyWithRepeats n -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack ". You may choose the same mode more than once."]
