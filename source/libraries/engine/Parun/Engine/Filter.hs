@@ -21,12 +21,10 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
-import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.Color as Color
@@ -35,20 +33,13 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
-import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.EnteredZone as EnteredZone
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
-import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileLink as ExileLink
-import qualified Parun.Types.ExileMaterials as ExileMaterials
-import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameSettings as GameSettings
@@ -78,8 +69,6 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.ReturnPermanents as ReturnPermanents
-import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StickerContent as StickerContent
@@ -88,8 +77,6 @@ import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
-import qualified Parun.Types.TapForTotalPower as TapForTotalPower
-import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Trait as Trait
@@ -2792,11 +2779,22 @@ rewriteKeyword pairs =
 -- symbol is a symbol and not a land type word, and "a land type word used as a
 -- land type" is the only use of these pairs the rule licenses.
 --
--- Exhaustive rather than a catch-all, rewrite's and rewriteKeyword's stated
--- posture: a later component that can carry a Filter must fail to compile here
--- instead of silently keeping the printed word.
+-- Children.costChildren's descent: every Filter a component holds takes
+-- `rewrite`, and every counter kind rewriteCounterKind (CR 122.1b's keyword
+-- counter). A tally's colour is the one word outside both: Baron Helmut Zemo's
+-- "black mana symbols" is a colour word used as one, devotion's reading (CR
+-- 612.2). The rest name a number, or the object the cost is on, and CR 612.2
+-- finds no word in them to swap.
+--
+-- Of the Filter positions only Sacrifice has a producer: Dark Heart of the Wood
+-- on an activation cost, and Lithophage on the cost a trigger offers as it
+-- resolves (CR 118.12). No printing pairs any other with a basic land type, so
+-- no test can falsify them. Magmatic Insight's "discard a land card" and Hakbal
+-- of the Surging Soul's "a land card from your hand" come closest and are still
+-- not one -- no text changer's family names the land CARD TYPE
+-- (Parun.Types.WordFamily).
 rewriteCost :: [(TextWord.TextWord, TextWord.TextWord)] -> Cost.Cost Keyword.Type.Keyword -> Cost.Cost Keyword.Type.Keyword
-rewriteCost pairs cost = cost {Cost.components = fmap (rewriteComponent pairs) (Cost.components cost)}
+rewriteCost pairs = Identity.runIdentity . Children.costChildren (costRewrites pairs)
 
 -- rewriteCounterKind over the kind a counter removal names, where it names one.
 rewriteWhichCounters :: [(TextWord.TextWord, TextWord.TextWord)] -> WhichCounters.WhichCounters Keyword.Type.Keyword -> WhichCounters.WhichCounters Keyword.Type.Keyword
@@ -2804,91 +2802,29 @@ rewriteWhichCounters pairs which = case which of
   WhichCounters.OfKind kind -> WhichCounters.OfKind (rewriteCounterKind pairs kind)
   WhichCounters.OfAnyKind -> which
 
--- rewriteCost's per-component half. The components that carry a Filter are the
--- ones that descend; the rest name a number, or the object the cost is on, and
--- CR 612.2 finds no word in them to swap.
---
--- Of those, only Sacrifice has a producer: Dark Heart of the Wood on an
--- activation cost, and Lithophage on the cost a trigger offers as it resolves
--- (CR 118.12). The TapForTotalPower, TapPermanents, DiscardCards,
--- ExileCardsFromGraveyard, ExileTopFromGraveyard, ReturnPermanents,
--- ExileCardsFromHand, RevealCardFromHand, Behold, BeholdAndExile, ExileMaterials,
--- RemoveCounters and
--- PutCardFromHandOntoBattlefield arms
--- are a regression
--- fence: no printing pairs any of them with a basic land type, so no test can
--- falsify them. Magmatic
--- Insight's "discard a land card" and Hakbal of the Surging Soul's "a land card
--- from your hand" come closest and are still not one -- no text changer's family
--- names the land CARD TYPE (Parun.Types.WordFamily).
---
--- A tally's colour is the one word outside a Filter: Baron Helmut Zemo's "black
--- mana symbols" is a colour word used as one, devotion's reading (CR 612.2).
+-- rewriteCost over one component, for a component added to a cost rather than
+-- printed in one.
 rewriteComponent :: [(TextWord.TextWord, TextWord.TextWord)] -> CostComponent.CostComponent Keyword.Type.Keyword -> CostComponent.CostComponent Keyword.Type.Keyword
-rewriteComponent pairs component = case overComponent (rewrite pairs) (rewriteWhichCounters pairs) component of
-  CostComponent.ExileCardsTotalling exile -> CostComponent.ExileCardsTotalling exile {ExileCardsTotalling.tally = rewriteTally (ExileCardsTotalling.tally exile)}
-  rewritten -> rewritten
-  where
-    rewriteTally tally = case tally of
-      CardTally.ManaValue -> tally
-      CardTally.ManaSymbolsOf c -> CardTally.ManaSymbolsOf (TextWord.colorAfter pairs c)
+rewriteComponent pairs = Identity.runIdentity . Children.costComponentChildren (costRewrites pairs)
 
--- Every Filter and counter kind a cost component names, rewritten; the one
--- descent rewriteComponent and bakeCost share.
-overComponent ::
-  (Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword) ->
-  (WhichCounters.WhichCounters Keyword.Type.Keyword -> WhichCounters.WhichCounters Keyword.Type.Keyword) ->
-  CostComponent.CostComponent Keyword.Type.Keyword ->
-  CostComponent.CostComponent Keyword.Type.Keyword
-overComponent onFilter onCounters component = case component of
-  CostComponent.Sacrifice (Sacrifice.MkSacrifice n criterion) -> CostComponent.Sacrifice (Sacrifice.MkSacrifice n (onFilter criterion))
-  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion) -> CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n (onFilter criterion))
-  CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing) -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents n (onFilter criterion) sharing)
-  CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n criterion) -> CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n (onFilter criterion))
-  CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) -> CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n (onFilter criterion))
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n (onFilter criterion))
-  CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore (onFilter criterion))
-  CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard (onFilter criterion)
-  CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) -> CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling n tally (onFilter criterion))
-  -- Untouched: CR 701.59a describes the cards by a total and states no card type,
-  -- so rule 612.1 finds no word in this component to swap.
-  CostComponent.CollectEvidence _ -> component
-  CostComponent.CollectEvidenceOfTargets -> component
-  CostComponent.DiscardCards discard -> CostComponent.DiscardCards discard {DiscardCards.whichCards = onFilter (DiscardCards.whichCards discard)}
-  CostComponent.PutCardFromHandOntoBattlefield criterion -> CostComponent.PutCardFromHandOntoBattlefield (onFilter criterion)
-  CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand n criterion) -> CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand n (onFilter criterion))
-  CostComponent.RevealCardFromHand criterion -> CostComponent.RevealCardFromHand (onFilter criterion)
-  CostComponent.Behold (Behold.MkBehold n criterion) -> CostComponent.Behold (Behold.MkBehold n (onFilter criterion))
-  CostComponent.BeholdAndExile criterion -> CostComponent.BeholdAndExile (onFilter criterion)
-  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n which criterion spread) -> CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n (onCounters which) (onFilter criterion) spread)
-  CostComponent.TapThis -> component
-  CostComponent.UntapThis -> component
-  CostComponent.SacrificeThis -> component
-  CostComponent.ReturnThis -> component
-  CostComponent.PayLife _ -> component
-  CostComponent.PayComputedLife _ -> component
-  CostComponent.DiscardThis _ -> component
-  CostComponent.PayEnergy _ -> component
-  CostComponent.AddLoyaltyToThis _ -> component
-  CostComponent.RemoveLoyaltyFromThis _ -> component
-  CostComponent.RemoveCountersFromThis _ -> component
-  CostComponent.PutCountersOnThis _ -> component
-  CostComponent.PutCountersOnPayer _ -> component
-  CostComponent.Blight _ -> component
-  CostComponent.Forage -> component
-  CostComponent.FlipCoin -> component
-  CostComponent.ExileThisFrom _ -> component
-  CostComponent.ExileThis -> component
-  CostComponent.MillCards _ -> component
-  CostComponent.RevealTopOfLibrary _ -> component
-  CostComponent.ChooseOpponent _ -> component
-  CostComponent.Waterbend _ -> component
-  CostComponent.WaterbendInstead _ -> component
+-- The visitors rewriteCost and rewriteComponent share.
+costRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.CostChildren Keyword.Type.Keyword Identity.Identity
+costRewrites pairs =
+  Children.costLeaves
+    { Children.costFilter = Identity.Identity . rewrite pairs,
+      Children.costCounterKind = Identity.Identity . rewriteCounterKind pairs,
+      Children.costColor = Identity.Identity . TextWord.colorAfter pairs
+    }
 
 -- bakeBound over every Filter a cost names, for a slot the cost is read under
 -- only once a grant fills it (Parun.Engine.Binding.grantingPermanent).
 bakeCost :: SlotName.SlotName -> ObjectId.ObjectId -> Cost.Cost Keyword.Type.Keyword -> Cost.Cost Keyword.Type.Keyword
-bakeCost slot object cost = cost {Cost.components = fmap (overComponent (bakeBound Map.empty (Map.singleton slot (Set.singleton object)) Map.empty) id) (Cost.components cost)}
+bakeCost slot object =
+  Identity.runIdentity
+    . Children.costChildren
+      Children.costLeaves
+        { Children.costFilter = Identity.Identity . bakeBound Map.empty (Map.singleton slot (Set.singleton object)) Map.empty
+        }
 
 -- CR 603.2: replace every HeldByBound atom whose slot this environment names
 -- with its baked HeldByPlayer, every IsBound atom whose slot
