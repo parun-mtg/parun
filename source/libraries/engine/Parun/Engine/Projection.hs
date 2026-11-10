@@ -1249,6 +1249,9 @@ viewOfSpell caster oid gs = viewOfCharacteristics (fullView gs) oid (project oid
 -- controller (CR 602.2a), CR 606.2's kind, and its source through CR 113.7a's
 -- last known information, as viewOfCharacteristics' abilitySource. The record
 -- is playerView's with no player behind it.
+--
+-- Not implemented: the activation cost, so ManaCostHasSymbol misses a mana
+-- ability's {X} (#6894).
 viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> LoyaltyKind.LoyaltyKind -> GameState -> Filter.View
 viewOfUnstackedAbility activator source kind gs =
   (Filter.playerView activator)
