@@ -3148,6 +3148,7 @@ sphinxs-decree
 sphinxs-tutelage
 spider-man-to-the-rescue
 spider-punk
+spider-woman-secret-agent
 spike-cannibal
 spiked-corridor-torture-pit
 spikeshell-harrier

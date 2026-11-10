@@ -46,7 +46,9 @@
                           "duration": {
                             "type": "UntilEndOfTurn"
                           },
-                          "what": "Activate"
+                          "what": {
+                            "type": "Activate"
+                          }
                         }
                       }
                     ]

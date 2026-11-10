@@ -113,7 +113,10 @@
                               }
                             }
                           },
-                          "what": "Untap"
+                          "what": {
+                            "type": "Untap",
+                            "value": "UntapStep"
+                          }
                         }
                       }
                     ]

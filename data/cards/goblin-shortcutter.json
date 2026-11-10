@@ -49,7 +49,9 @@
                           "duration": {
                             "type": "UntilEndOfTurn"
                           },
-                          "what": "Block"
+                          "what": {
+                            "type": "Block"
+                          }
                         }
                       }
                     ]

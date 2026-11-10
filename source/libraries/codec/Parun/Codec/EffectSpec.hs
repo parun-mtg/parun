@@ -2196,7 +2196,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       codec
       (Effect.Prohibit (Prohibit.MkProhibit Prohibition.Regenerate Duration.UntilEndOfTurn (RestrictedCreatures.Named (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))))
-      " {\"type\":\"Prohibit\",\"value\":{\"what\":\"Regenerate\",\"duration\":{\"type\":\"UntilEndOfTurn\"},\"affected\":{\"type\":\"Named\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}}}} "
+      " {\"type\":\"Prohibit\",\"value\":{\"what\":{\"type\":\"Regenerate\"},\"duration\":{\"type\":\"UntilEndOfTurn\"},\"affected\":{\"type\":\"Named\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}}}} "
   Spec.it s "RequireAttack" $
     Common.assertCodec
       s

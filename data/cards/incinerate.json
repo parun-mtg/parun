@@ -65,7 +65,9 @@
                       "duration": {
                         "type": "UntilEndOfTurn"
                       },
-                      "what": "Regenerate"
+                      "what": {
+                        "type": "Regenerate"
+                      }
                     }
                   }
                 ]

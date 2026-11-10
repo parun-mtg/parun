@@ -12,6 +12,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.UntapScope as UntapScope
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ActiveObjectProhibition" $ do
@@ -29,7 +30,7 @@ spec s = Spec.describe s "Parun.Codec.ActiveObjectProhibition" $ do
           ActiveObjectProhibition.what = Prohibition.Activate,
           ActiveObjectProhibition.affected = RestrictedCreatures.Named (ObjectId.MkObjectId 3)
         }
-      " {\"source\":1,\"controller\":4,\"timestamp\":2,\"expiry\":{\"type\":\"AtCleanup\"},\"what\":\"Activate\",\"affected\":{\"type\":\"Named\",\"value\":3}} "
+      " {\"source\":1,\"controller\":4,\"timestamp\":2,\"expiry\":{\"type\":\"AtCleanup\"},\"what\":{\"type\":\"Activate\"},\"affected\":{\"type\":\"Named\",\"value\":3}} "
   -- CR 611.2c: a class, inert until that player's untap step (Exhaustion).
   Spec.it s "a class that doesn't untap during a player's untap step" $
     Common.assertCodec
@@ -40,9 +41,9 @@ spec s = Spec.describe s "Parun.Codec.ActiveObjectProhibition" $ do
           ActiveObjectProhibition.controller = PlayerId.MkPlayerId 4,
           ActiveObjectProhibition.timestamp = Timestamp.MkTimestamp 2,
           ActiveObjectProhibition.expiry = Expiry.DuringUntapStepOf (PlayerId.MkPlayerId 5),
-          ActiveObjectProhibition.what = Prohibition.Untap,
+          ActiveObjectProhibition.what = Prohibition.Untap UntapScope.UntapStep,
           ActiveObjectProhibition.affected = RestrictedCreatures.Matching (Filter.HasCardType CardType.Creature)
         }
-      " {\"source\":1,\"controller\":4,\"timestamp\":2,\"expiry\":{\"type\":\"DuringUntapStepOf\",\"value\":5},\"what\":\"Untap\",\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+      " {\"source\":1,\"controller\":4,\"timestamp\":2,\"expiry\":{\"type\":\"DuringUntapStepOf\",\"value\":5},\"what\":{\"type\":\"Untap\",\"value\":\"UntapStep\"},\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ActiveObjectProhibition.codec
