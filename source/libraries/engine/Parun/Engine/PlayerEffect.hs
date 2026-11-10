@@ -2104,11 +2104,12 @@ mayPlayAsThoughItHadFlash pid oid gs = any (grantReaches landPlayFlashGrant pid 
 
 -- CR 602.5: the clauses of its rider that grants let `pid` activate an ability
 -- under this rule-702 keyword of `srcId` past -- Leonin Shikari's "equip
--- abilities" any time they could cast an instant, Birgi's boast twice. The
--- keyword is compared against Parun.Types.ActivatedAbility.keyword, as
--- prohibitsActivating above is, so reconfigure -- no equip ability, per Forge
--- Anew's ruling -- is not reached. The criterion is asked of the permanent from
--- the effect's source, as loyaltyGrants' is.
+-- abilities" any time they could cast an instant, Birgi's boast twice, Wonder
+-- Man's power-up an additional time. The keyword is compared against
+-- Parun.Types.ActivatedAbility.keyword, as prohibitsActivating above is, so
+-- reconfigure -- no equip ability, per Forge Anew's ruling -- is not reached.
+-- The criterion is asked of the permanent from the effect's source, as
+-- loyaltyGrants' is.
 keywordRiderGrants :: Maybe Keyword -> PlayerId -> ObjectId -> GameState -> [RiderClause.RiderClause]
 keywordRiderGrants stamp pid srcId gs =
   [ KeywordRiderGrant.relaxes grant

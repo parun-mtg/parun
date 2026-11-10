@@ -1728,7 +1728,7 @@ rewriteRestriction pairs restriction = case restriction of
   ActivationRestriction.AfterBlockersDeclared -> restriction
   ActivationRestriction.DuringCombatBefore _ -> restriction
   ActivationRestriction.BeforeStep _ -> restriction
-  ActivationRestriction.OnlyOnce -> restriction
+  ActivationRestriction.TimesEver _ -> restriction
   ActivationRestriction.TimesEachTurn _ -> restriction
   ActivationRestriction.DuringThrow -> restriction
   ActivationRestriction.InstantSpeed -> restriction

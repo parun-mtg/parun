@@ -904,7 +904,7 @@ data Object = MkObject
     -- Per-incarnation (CR 400.7), and CR 701.43c is why nothing writes it back.
     exertedBy :: Set.Set PlayerId.PlayerId,
     -- | CR 602.5b: the abilities of this object carrying CR 602.5's once-only
-    -- rider (ActivationRestriction.OnlyOnce) that have already been activated --
+    -- rider (ActivationRestriction.TimesEver) that have already been activated --
     -- what CR 702.177a's "Activate only once" remembers. Empty for every object
     -- that has never activated one, which is nearly all of them.
     --
@@ -928,7 +928,7 @@ data Object = MkObject
     -- "doesn't apply to other, identically worded abilities", so an object
     -- bearing two equal copies (CR 113.2c) -- two Auras granting one ability --
     -- may spend each once.
-    -- Parun.Engine.ActivationRestriction's OnlyOnce arm compares the count with
+    -- Parun.Engine.ActivationRestriction's TimesEver arm compares the count with
     -- the copies the object bears. Keyed as printed before any text change (CR
     -- 612.1, Parun.Engine.Projection.printedActivatedAbility).
     activatedOnce :: Map.Map (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) Natural.Natural,

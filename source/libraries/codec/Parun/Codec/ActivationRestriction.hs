@@ -13,8 +13,8 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 
 -- | Tagged rather than bare-nullary since CR 500.1's DuringPhase carries a
 -- window, CR 102.1's DuringTurn a scope, CR 506.8a's BeforeStep a step, CR
--- 602.5's OnlyIf a condition and CR 602.5b's TimesEachTurn a count; the other
--- arms still render as bare tags.
+-- 602.5's OnlyIf a condition and CR 602.5b's TimesEver and TimesEachTurn a
+-- count; the other arms still render as bare tags.
 --
 -- There is no tag for "no rider": CR 117.1b's default is the EMPTY LIST on the
 -- ability, which Parun.Codec.ActivatedAbility writes by omitting the key.
@@ -30,7 +30,7 @@ codec =
       Arm.payload "DuringCombatBefore" CombatStep.codec ActivationRestriction.DuringCombatBefore (\x -> case x of ActivationRestriction.DuringCombatBefore y -> Just y; _ -> Nothing),
       Arm.payload "BeforeStep" Phase.codec ActivationRestriction.BeforeStep (\x -> case x of ActivationRestriction.BeforeStep y -> Just y; _ -> Nothing),
       Arm.payload "OnlyIf" Condition.codec ActivationRestriction.OnlyIf (\x -> case x of ActivationRestriction.OnlyIf y -> Just y; _ -> Nothing),
-      Arm.nullary "OnlyOnce" ActivationRestriction.OnlyOnce,
+      Arm.payload "TimesEver" Common.natural ActivationRestriction.TimesEver (\x -> case x of ActivationRestriction.TimesEver y -> Just y; _ -> Nothing),
       Arm.payload "TimesEachTurn" Common.natural ActivationRestriction.TimesEachTurn (\x -> case x of ActivationRestriction.TimesEachTurn y -> Just y; _ -> Nothing),
       Arm.nullary "DuringThrow" ActivationRestriction.DuringThrow,
       Arm.nullary "InstantSpeed" ActivationRestriction.InstantSpeed,
@@ -47,7 +47,7 @@ tagOf x = case x of
   ActivationRestriction.DuringCombatBefore {} -> "DuringCombatBefore"
   ActivationRestriction.BeforeStep {} -> "BeforeStep"
   ActivationRestriction.OnlyIf {} -> "OnlyIf"
-  ActivationRestriction.OnlyOnce {} -> "OnlyOnce"
+  ActivationRestriction.TimesEver {} -> "TimesEver"
   ActivationRestriction.TimesEachTurn {} -> "TimesEachTurn"
   ActivationRestriction.DuringThrow {} -> "DuringThrow"
   ActivationRestriction.InstantSpeed {} -> "InstantSpeed"

@@ -475,7 +475,7 @@ activationRestrictions n = case Node.tag n of
   "ActivateNoMoreThanNumberTimesEachTurn" -> do
     k <- Node.child n >>= integer >>= natural n
     if k == 0 then Node.untranslated n else Right [ActivationRestriction.TimesEachTurn k]
-  "ActivateOnlyOnce" -> Right [ActivationRestriction.OnlyOnce]
+  "ActivateOnlyOnce" -> Right [ActivationRestriction.TimesEver 1]
   "ActivateOnlyIf" -> Node.child n >>= onlyIf
   _ -> Node.untranslated n
   where

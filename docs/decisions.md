@@ -143,6 +143,22 @@ Entries are ordered by the first rule each cites.
   proves it.
 - **Issue**: #4627.
 
+## Whether two "an additional time" grants stack
+
+- **Question**: Wonder Man, Hollywood Hero lets each power-up ability of
+  permanents you control be activated "an additional time". Under two such
+  grants (Wonder Man and a nonlegendary Spark Double copying him), is a
+  power-up ability activatable twice or three times? The card has no rulings.
+- **Rules**: CR 602.5b, 702.193a; CR of 2026-11-06.
+- **Decision**: Three times: each grant adds one activation to CR 702.193a's
+  "only once", as each The Chain Veil resolution adds one per its rulings.
+- **Rejected**: Twice, reading the grant as setting the limit, as Birgi's
+  "twice rather than once" does per Oath of Teferi's ruling: Wonder Man's text
+  states an increment, not a total.
+- **Site**: `Parun.Engine.ActivationRestriction.relaxedBy`, proved by
+  `data/scenarios/wonder-man-hollywood-hero-and-a-spark-double-copy-let-his-power-up-activate-three-times.json`.
+- **Issue**: #6784.
+
 ## Which objects a cast trigger's "those creatures" names
 
 - **Question**: Storm, Windrider gives flying to "those creatures" a spell you

@@ -278,7 +278,7 @@ restriction r = case r of
   ActivationRestriction.SorcerySpeed -> [Text.pack "as a sorcery"]
   ActivationRestriction.InstantSpeed -> [Text.pack "as an instant"]
   ActivationRestriction.TimesEachTurn 1 -> [Text.pack "once each turn"]
-  ActivationRestriction.OnlyOnce -> [Text.pack "once"]
+  ActivationRestriction.TimesEver 1 -> [Text.pack "once"]
   ActivationRestriction.DuringTurn (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) -> [Text.pack "during your turn"]
   ActivationRestriction.DuringTurn (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) -> [Text.pack "during an opponent's turn"]
   ActivationRestriction.BeforeStep (Phase.Combat CombatStep.DeclareAttackers) -> [Text.pack "before attackers are declared"]

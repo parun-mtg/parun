@@ -529,7 +529,7 @@ activationRestrictionNames asking x = case x of
   ActivationRestriction.DuringCombatBefore _step -> mempty
   ActivationRestriction.BeforeStep _phase -> history asking HistoryRead.StepBegins
   ActivationRestriction.OnlyIf condition -> conditionNames asking condition
-  ActivationRestriction.OnlyOnce -> mempty
+  ActivationRestriction.TimesEver _ -> mempty
   ActivationRestriction.TimesEachTurn _ -> mempty
   ActivationRestriction.DuringThrow -> mempty
   ActivationRestriction.InstantSpeed -> mempty
