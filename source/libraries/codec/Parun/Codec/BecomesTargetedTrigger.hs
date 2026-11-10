@@ -17,12 +17,12 @@ codec :: Codec.Codec BecomesTargetedTrigger.BecomesTargetedTrigger
 codec = Fields.object $ do
   subject <- Fields.defaulted "subject" (BecomesTargetedTrigger.subject BecomesTargetedTrigger.defaultValue) TargetedSubject.codec BecomesTargetedTrigger.subject
   relation <- Fields.defaulted "relation" (BecomesTargetedTrigger.relation BecomesTargetedTrigger.defaultValue) PlayerRelation.codec BecomesTargetedTrigger.relation
-  kind <- Fields.defaulted "kind" (BecomesTargetedTrigger.kind BecomesTargetedTrigger.defaultValue) (Common.maybe StackObjectKind.codec) BecomesTargetedTrigger.kind
+  kinds <- Fields.defaulted "kinds" (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) (Common.set StackObjectKind.codec) BecomesTargetedTrigger.kinds
   batching <- Fields.defaulted "batching" (BecomesTargetedTrigger.batching BecomesTargetedTrigger.defaultValue) Batching.codec BecomesTargetedTrigger.batching
   pure
     BecomesTargetedTrigger.MkBecomesTargetedTrigger
       { BecomesTargetedTrigger.subject = subject,
         BecomesTargetedTrigger.relation = relation,
-        BecomesTargetedTrigger.kind = kind,
+        BecomesTargetedTrigger.kinds = kinds,
         BecomesTargetedTrigger.batching = batching
       }

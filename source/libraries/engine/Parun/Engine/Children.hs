@@ -1317,13 +1317,13 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies) ->
     fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies)
   TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ kind) -> fmap (\renamed -> TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger renamed kind)) (triggerFilter c filter_)
-  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kind batching) ->
+  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching) ->
     fmap
-      (\renamed -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kind batching))
+      (\renamed -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kinds batching))
       ( case subject of
           TargetedSubject.Permanent permanent -> fmap TargetedSubject.Permanent (actingChildren c permanent)
-          TargetedSubject.You -> pure subject
-          TargetedSubject.YouOrPermanent permanent -> fmap TargetedSubject.YouOrPermanent (actingChildren c permanent)
+          TargetedSubject.Player _ -> pure subject
+          TargetedSubject.PlayerOrPermanent who permanent -> fmap (TargetedSubject.PlayerOrPermanent who) (actingChildren c permanent)
       )
   TriggerCondition.SelfHalfUnlocked _ -> pure condition
   TriggerCondition.RoomFullyUnlocked _ -> pure condition

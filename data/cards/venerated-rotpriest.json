@@ -31,7 +31,9 @@
           "condition": {
             "type": "BecomesTargeted",
             "value": {
-              "kind": "Spell",
+              "kinds": [
+                "Spell"
+              ],
               "subject": {
                 "type": "Permanent",
                 "value": {

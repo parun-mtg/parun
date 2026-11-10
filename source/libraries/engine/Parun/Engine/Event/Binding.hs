@@ -1167,11 +1167,12 @@ entersBindings gs t zc = case EntersTrigger.permanent t of
 --
 -- A Matching subject per permanent adds CR 601.2c's "that creature" read by a
 -- bystander: the permanent that became the target, which Cowardice returns to
--- its owner's hand, and only sometimes when a subject including "you" may admit
--- the player instead (Unsettled Mariner). The targeting object beside it is Diffusion
--- Sliver's "counter that spell or ability unless its controller pays {2}".
+-- its owner's hand, and only sometimes when a subject including a player may
+-- admit the player instead (Unsettled Mariner). The targeting object beside it
+-- is Diffusion Sliver's "counter that spell or ability unless its controller
+-- pays {2}".
 --
--- A You subject per occurrence binds only the targeting object, as a Self one
+-- A Player subject per occurrence binds only the targeting object, as a Self one
 -- does: Amulet of Safekeeping's "counter that spell or ability unless its
 -- controller pays {1}". With a PLAYER targeted there is no bearer-shaped slot
 -- that would already name it. Dormant Gomazoa's "untap this creature" reads the
@@ -1190,7 +1191,7 @@ becomesTargetedSlots c = case (BecomesTargetedTrigger.batching c, TargetedSubjec
   (Batching.EachOccurrence, Nothing) -> (Set.singleton Binding.targetingObject, Set.empty)
   (Batching.EachOccurrence, Just ActingPermanent.Self) -> (Set.singleton Binding.targetingObject, Set.empty)
   (Batching.EachOccurrence, Just (ActingPermanent.Matching _))
-    | TargetedSubject.includesYou subject -> (Set.singleton Binding.targetingObject, Set.singleton Binding.became)
+    | Maybe.isJust (TargetedSubject.playerOf subject) -> (Set.singleton Binding.targetingObject, Set.singleton Binding.became)
     | otherwise -> (Set.fromList [Binding.became, Binding.targetingObject], Set.empty)
   where
     subject = BecomesTargetedTrigger.subject c
