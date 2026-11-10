@@ -2857,6 +2857,7 @@ scavenging-ooze
 scepter-of-empires
 scheming-aspirant
 scheming-symmetry
+scientist-supreme-of-a-i-m
 scorch-spitter
 scorching-dragonfire
 scorching-winds
@@ -2884,6 +2885,7 @@ seasoned-cryomancer
 secluded-courtyard
 second-sight
 secret-door
+secret-invasion
 secret-tunnel
 secrets-of-the-golden-city
 sedge-sliver
@@ -2917,6 +2919,7 @@ serene-master
 serene-remembrance
 serpent-generator
 serpent-of-the-endless-sea
+serpent-specialist
 serra-avatar
 serra-avenger
 serra-bestiary
@@ -2941,6 +2944,7 @@ shahrazad-and-sindbad
 shapeshifter
 shared-summons
 shattered-ego
+she-hulk-jade-defender
 shed-weakness
 shell-of-the-last-kappa
 shellfish-scholar
@@ -2956,6 +2960,7 @@ showstopping-surprise
 shrapnel-blast
 shroofus-sproutsire
 shunt
+shuri-wakandan-inventor
 sibilant-spirit
 sidar-kondo-of-jamuraa
 siege-behemoth
@@ -3070,6 +3075,8 @@ spear-of-heliod
 spectra-ward
 spectral-searchlight
 spectral-shift
+speed-young-avenger
+speedball-new-warrior
 spell-blast
 spellbook
 spellskite
@@ -3086,6 +3093,7 @@ sphinx-of-uthuun
 sphinxs-approach
 sphinxs-decree
 sphinxs-tutelage
+spider-man-to-the-rescue
 spider-punk
 spike-cannibal
 spiked-corridor-torture-pit
@@ -3124,11 +3132,13 @@ star-crowned-stag
 starfield-mystic
 starfield-of-nyx
 starforged-sword
+stark-industries-executive
 starlight-snare
 stasis
 stasis-snare
 static-discharge
 static-orb
+stature-size-shifter
 stave-off
 steady-progress
 steal-artifact
@@ -3147,6 +3157,7 @@ stingerquill-voxmancer-vicious-verse
 stinging-vitriol
 stir-the-grave
 stir-up-trouble
+stolen-stark-tech
 stone-by-sunlight
 stone-giant
 stone-giant-of-high-pass
@@ -3194,8 +3205,11 @@ sunglasses-of-urza
 sunken-hope
 sunscape-battlemage
 sunweb
+super-adaptoid
 super-shredder
 super-soldier-serum
+super-suit
+super-villain-lockup
 superior-spider-man
 supper-for-spiders
 suppression-bonds
@@ -3207,6 +3221,7 @@ surrak-the-hunt-caller
 surrounded-by-orcs
 surveillance-monitor
 surveillance-phantasm
+surveillance-room
 surveyors-scope
 susan-foreman
 suspend
@@ -3221,6 +3236,7 @@ switcheroo
 swooping-protector
 sword-of-the-animist
 sword-swallowing-seraph
+swordsman-sharp-scoundrel
 sylvan-library
 sylvan-messenger
 sylvan-scavenging
@@ -3244,6 +3260,7 @@ tapestry-warden
 targeting-rocket
 tariff
 tarmogoyf
+taskmaster-mercenary-mimic
 tattoo-ward
 taunt
 taunting-challenge
@@ -3297,8 +3314,10 @@ tezzeret-artifice-master
 tezzeret-cruel-machinist
 tezzerets-gatebreaker
 tezzerets-reckoning
+thanos-the-mad-titan
 thatcher-revolt
 the-arkenstone-seek-the-heart
+the-astonishing-ant-man
 the-best-of-both-worlds
 the-black-arrow
 the-black-gate
