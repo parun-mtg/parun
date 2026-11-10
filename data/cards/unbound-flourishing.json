@@ -67,7 +67,9 @@
                     },
                     {
                       "type": "ManaCostHasSymbol",
-                      "value": "VariableSymbol"
+                      "value": {
+                        "type": "VariableSymbol"
+                      }
                     }
                   ]
                 }
@@ -141,7 +143,9 @@
                         },
                         {
                           "type": "ManaCostHasSymbol",
-                          "value": "VariableSymbol"
+                          "value": {
+                            "type": "VariableSymbol"
+                          }
                         }
                       ]
                     }
@@ -163,7 +167,9 @@
                       },
                       {
                         "type": "ManaCostHasSymbol",
-                        "value": "VariableSymbol"
+                        "value": {
+                          "type": "VariableSymbol"
+                        }
                       }
                     ]
                   }

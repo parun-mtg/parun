@@ -28,6 +28,7 @@ import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaSpent as ManaSpent
+import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
@@ -58,6 +59,9 @@ data Quantity
     -- (Static Discharge), which no CR rule names; see
     -- Parun.Types.ProjectedCharacteristics.intensity.
     Intensity
+  | -- | CR 107.4 / 202.1: how many symbols of that kind the mana cost of the
+    -- object this quantity is evaluated against holds (Namor the Sub-Mariner).
+    ManaSymbolCount ManaSymbolKind.ManaSymbolKind
   | -- | A number an earlier effect of the same resolution bound at that slot;
     -- Nothing when it holds no amount. CR 601.2b's X is this arm, at
     -- Parun.Engine.Binding.variableX.

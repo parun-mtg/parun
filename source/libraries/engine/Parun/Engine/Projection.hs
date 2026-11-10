@@ -4678,6 +4678,8 @@ quantityReads q = case q of
   Quantity.Type.Measure measure -> measureReads measure
   -- Intensity is not a characteristic, so no Aspect names it.
   Quantity.Type.Intensity -> Set.empty
+  -- CR 707.2: a mana cost is copiable, ManaValue's reason.
+  Quantity.Type.ManaSymbolCount _ -> Set.empty
   -- Reads whichever of power and toughness the substitution picks, so it reads
   -- PowerA exactly as either Measure does above.
   Quantity.Type.StationMeasure -> Set.singleton PowerA

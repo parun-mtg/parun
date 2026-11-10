@@ -135,7 +135,7 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
     let lap reader =
           let (bearsId, gs1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
               gs2 = maybe gs1 (\printing -> snd (S.addLibraryCard printing S.alice gs1)) reader
-              declared = AttackerDeclared.MkAttackerDeclared bearsId S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice 2
+              declared = AttackerDeclared.MkAttackerDeclared bearsId S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.attackerSnapshot bearsId S.alice 2)
            in Fragmented.lapIsRead (Fragmented.digest gs2) (S.withEvents [GameEvent.AttackerDeclared declared] gs2)
     Spec.assertEqWith s "CR 733.3 Desert Were-Worm reads the lap's attack" (lap (Just worm)) True
     Spec.assertEqWith s "CR 733.3 with no reader the lap's attack is unread" (lap Nothing) False

@@ -28,15 +28,14 @@ import qualified Parun.Types.Quantity as Quantity
 -- 'ChooseInstead' is the fourth: one instruction replaced by another while a
 -- condition holds (CR 700.2; Parun.Types.ChooseInstead). Parun.Engine.Modal reads
 -- it as either instruction until something settles the condition, which
--- Parun.Engine.Cast does once the costs are announced (CR 601.4), and
+-- Parun.Engine.Cast does once the costs are announced (CR 601.4),
+-- Parun.Engine.Activate once an activation's are (CR 602.2b), and
 -- Parun.Engine.Engine as a triggered ability is put on the stack (CR 603.3c).
--- Settling it for an activated ability is not implemented (#5308).
 --
 -- 'ChooseUpTo' is the fifth: zero through a number computed as the modes are
 -- chosen ("choose up to X --", The Ruinous Wrecking Crew), settled to a
 -- 'ChooseBetween' where 'ChooseInstead' is. Until then Parun.Engine.Modal reads it
--- as having no ceiling of its own. Settling it for an activated ability is not
--- implemented (#6858).
+-- as having no ceiling of its own.
 --
 -- CR 700.2i's pawprint is a future constructor: it bounds a WEIGHTED total
 -- rather than a number of modes, so no range over mode counts states it.

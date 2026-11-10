@@ -2,6 +2,7 @@ module Parun.Types.Moved where
 
 import qualified Data.Sequence as Seq
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -72,14 +73,18 @@ data Moved = MkMoved
     -- action, a cast. A CR 118.12 cost paid on resolution records the
     -- resolving spell's or ability's controller (Tamiyo, Collector of Tales'
     -- ruling of 2019-05-03).
-    causedBy :: Maybe PlayerId.PlayerId
+    causedBy :: Maybe PlayerId.PlayerId,
+    -- | CR 608.2i: the leading arrival as it stood once the move finished,
+    -- which `characteristics`, the departing object's, is not (CR 707.5's copy
+    -- entering). Nothing where it no longer existed, and on a hand-built event.
+    arrived :: Maybe ObjectSnapshot.ObjectSnapshot
   }
   deriving (Eq, Ord, Show)
 
 -- | The ordinary move: one departure, one arrival, no CR 713.8 split. Every
 -- construction site but Parun.Engine.Event's zone-change funnel uses this.
 moved :: ZoneChange.ZoneChange -> ProjectedCharacteristics.ProjectedCharacteristics -> Moved
-moved zc pc = MkMoved {change = zc, characteristics = pc, otherArrivals = Seq.empty, otherDepartures = Seq.empty, duringResolution = False, revealed = False, seenArriving = False, causedBy = Nothing}
+moved zc pc = MkMoved {change = zc, characteristics = pc, otherArrivals = Seq.empty, otherDepartures = Seq.empty, duringResolution = False, revealed = False, seenArriving = False, causedBy = Nothing, arrived = Nothing}
 
 -- | CR 400.7e's "the new object it became", in the plural CR 713.8c asks for:
 -- every incarnation this move minted, first arrival first. A singleton for every

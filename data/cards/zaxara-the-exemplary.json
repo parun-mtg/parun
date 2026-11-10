@@ -105,7 +105,9 @@
                     },
                     {
                       "type": "ManaCostHasSymbol",
-                      "value": "VariableSymbol"
+                      "value": {
+                        "type": "VariableSymbol"
+                      }
                     }
                   ]
                 }

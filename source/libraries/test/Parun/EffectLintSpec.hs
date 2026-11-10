@@ -516,6 +516,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.AtMost {} -> False
   Quantity.Type.Measure _ -> False
   Quantity.Type.Intensity -> False
+  Quantity.Type.ManaSymbolCount _ -> False
   Quantity.Type.InSlot _ -> False
   Quantity.Type.Share _ -> False
   Quantity.Type.WasBound _ -> False

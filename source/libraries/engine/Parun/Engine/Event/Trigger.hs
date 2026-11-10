@@ -601,7 +601,7 @@ fileBoards gs =
 -- The zone change an event describes, if it is one.
 movedOf :: GameEvent -> Maybe ZoneChange
 movedOf event = case event of
-  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _) -> Just zc
+  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) -> Just zc
   -- CR 713.8 / CR 731.3: each component card after the leading one DID change
   -- zones, so the event that announces it answers with its zone change like any
   -- other. That is what puts it in front of the two graveyard candidate sources
@@ -1524,7 +1524,7 @@ eventTriggersGiven scope standing events gs =
                 _ -> Map.empty
               _ -> Map.empty
       leftBattlefield event = case event of
-        GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _)
+        GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)
           | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc /= Zone.Battlefield ->
               case Map.lookup (ZoneChange.departed zc) (GameState.lastKnown gs) of
                 Nothing -> Map.empty
@@ -3862,7 +3862,8 @@ firesWithout gone pending gs =
 
 -- An event as it would have been recorded on the board `without`: each
 -- characteristics snapshot is re-read there, off the object it describes --
--- for a move, the incarnation that LEFT (Parun.Types.Moved). The snapshot is
+-- for a move, the incarnation that LEFT (Parun.Types.Moved) and, for its
+-- `arrived`, the one that arrived. The snapshot is
 -- kept where that object is gone, as a moved one usually is, or reads the same
 -- on both boards; it is replaced where the object still reads as the snapshot
 -- on `gs`; and one that has changed since the event and that `without` reads
@@ -3897,15 +3898,19 @@ resnapshot gs without event =
         let pc = Projection.project oid g
          in (pc, Projection.lapsedGrantsOf (Projection.fullView g) pc oid g)
       resample oid pc lapsed = rereadBy sampled oid (pc, lapsed)
+      resampleObject snapshot =
+        fmap
+          (\(pc, lapsed) -> snapshot {ObjectSnapshot.characteristics = pc, ObjectSnapshot.lapsedGrants = lapsed})
+          (resample (ObjectSnapshot.object snapshot) (ObjectSnapshot.characteristics snapshot) (ObjectSnapshot.lapsedGrants snapshot))
       rereadBallot ballot = case Ballot.choice ballot of
-        BallotChoice.ForObject snapshot ->
-          fmap
-            (\(pc, lapsed) -> ballot {Ballot.choice = BallotChoice.ForObject snapshot {ObjectSnapshot.characteristics = pc, ObjectSnapshot.lapsedGrants = lapsed}})
-            (resample (ObjectSnapshot.object snapshot) (ObjectSnapshot.characteristics snapshot) (ObjectSnapshot.lapsedGrants snapshot))
+        BallotChoice.ForObject snapshot -> fmap (\resampled -> ballot {Ballot.choice = BallotChoice.ForObject resampled}) (resampleObject snapshot)
         BallotChoice.ForWord _ -> Just ballot
         BallotChoice.ForPlayer _ -> Just ballot
    in case event of
-        GameEvent.Moved m -> fmap (\pc -> GameEvent.Moved m {Moved.characteristics = pc}) (reread (ZoneChange.departed (Moved.change m)) (Moved.characteristics m))
+        GameEvent.Moved m -> do
+          pc <- reread (ZoneChange.departed (Moved.change m)) (Moved.characteristics m)
+          arrived <- traverse resampleObject (Moved.arrived m)
+          Just (GameEvent.Moved m {Moved.characteristics = pc, Moved.arrived = arrived})
         GameEvent.SpellCast c -> fmap (\(pc, lapsed) -> GameEvent.SpellCast c {SpellWasCast.characteristics = pc, SpellWasCast.lapsedGrants = lapsed}) (resample (SpellWasCast.spell c) (SpellWasCast.characteristics c) (SpellWasCast.lapsedGrants c))
         GameEvent.Revealed r -> fmap (\pc -> GameEvent.Revealed r {Revealed.characteristics = pc}) (rereadBy Projection.projectShown (Revealed.card r) (Revealed.characteristics r))
         GameEvent.Looked l -> fmap (\pc -> GameEvent.Looked l {Looked.characteristics = pc}) (rereadBy Projection.projectShown (Looked.card l) (Looked.characteristics l))
@@ -3923,7 +3928,7 @@ resnapshot gs without event =
         GameEvent.Discarded {} -> Just event
         GameEvent.Milled {} -> Just event
         GameEvent.Drew {} -> Just event
-        GameEvent.AttackerDeclared {} -> Just event
+        GameEvent.AttackerDeclared d -> fmap (\resampled -> GameEvent.AttackerDeclared d {AttackerDeclared.snapshot = resampled}) (resampleObject (AttackerDeclared.snapshot d))
         GameEvent.BecameAttacked {} -> Just event
         GameEvent.AttackersDeclared {} -> Just event
         GameEvent.BecameBlocking {} -> Just event

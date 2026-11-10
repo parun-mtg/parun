@@ -1,12 +1,14 @@
 module Parun.Codec.MovedSpec where
 
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Parun.Codec.Moved as Moved
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -27,7 +29,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = False,
             Moved.seenArriving = False,
-            Moved.causedBy = Nothing
+            Moved.causedBy = Nothing,
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -48,7 +51,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = False,
             Moved.seenArriving = False,
-            Moved.causedBy = Nothing
+            Moved.causedBy = Nothing,
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -69,7 +73,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = False,
             Moved.seenArriving = False,
-            Moved.causedBy = Nothing
+            Moved.causedBy = Nothing,
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Exile\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -90,7 +95,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = True,
             Moved.revealed = False,
             Moved.seenArriving = False,
-            Moved.causedBy = Nothing
+            Moved.causedBy = Nothing,
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Stack\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -111,7 +117,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = True,
             Moved.seenArriving = False,
-            Moved.causedBy = Nothing
+            Moved.causedBy = Nothing,
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Hand\",\"to\":\"Library\"},\"characteristics\":"
@@ -132,7 +139,8 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = False,
             Moved.seenArriving = True,
-            Moved.causedBy = Nothing
+            Moved.causedBy = Nothing,
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Library\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -153,11 +161,46 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = False,
             Moved.seenArriving = False,
-            Moved.causedBy = Just (PlayerId.MkPlayerId 1)
+            Moved.causedBy = Just (PlayerId.MkPlayerId 1),
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
           <> ",\"otherArrivals\":[],\"causedBy\":1}"
+      )
+  -- CR 608.2i's arrival as it stood once the move finished, under a
+  -- controller and owner who differ.
+  Spec.it s "MkMoved, CR 608.2i's arrival as it entered" $
+    Common.assertCodec
+      s
+      Moved.codec
+      ( Moved.MkMoved
+          { Moved.change = ZoneChange.MkZoneChange (ObjectId.MkObjectId 1) (ObjectId.MkObjectId 2) Zone.Hand Zone.Battlefield,
+            Moved.characteristics = ProjectedCharacteristicsSpec.testCharacteristics,
+            Moved.otherArrivals = Seq.empty,
+            Moved.otherDepartures = Seq.empty,
+            Moved.duringResolution = False,
+            Moved.revealed = False,
+            Moved.seenArriving = False,
+            Moved.causedBy = Nothing,
+            Moved.arrived =
+              Just
+                ObjectSnapshot.MkObjectSnapshot
+                  { ObjectSnapshot.object = ObjectId.MkObjectId 2,
+                    ObjectSnapshot.characteristics = ProjectedCharacteristicsSpec.testCharacteristics,
+                    ObjectSnapshot.controller = Just (PlayerId.MkPlayerId 1),
+                    ObjectSnapshot.owner = PlayerId.MkPlayerId 0,
+                    ObjectSnapshot.zone = Zone.Battlefield,
+                    ObjectSnapshot.home = Zone.Battlefield,
+                    ObjectSnapshot.lapsedGrants = Set.empty
+                  }
+          }
+      )
+      ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Hand\",\"to\":\"Battlefield\"},\"characteristics\":"
+          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
+          <> ",\"otherArrivals\":[],\"arrived\":{\"object\":2,\"characteristics\":"
+          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
+          <> ",\"controller\":1,\"owner\":0,\"zone\":\"Battlefield\"}}"
       )
   Spec.it s "has a schema" $ Common.assertHasSchema s Moved.codec

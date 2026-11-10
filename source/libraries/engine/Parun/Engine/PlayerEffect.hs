@@ -19,11 +19,11 @@
 -- and by that same standing: it is an Effect payload, and only a resolution can
 -- answer the slot its Named arm holds. This module reads the BAKED value.
 --
--- The one other module that cases on PlayerEffect is Parun.Engine.Projection,
--- through rewritePlayerEffect, and it asks nothing about meaning: CR 612.1's word
--- swap walks the type's STRUCTURE for a Filter that could hold a subtype word,
--- and hands the answer straight back. Living there is what lets rewriteEffect
--- reach a restriction a resolution stores.
+-- The one other module that cases on PlayerEffect is Parun.Engine.Children,
+-- through playerEffectChildren, and it asks nothing about meaning: the
+-- structural walks' traversal, which CR 612.1's word swap
+-- (Parun.Engine.Projection.Rewrite.rewritePlayerEffect) and
+-- Parun.Engine.Interchangeable.Mentions both run.
 module Parun.Engine.PlayerEffect where
 
 import qualified Data.Bifunctor as Bifunctor

@@ -12,6 +12,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.TextWord as TextWord
@@ -54,8 +55,6 @@ import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MovedBetween as MovedBetween
@@ -254,10 +253,10 @@ data View = MkView
     -- battlefield, a player, a cast's snapshot -- the vacuous posture power and
     -- controller take.
     attacking :: Bool,
-    -- CR 506.5: is this candidate attacking alone right now -- attacking, with
-    -- no other creature attacking? Read off the same map as `attacking`, and
-    -- False wherever that is.
-    attackingAlone :: Bool,
+    -- CR 506.5 / 506.6: among which attackers is this candidate attacking alone
+    -- right now? Read off the same map as `attacking`, and empty wherever that
+    -- is False.
+    attackingAlone :: Set.Set AloneAmong.AloneAmong,
     -- CR 508.1b: WHICH PLAYER is this candidate attacking? Read from
     -- GameState.combat like `attacking` above and off the same map, but off its
     -- VALUE rather than its keys: Combat.attackers records what each attacker was
@@ -922,7 +921,7 @@ playerView pid =
       playerIdentity = Just pid,
       -- CR 506.3: only a creature can attack, and a player is not one.
       attacking = False,
-      attackingAlone = False,
+      attackingAlone = Set.empty,
       -- CR 506.3 again: a player attacks nothing, so there is no player it is
       -- attacking either.
       attackingPlayer = Nothing,
@@ -2060,18 +2059,12 @@ matches context view predicate = case predicate of
   Filter.ManaCostRepeatsSymbol ->
     let symbols = foldMap ManaCost.unwrap (manaCost view)
      in length (ListUtils.nubOrd symbols) < length symbols
-  -- CR 107.3 / 107.4g over the mana cost's symbols, CR 709.4b's combined cost
-  -- included; an object with no mana cost has none. {H} is either Phyrexian
-  -- shape (CR 107.4f). An activated ability's activation cost stands in for
-  -- the mana cost (CR 602.2b), Glava, Five-Advents Mage's "an ability with {X}
-  -- in its activation cost".
+  -- Over the mana cost's symbols, CR 709.4b's combined cost included; an
+  -- object with no mana cost has none. An activated ability's activation cost
+  -- stands in for the mana cost (CR 602.2b), Glava, Five-Advents Mage's "an
+  -- ability with {X} in its activation cost".
   Filter.ManaCostHasSymbol kind ->
-    let isKind symbol = case (kind, symbol) of
-          (ManaSymbolKind.VariableSymbol, ManaSymbol.Variable) -> True
-          (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.Phyrexian _) -> True
-          (ManaSymbolKind.PhyrexianSymbol, ManaSymbol.HybridPhyrexian _) -> True
-          _ -> False
-     in any isKind (foldMap ManaCost.unwrap (manaCost view) <> foldMap ManaCost.unwrap (activationCost view))
+    any (ManaSymbolText.isOfKind kind) (foldMap ManaCost.unwrap (manaCost view) <> foldMap ManaCost.unwrap (activationCost view))
   -- PlayerRelation.holds is what each arm MEANS, and its haddock carries the
   -- argument: an Opponent is CR 102.3's player not on your team, which is every
   -- other player in a free-for-all (CR 806.1) and at two seats (CR 102.2), and
@@ -2314,11 +2307,10 @@ matches context view predicate = case predicate of
   Filter.OwnsBoundAtLeast {} -> False
   -- CR 508.1k: a creature stays attacking until it is removed from combat or the
   -- combat phase ends, so this is a live read of the combat record, never a stamp
-  -- on the object. CR 506.5's "attacking alone" reads the same record.
+  -- on the object. CR 506.5's and CR 506.6's "attacking alone" read the same
+  -- record.
   Filter.IsAttacking Nothing -> attacking view
-  Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> attackingAlone view
-  -- Not implemented (#6873).
-  Filter.IsAttacking (Just AloneAmong.AttackersOfItsPlayer) -> False
+  Filter.IsAttacking (Just among) -> Set.member among (attackingAlone view)
   -- CR 508.1b: the same live read one field over, and the relation is answered
   -- against the perspective here rather than baked, exactly as HeldBy's is
   -- -- CR 109.5's "you" is what the match is framed by, not a fact about the

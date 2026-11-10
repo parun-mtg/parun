@@ -50,7 +50,8 @@ data EventShape
     -- only the one that arrived in the named zone is counted.
     --
     -- Into the battlefield it counts every permanent that entered, a created
-    -- token among them (CR 111.2), under the controller it entered under:
+    -- token among them (CR 111.2), as it entered (CR 608.2i), under the
+    -- controller it entered under:
     -- Iron Man, Master of Machines' "if an artifact entered the battlefield
     -- under your control this turn".
     CardArrivedIn CardArrivedIn.CardArrivedIn
@@ -67,8 +68,8 @@ data EventShape
     SpellCast CastWindow.CastWindow
   | -- | CR 508.1a / 608.2i: a creature was declared as an attacker -- "you
     -- attacked with a Hero this turn" (Avengers Assemble!). Each member is the
-    -- attacker as it is or last was, controlled by the player who attacked
-    -- with it. A creature put onto the battlefield attacking never "attacked"
+    -- attacker as it was declared, controlled by the player who attacked with
+    -- it. A creature put onto the battlefield attacking never "attacked"
     -- (CR 508.4).
     AttackerDeclared
   deriving (Eq, Ord, Show)

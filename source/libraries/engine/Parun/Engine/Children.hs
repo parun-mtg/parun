@@ -1,5 +1,6 @@
 module Parun.Engine.Children where
 
+import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -16,6 +17,7 @@ import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledW
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AimedAt as AimedAt
+import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Ante as Ante
@@ -47,6 +49,7 @@ import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CastFrom as CastFrom
+import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.CausedBy as CausedBy
@@ -76,8 +79,13 @@ import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostModifier as CostModifier
+import qualified Parun.Types.CostScale as CostScale
+import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
@@ -85,6 +93,7 @@ import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CounteringTrigger as CounteringTrigger
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
@@ -96,6 +105,7 @@ import qualified Parun.Types.CreateEmblem as CreateEmblem
 import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePart as DamagePart
+import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -121,6 +131,7 @@ import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EntersTrigger as EntersTrigger
+import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
@@ -146,6 +157,7 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
@@ -154,12 +166,14 @@ import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
+import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
@@ -172,16 +186,21 @@ import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
+import qualified Parun.Types.LoyaltyClause as LoyaltyClause
+import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
+import qualified Parun.Types.ManaFilter as ManaFilter
+import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modification as Modification
+import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MonarchTarget as MonarchTarget
 import qualified Parun.Types.Morph as Morph
@@ -200,6 +219,7 @@ import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PayGate as PayGate
+import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -217,6 +237,7 @@ import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlaysLand as PlaysLand
+import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prohibit as Prohibit
@@ -259,17 +280,21 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
+import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.Splice as Splice
+import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
+import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TransformTrigger as TransformTrigger
@@ -542,6 +567,7 @@ quantityChildren children quantity = case quantity of
   Quantity.Literal _ -> pure quantity
   Quantity.Measure _ -> pure quantity
   Quantity.Intensity -> pure quantity
+  Quantity.ManaSymbolCount _ -> pure quantity
   -- AMOUNT, for each of the six: the slot's number (Binding.amountOf), its
   -- division (CR 601.2d), whether it is bound at all (CR 701.4b), or a tally,
   -- never one recipient, so none reaches Filter.slotOneObject.
@@ -1825,3 +1851,183 @@ cardTallyChildren :: (Applicative f) => CostChildren keyword f -> CardTally.Card
 cardTallyChildren c tally = case tally of
   CardTally.ManaValue -> pure tally
   CardTally.ManaSymbolsOf color -> CardTally.ManaSymbolsOf <$> costColor c color
+
+-- | One visitor per kind of child a player effect (CR 611.1's third clause)
+-- holds. Its payloads are matched positionally in playerEffectChildren; a type
+-- visited whole has walks of its own outside the player effect.
+data PlayerEffectChildren f = MkPlayerEffectChildren
+  { -- | A Filter a field holds, judged of the objects it describes.
+    playerFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A Quantity a field holds: a count a modifier repeats by, a free cast's
+    -- mana value limit.
+    playerQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A die roll modifier's cost (CR 706.2a), whole.
+    playerCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | A cost component an effect adds to a cost (CR 118.8), whole.
+    playerCostComponent :: CostComponent.CostComponent Keyword.Keyword -> f (CostComponent.CostComponent Keyword.Keyword),
+    -- | The colour of mana symbols an addition is scaled by (CR 107.4).
+    playerColor :: Color.Color -> f Color.Color,
+    -- | A keyword an ability is designated by (CR 702), whole.
+    playerDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword),
+    -- | What narrows a cost modifier's abilities (CR 602.2b), whole.
+    playerActivations :: ActivationCriteria.ActivationCriteria -> f ActivationCriteria.ActivationCriteria,
+    -- | The zone a permission reaches into, whole.
+    playerZone :: InZone.InZone -> f InZone.InZone,
+    -- | The turn an "only the first" limit counts over (CR 500.1), whole.
+    playerTurn :: TurnScope.TurnScope -> f TurnScope.TurnScope,
+    -- | Which mana an effect keeps or spends (CR 106.4), whole.
+    playerManaFilter :: ManaFilter.ManaFilter -> f ManaFilter.ManaFilter,
+    -- | A spend-as-though clause (CR 609.4b), whole.
+    playerSpending :: SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough,
+    -- | What tapped-for mana may be spent on (CR 106.6), whole.
+    playerManaRestriction :: ManaRestriction.ManaRestriction -> f ManaRestriction.ManaRestriction,
+    -- | Which damage an effect matches (CR 120.1), whole.
+    playerDamage :: DamagePattern.DamagePattern -> f DamagePattern.DamagePattern,
+    -- | The events the engine looks back over to apply the effect.
+    playerLooksBack :: HistoryRead.HistoryRead -> f ()
+  }
+
+-- | Every child of a player effect left as it is: the base a walk overrides.
+playerEffectLeaves :: (Applicative f) => PlayerEffectChildren f
+playerEffectLeaves =
+  MkPlayerEffectChildren
+    { playerFilter = pure,
+      playerQuantity = pure,
+      playerCost = pure,
+      playerCostComponent = pure,
+      playerColor = pure,
+      playerDesignator = pure,
+      playerActivations = pure,
+      playerZone = pure,
+      playerTurn = pure,
+      playerManaFilter = pure,
+      playerSpending = pure,
+      playerManaRestriction = pure,
+      playerDamage = pure,
+      playerLooksBack = const (pure ())
+    }
+
+-- | A PlayerEffect's children, its payload matched positionally.
+playerEffectChildren :: (Applicative f) => PlayerEffectChildren f -> PlayerEffect.PlayerEffect -> f PlayerEffect.PlayerEffect
+playerEffectChildren c effect = case effect of
+  PlayerEffect.CantCastSpells -> pure effect
+  PlayerEffect.CantActivateAbilities designator filter_ kind -> PlayerEffect.CantActivateAbilities <$> traverse (playerDesignator c) designator <*> playerFilter c filter_ <*> pure kind
+  -- CR 601.3's limit counts the turn's casts.
+  PlayerEffect.CantCastMoreThan _ -> effect <$ playerLooksBack c HistoryRead.Casts
+  PlayerEffect.ModifyCost modifier -> PlayerEffect.ModifyCost <$> costModifierChildren c modifier
+  PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost grantedBy onlyFirst cost) ->
+    fmap PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost <$> playerDesignator c grantedBy <*> traverse (onlyFirstChildren c HistoryRead.Activations) onlyFirst <*> pure cost)
+  PlayerEffect.PlayAdditionalLands _ -> pure effect
+  PlayerEffect.NoMaximumHandSize -> pure effect
+  PlayerEffect.SetMaximumHandSize _ -> pure effect
+  PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
+  PlayerEffect.ReduceMaximumHandSize _ -> pure effect
+  PlayerEffect.DontLoseUnspentMana which -> PlayerEffect.DontLoseUnspentMana <$> playerManaFilter c which
+  PlayerEffect.LoseLifeForUnspentMana -> pure effect
+  PlayerEffect.MayPayLifeForMana _ _ -> pure effect
+  PlayerEffect.SpendManaAsThough clause -> PlayerEffect.SpendManaAsThough <$> playerSpending c clause
+  PlayerEffect.CantBeTargetedBy players quality -> PlayerEffect.CantBeTargetedBy players <$> traverse (playerFilter c) quality
+  PlayerEffect.HasProtectionFrom quality -> PlayerEffect.HasProtectionFrom <$> playerFilter c quality
+  PlayerEffect.CastAsThoughItHadFlash filter_ onlyFirst -> PlayerEffect.CastAsThoughItHadFlash <$> playerFilter c filter_ <*> traverse (onlyFirstChildren c HistoryRead.Casts) onlyFirst
+  PlayerEffect.MayPlayAsThoughItHadFlash filter_ -> PlayerEffect.MayPlayAsThoughItHadFlash <$> playerFilter c filter_
+  PlayerEffect.KeywordRiderGrant (KeywordRiderGrant.MkKeywordRiderGrant abilities relaxes permanents) ->
+    fmap PlayerEffect.KeywordRiderGrant (KeywordRiderGrant.MkKeywordRiderGrant <$> playerDesignator c abilities <*> pure relaxes <*> playerFilter c permanents)
+  PlayerEffect.LoyaltyGrant (LoyaltyGrant.MkLoyaltyGrant relaxes permanents) ->
+    let -- CR 606.3: a once-per-turn grant is spent off the turn's activations.
+        looksBack = case relaxes of
+          LoyaltyClause.Window -> pure ()
+          LoyaltyClause.OncePerTurn -> playerLooksBack c HistoryRead.Activations
+     in fmap PlayerEffect.LoyaltyGrant (LoyaltyGrant.MkLoyaltyGrant relaxes <$ looksBack <*> playerFilter c permanents)
+  PlayerEffect.MayTapForMana (TapForMana.MkTapForMana permanents restriction) ->
+    fmap PlayerEffect.MayTapForMana (TapForMana.MkTapForMana <$> playerFilter c permanents <*> traverse (playerManaRestriction c) restriction)
+  PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition countered counterers) ->
+    fmap PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition <$> playerFilter c countered <*> playerFilter c counterers)
+  PlayerEffect.NextSpell filter_ -> PlayerEffect.NextSpell <$> playerFilter c filter_
+  PlayerEffect.RestrictTargeting (TargetRestriction.MkTargetRestriction affected kind aimers) ->
+    fmap PlayerEffect.RestrictTargeting (TargetRestriction.MkTargetRestriction <$> playerFilter c affected <*> pure kind <*> playerFilter c aimers)
+  PlayerEffect.TargetPastHexproof (HexproofExemption.MkHexproofExemption permanents players) ->
+    fmap PlayerEffect.TargetPastHexproof (HexproofExemption.MkHexproofExemption <$> playerFilter c permanents <*> pure players)
+  PlayerEffect.DamageCantBePrevented damage -> PlayerEffect.DamageCantBePrevented <$> playerDamage c damage
+  PlayerEffect.DamageCantBeRedirected damage -> PlayerEffect.DamageCantBeRedirected <$> playerDamage c damage
+  PlayerEffect.CantSearchLibraries _ -> pure effect
+  PlayerEffect.CantBecomeMonarch -> pure effect
+  PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
+  PlayerEffect.CantSetSchemesInMotion -> pure effect
+  PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants triggering) ->
+    fmap PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger <$> playerFilter c entrants <*> pure triggering)
+  PlayerEffect.AdditionalTriggers bearers -> PlayerEffect.AdditionalTriggers <$> playerFilter c bearers
+  PlayerEffect.ControlledWhileSearching -> pure effect
+  PlayerEffect.YouChoose _ -> pure effect
+  PlayerEffect.BlocksFromPiles -> pure effect
+  PlayerEffect.ExilesFoundWhileSearching -> pure effect
+  PlayerEffect.CantAttackWithCreatures -> pure effect
+  PlayerEffect.CantCastMatching filter_ -> PlayerEffect.CantCastMatching <$> playerFilter c filter_
+  PlayerEffect.CastOnlyAtSorcerySpeed -> pure effect
+  PlayerEffect.CantPlayLands filter_ -> PlayerEffect.CantPlayLands <$> playerFilter c filter_
+  PlayerEffect.CastFrom (CastFromZone.MkCastFromZone from matching limit verb pool additionalCosts reduction spending) ->
+    fmap PlayerEffect.CastFrom (CastFromZone.MkCastFromZone <$> playerZone c from <*> playerFilter c matching <*> pure limit <*> pure verb <*> pure pool <*> traverse (playerCostComponent c) additionalCosts <*> pure reduction <*> pure spending)
+  PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
+  PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
+    fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
+  PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast spells amount from) ->
+    fmap PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast <$> playerFilter c spells <*> traverse (playerQuantity c) amount <*> pure from)
+  PlayerEffect.CantGetCounters _ -> pure effect
+  -- CR 705.3: "the first coin you flip each turn" counts the turn's flips.
+  PlayerEffect.StateCoinFlip (StatedFlip.MkStatedFlip _ _ firstEachTurn) -> effect <$ Monad.when firstEachTurn (playerLooksBack c HistoryRead.CoinFlips)
+  PlayerEffect.ModifyDieRoll (ModifiedRoll.MkModifiedRoll sides natural modifier cost limit) ->
+    fmap PlayerEffect.ModifyDieRoll (ModifiedRoll.MkModifiedRoll sides natural modifier <$> traverse (playerCost c) cost <*> pure limit)
+  PlayerEffect.AdditionalVotes _ -> pure effect
+  PlayerEffect.AdditionalSurveilCards _ -> pure effect
+  PlayerEffect.PutTappedAsYouCascade filter_ -> PlayerEffect.PutTappedAsYouCascade <$> playerFilter c filter_
+  PlayerEffect.CantGainLife -> pure effect
+  PlayerEffect.CantLoseLife -> pure effect
+  PlayerEffect.Precluded _ -> pure effect
+  PlayerEffect.Shows _ -> pure effect
+  PlayerEffect.RevealsDraw _ -> pure effect
+
+-- | An "only the first each turn" limit's children: the turn it counts over,
+-- and the events it counts.
+onlyFirstChildren :: (Applicative f) => PlayerEffectChildren f -> HistoryRead.HistoryRead -> TurnScope.TurnScope -> f TurnScope.TurnScope
+onlyFirstChildren c counted turn = playerLooksBack c counted *> playerTurn c turn
+
+-- | A cost modifier's children (CR 601.2f, 602.2b).
+costModifierChildren :: (Applicative f) => PlayerEffectChildren f -> CostModifier.CostModifier -> f CostModifier.CostModifier
+costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach onlyFirst change) =
+  CostModifier.MkCostModifier
+    <$> costSubjectChildren c subject
+    <*> playerFilter c matching
+    <*> traverse (playerFilter c) whichTargets
+    <*> traverse (perTargetChildren c) perTarget
+    <*> traverse (playerQuantity c) perEach
+    <*> traverse (onlyFirstChildren c (costSubjectHistory subject)) onlyFirst
+    <*> costChangeChildren c change
+
+-- | The turn's history a cost modifier's "only the first" reads: CR 601.2i's
+-- casts for a spell, CR 602.2's activations for an ability.
+costSubjectHistory :: CostSubject.CostSubject -> HistoryRead.HistoryRead
+costSubjectHistory subject = case subject of
+  CostSubject.Spells -> HistoryRead.Casts
+  CostSubject.Activations _ -> HistoryRead.Activations
+
+-- | What a cost modifier applies to: only abilities hold a child.
+costSubjectChildren :: (Applicative f) => PlayerEffectChildren f -> CostSubject.CostSubject -> f CostSubject.CostSubject
+costSubjectChildren c subject = case subject of
+  CostSubject.Spells -> pure subject
+  CostSubject.Activations criteria -> CostSubject.Activations <$> playerActivations c criteria
+
+-- | How a cost modifier counts targets (CR 601.2f).
+perTargetChildren :: (Applicative f) => PlayerEffectChildren f -> PerTarget.PerTarget -> f PerTarget.PerTarget
+perTargetChildren c (PerTarget.MkPerTarget matching each) = PerTarget.MkPerTarget <$> playerFilter c matching <*> traverse (playerQuantity c) each
+
+-- | How a cost modifier changes the cost: only an addition holds children.
+costChangeChildren :: (Applicative f) => PlayerEffectChildren f -> CostChange.CostChange -> f CostChange.CostChange
+costChangeChildren c change = case change of
+  CostChange.Increase _ -> pure change
+  CostChange.Reduce _ -> pure change
+  CostChange.Add (CostAddition.MkCostAddition components scale) -> fmap CostChange.Add (CostAddition.MkCostAddition <$> traverse (playerCostComponent c) components <*> costScaleChildren c scale)
+
+-- | How often an addition applies: only a per-symbol scale names a colour.
+costScaleChildren :: (Applicative f) => PlayerEffectChildren f -> CostScale.CostScale -> f CostScale.CostScale
+costScaleChildren c scale = case scale of
+  CostScale.Once -> pure scale
+  CostScale.PerColoredSymbol color -> CostScale.PerColoredSymbol <$> playerColor c color

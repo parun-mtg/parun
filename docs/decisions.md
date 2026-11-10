@@ -500,6 +500,27 @@ Entries are ordered by the first rule each cites.
   mangara-draws-when-two-attack-you-or-your-planeswalkers-and-for-an-opponents-second-spell.
 - **Issue**: #5890.
 
+## What Jin Sakai's "no other creatures are attacking that player" asks
+
+- **Question**: Jin Sakai, Ghost of Tsushima's intervening "if no other
+  creatures are attacking that player", re-checked on resolution: is it CR
+  506.6's "attacking a player alone", false once the triggering creature is
+  removed from combat, or true of a creature no longer attacking so long as
+  nothing else attacks that player?
+- **Rules**: CR 506.4, 506.6, 603.4, 608.2a (CR of 2026-11-06); the card has
+  no rulings.
+- **Decision**: CR 506.6's "attacking a player alone",
+  `Filter.IsAttacking (Just AttackersOfItsPlayer)` over the triggering
+  creature: "that player" is the player it is attacking, and a creature
+  removed from combat attacks no one.
+- **Rejected**: The literal negative, under which a creature removed from
+  combat (Reconnaissance) before resolution still gains double strike or
+  "can't be blocked" for a later combat this turn.
+- **Site**: data/cards/jin-sakai-ghost-of-tsushima.json's intervening "if",
+  proved by the scenario
+  `jin-sakai-ghost-of-tsushima-loses-its-trigger-once-another-creature-attacks-that-player`.
+- **Issue**: #6873.
+
 ## Whether a myriad token attacks an opponent who is not a defending player
 
 - **Question**: CR 702.116a's token is "attacking that player or a planeswalker

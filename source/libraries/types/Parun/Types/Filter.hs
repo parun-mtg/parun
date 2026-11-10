@@ -283,11 +283,9 @@ data Filter keyword
     OwnsBoundAtLeast Natural.Natural SlotName.SlotName (Filter keyword)
   | -- | CR 508.1k: the candidate is an ATTACKING creature, not since removed from
     -- combat (CR 506.4), and with Just, attacking alone among the attackers the
-    -- AloneAmong names (CR 506.5). Reading combat status breaches nothing: it is
-    -- a rules concept the closed half owns, so the read is the same kind of act
-    -- as reading a card type.
-    --
-    -- CR 506.6's AttackersOfItsPlayer is not implemented and never matches (#6873).
+    -- AloneAmong names (CR 506.5 / 506.6). Reading combat status breaches
+    -- nothing: it is a rules concept the closed half owns, so the read is the
+    -- same kind of act as reading a card type.
     IsAttacking (Maybe AloneAmong.AloneAmong)
   | -- | CR 508.1b: the candidate is an attacking creature AND the player it is
     -- attacking stands in this relation to the perspective (CR 109.5). Strictly

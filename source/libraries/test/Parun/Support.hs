@@ -112,6 +112,7 @@ import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Placement as Placement
@@ -1448,6 +1449,21 @@ attackerDeclarationsOf gs =
 emptyCharacteristics :: PC.ProjectedCharacteristics
 emptyCharacteristics = Projection.project (ObjectId.MkObjectId 999) (Setup.emptyGame bothPlayers)
 
+-- A hand-built GameEvent.AttackerDeclared's snapshot: this attacker on the
+-- battlefield under this player, with this power and characteristics
+-- otherwise empty.
+attackerSnapshot :: ObjectId.ObjectId -> PlayerId.PlayerId -> Integer -> ObjectSnapshot.ObjectSnapshot
+attackerSnapshot oid pid power =
+  ObjectSnapshot.MkObjectSnapshot
+    { ObjectSnapshot.object = oid,
+      ObjectSnapshot.characteristics = emptyCharacteristics {PC.power = Just power},
+      ObjectSnapshot.controller = Just pid,
+      ObjectSnapshot.owner = pid,
+      ObjectSnapshot.zone = Zone.Battlefield,
+      ObjectSnapshot.home = Zone.Battlefield,
+      ObjectSnapshot.lapsedGrants = Set.empty
+    }
+
 -- A state whose UNSCANNED event log IS this list, in this order -- the
 -- hand-built-event fixture shape a scan test needs. Takes the whole list rather
 -- than one event because it REPLACES the log: the one-event `withEvent` this
@@ -1867,7 +1883,7 @@ stubView table oid =
                 Filter.identity = Just o,
                 Filter.playerIdentity = Nothing,
                 Filter.attacking = False,
-                Filter.attackingAlone = False,
+                Filter.attackingAlone = Set.empty,
                 Filter.attackingPlayer = Nothing,
                 Filter.attackingPlaneswalkerController = Nothing,
                 Filter.attackingBattleProtector = Nothing,
