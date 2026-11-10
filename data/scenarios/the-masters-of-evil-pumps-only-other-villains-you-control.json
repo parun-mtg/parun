@@ -1,0 +1,102 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Masters of Evil",
+            "label": "masters"
+          },
+          {
+            "card": "A.I.M. Scientists",
+            "label": "ally"
+          },
+          {
+            "card": "Alaborn Trooper",
+            "label": "trooper"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "A.I.M. Scientists",
+            "label": "foe"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.4c, 109.5: The Masters of Evil gives other Villains you control +2/+1, not itself, a non-Villain, or an opponent's Villain",
+  "note": "Alice's A.I.M. Scientists is a 3/3 Villain and her Alaborn Trooper a 2/3 Human that is not a Villain, as both her Villains are Humans; bob's A.I.M. Scientists is a Villain alice does not control.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$ally",
+          "power": 5,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$masters",
+          "power": 5,
+          "toughness": 6
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$trooper",
+          "power": 2,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$foe",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

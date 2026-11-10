@@ -1,0 +1,35 @@
+{
+  "description": "CR 113.6j, 701.23a, 205.3h: The Masters of Evil, discarded from hand for {1}{B}, searches its controller's library for a Plan card and puts it into her hand",
+  "note": "Alice's library holds Pacifism, an enchantment that is not a Plan, which the search refuses, then Construct a Cosmic Cube, a Plan, and a Hill Giant.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BB",
+        "hand": [{ "card": "The Masters of Evil", "label": "masters" }],
+        "library": [
+          { "card": "Pacifism", "label": "pacifism" },
+          { "card": "Construct a Cosmic Cube", "label": "cube" },
+          { "card": "Hill Giant", "label": "giant" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$masters" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "The Masters of Evil", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Answer": { "prompt": "Search", "with": ["$pacifism"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Search", "with": ["$cube"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$pacifism", "$giant"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Construct a Cosmic Cube", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Library", "card": "Pacifism", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } }
+  ]
+}

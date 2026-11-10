@@ -3341,6 +3341,7 @@ the-black-gate
 the-caldaia
 the-chain-veil
 the-chief-warg
+the-coming-of-galactus
 the-dalek-emperor
 the-deck-of-many-things
 the-dining-car
@@ -3362,6 +3363,8 @@ the-lord-of-the-eagles
 the-lux-foundation-library
 the-master-of-lake-town
 the-master-transcendent
+the-masters-of-evil
+the-mighty-thor-jane-foster
 the-mind-stone
 the-misty-mountains-cold
 the-moonbase
@@ -3375,7 +3378,10 @@ the-ravens-warning
 the-royal-scions
 the-ruinous-powers
 the-sackville-bagginses
+the-scarlet-witch
+the-sentry-golden-guardian
 the-stasis-coffin
+the-super-hero-civil-war
 the-ten-rings
 the-theorist-jace-beleren
 the-unagi-of-kyoshi-island
@@ -3384,6 +3390,7 @@ the-valeyard
 the-very-soil-shall-shake
 the-wandering-emperor
 the-weatherseed-treaty
+the-wondrous-wasp
 the-wretched
 thelonite-hermit
 theorists-proxy
@@ -3392,6 +3399,7 @@ thicket-basilisk
 thieves-auction
 thieves-guild-enforcer
 thopter-spy-network
+thor-god-of-thunder
 thorin-mountain-king
 thorin-oakenshield
 thorn-elemental
@@ -3424,6 +3432,7 @@ through-the-forest-gate
 throwing-knife
 thrull-surgeon
 thud
+thunderbolts-conspiracy
 thunderbond-vanguard
 thunderkin-awakener
 thundermane-dragon
@@ -3437,6 +3446,7 @@ tide-skimmer
 tidebinder-mage
 tidewalker
 tidings-of-war
+tigra-feline-fury
 timberpack-wolf
 time-bomb
 time-elemental
@@ -3470,6 +3480,8 @@ tome-anima
 tome-of-the-infinite
 tomik-izzet-sparkmage
 tomik-orzhov-lawmage
+tony-stark-the-invincible-iron-man
+too-evil-to-stay-dead
 too-greedily-too-deep
 toralfs-disciple
 torgaar-famine-incarnate
@@ -3490,6 +3502,8 @@ track-down
 trade-secrets
 tragic-arrogance
 tragic-banshee
+training-compound
+training-regimen
 trait-doctoring
 traitorous-greed
 transcantation
@@ -3516,6 +3530,7 @@ trollhide
 troop-of-ponies
 trove-of-temptation
 truce
+truck-toss
 true-believer
 true-name-nemesis
 trumpeting-carnosaur
@@ -3540,9 +3555,12 @@ two-headed-dragon
 two-headed-giant-of-foriys
 tymna-the-weaver
 tyvar-the-bellicose
+u-s-agent-john-walker
 ugin-the-spirit-dragon
 uldaros-theorix
 ultima
+ultron-artificial-malevolence
+ultron-drone
 umori-the-collector
 unbury
 uncharted-haven

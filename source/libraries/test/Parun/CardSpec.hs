@@ -3354,6 +3354,9 @@ namedTokens =
       -- Stone-Giant of High Pass's "a 3/1 colorless Wall artifact creature token
       -- with defender named Stone Boulder".
       CardName.MkCardName (Text.pack "Stone Boulder"),
+      -- U.S.Agent, John Walker's "a colorless Equipment artifact token named
+      -- Sturdy Shield".
+      CardName.MkCardName (Text.pack "Sturdy Shield"),
       -- The Hive's "a 1/1 colorless Insect artifact creature token with flying
       -- named Wasp".
       CardName.MkCardName (Text.pack "Wasp"),
