@@ -30,7 +30,7 @@ import qualified Parun.Codec.LostPermanent as LostPermanent
 import qualified Parun.Codec.PermanentActed as PermanentActed
 import qualified Parun.Codec.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Codec.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Codec.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Codec.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Codec.PlacesSticker as PlacesSticker
 import qualified Parun.Codec.PlayerActed as PlayerActed
 import qualified Parun.Codec.PlayerActsOn as PlayerActsOn
@@ -69,7 +69,7 @@ codec =
           Arm.payload "DealsDamage" DamageTrigger.codec TriggerCondition.DealsDamage (\x -> case x of TriggerCondition.DealsDamage y -> Just y; _ -> Nothing),
           Arm.payload "IsDealtDamage" PermanentIsDealtDamage.codec TriggerCondition.IsDealtDamage (\x -> case x of TriggerCondition.IsDealtDamage y -> Just y; _ -> Nothing),
           Arm.payload "PlayerIsDealtDamage" PlayerIsDealtDamage.codec TriggerCondition.PlayerIsDealtDamage (\x -> case x of TriggerCondition.PlayerIsDealtDamage y -> Just y; _ -> Nothing),
-          Arm.payload "PermanentsDealCombatDamageToPlayer" PermanentsDealCombatDamageToPlayer.codec TriggerCondition.PermanentsDealCombatDamageToPlayer (\x -> case x of TriggerCondition.PermanentsDealCombatDamageToPlayer y -> Just y; _ -> Nothing),
+          Arm.payload "PermanentsDealDamageToPlayer" PermanentsDealDamageToPlayer.codec TriggerCondition.PermanentsDealDamageToPlayer (\x -> case x of TriggerCondition.PermanentsDealDamageToPlayer y -> Just y; _ -> Nothing),
           Arm.nullary "CreatureDealtCombatDamageToMonarch" TriggerCondition.CreatureDealtCombatDamageToMonarch,
           Arm.nullary "CreaturesDealtCombatDamageToInitiative" TriggerCondition.CreaturesDealtCombatDamageToInitiative,
           Arm.nullary "PlayerTookInitiative" TriggerCondition.PlayerTookInitiative,
@@ -140,7 +140,7 @@ tagOf x = case x of
   TriggerCondition.DealsDamage {} -> "DealsDamage"
   TriggerCondition.IsDealtDamage {} -> "IsDealtDamage"
   TriggerCondition.PlayerIsDealtDamage {} -> "PlayerIsDealtDamage"
-  TriggerCondition.PermanentsDealCombatDamageToPlayer {} -> "PermanentsDealCombatDamageToPlayer"
+  TriggerCondition.PermanentsDealDamageToPlayer {} -> "PermanentsDealDamageToPlayer"
   TriggerCondition.CreatureDealtCombatDamageToMonarch {} -> "CreatureDealtCombatDamageToMonarch"
   TriggerCondition.CreaturesDealtCombatDamageToInitiative {} -> "CreaturesDealtCombatDamageToInitiative"
   TriggerCondition.PlayerTookInitiative {} -> "PlayerTookInitiative"

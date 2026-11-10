@@ -4,7 +4,7 @@
       "delayedAbilities": {
         "the raven's warning": {
           "condition": {
-            "type": "PermanentsDealCombatDamageToPlayer",
+            "type": "PermanentsDealDamageToPlayer",
             "value": {
               "filter": {
                 "type": "And",
@@ -28,6 +28,7 @@
                   }
                 ]
               },
+              "kind": "Combat",
               "recipient": "AnyPlayer"
             }
           },

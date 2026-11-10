@@ -124,7 +124,7 @@
       "triggeredAbilities": [
         {
           "condition": {
-            "type": "PermanentsDealCombatDamageToPlayer",
+            "type": "PermanentsDealDamageToPlayer",
             "value": {
               "filter": {
                 "type": "And",
@@ -142,6 +142,7 @@
                   }
                 ]
               },
+              "kind": "Combat",
               "recipient": "AnyPlayer"
             }
           },

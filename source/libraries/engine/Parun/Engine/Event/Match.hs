@@ -82,7 +82,6 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
-import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
@@ -136,7 +135,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlanarDieFace as PlanarDieFace
@@ -1162,14 +1161,14 @@ armMatches bindings board gs bearer you cond event = case cond of
   TriggerCondition.Leaves t -> leaves bindings bearerContext gs bearer you t event
   TriggerCondition.LeavesZone t -> leavesZone board gs bearer you (admitsTurn . LeavesZoneTrigger.scope) t event
   TriggerCondition.PutIntoZone t -> putIntoZone bearerContext board gs bearer you (admitsTurn . PutIntoZoneTrigger.scope) t event
-  -- CR 603.2c's batch reading of DealsDamage's combat damage to a player (Pia Nalaar,
+  -- CR 603.2c's batch reading of DealsDamage's damage to a player (Pia Nalaar,
   -- Chief Mechanic's "whenever ONE OR MORE artifact creatures you control deal
   -- combat damage to a player"), delegated because which
   -- damage events this condition admits is the singular arm's answer, filter,
   -- kind and recipient alike (Norn's Decree's "deal combat damage to YOU"),
   -- and firing once for the CR 510.2 step is `batchScoped` below plus
   -- eventTriggers' dedup, never this arm.
-  TriggerCondition.PermanentsDealCombatDamageToPlayer p ->
+  TriggerCondition.PermanentsDealDamageToPlayer p ->
     matchesTriggerGiven
       bindings
       board
@@ -1178,9 +1177,9 @@ armMatches bindings board gs bearer you cond event = case cond of
       you
       ( TriggerCondition.DealsDamage
           DamageTrigger.MkDamageTrigger
-            { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealCombatDamageToPlayer.filter p),
-              DamageTrigger.kind = Just DamageKind.Combat,
-              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PermanentsDealCombatDamageToPlayer.recipient p))
+            { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealDamageToPlayer.filter p),
+              DamageTrigger.kind = PermanentsDealDamageToPlayer.kind p,
+              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PermanentsDealDamageToPlayer.recipient p))
             }
       )
       event

@@ -1,0 +1,23 @@
+{
+  "description": "CR 603.2c The Thing, Ben Grimm grows once when two Heroes deal combat damage to a player",
+  "note": "The Thing and Brave Brawler, both Heroes, connect in one combat damage step: one trigger, two counters, where a per-damager reading would put four.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "The Thing, Ben Grimm", "label": "thing", "ready": true },
+          { "card": "Brave Brawler", "label": "brawler", "ready": true }
+        ]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$thing", "$brawler"] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 11 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Counters": { "object": "$thing", "kind": { "type": "PlusOnePlusOne" }, "count": 2 } } }
+  ]
+}

@@ -1263,8 +1263,8 @@ library codec
     Parun.Codec.PermanentCandidateSpec
     Parun.Codec.PermanentIsDealtDamage
     Parun.Codec.PermanentIsDealtDamageSpec
-    Parun.Codec.PermanentsDealCombatDamageToPlayer
-    Parun.Codec.PermanentsDealCombatDamageToPlayerSpec
+    Parun.Codec.PermanentsDealDamageToPlayer
+    Parun.Codec.PermanentsDealDamageToPlayerSpec
     Parun.Codec.PermanentWasSacrificed
     Parun.Codec.PermanentWasSacrificedSpec
     Parun.Codec.PermissionCost
@@ -3262,7 +3262,7 @@ library types
     Parun.Types.PermanentBecomesDesignated
     Parun.Types.PermanentCandidate
     Parun.Types.PermanentIsDealtDamage
-    Parun.Types.PermanentsDealCombatDamageToPlayer
+    Parun.Types.PermanentsDealDamageToPlayer
     Parun.Types.PermanentWasSacrificed
     Parun.Types.PermissionCost
     Parun.Types.PermissionLimit

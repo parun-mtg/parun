@@ -341,7 +341,7 @@ import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -1203,7 +1203,7 @@ triggerConditionCounts triggerCondition = case triggerCondition of
   TriggerCondition.IsDealtDamage _ -> []
   TriggerCondition.PlayerIsDealtDamage _ -> []
   -- Its watcher-scoped sibling carries a Filter, and a Filter holds no Count.
-  TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> []
+  TriggerCondition.PermanentsDealDamageToPlayer _ -> []
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
   TriggerCondition.PlayerTookInitiative -> []
@@ -4691,7 +4691,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- CR 603.2c's batch reading of the same written form carries the same Filter,
   -- swept the same way as a OneOrMore Leaves: answering [] here would exempt
   -- Pia Nalaar's "artifact creatures you control" from every corpus filter lint.
-  TriggerCondition.PermanentsDealCombatDamageToPlayer p -> unframed [PermanentsDealCombatDamageToPlayer.filter p]
+  TriggerCondition.PermanentsDealDamageToPlayer p -> unframed [PermanentsDealDamageToPlayer.filter p]
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
   TriggerCondition.PlayerTookInitiative -> []
@@ -4823,7 +4823,7 @@ triggerConditionSlots triggerCondition = case triggerCondition of
   TriggerCondition.DealsDamage _ -> []
   TriggerCondition.IsDealtDamage _ -> []
   TriggerCondition.PlayerIsDealtDamage _ -> []
-  TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> []
+  TriggerCondition.PermanentsDealDamageToPlayer _ -> []
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
   TriggerCondition.PlayerTookInitiative -> []

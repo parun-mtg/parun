@@ -165,7 +165,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
@@ -1911,7 +1911,7 @@ representativeEvents cond =
         -- Event.matchesTrigger answers alike for both (its batch arm delegates to
         -- DealsDamage's), CR 603.2c's once-per-step scoping living in
         -- Event.eventTriggers instead -- a OneOrMore Leaves' posture above.
-        TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> one combatDamage
+        TriggerCondition.PermanentsDealDamageToPlayer _ -> one combatDamage
         -- CR 726.2's and CR 727.2's damage, dealt to alice: the inherent
         -- abilities' "you" is the monarch or the holder, the player hit.
         TriggerCondition.CreatureDealtCombatDamageToMonarch -> one combatDamageToAlice
@@ -2325,7 +2325,7 @@ everyTriggerCondition =
     TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Noncombat) Nothing) False Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
     TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Combat) Nothing) True Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
     TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.Opponent (Just DamageKind.Combat) Nothing) False Batching.OneOrMore (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))),
-    TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer (Filter.Type.And []) PlayerRelation.AnyPlayer False),
+    TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.Type.And []) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False),
     TriggerCondition.CreatureDealtCombatDamageToMonarch,
     TriggerCondition.CreaturesDealtCombatDamageToInitiative,
     TriggerCondition.PlayerTookInitiative,
