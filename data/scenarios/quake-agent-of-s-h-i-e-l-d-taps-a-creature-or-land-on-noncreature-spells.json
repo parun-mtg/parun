@@ -49,6 +49,16 @@
           {
             "card": "Hill Giant",
             "label": "giant"
+          },
+          {
+            "card": "Forest",
+            "label": "bf2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Giant Growth",
+            "label": "growth"
           }
         ],
         "library": [
@@ -67,13 +77,14 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Quake, Agent of S.H.I.E.L.D. taps target creature or land when you cast a noncreature spell, not a creature spell",
+  "description": "Quake, Agent of S.H.I.E.L.D. taps target creature or land when you cast a noncreature spell, not for a creature spell or an opponent's spell",
   "timeline": [
     {
       "do": {
         "Cast": {
           "mana": [
-            "$f"
+            "$f",
+            null
           ],
           "object": "$elves"
         }
@@ -193,6 +204,45 @@
       },
       "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bf2"
+          ],
+          "object": "$growth",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$giant",
+          "power": 6,
+          "toughness": 6
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
       "turn": 1
     }
   ]
