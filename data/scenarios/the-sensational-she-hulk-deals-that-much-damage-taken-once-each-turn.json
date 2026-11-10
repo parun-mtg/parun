@@ -58,8 +58,18 @@
         "name": "alice"
       },
       {
-        "battlefield": [],
-        "hand": [],
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "bshock"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -76,7 +86,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.2h: The Sensational She-Hulk's first dealt-damage trigger declines, which leaves it to trigger again; once the second deals that much damage to bob, a third creature dealt damage triggers nothing",
+  "description": "CR 603.2h: The Sensational She-Hulk's first dealt-damage trigger declines, which leaves it to trigger again; once the second deals that much damage to bob, a third creature dealt damage triggers nothing. Bob can't cast spells during alice's turn, and can during his own",
   "timeline": [
     {
       "do": {
@@ -98,6 +108,28 @@
     {
       "do": "Pass",
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bm"
+          ],
+          "object": "$bshock",
+          "targets": [
+            "$hulk"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
       "step": "PrecombatMain",
       "turn": 1
     },
@@ -241,6 +273,39 @@
       "player": "alice",
       "step": "BeginningOfCombat",
       "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm"
+          ],
+          "object": "$bshock",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     }
   ]
 }
