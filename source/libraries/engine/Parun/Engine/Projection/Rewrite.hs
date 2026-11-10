@@ -25,9 +25,7 @@ import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AsCopy as AsCopy
-import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRestriction as AttachRestriction
-import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
@@ -57,17 +55,10 @@ import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.CounterPattern as CounterPattern
-import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
-import qualified Parun.Types.DamageR as DamageR
-import qualified Parun.Types.DamageRewrite as DamageRewrite
-import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devotion as Devotion
-import qualified Parun.Types.DrawR as DrawR
-import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
@@ -75,37 +66,21 @@ import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EntersWith as EntersWith
-import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
-import qualified Parun.Types.EntryOption as EntryOption
-import qualified Parun.Types.EntryPrice as EntryPrice
-import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRestriction as EntryRestriction
-import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
-import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
-import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FullText as FullText
-import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HowMany as HowMany
-import qualified Parun.Types.InstructionR as InstructionR
-import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
-import qualified Parun.Types.LifeGainR as LifeGainR
-import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
-import qualified Parun.Types.LifeLossR as LifeLossR
-import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaProduction as ManaProduction
-import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.ManaSpecification as ManaSpecification
@@ -118,11 +93,6 @@ import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
-import qualified Parun.Types.PerformerR as PerformerR
-import qualified Parun.Types.PhaseR as PhaseR
-import qualified Parun.Types.PhaseRewrite as PhaseRewrite
-import qualified Parun.Types.PlaneswalkR as PlaneswalkR
-import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
@@ -133,13 +103,9 @@ import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.RemovalCount as RemovalCount
 import Parun.Types.ReplacementEffect (ReplacementEffect)
-import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
-import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
-import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
-import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
@@ -148,22 +114,16 @@ import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
-import qualified Parun.Types.TokenPattern as TokenPattern
-import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
-import qualified Parun.Types.TurnUpR as TurnUpR
-import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.WordFamily as WordFamily
-import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
-import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 
 -- CR 613.1f's grant carries a whole quoted ability, and a card's abilities are
 -- written against a whole Card (CR 707.8a).
@@ -889,187 +849,55 @@ rewritePrintedReplacement pairs printed =
       PrintedReplacement.effect = rewriteReplacementEffect pairs (PrintedReplacement.effect printed)
     }
 
--- CR 612.1 through the replacement effect itself: the EVENT PATTERN saying which
--- objects it watches, and the REWRITE it applies to one. Exhaustive rather than a
--- wildcard, so a later arm carrying a word fails to compile here instead of
--- silently keeping the printed one.
+-- CR 612.1 through the replacement effect itself: Parun.Engine.Children's
+-- traversal at Identity. Every Filter takes Filter.rewrite (the moving,
+-- entering, destroyed, turned-up or attached object; a token pattern's;
+-- Steamflogger Boss's Rigger performer, per the Unstable FAQ; Naked
+-- Singularity's land type, per its 2004-10-04 ruling; a printed redirection
+-- destination; CR 400.11c's wish filter, the same Filter rewriteEffect swaps
+-- inside an Effect.FromOutsideTheGame, so the two roads agree; CR 201.4a's
+-- naming restriction; Living Lore's exiled card, which Parun.ReplacementSpec's
+-- Tidewalker case proves), every Quantity rewriteQuantity, every nested effect
+-- rewriteEffect, a token's card rewriteCard, a granted ability
+-- rewriteGrantedAbility, a keyword CR 702.14a's word and an entry option's
+-- subtype CR 205.3's, a counter kind Filter.rewriteCounterKind, entry counters
+-- rewriteWithCounters and a copy rewriteAsCopy.
 --
--- Classification, not identity: every arm is a CR 614.1 event class, and the
--- descent is by the field shapes those classes carry.
+-- Kept: a CR 109.5 relation, a baked recipient and the cost a turn-up
+-- procedure must have paid (engine-baked, compared against the payment) name
+-- no printed word, and the history reads are the engine's.
+--
+-- Classification, not identity: Children.replacementEffectChildren cases on
+-- STRUCTURE, by CR 614.1 event class, and asks nothing else.
+--
+-- NO BOARD OBSERVES the printed redirection destination (Pariah's
+-- Filter.IsHostOfSource), the nested damage programs (Kill-Suit Cultist), the
+-- counted prevention ceiling (Shield of the Avatar counts a card type), the
+-- wish filter (Ring of Ma'rûf's @And []@), or an option's keywords (Molten
+-- Sentry's haste and defender carry no word): each is the rule rather than a
+-- proven behaviour.
 rewriteReplacementEffect :: [(TextWord.TextWord, TextWord.TextWord)] -> ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-rewriteReplacementEffect pairs effect = case effect of
-  -- CR 400.3's owner and the destination Zone name no word; the moving object's
-  -- Filter and the CR 603.11 linked trigger's effects do.
-  ReplacementEffect.ZoneChangeR r ->
-    ReplacementEffect.ZoneChangeR
-      r
-        { ZoneChangeR.matching =
-            (ZoneChangeR.matching r)
-              { ZoneChangePattern.whatObject = Filter.rewrite pairs (ZoneChangePattern.whatObject (ZoneChangeR.matching r))
-              },
-          ZoneChangeR.whenYouDo = fmap (rewriteEffect pairs) (ZoneChangeR.whenYouDo r)
+rewriteReplacementEffect pairs =
+  Identity.runIdentity
+    . Children.replacementEffectChildren
+      Children.replacementLeaves
+        { Children.replacementFilter = Identity.Identity . Filter.rewrite pairs,
+          Children.replacementQuantity = Identity.Identity . rewriteQuantity pairs,
+          Children.replacementEffect = Identity.Identity . rewriteEffect pairs,
+          Children.replacementAbility = Identity.Identity . rewriteGrantedAbility pairs,
+          Children.replacementCard = Identity.Identity . rewriteCard pairs,
+          Children.replacementKeyword = Identity.Identity . Filter.rewriteKeyword pairs,
+          Children.replacementSubtype = Identity.Identity . TextWord.Engine.subtypeAfter pairs,
+          Children.replacementCounterKind = Identity.Identity . Filter.rewriteCounterKind pairs,
+          Children.replacementDamage = Identity.Identity . rewriteDamagePattern pairs,
+          Children.replacementCounters = Identity.Identity . rewriteWithCounters pairs,
+          Children.replacementCopy = Identity.Identity . rewriteAsCopy pairs
         }
-  ReplacementEffect.EntryR r ->
-    ReplacementEffect.EntryR
-      r
-        { EntryR.matching = Filter.rewrite pairs (EntryR.matching r),
-          EntryR.rewrite = rewriteEntryRewrite pairs (EntryR.rewrite r)
-        }
-  -- The pattern's two Filters, CR 614.9's printed destination, and CR 615.5's
-  -- riders. The pattern's DamageKind, its PlayerRelation, its Recipient and its
-  -- ObjectId are a rules category, a CR 109.5 relation and two baked identities,
-  -- so none of the four holds a printed word.
-  ReplacementEffect.DamageR r ->
-    ReplacementEffect.DamageR
-      r
-        { DamageR.matching = rewriteDamagePattern pairs (DamageR.matching r),
-          DamageR.rewrite = rewriteDamageRewrite pairs (DamageR.rewrite r),
-          DamageR.riders = fmap (rewriteEffect pairs) (DamageR.riders r)
-        }
-  -- CR 614.1a's printed subject; the rewrite beside it is nullary.
-  ReplacementEffect.DestructionR r ->
-    ReplacementEffect.DestructionR r {DestructionR.matching = fmap (Filter.rewrite pairs) (DestructionR.matching r)}
-  -- CR 122.1d's untap replacement: a nullary rewrite with no pattern beside it,
-  -- so there is nothing to swap.
-  ReplacementEffect.UntapR _ -> effect
-  -- CR 614.1a / 120.4c: a LifeLossPattern is one CR 109.5 relation and one cause,
-  -- so only a scaling's quantity holds a printed word.
-  ReplacementEffect.LifeLossR r -> ReplacementEffect.LifeLossR r {LifeLossR.rewrite = rewriteLifeLossRewrite pairs (LifeLossR.rewrite r)}
-  -- CR 614.1a / 119.10: a LifeGainR is one CR 109.5 relation and one rewrite,
-  -- so only a scaling's quantity holds a printed word.
-  ReplacementEffect.LifeGainR r -> ReplacementEffect.LifeGainR r {LifeGainR.rewrite = rewriteLifeGainRewrite pairs (LifeGainR.rewrite r)}
-  -- CR 614.1a: an InstructionR is one instruction, one CR 109.5 relation and one
-  -- rewrite; LifeGainR's answer.
-  ReplacementEffect.InstructionR r -> ReplacementEffect.InstructionR r {InstructionR.rewrite = rewriteInstructionRewrite pairs (InstructionR.rewrite r)}
-  -- CR 614.1a / 706.1: a DieRollR is one CR 109.5 relation and one nullary
-  -- rewrite, so CR 612.1's text change has nothing to walk into.
-  ReplacementEffect.DieRollR {} -> effect
-  -- The Unstable FAQ: a PerformerR's Filter names a subtype (Steamflogger Boss's
-  -- Rigger), which CR 612.1's text change reaches.
-  ReplacementEffect.PerformerR row -> ReplacementEffect.PerformerR row {PerformerR.performer = Filter.rewrite pairs (PerformerR.performer row), PerformerR.rewrite = rewriteInstructionRewrite pairs (PerformerR.rewrite row)}
-  -- Naked Singularity's ruling of 2004-10-04: a text change reaches the land
-  -- type a ManaR's Filter names.
-  ReplacementEffect.ManaR r -> ReplacementEffect.ManaR r {ManaR.matching = Filter.rewrite pairs (ManaR.matching r)}
-  -- CR 104.3: the pattern is one CR 109.5 relation; the effects run instead are
-  -- the resolution road's, so they are swapped here too.
-  ReplacementEffect.GameLossR r -> ReplacementEffect.GameLossR r {GameLossR.instead = fmap (rewriteEffect pairs) (GameLossR.instead r)}
-  ReplacementEffect.PlaneswalkR r -> ReplacementEffect.PlaneswalkR r {PlaneswalkR.rewrite = case PlaneswalkR.rewrite r of PlaneswalkRewrite.ArrangeTopTwo -> PlaneswalkRewrite.ArrangeTopTwo; PlaneswalkRewrite.RunEffects effects -> PlaneswalkRewrite.RunEffects (fmap (rewriteEffect pairs) effects)}
-  -- A DrawR's pattern is one CR 109.5 relation, but the REWRITE can hold effects
-  -- or CR 400.11c's wish filter, which rewriteEffect swaps inside an Effect.FromOutsideTheGame on
-  -- the resolution road -- so it has to be swapped here too, or the same sentence
-  -- would read one way as a spell and another as a floating row.
-  ReplacementEffect.DrawR r -> ReplacementEffect.DrawR r {DrawR.rewrite = rewriteDrawRewrite pairs (DrawR.rewrite r)}
-  -- A DrawCountR is one CR 109.5 relation, one count and one nullary rewrite; no
-  -- Filter and no card, so no printed word to swap. DrawR's answer.
-  ReplacementEffect.DrawCountR {} -> effect
-  ReplacementEffect.CounterR r ->
-    ReplacementEffect.CounterR
-      r
-        { CounterR.matching =
-            (CounterR.matching r)
-              { CounterPattern.whichKind = fmap (Filter.rewriteCounterKind pairs) (CounterPattern.whichKind (CounterR.matching r)),
-                CounterPattern.onWhat = Filter.rewrite pairs (CounterPattern.onWhat (CounterR.matching r))
-              },
-          CounterR.scaling = rewriteScaling pairs (CounterR.scaling r)
-        }
-  -- CR 612.1 through both printed halves: the pattern's Filter over what the
-  -- token is (Queen Allenal of Ruadach's "creature tokens") and the appended
-  -- token's own text, rewriteCard's descent as for a Create's token.
-  ReplacementEffect.TokenR r ->
-    ReplacementEffect.TokenR
-      r
-        { TokenR.matching = (TokenR.matching r) {TokenPattern.whatToken = Filter.rewrite pairs (TokenPattern.whatToken (TokenR.matching r))},
-          TokenR.plus = fmap (fmap (rewriteCard pairs)) (TokenR.plus r),
-          TokenR.scaling = fmap (rewriteScaling pairs) (TokenR.scaling r)
-        }
-  ReplacementEffect.TurnUpR r ->
-    ReplacementEffect.TurnUpR
-      r
-        { TurnUpR.matching = Filter.rewrite pairs (TurnUpR.matching r),
-          TurnUpR.rewrite = case TurnUpR.rewrite r of
-            TurnUpRewrite.WithCounters w -> TurnUpRewrite.WithCounters (rewriteWithCounters pairs w)
-            TurnUpRewrite.MayAttachTo f -> TurnUpRewrite.MayAttachTo (Filter.rewrite pairs f)
-            TurnUpRewrite.AsCopy c -> TurnUpRewrite.AsCopy (rewriteAsCopy pairs c)
-        }
-  ReplacementEffect.AttachR r ->
-    ReplacementEffect.AttachR
-      r
-        { AttachR.matching = Filter.rewrite pairs (AttachR.matching r),
-          AttachR.rewrite = case AttachR.rewrite r of
-            AttachRewrite.AsCopy c -> AttachRewrite.AsCopy (rewriteAsCopy pairs c)
-            AttachRewrite.ChooseQuality quality -> AttachRewrite.ChooseQuality quality
-        }
-  -- A PhasePattern is a PhaseSelector and a baked seat (CR 614.1b / 500.11), both
-  -- rules categories rather than printed words; the effects a skip runs are not.
-  ReplacementEffect.PhaseR r -> ReplacementEffect.PhaseR r {PhaseR.rewrite = case PhaseR.rewrite r of PhaseRewrite.Skip -> PhaseRewrite.Skip; PhaseRewrite.MaySkipFor effects -> PhaseRewrite.MaySkipFor (fmap (rewriteEffect pairs) effects)}
 
--- CR 612.1 through a damage REWRITE, rewriteEntryRewrite's twin one event class
--- over. CR 614.9's printed destination holds a Filter for a word to sit in,
--- the nested effects hold whatever an ability's clauses do, and CR 702.64a's
--- ceiling is a Quantity whose count may hold one; the rest are numbers, a
--- Scaling and a baked Recipient.
+-- CR 612.1 through CR 707.9's "except ..." clause. Exhaustive rather than a
+-- wildcard, so a later arm carrying a word fails to compile here.
 --
--- NO BOARD OBSERVES IT: the pool's one printed destination is
--- Filter.IsHostOfSource (Pariah), which names no subtype for CR 612.1 to swap,
--- the pool's nested programs (Kill-Suit Cultist, Synthetic Proxy Strike)
--- destroy a slot, which names none either, and the pool's one counted ceiling
--- (Shield of the Avatar) counts creatures, a card type -- so mutating any of
--- the three arms away leaves the suite green. All are the rule rather than a
--- proven behaviour: a card redirecting to "the enchanted Goblin" would prove
--- the first. Exhaustive rather than a wildcard, rewriteReplacementEffect's
--- posture.
-rewriteDamageRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> DamageRewrite.DamageRewrite (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> DamageRewrite.DamageRewrite (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-rewriteDamageRewrite pairs rewrite = case rewrite of
-  DamageRewrite.RedirectMatching f -> DamageRewrite.RedirectMatching (Filter.rewrite pairs f)
-  DamageRewrite.Redirect _ -> rewrite
-  DamageRewrite.RedirectNext _ _ -> rewrite
-  DamageRewrite.PreventAll -> rewrite
-  DamageRewrite.PreventRemovingShieldCounter -> rewrite
-  DamageRewrite.PreventRemovingCounters _ -> rewrite
-  DamageRewrite.PreventNext _ -> rewrite
-  DamageRewrite.PreventAllBut _ -> rewrite
-  DamageRewrite.PreventUpTo quantity -> DamageRewrite.PreventUpTo (rewriteQuantity pairs quantity)
-  DamageRewrite.SetAmount _ -> rewrite
-  DamageRewrite.Scale scaling -> DamageRewrite.Scale (rewriteScaling pairs scaling)
-  -- CR 614.1a's "instead [do something]", the payload shared with an ability's
-  -- clauses -- EntryRewrite.RunEffects' arm exactly.
-  DamageRewrite.RunEffects es -> DamageRewrite.RunEffects (fmap (rewriteEffect pairs) es)
-  DamageRewrite.TurnFaceUp -> rewrite
-  DamageRewrite.AlsoToSourceController -> rewrite
-  DamageRewrite.HealSourceFirst -> rewrite
-
--- CR 612.1 through what a CR 614.1a draw replacement does. The wish filter is the
--- one printed word a draw rewrite can hold, and it is the SAME Filter
--- rewriteEffect swaps inside an Effect.FromOutsideTheGame, so the two roads into the
--- game agree about what a text change did (CR 400.11c).
---
--- NO BOARD OBSERVES IT, rewriteDamageRewrite's position above: the pool's
--- draw-replacing wishes are Ring of Ma'rûf's @And []@ and Synthetic Wishful
--- Djinn's comparison against the source's power, which name no subtype for
--- CR 612.1 to swap, so neutralising the Filter.rewrite here leaves the suite
--- green. The arm is the rule rather than a proven behaviour -- a card replacing
--- a draw with "a Goblin card you own from outside the game", under a
--- text-changing effect, would be what proves it. Exhaustive rather than a
--- wildcard, rewriteReplacementEffect's posture.
-rewriteDrawRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> DrawRewrite.DrawRewrite (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> DrawRewrite.DrawRewrite (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-rewriteDrawRewrite pairs rewrite = case rewrite of
-  DrawRewrite.GainLife _ -> rewrite
-  DrawRewrite.FromOutsideTheGame payload -> DrawRewrite.FromOutsideTheGame payload {FromOutsideTheGame.filter = Filter.rewrite pairs (FromOutsideTheGame.filter payload)}
-  -- CR 702.52a's dredge carries a COUNT and nothing CR 612.1 can swap.
-  DrawRewrite.Dredge _ -> rewrite
-  DrawRewrite.YouDraw -> rewrite
-  DrawRewrite.OthersMayPayLife _ -> rewrite
-  DrawRewrite.FromGraveyardOrLose -> rewrite
-  DrawRewrite.RevealUntilChosenKind -> rewrite
-  DrawRewrite.DrawInstead _ -> rewrite
-  DrawRewrite.DiscardThenDrawOrMill -> rewrite
-  DrawRewrite.KeepOneOfTopThenDraw quantity -> DrawRewrite.KeepOneOfTopThenDraw (rewriteQuantity pairs quantity)
-  DrawRewrite.MaySkipFor effects -> DrawRewrite.MaySkipFor (fmap (rewriteEffect pairs) effects)
-
--- CR 612.1 through CR 707.9's "except ..." clause. Exhaustive for
--- rewriteReplacementEffect's reason.
---
--- NO BOARD OBSERVES IT, the ChoiceByCoinFlip arm's position below: what changes
+-- NO BOARD OBSERVES IT, an entry option's keywords' position: what changes
 -- is a keyword that CARRIES a word, a quoted ability, or CR 707.9b's subtype
 -- clause, and no card in data/cards puts a text-changing effect on any of them --
 -- no producer of the CR 707.9a arms names a word (Dack's Duplicate grants haste
@@ -1150,120 +978,6 @@ rewriteAsCopy pairs c =
 rewriteCopyClause :: [(TextWord.TextWord, TextWord.TextWord)] -> CopyClause.CopyClause (GrantedAbility.GrantedAbility Card.Type.Card) -> CopyClause.CopyClause (GrantedAbility.GrantedAbility Card.Type.Card)
 rewriteCopyClause pairs (CopyClause.MkCopyClause condition exceptions counters) =
   CopyClause.MkCopyClause (fmap (rewriteCondition pairs) condition) (fmap (rewriteCopyException pairs) exceptions) (fmap (rewriteWithCounters pairs) counters)
-
--- CR 612.1 through one CR 208.2b option's printed words: its keywords' and its
--- subtypes'.
-rewriteEntryOption :: [(TextWord.TextWord, TextWord.TextWord)] -> EntryOption.EntryOption -> EntryOption.EntryOption
-rewriteEntryOption pairs o =
-  o
-    { EntryOption.keywords = Set.map (Filter.rewriteKeyword pairs) (EntryOption.keywords o),
-      EntryOption.subtypes = Set.map (TextWord.Engine.subtypeAfter pairs) (EntryOption.subtypes o)
-    }
-
--- CR 612.1 through what a CR 614.1c/614.1d entry replacement does. Exhaustive for
--- rewriteReplacementEffect's reason.
-rewriteEntryRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> EntryRewrite.EntryRewrite (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> EntryRewrite.EntryRewrite (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-rewriteEntryRewrite pairs rewrite = case rewrite of
-  EntryRewrite.AsCopy c -> EntryRewrite.AsCopy (rewriteAsCopy pairs c)
-  -- CR 702.14a's word again, this time inside a keyword an option grants, and
-  -- CR 205.3's inside a subtype one adds.
-  EntryRewrite.ChoiceOf os -> EntryRewrite.ChoiceOf (fmap (rewriteEntryOption pairs) os)
-  -- The same word again, in an option a coin picks rather than a player. NO
-  -- BOARD OBSERVES IT, and cannot: rewriteKeyword only ever changes a keyword
-  -- that CARRIES a word (landwalk, typecycling, hexproof from, protection from),
-  -- and Molten Sentry's two options grant haste and defender, which carry none.
-  -- The arm is the rule (CR 612.1) rather than a proven behaviour -- an option
-  -- granting islandwalk would be what proves it.
-  EntryRewrite.ChoiceByCoinFlip f ->
-    EntryRewrite.ChoiceByCoinFlip f {EntryFlip.heads = rewriteEntryOption pairs (EntryFlip.heads f), EntryFlip.tails = rewriteEntryOption pairs (EntryFlip.tails f)}
-  -- CR 105.1's five colours, CR 305.6's five basic land types, CR 205.3m's
-  -- creature types and CR 102.1's seats are the offers themselves, so none of
-  -- these four prints a word the card chose.
-  EntryRewrite.ChooseQuality _ -> rewrite
-  EntryRewrite.ChoosePlayer _ -> rewrite
-  -- CR 702.155b's offer is a range of NUMBERS, read off the entering Saga's own
-  -- chapter symbols (CR 715.2d), so the rewrite prints no word either.
-  EntryRewrite.ReadAhead -> rewrite
-  -- CR 201.4a's restriction on which names may be named.
-  EntryRewrite.ChooseCardNames f -> EntryRewrite.ChooseCardNames (Filter.rewrite pairs f)
-  EntryRewrite.ChooseCardName f -> EntryRewrite.ChooseCardName (Filter.rewrite pairs f)
-  EntryRewrite.WithCounters w -> EntryRewrite.WithCounters (rewriteWithCounters pairs w)
-  -- EVERY part of the sentence: the counters take the arm above's descent and
-  -- the keywords take CR 702.14a's word once more, this time in a keyword the
-  -- entry clause grants outright. The keyword half is latent for
-  -- ChoiceByCoinFlip's reason: Faerie Squadron grants flying, which carries no
-  -- word, and an entry clause granting islandwalk would be what proves it. A
-  -- quoted ability takes CopyException.GainAbility's descent, latent the same
-  -- way: Degavolver's quoted ability prints no subtype.
-  --
-  -- Written out rather than as a record update, so a field added to the payload
-  -- is a missing-field error here rather than a value the text change silently
-  -- keeps.
-  EntryRewrite.EntersWith e ->
-    EntryRewrite.EntersWith
-      EntersWith.MkEntersWith
-        { EntersWith.counters = fmap (rewriteWithCounters pairs) (EntersWith.counters e),
-          EntersWith.keywords = Set.map (Filter.rewriteKeyword pairs) (EntersWith.keywords e),
-          EntersWith.abilities = fmap (rewriteGrantedAbility pairs) (EntersWith.abilities e)
-        }
-  EntryRewrite.UnderControlOf _ -> rewrite
-  EntryRewrite.SacrificeAnyNumber s ->
-    EntryRewrite.SacrificeAnyNumber
-      s
-        { SacrificeAnyNumber.each = rewriteQuantity pairs (SacrificeAnyNumber.each s),
-          SacrificeAnyNumber.filter = Filter.rewrite pairs (SacrificeAnyNumber.filter s),
-          SacrificeAnyNumber.kind = fmap (Filter.rewriteCounterKind pairs) (SacrificeAnyNumber.kind s)
-        }
-  -- CR 614.1c's "exile a [matching] card from your graveyard": Living Lore's says
-  -- instant or sorcery, card types CR 612.1 reaches. That EntryR matches
-  -- Filter.IsSource, so a text change reaches this row only on a spell, carried
-  -- over by CR 400.7a before the entry loop (Parun.ReplacementSpec's Tidewalker
-  -- case).
-  EntryRewrite.ExileFromGraveyard exile -> EntryRewrite.ExileFromGraveyard exile {ExileFromGraveyard.filter = Filter.rewrite pairs (ExileFromGraveyard.filter exile), ExileFromGraveyard.count = rewriteHowMany pairs (ExileFromGraveyard.count exile), ExileFromGraveyard.kinds = fmap (Filter.rewriteCounterKind pairs) (ExileFromGraveyard.kinds exile), ExileFromGraveyard.each = rewriteQuantity pairs (ExileFromGraveyard.each exile)}
-  -- CR 614.1a's "sacrifice a Forest instead": Heart of Yavimaya's names a land
-  -- type CR 612.1 reaches. Latent: that EntryR matches Filter.IsSource, and a
-  -- land is never a spell, so CR 400.7a carries no text change onto it before it
-  -- enters.
-  EntryRewrite.SacrificeToEnter s -> EntryRewrite.SacrificeToEnter s {SacrificeToEnter.filter = Filter.rewrite pairs (SacrificeToEnter.filter s)}
-  -- CR 614.1c's "a creature you control it could be attached to": Grifter's
-  -- Blade's names a card type CR 612.1 reaches. That EntryR matches
-  -- Filter.IsSource, so a text change reaches this row only on a spell, carried
-  -- over by CR 400.7a, as with Living Lore above.
-  EntryRewrite.EntersAttachedTo f -> EntryRewrite.EntersAttachedTo (Filter.rewrite pairs f)
-  -- CR 702.38a carries no Filter and no subtype of its own, so there is nothing
-  -- here for CR 612.1 to change. A text change to the entering object's own
-  -- creature types still reaches the offer, which Parun.Engine.Event reads off
-  -- that object's CR 613 projection as the row applies.
-  EntryRewrite.Amplify _ -> rewrite
-  -- Rules 702.136a, 702.98a and 702.54a state these three whole, bloodthirst's
-  -- number included, so the card prints no word for CR 612.1 to reach.
-  EntryRewrite.Riot -> rewrite
-  EntryRewrite.Unleash -> rewrite
-  EntryRewrite.Bloodthirst _ -> rewrite
-  EntryRewrite.Tribute _ -> rewrite
-  -- CR 702.44a states sunburst whole as well, and its count is the entering
-  -- object's CR 400.7d mana record rather than card text, so there is no word
-  -- here for CR 612.1 to reach either.
-  EntryRewrite.Sunburst -> rewrite
-  EntryRewrite.ModularSunburst -> rewrite
-  -- CR 702.150a states compleated whole, the symbol count being CR 118.13a's
-  -- announced payment rather than card text, so there is no word here for CR
-  -- 612.1 either.
-  EntryRewrite.Compleated _ -> rewrite
-  -- CR 614.1d's bare "enters tapped": a tap status.
-  EntryRewrite.Tapped -> rewrite
-  EntryRewrite.Prepared -> rewrite
-  -- CR 614.1c's life price is a number. Its "reveal a [matching] card": Rustic
-  -- Clachan's says Kithkin, a creature type word CR 612.2 licenses. Latent all
-  -- the same: that EntryR matches Filter.IsSource, and a land is never a spell,
-  -- so CR 400.7a carries no text change onto it before it enters.
-  EntryRewrite.OrTapped (EntryPrice.PayLife _) -> rewrite
-  EntryRewrite.OrTapped (EntryPrice.Reveal f) -> EntryRewrite.OrTapped (EntryPrice.Reveal (Filter.rewrite pairs f))
-  EntryRewrite.OrTapped (EntryPrice.Behold f) -> EntryRewrite.OrTapped (EntryPrice.Behold (Filter.rewrite pairs f))
-  EntryRewrite.EntersTransformed -> rewrite
-  -- CR 614.1c's "as this enters, [do something]", the payload shared with an
-  -- ability's clauses.
-  EntryRewrite.RunEffects es -> EntryRewrite.RunEffects (fmap (rewriteEffect pairs) es)
 
 -- CR 122.1b's keyword counter is the one counter kind holding a word. The amount
 -- holds a second, on the same axis Effect.PutCounters' quantity does: CR 614.1c
@@ -1521,34 +1235,6 @@ rewritePlacement pairs placement = case placement of
 -- CR 612.1 through a quantity: every Filter it nests (a Count's, an activation
 -- tally's, a linked card's criterion) and every nested quantity, through
 -- Parun.Engine.Children, plus the text-bearing leaves below. The keywords
--- CR 612.1: AddMore's quantity is the one place a scaling holds a printed word.
-rewriteScaling :: [(TextWord.TextWord, TextWord.TextWord)] -> Scaling.Scaling -> Scaling.Scaling
-rewriteScaling pairs scaling = case scaling of
-  Scaling.AddMore quantity -> Scaling.AddMore (rewriteQuantity pairs quantity)
-  Scaling.Multiply _ -> scaling
-  Scaling.Subtract _ -> scaling
-  Scaling.Halve -> scaling
-
-rewriteInstructionRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> InstructionRewrite.InstructionRewrite -> InstructionRewrite.InstructionRewrite
-rewriteInstructionRewrite pairs rewrite = case rewrite of
-  InstructionRewrite.Scaled scaling -> InstructionRewrite.Scaled (rewriteScaling pairs scaling)
-  InstructionRewrite.DrawInstead -> rewrite
-  InstructionRewrite.RollD20Instead -> rewrite
-  InstructionRewrite.DrawFirst -> rewrite
-
-rewriteLifeLossRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> LifeLossRewrite.LifeLossRewrite -> LifeLossRewrite.LifeLossRewrite
-rewriteLifeLossRewrite pairs rewrite = case rewrite of
-  LifeLossRewrite.Scaled scaling -> LifeLossRewrite.Scaled (rewriteScaling pairs scaling)
-  LifeLossRewrite.LeaveAtLeast _ -> rewrite
-  LifeLossRewrite.ExileFromTopOfYourLibrary -> rewrite
-  LifeLossRewrite.GainInstead -> rewrite
-
-rewriteLifeGainRewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> LifeGainRewrite.LifeGainRewrite -> LifeGainRewrite.LifeGainRewrite
-rewriteLifeGainRewrite pairs rewrite = case rewrite of
-  LifeGainRewrite.Scaled scaling -> LifeGainRewrite.Scaled (rewriteScaling pairs scaling)
-  LifeGainRewrite.DrawInstead -> rewrite
-  LifeGainRewrite.LoseInstead -> rewrite
-
 -- TimesPaid and CastUsing designate are deliberately NOT rewritten:
 -- Parun.Engine.Cast keys the record it stamps by the keyword the spell had as
 -- CR 601.2b announced it (Cost.spellKeywords), which a later text change does
