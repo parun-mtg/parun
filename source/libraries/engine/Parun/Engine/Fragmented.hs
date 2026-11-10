@@ -437,6 +437,7 @@ records reading event = case reading of
   HistoryRead.Resolutions -> Maybe.isJust (Game.abilityResolved event)
   HistoryRead.Saddles -> saddled event
   HistoryRead.StepBegins -> stepBegan event
+  HistoryRead.Taps -> Maybe.isJust (Game.tappedOf event)
   HistoryRead.Triggers -> abilityTriggered event
 
 -- The zone changes, and a player leaving the game: what a Scope.InHistory

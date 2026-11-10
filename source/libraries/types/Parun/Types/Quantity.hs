@@ -234,6 +234,11 @@ data Quantity
     -- last sentence here: the blocker leaving combat before the death does not
     -- take the answer away.
     WasBlockedThisTurn
+  | -- | CR 701.26a \/ 608.2i: how many times the object this quantity is
+    -- evaluated against became tapped this turn, folded from the turn-scoped
+    -- GameEvent.BecameTapped log -- Captain America, Living Legend's "if it's
+    -- the first time that creature has become tapped this turn".
+    TimesTappedThisTurn
   | -- | CR 702.30a / 110.2 / 608.2h: 1 if the player that reference names came
     -- to control the object this quantity is evaluated against within that
     -- window, else 0.
