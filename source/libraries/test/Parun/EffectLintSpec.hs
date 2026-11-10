@@ -1914,7 +1914,7 @@ unpairedMelds cards =
 -- `overFaces cardFilters card` -- and inside a CARD that tag means the TOKEN's
 -- host, which is not the comparison below's vocabulary: Ashiok, Wicked
 -- Manipulator's Nightmare carries a CR 603.4 intervening "if" and no ObjectRef at
--- all, and effectObjectRefs' Create arm rightly answers []. A minted face's own
+-- all, and effectObjectRefs rightly answers [] for a Create. A minted face's own
 -- positions are cardFilters' business, and the mintedFaces lints are where they
 -- are read.
 --

@@ -310,6 +310,7 @@ costMovesLibraryCard component = case component of
 -- criteria say nothing about whose pool the mana goes to ("a player's", not its
 -- controller's), how long it lasts, or what it may pay for, so an addition
 -- naming any of them is a mana ability just the same.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 manaProduced :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe ManaAddition.ManaAddition
 manaProduced effect = case effect of
   Effect.AddMana addition -> Just addition
@@ -523,6 +524,7 @@ manaProduced effect = case effect of
 -- chosen player is not filed under "chooses nobody" without a diagnostic. A
 -- choice made at random (CR 701.9b) is no choice of the controller's, and one
 -- inside a loop body binds per iteration, so neither answers here.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 playerChoice :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe ChoosePlayer.ChoosePlayer
 playerChoice effect = case effect of
   Effect.AddMana _ -> Nothing
@@ -716,6 +718,7 @@ playerChoice effect = case effect of
 -- branch that takes the card OUT (CR 701.25a, CR 701.44a), and CR 605.1a's test is
 -- what the effect may do rather than what it did on one resolution -- the same
 -- reading `manaProduced` gives "could add mana".
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 movesLibraryCard :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 movesLibraryCard effect = case effect of
   -- CR 121.1: a draw takes the top card of a library into a hand.

@@ -38,14 +38,12 @@ import qualified Parun.Types.AbilityAct as AbilityAct
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
-import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
-import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AffectedUnless as AffectedUnless
@@ -55,20 +53,11 @@ import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AlternativeCost as AlternativeCost
-import qualified Parun.Types.Amass as Amass
-import qualified Parun.Types.Ante as Ante
-import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
-import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
-import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
-import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AsCopy as AsCopy
-import qualified Parun.Types.AttachAll as AttachAll
-import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
-import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
@@ -76,20 +65,15 @@ import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
-import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.Backup as Backup
-import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.Behold as Behold
-import qualified Parun.Types.Bid as Bid
-import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.Binding as Binding
-import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockPermission as BlockPermission
@@ -104,21 +88,11 @@ import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastFromZone as CastFromZone
-import qualified Parun.Types.CastOffer as CastOffer
-import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CausedBy as CausedBy
-import qualified Parun.Types.ChangeTargets as ChangeTargets
-import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
-import qualified Parun.Types.ChooseCardName as ChooseCardName
-import qualified Parun.Types.ChooseGroup as ChooseGroup
 import qualified Parun.Types.ChooseInstead as ChooseInstead
-import qualified Parun.Types.ChooseNumber as ChooseNumber
-import qualified Parun.Types.ChoosePermanents as ChoosePermanents
-import qualified Parun.Types.ChoosePlayer as ChoosePlayer
-import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -130,18 +104,9 @@ import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition
-import qualified Parun.Types.Conjure as Conjure
-import qualified Parun.Types.ConjureCards as ConjureCards
-import qualified Parun.Types.Connive as Connive
-import qualified Parun.Types.ControlPlayer as ControlPlayer
-import qualified Parun.Types.ControlSides as ControlSides
-import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
-import qualified Parun.Types.CopyOriginal as CopyOriginal
-import qualified Parun.Types.CopyStackObject as CopyStackObject
-import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostAmount as CostAmount
@@ -153,9 +118,6 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.CountedDiscard as CountedDiscard
-import qualified Parun.Types.Counter as Counter
-import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterPattern as CounterPattern
@@ -168,35 +130,24 @@ import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Craft as Craft
-import qualified Parun.Types.Create as Create
-import qualified Parun.Types.CreateCopy as CreateCopy
-import qualified Parun.Types.CreateEmblem as CreateEmblem
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Cycling as Cycling
-import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DamageTrigger as DamageTrigger
-import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
-import qualified Parun.Types.Designate as Designate
-import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DieRollR as DieRollR
-import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
-import qualified Parun.Types.Divide as Divide
-import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
-import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
@@ -208,7 +159,6 @@ import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
-import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EnteredZone as EnteredZone
@@ -229,18 +179,10 @@ import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EventExpiry as EventExpiry
 import qualified Parun.Types.EventShape as EventShape
-import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
-import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
-import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
-import qualified Parun.Types.ExchangeSides as ExchangeSides
-import qualified Parun.Types.ExchangeValues as ExchangeValues
-import qualified Parun.Types.ExchangeZones as ExchangeZones
-import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
-import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Expiry as Expiry
@@ -248,27 +190,15 @@ import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
-import qualified Parun.Types.Fight as Fight
 import qualified Parun.Types.Filter as Filter
-import qualified Parun.Types.FlipCoin as FlipCoin
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
-import qualified Parun.Types.ForEach as ForEach
-import qualified Parun.Types.ForEachNumber as ForEachNumber
-import qualified Parun.Types.ForbidAttack as ForbidAttack
-import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
 import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
-import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.FullText as FullText
-import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
-import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
-import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
-import qualified Parun.Types.Grouping as Grouping
-import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HistoryRead as HistoryRead
@@ -282,7 +212,6 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
-import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
@@ -290,18 +219,15 @@ import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeGainR as LifeGainR
-import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LimitUnless as LimitUnless
-import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.MadnessCost as MadnessCost
-import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaProduction as ManaProduction
@@ -309,30 +235,20 @@ import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.Measures as Measures
-import qualified Parun.Types.Meld as Meld
-import qualified Parun.Types.Mill as Mill
-import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
-import qualified Parun.Types.ModifyTarget as ModifyTarget
-import qualified Parun.Types.MonarchTarget as MonarchTarget
 import qualified Parun.Types.Morph as Morph
-import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveDuration as MoveDuration
-import qualified Parun.Types.MoveMana as MoveMana
-import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
-import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextStepOf as NextStepOf
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
-import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
@@ -357,72 +273,42 @@ import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
-import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
-import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
-import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
-import qualified Parun.Types.PreventAllDamage as PreventAllDamage
-import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
-import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Protection as Protection
-import qualified Parun.Types.PutCounters as PutCounters
-import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
-import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.RemovalCount as RemovalCount
-import qualified Parun.Types.RemoveCounters as RemoveCounters
-import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
-import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
-import qualified Parun.Types.RemovePlayerCounters as RemovePlayerCounters
-import qualified Parun.Types.Repeat as Repeat
-import qualified Parun.Types.RepeatIf as RepeatIf
-import qualified Parun.Types.Replace as Replace
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
-import qualified Parun.Types.RequireAttack as RequireAttack
-import qualified Parun.Types.RequireBlock as RequireBlock
-import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
-import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
-import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
-import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scope as Scope
-import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
-import qualified Parun.Types.SetClassLevel as SetClassLevel
-import qualified Parun.Types.SetHalfLocked as SetHalfLocked
-import qualified Parun.Types.SetOwner as SetOwner
-import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
-import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
-import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
@@ -431,10 +317,7 @@ import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
-import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.Suspend as Suspend
-import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
-import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -443,7 +326,6 @@ import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TargetedSubject as TargetedSubject
-import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
@@ -455,20 +337,14 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
-import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
-import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
-import qualified Parun.Types.Vote as Vote
-import qualified Parun.Types.VoteChoices as VoteChoices
-import qualified Parun.Types.VoteObjects as VoteObjects
-import qualified Parun.Types.VotePlayers as VotePlayers
 import qualified Parun.Types.Ward as Ward
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -633,10 +509,6 @@ abilityAddsManaNames :: (Monoid r) => Asking r -> AbilityAddsMana.AbilityAddsMan
 abilityAddsManaNames asking x = case x of
   AbilityAddsMana.MkAbilityAddsMana _player source _mana -> filterNames asking source
 
-activateManaAbilitiesNames :: (Monoid r) => Asking r -> ActivateManaAbilities.ActivateManaAbilities -> r
-activateManaAbilitiesNames asking x = case x of
-  ActivateManaAbilities.MkActivateManaAbilities player filter_ -> playerRefNames asking player <> filterNames asking filter_
-
 activatedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> ActivatedAbility.ActivatedAbility card ability -> r
 activatedAbilityNames asking onCard onAbility x = case x of
   ActivatedAbility.MkActivatedAbility cost maximumX _minimumX definedX modal restrictions _activator condition _name keyword -> costNames asking (keywordNames asking) cost <> foldMap (quantityNames asking) maximumX <> foldMap (quantityNames asking) definedX <> modalNames asking onCard onAbility modal <> foldMap (activationRestrictionNames asking) restrictions <> foldMap (conditionNames asking) condition <> foldMap (keywordNames asking) keyword
@@ -664,10 +536,6 @@ activationRestrictionNames asking x = case x of
 activeReplacementNames :: (Monoid r) => Asking r -> ActiveReplacement.ActiveReplacement -> r
 activeReplacementNames asking x = case x of
   ActiveReplacement.MkActiveReplacement effect source _controller _timestamp expiry _uses _origin condition rider slots_ _choices -> replacementEffectNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effect <> names asking (== source) <> expiryNames asking expiry <> foldMap (conditionNames asking) condition <> foldMap (preventionRiderNames asking) rider <> foldMap (slotNames asking) (Map.keys slots_) <> names asking (\oid -> any (elem oid) slots_)
-
-affectPlayersNames :: (Monoid r) => Asking r -> AffectPlayers.AffectPlayers -> r
-affectPlayersNames asking x = case x of
-  AffectPlayers.MkAffectPlayers duration players effect -> durationNames asking duration <> affectedPlayersNames asking (slotNames asking) players <> playerEffectNames asking effect
 
 affectedNames :: (Monoid r) => Asking r -> Affected.Affected -> r
 affectedNames asking x = case x of
@@ -710,22 +578,6 @@ alternativeCostNames :: (Monoid r) => Asking r -> AlternativeCost.AlternativeCos
 alternativeCostNames asking x = case x of
   AlternativeCost.MkAlternativeCost condition cost -> foldMap (conditionNames asking) condition <> costNames asking (keywordNames asking) cost
 
-amassNames :: (Monoid r) => Asking r -> Amass.Amass -> r
-amassNames asking x = case x of
-  Amass.MkAmass player quantity _kind slot -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) slot
-
-anyNumberDiscardNames :: (Monoid r) => Asking r -> AnyNumberDiscard.AnyNumberDiscard -> r
-anyNumberDiscardNames asking x = case x of
-  AnyNumberDiscard.MkAnyNumberDiscard player cards discarded -> playerRefNames asking player <> anyNumberMatchingNames asking cards <> foldMap (slotNames asking) discarded
-
-anyNumberMatchingNames :: (Monoid r) => Asking r -> AnyNumberMatching.AnyNumberMatching -> r
-anyNumberMatchingNames asking x = case x of
-  AnyNumberMatching.MkAnyNumberMatching filter_ atMost -> filterNames asking filter_ <> foldMap (quantityNames asking) atMost
-
-armDelayedTriggerNames :: (Monoid r) => Asking r -> (ability -> r) -> ArmDelayedTrigger.ArmDelayedTrigger ability -> r
-armDelayedTriggerNames asking onAbility x = case x of
-  ArmDelayedTrigger.MkArmDelayedTrigger _name onset duration ability -> onsetNames asking onset <> foldMap (durationNames asking) duration <> foldMap onAbility ability
-
 onsetNames :: (Monoid r) => Asking r -> Onset.Onset -> r
 onsetNames asking x = case x of
   Onset.Immediately -> mempty
@@ -736,21 +588,9 @@ asCopyNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> AsCo
 asCopyNames asking onAbility onEffect x = case x of
   AsCopy.MkAsCopy eligible clauses _tapped whenYouDo _among duration _recipient _optional -> filterNames asking eligible <> foldMap (copyClauseNames asking onAbility) clauses <> foldMap onEffect whenYouDo <> foldMap (durationNames asking) duration
 
-attachAllNames :: (Monoid r) => Asking r -> AttachAll.AttachAll -> r
-attachAllNames asking x = case x of
-  AttachAll.MkAttachAll subjects destination -> objectRefNames asking subjects <> filterNames asking destination
-
-attachBoundNames :: (Monoid r) => Asking r -> AttachBound.AttachBound -> r
-attachBoundNames asking x = case x of
-  AttachBound.MkAttachBound subject destination -> slotNames asking subject <> slotNames asking destination
-
 attachRestrictionNames :: (Monoid r) => Asking r -> AttachRestriction.AttachRestriction -> r
 attachRestrictionNames asking x = case x of
   AttachRestriction.MkAttachRestriction affected attachers -> affectedNames asking affected <> filterNames asking attachers
-
-attachTargetNames :: (Monoid r) => Asking r -> AttachTarget.AttachTarget -> r
-attachTargetNames asking x = case x of
-  AttachTarget.MkAttachTarget slot filter_ -> slotNames asking slot <> filterNames asking filter_
 
 attachedToBoundNames :: (Monoid r) => Asking r -> AttachedToBound.AttachedToBound -> r
 attachedToBoundNames asking x = case x of
@@ -772,11 +612,6 @@ attackRequirementNames :: (Monoid r) => Asking r -> AttackRequirement.AttackRequ
 attackRequirementNames asking x = case x of
   AttackRequirement.MkAttackRequirement subject _object_ while _arity -> affectedNames asking subject <> foldMap (conditionNames asking) while
 
-attackTargetRefNames :: (Monoid r) => Asking r -> AttackTargetRef.AttackTargetRef -> r
-attackTargetRefNames asking x = case x of
-  AttackTargetRef.Players playerRef -> playerRefNames asking playerRef
-  AttackTargetRef.Permanents objectRef -> objectRefNames asking objectRef
-
 attackingPlayersNames :: Asking r -> AttackingPlayers.AttackingPlayers -> r
 attackingPlayersNames asking x = case x of
   AttackingPlayers.MkAttackingPlayers _relation attacked -> slotNames asking attacked
@@ -785,10 +620,6 @@ backupNames :: (Monoid r) => Asking r -> (keyword -> r) -> Backup.Backup keyword
 backupNames _asking onKeyword x = case x of
   Backup.MkBackup _count printedAbove -> foldMap onKeyword printedAbove
 
-becomeCopyNames :: (Monoid r) => Asking r -> (ability -> r) -> BecomeCopy.BecomeCopy ability -> r
-becomeCopyNames asking onAbility x = case x of
-  BecomeCopy.MkBecomeCopy original subject duration exceptions _newTargets -> copyOriginalNames asking original <> objectRefNames asking subject <> foldMap (durationNames asking) duration <> foldMap (copyExceptionNames asking onAbility) exceptions
-
 beholdNames :: (Monoid r) => Asking r -> Behold.Behold keyword -> r
 beholdNames asking x = case x of
   Behold.MkBehold _count whichObjects -> filterNames asking whichObjects
@@ -796,10 +627,6 @@ beholdNames asking x = case x of
 bindingNames :: (Monoid r) => Asking r -> Binding.Binding -> r
 bindingNames asking x = case x of
   Binding.MkBinding targets _amount _modes copy objects _sticker _votes division -> foldMap (foldMap (recipientNames asking)) targets <> foldMap (projectedCharacteristicsNames asking) copy <> names asking (\oid -> any (elem oid) objects) <> foldMap (foldMap (recipientNames asking) . Map.keys) division
-
-blightNames :: (Monoid r) => Asking r -> Blight.Blight -> r
-blightNames asking x = case x of
-  Blight.MkBlight player quantity slot -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) slot
 
 blockCostNames :: (Monoid r) => Asking r -> BlockCost.BlockCost -> r
 blockCostNames asking x = case x of
@@ -847,17 +674,6 @@ castFromZoneNames :: (Monoid r) => Asking r -> CastFromZone.CastFromZone -> r
 castFromZoneNames asking x = case x of
   CastFromZone.MkCastFromZone from matching _limit _verb _pool additionalCosts _reduction _spending -> inZoneNames asking from <> filterNames asking matching <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts
 
-castOfferNames :: (Monoid r) => Asking r -> CastOffer.CastOffer -> r
-castOfferNames asking x = case x of
-  CastOffer.MkCastOffer _transformed _withoutPayingManaCost payingInstead _spending restriction offeredBy _faceDown _payableFromSpent _reduction -> foldMap (costNames asking (keywordNames asking)) payingInstead <> foldMap (filterNames asking) restriction <> foldMap (keywordNames asking) offeredBy
-
-castRepetitionNames :: (Monoid r) => Asking r -> CastRepetition.CastRepetition -> r
-castRepetitionNames asking x = case x of
-  CastRepetition.Once -> mempty
-  CastRepetition.AnyNumber -> mempty
-  CastRepetition.WithinTotalManaValue quantity -> quantityNames asking quantity
-  CastRepetition.UpTo quantity -> quantityNames asking quantity
-
 castingPermissionNames :: (Monoid r) => Asking r -> CastingPermission.CastingPermission -> r
 castingPermissionNames asking x = case x of
   CastingPermission.CastFromLibraryWhileSearching -> mempty
@@ -882,46 +698,9 @@ castingRestrictionNames asking x = case x of
   CastingRestriction.OnlyIf condition -> conditionNames asking condition
   CastingRestriction.SpendOnlyOnX _color -> mempty
 
-changeTextNames :: (Monoid r) => Asking r -> ChangeText.ChangeText -> r
-changeTextNames asking x = case x of
-  ChangeText.MkChangeText _families _forbidden slot duration -> slotNames asking slot <> durationNames asking duration
-
 characteristicPTNames :: (Monoid r) => Asking r -> CharacteristicPT.CharacteristicPT -> r
 characteristicPTNames asking x = case x of
   CharacteristicPT.MkCharacteristicPT power toughness -> quantityNames asking power <> quantityNames asking toughness
-
-chooseCardNameNames :: (Monoid r) => Asking r -> ChooseCardName.ChooseCardName -> r
-chooseCardNameNames asking x = case x of
-  ChooseCardName.MkChooseCardName player restriction among -> playerRefNames asking player <> filterNames asking restriction <> foldMap (slotNames asking) among
-
-bindAmountNames :: (Monoid r) => Asking r -> BindAmount.BindAmount -> r
-bindAmountNames asking x = case x of
-  BindAmount.MkBindAmount quantity slot -> quantityNames asking quantity <> slotNames asking slot
-
-chooseNumberNames :: (Monoid r) => Asking r -> ChooseNumber.ChooseNumber -> r
-chooseNumberNames asking x = case x of
-  ChooseNumber.MkChooseNumber slot upTo chooser -> slotNames asking slot <> foldMap (quantityNames asking) upTo <> playerRefNames asking chooser
-
-choosePermanentsNames :: (Monoid r) => Asking r -> ChoosePermanents.ChoosePermanents -> r
-choosePermanentsNames asking x = case x of
-  ChoosePermanents.MkChoosePermanents permanents slot pileChooser rest -> chosenPermanentsNames asking permanents <> slotNames asking slot <> foldMap (playerRefNames asking) pileChooser <> foldMap (slotNames asking) rest
-
-chooseGroupNames :: (Monoid r) => Asking r -> ChooseGroup.ChooseGroup -> r
-chooseGroupNames asking x = case x of
-  ChooseGroup.MkChooseGroup among slot about -> groupingNames asking among <> slotNames asking slot <> foldMap (objectRefNames asking) about
-
-groupingNames :: (Monoid r) => Asking r -> Grouping.Grouping -> r
-groupingNames asking x = case x of
-  Grouping.Sectors -> mempty
-  Grouping.Piles slots -> foldMap (slotNames asking) slots
-
-choosePlayerNames :: Asking r -> ChoosePlayer.ChoosePlayer -> r
-choosePlayerNames asking x = case x of
-  ChoosePlayer.MkChoosePlayer _scope slot -> slotNames asking slot
-
-choosePlayerAtRandomNames :: Asking r -> ChoosePlayerAtRandom.ChoosePlayerAtRandom -> r
-choosePlayerAtRandomNames asking x = case x of
-  ChoosePlayerAtRandom.MkChoosePlayerAtRandom _scope slot -> slotNames asking slot
 
 chooserNames :: (Monoid r) => Asking r -> Chooser.Chooser -> r
 chooserNames asking x = case x of
@@ -972,30 +751,6 @@ conditionNames asking x = case x of
   Condition.All items -> foldMap (conditionNames asking) items
   Condition.During duringPhase -> duringPhaseNames asking duringPhase
 
-conjureNames :: (Monoid r) => Asking r -> (card -> r) -> Conjure.Conjure card -> r
-conjureNames asking onCard x = case x of
-  Conjure.MkConjure quantity cards _selection _destination slot -> quantityNames asking quantity <> conjureCardsNames asking onCard cards <> foldMap (slotNames asking) slot
-
-conjureCardsNames :: (Monoid r) => Asking r -> (card -> r) -> ConjureCards.ConjureCards card -> r
-conjureCardsNames asking onCard x = case x of
-  ConjureCards.Written nonEmpty -> foldMap onCard nonEmpty
-  ConjureCards.Duplicate objectRef -> objectRefNames asking objectRef
-  ConjureCards.Reference fromReference -> fromReferenceNames asking fromReference
-
-conniveNames :: (Monoid r) => Asking r -> Connive.Connive -> r
-conniveNames asking x = case x of
-  Connive.MkConnive quantity ref -> quantityNames asking quantity <> objectRefNames asking ref
-
-controlPlayerNames :: Asking r -> ControlPlayer.ControlPlayer -> r
-controlPlayerNames asking x = case x of
-  ControlPlayer.MkControlPlayer slot _manaFromLandsOnly -> slotNames asking slot
-
-controlSidesNames :: (Monoid r) => Asking r -> ControlSides.ControlSides -> r
-controlSidesNames asking x = case x of
-  ControlSides.WithinSlot slotName -> slotNames asking slotName
-  ControlSides.WithSource slotName -> slotNames asking slotName
-  ControlSides.BetweenSlots (ControlSlots.MkControlSlots one two) -> slotNames asking one <> slotNames asking two
-
 controllerRelationNames :: (Monoid r) => Asking r -> ControllerRelation.ControllerRelation -> r
 controllerRelationNames asking x = case x of
   ControllerRelation.Related _ -> mempty
@@ -1022,22 +777,6 @@ copyExceptionNames asking onAbility x = case x of
   CopyException.NoManaCost -> mempty
   CopyException.GainAbility ability -> onAbility ability
   CopyException.DontCopyColors -> mempty
-
-copyOriginalNames :: (Monoid r) => Asking r -> CopyOriginal.CopyOriginal -> r
-copyOriginalNames asking x = case x of
-  CopyOriginal.OfObject objectRef -> objectRefNames asking objectRef
-  CopyOriginal.Named _cardName -> mempty
-
-copyStackObjectNames :: (Monoid r) => Asking r -> (ability -> r) -> CopyStackObject.CopyStackObject ability -> r
-copyStackObjectNames asking onAbility x = case x of
-  CopyStackObject.MkCopyStackObject ref targets quantity copier exceptions -> objectRefNames asking ref <> copyTargetsNames asking targets <> quantityNames asking quantity <> playerRefNames asking copier <> foldMap (copyExceptionNames asking onAbility) exceptions
-
-copyTargetsNames :: (Monoid r) => Asking r -> CopyTargets.CopyTargets -> r
-copyTargetsNames asking x = case x of
-  CopyTargets.Copied -> mempty
-  CopyTargets.ChosenByController -> mempty
-  CopyTargets.ForEach objectRef -> objectRefNames asking objectRef
-  CopyTargets.Stated objectRef -> objectRefNames asking objectRef
 
 costNames :: (Monoid r) => Asking r -> (keyword -> r) -> Cost.Cost keyword -> r
 costNames asking onKeyword x = case x of
@@ -1108,18 +847,6 @@ costReductionNames :: (Monoid r) => Asking r -> CostReduction.CostReduction -> r
 costReductionNames asking x = case x of
   CostReduction.MkCostReduction _amount perEach condition whichTargets _direction -> quantityNames asking perEach <> foldMap (conditionNames asking) condition <> foldMap (filterNames asking) whichTargets
 
-countedDiscardNames :: (Monoid r) => Asking r -> CountedDiscard.CountedDiscard -> r
-countedDiscardNames asking x = case x of
-  CountedDiscard.MkCountedDiscard player quantity discarded -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) discarded
-
-counterNames :: (Monoid r) => Asking r -> Counter.Counter -> r
-counterNames asking x = case x of
-  Counter.MkCounter ref slot sources instead -> objectRefNames asking ref <> foldMap (slotNames asking) slot <> foldMap (slotNames asking) sources <> foldMap (counterDestinationNames asking) instead
-
-counterDestinationNames :: (Monoid r) => Asking r -> CounterDestination.CounterDestination -> r
-counterDestinationNames asking x = case x of
-  CounterDestination.MkCounterDestination _zone _position only slot -> foldMap (filterNames asking) only <> foldMap (slotNames asking) slot
-
 counterKindNames :: (Monoid r) => Asking r -> (keyword -> r) -> CounterKind.CounterKind keyword -> r
 counterKindNames _asking onKeyword x = case x of
   CounterKind.PlusOnePlusOne -> mempty
@@ -1178,18 +905,6 @@ craftNames :: (Monoid r) => Asking r -> (keyword -> r) -> Craft.Craft keyword ->
 craftNames asking onKeyword x = case x of
   Craft.MkCraft cost materials -> costNames asking onKeyword cost <> exileMaterialsNames asking materials
 
-createNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Create.Create card ability -> r
-createNames asking onCard onAbility x = case x of
-  Create.MkCreate quantity card riders slot creator _ -> quantityNames asking quantity <> onCard card <> entryRidersNames asking (quantityNames asking) onAbility riders <> foldMap (slotNames asking) slot <> playerRefNames asking creator
-
-createEmblemNames :: (Monoid r) => Asking r -> (card -> r) -> CreateEmblem.CreateEmblem card -> r
-createEmblemNames asking onCard x = case x of
-  CreateEmblem.MkCreateEmblem card player -> onCard card <> playerRefNames asking player
-
-createCopyNames :: (Monoid r) => Asking r -> (ability -> r) -> CreateCopy.CreateCopy ability -> r
-createCopyNames asking onAbility x = case x of
-  CreateCopy.MkCreateCopy quantity ref riders slot exceptions _ -> quantityNames asking quantity <> objectRefNames asking ref <> entryRidersNames asking (quantityNames asking) onAbility riders <> foldMap (slotNames asking) slot <> foldMap (copyExceptionNames asking onAbility) exceptions
-
 counterProhibitionNames :: (Monoid r) => Asking r -> CounterProhibition.CounterProhibition -> r
 counterProhibitionNames asking x = case x of
   CounterProhibition.MkCounterProhibition countered counterers -> filterNames asking countered <> filterNames asking counterers
@@ -1211,10 +926,6 @@ targetRestrictionNames asking onAffected x = case x of
 cyclingNames :: (Monoid r) => Asking r -> (keyword -> r) -> Cycling.Cycling keyword -> r
 cyclingNames asking onKeyword x = case x of
   Cycling.MkCycling cost searchFor -> costNames asking onKeyword cost <> foldMap (filterNames asking) searchFor
-
-damagePartNames :: (Monoid r) => Asking r -> DamagePart.DamagePart -> r
-damagePartNames asking x = case x of
-  DamagePart.MkDamagePart ref quantity -> objectRefNames asking ref <> quantityNames asking quantity
 
 damagePatternNames :: (Monoid r) => Asking r -> DamagePattern.DamagePattern -> r
 damagePatternNames asking x = case x of
@@ -1242,10 +953,6 @@ damageRewriteNames asking onEffect x = case x of
   DamageRewrite.AlsoToSourceController -> mempty
   DamageRewrite.HealSourceFirst -> mempty
 
-dealDamageNames :: (Monoid r) => Asking r -> DealDamage.DealDamage -> r
-dealDamageNames asking x = case x of
-  DealDamage.MkDealDamage parts dealer _excess tally damaged excessTally -> foldMap (damagePartNames asking) parts <> foldMap (slotNames asking) dealer <> foldMap (slotNames asking) tally <> foldMap (slotNames asking) damaged <> foldMap (slotNames asking) excessTally
-
 activeLaterPaymentNames :: (Monoid r) => Asking r -> ActiveLaterPayment.ActiveLaterPayment -> r
 activeLaterPaymentNames asking x = case x of
   ActiveLaterPayment.MkActiveLaterPayment cost payoff _createdAt expiry -> costNames asking (keywordNames asking) cost <> preventionRiderNames asking payoff <> expiryNames asking expiry
@@ -1253,14 +960,6 @@ activeLaterPaymentNames asking x = case x of
 delayedTriggerNames :: (Monoid r) => Asking r -> DelayedTrigger.DelayedTrigger -> r
 delayedTriggerNames asking x = case x of
   DelayedTrigger.MkDelayedTrigger ability source _controller bindings _window expiry _createdAt -> triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty)) ability <> names asking (== source) <> foldMap (slotNames asking) (Map.keys bindings) <> foldMap (bindingNames asking) bindings <> foldMap (expiryNames asking) expiry
-
-designateNames :: (Monoid r) => Asking r -> Designate.Designate -> r
-designateNames asking x = case x of
-  Designate.MkDesignate _designation slot value -> slotNames asking slot <> foldMap (quantityNames asking) value
-
-destroyNames :: (Monoid r) => Asking r -> Destroy.Destroy -> r
-destroyNames asking x = case x of
-  Destroy.MkDestroy ref _regenerability slot buried permanents -> objectRefNames asking ref <> foldMap (slotNames asking) slot <> foldMap (slotNames asking) buried <> foldMap (slotNames asking) permanents
 
 destructionRNames :: (Monoid r) => Asking r -> DestructionR.DestructionR -> r
 destructionRNames asking x = case x of
@@ -1287,27 +986,9 @@ dieRollRNames :: (Monoid r) => Asking r -> DieRollR.DieRollR -> r
 dieRollRNames asking x = case x of
   DieRollR.MkDieRollR whose _rewrite -> controllerRelationNames asking whose
 
-discardNames :: (Monoid r) => Asking r -> Discard.Discard -> r
-discardNames asking x = case x of
-  Discard.Counted countedDiscard -> countedDiscardNames asking countedDiscard
-  Discard.These theseDiscard -> theseDiscardNames asking theseDiscard
-  Discard.AnyNumber anyNumberDiscard -> anyNumberDiscardNames asking anyNumberDiscard
-
-divideNames :: (Monoid r) => Asking r -> Divide.Divide -> r
-divideNames asking x = case x of
-  Divide.MkDivide quantity among chooser slot -> quantityNames asking quantity <> objectRefNames asking among <> playerRefNames asking chooser <> slotNames asking slot
-
 discardCardsNames :: (Monoid r) => Asking r -> DiscardCards.DiscardCards keyword -> r
 discardCardsNames asking x = case x of
   DiscardCards.MkDiscardCards _count whichCards _selection -> filterNames asking whichCards
-
-doesNotUntapNextNames :: (Monoid r) => Asking r -> DoesNotUntapNext.DoesNotUntapNext -> r
-doesNotUntapNextNames asking x = case x of
-  DoesNotUntapNext.MkDoesNotUntapNext ref _steps -> objectRefNames asking ref
-
-drawNames :: (Monoid r) => Asking r -> Draw.Draw -> r
-drawNames asking x = case x of
-  Draw.MkDraw player quantity slot -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) slot
 
 drawCountRNames :: (Monoid r) => Asking r -> DrawCountR.DrawCountR -> r
 drawCountRNames asking x = case x of
@@ -1387,192 +1068,48 @@ eachCardInHandNames :: (Monoid r) => Asking r -> EachCardInHand.EachCardInHand -
 eachCardInHandNames asking x = case x of
   EachCardInHand.MkEachCardInHand hands filter_ -> zoneScopeNames asking hands <> foldMap (filterNames asking) filter_
 
-earthbendNames :: (Monoid r) => Asking r -> Earthbend.Earthbend -> r
-earthbendNames asking x = case x of
-  Earthbend.MkEarthbend quantity ref -> quantityNames asking quantity <> objectRefNames asking ref
-
+-- Parun.Engine.Children's traversal at Const: every child an effect holds,
+-- each through its own walk. No effect constructor reads the history or
+-- prevention itself; those reads sit in the children (a Quantity, an
+-- ObjectRef, a keyword).
 effectNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Effect.Effect card ability -> r
-effectNames asking onCard onAbility x = case x of
-  Effect.DealDamage dealDamage -> dealDamageNames asking dealDamage
-  Effect.Fight fight -> fightNames asking fight
-  Effect.ModifyTarget modifyTarget -> modifyTargetNames asking onAbility modifyTarget
-  Effect.ChangeText changeText -> changeTextNames asking changeText
-  Effect.AddMana manaAddition -> manaAdditionNames asking manaAddition
-  Effect.ActivateManaAbilities activateManaAbilities -> activateManaAbilitiesNames asking activateManaAbilities
-  Effect.MoveMana moveMana -> moveManaNames asking moveMana
-  Effect.Search search -> searchNames asking search
-  Effect.ExileAllGraveyards -> mempty
-  Effect.RestartGame objectRef -> foldMap (objectRefNames asking) objectRef
-  Effect.ControlPlayerNextTurn slotName -> slotNames asking slotName
-  Effect.ControlPlayerThisResolution controlPlayer -> controlPlayerNames asking controlPlayer
-  Effect.Destroy destroy -> destroyNames asking destroy
-  Effect.Sacrifice sacrificeEffect -> sacrificeEffectNames asking sacrificeEffect
-  Effect.Attach slotName -> slotNames asking slotName
-  Effect.AttachAsThoughCreature slotName -> slotNames asking slotName
-  Effect.AttachTarget attachTarget -> attachTargetNames asking attachTarget
-  Effect.AttachTargetToEach attachTarget -> attachTargetNames asking attachTarget
-  Effect.AttachBound attachBound -> attachBoundNames asking attachBound
-  Effect.AttachAll attachAll -> attachAllNames asking attachAll
-  Effect.Unattach objectRef -> objectRefNames asking objectRef
-  Effect.MoveToZone moveToZone -> moveToZoneNames asking onAbility moveToZone
-  Effect.Draw draw -> drawNames asking draw
-  Effect.Mill mill -> millNames asking mill
-  Effect.Reveal reveal -> revealNames asking reveal
-  Effect.FromOutsideTheGame fromOutsideTheGame -> fromOutsideTheGameNames asking fromOutsideTheGame
-  Effect.ExileThisSpell -> mempty
-  Effect.LookAt lookAt -> lookAtNames asking lookAt
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary objectRef chooser) -> objectRefNames asking objectRef <> playerRefNames asking chooser
-  Effect.Scry playerQuantity -> playerQuantityNames asking playerQuantity
-  Effect.Surveil (Surveil.MkSurveil player quantity slot) -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) slot
-  Effect.Fateseal playerQuantity -> playerQuantityNames asking playerQuantity
-  Effect.Clash slotName -> slotNames asking slotName
-  Effect.AsYouCascade slotName -> slotNames asking slotName
-  Effect.Explore objectRef -> objectRefNames asking objectRef
-  Effect.Assemble objectRef -> foldMap (objectRefNames asking) objectRef
-  Effect.Connive connive -> conniveNames asking connive
-  Effect.Discard discard -> discardNames asking discard
-  Effect.LoseLife lifeLoss -> lifeLossNames asking lifeLoss
-  Effect.GainLife playerQuantity -> playerQuantityNames asking playerQuantity
-  Effect.ExchangeLifeTotals exchangeSides -> exchangeSidesNames asking exchangeSides
-  Effect.ExchangeValues exchangeValues -> exchangeValuesNames asking exchangeValues
-  Effect.ExchangeZones exchangeZones -> exchangeZonesNames asking exchangeZones
-  Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones one other) -> objectRefNames asking one <> objectRefNames asking other
-  Effect.SetLifeTotal playerQuantity -> playerQuantityNames asking playerQuantity
-  Effect.LoseGame playerRef -> playerRefNames asking playerRef
-  Effect.WinGame playerRef -> playerRefNames asking playerRef
-  Effect.DrawGame -> mempty
-  Effect.RedistributeLifeTotals -> mempty
-  Effect.IncreaseSpeed playerQuantity -> playerQuantityNames asking playerQuantity
-  Effect.DecreaseSpeed speedDecrease -> speedDecreaseNames asking speedDecrease
-  Effect.Create create -> createNames asking onCard onAbility create
-  Effect.Conjure conjure -> conjureNames asking onCard conjure
-  Effect.CreateCopy createCopy -> createCopyNames asking onAbility createCopy
-  Effect.BecomeCopy becomeCopy -> becomeCopyNames asking onAbility becomeCopy
-  Effect.CopyStackObject copyStackObject -> copyStackObjectNames asking onAbility copyStackObject
-  Effect.Replace replace -> replaceNames asking onCard onAbility (effectNames asking onCard onAbility) replace
-  Effect.SkipPhase skipPhase -> skipPhaseNames asking skipPhase
-  Effect.PreventNextDamage preventNextDamage -> preventNextDamageNames asking (effectNames asking onCard onAbility) preventNextDamage
-  Effect.LaterPayment (LaterPayment.MkLaterPayment duration cost effects) -> durationNames asking duration <> costNames asking (keywordNames asking) cost <> foldMap (effectNames asking onCard onAbility) effects
-  Effect.PreventAllDamage preventAllDamage -> preventAllDamageNames asking (effectNames asking onCard onAbility) preventAllDamage
-  Effect.NextDamageInstance nextDamageInstance -> nextDamageInstanceNames asking (effectNames asking onCard onAbility) nextDamageInstance
-  Effect.RedirectDamage redirectDamage -> redirectDamageNames asking redirectDamage
-  Effect.Counter counter -> counterNames asking counter
-  Effect.PutCounters putCounters -> putCountersNames asking putCounters
-  Effect.Divide divide -> divideNames asking divide
-  Effect.RemoveCounters removeCounters -> removeCountersNames asking removeCounters
-  Effect.RemoveCountersAmong removeCountersAmong -> removeCountersAmongNames asking removeCountersAmong
-  Effect.MoveCounters moveCounters -> moveCountersNames asking moveCounters
-  Effect.PutCountersFrom putCountersFrom -> putCountersFromNames asking putCountersFrom
-  Effect.GainPlayerCounters playerCounters -> playerCountersNames asking playerCounters
-  Effect.RemovePlayerCounters removal -> removePlayerCountersNames asking removal
-  Effect.PayAnyEnergy slotName -> slotNames asking slotName
-  Effect.ChooseNumber chooseNumber -> chooseNumberNames asking chooseNumber
-  Effect.BindAmount bindAmount -> bindAmountNames asking bindAmount
-  Effect.Tap tap -> tapNames asking tap
-  Effect.Untap objectRef -> objectRefNames asking objectRef
-  Effect.Detain objectRef -> objectRefNames asking objectRef
-  Effect.Goad objectRef -> objectRefNames asking objectRef
-  Effect.Pair objectRef -> objectRefNames asking objectRef
-  Effect.DoesNotUntapNext doesNotUntapNext -> doesNotUntapNextNames asking doesNotUntapNext
-  Effect.Transform objectRef -> objectRefNames asking objectRef
-  Effect.Convert objectRef -> objectRefNames asking objectRef
-  Effect.Flip objectRef -> objectRefNames asking objectRef
-  Effect.Meld meld -> meldNames asking onCard meld
-  Effect.PhaseOut objectRef -> objectRefNames asking objectRef
-  Effect.TurnFaceDown turnFaceDown -> turnFaceDownNames asking onAbility turnFaceDown
-  Effect.TurnFaceUp slotName -> slotNames asking slotName
-  Effect.RemoveFromCombat payload -> objectRefNames asking (RemoveFromCombat.removed payload)
-  Effect.BlockAttacker objectRef -> objectRefNames asking objectRef
-  Effect.BecomesBlocked slotName -> slotNames asking slotName
-  Effect.SwitchBlockers slotName -> slotNames asking slotName
-  Effect.ExchangeBlocks exchangeBlocks -> exchangeBlocksNames asking exchangeBlocks
-  Effect.AddPhases _items -> mempty
-  Effect.EndTurn -> mempty
-  Effect.EndCombatPhase -> mempty
-  Effect.GainControl gainControl -> gainControlNames asking gainControl
-  Effect.ExchangeControl controlSides -> controlSidesNames asking controlSides
-  Effect.ArmDelayedTrigger armDelayedTrigger -> armDelayedTriggerNames asking onAbility armDelayedTrigger
-  Effect.AffectPlayers affectPlayers -> affectPlayersNames asking affectPlayers
-  Effect.RequireBlock requireBlock -> requireBlockNames asking requireBlock
-  Effect.RequireAttack requireAttack -> requireAttackNames asking requireAttack
-  Effect.Prohibit prohibit -> prohibitNames asking prohibit
-  Effect.ForbidAttack forbidAttack -> forbidAttackNames asking forbidAttack
-  Effect.ForbidBeingBlocked forbidBeingBlocked -> forbidBeingBlockedNames asking forbidBeingBlocked
-  Effect.CreateEmblem createEmblem -> createEmblemNames asking onCard createEmblem
-  Effect.BecomeMonarch monarchTarget -> monarchTargetNames asking monarchTarget
-  Effect.TakeTheInitiative _initiativeTarget -> mempty
-  Effect.Designate designate -> designateNames asking designate
-  Effect.SetClassLevel setClassLevel -> setClassLevelNames asking setClassLevel
-  Effect.Undesignate (Undesignate.MkUndesignate _ objectRef) -> objectRefNames asking objectRef
-  Effect.SetHalfLocked setHalfLocked -> setHalfLockedNames asking setHalfLocked
-  Effect.CounterAndMark counterAndMark -> permanentActedNames asking (slotNames asking) counterAndMark
-  Effect.BecomeProtector slotName -> slotNames asking slotName
-  Effect.Mentor slotName -> slotNames asking slotName
-  Effect.Firebend manaAddition -> manaAdditionNames asking manaAddition
-  Effect.Exploit -> mempty
-  Effect.GiveGift -> mempty
-  Effect.ItBecomes _daytime -> mempty
-  Effect.ExileHaunting exileHaunting -> exileHauntingNames asking exileHaunting
-  Effect.PlaySubgame slotName -> slotNames asking slotName
-  Effect.ChoosePlayer choosePlayer -> choosePlayerNames asking choosePlayer
-  Effect.ChoosePlayerAtRandom choosePlayerAtRandom -> choosePlayerAtRandomNames asking choosePlayerAtRandom
-  Effect.ChoosePermanents choosePermanents -> choosePermanentsNames asking choosePermanents
-  Effect.ChooseGroup choice -> chooseGroupNames asking choice
-  Effect.RollDie rollDie -> rollDieNames asking rollDie
-  Effect.Rethrow -> mempty
-  Effect.RerollStoredResults slotName -> slotNames asking slotName
-  Effect.FlipCoin flipCoin -> flipCoinNames asking flipCoin
-  Effect.Guess guess -> guessNames asking guess
-  Effect.ExileHandThenDraw -> mempty
-  Effect.NoteManaSpent -> mempty
-  Effect.Proliferate -> mempty
-  Effect.ChooseCardName chooseCardName -> chooseCardNameNames asking chooseCardName
-  Effect.ChooseQuality _ -> mempty
-  Effect.Bolster quantity -> quantityNames asking quantity
-  Effect.Amass amass -> amassNames asking amass
-  Effect.Blight blight -> blightNames asking blight
-  Effect.Earthbend earthbend -> earthbendNames asking earthbend
-  Effect.Airbend objectRef -> objectRefNames asking objectRef
-  Effect.Assimilate objectRef -> objectRefNames asking objectRef
-  Effect.TemptWithTheRing -> mempty
-  Effect.OpenAttraction -> mempty
-  Effect.Planeswalk -> mempty
-  Effect.ChaosEnsues -> mempty
-  Effect.Abandon -> mempty
-  Effect.ClaimPrize -> mempty
-  Effect.Forage -> mempty
-  Effect.Populate -> mempty
-  Effect.Learn -> mempty
-  Effect.TimeTravel -> mempty
-  Effect.Recruit -> mempty
-  Effect.Cloak playerRef -> playerRefNames asking playerRef
-  Effect.ManifestDread playerRef -> playerRefNames asking playerRef
-  Effect.Venture _subtype -> mempty
-  Effect.PlayerSacrifices playerSacrifices -> playerSacrificesNames asking playerSacrifices
-  Effect.Vote vote -> voteNames asking vote
-  Effect.Bid bid -> bidNames asking bid
-  Effect.TakeExtraTurn takeExtraTurn -> takeExtraTurnNames asking takeExtraTurn
-  Effect.ShuffleIntoLibrary shuffleIntoLibrary -> shuffleIntoLibraryNames asking shuffleIntoLibrary
-  Effect.Ante ante -> anteNames asking ante
-  Effect.PutSticker putSticker -> putStickerNames asking putSticker
-  Effect.SetOwner (SetOwner.MkSetOwner player ref) -> playerRefNames asking player <> objectRefNames asking ref
-  Effect.ExchangeOwnership (ExchangeOwnership.MkExchangeOwnership one other) -> objectRefNames asking one <> objectRefNames asking other
-  Effect.Shuffle playerRef -> playerRefNames asking playerRef
-  Effect.OfferCast offerCast -> offerCastNames asking offerCast
-  Effect.OfferNamedCopy _cardName -> mempty
-  Effect.OfferNotedCopy castOffer -> castOfferNames asking castOffer
-  Effect.GrantPlayFromExile grantPlayFromExile -> grantPlayFromExileNames asking grantPlayFromExile
-  Effect.GrantLookAtExiled grantLookAtExiled -> grantLookAtExiledNames asking grantLookAtExiled
-  Effect.MakePlotted objectRef -> objectRefNames asking objectRef
-  Effect.MakeForetold makeForetold -> makeForetoldNames asking makeForetold
-  Effect.MakeWarped objectRef -> objectRefNames asking objectRef
-  Effect.ForEach forEach -> forEachNames asking (effectNames asking onCard onAbility) forEach
-  Effect.ForEachNumber forEachNumber -> forEachNumberNames asking (effectNames asking onCard onAbility) forEachNumber
-  Effect.Repeat repeat_ -> repeatNames asking (effectNames asking onCard onAbility) repeat_
-  Effect.RepeatIf repeatIf -> repeatIfNames asking (effectNames asking onCard onAbility) repeatIf
-  Effect.Heal objectRef -> objectRefNames asking objectRef
-  Effect.ChooseNewTargets objectRef -> objectRefNames asking objectRef
-  Effect.ChangeTargets changeTargets -> changeTargetsNames asking changeTargets
+effectNames asking onCard onAbility =
+  Const.getConst
+    . Children.effectChildren
+      Children.MkEffectChildren
+        { Children.onFilter = Const.Const . filterNames asking,
+          Children.onQuantity = Const.Const . quantityNames asking,
+          Children.onEffect = Const.Const . effectNames asking onCard onAbility,
+          Children.onObjectRef = Const.Const . objectRefNames asking,
+          Children.onPlayer = Const.Const . playerRefNames asking,
+          Children.onSlot = Const.Const . slotNames asking,
+          Children.onDuration = Const.Const . durationNames asking,
+          Children.onCondition = Const.Const . conditionNames asking,
+          Children.onCard = Const.Const . onCard,
+          Children.onConjured = Const.Const . onCard,
+          Children.onMelded = Const.Const . melded asking . onCard,
+          Children.onAbility = Const.Const . onAbility,
+          Children.onCost = Const.Const . costNames asking (keywordNames asking),
+          Children.onKeyword = Const.Const . keywordNames asking,
+          Children.onCounterKind = Const.Const . counterKindNames asking (keywordNames asking),
+          Children.onWhichCounters = Const.Const . whichCountersNames asking (keywordNames asking),
+          Children.onMovedKinds = Const.Const . movedKindsNames asking,
+          Children.onRemovalCount = Const.Const . removalCountNames asking,
+          Children.onModification = Const.Const . modificationNames asking onAbility,
+          Children.onPlayerEffect = Const.Const . playerEffectNames asking,
+          Children.onReplacement = Const.Const . replacementEffectNames asking onCard onAbility (effectNames asking onCard onAbility),
+          Children.onPayGate = Const.Const . payGateNames asking,
+          Children.onEntryRiders = Const.Const . entryRidersNames asking (quantityNames asking) onAbility,
+          Children.onPlacement = Const.Const . libraryPlacementNames asking,
+          Children.onCopyException = Const.Const . copyExceptionNames asking onAbility,
+          Children.onFaceDown = Const.Const . faceDownCharacteristicsNames asking onAbility,
+          Children.onManaAddition = Const.Const . manaAdditionNames asking,
+          Children.onAffectedPlayers = Const.Const . affectedPlayersNames asking (slotNames asking),
+          Children.onOnset = Const.Const . onsetNames asking,
+          Children.onMoveDuration = Const.Const . moveDurationNames asking,
+          Children.onAimedAt = Const.Const . aimedAtNames asking,
+          Children.onChosenPermanents = Const.Const . chosenPermanentsNames asking
+        }
 
 emergeNames :: (Monoid r) => Asking r -> (keyword -> r) -> Emerge.Emerge keyword -> r
 emergeNames asking onKeyword x = case x of
@@ -1664,29 +1201,6 @@ equipNames :: (Monoid r) => Asking r -> (keyword -> r) -> Equip.Equip keyword ->
 equipNames asking onKeyword x = case x of
   Equip.MkEquip cost quality _target -> costNames asking onKeyword cost <> foldMap (filterNames asking) quality
 
-exchangeBlocksNames :: (Monoid r) => Asking r -> ExchangeBlocks.ExchangeBlocks -> r
-exchangeBlocksNames asking x = case x of
-  ExchangeBlocks.MkExchangeBlocks first second -> slotNames asking first <> slotNames asking second
-
-exchangeSidesNames :: Asking r -> ExchangeSides.ExchangeSides -> r
-exchangeSidesNames asking x = case x of
-  ExchangeSides.WithController slotName -> slotNames asking slotName
-  ExchangeSides.BetweenTargets slotName -> slotNames asking slotName
-
-exchangeValuesNames :: (Monoid r) => Asking r -> ExchangeValues.ExchangeValues -> r
-exchangeValuesNames asking x = case x of
-  ExchangeValues.MkExchangeValues one other duration -> exchangedValueNames asking one <> exchangedValueNames asking other <> durationNames asking duration
-
-exchangeZonesNames :: (Monoid r) => Asking r -> ExchangeZones.ExchangeZones -> r
-exchangeZonesNames asking x = case x of
-  ExchangeZones.MkExchangeZones player _zones -> playerRefNames asking player
-
-exchangedValueNames :: (Monoid r) => Asking r -> ExchangedValue.ExchangedValue -> r
-exchangedValueNames asking x = case x of
-  ExchangedValue.LifeTotal playerRef -> playerRefNames asking playerRef
-  ExchangedValue.Power objectRef -> objectRefNames asking objectRef
-  ExchangedValue.Toughness objectRef -> objectRefNames asking objectRef
-
 exileCardsFromHandNames :: (Monoid r) => Asking r -> ExileCardsFromHand.ExileCardsFromHand keyword -> r
 exileCardsFromHandNames asking x = case x of
   ExileCardsFromHand.MkExileCardsFromHand count whichCards -> costAmountNames asking count <> filterNames asking whichCards
@@ -1698,10 +1212,6 @@ exileCardsFromGraveyardNames asking x = case x of
 exileCardsTotallingNames :: (Monoid r) => Asking r -> ExileCardsTotalling.ExileCardsTotalling keyword -> r
 exileCardsTotallingNames asking x = case x of
   ExileCardsTotalling.MkExileCardsTotalling _threshold _tally whichCards -> filterNames asking whichCards
-
-exileHauntingNames :: (Monoid r) => Asking r -> ExileHaunting.ExileHaunting -> r
-exileHauntingNames asking x = case x of
-  ExileHaunting.MkExileHaunting card host -> slotNames asking card <> slotNames asking host
 
 exileMaterialsNames :: (Monoid r) => Asking r -> ExileMaterials.ExileMaterials keyword -> r
 exileMaterialsNames asking x = case x of
@@ -1750,37 +1260,9 @@ faceDownStateNames :: (Monoid r) => Asking r -> (ability -> r) -> FaceDownState.
 faceDownStateNames asking onAbility x = case x of
   FaceDownState.MkFaceDownState _reason listed _turnsUpBefore -> faceDownCharacteristicsNames asking onAbility listed
 
-fightNames :: (Monoid r) => Asking r -> Fight.Fight -> r
-fightNames asking x = case x of
-  Fight.MkFight first second -> slotNames asking first <> slotNames asking second
-
-flipCoinNames :: (Monoid r) => Asking r -> FlipCoin.FlipCoin -> r
-flipCoinNames asking x = case x of
-  FlipCoin.MkFlipCoin count _reading slot misses flipper -> quantityNames asking count <> slotNames asking slot <> foldMap (slotNames asking) misses <> playerRefNames asking flipper
-
-guessNames :: (Monoid r) => Asking r -> Guess.Guess -> r
-guessNames asking x = case x of
-  Guess.MkGuess subject slot guesser proposition right -> objectRefNames asking subject <> slotNames asking slot <> playerRefNames asking guesser <> filterNames asking proposition <> slotNames asking right
-
 floatingCandidateNames :: Asking r -> FloatingCandidate.FloatingCandidate -> r
 floatingCandidateNames asking x = case x of
   FloatingCandidate.MkFloatingCandidate source _timestamp -> names asking (== source)
-
-forEachNames :: (Monoid r) => Asking r -> (effect -> r) -> ForEach.ForEach effect -> r
-forEachNames asking onEffect x = case x of
-  ForEach.MkForEach ref _members slot body _individually payGate startingWith -> objectRefNames asking ref <> slotNames asking slot <> foldMap onEffect body <> foldMap (payGateNames asking) payGate <> foldMap (playerRefNames asking) startingWith
-
-forEachNumberNames :: (Monoid r) => Asking r -> (effect -> r) -> ForEachNumber.ForEachNumber effect -> r
-forEachNumberNames asking onEffect x = case x of
-  ForEachNumber.MkForEachNumber upTo slot body -> quantityNames asking upTo <> slotNames asking slot <> foldMap onEffect body
-
-forbidAttackNames :: (Monoid r) => Asking r -> ForbidAttack.ForbidAttack -> r
-forbidAttackNames asking x = case x of
-  ForbidAttack.MkForbidAttack duration affected aimedAt -> durationNames asking duration <> restrictedCreaturesNames asking (objectRefNames asking) affected <> foldMap (aimedAtNames asking) aimedAt
-
-forbidBeingBlockedNames :: (Monoid r) => Asking r -> ForbidBeingBlocked.ForbidBeingBlocked -> r
-forbidBeingBlockedNames asking x = case x of
-  ForbidBeingBlocked.MkForbidBeingBlocked duration affected barred -> durationNames asking duration <> filterNames asking affected <> filterNames asking barred
 
 foretellCostNames :: (Monoid r) => Asking r -> (keyword -> r) -> ForetellCost.ForetellCost keyword -> r
 foretellCostNames asking onKeyword x = case x of
@@ -1791,25 +1273,9 @@ fromOutsideTheGameNames :: (Monoid r) => Asking r -> FromOutsideTheGame.FromOuts
 fromOutsideTheGameNames asking x = case x of
   FromOutsideTheGame.MkFromOutsideTheGame _count _upTo _destination filter_ _reveal _differentIn _pick -> filterNames asking filter_
 
-fromReferenceNames :: (Monoid r) => Asking r -> FromReference.FromReference -> r
-fromReferenceNames asking x = case x of
-  FromReference.MkFromReference filter_ amount -> filterNames asking filter_ <> foldMap (quantityNames asking) amount
-
 fullTextNames :: (Monoid r) => Asking r -> (ability -> r) -> FullText.FullText ability -> r
 fullTextNames asking onAbility x = case x of
   FullText.MkFullText graveyard alsoHas -> playerRefNames asking graveyard <> foldMap onAbility alsoHas
-
-gainControlNames :: (Monoid r) => Asking r -> GainControl.GainControl -> r
-gainControlNames asking x = case x of
-  GainControl.MkGainControl duration ref to -> durationNames asking duration <> objectRefNames asking ref <> playerRefNames asking to
-
-grantLookAtExiledNames :: (Monoid r) => Asking r -> GrantLookAtExiled.GrantLookAtExiled -> r
-grantLookAtExiledNames asking x = case x of
-  GrantLookAtExiled.MkGrantLookAtExiled cards _followsExiler -> objectRefNames asking cards
-
-grantPlayFromExileNames :: (Monoid r) => Asking r -> GrantPlayFromExile.GrantPlayFromExile -> r
-grantPlayFromExileNames asking x = case x of
-  GrantPlayFromExile.MkGrantPlayFromExile duration player ref _spending _alternativeCost condition _verb _increase _landEnters _upTo _zone -> durationNames asking duration <> playerRefNames asking player <> objectRefNames asking ref <> foldMap (conditionNames asking) condition
 
 -- A granted ability's slots are its OWN: each read resolves against the
 -- bindings of the stack object it becomes or of the object it is granted to,
@@ -2083,10 +1549,6 @@ lifeGainRNames :: (Monoid r) => Asking r -> LifeGainR.LifeGainR -> r
 lifeGainRNames asking x = case x of
   LifeGainR.MkLifeGainR whose _rewrite -> controllerRelationNames asking whose
 
-lifeLossNames :: (Monoid r) => Asking r -> LifeLoss.LifeLoss -> r
-lifeLossNames asking x = case x of
-  LifeLoss.MkLifeLoss player quantity _cause tally -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) tally
-
 lifeLossPatternNames :: (Monoid r) => Asking r -> LifeLossPattern.LifeLossPattern -> r
 lifeLossPatternNames asking x = case x of
   LifeLossPattern.MkLifeLossPattern whose _whichCause -> controllerRelationNames asking whose
@@ -2099,22 +1561,10 @@ limitUnlessNames :: (Monoid r) => Asking r -> LimitUnless.LimitUnless -> r
 limitUnlessNames asking x = case x of
   LimitUnless.MkLimitUnless _limit _comparison attackers unless -> foldMap (affectedNames asking) attackers <> foldMap (conditionNames asking) unless
 
-lookAtNames :: (Monoid r) => Asking r -> LookAt.LookAt -> r
-lookAtNames asking x = case x of
-  LookAt.MkLookAt ref slot looker -> objectRefNames asking ref <> slotNames asking slot <> playerRefNames asking looker
-
 madnessCostNames :: (Monoid r) => Asking r -> (keyword -> r) -> MadnessCost.MadnessCost keyword -> r
 madnessCostNames asking onKeyword x = case x of
   MadnessCost.Stated cost -> costNames asking onKeyword cost
   MadnessCost.OwnManaCost -> mempty
-
-changeTargetsNames :: (Monoid r) => Asking r -> ChangeTargets.ChangeTargets -> r
-changeTargetsNames asking x = case x of
-  ChangeTargets.MkChangeTargets objects onto -> objectRefNames asking objects <> foldMap (objectRefNames asking) onto
-
-makeForetoldNames :: (Monoid r) => Asking r -> MakeForetold.MakeForetold -> r
-makeForetoldNames asking x = case x of
-  MakeForetold.MkMakeForetold cards _manaCostReducedBy -> objectRefNames asking cards
 
 manaAdditionNames :: (Monoid r) => Asking r -> ManaAddition.ManaAddition -> r
 manaAdditionNames asking x = case x of
@@ -2156,18 +1606,6 @@ manaRiderNames asking x = case x of
 measuresNames :: (Monoid r) => Asking r -> Measures.Measures -> r
 measuresNames asking x = case x of
   Measures.MkMeasures _measure _comparison operand -> operandNames asking operand
-
-meldNames :: (Monoid r) => Asking r -> (card -> r) -> Meld.Meld card -> r
-meldNames asking onCard x = case x of
-  Meld.MkMeld objects result -> objectRefNames asking objects <> melded asking (onCard result)
-
-millNames :: (Monoid r) => Asking r -> Mill.Mill -> r
-millNames asking x = case x of
-  Mill.MkMill player quantity tally slot -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (millTallyNames asking) tally <> foldMap (slotNames asking) slot
-
-millTallyNames :: (Monoid r) => Asking r -> MillTally.MillTally -> r
-millTallyNames asking x = case x of
-  MillTally.MkMillTally slot filter_ -> slotNames asking slot <> filterNames asking filter_
 
 modalNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Modal.Modal card ability -> r
 modalNames asking onCard onAbility x = case x of
@@ -2237,31 +1675,9 @@ modifyPowerToughnessNames :: (Monoid r) => Asking r -> ModifyPowerToughness.Modi
 modifyPowerToughnessNames asking x = case x of
   ModifyPowerToughness.MkModifyPowerToughness power toughness -> quantityNames asking power <> quantityNames asking toughness
 
-modifyTargetNames :: (Monoid r) => Asking r -> (ability -> r) -> ModifyTarget.ModifyTarget ability -> r
-modifyTargetNames asking onAbility x = case x of
-  ModifyTarget.MkModifyTarget duration modification ref each -> durationNames asking duration <> modificationNames asking onAbility modification <> objectRefNames asking ref <> foldMap (slotNames asking) each
-
-monarchTargetNames :: (Monoid r) => Asking r -> MonarchTarget.MonarchTarget -> r
-monarchTargetNames asking x = case x of
-  MonarchTarget.TheController -> mempty
-  MonarchTarget.ControllerOfSource -> mempty
-  MonarchTarget.InSlot slotName -> slotNames asking slotName
-
 morphNames :: (Monoid r) => Asking r -> (keyword -> r) -> Morph.Morph keyword -> r
 morphNames asking onKeyword x = case x of
   Morph.MkMorph cost _variant -> costNames asking onKeyword cost
-
-moveCountersNames :: (Monoid r) => Asking r -> MoveCounters.MoveCounters -> r
-moveCountersNames asking x = case x of
-  MoveCounters.MkMoveCounters from kinds slot to -> objectRefNames asking from <> movedKindsNames asking kinds <> foldMap (slotNames asking) slot <> objectRefNames asking to
-
-moveManaNames :: (Monoid r) => Asking r -> MoveMana.MoveMana -> r
-moveManaNames asking x = case x of
-  MoveMana.MkMoveMana from to -> playerRefNames asking from <> foldMap (playerRefNames asking) to
-
-moveToZoneNames :: (Monoid r) => Asking r -> (ability -> r) -> MoveToZone.MoveToZone ability -> r
-moveToZoneNames asking onAbility x = case x of
-  MoveToZone.MkMoveToZone ref _zone riders slot _origin placement duration -> foldMap (moveDurationNames asking) duration <> objectRefNames asking ref <> entryRidersNames asking (quantityNames asking) onAbility riders <> foldMap (slotNames asking) slot <> libraryPlacementNames asking placement
 
 moveDurationNames :: (Monoid r) => Asking r -> MoveDuration.MoveDuration -> r
 moveDurationNames asking x = case x of
@@ -2310,10 +1726,6 @@ objectRefNames asking x = case x of
   ObjectRef.AttackedBy slot -> slotNames asking slot
   ObjectRef.FromAnywhere fromAnywhere -> history asking HistoryRead.Moves <> fromAnywhereNames asking fromAnywhere
   ObjectRef.AllOf refs -> foldMap (objectRefNames asking) refs
-
-offerCastNames :: (Monoid r) => Asking r -> OfferCast.OfferCast -> r
-offerCastNames asking x = case x of
-  OfferCast.MkOfferCast ref caster _optionality _verb offer repetition _copied _controlWhileResolving slot -> objectRefNames asking ref <> playerRefNames asking caster <> castOfferNames asking offer <> castRepetitionNames asking repetition <> foldMap (slotNames asking) slot
 
 operandNames :: (Monoid r) => Asking r -> Operand.Operand -> r
 operandNames asking x = case x of
@@ -2388,10 +1800,6 @@ permanentsDealCombatDamageToPlayerNames asking x = case x of
 playerCounterTallyNames :: (Monoid r) => Asking r -> PlayerCounterTally.PlayerCounterTally -> r
 playerCounterTallyNames asking x = case x of
   PlayerCounterTally.MkPlayerCounterTally player _kind -> playerRefNames asking player
-
-playerCountersNames :: (Monoid r) => Asking r -> PlayerCounters.PlayerCounters -> r
-playerCountersNames asking x = case x of
-  PlayerCounters.MkPlayerCounters player _kind quantity -> playerRefNames asking player <> quantityNames asking quantity
 
 activationCriteriaNames :: (Monoid r) => Asking r -> ActivationCriteria.ActivationCriteria -> r
 activationCriteriaNames asking x = case x of
@@ -2502,10 +1910,6 @@ keywordInstanceNames asking x = case x of
   KeywordInstance.Own _ordinal -> mempty
   KeywordInstance.Granted objectId _timestamp _ordinal -> names asking (== objectId)
 
-playerQuantityNames :: (Monoid r) => Asking r -> PlayerQuantity.PlayerQuantity -> r
-playerQuantityNames asking x = case x of
-  PlayerQuantity.MkPlayerQuantity player quantity -> playerRefNames asking player <> quantityNames asking quantity
-
 playerRefNames :: (Monoid r) => Asking r -> PlayerRef.PlayerRef -> r
 playerRefNames asking x = case x of
   PlayerRef.EachPlayerExcept slotName -> slotNames asking slotName
@@ -2521,10 +1925,6 @@ playerRefNames asking x = case x of
   PlayerRef.Attacking attackingPlayers -> attackingPlayersNames asking attackingPlayers
   PlayerRef.Superlative _ -> mempty
   PlayerRef.InRole _ -> mempty
-
-playerSacrificesNames :: (Monoid r) => Asking r -> PlayerSacrifices.PlayerSacrifices -> r
-playerSacrificesNames asking x = case x of
-  PlayerSacrifices.MkPlayerSacrifices players filter_ quantity permanents -> playerRefNames asking players <> filterNames asking filter_ <> quantityNames asking quantity <> foldMap (slotNames asking) permanents
 
 playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.PlayerStaticAbility -> r
 playerStaticAbilityNames asking x = case x of
@@ -2562,18 +1962,6 @@ powerNames :: (Monoid r) => Asking r -> Power.Power -> r
 powerNames asking x = case x of
   Power.MkPower unwrap -> quantityNames asking unwrap
 
-preventAllDamageNames :: (Monoid r) => Asking r -> (effect -> r) -> PreventAllDamage.PreventAllDamage effect -> r
-preventAllDamageNames asking onEffect x = case x of
-  PreventAllDamage.MkPreventAllDamage duration _kind ref whatRecipient _whoRecipient _direction chosenSource whatSource riders -> durationNames asking duration <> foldMap (objectRefNames asking) ref <> foldMap (filterNames asking) whatRecipient <> foldMap (filterNames asking) chosenSource <> filterNames asking whatSource <> foldMap onEffect riders
-
-preventNextDamageNames :: (Monoid r) => Asking r -> (effect -> r) -> PreventNextDamage.PreventNextDamage effect -> r
-preventNextDamageNames asking onEffect x = case x of
-  PreventNextDamage.MkPreventNextDamage duration _kind ref whatRecipient _whoRecipient chosenSource quantity riders -> durationNames asking duration <> foldMap (objectRefNames asking) ref <> foldMap (filterNames asking) whatRecipient <> foldMap (filterNames asking) chosenSource <> quantityNames asking quantity <> foldMap onEffect riders
-
-nextDamageInstanceNames :: (Monoid r) => Asking r -> (effect -> r) -> NextDamageInstance.NextDamageInstance effect -> r
-nextDamageInstanceNames asking onEffect x = case x of
-  NextDamageInstance.MkNextDamageInstance duration _kind ref chosenSource riders _outcome -> durationNames asking duration <> objectRefNames asking ref <> filterNames asking chosenSource <> foldMap onEffect riders
-
 preventionNames :: (Monoid r) => Asking r -> Prevention.Prevention -> r
 preventionNames asking x = case x of
   Prevention.MkPrevention by amounts rider -> candidateIdNames asking by <> names asking (`Map.member` amounts) <> foldMap (foldMap (recipientNames asking) . Map.keys) amounts <> foldMap (preventionRiderNames asking) rider
@@ -2590,22 +1978,9 @@ projectedCharacteristicsNames :: (Monoid r) => Asking r -> ProjectedCharacterist
 projectedCharacteristicsNames asking x = case x of
   ProjectedCharacteristics.MkProjectedCharacteristics _names _supertypes keywords _colors _manaCost _manaValue _power _toughness _loyalty _defense _intensity characteristicPT _cardTypes _subtypes staticAbilities playerAbilities grantedPlayerAbilities grantedStaticAbilities grantedRuleAbilities specialActions activatedAbilities replacementEffects triggeredAbilities delayedAbilities enchant castingPermissions ruleAbilities _lostAllAbilities _hasFullText _wordChanges textChangedKeywords _combatDamageAmount _combatDamageOptions _grantsStationToughness additionalCosts additionalCostChoices alternativeCosts costReductions grantedCostReductions grantedAlternativeCosts _grantedSpendManaAsThough _halves exceptions mergedDonors prepare alternativeSpell _prototyped spell _circled _definesChosenColor flipped -> foldMap (keywordNames asking) (Map.keys keywords) <> foldMap (characteristicPTNames asking) characteristicPT <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty))) staticAbilities <> foldMap (playerStaticAbilityNames asking) playerAbilities <> foldMap (playerStaticAbilityNames asking . snd) grantedPlayerAbilities <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty)) . snd) grantedStaticAbilities <> ruleAbilitiesNames asking grantedRuleAbilities <> foldMap (specialActionNames asking) specialActions <> foldMap (activatedAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) activatedAbilities <> foldMap (printedReplacementNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty)))) replacementEffects <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) triggeredAbilities <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) delayedAbilities <> foldMap (targetSlotNames asking) enchant <> foldMap (castingPermissionNames asking) castingPermissions <> ruleAbilitiesNames asking ruleAbilities <> foldMap (keywordNames asking) (Map.keys textChangedKeywords) <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts <> foldMap (costChoiceNames asking) additionalCostChoices <> foldMap (alternativeCostNames asking) alternativeCosts <> foldMap (costReductionNames asking) costReductions <> foldMap (costReductionNames asking) grantedCostReductions <> foldMap (alternativeCostNames asking) grantedAlternativeCosts <> foldMap (copyExceptionNames asking (grantedAbilityNames asking (const mempty))) exceptions <> foldMap (projectedCharacteristicsNames asking) mergedDonors <> foldMap (faceNames asking (const mempty)) prepare <> foldMap (faceNames asking (const mempty)) alternativeSpell <> modalNames asking (const mempty) (grantedAbilityNames asking (const mempty)) spell <> foldMap (projectedCharacteristicsNames asking) flipped
 
--- What is prohibited names no object.
-prohibitNames :: (Monoid r) => Asking r -> Prohibit.Prohibit -> r
-prohibitNames asking x = case x of
-  Prohibit.MkProhibit _what duration affected -> durationNames asking duration <> restrictedCreaturesNames asking (objectRefNames asking) affected
-
 protectionNames :: (Monoid r) => Asking r -> Protection.Protection keyword -> r
 protectionNames asking x = case x of
   Protection.MkProtection quality spares -> filterNames asking quality <> foldMap (filterNames asking) spares
-
-putCountersNames :: (Monoid r) => Asking r -> PutCounters.PutCounters -> r
-putCountersNames asking x = case x of
-  PutCounters.MkPutCounters kind quantity ref _ -> counterKindNames asking (keywordNames asking) kind <> quantityNames asking quantity <> objectRefNames asking ref
-
-putCountersFromNames :: (Monoid r) => Asking r -> PutCountersFrom.PutCountersFrom -> r
-putCountersFromNames asking x = case x of
-  PutCountersFrom.MkPutCountersFrom from kind ref -> slotNames asking from <> foldMap (counterKindNames asking (keywordNames asking)) kind <> objectRefNames asking ref
 
 -- Every slot, PlayerRef, Scope, Filter, keyword and nested quantity through
 -- Parun.Engine.Children; the arms below are the history reads (CR 733.3) and
@@ -2669,10 +2044,6 @@ recipientNames asking x = case x of
   Recipient.ToObject objectId -> names asking (== objectId)
   Recipient.ToPile _pile -> mempty
 
-redirectDamageNames :: (Monoid r) => Asking r -> RedirectDamage.RedirectDamage -> r
-redirectDamageNames asking x = case x of
-  RedirectDamage.MkRedirectDamage duration _kind amount from whatRecipient _whoRecipient to chosenSource _uses whatSource -> durationNames asking duration <> foldMap (quantityNames asking) amount <> foldMap (objectRefNames asking) from <> foldMap (filterNames asking) whatRecipient <> objectRefNames asking to <> foldMap (filterNames asking) chosenSource <> filterNames asking whatSource
-
 reinforceNames :: (Monoid r) => Asking r -> (keyword -> r) -> Reinforce.Reinforce keyword -> r
 reinforceNames asking onKeyword x = case x of
   Reinforce.MkReinforce _amount cost -> costNames asking onKeyword cost
@@ -2683,30 +2054,6 @@ removalCountNames asking x = case x of
   RemovalCount.UpTo quantity -> quantityNames asking quantity
   RemovalCount.AnyNumber -> mempty
   RemovalCount.All -> mempty
-
-removeCountersNames :: (Monoid r) => Asking r -> RemoveCounters.RemoveCounters -> r
-removeCountersNames asking x = case x of
-  RemoveCounters.MkRemoveCounters kind quantity slot tally -> counterKindNames asking (keywordNames asking) kind <> quantityNames asking quantity <> slotNames asking slot <> foldMap (slotNames asking) tally
-
-removePlayerCountersNames :: (Monoid r) => Asking r -> RemovePlayerCounters.RemovePlayerCounters -> r
-removePlayerCountersNames asking x = case x of
-  RemovePlayerCounters.MkRemovePlayerCounters player _kind quantity tally -> playerRefNames asking player <> quantityNames asking quantity <> foldMap (slotNames asking) tally
-
-removeCountersAmongNames :: (Monoid r) => Asking r -> RemoveCountersAmong.RemoveCountersAmong -> r
-removeCountersAmongNames asking x = case x of
-  RemoveCountersAmong.MkRemoveCountersAmong count from kind tally -> removalCountNames asking count <> objectRefNames asking from <> whichCountersNames asking (keywordNames asking) kind <> foldMap (slotNames asking) tally
-
-repeatNames :: (Monoid r) => Asking r -> (effect -> r) -> Repeat.Repeat effect -> r
-repeatNames asking onEffect x = case x of
-  Repeat.MkRepeat chooser body gate otherChooser ifAgain -> playerRefNames asking chooser <> foldMap onEffect body <> foldMap (conditionNames asking) gate <> foldMap (playerRefNames asking) otherChooser <> foldMap onEffect ifAgain
-
-repeatIfNames :: (Monoid r) => Asking r -> (effect -> r) -> RepeatIf.RepeatIf effect -> r
-repeatIfNames asking onEffect x = case x of
-  RepeatIf.MkRepeatIf process condition ifHolds -> foldMap onEffect process <> conditionNames asking condition <> foldMap onEffect ifHolds
-
-replaceNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> Replace.Replace card ability effect -> r
-replaceNames asking onCard onAbility onEffect x = case x of
-  Replace.MkReplace duration _uses _origin condition effect -> durationNames asking duration <> foldMap (conditionNames asking) condition <> replacementEffectNames asking onCard onAbility onEffect effect
 
 replacementEffectNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> ReplacementEffect.ReplacementEffect card ability effect -> r
 replacementEffectNames asking onCard onAbility onEffect x = case x of
@@ -2734,19 +2081,6 @@ replacementEffectNames asking onCard onAbility onEffect x = case x of
       PlaneswalkRewrite.RunEffects effects -> foldMap onEffect effects
   ReplacementEffect.PhaseR (PhaseR.MkPhaseR (PhasePattern.MkPhasePattern _whichPhase whose) rewrite) -> controllerRelationNames asking whose <> phaseRewriteNames onEffect rewrite
 
-requireAttackNames :: (Monoid r) => Asking r -> RequireAttack.RequireAttack -> r
-requireAttackNames asking x = case x of
-  RequireAttack.MkRequireAttack duration attacker defender -> durationNames asking duration <> restrictedCreaturesNames asking (objectRefNames asking) attacker <> foldMap (attackTargetRefNames asking) defender
-
-requireBlockNames :: (Monoid r) => Asking r -> RequireBlock.RequireBlock -> r
-requireBlockNames asking x = case x of
-  RequireBlock.MkRequireBlock duration blocker attacker _ -> durationNames asking duration <> restrictedCreaturesNames asking (objectRefNames asking) blocker <> foldMap (restrictedCreaturesNames asking (objectRefNames asking)) attacker
-
-restrictedCreaturesNames :: (Monoid r) => Asking r -> (named -> r) -> RestrictedCreatures.RestrictedCreatures named -> r
-restrictedCreaturesNames asking onNamed x = case x of
-  RestrictedCreatures.Named named -> onNamed named
-  RestrictedCreatures.Matching filter_ -> filterNames asking filter_
-
 exilePermanentsNames :: (Monoid r) => Asking r -> ExilePermanents.ExilePermanents keyword -> r
 exilePermanentsNames asking x = case x of
   ExilePermanents.MkExilePermanents _count whichPermanents -> filterNames asking whichPermanents
@@ -2754,14 +2088,6 @@ exilePermanentsNames asking x = case x of
 returnPermanentsNames :: (Monoid r) => Asking r -> ReturnPermanents.ReturnPermanents keyword -> r
 returnPermanentsNames asking x = case x of
   ReturnPermanents.MkReturnPermanents _count whichPermanents -> filterNames asking whichPermanents
-
-revealNames :: (Monoid r) => Asking r -> Reveal.Reveal -> r
-revealNames asking x = case x of
-  Reveal.MkReveal ref slot -> objectRefNames asking ref <> foldMap (slotNames asking) slot
-
-rollDieNames :: (Monoid r) => Asking r -> RollDie.RollDie -> r
-rollDieNames asking x = case x of
-  RollDie.MkRollDie _sides count modifier _reading slot other _roller highest store -> quantityNames asking count <> foldMap (quantityNames asking) modifier <> slotNames asking slot <> foldMap (slotNames asking) other <> foldMap (slotNames asking) highest <> foldMap (slotNames asking) store
 
 ruleAbilitiesNames :: (Monoid r) => Asking r -> RuleAbilities.RuleAbilities -> r
 ruleAbilitiesNames asking x = case x of
@@ -2778,10 +2104,6 @@ exileFromGraveyardNames asking x = case x of
 sacrificeAnyNumberNames :: (Monoid r) => Asking r -> SacrificeAnyNumber.SacrificeAnyNumber -> r
 sacrificeAnyNumberNames asking x = case x of
   SacrificeAnyNumber.MkSacrificeAnyNumber filter_ kind each -> filterNames asking filter_ <> foldMap (counterKindNames asking (keywordNames asking)) kind <> quantityNames asking each
-
-sacrificeEffectNames :: (Monoid r) => Asking r -> SacrificeEffect.SacrificeEffect -> r
-sacrificeEffectNames asking x = case x of
-  SacrificeEffect.MkSacrificeEffect ref _sacrificer sacrificed -> objectRefNames asking ref <> foldMap (slotNames asking) sacrificed
 
 sacrificeRestrictionNames :: (Monoid r) => Asking r -> SacrificeRestriction.SacrificeRestriction -> r
 sacrificeRestrictionNames asking x = case x of
@@ -2800,37 +2122,9 @@ scopeNames asking x = case x of
   Scope.InPosition _position inZone -> inZoneNames asking inZone
   Scope.AsTurnBegan -> mempty
 
-searchNames :: (Monoid r) => Asking r -> Search.Search -> r
-searchNames asking x = case x of
-  Search.MkSearch searcher owner _zones _outsideTheGame quantity filter_ descriptions _upTo _destination subject slot handSlot _differentIn _exactly _andOr -> playerRefNames asking searcher <> playerRefNames asking owner <> foldMap (quantityNames asking) quantity <> filterNames asking filter_ <> foldMap (filterNames asking) descriptions <> foldMap (slotNames asking) subject <> foldMap (slotNames asking) slot <> foldMap (slotNames asking) handSlot
-
 setBasePowerToughnessNames :: (Monoid r) => Asking r -> SetBasePowerToughness.SetBasePowerToughness -> r
 setBasePowerToughnessNames asking x = case x of
   SetBasePowerToughness.MkSetBasePowerToughness power toughness -> foldMap (quantityNames asking) power <> foldMap (quantityNames asking) toughness
-
-setClassLevelNames :: Asking r -> SetClassLevel.SetClassLevel -> r
-setClassLevelNames asking x = case x of
-  SetClassLevel.MkSetClassLevel _level slot -> slotNames asking slot
-
-setHalfLockedNames :: Asking r -> SetHalfLocked.SetHalfLocked -> r
-setHalfLockedNames asking x = case x of
-  SetHalfLocked.MkSetHalfLocked _every _locked slot -> slotNames asking slot
-
-anteNames :: (Monoid r) => Asking r -> Ante.Ante -> r
-anteNames asking x = case x of
-  Ante.MkAnte player ref slot -> playerRefNames asking player <> objectRefNames asking ref <> foldMap (slotNames asking) slot
-
-putStickerNames :: (Monoid r) => Asking r -> PutSticker.PutSticker -> r
-putStickerNames asking x = case x of
-  PutSticker.MkPutSticker player ref _kinds cap _free bound -> playerRefNames asking player <> objectRefNames asking ref <> foldMap (quantityNames asking) cap <> foldMap (slotNames asking) bound
-
-shuffleIntoLibraryNames :: (Monoid r) => Asking r -> ShuffleIntoLibrary.ShuffleIntoLibrary -> r
-shuffleIntoLibraryNames asking x = case x of
-  ShuffleIntoLibrary.MkShuffleIntoLibrary library ref slot -> foldMap (playerRefNames asking) library <> objectRefNames asking ref <> foldMap (slotNames asking) slot
-
-skipPhaseNames :: (Monoid r) => Asking r -> SkipPhase.SkipPhase -> r
-skipPhaseNames asking x = case x of
-  SkipPhase.MkSkipPhase player _selector _uses duration count -> playerRefNames asking player <> durationNames asking duration <> quantityNames asking count
 
 slotCountNames :: (Monoid r) => Asking r -> SlotCount.SlotCount -> r
 slotCountNames asking x = case x of
@@ -2847,10 +2141,6 @@ specialActionNames :: (Monoid r) => Asking r -> SpecialAction.SpecialAction -> r
 specialActionNames asking x = case x of
   SpecialAction.DiscardThisAnyTime -> mempty
   SpecialAction.IgnoreThisUntilEndOfTurn _abilityName cost -> costNames asking (keywordNames asking) cost
-
-speedDecreaseNames :: (Monoid r) => Asking r -> SpeedDecrease.SpeedDecrease -> r
-speedDecreaseNames asking x = case x of
-  SpeedDecrease.MkSpeedDecrease player quantity _floor_ -> playerRefNames asking player <> quantityNames asking quantity
 
 spellCastNames :: (Monoid r) => Asking r -> SpellCast.SpellCast -> r
 spellCastNames asking x = case x of
@@ -2889,14 +2179,6 @@ suspendNames :: (Monoid r) => Asking r -> (keyword -> r) -> Suspend.Suspend keyw
 suspendNames asking onKeyword x = case x of
   Suspend.MkSuspend _counters cost -> costNames asking onKeyword cost
 
-takeExtraTurnNames :: (Monoid r) => Asking r -> TakeExtraTurn.TakeExtraTurn -> r
-takeExtraTurnNames asking x = case x of
-  TakeExtraTurn.MkTakeExtraTurn player _skips count -> playerRefNames asking player <> quantityNames asking count
-
-tapNames :: (Monoid r) => Asking r -> Tap.Tap -> r
-tapNames asking x = case x of
-  Tap.MkTap ref tapped -> objectRefNames asking ref <> foldMap (slotNames asking) tapped
-
 tapForTotalPowerNames :: (Monoid r) => Asking r -> TapForTotalPower.TapForTotalPower keyword -> r
 tapForTotalPowerNames asking x = case x of
   TapForTotalPower.MkTapForTotalPower _totalPower whichPermanents -> filterNames asking whichPermanents
@@ -2908,10 +2190,6 @@ tapPermanentsNames asking x = case x of
 targetSlotNames :: (Monoid r) => Asking r -> TargetSlot.TargetSlot -> r
 targetSlotNames asking x = case x of
   TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided _together asCast -> poolNames asking pool <> foldMap (filterNames asking) filter_ <> foldMap (filterNames asking) asCast <> slotCountNames asking count <> foldMap (quantityNames asking) amount <> foldMap (playerRefNames asking) chooser <> foldMap (slotPerPlayerNames asking) perPlayer <> foldMap (quantityNames asking) divided
-
-theseDiscardNames :: (Monoid r) => Asking r -> TheseDiscard.TheseDiscard -> r
-theseDiscardNames asking x = case x of
-  TheseDiscard.MkTheseDiscard cards discarded -> objectRefNames asking cards <> foldMap (slotNames asking) discarded
 
 tokenPatternNames :: (Monoid r) => Asking r -> TokenPattern.TokenPattern -> r
 tokenPatternNames asking x = case x of
@@ -3139,10 +2417,6 @@ triggeredAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r)
 triggeredAbilityNames asking onCard onAbility x = case x of
   TriggeredAbility.MkTriggeredAbility condition modal intervening _name limit _functionsFrom -> triggerLimitNames asking limit <> triggerConditionNames asking condition <> modalNames asking onCard onAbility modal <> foldMap (conditionNames asking) intervening
 
-turnFaceDownNames :: (Monoid r) => Asking r -> (ability -> r) -> TurnFaceDown.TurnFaceDown ability -> r
-turnFaceDownNames asking onAbility x = case x of
-  TurnFaceDown.MkTurnFaceDown ref characteristics -> objectRefNames asking ref <> faceDownCharacteristicsNames asking onAbility characteristics
-
 turnUpRNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> TurnUpR.TurnUpR ability effect -> r
 turnUpRNames asking onAbility onEffect x = case x of
   TurnUpR.MkTurnUpR matching _requiring paying rewrite -> filterNames asking matching <> foldMap (costNames asking (keywordNames asking)) paying <> turnUpRewriteNames asking onAbility onEffect rewrite
@@ -3174,24 +2448,6 @@ untapRewriteNames :: (Monoid r) => Asking r -> UntapRewrite.UntapRewrite -> r
 untapRewriteNames asking x = case x of
   UntapRewrite.RemoveStunCounter -> mempty
   UntapRewrite.RemoveCounterToUntap counterKind -> counterKindNames asking (keywordNames asking) counterKind
-
-voteNames :: (Monoid r) => Asking r -> Vote.Vote -> r
-voteNames asking x = case x of
-  Vote.MkVote starter choices _ -> playerRefNames asking starter <> voteChoicesNames asking choices
-
-bidNames :: (Monoid r) => Asking r -> Bid.Bid -> r
-bidNames asking x = case x of
-  Bid.MkBid opening highBid highBidder -> quantityNames asking opening <> slotNames asking highBid <> slotNames asking highBidder
-
-voteChoicesNames :: (Monoid r) => Asking r -> VoteChoices.VoteChoices -> r
-voteChoicesNames asking x = case x of
-  VoteChoices.Objects voteObjects -> voteObjectsNames asking voteObjects
-  VoteChoices.Words slotName -> foldMap (slotNames asking) slotName
-  VoteChoices.Players votePlayers -> slotNames asking (VotePlayers.slot votePlayers)
-
-voteObjectsNames :: (Monoid r) => Asking r -> VoteObjects.VoteObjects -> r
-voteObjectsNames asking x = case x of
-  VoteObjects.MkVoteObjects filter_ slot -> filterNames asking filter_ <> slotNames asking slot
 
 wardNames :: (Monoid r) => Asking r -> (keyword -> r) -> Ward.Ward keyword -> r
 wardNames asking onKeyword x = case x of
