@@ -337,6 +337,7 @@ import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
+import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -2142,7 +2143,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho) scaling) ->
     fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho) <*> scalingChildren c scaling)
   ReplacementEffect.TokenR (TokenR.MkTokenR (TokenPattern.MkTokenPattern whose whatToken effectsOnly) scaling plus) ->
-    fmap ReplacementEffect.TokenR (TokenR.MkTokenR <$> (TokenPattern.MkTokenPattern <$> replacementWhose c whose <*> replacementFilter c whatToken <*> pure effectsOnly) <*> traverse (scalingChildren c) scaling <*> traverse (traverse (replacementCard c)) plus)
+    fmap ReplacementEffect.TokenR (TokenR.MkTokenR <$> (TokenPattern.MkTokenPattern <$> replacementWhose c whose <*> replacementFilter c whatToken <*> pure effectsOnly) <*> traverse (scalingChildren c) scaling <*> traverse (tokenPlusChildren c) plus)
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR matching requiring paying rewrite) ->
     fmap ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR <$> replacementFilter c matching <*> pure requiring <*> traverse (replacementProcedureCost c) paying <*> turnUpRewriteChildren c rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)
@@ -2302,6 +2303,13 @@ phaseRewriteChildren :: (Applicative f) => ReplacementChildren card ability effe
 phaseRewriteChildren c rewrite = case rewrite of
   PhaseRewrite.Skip -> pure rewrite
   PhaseRewrite.MaySkipFor effects -> PhaseRewrite.MaySkipFor <$> traverse (replacementEffect c) effects
+
+-- | The tokens a token replacement adds (CR 614.1a).
+tokenPlusChildren :: (Applicative f) => ReplacementChildren card ability effect f -> TokenPlus.TokenPlus card -> f (TokenPlus.TokenPlus card)
+tokenPlusChildren c plus = case plus of
+  TokenPlus.One card -> TokenPlus.One <$> replacementCard c card
+  TokenPlus.ThatMany card -> TokenPlus.ThatMany <$> replacementCard c card
+  TokenPlus.Instead card -> TokenPlus.Instead <$> replacementCard c card
 
 -- | How a replacement resizes an event (CR 614.1a): only an addition holds a child.
 scalingChildren :: (Applicative f) => ReplacementChildren card ability effect f -> Scaling.Scaling -> f Scaling.Scaling
