@@ -93,10 +93,13 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
-        "OrderTriggers": [
-          "$rockets",
-          "$uf"
-        ]
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
       }
     },
     {
