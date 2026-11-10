@@ -75,7 +75,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Training Regimen: at the beginning of combat on your turn (CR 603.2, 507.1) a +1/+1 counter goes on target creature you control; creatures you control with +1/+1 counters have trample (CR 613.1f, 702.19b), so the countered Bears tramples over Ornithopter",
+  "description": "Training Regimen: at the beginning of combat on your turn (CR 603.2b) a +1/+1 counter goes on target creature you control; creatures you control with +1/+1 counters have trample (CR 613.1f, 702.19b), so the countered Bears tramples over Ornithopter",
   "note": "Hill Giant gives the trigger a second candidate and keeps no counter, so it has no trample; bob's Centaur Courser has a +1/+1 counter but is not alice's, so it has none either and is refused as the target. On bob's turn the trigger does not fire: an unscheduled target prompt would fail the run, and the Bears still carry one counter.",
   "timeline": [
     {
