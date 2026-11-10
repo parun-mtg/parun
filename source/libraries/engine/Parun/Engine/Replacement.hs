@@ -1230,9 +1230,9 @@ breaches gs candidate rewrite pid n = case rewrite of
   LifeLossRewrite.LeaveAtLeast floor_ -> case Map.lookup pid (GameState.players gs) of
     Nothing -> False
     Just player -> Player.life player - toInteger n < toInteger floor_
-  -- The board is not consulted: a scaling's whole applicability is arithmetic on
-  -- the proposed amount, and rule 119.6's own death check is a state-based action
-  -- rather than a bound this may not cross.
+  -- Only a computed AddMore consults the board (`scale`): a scaling's whole
+  -- applicability is arithmetic on the proposed amount, and rule 119.6's own death
+  -- check is a state-based action rather than a bound this may not cross.
   --
   -- `Scaled (Multiply 1)` and `Scaled (AddMore 0)` resize nothing and are refused
   -- here. That is the Worship example's posture carried over rather than a rule of
@@ -1259,8 +1259,9 @@ breaches gs candidate rewrite pid n = case rewrite of
 
 -- CR 614.1a: would this rewrite actually change the gain? `breaches` above, for
 -- the gain class -- and simpler, since no arm of Parun.Types.LifeGainRewrite
--- reads the board. A gain the funnel proposes is never 0 (CR 119.10), so
--- DrawInstead and LoseInstead always change it.
+-- reads the board beyond a computed AddMore's quantity. A gain the funnel
+-- proposes is never 0 (CR 119.10), so DrawInstead and LoseInstead always
+-- change it.
 --
 -- `Scaled (Multiply 1)` and `Scaled (AddMore 0)` resize nothing and are refused,
 -- which is `breaches`' Scaled arm carried over word for word: a fence rather than

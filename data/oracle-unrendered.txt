@@ -1577,6 +1577,7 @@ haunting-echoes
 hauntwoods-shrieker
 havoc-jester
 hawkeye-avenging-archer
+hawkeye-young-avenger
 hawkeyes-bow
 head-banger
 head-games
