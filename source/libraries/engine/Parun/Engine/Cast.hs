@@ -3634,6 +3634,13 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               (\(keyword, count) -> let entries = Map.findWithDefault Map.empty keyword paid in maybe False (sum entries >) (Keyword.paymentLimit count keyword) || (Keyword.paidPerInstance keyword && maybe False (\each -> any (> each) entries) (snd =<< Keyword.optionalCost keyword)))
               optionalOffers
           withKicker = withOptionalPayments paid
+          -- CR 601.4: a candidate is offered only if the chosen modes satisfy
+          -- the instruction its announcement settles an unsettled one to
+          -- (Modal.settle), so Widow's Bite naming both modes without teamwork,
+          -- or one with it, has no candidate and rewinds below.
+          settledFor candidate =
+            let proposed = stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)
+             in Modal.selectionSatisfiedBy legal (Modal.settle (Condition.holds (Projection.fullView proposed) (Projection.sourceContext proposed (Just pid) sid) proposed sid) selection) chosenModes
           -- CR 702.27a's cost is additional too, so it rides the same fold.
           withBuyback candidate = maybe candidate (Cost.plus candidate) boughtBack
           -- CR 702.47a's costs are additional too, one per spliced card.
@@ -3659,7 +3666,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- reduction once it is.
           payableCandidates =
             filter
-              (\candidate -> any (\(extra, less, wayGives) -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (CandidateCost.cost candidate))) (wayCosts (permissions (CandidateCost.keyword candidate))))
+              (\candidate -> settledFor candidate && any (\(extra, less, wayGives) -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (CandidateCost.cost candidate))) (wayCosts (permissions (CandidateCost.keyword candidate))))
               (fmap (\candidate -> candidate {CandidateCost.cost = withSplice (withBuyback (withKicker (withModeCost (withEscalate (withEntwine (CandidateCost.cost candidate))))))}) candidateCosts)
       if null payableCandidates || overKickerLimit || not spliceValid
         then reject

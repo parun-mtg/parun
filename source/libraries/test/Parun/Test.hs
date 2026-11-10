@@ -173,6 +173,7 @@ import qualified Parun.Codec.CheckSpec
 import qualified Parun.Codec.ChoicesSpec
 import qualified Parun.Codec.ChooseBetweenSpec
 import qualified Parun.Codec.ChooseGroupSpec
+import qualified Parun.Codec.ChooseInsteadSpec
 import qualified Parun.Codec.ChooseNumberSpec
 import qualified Parun.Codec.ChoosePermanentsSpec
 import qualified Parun.Codec.ChoosePlayerAtRandomSpec
@@ -1205,6 +1206,7 @@ spec s registry corpus = do
   Parun.Codec.CheckSpec.spec s
   Parun.Codec.ChoicesSpec.spec s
   Parun.Codec.ChooseBetweenSpec.spec s
+  Parun.Codec.ChooseInsteadSpec.spec s
   Parun.Codec.ChooseNumberSpec.spec s
   Parun.Codec.ChooseGroupSpec.spec s
   Parun.Codec.ChoosePermanentsSpec.spec s

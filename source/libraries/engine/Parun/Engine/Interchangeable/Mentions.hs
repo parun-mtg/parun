@@ -114,6 +114,7 @@ import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
@@ -313,6 +314,7 @@ import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
@@ -2169,7 +2171,14 @@ millTallyNames asking x = case x of
 
 modalNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Modal.Modal card ability -> r
 modalNames asking onCard onAbility x = case x of
-  Modal.MkModal modes _selection _memory -> foldMap (modeNames asking onCard onAbility) modes
+  Modal.MkModal modes selection _memory -> foldMap (modeNames asking onCard onAbility) modes <> modeSelectionNames asking selection
+
+modeSelectionNames :: (Monoid r) => Asking r -> ModeSelection.ModeSelection -> r
+modeSelectionNames asking x = case x of
+  ModeSelection.ChooseExactly _ -> mempty
+  ModeSelection.ChooseExactlyWithRepeats _ -> mempty
+  ModeSelection.ChooseBetween _ -> mempty
+  ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> conditionNames asking condition <> modeSelectionNames asking ordinary <> modeSelectionNames asking instead
 
 modeNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Mode.Mode card ability -> r
 modeNames asking onCard onAbility x = case x of

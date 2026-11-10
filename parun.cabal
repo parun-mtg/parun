@@ -401,6 +401,8 @@ library codec
     Parun.Codec.ChooseCardName
     Parun.Codec.ChooseGroup
     Parun.Codec.ChooseGroupSpec
+    Parun.Codec.ChooseInstead
+    Parun.Codec.ChooseInsteadSpec
     Parun.Codec.ChooseNumber
     Parun.Codec.ChooseNumberSpec
     Parun.Codec.ChoosePermanents
@@ -2753,6 +2755,7 @@ library types
     Parun.Types.ChooseBetween
     Parun.Types.ChooseCardName
     Parun.Types.ChooseGroup
+    Parun.Types.ChooseInstead
     Parun.Types.ChooseNumber
     Parun.Types.ChoosePermanents
     Parun.Types.ChoosePlayer
