@@ -13,6 +13,12 @@ spec s = Spec.describe s "Parun.Codec.ModeMemory" $ do
       ModeMemory.codec
       ModeMemory.ObjectLifetime
       " \"ObjectLifetime\" "
+  Spec.it s "ThisTurn" $
+    Common.assertCodec
+      s
+      ModeMemory.codec
+      ModeMemory.ThisTurn
+      " \"ThisTurn\" "
   Spec.it s "round trips every constructor" $ Common.assertEnumCodec s ModeMemory.codec
   Spec.it s "has a schema" $
     Common.assertHasSchema s ModeMemory.codec

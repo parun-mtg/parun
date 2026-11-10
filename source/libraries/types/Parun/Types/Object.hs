@@ -932,13 +932,14 @@ data Object = MkObject
     -- the copies the object bears. Keyed as printed before any text change (CR
     -- 612.1, Parun.Engine.Projection.printedActivatedAbility).
     activatedOnce :: Map.Map (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) Natural.Natural,
-    -- | The modes each of this object's triggered abilities has chosen, for a
-    -- ModeMemory.ObjectLifetime instruction (CR 700.2b), keyed by the ability
+    -- | The modes each of this object's triggered abilities has chosen, each
+    -- with the turn (GameState.turnNumber) it was last chosen, for a
+    -- remembering ModeMemory (CR 700.2b), keyed by the ability
     -- by value as activatedOnce is, as printed before any text change (CR
     -- 612.1, Parun.Engine.Projection.printedTriggeredAbility). Written as the
     -- ability is put on the stack, so a countered instance still counts;
     -- per-incarnation (CR 400.7).
-    chosenModes :: Map.Map (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) (Set.Set ModeIndex.ModeIndex),
+    chosenModes :: Map.Map (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) (Map.Map ModeIndex.ModeIndex Natural.Natural),
     -- | CR 702.95b: the creature this one is paired with, and the seat the
     -- soulbond ability that paired them was controlled by; Nothing for every
     -- unpaired creature, which is nearly all of them.

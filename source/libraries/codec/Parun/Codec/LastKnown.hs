@@ -61,7 +61,7 @@ codec = Fields.object $ do
   paidCosts <- Fields.defaulted "paidCosts" Map.empty (Common.keyedList (Common.keyValue Keyword.codec (Common.keyedList (Common.keyValue KeywordInstance.codec Common.natural)))) LastKnown.paidCosts
   prototyped <- Fields.defaulted "prototyped" False Common.boolean LastKnown.prototyped
   announcedX <- Fields.defaulted "announcedX" Nothing (Common.maybe Common.natural) LastKnown.announcedX
-  chosenModes <- Fields.defaulted "chosenModes" Map.empty (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.set ModeIndex.codec))) LastKnown.chosenModes
+  chosenModes <- Fields.defaulted "chosenModes" Map.empty (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.naturalMap ModeIndex.codec Common.natural))) LastKnown.chosenModes
   controlClock <- Fields.defaulted "controlClock" Map.empty (Common.keyedList ControlClock.entry) LastKnown.controlClock
   zone <- Fields.required "zone" Zone.codec LastKnown.zone
   home <- Fields.defaulted "home" Zone.Battlefield Zone.codec LastKnown.home

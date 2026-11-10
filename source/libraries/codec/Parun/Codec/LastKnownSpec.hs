@@ -79,7 +79,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.paidCosts = Map.singleton (Keyword.Offspring (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) (Map.singleton (KeywordInstance.Own 1) 1),
           LastKnown.prototyped = True,
           LastKnown.announcedX = Just 4,
-          LastKnown.chosenModes = Map.singleton TriggeredAbilitySourceSpec.ability (Set.singleton (ModeIndex.MkModeIndex 2)),
+          LastKnown.chosenModes = Map.singleton TriggeredAbilitySourceSpec.ability (Map.singleton (ModeIndex.MkModeIndex 2) 3),
           LastKnown.controlClock = Map.singleton (PlayerId.MkPlayerId 1) ControlClock.SinceLastUpkeep,
           LastKnown.zone = Zone.Battlefield,
           LastKnown.home = Zone.Command,
@@ -99,7 +99,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"paidCosts\":[{\"key\":{\"type\":\"Offspring\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}},\"value\":[{\"key\":{\"type\":\"Own\",\"value\":1},\"value\":1}]}]"
           <> ",\"prototyped\":true"
           <> ",\"announcedX\":4"
-          <> ",\"chosenModes\":[{\"key\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"value\":[2]}]"
+          <> ",\"chosenModes\":[{\"key\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"value\":{\"2\":3}}]"
           <> ",\"controlClock\":[{\"player\":1,\"clock\":\"SinceLastUpkeep\"}]"
           <> ",\"zone\":\"Battlefield\",\"home\":\"Command\",\"pile\":6"
           <> ",\"lapsedGrants\":[{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":3},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":5}}}],\"tapped\":true} "

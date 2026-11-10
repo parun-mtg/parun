@@ -987,10 +987,15 @@ placeBorne srcId pending = do
       -- unfillable one, so CR 603.3c removes an ability left with none. A
       -- source gone before placement answers from its last known information
       -- (CR 113.7a), which data/scenarios' demonic-pact-dying-before-its-trigger-is-placed-still-bars-its-chosen-mode
+      -- proves. ThisTurn bars a mode stamped with this turn's number, so a
+      -- cleanup step's trigger (CR 514.3a) still sees it, as data/scenarios'
+      -- monument-to-endurance-offers-each-mode-once-a-turn-and-again-next-turn
       -- proves.
       remembered = case Modal.Type.memory modal of
         ModeMemory.NoMemory -> Set.empty
-        ModeMemory.ObjectLifetime -> maybe Set.empty (Map.findWithDefault Set.empty memoryKey) (Game.liveOrLastKnown Object.chosenModes LastKnown.chosenModes srcId gs)
+        ModeMemory.ObjectLifetime -> Map.keysSet chosenBefore
+        ModeMemory.ThisTurn -> Map.keysSet (Map.filter (== GameState.turnNumber gs) chosenBefore)
+      chosenBefore = maybe Map.empty (Map.findWithDefault Map.empty memoryKey) (Game.liveOrLastKnown Object.chosenModes LastKnown.chosenModes srcId gs)
       -- CR 612.1: a text change rewrites the ability, not which ability it is.
       memoryKey = Projection.printedTriggeredAbility srcId gs ability
       legal = Set.difference (Target.fillableModes StackObjectKind.TriggeredAbility Nothing (Just controller) bound srcId Map.empty modal gs) remembered
@@ -1054,7 +1059,7 @@ placeBorne srcId pending = do
       -- data/scenarios' demonic-pact-counts-a-mode-chosen-for-a-countered-trigger
       -- proves.
       Monad.when (Modal.Type.memory modal /= ModeMemory.NoMemory) $
-        State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.insertWith Set.union memoryKey (Set.fromList (Foldable.toList chosenModes)) (Object.chosenModes o)}) srcId (GameState.objects g)})
+        State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.insertWith Map.union memoryKey (Map.fromList [(mi, GameState.turnNumber g) | mi <- Foldable.toList chosenModes]) (Object.chosenModes o)}) srcId (GameState.objects g)})
       -- CR 603.3d: targets for the chosen mode(s) only, chosen as the ability is
       -- placed. A mode with no target slots asks nothing.
       let slots = Target.announcedSlots controller srcId gs (Modal.modesTargetSlots chosenModes modal)
