@@ -2184,15 +2184,19 @@ misinformation
 mist-dragon
 mistcaller
 mister-fantastic-reed-richards
+misty-knight-hero-for-hire
 misty-mountains-raider
 mitotic-slime
 mizzium-meddler
 mizzixs-mastery
+mjolnir-hammer-of-thor
 mob-verdict
 mobilizer-mech
 mocking-sprite
+mockingbird-ace-agent
 mogg-flunkies
 mogiss-marauder
+mole-man-moloid-master
 mole-worms
 molecule-man
 molten-birth
@@ -2201,12 +2205,15 @@ molten-psyche
 molten-sentry
 moment-of-glory
 moment-of-silence
+monica-rambeau-photon-living-light
 monks-fist
 monomania
 monstrous-war-leech
+moon-girl-and-devil-dinosaur
 moonlace
 moonmist
 moonshae-pixie-pixie-dust
+moonstone-harsh-mistress
 morality-shift
 mordor-muster
 moritte-of-the-frost
@@ -2215,12 +2222,14 @@ mortivore
 mossborn-hydra
 mossbridge-troll
 most-decrepit-old-bird-speak-secrets
+ms-marvel-kamala-khan
 mu-yanling-celestial-wind
 mu-yanling-sky-dancer
 mudbutton-clanger
 mulch
 muldrotha-the-gravetide
 multiply-by-zero
+multiversal-incursion
 multiversal-recruitment
 muraganda-raceway
 murder-investigation
@@ -2282,6 +2291,7 @@ new-way-forward
 nexus-of-fate
 nicol-bolas-planeswalker
 nicol-bolas-the-ravager-nicol-bolas-the-arisen
+night-nurse-healer-of-heroes
 night-shift-of-the-living-dead
 nighthowl-pursuer
 nightmares-thirst
@@ -2292,6 +2302,7 @@ nimbus-maze
 nine-lives
 nine-lives-familiar
 ninja-of-the-deep-hours
+ninja-of-the-hand
 nishoba-brawler
 nissa-steward-of-elements
 nissa-vastwood-seer-nissa-sage-animist
@@ -2329,6 +2340,7 @@ ogre-siegebreaker
 oin-the-brave
 ojutais-command
 okk
+okoye-dora-milaje-leader
 old-fat-spider
 old-fat-spider-cant-see-me
 old-growth-troll
@@ -2365,6 +2377,7 @@ oreskos-explorer
 oreskos-sun-guide
 orgg
 ori-keeper-of-songs
+origin-of-the-avengers
 ornate-imitations
 ornery-dilophosaur
 orzhova
@@ -2400,6 +2413,7 @@ panglacial-wurm
 panic
 panic-attack
 panopticon
+panther-pounce
 paradox-shaper-omit-variables
 paralyze
 paranormal-analyst
@@ -2443,6 +2457,7 @@ pest-infestation
 pestilent-cauldron-restorative-burst
 pestilent-haze
 pestilent-spirit
+pet-avengers
 petra-sphinx
 petrified-wood-kin
 phage-the-untouchable
@@ -2452,6 +2467,7 @@ phantasmal-image
 phantasmal-terrain
 phantom-beast
 phantom-tiger
+photon-blast-barrage
 phylactery-lich
 phyrexian-colossus
 phyrexian-fleshgorger
@@ -2490,6 +2506,7 @@ plea-for-power
 plunder-the-trollshaws
 poison-the-cup
 pokey-the-scallywagg
+political-triumph
 pollen-remedy
 polymorph
 polymorphists-jest
@@ -2568,6 +2585,7 @@ public-execution
 pull-from-eternity
 pulling-teeth
 pulmonic-sliver
+punishing-punch
 puppet-crafting
 purelace
 purging-scythe

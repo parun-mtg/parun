@@ -3343,6 +3343,9 @@ namedTokens =
       CardName.MkCardName (Text.pack "Land Mine"),
       -- Kwia Vigorbloom's "a colorless artifact token named Lotus".
       CardName.MkCardName (Text.pack "Lotus"),
+      -- Mole Man, Moloid Master's "a 1/1 green Minion creature token named
+      -- Moloid".
+      CardName.MkCardName (Text.pack "Moloid"),
       CardName.MkCardName (Text.pack "Nalaar Aetherjet"),
       -- Yotia Declares War's "a 0/2 colorless Thopter artifact creature token
       -- with flying named Ornithopter".
@@ -7604,6 +7607,16 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           any
             (\ability -> TriggeredAbility.condition ability == TriggerCondition.Enters EntersTrigger.defaultValue && (modalReadsAnnouncedX (TriggeredAbility.modal ability) || Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (TriggeredAbility.modal ability))))
             (Face.triggeredAbilities c)
+        -- CR 107.3i's reader: a "when you cast this spell" trigger (CR 113.6k)
+        -- reading the X of the spell that is its source (Photon Blast Barrage's
+        -- "copy it X times").
+        castTriggerReadsX c =
+          any
+            (\ability -> isSelfCast (TriggeredAbility.condition ability) && Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (TriggeredAbility.modal ability)))
+            (Face.triggeredAbilities c)
+        isSelfCast condition = case condition of
+          TriggerCondition.SpellCast cast -> SpellCast.spell cast == ActingPermanent.Self
+          _ -> False
         -- CR 107.3m's reader that no card writes: a KEYWORD whose minted CR 614.1c
         -- row carries the announcement (ravenous, CR 702.156a, on Jacked Rabbit).
         -- Read off the mint rather than named here, so the next such keyword owes
@@ -7619,6 +7632,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
             || any declaresVariable (announcedGateCostsOf (Face.spell c))
             || modalReadsAnnouncedX (Face.spell c)
             || entersTriggerReadsX c
+            || castTriggerReadsX c
             || turnedUpReadsX c
             || selfReductionReadsX c
             || filterReadsX c
