@@ -2809,6 +2809,16 @@ omniscienceSpec s registry =
           red = ManaSymbol.OfType (ManaType.Colored Color.Red)
       Spec.assertEqWith s "alice is offered the printed {R} and the grant's {0}" (manaOf hers) [Just (ManaCost.MkManaCost [red]), Just (ManaCost.MkManaCost [])]
       Spec.assertEqWith s "the identical copy in bob's hand is offered the printed {R} alone" (manaOf his) [Just (ManaCost.MkManaCost [red])]
+    -- The zone half of "from your hand": the `_` arm offers a library card its
+    -- printed cost unasked, so a grant that forgot its zone would add {0} there.
+    Spec.it s "CR 118.9 the grant does not reach its controller's own library" $ do
+      mountain <- S.printingOf s registry "Mountain"
+      omniscience <- S.printingOf s registry "Omniscience"
+      bolt <- S.printingOf s registry "Lightning Bolt"
+      let (_, granted) = omniscienceBoard mountain omniscience bolt 0 True
+          (top, gs) = S.addLibraryCard bolt S.alice granted
+          red = ManaSymbol.OfType (ManaType.Colored Color.Red)
+      Spec.assertEqWith s "the copy on top of alice's library is offered the printed {R} alone" (fmap Cost.Type.mana (Cost.costsFor S.alice (S.printingName bolt) top gs)) [Just (ManaCost.MkManaCost [red])]
     -- The other conjunct, on the same shape of board: bob controls the
     -- enchantment and alice does not, so the card in ALICE's hand is priced for
     -- her without the grant. Paired with the case above rather than folded into

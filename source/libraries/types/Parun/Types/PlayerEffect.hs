@@ -13,7 +13,7 @@ import qualified Parun.Types.DrawReveal as DrawReveal
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.InZone as InZone
@@ -238,9 +238,9 @@ data PlayerEffect
   | -- | CR 702.170f / Fblthp, Lost on the Range: a matching card in the named
     -- zone may be plotted from there, for its own plot cost or its mana cost.
     PlotFrom PlotFromZone.PlotFromZone
-  | -- | CR 118.9 / Omniscience: this player may cast a matching spell from their
-    -- hand without paying its mana cost.
-    CastFromHandWithoutPayingManaCost FreeCastFromHand.FreeCastFromHand
+  | -- | CR 118.9 / Omniscience, World War Hulk: this player may cast a matching
+    -- spell without paying its mana cost.
+    CastWithoutPayingManaCost FreeCast.FreeCast
   | -- | CR 101.2 / 122.1 / Solemnity, Melira Sylvok Outcast: this player can't get
     -- counters -- of the kind the Maybe names, or of every kind where it is Nothing.
     CantGetCounters (Maybe PlayerCounterKind.PlayerCounterKind)

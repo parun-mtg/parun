@@ -838,11 +838,21 @@ candidateCostsGiven permitted pid name oid gs =
               -- paying its printed cost or an alternative -- the hand, the `_` arm,
               -- and a graveyard some permission opens. Not where the permission
               -- itself fixes the cost: a plotted card (CR 702.170d), a foretold one
-              -- (CR 702.143a), a free CR 118.9 grant, flashback's or escape's own
-              -- cost, or rule 702.162a's converted cast. Parun.CastSpec's "CR
+              -- (CR 702.143a), a permission's own free cast (Extract Power),
+              -- flashback's or escape's own cost, or rule 702.162a's converted
+              -- cast. Parun.CastSpec's "CR
               -- 702.170d a Mulldrifter Aven Interrupter plotted is offered no evoke
               -- cost" proves it.
-              ordinary = fmap untagged (printed : alternatives) <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun
+              --
+              -- CR 118.9's other half, "applied to it from another effect", rides
+              -- there too, LAST so that `firstOffered` still reads the printed
+              -- cost: a STANDING grant (Omniscience) or a one-shot one (World War
+              -- Hulk) no per-card list can hold. Untagged, `untagged`'s reason.
+              -- CR 107.3b's "the only legal choice for X is 0" falls out rather
+              -- than being enforced: withoutPayingManaCost carries an empty
+              -- ManaCost, which has no variable to prompt for.
+              freeCast = if PlayerEffect.mayCastWithoutPayingManaCost pid oid gs then [untagged (withoutPayingManaCost face)] else []
+              ordinary = fmap untagged (printed : alternatives) <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
            in -- CR 118.8 / 601.2b: every candidate below owes this face's choice
               -- costs, whichever of them the caster announces, so the expansion
               -- wraps the whole list rather than any one arm of it. The zone is
@@ -1068,20 +1078,8 @@ candidateCostsGiven permitted pid name oid gs =
                     Expiry.permissionOpen pid permission gs,
                     Just alternative <- ExilePlayPermission.alternativeCost permission ->
                       [untagged (permissionCost alternative face)]
-                -- CR 118.9's other half, "applied to it from another effect", as a
-                -- STANDING grant (Omniscience): a player-scoped alternative cost no
-                -- per-card list can hold. APPENDED to the hand's ordinary list rather
-                -- than replacing it, CR 118.9a letting the controller announce which
-                -- single alternative they pay, and last so that `firstOffered` still
-                -- reads the printed cost. Untagged, `untagged`'s reason.
-                --
-                -- CR 107.3b's "the only legal choice for X is 0" falls out rather
-                -- than being enforced: withoutPayingManaCost carries an empty
-                -- ManaCost, which has no variable to prompt for.
-                Just Zone.Hand ->
-                  ordinary
-                    <> warped
-                    <> (if PlayerEffect.mayCastFromHandWithoutPayingManaCost pid oid gs then [untagged (withoutPayingManaCost face)] else [])
+                -- CR 702.185a: warp names the hand, `warped`'s note.
+                Just Zone.Hand -> ordinary <> warped
                 _ -> ordinary
    in case Game.lookupObject oid gs of
         Nothing -> []

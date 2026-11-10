@@ -12,7 +12,7 @@ import qualified Parun.Codec.DrawReveal as DrawReveal
 import qualified Parun.Codec.EntriesTrigger as EntriesTrigger
 import qualified Parun.Codec.ExtraVotes as ExtraVotes
 import qualified Parun.Codec.Filter as Filter
-import qualified Parun.Codec.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Codec.FreeCast as FreeCast
 import qualified Parun.Codec.GameOutcome as GameOutcome
 import qualified Parun.Codec.HexproofExemption as HexproofExemption
 import qualified Parun.Codec.InZone as InZone
@@ -117,7 +117,7 @@ codec =
           Arm.payload "CastFrom" CastFromZone.codec PlayerEffect.CastFrom (\x -> case x of PlayerEffect.CastFrom y -> Just y; _ -> Nothing),
           Arm.payload "PlayLandsFrom" InZone.codec PlayerEffect.PlayLandsFrom (\x -> case x of PlayerEffect.PlayLandsFrom y -> Just y; _ -> Nothing),
           Arm.payload "PlotFrom" PlotFromZone.codec PlayerEffect.PlotFrom (\x -> case x of PlayerEffect.PlotFrom y -> Just y; _ -> Nothing),
-          Arm.payload "CastFromHandWithoutPayingManaCost" FreeCastFromHand.codec PlayerEffect.CastFromHandWithoutPayingManaCost (\x -> case x of PlayerEffect.CastFromHandWithoutPayingManaCost y -> Just y; _ -> Nothing),
+          Arm.payload "CastWithoutPayingManaCost" FreeCast.codec PlayerEffect.CastWithoutPayingManaCost (\x -> case x of PlayerEffect.CastWithoutPayingManaCost y -> Just y; _ -> Nothing),
           Arm.payload "CantGetCounters" (Common.maybe PlayerCounterKind.codec) PlayerEffect.CantGetCounters (\x -> case x of PlayerEffect.CantGetCounters y -> Just y; _ -> Nothing),
           Arm.payload "StateCoinFlip" StatedFlip.codec PlayerEffect.StateCoinFlip (\x -> case x of PlayerEffect.StateCoinFlip y -> Just y; _ -> Nothing),
           Arm.payload "ModifyDieRoll" ModifiedRoll.codec PlayerEffect.ModifyDieRoll (\x -> case x of PlayerEffect.ModifyDieRoll y -> Just y; _ -> Nothing),
@@ -178,7 +178,7 @@ tagOf x = case x of
   PlayerEffect.CastFrom {} -> "CastFrom"
   PlayerEffect.PlayLandsFrom {} -> "PlayLandsFrom"
   PlayerEffect.PlotFrom {} -> "PlotFrom"
-  PlayerEffect.CastFromHandWithoutPayingManaCost {} -> "CastFromHandWithoutPayingManaCost"
+  PlayerEffect.CastWithoutPayingManaCost {} -> "CastWithoutPayingManaCost"
   PlayerEffect.CantGetCounters {} -> "CantGetCounters"
   PlayerEffect.StateCoinFlip {} -> "StateCoinFlip"
   PlayerEffect.ModifyDieRoll {} -> "ModifyDieRoll"

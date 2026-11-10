@@ -95,7 +95,7 @@ import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GameLossR as GameLossR
@@ -429,7 +429,7 @@ rewritePlayerEffect pairs effect = case effect of
   PlayerEffect.CantPlayLands f -> PlayerEffect.CantPlayLands (Filter.rewrite pairs f)
   PlayerEffect.CastFrom grant -> PlayerEffect.CastFrom grant {CastFromZone.matching = Filter.rewrite pairs (CastFromZone.matching grant), CastFromZone.additionalCosts = fmap (Filter.rewriteComponent pairs) (CastFromZone.additionalCosts grant)}
   PlayerEffect.PlotFrom grant -> PlayerEffect.PlotFrom grant {PlotFromZone.matching = Filter.rewrite pairs (PlotFromZone.matching grant)}
-  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> PlayerEffect.CastFromHandWithoutPayingManaCost grant {FreeCastFromHand.spells = Filter.rewrite pairs (FreeCastFromHand.spells grant), FreeCastFromHand.amount = fmap (rewriteQuantity pairs) (FreeCastFromHand.amount grant)}
+  PlayerEffect.CastWithoutPayingManaCost grant -> PlayerEffect.CastWithoutPayingManaCost grant {FreeCast.spells = Filter.rewrite pairs (FreeCast.spells grant), FreeCast.amount = fmap (rewriteQuantity pairs) (FreeCast.amount grant)}
   -- CR 702.16a's quality where the CARD states it, so a subtype word in it is a
   -- word on the card and CR 612.1 swaps it; the chosen-name sibling below is the
   -- arm CR 612.2's second sentence keeps a swap off.

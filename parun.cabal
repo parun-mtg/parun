@@ -899,8 +899,8 @@ library codec
     Parun.Codec.ForetellCostSpec
     Parun.Codec.Format
     Parun.Codec.FormatSpec
-    Parun.Codec.FreeCastFromHand
-    Parun.Codec.FreeCastFromHandSpec
+    Parun.Codec.FreeCast
+    Parun.Codec.FreeCastSpec
     Parun.Codec.FromAnywhere
     Parun.Codec.FromAnywhereSpec
     Parun.Codec.FromOutsideTheGame
@@ -3041,7 +3041,7 @@ library types
     Parun.Types.ForEachNumber
     Parun.Types.ForetellCost
     Parun.Types.Format
-    Parun.Types.FreeCastFromHand
+    Parun.Types.FreeCast
     Parun.Types.FromAnywhere
     Parun.Types.FromOutsideTheGame
     Parun.Types.FromReference

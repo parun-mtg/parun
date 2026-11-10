@@ -451,7 +451,7 @@ data Face card = MkFace
     --
     -- Printed-only, and deliberately so: an effect that APPLIES an alternative
     -- cost to a spell carries it elsewhere -- one-shot in Parun.Types.CastOffer,
-    -- standing in Parun.Types.PlayerEffect's CastFromHandWithoutPayingManaCost --
+    -- standing in Parun.Types.PlayerEffect's CastWithoutPayingManaCost --
     -- and one that GRANTS the card one rides the projection
     -- (ProjectedCharacteristics.grantedAlternativeCosts, Mine Security), and
     -- Parun.Engine.Cost.candidateCostsFor offers them all side by side. CR
