@@ -25,9 +25,7 @@ import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AsCopy as AsCopy
-import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRestriction as AttachRestriction
-import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
@@ -57,17 +55,10 @@ import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.CounterPattern as CounterPattern
-import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
-import qualified Parun.Types.DamageR as DamageR
-import qualified Parun.Types.DamageRewrite as DamageRewrite
-import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devotion as Devotion
-import qualified Parun.Types.DrawR as DrawR
-import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
@@ -75,37 +66,21 @@ import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
 import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EntersWith as EntersWith
-import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryHost as EntryHost
-import qualified Parun.Types.EntryOption as EntryOption
-import qualified Parun.Types.EntryPrice as EntryPrice
-import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRestriction as EntryRestriction
-import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
-import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
-import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FullText as FullText
-import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HowMany as HowMany
-import qualified Parun.Types.InstructionR as InstructionR
-import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
-import qualified Parun.Types.LifeGainR as LifeGainR
-import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
-import qualified Parun.Types.LifeLossR as LifeLossR
-import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaProduction as ManaProduction
-import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.ManaSpecification as ManaSpecification
@@ -118,11 +93,6 @@ import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
-import qualified Parun.Types.PerformerR as PerformerR
-import qualified Parun.Types.PhaseR as PhaseR
-import qualified Parun.Types.PhaseRewrite as PhaseRewrite
-import qualified Parun.Types.PlaneswalkR as PlaneswalkR
-import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
@@ -133,13 +103,9 @@ import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.RemovalCount as RemovalCount
 import Parun.Types.ReplacementEffect (ReplacementEffect)
-import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
-import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
-import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
-import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
@@ -148,22 +114,16 @@ import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
-import qualified Parun.Types.TokenPattern as TokenPattern
-import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
-import qualified Parun.Types.TurnUpR as TurnUpR
-import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.WordFamily as WordFamily
-import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
-import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 
 -- CR 613.1f's grant carries a whole quoted ability, and a card's abilities are
 -- written against a whole Card (CR 707.8a).

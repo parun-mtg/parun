@@ -2223,7 +2223,7 @@ damageRewriteChildren c rewrite = case rewrite of
   DamageRewrite.PreventRemovingCounters kind -> DamageRewrite.PreventRemovingCounters <$> replacementCounterKind c kind
   DamageRewrite.PreventNext _ -> pure rewrite
   DamageRewrite.PreventAllBut _ -> pure rewrite
-  DamageRewrite.PreventUpTo ceiling -> DamageRewrite.PreventUpTo <$> replacementQuantity c ceiling
+  DamageRewrite.PreventUpTo most -> DamageRewrite.PreventUpTo <$> replacementQuantity c most
   DamageRewrite.SetAmount _ -> pure rewrite
   DamageRewrite.Scale scaling -> DamageRewrite.Scale <$> scalingChildren c scaling
   DamageRewrite.Redirect recipient -> DamageRewrite.Redirect <$> replacementRecipient c recipient
