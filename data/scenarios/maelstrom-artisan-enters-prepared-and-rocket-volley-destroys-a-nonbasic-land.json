@@ -74,7 +74,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.8a, 205.4b: Maelstrom Artisan enters prepared, and its Rocket Volley copy destroys target nonbasic land but cannot target a basic one",
+  "description": "CR 701.8a, 205.4c: Maelstrom Artisan enters prepared, and its Rocket Volley copy destroys target nonbasic land but cannot target a basic one",
   "timeline": [
     {
       "do": {
@@ -103,6 +103,19 @@
         }
       },
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "Rocket Volley#2",
+          "targets": [
+            "$isl"
+          ]
+        }
+      },
       "step": "PrecombatMain",
       "turn": 1
     },

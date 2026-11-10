@@ -64,7 +64,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.23a, 305.6: Proctor's Gaze returns up to one target nonland permanent to its owner's hand and puts a basic land card from your library onto the battlefield tapped",
+  "description": "CR 701.23a, 205.4c: Proctor's Gaze returns up to one target nonland permanent to its owner's hand and puts a basic land card from your library onto the battlefield tapped",
   "timeline": [
     {
       "do": {

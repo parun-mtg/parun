@@ -64,8 +64,8 @@
       {
         "battlefield": [
           {
-            "card": "Ornithopter",
-            "label": "thopter"
+            "card": "Jayemdae Tome",
+            "label": "tome"
           },
           {
             "card": "Grizzly Bears",
@@ -132,7 +132,7 @@
           ],
           "object": "$gwd",
           "targets": [
-            "$thopter"
+            "$tome"
           ]
         }
       },
@@ -149,7 +149,7 @@
     {
       "check": {
         "Count": {
-          "card": "Ornithopter",
+          "card": "Jayemdae Tome",
           "count": 1,
           "player": "bob",
           "zone": "Graveyard"

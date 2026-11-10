@@ -8,6 +8,10 @@
           {
             "card": "Rapturous Moment",
             "label": "rm"
+          },
+          {
+            "card": "Plated Seastrider",
+            "label": "sea"
           }
         ],
         "library": [
@@ -55,7 +59,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 121.1, 701.9a, 106.4: Rapturous Moment draws three cards, then discards two, then adds {U}{U}{R}{R}{R}, which casts the Lightning Bolt it drew",
+  "description": "CR 121.1, 701.9a, 106.4: Rapturous Moment draws three cards, then discards two, then adds {U}{U}{R}{R}{R}, which casts the Lightning Bolt it drew and a {U}{U} creature",
   "timeline": [
     {
       "do": {
@@ -150,6 +154,35 @@
         "Life": {
           "life": 17,
           "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$sea"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plated Seastrider",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
       },
       "player": "alice",

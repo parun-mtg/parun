@@ -10,6 +10,14 @@
           },
           {
             "card": "Ajani Goldmane",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 4
+              }
+            ],
             "label": "ajani"
           },
           {
