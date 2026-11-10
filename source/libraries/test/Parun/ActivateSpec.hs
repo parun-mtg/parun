@@ -633,7 +633,7 @@ ninjutsuSpec s registry = Spec.describe s "Ninjutsu" $ do
                       ( Filter.Type.And
                           [ Filter.Type.HasCardType CardType.Creature,
                             Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
-                            Filter.Type.IsAttacking,
+                            Filter.Type.IsAttacking Nothing,
                             Filter.Type.HasBlockStatus BlockStatus.Unblocked
                           ]
                       )

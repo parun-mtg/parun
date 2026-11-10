@@ -10,6 +10,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Oracle.Prose as Prose
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Filter as Filter
@@ -108,7 +109,8 @@ phraseJoining joining f named = case f of
   Filter.HasAttached (Filter.HasSubtype Subtype.Equipment) -> [adjective (Text.pack "equipped")]
   Filter.IsTapped -> [adjective (Text.pack "tapped")]
   Filter.Not Filter.IsTapped -> [adjective (Text.pack "untapped")]
-  Filter.IsAttacking -> [adjective (Text.pack "attacking")]
+  Filter.IsAttacking Nothing -> [adjective (Text.pack "attacking")]
+  Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> [qualifier (Text.pack "that's attacking alone") (Text.pack "that are attacking alone")]
   Filter.IsBlocking -> [adjective (Text.pack "blocking")]
   Filter.HeldBy Holder.Controller PlayerRelation.You -> [qualifier (Text.pack "you control") (Text.pack "you control")]
   Filter.HeldBy Holder.Controller PlayerRelation.Opponent -> [qualifier (Text.pack "an opponent controls") (Text.pack "your opponents control")]

@@ -1660,7 +1660,7 @@ atom context n = case Node.tag n of
         | s == Oracle.Target.selfSlot -> Right (Filter.Not Filter.IsSource)
         | elem s (Map.elems (references context)) -> Right (Filter.Not (Filter.IsBound s))
       _ -> Node.untranslated n
-  "IsAttacking" -> Right Filter.IsAttacking
+  "IsAttacking" -> Right (Filter.IsAttacking Nothing)
   "IsBlocking" -> Right Filter.IsBlocking
   "IsTapped" -> Right Filter.IsTapped
   "IsUntapped" -> Right (Filter.Not Filter.IsTapped)

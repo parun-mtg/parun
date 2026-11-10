@@ -3,6 +3,7 @@ module Parun.Codec.Filter where
 import qualified Data.Typeable as Typeable
 import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.AbilityKind as AbilityKind
+import qualified Parun.Codec.AloneAmong as AloneAmong
 import qualified Parun.Codec.Anchor as Anchor
 import qualified Parun.Codec.BlockRole as BlockRole
 import qualified Parun.Codec.BlockStatus as BlockStatus
@@ -123,7 +124,7 @@ codec keywordCodec =
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,
       Arm.nullary "OfChosenPlayer" Filter.OfChosenPlayer,
       Arm.payload "OfRelatedPlayer" PlayerRelation.codec Filter.OfRelatedPlayer (\x -> case x of Filter.OfRelatedPlayer y -> Just y; _ -> Nothing),
-      Arm.nullary "IsAttacking" Filter.IsAttacking,
+      Arm.optionalPayload "IsAttacking" AloneAmong.codec Filter.IsAttacking (\x -> case x of Filter.IsAttacking y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingPlayer" PlayerRelation.codec Filter.IsAttackingPlayer (\x -> case x of Filter.IsAttackingPlayer y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingPlaneswalker" PlayerRelation.codec Filter.IsAttackingPlaneswalker (\x -> case x of Filter.IsAttackingPlaneswalker y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingBattle" PlayerRelation.codec Filter.IsAttackingBattle (\x -> case x of Filter.IsAttackingBattle y -> Just y; _ -> Nothing),

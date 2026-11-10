@@ -172,6 +172,7 @@ viewOfCardLapsed lapsed face =
           -- CR 506.3 / 509.1a: a card off the battlefield never attacked or
           -- blocked; CR 303.4b: nor is it attached to anything.
           Filter.attacking = False,
+          Filter.attackingAlone = False,
           -- CR 508.1b: a printed face attacks nothing, for the reason above.
           Filter.attackingPlayer = Nothing,
           -- CR 508.1b: nor any planeswalker, for the same reason.
@@ -473,6 +474,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- a departed creature out of the record, so Count.lastKnownView writes CR
       -- 608.2h's answer over this one.
       Filter.attacking = Game.isAttacking oid gs,
+      -- CR 506.5: the same map, holding this attacker and no other.
+      Filter.attackingAlone = Map.keys (Combat.attackers (GameState.combat gs)) == [oid],
       -- CR 508.1b: the same map's VALUE, kept only when it names a player. A
       -- creature attacking a planeswalker or a battle answers Nothing here and
       -- True above, which is CR 509.1a's and CR 802.4a's own three-way split --

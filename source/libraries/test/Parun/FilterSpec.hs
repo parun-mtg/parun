@@ -8,6 +8,7 @@ import qualified Data.Text as Text
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
@@ -103,6 +104,7 @@ blackCreature =
       Filter.identity = Just (ObjectId.MkObjectId 7),
       Filter.playerIdentity = Nothing,
       Filter.attacking = False,
+      Filter.attackingAlone = False,
       Filter.attackingPlayer = Nothing,
       Filter.attackingPlaneswalkerController = Nothing,
       Filter.attackingBattleProtector = Nothing,
@@ -193,6 +195,7 @@ devoidBigCreature =
       Filter.identity = Nothing,
       Filter.playerIdentity = Nothing,
       Filter.attacking = False,
+      Filter.attackingAlone = False,
       Filter.attackingPlayer = Nothing,
       Filter.attackingPlaneswalkerController = Nothing,
       Filter.attackingBattleProtector = Nothing,
@@ -1284,20 +1287,26 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   Spec.describe s "IsAttacking" $ do
     Spec.it s "matches a view whose combat status says so" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True}) Filter.Type.IsAttacking) "attacking"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True}) (Filter.Type.IsAttacking Nothing)) "attacking"
 
     Spec.it s "does not match a creature that is not attacking" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.IsAttacking)) "not attacking"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsAttacking Nothing))) "not attacking"
 
     -- CR 109.3: combat status is not a characteristic, so no other axis of
     -- the view can stand in for it. A 5-power creature is no more attacking
     -- than a 2-power one.
     Spec.it s "is independent of every characteristic axis" $ do
-      Spec.assertBool s (not (Filter.matches self devoidBigCreature Filter.Type.IsAttacking)) "power does not imply attacking"
+      Spec.assertBool s (not (Filter.matches self devoidBigCreature (Filter.Type.IsAttacking Nothing))) "power does not imply attacking"
 
     -- CR 506.3: only a creature can attack, and a player is not one.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.IsAttacking)) "player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsAttacking Nothing))) "player"
+
+    -- CR 506.5: alone reads its own field; attacking beside another is not alone.
+    Spec.it s "alone matches only a view attacking alone" $ do
+      let alone = Filter.Type.IsAttacking (Just AloneAmong.EveryAttacker)
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True, Filter.attackingAlone = True}) alone) "attacking alone"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) alone)) "attacking beside another"
 
   Spec.describe s "IsBlocking" $ do
     Spec.it s "matches a view whose combat status says so" $ do
@@ -1315,11 +1324,11 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) Filter.Type.IsBlocking)) "attacking does not imply blocking"
 
     Spec.it s "does not imply attacking" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.blocking = True}) Filter.Type.IsAttacking)) "blocking does not imply attacking"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.blocking = True}) (Filter.Type.IsAttacking Nothing))) "blocking does not imply attacking"
 
     -- Labyrinth of Skophos' own filter, over each role in turn.
     Spec.it s "Or [IsAttacking, IsBlocking] admits either role and rejects a creature in neither" $ do
-      let both = Filter.Type.Or [Filter.Type.IsAttacking, Filter.Type.IsBlocking]
+      let both = Filter.Type.Or [Filter.Type.IsAttacking Nothing, Filter.Type.IsBlocking]
       Spec.assertBool s (Filter.matches self (blackCreature {Filter.attacking = True}) both) "attacker"
       Spec.assertBool s (Filter.matches self (blackCreature {Filter.blocking = True}) both) "blocker"
       Spec.assertBool s (not (Filter.matches self blackCreature both)) "neither"
@@ -1348,8 +1357,8 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
         (Filter.Type.HasSubtype Subtype.Wall)
 
     Spec.it s "recurses through And, Or and Not" $ do
-      let before = Filter.Type.And [Filter.Type.Not (Filter.Type.HasSubtype Subtype.Island), Filter.Type.Or [Filter.Type.HasSubtype Subtype.Island, Filter.Type.IsAttacking]]
-          after = Filter.Type.And [Filter.Type.Not (Filter.Type.HasSubtype Subtype.Forest), Filter.Type.Or [Filter.Type.HasSubtype Subtype.Forest, Filter.Type.IsAttacking]]
+      let before = Filter.Type.And [Filter.Type.Not (Filter.Type.HasSubtype Subtype.Island), Filter.Type.Or [Filter.Type.HasSubtype Subtype.Island, Filter.Type.IsAttacking Nothing]]
+          after = Filter.Type.And [Filter.Type.Not (Filter.Type.HasSubtype Subtype.Forest), Filter.Type.Or [Filter.Type.HasSubtype Subtype.Forest, Filter.Type.IsAttacking Nothing]]
       Spec.assertEqWith s "every occurrence" (Filter.rewrite [(TextWord.SubtypeWord Subtype.Island, TextWord.SubtypeWord Subtype.Forest)] before) after
 
     -- CR 612.2: Baron Helmut Zemo's "black cards with fifteen or more black
@@ -1489,7 +1498,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) (Filter.Type.DeclaredThisTurn BlockRole.Attacker))) "attacking does not imply attacked"
 
     Spec.it s "does not imply attacking right now" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) Filter.Type.IsAttacking)) "attacked does not imply attacking"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredThisTurn = Set.singleton BlockRole.Attacker}) (Filter.Type.IsAttacking Nothing))) "attacked does not imply attacking"
 
     -- CR 506.3: only a creature can be declared as an attacker, and a
     -- player is not one.
@@ -1513,7 +1522,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.attacking = True}) Filter.Type.DeclaredAttackerThisCombat)) "attacking does not imply declared"
 
     Spec.it s "does not imply attacking right now" $ do
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackerThisCombat = True}) Filter.Type.IsAttacking)) "declared does not imply attacking"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.declaredAttackerThisCombat = True}) (Filter.Type.IsAttacking Nothing))) "declared does not imply attacking"
 
     -- And independent of the TURN-scoped atom, the distinction CR 500.8's
     -- additional combat phase makes observable: CR 511.3 empties the combat
@@ -1567,7 +1576,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "does not match a creature attacking something other than a player" $ do
       Spec.assertBool s (not (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttackingPlayer PlayerRelation.You))) "attacking a planeswalker is not attacking you"
       Spec.assertBool s (not (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttackingPlayer PlayerRelation.Opponent))) "nor attacking an opponent"
-      Spec.assertBool s (Filter.matches self attackingPlaneswalker Filter.Type.IsAttacking) "but it is still attacking"
+      Spec.assertBool s (Filter.matches self attackingPlaneswalker (Filter.Type.IsAttacking Nothing)) "but it is still attacking"
 
     -- CR 109.5: the relation is measured against the perspective, so one board
     -- answers both ways depending on who asks. `self` is player 0.
@@ -1612,7 +1621,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "reads the relation against the perspective" $ do
       Spec.assertBool s (not (Filter.matches self (attackingPlaneswalkerOf 1) (Filter.Type.IsAttackingPlaneswalker PlayerRelation.You))) "someone else's planeswalker is not yours"
       Spec.assertBool s (Filter.matches self (attackingPlaneswalkerOf 1) (Filter.Type.IsAttackingPlaneswalker PlayerRelation.Opponent)) "it is an opponent's"
-      Spec.assertBool s (Filter.matches self (attackingPlaneswalkerOf 1) Filter.Type.IsAttacking) "and it is attacking either way"
+      Spec.assertBool s (Filter.matches self (attackingPlaneswalkerOf 1) (Filter.Type.IsAttacking Nothing)) "and it is attacking either way"
 
     -- The other half of CR 509.1a's split, from this atom's side: the two subjects
     -- are disjoint, so a creature attacking a PLAYER is not attacking a
@@ -1660,7 +1669,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "reads the relation against the perspective" $ do
       Spec.assertBool s (not (Filter.matches self (attackingBattleOf 1) (Filter.Type.IsAttackingBattle PlayerRelation.You))) "a battle someone else protects is not yours"
       Spec.assertBool s (Filter.matches self (attackingBattleOf 1) (Filter.Type.IsAttackingBattle PlayerRelation.Opponent)) "it is an opponent's"
-      Spec.assertBool s (Filter.matches self (attackingBattleOf 1) Filter.Type.IsAttacking) "and it is attacking either way"
+      Spec.assertBool s (Filter.matches self (attackingBattleOf 1) (Filter.Type.IsAttacking Nothing)) "and it is attacking either way"
 
     -- CR 509.1a's three subjects are disjoint, from this atom's side: neither of
     -- the other two arms of AttackTarget answers this one.

@@ -353,7 +353,7 @@ mentorSpec s registry =
               expectedSlot =
                 TargetSlot.required
                   Pool.Creatures
-                  (Just (Filter.Type.And [Filter.Type.IsAttacking, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.LessThan (Operand.OfSource Measure.Power))]))
+                  (Just (Filter.Type.And [Filter.Type.IsAttacking Nothing, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.LessThan (Operand.OfSource Measure.Power))]))
               slotsOf ability = concatMap (Map.elems . Mode.targetSlots) (Modal.modes (TriggeredAbility.modal ability))
           Spec.assertEqWith s "two abilities" (length abilities) 2
           Spec.assertEqWith

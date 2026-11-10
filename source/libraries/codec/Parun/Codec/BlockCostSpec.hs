@@ -72,7 +72,7 @@ spec s = Spec.describe s "Parun.Codec.BlockCost" $ do
                       ( Quantity.Count
                           ( Count.MkCount
                               (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
-                              (Filter.And [Filter.IsSource, Filter.IsAttacking])
+                              (Filter.And [Filter.IsSource, Filter.IsAttacking Nothing])
                               Aggregation.Members
                           )
                       )

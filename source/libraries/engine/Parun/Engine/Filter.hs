@@ -19,6 +19,7 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockRole as BlockRole
@@ -285,6 +286,10 @@ data View = MkView
     -- battlefield, a player, a cast's snapshot -- the vacuous posture power and
     -- controller take.
     attacking :: Bool,
+    -- CR 506.5: is this candidate attacking alone right now -- attacking, with
+    -- no other creature attacking? Read off the same map as `attacking`, and
+    -- False wherever that is.
+    attackingAlone :: Bool,
     -- CR 508.1b: WHICH PLAYER is this candidate attacking? Read from
     -- GameState.combat like `attacking` above and off the same map, but off its
     -- VALUE rather than its keys: Combat.attackers records what each attacker was
@@ -943,6 +948,7 @@ playerView pid =
       playerIdentity = Just pid,
       -- CR 506.3: only a creature can attack, and a player is not one.
       attacking = False,
+      attackingAlone = False,
       -- CR 506.3 again: a player attacks nothing, so there is no player it is
       -- attacking either.
       attackingPlayer = Nothing,
@@ -2331,8 +2337,11 @@ matches context view predicate = case predicate of
   Filter.OwnsBoundAtLeast {} -> False
   -- CR 508.1k: a creature stays attacking until it is removed from combat or the
   -- combat phase ends, so this is a live read of the combat record, never a stamp
-  -- on the object.
-  Filter.IsAttacking -> attacking view
+  -- on the object. CR 506.5's "attacking alone" reads the same record.
+  Filter.IsAttacking Nothing -> attacking view
+  Filter.IsAttacking (Just AloneAmong.EveryAttacker) -> attackingAlone view
+  -- Not implemented (#6873).
+  Filter.IsAttacking (Just AloneAmong.AttackersOfItsPlayer) -> False
   -- CR 508.1b: the same live read one field over, and the relation is answered
   -- against the perspective here rather than baked, exactly as HeldBy's is
   -- -- CR 109.5's "you" is what the match is framed by, not a fact about the
@@ -3479,7 +3488,7 @@ manaValueThresholds predicate = case predicate of
   -- value, so CR 601.3a's sample has nothing to learn from it.
   Filter.CardsInGraveyardAtLeast _ -> []
   Filter.OwnsBoundAtLeast _ _ f -> manaValueThresholds f
-  Filter.IsAttacking -> []
+  Filter.IsAttacking _ -> []
   Filter.IsAttackingPlayer _ -> []
   Filter.IsAttackingPlaneswalker _ -> []
   Filter.IsAttackingBattle _ -> []
@@ -3657,7 +3666,7 @@ statesAQuality predicate = case predicate of
   Filter.IsControllerOfBound _ -> True
   Filter.CardsInGraveyardAtLeast _ -> True
   Filter.OwnsBoundAtLeast {} -> True
-  Filter.IsAttacking -> True
+  Filter.IsAttacking _ -> True
   Filter.IsAttackingPlayer _ -> True
   Filter.IsAttackingPlaneswalker _ -> True
   Filter.IsAttackingBattle _ -> True
@@ -3831,7 +3840,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsControllerOfBound _ -> False
   Filter.CardsInGraveyardAtLeast _ -> False
   Filter.OwnsBoundAtLeast _ _ f -> readsSourceValues f
-  Filter.IsAttacking -> False
+  Filter.IsAttacking _ -> False
   Filter.IsAttackingPlayer _ -> False
   Filter.IsAttackingPlaneswalker _ -> False
   Filter.IsAttackingBattle _ -> False

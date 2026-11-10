@@ -4045,7 +4045,7 @@ filterReads f = case f of
   -- Over-declared for Controls' reason: each bound object's owner plus whatever
   -- the nest reads of it.
   Filter.Type.OwnsBoundAtLeast _ _ g -> holderReads Holder.Owner <> filterReads g
-  Filter.Type.IsAttacking -> Set.empty
+  Filter.Type.IsAttacking _ -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same map: what a creature
   -- is attacking is no characteristic of it (CR 109.3).
   Filter.Type.IsAttackingPlayer _ -> Set.empty
@@ -4383,7 +4383,7 @@ filterReadsPeers f = case f of
   Filter.Type.CardsInGraveyardAtLeast _ -> False
   -- DESCENT for Controls' reason.
   Filter.Type.OwnsBoundAtLeast _ _ g -> filterReadsPeers g
-  Filter.Type.IsAttacking -> False
+  Filter.Type.IsAttacking _ -> False
   Filter.Type.IsAttackingPlayer _ -> False
   Filter.Type.DeclaredAttackedThisCombat -> False
   Filter.Type.IsBlocking -> False

@@ -1047,6 +1047,8 @@ lastKnownView peers oid gs lastKnown =
         { Filter.identity = Just oid,
           Filter.tapped = LastKnown.tapped lastKnown,
           Filter.attacking = LastKnown.attacking lastKnown,
+          -- `attackingAlone` keeps the snapshot's False: LastKnown records no
+          -- fellow attackers, and no card asks CR 506.5 of a departed creature.
           -- CR 508.1b: what it was attacking as it left (Mangara, the Diplomat's
           -- ruling), and that planeswalker's controller as it left, which
           -- docs/decisions.md's "The seat of a departed attacker's planeswalker"
@@ -1376,6 +1378,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.identity = Nothing,
       Filter.playerIdentity = Nothing,
       Filter.attacking = False,
+      Filter.attackingAlone = False,
       -- CR 508.1b: nothing a snapshot holds says what was attacked, for the
       -- reason `attacking` above is False.
       Filter.attackingPlayer = Nothing,

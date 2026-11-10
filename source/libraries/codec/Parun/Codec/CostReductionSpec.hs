@@ -67,7 +67,7 @@ spec s = Spec.describe s "Parun.Codec.CostReduction" $ do
           { CostReduction.amount = ManaCost.MkManaCost [ManaSymbol.Generic 2],
             CostReduction.perEach = Quantity.Literal 1,
             CostReduction.condition = Nothing,
-            CostReduction.whichTargets = Just Filter.IsAttacking,
+            CostReduction.whichTargets = Just (Filter.IsAttacking Nothing),
             CostReduction.direction = CostDirection.Less
           }
       )

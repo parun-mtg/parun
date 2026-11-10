@@ -350,7 +350,7 @@ filterChildren children predicate = case predicate of
   Filter.Controls margin f -> fmap (Filter.Controls margin) (nest children f)
   Filter.CardsInGraveyardAtLeast _ -> pure predicate
   Filter.OwnsBoundAtLeast n name f -> liftA2 (Filter.OwnsBoundAtLeast n) (slot children SlotArity.Many name) (nest children f)
-  Filter.IsAttacking -> pure predicate
+  Filter.IsAttacking _ -> pure predicate
   Filter.IsAttackingPlayer _ -> pure predicate
   Filter.IsAttackingPlaneswalker _ -> pure predicate
   Filter.IsAttackingBattle _ -> pure predicate

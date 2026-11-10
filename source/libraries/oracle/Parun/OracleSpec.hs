@@ -447,7 +447,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- together or one at a time (Zhang He, Wei General); a player a slot names
   -- owns "their" graveyard once named (Guiltfeeder).
   Spec.it s "render names creatures by type and counts in a named player's zone" $ do
-    let prankster = spell [clause [modify (ObjectRef.InSlot target) Duration.UntilEndOfTurn (pt 1 0)]] [(target, TargetSlot.required Pool.Creatures (Just (Filter.And [Filter.IsAttacking, Filter.HasSubtype Subtype.Goblin, Filter.HeldBy Holder.Controller PlayerRelation.You])))]
+    let prankster = spell [clause [modify (ObjectRef.InSlot target) Duration.UntilEndOfTurn (pt 1 0)]] [(target, TargetSlot.required Pool.Creatures (Just (Filter.And [Filter.IsAttacking Nothing, Filter.HasSubtype Subtype.Goblin, Filter.HeldBy Holder.Controller PlayerRelation.You])))]
     Spec.assertEq s (Just (Text.pack "Target attacking Goblin you control gets +1/+0 until end of turn.")) (Oracle.render prankster)
     let he = spell [clause [modify (ObjectRef.EachMatching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsSource])) Duration.UntilEndOfTurn (pt 1 0)]] []
     Spec.assertEq s (Just (Text.pack "Other creatures you control get +1/+0 until end of turn.")) (Oracle.render he)
@@ -498,7 +498,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "Destroy two target white and/or blue creatures.", Text.pack "Destroy two target creatures that are white and/or blue."]] (Oracle.abilities ignite)
     let decree = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, TargetSlot.required Pool.Creatures (Just colours))]
     Spec.assertEq s [[Text.pack "Destroy target white or blue creature.", Text.pack "Destroy target creature that's white or blue."]] (Oracle.abilities decree)
-    let combatants = Filter.Or [Filter.IsAttacking, Filter.IsBlocking]
+    let combatants = Filter.Or [Filter.IsAttacking Nothing, Filter.IsBlocking]
         fire = spell [clause [destroy (ObjectRef.InSlot target) Regenerability.Regenerable]] [(target, (TargetSlot.required Pool.Creatures (Just combatants)) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 2 (Just 2))})]
     Spec.assertEq s [[Text.pack "Destroy two target attacking or blocking creatures."]] (Oracle.abilities fire)
 
@@ -1017,7 +1017,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let gated c changes = withFace (\f -> (typed [CardType.Creature] [] f) {Face.staticAbilities = [(static (Affected.Matching Filter.IsSource) changes) {StaticAbility.condition = Just c}]})
         atLeast q k = Condition.Compares (Compares.MkCompares q Comparison.AtLeast (Quantity.Literal k))
         forest = atLeast (countOf (Filter.And [Filter.HasSubtype Subtype.Forest, Filter.HeldBy Holder.Controller PlayerRelation.You]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) 1
-        attacking = atLeast (countOf (Filter.And [Filter.IsSource, Filter.IsAttacking]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) 1
+        attacking = atLeast (countOf (Filter.And [Filter.IsSource, Filter.IsAttacking Nothing]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) 1
         threshold = atLeast (countOf (Filter.And []) (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You))) 7
         turn = Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1))
     Spec.assertEq s [[Text.pack "As long as you control a Forest, Spark gets +1/+2.", Text.pack "Spark gets +1/+2 as long as you control a Forest."]] (Oracle.abilities (gated forest [pt 1 2]))
