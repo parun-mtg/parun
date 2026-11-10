@@ -1,6 +1,7 @@
--- Every slot NAME a Parun.Types.Quantity carries: the traversal that visits them,
--- the read derived from it and the rename derived from it. Structural only --
--- nothing here touches a GameState, which Parun.Engine.Quantity's evaluation does.
+-- Every slot NAME a Parun.Types.Quantity carries: the reads and the rename,
+-- each Parun.Engine.Children.quantityChildren run with the visitors it has an
+-- opinion about. Structural only -- nothing here touches a GameState, which
+-- Parun.Engine.Quantity's evaluation does.
 --
 -- A module of its own for a MODULE CYCLE rather than for cohesion.
 -- Parun.Engine.Modal is CR 700.2d's per-occurrence rename and sits below
@@ -8,247 +9,21 @@
 -- Parun.Engine.Count both read a board and so sit above Game. Splitting the walk
 -- out is the repo's parametric-polymorphism escape one step further along: the
 -- rename is a function of the syntax alone, so it belongs where the syntax is.
---
--- The Count traversal below is here for the same reason and no other: it is a
--- walk over Parun.Types.Count's own field, and Parun.Engine.Count -- where it would
--- otherwise live -- folds over the board.
 module Parun.Engine.QuantitySlot where
 
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
-import qualified Data.Monoid as Monoid
 import Data.Set (Set)
 import qualified Data.Set as Set
-import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
-import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
-import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
-import qualified Parun.Types.AgainstSlot as AgainstSlot
-import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
-import qualified Parun.Types.CastFrom as CastFrom
-import qualified Parun.Types.CommanderColors as CommanderColors
-import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.Count as Count.Type
-import qualified Parun.Types.DamageTally as DamageTally
-import qualified Parun.Types.DealtDamage as DealtDamage
-import qualified Parun.Types.Devotion as Devotion
-import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.InZone as InZone
-import qualified Parun.Types.LifeTally as LifeTally
-import qualified Parun.Types.ManaCount as ManaCount.Type
-import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
-import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
 import qualified Parun.Types.PlayerRef as PlayerRef
 import Parun.Types.Quantity (Quantity)
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Scope as Scope
 import Parun.Types.SlotName (SlotName)
-import qualified Parun.Types.SpellTally as SpellTally
-import qualified Parun.Types.VotesReceived as VotesReceived
-
--- The per-member quantity of a count, VISITED -- the one walk the four functions
--- below are each an instance of, so a new Aggregation arm carrying a quantity
--- fails to compile once rather than being silently skipped by whichever of them
--- nobody rewrote. Reading a slot name and renaming one must agree about where a
--- quantity is, which is the whole reason this is a traversal.
---
--- Aggregation.Greatest and Aggregation.Total each carry a quantity; the
--- others aggregate the matched set alone, and neither the Scope nor the Filter
--- holds one.
-overCount :: (Applicative f) => (quantity -> f quantity) -> Count.Type.Count quantity -> f (Count.Type.Count quantity)
-overCount f count = case Count.Type.aggregation count of
-  Aggregation.Members -> pure count
-  Aggregation.Distinct _ -> pure count
-  Aggregation.MostSharing _ -> pure count
-  Aggregation.DistinctNames -> pure count
-  Aggregation.Greatest quantity -> fmap (\q -> count {Count.Type.aggregation = Aggregation.Greatest q}) (f quantity)
-  Aggregation.Total quantity -> fmap (\q -> count {Count.Type.aggregation = Aggregation.Total q}) (f quantity)
-
--- overCount as a fold: whatever the per-member quantity contributes. The binding
--- slots it reads, for the two readers in Parun.Engine.Quantity that want a Set.
-foldCount :: (Monoid m) => (quantity -> m) -> Count.Type.Count quantity -> m
-foldCount f = Const.getConst . overCount (Const.Const . f)
-
--- Does the per-member quantity of a count satisfy the predicate?
--- Parun.Engine.Quantity.hasRead is the one caller.
-anyCount :: (quantity -> Bool) -> Count.Type.Count quantity -> Bool
-anyCount predicate = Monoid.getAny . foldCount (Monoid.Any . predicate)
-
--- The count with its per-member quantity REWRITTEN. An aggregation carrying no
--- quantity is returned untouched, there being nothing there to rewrite.
-mapCount :: (quantity -> quantity) -> Count.Type.Count quantity -> Count.Type.Count quantity
-mapCount f = Identity.runIdentity . overCount (Identity.Identity . f)
-
--- Every slot NAME a quantity carries in an AMOUNT position, as one traversal:
--- `slots` below READS them and `renameSlots` REWRITES them. One walk rather than
--- two, for the reason Parun.Engine.Filter.overBoundSlots is one: the two consumers
--- disagreeing about which arms name a slot is a live defect shape, and CR 700.2d's
--- per-occurrence rename skipping an arm this one reported is the shape that
--- shipped.
---
--- The AMOUNT half only. A PlayerRef buried in one of these arms names a TARGET
--- slot rather than an amount, `slots` deliberately leaves it to Resolve.slotsOf,
--- and nestedRefs below is what reports it -- so renameSlots walks that half
--- separately rather than widening this traversal and the lint with it.
-overSlots :: (Applicative f) => (SlotName -> f SlotName) -> Quantity -> f Quantity
-overSlots f quantity =
-  let recur = overSlots f
-   in case quantity of
-        Quantity.Literal _ -> pure quantity
-        Quantity.Measure _ -> pure quantity
-        Quantity.Intensity -> pure quantity
-        Quantity.InSlot slot -> fmap Quantity.InSlot (f slot)
-        -- CR 601.2d's part names the divided slot it reads, on the READ side of
-        -- the D4 dataflow lint and renamed with its mode's slots.
-        Quantity.Share slot -> fmap Quantity.Share (f slot)
-        -- CR 701.4b's reader names a slot too, and is visited here for
-        -- AgainstSlot's reason below: the slot has to be on the READ side of the
-        -- D4 dataflow lint, and a mode that renames its slots has to rename this
-        -- one with them.
-        Quantity.WasBound slot -> fmap Quantity.WasBound (f slot)
-        Quantity.BoundCount slot -> fmap Quantity.BoundCount (f slot)
-        Quantity.UniqueVowelsOnSticker slot -> fmap Quantity.UniqueVowelsOnSticker (f slot)
-        -- The tally's slot; the PlayerRef beside it is nestedRefs' half.
-        Quantity.VotesReceived received -> fmap (\slot -> Quantity.VotesReceived received {VotesReceived.slot = slot}) (f (VotesReceived.slot received))
-        Quantity.Star -> pure quantity
-        -- Whatever the operands name: a calculation's own payload (a rounding, a
-        -- factor) names no slot.
-        Quantity.Arithmetic arithmetic -> fmap Quantity.Arithmetic (traverse recur arithmetic)
-        Quantity.AtMost atMost -> fmap Quantity.AtMost (traverse recur atMost)
-        -- Terminating for the reason evaluate's Count arm is: a Greatest's payload is
-        -- a strictly smaller subterm.
-        Quantity.Count c -> fmap Quantity.Count (overCount recur c)
-        -- Neither half of a ManaCount holds an AMOUNT slot: a ManaFilter names no slot
-        -- at all, and PlayerRef.InSlot names a TARGET slot, which is Resolve's half of
-        -- the lint. Count's Scope is in the same position.
-        --
-        -- nestedRefs below reports these arms, and Resolve.Slots.quantitySlots folds
-        -- it -- which is what carries the read to the D4 dataflow lint wherever an
-        -- effect's quantity holds one, what Resolve.targetSlotSlots reads for a CR
-        -- 202.3 computed bound, and what slotsAreExhaustive reads so the CR 603.3b
-        -- elision cannot rest on a gap.
-        Quantity.ManaCount _ -> pure quantity
-        -- The same position a third time: these arms' PlayerRef.InSlot names a
-        -- TARGET slot, not an amount one.
-        Quantity.LifeTotal _ -> pure quantity
-        Quantity.StartingLifeTotal _ -> pure quantity
-        Quantity.StartingDeckSize _ -> pure quantity
-        -- And a fourth: LifeTotal's sibling carries a PlayerRef in the same position.
-        Quantity.Speed _ -> pure quantity
-        -- And a fifth, CR 726.1's designation -- a PlayerRef and nothing else.
-        Quantity.IsMonarch _ -> pure quantity
-        Quantity.HasPlayerDesignation {} -> pure quantity
-        -- And a sixth, CR 103.1's -- the same position again.
-        Quantity.IsStartingPlayer _ -> pure quantity
-        -- And a seventh, CR 102.1's -- the same position once more.
-        Quantity.IsActivePlayer _ -> pure quantity
-        -- And an eighth. The PlayerCounterKind beside it names no slot either.
-        Quantity.PlayerCounters {} -> pure quantity
-        -- And a ninth, CR 700.5's. The colour set beside it names no slot either.
-        Quantity.Devotion {} -> pure quantity
-        Quantity.PartySize _ -> pure quantity
-        -- A bare CounterKind, which names no slot at all -- this arm carries no
-        -- reference of any sort, the object being the one the evaluation is aimed at.
-        Quantity.ObjectCounters _ -> pure quantity
-        -- The kind-agnostic reading of that same arm, naming no slot for its reason and
-        -- carrying not even a CounterKind.
-        Quantity.ObjectCountersOfAnyKind -> pure quantity
-        Quantity.LettersOnNameStickers _ -> pure quantity
-        Quantity.NameStickers -> pure quantity
-        Quantity.PowerOfStickers -> pure quantity
-        Quantity.ToughnessOfStickers -> pure quantity
-        -- The designation, which carries no reference either -- ObjectCounters' position,
-        -- with which designation in the kind's place.
-        Quantity.HasDesignation _ -> pure quantity
-        -- CR 701.37c's number, HasDesignation's arm above with the same payload.
-        Quantity.DesignationValue _ -> pure quantity
-        Quantity.StoredResultsOfSameValue -> pure quantity
-        Quantity.ClassLevel -> pure quantity
-        Quantity.WasForetold -> pure quantity
-        Quantity.TributeWasPaid -> pure quantity
-        -- CR 601.2b: the keywords it designates are identifiers Keyword.designates
-        -- matches, never instructions this traversal descends into.
-        Quantity.TimesPaid _ -> pure quantity
-        Quantity.CastUsing _ -> pure quantity
-        Quantity.TagWasSpent {} -> pure quantity
-        Quantity.TagWasSpentOfOwnColor {} -> pure quantity
-        Quantity.ChosenColorsItIs -> pure quantity
-        Quantity.ChosenNumber -> pure quantity
-        Quantity.ManaSpent _ -> pure quantity
-        Quantity.WasToken -> pure quantity
-        Quantity.WasAttacking -> pure quantity
-        Quantity.WasBlocking -> pure quantity
-        Quantity.WasBlockedThisTurn -> pure quantity
-        -- CR 120.1's damage total, naming no slot either: it carries no reference at
-        -- all, the object being the one the evaluation is aimed at.
-        Quantity.DamageDealtThisTurn _ -> pure quantity
-        -- And a ninth PlayerRef in that same position, CR 508.3b's record having
-        -- nothing else on it.
-        Quantity.OpponentsAttacked _ -> pure quantity
-        -- And a tenth, CR 701.9a's tally having nothing beside its PlayerRef either.
-        Quantity.TalliedThisTurn _ _ -> pure quantity
-        -- And another, CR 508.1a's declaration tally likewise.
-        Quantity.AttackersDeclaredThisTurn _ -> pure quantity
-        Quantity.AttackersDeclaredThisCombat -> pure quantity
-        Quantity.AttackedInLastTurnOf _ -> pure quantity
-        Quantity.AttackersInTheirLastTurn _ -> pure quantity
-        -- And another, CR 119.3's life tally likewise.
-        Quantity.LifeChanged _ -> pure quantity
-        -- And another, CR 120.1's damage tally likewise.
-        Quantity.PlayersDealtDamage _ -> pure quantity
-        -- And another, CR 120.1's damage total likewise.
-        Quantity.DamageDealtToPlayersThisTurn _ -> pure quantity
-        -- And another in that same position, CR 601.2i's cast tally having nothing
-        -- beside its PlayerRef either.
-        Quantity.SpellsCast _ -> pure quantity
-        Quantity.TimesThisTurn _ -> pure quantity
-        -- And another: the tally's PlayerRef is nestedRefs' half, and its Filter
-        -- names no amount.
-        Quantity.ActivationsThisTurn _ -> pure quantity
-        Quantity.PermanentsDiedThisTurn -> pure quantity
-        Quantity.DamagePreventedThisWay -> pure quantity
-        Quantity.SpellsCastUsingThisTurn _ -> pure quantity
-        Quantity.SubgamesThisMatch -> pure quantity
-        -- And another again, CR 309.7's completion tally having nothing beside its
-        -- PlayerRef either -- nor the named read beside it, whose CardName is a printed
-        -- name rather than anything a slot could bind.
-        Quantity.DungeonsCompleted _ -> pure quantity
-        Quantity.CompletedDungeon {} -> pure quantity
-        Quantity.DraftNotes {} -> pure quantity
-        -- And CR 903.8's cast tally, a PlayerRef with nothing beside it.
-        Quantity.CommanderCasts _ -> pure quantity
-        Quantity.CommanderColors _ -> pure quantity
-        -- And a nullary arm, which names nothing at all: CR 400.7's entry is read
-        -- against the object the evaluation is aimed at, as ObjectCounters is.
-        Quantity.EnteredThisTurn -> pure quantity
-        -- And two more with nothing beside their PlayerRefs, CR 400.7's origin zone
-        -- and CR 601.2a's cast zone alike -- the latter carrying two of them.
-        Quantity.EnteredFrom _ -> pure quantity
-        Quantity.WasCastFrom _ -> pure quantity
-        -- And an arm naming no slot at all: CR 509.1g's declaration is read
-        -- against the object the evaluation is aimed at, as ObjectCounters is.
-        Quantity.BlockersBeyond _ -> pure quantity
-        -- And a nullary arm: CR 702.184c's substitution reads no slot of its own,
-        -- the object being the one the evaluation is aimed at, as BlockersBeyond
-        -- does.
-        Quantity.StationMeasure -> pure quantity
-        -- And another PlayerRef in ManaCount's position, CR 702.30a's echo window
-        -- having nothing beside it: the OBJECT it asks about is the one the
-        -- evaluation is aimed at, as ObjectCounters' is.
-        Quantity.ControlGained _ _ -> pure quantity
-        Quantity.PlayedBy _ -> pure quantity
-        -- The one arm that names a TARGET slot and is visited here anyway. Every other
-        -- nested target slot is a PlayerRef this function leaves to nestedRefs below;
-        -- reporting this one here is what keeps Soul's Majesty's declared target on the
-        -- read side of the D4 lint at SlotArity.One rather than Many, the arity
-        -- Filter.slotOneObject needs. The payload may hide slots of its own.
-        Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot slot inner) -> fmap Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot <$> f slot <*> recur inner)
-        -- DESCENT and no slot of its own: CR 607.2a's linked pile comes from
-        -- GameState.exiledWith rather than from a binding, so the arm names nothing
-        -- here and only the payload can.
-        Quantity.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile pile inner) -> fmap (Quantity.AgainstExiledPile . AgainstExiledPile.MkAgainstExiledPile pile) (recur inner)
-        -- The same descent: the card comes off GameState.exiledWith too.
-        Quantity.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion inner) -> fmap (Quantity.AgainstLastCardExiledWith . AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion) (recur inner)
 
 -- The binding slots a quantity READS. The read half of the dataflow lint whose
 -- write half is Resolve.definedSlots -- so a card whose "for each ... destroyed
@@ -260,10 +35,20 @@ overSlots f quantity =
 -- AVAILABLE side exactly when the cost prints an {X}. No arm here has to know
 -- that X is special, and nothing subtracts it -- the fact lives where it belongs,
 -- in what casting makes available.
+--
+-- Every slot Parun.Engine.Children's slot visitor reaches: the amount readers
+-- and AgainstSlot's object. A PlayerRef's slots name a TARGET slot rather than
+-- an amount, so `slots` leaves them to Resolve.slotsOf, and nestedRefs below is
+-- what reports them.
 slots :: Quantity -> Set SlotName
-slots = Const.getConst . overSlots (Const.Const . Set.singleton)
+slots =
+  Const.getConst
+    . Children.quantityChildren
+      (Children.descendingQuantities (Const.Const . slots))
+        { Children.slot = \_arity -> Const.Const . Set.singleton
+        }
 
--- Every slot NAME a quantity carries, rewritten -- overSlots' amount half above
+-- Every slot NAME a quantity carries, rewritten -- `slots`' half above
 -- and the target slots its nested references name, which nestedRefs below is the
 -- reading counterpart of. CR 700.2d's per-occurrence rename is the caller
 -- (Parun.Engine.Modal.instanceScope): a target slot's CR 202.3 computed bound may
@@ -272,26 +57,20 @@ slots = Const.getConst . overSlots (Const.Const . Set.singleton)
 -- given is a PARTIAL rename (Modal.ownSlot), so a name the mode does not declare
 -- comes back unchanged.
 --
--- Two walks composed rather than one, because the two halves are not the same
--- question: widening overSlots to the references would widen `slots` with it and
--- report a target slot to the amount lint. Proved by Parun.TargetSpec's "CR 700.2d
--- a repeated mode's computed bound measures its own occurrence's sibling slot".
+-- The Scope says whose zone, which players or which bound slot, and a nested
+-- quantity may hide a reference of its own. Proved by Parun.TargetSpec's "CR
+-- 700.2d a repeated mode's computed bound measures its own occurrence's
+-- sibling slot".
 renameSlots :: (SlotName -> SlotName) -> Quantity -> Quantity
-renameSlots rename = Identity.runIdentity . overSlots (Identity.Identity . rename) . renameRefSlots rename
-
--- renameSlots' second half: the slots a quantity names THROUGH a reference -- a
--- PlayerRef, or CR 400.7j's fold over a bound slot. mapPlayerRefs is the shared
--- traversal, so a new arm carrying a reference fails to compile there rather than
--- keeping a printed name here.
-renameRefSlots :: (SlotName -> SlotName) -> Quantity -> Quantity
-renameRefSlots rename =
+renameSlots rename =
   let go =
-        mapPlayerRefs
-          (renamePlayerRef rename)
-          -- Both halves, bakeBound's arm one rewrite over: the Scope says whose
-          -- zone, which players or which bound slot, and a Greatest's per-member
-          -- quantity may hide a reference of its own.
-          (\c -> (mapCount go c) {Count.Type.scope = renameScope rename (mapScope (renamePlayerRef rename) (Count.Type.scope c))})
+        Identity.runIdentity
+          . Children.quantityChildren
+            (Children.descendingQuantities (Identity.Identity . go))
+              { Children.slot = \_arity -> Identity.Identity . rename,
+                Children.player = Identity.Identity . renamePlayerRef rename,
+                Children.scope = Identity.Identity . renameScope rename . mapScope (renamePlayerRef rename)
+              }
    in go
 
 -- Every read of a slot this quantity makes that `slots` above does not report: a
@@ -306,111 +85,14 @@ renameRefSlots rename =
 -- them names a slot at all, and Resolve.targetSlotSlots turns them into the slots a
 -- CR 202.3 computed bound reads, so the D4 dataflow lint can see a bound naming a
 -- slot its carrier never binds.
---
--- One arm per constructor, no wildcard, for `slots`' reason: a new quantity arm
--- carrying a reference must answer here rather than default to reading nothing,
--- which would both hide a dead bound and license an unsound elision.
 nestedRefs :: Quantity -> Set (Either PlayerRef.PlayerRef SlotName)
-nestedRefs quantity = case quantity of
-  Quantity.Literal _ -> Set.empty
-  Quantity.Measure _ -> Set.empty
-  Quantity.Intensity -> Set.empty
-  -- The amount reader, which `slots` above reports itself.
-  Quantity.InSlot _ -> Set.empty
-  -- CR 601.2d's part: `slots` above reports its slot too.
-  Quantity.Share _ -> Set.empty
-  -- AgainstSlot's answer below: `slots` above DOES report this arm's own slot,
-  -- and it hides no nested reference.
-  Quantity.WasBound _ -> Set.empty
-  Quantity.BoundCount _ -> Set.empty
-  Quantity.UniqueVowelsOnSticker _ -> Set.empty
-  Quantity.VotesReceived received -> Set.singleton (Left (VotesReceived.player received))
-  Quantity.Star -> Set.empty
-  -- What the operands hide is the whole question: a rounding or a factor hides
-  -- no reference.
-  Quantity.Arithmetic arithmetic -> foldMap nestedRefs arithmetic
-  Quantity.AtMost atMost -> foldMap nestedRefs atMost
-  -- Both halves `slots` skips: the Scope's own read, and the per-member quantity
-  -- of a Greatest, which may hide a reference of its own.
-  Quantity.Count c -> Set.union (scopeRefs (Count.Type.scope c)) (foldCount nestedRefs c)
-  Quantity.ManaCount c -> Set.singleton (Left (ManaCount.Type.player c))
-  Quantity.LifeTotal ref -> Set.singleton (Left ref)
-  Quantity.StartingLifeTotal ref -> Set.singleton (Left ref)
-  Quantity.StartingDeckSize ref -> Set.singleton (Left ref)
-  Quantity.Speed ref -> Set.singleton (Left ref)
-  Quantity.IsMonarch ref -> Set.singleton (Left ref)
-  Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref _) -> Set.singleton (Left ref)
-  Quantity.IsStartingPlayer ref -> Set.singleton (Left ref)
-  Quantity.IsActivePlayer ref -> Set.singleton (Left ref)
-  Quantity.ControlGained _ ref -> Set.singleton (Left ref)
-  Quantity.PlayedBy ref -> Set.singleton (Left ref)
-  Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally ref _) -> Set.singleton (Left ref)
-  Quantity.Devotion d -> Set.singleton (Left (Devotion.player d))
-  Quantity.PartySize ref -> Set.singleton (Left ref)
-  Quantity.ObjectCounters _ -> Set.empty
-  Quantity.ObjectCountersOfAnyKind -> Set.empty
-  Quantity.LettersOnNameStickers _ -> Set.empty
-  Quantity.NameStickers -> Set.empty
-  Quantity.PowerOfStickers -> Set.empty
-  Quantity.ToughnessOfStickers -> Set.empty
-  Quantity.HasDesignation _ -> Set.empty
-  Quantity.DesignationValue _ -> Set.empty
-  Quantity.StoredResultsOfSameValue -> Set.empty
-  Quantity.ClassLevel -> Set.empty
-  Quantity.WasForetold -> Set.empty
-  Quantity.TributeWasPaid -> Set.empty
-  -- CR 601.2b: the keywords it designates are identifiers Keyword.designates
-  -- matches, never instructions this traversal descends into.
-  Quantity.TimesPaid _ -> Set.empty
-  Quantity.CastUsing _ -> Set.empty
-  Quantity.TagWasSpent {} -> Set.empty
-  Quantity.TagWasSpentOfOwnColor {} -> Set.empty
-  Quantity.ChosenColorsItIs -> Set.empty
-  Quantity.ChosenNumber -> Set.empty
-  Quantity.ManaSpent _ -> Set.empty
-  Quantity.WasToken -> Set.empty
-  Quantity.WasAttacking -> Set.empty
-  Quantity.WasBlocking -> Set.empty
-  Quantity.WasBlockedThisTurn -> Set.empty
-  Quantity.DamageDealtThisTurn _ -> Set.empty
-  Quantity.OpponentsAttacked ref -> Set.singleton (Left ref)
-  Quantity.AttackersDeclaredThisTurn ref -> Set.singleton (Left ref)
-  Quantity.AttackersDeclaredThisCombat -> Set.empty
-  Quantity.AttackedInLastTurnOf ref -> Set.singleton (Left ref)
-  Quantity.AttackersInTheirLastTurn ref -> Set.singleton (Left ref)
-  Quantity.TalliedThisTurn _ ref -> Set.singleton (Left ref)
-  Quantity.LifeChanged tally -> Set.singleton (Left (LifeTally.player tally))
-  Quantity.PlayersDealtDamage tally -> Set.singleton (Left (DealtDamage.recipient (DamageTally.dealt tally)))
-  Quantity.DamageDealtToPlayersThisTurn tally -> Set.singleton (Left (DealtDamage.recipient tally))
-  Quantity.SpellsCast tally -> Set.singleton (Left (SpellTally.player tally))
-  Quantity.TimesThisTurn _ -> Set.empty
-  Quantity.ActivationsThisTurn tally -> Set.singleton (Left (ActivationsThisTurn.activator tally))
-  Quantity.PermanentsDiedThisTurn -> Set.empty
-  Quantity.DamagePreventedThisWay -> Set.empty
-  Quantity.SpellsCastUsingThisTurn _ -> Set.empty
-  Quantity.SubgamesThisMatch -> Set.empty
-  Quantity.DungeonsCompleted ref -> Set.singleton (Left ref)
-  Quantity.CommanderCasts ref -> Set.singleton (Left ref)
-  Quantity.CommanderColors c -> Set.singleton (Left (CommanderColors.player c))
-  Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref _) -> Set.singleton (Left ref)
-  Quantity.DraftNotes tally -> Set.singleton (Left (DraftNoteTally.player tally))
-  Quantity.EnteredThisTurn -> Set.empty
-  Quantity.EnteredFrom inZone -> Set.singleton (Left (InZone.player inZone))
-  -- BOTH references, CR 601.2a's caster beside CR 400.1's zone: a walk that
-  -- reported one would leave the other's slot unnamed.
-  Quantity.WasCastFrom castFrom -> Set.fromList [Left (CastFrom.caster castFrom), Left (InZone.player (CastFrom.from castFrom))]
-  Quantity.BlockersBeyond _ -> Set.empty
-  -- Reads a live grant off the resolving object rather than a bound reference
-  -- or slot: nothing here for a target-slot walk to find.
-  Quantity.StationMeasure -> Set.empty
-  -- Its own slot is left out because `slots` above DOES report it, unlike the
-  -- nested PlayerRefs; the payload is walked like any other.
-  Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot _ inner) -> nestedRefs inner
-  -- Nothing of its own to report -- CR 607.2a's pile is a relation on the board,
-  -- named by no reference and no slot -- and the payload is walked like any
-  -- other.
-  Quantity.AgainstExiledPile a -> nestedRefs (AgainstExiledPile.quantity a)
-  Quantity.AgainstLastCardExiledWith l -> nestedRefs (AgainstLastCardExiledWith.quantity l)
+nestedRefs =
+  Const.getConst
+    . Children.quantityChildren
+      (Children.descendingQuantities (Const.Const . nestedRefs))
+        { Children.player = Const.Const . Set.singleton . Left,
+          Children.scope = Const.Const . scopeRefs
+        }
 
 -- Every Count reachable from a Quantity: a leaf Count directly, plus the ones
 -- nested through the arms that compose one (CR 208.2's printed 1+*, CR 107.1a's
@@ -422,121 +104,12 @@ nestedRefs quantity = case quantity of
 -- naming slots like any other (a Filter.IsBound under a fold is a read of the
 -- resolving object's bindings), and Parun.CardSpec's Count sweeps ask the same
 -- Counts about their scopes and counter kinds.
---
--- One arm per constructor, no wildcard, for `slots`' and nestedRefs' reason: a
--- new quantity arm that composes another quantity must answer here rather than
--- silently hide a Count from both readers.
 nestedCounts :: Quantity -> [Count.Type.Count Quantity]
-nestedCounts quantity = case quantity of
-  Quantity.Literal _ -> []
-  Quantity.Measure _ -> []
-  Quantity.Intensity -> []
-  -- A slot read, not a fold over game state: the value was bound by an earlier
-  -- effect of the same resolution and there is no Count inside it.
-  Quantity.InSlot _ -> []
-  -- InSlot's answer: an announced part holds no Count.
-  Quantity.Share _ -> []
-  -- InSlot's answer, one half of the binding over: CR 701.4b's yes-or-no holds
-  -- no Count either.
-  Quantity.WasBound _ -> []
-  Quantity.BoundCount _ -> []
-  Quantity.UniqueVowelsOnSticker _ -> []
-  Quantity.VotesReceived _ -> []
-  Quantity.Star -> []
-  -- An operand may be a Count -- Malignus halves a fold over players, Blessed
-  -- Reversal multiplies one over the battlefield.
-  Quantity.Arithmetic arithmetic -> foldMap nestedCounts arithmetic
-  Quantity.AtMost atMost -> foldMap nestedCounts atMost
-  -- The leaf itself, and DESCENT into a Greatest's per-member number, which may
-  -- be a Count of its own.
-  Quantity.Count c -> c : foldCount nestedCounts c
-  -- A fold over a MANA POOL (CR 106.4), not over a zone: it holds no
-  -- Parun.Types.Count and no Parun.Types.Filter. See Parun.Types.ManaCount.
-  Quantity.ManaCount _ -> []
-  -- Every remaining arm is a leaf reading a scalar off a player, an object or the
-  -- game, so none of them holds a Count:
-  Quantity.LifeTotal _ -> []
-  Quantity.StartingLifeTotal _ -> []
-  Quantity.StartingDeckSize _ -> []
-  Quantity.Speed _ -> []
-  Quantity.IsMonarch _ -> []
-  Quantity.HasPlayerDesignation {} -> []
-  Quantity.IsStartingPlayer _ -> []
-  Quantity.IsActivePlayer _ -> []
-  Quantity.ControlGained _ _ -> []
-  Quantity.PlayedBy _ -> []
-  Quantity.HasDesignation _ -> []
-  Quantity.DesignationValue _ -> []
-  Quantity.StoredResultsOfSameValue -> []
-  Quantity.ClassLevel -> []
-  Quantity.WasForetold -> []
-  Quantity.TributeWasPaid -> []
-  -- CR 601.2b's per-keyword tally reads a Keyword off the spell's own
-  -- announcement, and no traversal of this type can carry a Keyword;
-  -- Parun.FilterPositionLintSpec's timesPaidOffends checks that field off the
-  -- encoding instead.
-  Quantity.TimesPaid {} -> []
-  Quantity.CastUsing {} -> []
-  Quantity.TagWasSpent {} -> []
-  Quantity.TagWasSpentOfOwnColor {} -> []
-  Quantity.ChosenColorsItIs -> []
-  Quantity.ChosenNumber -> []
-  Quantity.ManaSpent _ -> []
-  Quantity.WasToken -> []
-  Quantity.WasAttacking -> []
-  Quantity.WasBlocking -> []
-  Quantity.WasBlockedThisTurn -> []
-  Quantity.DamageDealtThisTurn _ -> []
-  Quantity.PlayerCounters {} -> []
-  Quantity.Devotion {} -> []
-  Quantity.PartySize _ -> []
-  -- CR 122.1's per-OBJECT tally: a CounterKind with no Count beside it. The KIND
-  -- may carry a Filter of its own (CR 122.1b), which Parun.CardSpec's
-  -- quantityKindFilters is what digs out.
-  Quantity.ObjectCounters _ -> []
-  Quantity.ObjectCountersOfAnyKind -> []
-  Quantity.LettersOnNameStickers _ -> []
-  Quantity.NameStickers -> []
-  Quantity.PowerOfStickers -> []
-  Quantity.ToughnessOfStickers -> []
-  Quantity.OpponentsAttacked _ -> []
-  Quantity.AttackersDeclaredThisTurn _ -> []
-  Quantity.AttackersDeclaredThisCombat -> []
-  Quantity.AttackedInLastTurnOf _ -> []
-  Quantity.AttackersInTheirLastTurn _ -> []
-  Quantity.TalliedThisTurn _ _ -> []
-  Quantity.LifeChanged _ -> []
-  Quantity.PlayersDealtDamage _ -> []
-  Quantity.DamageDealtToPlayersThisTurn _ -> []
-  Quantity.SpellsCast _ -> []
-  Quantity.TimesThisTurn _ -> []
-  Quantity.ActivationsThisTurn _ -> []
-  Quantity.PermanentsDiedThisTurn -> []
-  Quantity.DamagePreventedThisWay -> []
-  Quantity.SpellsCastUsingThisTurn {} -> []
-  Quantity.SubgamesThisMatch -> []
-  Quantity.DungeonsCompleted _ -> []
-  Quantity.CommanderCasts _ -> []
-  Quantity.CommanderColors _ -> []
-  Quantity.CompletedDungeon {} -> []
-  Quantity.DraftNotes {} -> []
-  Quantity.EnteredThisTurn -> []
-  -- CR 400.7's logged origin zone and CR 601.2a's logged cast: player references
-  -- and nothing else. The shared-zone pairing either InZone could state is
-  -- rejected at the decoder by Parun.Codec.InZone.undividedShared, and
-  -- Parun.CardSpec's cardOffendsSharedZoneScope restates it only over a Count's
-  -- scope, so these two are covered once rather than twice (see #161).
-  Quantity.EnteredFrom _ -> []
-  Quantity.WasCastFrom _ -> []
-  Quantity.BlockersBeyond _ -> []
-  Quantity.StationMeasure -> []
-  -- Not a leaf: aiming the evaluation at another object does not stop the payload
-  -- from being a Count.
-  Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot _ inner) -> nestedCounts inner
-  -- AgainstSlot's answer: re-aiming the evaluation at CR 607.2a's linked cards
-  -- does not stop the payload from being a Count.
-  Quantity.AgainstExiledPile a -> nestedCounts (AgainstExiledPile.quantity a)
-  Quantity.AgainstLastCardExiledWith l -> nestedCounts (AgainstLastCardExiledWith.quantity l)
+nestedCounts quantity =
+  let own = case quantity of
+        Quantity.Count c -> [c]
+        _ -> []
+   in own <> Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . nestedCounts)) quantity)
 
 -- A scope's own read. Every scope that names players takes a PlayerRef and CR
 -- 608.2i's look-back names nothing, so the same question as the arms above --
@@ -611,7 +184,7 @@ overPlayerRefSlots f ref = case ref of
 
 -- A scope's own slot, renamed -- scopeRefs' Right arm turned around, and paired
 -- with it arm for arm. Only CR 400.7j's fold names a slot outright; the players
--- the other arms name are PlayerRefs, which renameRefSlots rewrites through
+-- the other arms name are PlayerRefs, which renameSlots rewrites through
 -- mapScope instead.
 renameScope :: (SlotName -> SlotName) -> Scope.Scope -> Scope.Scope
 renameScope rename scope = case scope of
@@ -622,118 +195,10 @@ renameScope rename scope = case scope of
   Scope.InPosition {} -> scope
   Scope.AsTurnBegan -> scope
 
--- Every PlayerRef this quantity names, rewritten -- the traversal bakeBound and
--- forCandidate share, so the arm list is written once and a new arm carrying a
--- PlayerRef fails to compile HERE rather than silently keeping an old reference
--- in one of them.
---
--- `intoCount` is the one arm the two callers disagree about, so it is a parameter
--- rather than a recursive call: both rewrite the count's SCOPE through mapScope,
--- and only bakeBound descends into its per-member quantity, a Count being read
--- against an environment of its own (see forCandidate).
-mapPlayerRefs ::
-  (PlayerRef.PlayerRef -> PlayerRef.PlayerRef) ->
-  (Count.Type.Count Quantity -> Count.Type.Count Quantity) ->
-  Quantity ->
-  Quantity
-mapPlayerRefs f intoCount quantity =
-  let recur = mapPlayerRefs f intoCount
-   in case quantity of
-        Quantity.LifeTotal ref -> Quantity.LifeTotal (f ref)
-        Quantity.StartingLifeTotal ref -> Quantity.StartingLifeTotal (f ref)
-        Quantity.StartingDeckSize ref -> Quantity.StartingDeckSize (f ref)
-        Quantity.Speed ref -> Quantity.Speed (f ref)
-        Quantity.IsMonarch ref -> Quantity.IsMonarch (f ref)
-        Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally ref mark) -> Quantity.HasPlayerDesignation (PlayerDesignationTally.MkPlayerDesignationTally (f ref) mark)
-        Quantity.IsStartingPlayer ref -> Quantity.IsStartingPlayer (f ref)
-        Quantity.IsActivePlayer ref -> Quantity.IsActivePlayer (f ref)
-        Quantity.ControlGained window ref -> Quantity.ControlGained window (f ref)
-        Quantity.PlayedBy ref -> Quantity.PlayedBy (f ref)
-        Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally ref kind) -> Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally (f ref) kind)
-        Quantity.Devotion d -> Quantity.Devotion d {Devotion.player = f (Devotion.player d)}
-        Quantity.PartySize ref -> Quantity.PartySize (f ref)
-        Quantity.OpponentsAttacked ref -> Quantity.OpponentsAttacked (f ref)
-        Quantity.AttackersDeclaredThisTurn ref -> Quantity.AttackersDeclaredThisTurn (f ref)
-        Quantity.AttackersDeclaredThisCombat -> quantity
-        Quantity.AttackedInLastTurnOf ref -> Quantity.AttackedInLastTurnOf (f ref)
-        Quantity.AttackersInTheirLastTurn ref -> Quantity.AttackersInTheirLastTurn (f ref)
-        Quantity.TalliedThisTurn tally ref -> Quantity.TalliedThisTurn tally (f ref)
-        Quantity.LifeChanged tally -> Quantity.LifeChanged tally {LifeTally.player = f (LifeTally.player tally)}
-        Quantity.PlayersDealtDamage tally -> Quantity.PlayersDealtDamage tally {DamageTally.dealt = (DamageTally.dealt tally) {DealtDamage.recipient = f (DealtDamage.recipient (DamageTally.dealt tally))}}
-        Quantity.DamageDealtToPlayersThisTurn tally -> Quantity.DamageDealtToPlayersThisTurn tally {DealtDamage.recipient = f (DealtDamage.recipient tally)}
-        Quantity.SpellsCast tally -> Quantity.SpellsCast tally {SpellTally.player = f (SpellTally.player tally)}
-        Quantity.TimesThisTurn _ -> quantity
-        Quantity.ActivationsThisTurn tally -> Quantity.ActivationsThisTurn tally {ActivationsThisTurn.activator = f (ActivationsThisTurn.activator tally)}
-        Quantity.PermanentsDiedThisTurn -> quantity
-        Quantity.DamagePreventedThisWay -> quantity
-        Quantity.SpellsCastUsingThisTurn _ -> quantity
-        Quantity.SubgamesThisMatch -> quantity
-        Quantity.DungeonsCompleted ref -> Quantity.DungeonsCompleted (f ref)
-        Quantity.CommanderCasts ref -> Quantity.CommanderCasts (f ref)
-        Quantity.CommanderColors c -> Quantity.CommanderColors c {CommanderColors.player = f (CommanderColors.player c)}
-        Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref name) -> Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon (f ref) name)
-        Quantity.DraftNotes tally -> Quantity.DraftNotes tally {DraftNoteTally.player = f (DraftNoteTally.player tally)}
-        Quantity.EnteredFrom z -> Quantity.EnteredFrom z {InZone.player = f (InZone.player z)}
-        Quantity.WasCastFrom c ->
-          Quantity.WasCastFrom
-            c
-              { CastFrom.caster = f (CastFrom.caster c),
-                CastFrom.from = (CastFrom.from c) {InZone.player = f (InZone.player (CastFrom.from c))}
-              }
-        Quantity.ManaCount c -> Quantity.ManaCount c {ManaCount.Type.player = f (ManaCount.Type.player c)}
-        Quantity.Count c -> Quantity.Count (intoCount c)
-        Quantity.Arithmetic arithmetic -> Quantity.Arithmetic (fmap recur arithmetic)
-        Quantity.AtMost atMost -> Quantity.AtMost (fmap recur atMost)
-        Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot slot inner) -> Quantity.AgainstSlot (AgainstSlot.MkAgainstSlot slot (recur inner))
-        Quantity.AgainstExiledPile a -> Quantity.AgainstExiledPile a {AgainstExiledPile.quantity = recur (AgainstExiledPile.quantity a)}
-        Quantity.AgainstLastCardExiledWith l -> Quantity.AgainstLastCardExiledWith l {AgainstLastCardExiledWith.quantity = recur (AgainstLastCardExiledWith.quantity l)}
-        -- Every arm below holds no PlayerRef and no Quantity. InSlot names an AMOUNT
-        -- slot rather than a player one, so nothing here substitutes it -- an amount an
-        -- earlier effect bound is not a seat.
-        Quantity.Literal _ -> quantity
-        Quantity.Measure _ -> quantity
-        Quantity.Intensity -> quantity
-        Quantity.InSlot _ -> quantity
-        Quantity.Share _ -> quantity
-        Quantity.WasBound _ -> quantity
-        Quantity.BoundCount _ -> quantity
-        Quantity.UniqueVowelsOnSticker _ -> quantity
-        Quantity.VotesReceived received -> Quantity.VotesReceived received {VotesReceived.player = f (VotesReceived.player received)}
-        Quantity.Star -> quantity
-        Quantity.ObjectCounters _ -> quantity
-        Quantity.ObjectCountersOfAnyKind -> quantity
-        Quantity.LettersOnNameStickers _ -> quantity
-        Quantity.NameStickers -> quantity
-        Quantity.PowerOfStickers -> quantity
-        Quantity.ToughnessOfStickers -> quantity
-        Quantity.HasDesignation _ -> quantity
-        Quantity.DesignationValue _ -> quantity
-        Quantity.StoredResultsOfSameValue -> quantity
-        Quantity.ClassLevel -> quantity
-        Quantity.WasForetold -> quantity
-        Quantity.TributeWasPaid -> quantity
-        -- CR 601.2b: the keywords it designates are identifiers Keyword.designates
-        -- matches, never instructions this traversal descends into.
-        Quantity.TimesPaid _ -> quantity
-        Quantity.CastUsing _ -> quantity
-        Quantity.TagWasSpent {} -> quantity
-        Quantity.TagWasSpentOfOwnColor {} -> quantity
-        Quantity.ChosenColorsItIs -> quantity
-        Quantity.ChosenNumber -> quantity
-        Quantity.ManaSpent _ -> quantity
-        Quantity.WasToken -> quantity
-        Quantity.WasAttacking -> quantity
-        Quantity.WasBlocking -> quantity
-        Quantity.WasBlockedThisTurn -> quantity
-        Quantity.DamageDealtThisTurn _ -> quantity
-        Quantity.EnteredThisTurn -> quantity
-        Quantity.BlockersBeyond _ -> quantity
-        Quantity.StationMeasure -> quantity
-
 -- A scope's reference, rewritten. Every scope that names players takes one; CR
--- 608.2i's look-back names none. Shared by bakeBound and forCandidate for
--- mapPlayerRefs' reason: a new scope carrying a reference has to fail to compile
--- here rather than keep an old one in either of them.
+-- 608.2i's look-back names none. Shared by bakeBound, forCandidate and
+-- renameSlots, so a new scope carrying a reference fails to compile here rather
+-- than keep an old one in any of them.
 mapScope :: (PlayerRef.PlayerRef -> PlayerRef.PlayerRef) -> Scope.Scope -> Scope.Scope
 mapScope f scope = case scope of
   Scope.InZone (InZone.MkInZone zone ref) -> Scope.InZone (InZone.MkInZone zone (f ref))

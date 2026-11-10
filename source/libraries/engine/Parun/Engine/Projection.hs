@@ -4662,6 +4662,8 @@ modificationReads m = case m of
 -- Over-declaring is the safe direction: this is only a SCREEN, and the
 -- dependency itself is settled by re-evaluating the modification (see
 -- projectDeciding's resolve).
+--
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 quantityReads :: Quantity.Type.Quantity -> Set Aspect
 quantityReads q = case q of
   Quantity.Type.Count c -> filterReads (Count.Type.filter c) <> aggregationReads (Count.Type.aggregation c)

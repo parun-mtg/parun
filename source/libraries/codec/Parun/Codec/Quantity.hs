@@ -266,6 +266,7 @@ actionsDoneCodec =
       <$> Fields.required "actions" (Common.set PlayerAction.codec) fst
       <*> Fields.required "player" PlayerRef.codec snd
 
+-- Exhaustive, not over Parun.Engine.Children: the codec is an interpreter, every arm a tag of its own.
 tagOf :: Quantity.Quantity -> String
 tagOf x = case x of
   Quantity.Literal {} -> "Literal"
