@@ -308,6 +308,7 @@ baxter-building
 beacon-of-destruction
 beacon-of-immortality
 beacon-of-unrest
+beast-erudite-aerialist
 beatrix-loyal-general
 befoul
 befriending-the-moths-imperial-moth
@@ -1848,6 +1849,7 @@ key-to-the-side-door
 keys-to-the-house
 khabal-ghoul
 kharn-the-betrayer
+kid-loki
 kili-the-resourceful
 kill-suit-cultist
 killing-wave
