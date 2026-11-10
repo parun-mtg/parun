@@ -164,7 +164,7 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FullText as FullText
@@ -1560,7 +1560,7 @@ playerEffectNames asking x = case x of
   PlayerEffect.CastFrom castFromZone -> castFromZoneNames asking castFromZone
   PlayerEffect.PlayLandsFrom inZone -> inZoneNames asking inZone
   PlayerEffect.PlotFrom plotFromZone -> plotFromZoneNames asking plotFromZone
-  PlayerEffect.CastFromHandWithoutPayingManaCost freeCastFromHand -> freeCastFromHandNames asking freeCastFromHand
+  PlayerEffect.CastWithoutPayingManaCost freeCast -> freeCastNames asking freeCast
   PlayerEffect.CantGetCounters _playerCounterKind -> mempty
   PlayerEffect.StateCoinFlip statedFlip -> statedFlipNames asking statedFlip
   PlayerEffect.ModifyDieRoll modifiedRoll -> modifiedRollNames asking modifiedRoll
@@ -1603,9 +1603,9 @@ playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.Player
 playerStaticAbilityNames asking x = case x of
   PlayerStaticAbility.MkPlayerStaticAbility _scope condition _name effect -> foldMap (conditionNames asking) condition <> playerEffectNames asking effect
 
-freeCastFromHandNames :: (Monoid r) => Asking r -> FreeCastFromHand.FreeCastFromHand -> r
-freeCastFromHandNames asking x = case x of
-  FreeCastFromHand.MkFreeCastFromHand spells amount -> filterNames asking spells <> foldMap (quantityNames asking) amount
+freeCastNames :: (Monoid r) => Asking r -> FreeCast.FreeCast -> r
+freeCastNames asking x = case x of
+  FreeCast.MkFreeCast spells amount _from -> filterNames asking spells <> foldMap (quantityNames asking) amount
 
 plotFromZoneNames :: (Monoid r) => Asking r -> PlotFromZone.PlotFromZone -> r
 plotFromZoneNames asking x = case x of

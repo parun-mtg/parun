@@ -260,7 +260,7 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
-import qualified Parun.Types.FreeCastFromHand as FreeCastFromHand
+import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.FullText as FullText
@@ -4940,7 +4940,7 @@ filterSlotsReadSingly = Set.toList . Filter.singularSlots
 playerEffectCounts :: PlayerEffect.PlayerEffect -> [Count.Type.Count Quantity.Type.Quantity]
 playerEffectCounts playerEffect = case playerEffect of
   PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier) <> foldMap quantityCounts (PerTarget.each =<< CostModifier.perTarget modifier)
-  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCastFromHand.amount grant)
+  PlayerEffect.CastWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCast.amount grant)
   _ -> []
 
 -- The Filters a DamagePattern carries -- its source half and its printed
@@ -5077,7 +5077,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- exactly as the zone permission above is (Omniscience's is `And []`). An
   -- `amount` count's Filters are read with perEachCount's Context, so they
   -- take the same framing.
-  PlayerEffect.CastFromHandWithoutPayingManaCost grant -> FreeCastFromHand.spells grant : foldMap (fmap snd . quantityFilters) (FreeCastFromHand.amount grant)
+  PlayerEffect.CastWithoutPayingManaCost grant -> FreeCast.spells grant : foldMap (fmap snd . quantityFilters) (FreeCast.amount grant)
   -- CR 101.2's counter prohibition narrows by counter KIND, not by a Filter over
   -- objects: the object-side half of the same printings is
   -- Parun.Types.CounterRestriction, whose affected filter this lint reaches

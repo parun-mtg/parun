@@ -1150,7 +1150,7 @@ data Context = MkContext
     -- Parun.Engine.CombatRestriction.amountFrame for a combat restriction's
     -- affected set (Parun.Types.AffectedUnless's), and
     -- Parun.Engine.PlayerEffect.freeCastAdmits for a free-cast grant's spells
-    -- (Parun.Types.FreeCastFromHand's). It is Nothing at every other
+    -- (Parun.Types.FreeCast's). It is Nothing at every other
     -- position, and Parun.FilterPositionLintSpec's lint is what keeps a card out of
     -- them.
     --
