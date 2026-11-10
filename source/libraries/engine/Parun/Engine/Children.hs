@@ -25,8 +25,11 @@ import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
+import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
+import qualified Parun.Types.AttachR as AttachR
+import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
@@ -74,6 +77,7 @@ import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
@@ -93,7 +97,10 @@ import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
+import qualified Parun.Types.CounterR as CounterR
+import qualified Parun.Types.CounterSubject as CounterSubject
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.CounteringTrigger as CounteringTrigger
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
@@ -106,6 +113,8 @@ import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamagePattern as DamagePattern
+import qualified Parun.Types.DamageR as DamageR
+import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -115,9 +124,11 @@ import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
+import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DieResult as DieResult
+import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardSubject as DiscardSubject
@@ -126,12 +137,21 @@ import qualified Parun.Types.Divide as Divide
 import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.Draw as Draw
+import qualified Parun.Types.DrawCountR as DrawCountR
+import qualified Parun.Types.DrawR as DrawR
+import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EntersTrigger as EntersTrigger
+import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
+import qualified Parun.Types.EntryFlip as EntryFlip
+import qualified Parun.Types.EntryOption as EntryOption
+import qualified Parun.Types.EntryPrice as EntryPrice
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
@@ -144,6 +164,7 @@ import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
+import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
@@ -161,6 +182,7 @@ import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
+import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
@@ -168,8 +190,11 @@ import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HistoryRead as HistoryRead
+import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
+import qualified Parun.Types.InstructionR as InstructionR
+import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -181,7 +206,12 @@ import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
+import qualified Parun.Types.LifeGainR as LifeGainR
+import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLoss as LifeLoss
+import qualified Parun.Types.LifeLossPattern as LifeLossPattern
+import qualified Parun.Types.LifeLossR as LifeLossR
+import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LookAt as LookAt
@@ -193,6 +223,7 @@ import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
+import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.Measures as Measures
@@ -219,11 +250,17 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerTarget as PerTarget
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
+import qualified Parun.Types.PhasePattern as PhasePattern
+import qualified Parun.Types.PhaseR as PhaseR
+import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlacesSticker as PlacesSticker
+import qualified Parun.Types.PlaneswalkR as PlaneswalkR
+import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -246,6 +283,7 @@ import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -265,7 +303,10 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.Sacrifice as Sacrifice
+import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
+import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetClassLevel as SetClassLevel
@@ -295,12 +336,18 @@ import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
+import qualified Parun.Types.TokenPattern as TokenPattern
+import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.TurnUpR as TurnUpR
+import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.Undesignate as Undesignate
+import qualified Parun.Types.UntapR as UntapR
+import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
 import qualified Parun.Types.VoteObjects as VoteObjects
@@ -308,6 +355,9 @@ import qualified Parun.Types.VotePlayers as VotePlayers
 import qualified Parun.Types.VotesReceived as VotesReceived
 import qualified Parun.Types.Ward as Ward
 import qualified Parun.Types.WhichCounters as WhichCounters
+import qualified Parun.Types.WithCounters as WithCounters
+import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
+import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 
 -- | One visitor per kind of child a DSL tree holds. The traversals below are
 -- the ONE place that matches each constructor positionally, so a new
@@ -2021,3 +2071,259 @@ costScaleChildren :: (Applicative f) => PlayerEffectChildren f -> CostScale.Cost
 costScaleChildren c scale = case scale of
   CostScale.Once -> pure scale
   CostScale.PerColoredSymbol color -> CostScale.PerColoredSymbol <$> playerColor c color
+
+-- | One visitor per kind of child a replacement effect (CR 614.1) holds. Its
+-- event classes' payloads are matched positionally in
+-- replacementEffectChildren; a type visited whole has walks of its own
+-- outside the replacement effect.
+data ReplacementChildren card ability effect f = MkReplacementChildren
+  { -- | A Filter a field holds, judged of the objects it describes.
+    replacementFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A Quantity a field holds: a scaling's addend, a ceiling, a count.
+    replacementQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | An effect the replacement runs: instead, as a rider, or when you do.
+    replacementEffect :: effect -> f effect,
+    -- | An ability an entering permanent gains (CR 614.1c).
+    replacementAbility :: ability -> f ability,
+    -- | A token a token replacement adds (CR 614.1a).
+    replacementCard :: card -> f card,
+    -- | A keyword an entering permanent gains (CR 614.1c).
+    replacementKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | A subtype an entry option adds (CR 208.2b).
+    replacementSubtype :: Subtype.Subtype -> f Subtype.Subtype,
+    -- | A counter kind (CR 122.1), whole.
+    replacementCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword),
+    -- | The cost a turn-up procedure must have paid (CR 702.37b), whole: engine-baked.
+    replacementProcedureCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | Whose object, event or turn the replacement watches (CR 109.5), whole.
+    replacementWhose :: ControllerRelation.ControllerRelation -> f ControllerRelation.ControllerRelation,
+    -- | Where redirected damage goes (CR 614.9), whole.
+    replacementRecipient :: Recipient.Recipient -> f Recipient.Recipient,
+    -- | Which damage the replacement watches (CR 120.1), whole.
+    replacementDamage :: DamagePattern.DamagePattern -> f DamagePattern.DamagePattern,
+    -- | Counters an object enters or turns up with (CR 614.1c), whole.
+    replacementCounters :: WithCounters.WithCounters -> f WithCounters.WithCounters,
+    -- | An "as a copy" rewrite (CR 707.5), whole.
+    replacementCopy :: AsCopy.AsCopy ability effect -> f (AsCopy.AsCopy ability effect),
+    -- | The events the engine looks back over to apply the replacement.
+    replacementLooksBack :: HistoryRead.HistoryRead -> f ()
+  }
+
+-- | Every child of a replacement effect left as it is: the base a walk overrides.
+replacementLeaves :: (Applicative f) => ReplacementChildren card ability effect f
+replacementLeaves =
+  MkReplacementChildren
+    { replacementFilter = pure,
+      replacementQuantity = pure,
+      replacementEffect = pure,
+      replacementAbility = pure,
+      replacementCard = pure,
+      replacementKeyword = pure,
+      replacementSubtype = pure,
+      replacementCounterKind = pure,
+      replacementProcedureCost = pure,
+      replacementWhose = pure,
+      replacementRecipient = pure,
+      replacementDamage = pure,
+      replacementCounters = pure,
+      replacementCopy = pure,
+      replacementLooksBack = const (pure ())
+    }
+
+-- | A ReplacementEffect's children, its payload matched positionally.
+replacementEffectChildren :: (Applicative f) => ReplacementChildren card ability effect f -> ReplacementEffect.ReplacementEffect card ability effect -> f (ReplacementEffect.ReplacementEffect card ability effect)
+replacementEffectChildren c replacement = case replacement of
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern whenDestination whose what discarded causedBy resolving) destination revealing shuffling position optional whenYouDo) ->
+    fmap ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR <$> (ZoneChangePattern.MkZoneChangePattern whenDestination <$> replacementWhose c whose <*> replacementFilter c what <*> pure discarded <*> pure causedBy <*> pure resolving) <*> pure destination <*> pure revealing <*> pure shuffling <*> pure position <*> pure optional <*> traverse (replacementEffect c) whenYouDo)
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching rewrite) -> fmap ReplacementEffect.EntryR (EntryR.MkEntryR <$> replacementFilter c matching <*> entryRewriteChildren c rewrite)
+  ReplacementEffect.DamageR (DamageR.MkDamageR matching rewrite riders) ->
+    fmap ReplacementEffect.DamageR (DamageR.MkDamageR <$> replacementDamage c matching <*> damageRewriteChildren c rewrite <*> traverse (replacementEffect c) riders)
+  ReplacementEffect.DestructionR (DestructionR.MkDestructionR matching rewrite) -> fmap ReplacementEffect.DestructionR (DestructionR.MkDestructionR <$> traverse (replacementFilter c) matching <*> pure rewrite)
+  ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho) scaling) ->
+    fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho) <*> scalingChildren c scaling)
+  ReplacementEffect.TokenR (TokenR.MkTokenR (TokenPattern.MkTokenPattern whose whatToken effectsOnly) scaling plus) ->
+    fmap ReplacementEffect.TokenR (TokenR.MkTokenR <$> (TokenPattern.MkTokenPattern <$> replacementWhose c whose <*> replacementFilter c whatToken <*> pure effectsOnly) <*> traverse (scalingChildren c) scaling <*> traverse (traverse (replacementCard c)) plus)
+  ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR matching requiring paying rewrite) ->
+    fmap ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR <$> replacementFilter c matching <*> pure requiring <*> traverse (replacementProcedureCost c) paying <*> turnUpRewriteChildren c rewrite)
+  ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)
+  ReplacementEffect.UntapR (UntapR.MkUntapR during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR during <$> untapRewriteChildren c rewrite)
+  ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
+    fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose rewrite) -> fmap ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR <$> replacementWhose c whose <*> lifeGainRewriteChildren c rewrite)
+  -- CR 504.1: "except the first in your draw step" reads the turn's log back to the step's beginning.
+  ReplacementEffect.DrawR (DrawR.MkDrawR whose exceptFirst rewrite) ->
+    fmap ReplacementEffect.DrawR (DrawR.MkDrawR <$> replacementWhose c whose <*> (exceptFirst <$ Monad.when exceptFirst (replacementLooksBack c HistoryRead.StepBegins)) <*> drawRewriteChildren c rewrite)
+  ReplacementEffect.DrawCountR (DrawCountR.MkDrawCountR whose atLeast rewrite) -> fmap ReplacementEffect.DrawCountR (DrawCountR.MkDrawCountR <$> replacementWhose c whose <*> pure atLeast <*> pure rewrite)
+  ReplacementEffect.InstructionR (InstructionR.MkInstructionR instruction whose rewrite) ->
+    fmap ReplacementEffect.InstructionR (InstructionR.MkInstructionR instruction <$> replacementWhose c whose <*> instructionRewriteChildren c rewrite)
+  ReplacementEffect.DieRollR (DieRollR.MkDieRollR whose rewrite) -> fmap ReplacementEffect.DieRollR (DieRollR.MkDieRollR <$> replacementWhose c whose <*> pure rewrite)
+  ReplacementEffect.PerformerR (PerformerR.MkPerformerR instruction performer rewrite) ->
+    fmap ReplacementEffect.PerformerR (PerformerR.MkPerformerR instruction <$> replacementFilter c performer <*> instructionRewriteChildren c rewrite)
+  ReplacementEffect.GameLossR (GameLossR.MkGameLossR whose instead) -> fmap ReplacementEffect.GameLossR (GameLossR.MkGameLossR <$> replacementWhose c whose <*> traverse (replacementEffect c) instead)
+  ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR whose cause rewrite) ->
+    fmap ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR <$> replacementWhose c whose <*> pure cause <*> planeswalkRewriteChildren c rewrite)
+  ReplacementEffect.ManaR (ManaR.MkManaR matching produces) -> fmap ReplacementEffect.ManaR (ManaR.MkManaR <$> replacementFilter c matching <*> pure produces)
+  ReplacementEffect.PhaseR (PhaseR.MkPhaseR (PhasePattern.MkPhasePattern which whose) rewrite) ->
+    fmap ReplacementEffect.PhaseR (PhaseR.MkPhaseR . PhasePattern.MkPhasePattern which <$> replacementWhose c whose <*> phaseRewriteChildren c rewrite)
+
+-- | What an entry replacement does (CR 614.1c, 614.1d).
+entryRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> EntryRewrite.EntryRewrite ability effect -> f (EntryRewrite.EntryRewrite ability effect)
+entryRewriteChildren c rewrite = case rewrite of
+  EntryRewrite.AsCopy copy -> EntryRewrite.AsCopy <$> replacementCopy c copy
+  EntryRewrite.ChoiceOf options -> EntryRewrite.ChoiceOf <$> traverse (entryOptionChildren c) options
+  EntryRewrite.ChoiceByCoinFlip (EntryFlip.MkEntryFlip heads tails) -> fmap EntryRewrite.ChoiceByCoinFlip (EntryFlip.MkEntryFlip <$> entryOptionChildren c heads <*> entryOptionChildren c tails)
+  EntryRewrite.ChooseQuality _ -> pure rewrite
+  EntryRewrite.ChoosePlayer _ -> pure rewrite
+  EntryRewrite.ChooseCardNames names -> EntryRewrite.ChooseCardNames <$> replacementFilter c names
+  EntryRewrite.ChooseCardName names -> EntryRewrite.ChooseCardName <$> replacementFilter c names
+  EntryRewrite.WithCounters counters -> EntryRewrite.WithCounters <$> replacementCounters c counters
+  EntryRewrite.EntersWith (EntersWith.MkEntersWith counters keywords abilities) ->
+    fmap EntryRewrite.EntersWith (EntersWith.MkEntersWith <$> traverse (replacementCounters c) counters <*> traverseSet (replacementKeyword c) keywords <*> traverse (replacementAbility c) abilities)
+  EntryRewrite.UnderControlOf _ -> pure rewrite
+  EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber filter_ kind each) ->
+    fmap EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber <$> replacementFilter c filter_ <*> traverse (replacementCounterKind c) kind <*> replacementQuantity c each)
+  EntryRewrite.SacrificeToEnter (SacrificeToEnter.MkSacrificeToEnter count filter_) -> fmap EntryRewrite.SacrificeToEnter (SacrificeToEnter.MkSacrificeToEnter count <$> replacementFilter c filter_)
+  EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard filter_ players count orGraveyard kinds each) ->
+    fmap EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard <$> replacementFilter c filter_ <*> pure players <*> howManyChildren c count <*> pure orGraveyard <*> traverse (replacementCounterKind c) kinds <*> replacementQuantity c each)
+  EntryRewrite.EntersAttachedTo filter_ -> EntryRewrite.EntersAttachedTo <$> replacementFilter c filter_
+  EntryRewrite.Riot -> pure rewrite
+  EntryRewrite.ReadAhead -> pure rewrite
+  EntryRewrite.Unleash -> pure rewrite
+  EntryRewrite.Sunburst -> pure rewrite
+  EntryRewrite.ModularSunburst -> pure rewrite
+  -- CR 702.54a: bloodthirst reads whether an opponent was dealt damage this turn.
+  EntryRewrite.Bloodthirst _ -> rewrite <$ replacementLooksBack c HistoryRead.Damage
+  EntryRewrite.Amplify _ -> pure rewrite
+  EntryRewrite.Tribute _ -> pure rewrite
+  EntryRewrite.Compleated _ -> pure rewrite
+  EntryRewrite.Tapped -> pure rewrite
+  EntryRewrite.Prepared -> pure rewrite
+  EntryRewrite.OrTapped price -> EntryRewrite.OrTapped <$> entryPriceChildren c price
+  EntryRewrite.EntersTransformed -> pure rewrite
+  EntryRewrite.RunEffects effects -> EntryRewrite.RunEffects <$> traverse (replacementEffect c) effects
+
+-- | One option an entering permanent may be (CR 208.2b).
+entryOptionChildren :: (Applicative f) => ReplacementChildren card ability effect f -> EntryOption.EntryOption -> f EntryOption.EntryOption
+entryOptionChildren c (EntryOption.MkEntryOption power toughness keywords subtypes) =
+  EntryOption.MkEntryOption power toughness <$> traverseSet (replacementKeyword c) keywords <*> traverseSet (replacementSubtype c) subtypes
+
+-- | The price an entering permanent's controller may pay to avoid entering tapped (CR 614.1c).
+entryPriceChildren :: (Applicative f) => ReplacementChildren card ability effect f -> EntryPrice.EntryPrice -> f EntryPrice.EntryPrice
+entryPriceChildren c price = case price of
+  EntryPrice.PayLife _ -> pure price
+  EntryPrice.Reveal filter_ -> EntryPrice.Reveal <$> replacementFilter c filter_
+  EntryPrice.Behold filter_ -> EntryPrice.Behold <$> replacementFilter c filter_
+
+-- | What a damage replacement or prevention does (CR 614.1a, 615.1a).
+damageRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DamageRewrite.DamageRewrite effect -> f (DamageRewrite.DamageRewrite effect)
+damageRewriteChildren c rewrite = case rewrite of
+  DamageRewrite.PreventAll -> pure rewrite
+  DamageRewrite.PreventRemovingShieldCounter -> pure rewrite
+  DamageRewrite.PreventRemovingCounters kind -> DamageRewrite.PreventRemovingCounters <$> replacementCounterKind c kind
+  DamageRewrite.PreventNext _ -> pure rewrite
+  DamageRewrite.PreventAllBut _ -> pure rewrite
+  DamageRewrite.PreventUpTo ceiling -> DamageRewrite.PreventUpTo <$> replacementQuantity c ceiling
+  DamageRewrite.SetAmount _ -> pure rewrite
+  DamageRewrite.Scale scaling -> DamageRewrite.Scale <$> scalingChildren c scaling
+  DamageRewrite.Redirect recipient -> DamageRewrite.Redirect <$> replacementRecipient c recipient
+  DamageRewrite.RedirectNext amount recipient -> DamageRewrite.RedirectNext amount <$> replacementRecipient c recipient
+  DamageRewrite.RedirectMatching filter_ -> DamageRewrite.RedirectMatching <$> replacementFilter c filter_
+  DamageRewrite.RunEffects effects -> DamageRewrite.RunEffects <$> traverse (replacementEffect c) effects
+  DamageRewrite.TurnFaceUp -> pure rewrite
+  DamageRewrite.AlsoToSourceController -> pure rewrite
+  DamageRewrite.HealSourceFirst -> pure rewrite
+
+-- | What a draw replacement does (CR 614.1a).
+drawRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> DrawRewrite.DrawRewrite effect -> f (DrawRewrite.DrawRewrite effect)
+drawRewriteChildren c rewrite = case rewrite of
+  DrawRewrite.GainLife _ -> pure rewrite
+  DrawRewrite.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame count upTo destination filter_ reveal differentIn pick) ->
+    fmap (\rewritten -> DrawRewrite.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame count upTo destination rewritten reveal differentIn pick)) (replacementFilter c filter_)
+  DrawRewrite.Dredge _ -> pure rewrite
+  DrawRewrite.YouDraw -> pure rewrite
+  DrawRewrite.OthersMayPayLife _ -> pure rewrite
+  DrawRewrite.FromGraveyardOrLose -> pure rewrite
+  DrawRewrite.RevealUntilChosenKind -> pure rewrite
+  DrawRewrite.DrawInstead _ -> pure rewrite
+  DrawRewrite.DiscardThenDrawOrMill -> pure rewrite
+  DrawRewrite.KeepOneOfTopThenDraw count -> DrawRewrite.KeepOneOfTopThenDraw <$> replacementQuantity c count
+  DrawRewrite.MaySkipFor effects -> DrawRewrite.MaySkipFor <$> traverse (replacementEffect c) effects
+
+-- | What a turn-up replacement does (CR 614.1e).
+turnUpRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> TurnUpRewrite.TurnUpRewrite ability effect -> f (TurnUpRewrite.TurnUpRewrite ability effect)
+turnUpRewriteChildren c rewrite = case rewrite of
+  TurnUpRewrite.WithCounters counters -> TurnUpRewrite.WithCounters <$> replacementCounters c counters
+  TurnUpRewrite.MayAttachTo filter_ -> TurnUpRewrite.MayAttachTo <$> replacementFilter c filter_
+  TurnUpRewrite.AsCopy copy -> TurnUpRewrite.AsCopy <$> replacementCopy c copy
+
+-- | What an attachment replacement does (CR 701.3a).
+attachRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> AttachRewrite.AttachRewrite ability effect -> f (AttachRewrite.AttachRewrite ability effect)
+attachRewriteChildren c rewrite = case rewrite of
+  AttachRewrite.AsCopy copy -> AttachRewrite.AsCopy <$> replacementCopy c copy
+  AttachRewrite.ChooseQuality _ -> pure rewrite
+
+-- | What an untap replacement does (CR 614.1a).
+untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite
+untapRewriteChildren c rewrite = case rewrite of
+  UntapRewrite.RemoveStunCounter -> pure rewrite
+  UntapRewrite.RemoveCounterToUntap kind -> UntapRewrite.RemoveCounterToUntap <$> replacementCounterKind c kind
+
+-- | What a life loss replacement does (CR 614.1a).
+lifeLossRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> LifeLossRewrite.LifeLossRewrite -> f LifeLossRewrite.LifeLossRewrite
+lifeLossRewriteChildren c rewrite = case rewrite of
+  LifeLossRewrite.LeaveAtLeast _ -> pure rewrite
+  LifeLossRewrite.Scaled scaling -> LifeLossRewrite.Scaled <$> scalingChildren c scaling
+  LifeLossRewrite.ExileFromTopOfYourLibrary -> pure rewrite
+  LifeLossRewrite.GainInstead -> pure rewrite
+
+-- | What a life gain replacement does (CR 614.1a).
+lifeGainRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> LifeGainRewrite.LifeGainRewrite -> f LifeGainRewrite.LifeGainRewrite
+lifeGainRewriteChildren c rewrite = case rewrite of
+  LifeGainRewrite.Scaled scaling -> LifeGainRewrite.Scaled <$> scalingChildren c scaling
+  LifeGainRewrite.DrawInstead -> pure rewrite
+  LifeGainRewrite.LoseInstead -> pure rewrite
+
+-- | What an instruction replacement does (CR 614.1a).
+instructionRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> InstructionRewrite.InstructionRewrite -> f InstructionRewrite.InstructionRewrite
+instructionRewriteChildren c rewrite = case rewrite of
+  InstructionRewrite.Scaled scaling -> InstructionRewrite.Scaled <$> scalingChildren c scaling
+  InstructionRewrite.DrawInstead -> pure rewrite
+  InstructionRewrite.RollD20Instead -> pure rewrite
+  InstructionRewrite.DrawFirst -> pure rewrite
+
+-- | What a planeswalk replacement does (CR 701.31).
+planeswalkRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> PlaneswalkRewrite.PlaneswalkRewrite effect -> f (PlaneswalkRewrite.PlaneswalkRewrite effect)
+planeswalkRewriteChildren c rewrite = case rewrite of
+  PlaneswalkRewrite.ArrangeTopTwo -> pure rewrite
+  PlaneswalkRewrite.RunEffects effects -> PlaneswalkRewrite.RunEffects <$> traverse (replacementEffect c) effects
+
+-- | What a step or phase replacement does (CR 614.1b, 614.10b).
+phaseRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> PhaseRewrite.PhaseRewrite effect -> f (PhaseRewrite.PhaseRewrite effect)
+phaseRewriteChildren c rewrite = case rewrite of
+  PhaseRewrite.Skip -> pure rewrite
+  PhaseRewrite.MaySkipFor effects -> PhaseRewrite.MaySkipFor <$> traverse (replacementEffect c) effects
+
+-- | How a replacement resizes an event (CR 614.1a): only an addition holds a child.
+scalingChildren :: (Applicative f) => ReplacementChildren card ability effect f -> Scaling.Scaling -> f Scaling.Scaling
+scalingChildren c scaling = case scaling of
+  Scaling.Multiply _ -> pure scaling
+  Scaling.AddMore addend -> Scaling.AddMore <$> replacementQuantity c addend
+  Scaling.Subtract _ -> pure scaling
+  Scaling.Halve -> pure scaling
+
+-- | Who puts the counters a counter replacement watches: only a player relation is a child.
+counterSubjectChildren :: (Applicative f) => ReplacementChildren card ability effect f -> CounterSubject.CounterSubject -> f CounterSubject.CounterSubject
+counterSubjectChildren c subject = case subject of
+  CounterSubject.ByEffect -> pure subject
+  CounterSubject.ByPlayer whose -> CounterSubject.ByPlayer <$> replacementWhose c whose
+  CounterSubject.ByAnything -> pure subject
+
+-- | How many cards an entry exiles (CR 608.2d).
+howManyChildren :: (Applicative f) => ReplacementChildren card ability effect f -> HowMany.HowMany -> f HowMany.HowMany
+howManyChildren c count = case count of
+  HowMany.Exactly n -> HowMany.Exactly <$> replacementQuantity c n
+  HowMany.UpTo n -> HowMany.UpTo <$> traverse (replacementQuantity c) n
+
+-- | A set's members, each through a visitor; members the visitor maps together merge.
+traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)
+traverseSet f = fmap Set.fromList . traverse f . Set.toList

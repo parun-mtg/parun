@@ -15,8 +15,8 @@
 -- history read is a named discard, and that is the one site nothing forces: a
 -- type that later gains one owes every discard of it here a function. A type
 -- with a traversal in Parun.Engine.Children (Filter, Quantity, Effect,
--- TriggerCondition, Keyword, Cost, PlayerEffect) is matched there instead, its
--- leaf types discarded there.
+-- TriggerCondition, Keyword, Cost, PlayerEffect, ReplacementEffect) is matched
+-- there instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -720,23 +720,9 @@ counterKindNames _asking onKeyword x = case x of
   CounterKind.UnsafePowerToughness _ _ -> mempty
   CounterKind.Named _counterName -> mempty
 
-counterPatternNames :: (Monoid r) => Asking r -> CounterPattern.CounterPattern -> r
-counterPatternNames asking x = case x of
-  CounterPattern.MkCounterPattern whichKind subject whose onWhat onWho -> foldMap (counterKindNames asking (keywordNames asking)) whichKind <> counterSubjectNames asking subject <> controllerRelationNames asking whose <> filterNames asking onWhat <> foldMap (controllerRelationNames asking) onWho
-
-counterRNames :: (Monoid r) => Asking r -> CounterR.CounterR -> r
-counterRNames asking x = case x of
-  CounterR.MkCounterR matching scaling -> counterPatternNames asking matching <> scalingNames asking scaling
-
 counterRestrictionNames :: (Monoid r) => Asking r -> CounterRestriction.CounterRestriction -> r
 counterRestrictionNames asking x = case x of
   CounterRestriction.MkCounterRestriction affected kind -> affectedNames asking affected <> foldMap (counterKindNames asking (keywordNames asking)) kind
-
-counterSubjectNames :: (Monoid r) => Asking r -> CounterSubject.CounterSubject -> r
-counterSubjectNames asking x = case x of
-  CounterSubject.ByEffect -> mempty
-  CounterSubject.ByPlayer controllerRelation -> controllerRelationNames asking controllerRelation
-  CounterSubject.ByAnything -> mempty
 
 commanderDeckRuleNames :: (Monoid r) => Asking r -> CommanderDeckRule.CommanderDeckRule -> r
 commanderDeckRuleNames asking x = case x of
@@ -756,28 +742,6 @@ damagePatternNames :: (Monoid r) => Asking r -> DamagePattern.DamagePattern -> r
 damagePatternNames asking x = case x of
   DamagePattern.MkDamagePattern _whichKind whatSource whatRecipient _whoRecipient whichRecipient whichSource boundRecipient -> filterNames asking whatSource <> foldMap (filterNames asking) whatRecipient <> foldMap (recipientNames asking) whichRecipient <> names asking (`elem` whichSource) <> foldMap (slotNames asking) boundRecipient
 
-damageRNames :: (Monoid r) => Asking r -> (effect -> r) -> DamageR.DamageR effect -> r
-damageRNames asking onEffect x = case x of
-  DamageR.MkDamageR matching rewrite riders -> damagePatternNames asking matching <> damageRewriteNames asking onEffect rewrite <> foldMap onEffect riders
-
-damageRewriteNames :: (Monoid r) => Asking r -> (effect -> r) -> DamageRewrite.DamageRewrite effect -> r
-damageRewriteNames asking onEffect x = case x of
-  DamageRewrite.PreventAll -> mempty
-  DamageRewrite.PreventRemovingShieldCounter -> mempty
-  DamageRewrite.PreventRemovingCounters _kind -> mempty
-  DamageRewrite.PreventNext _natural -> mempty
-  DamageRewrite.PreventAllBut _natural -> mempty
-  DamageRewrite.PreventUpTo quantity -> quantityNames asking quantity
-  DamageRewrite.SetAmount _natural -> mempty
-  DamageRewrite.Scale scaling -> scalingNames asking scaling
-  DamageRewrite.Redirect recipient -> recipientNames asking recipient
-  DamageRewrite.RedirectNext _natural recipient -> recipientNames asking recipient
-  DamageRewrite.RedirectMatching filter_ -> filterNames asking filter_
-  DamageRewrite.RunEffects seq_ -> foldMap onEffect seq_
-  DamageRewrite.TurnFaceUp -> mempty
-  DamageRewrite.AlsoToSourceController -> mempty
-  DamageRewrite.HealSourceFirst -> mempty
-
 activeLaterPaymentNames :: (Monoid r) => Asking r -> ActiveLaterPayment.ActiveLaterPayment -> r
 activeLaterPaymentNames asking x = case x of
   ActiveLaterPayment.MkActiveLaterPayment cost payoff _createdAt expiry -> costNames asking (keywordNames asking) cost <> preventionRiderNames asking payoff <> expiryNames asking expiry
@@ -785,42 +749,6 @@ activeLaterPaymentNames asking x = case x of
 delayedTriggerNames :: (Monoid r) => Asking r -> DelayedTrigger.DelayedTrigger -> r
 delayedTriggerNames asking x = case x of
   DelayedTrigger.MkDelayedTrigger ability source _controller bindings _window expiry _createdAt -> triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty)) ability <> names asking (== source) <> foldMap (slotNames asking) (Map.keys bindings) <> foldMap (bindingNames asking) bindings <> foldMap (expiryNames asking) expiry
-
-destructionRNames :: (Monoid r) => Asking r -> DestructionR.DestructionR -> r
-destructionRNames asking x = case x of
-  DestructionR.MkDestructionR matching _rewrite -> foldMap (filterNames asking) matching
-
-dieRollRNames :: (Monoid r) => Asking r -> DieRollR.DieRollR -> r
-dieRollRNames asking x = case x of
-  DieRollR.MkDieRollR whose _rewrite -> controllerRelationNames asking whose
-
-drawCountRNames :: (Monoid r) => Asking r -> DrawCountR.DrawCountR -> r
-drawCountRNames asking x = case x of
-  DrawCountR.MkDrawCountR whose _atLeast _rewrite -> controllerRelationNames asking whose
-
-drawRNames :: (Monoid r) => Asking r -> (effect -> r) -> DrawR.DrawR effect -> r
-drawRNames asking onEffect x = case x of
-  -- CR 504.1: the exception reads the turn's log back to the step's beginning.
-  DrawR.MkDrawR whose exceptFirst rewrite -> controllerRelationNames asking whose <> (if exceptFirst then history asking HistoryRead.StepBegins else mempty) <> drawRewriteNames asking onEffect rewrite
-
-phaseRewriteNames :: (Monoid r) => (effect -> r) -> PhaseRewrite.PhaseRewrite effect -> r
-phaseRewriteNames onEffect x = case x of
-  PhaseRewrite.Skip -> mempty
-  PhaseRewrite.MaySkipFor effects -> foldMap onEffect effects
-
-drawRewriteNames :: (Monoid r) => Asking r -> (effect -> r) -> DrawRewrite.DrawRewrite effect -> r
-drawRewriteNames asking onEffect x = case x of
-  DrawRewrite.GainLife _natural -> mempty
-  DrawRewrite.FromOutsideTheGame fromOutsideTheGame -> fromOutsideTheGameNames asking fromOutsideTheGame
-  DrawRewrite.Dredge _natural -> mempty
-  DrawRewrite.YouDraw -> mempty
-  DrawRewrite.OthersMayPayLife _natural -> mempty
-  DrawRewrite.FromGraveyardOrLose -> mempty
-  DrawRewrite.RevealUntilChosenKind -> mempty
-  DrawRewrite.DrawInstead _natural -> mempty
-  DrawRewrite.DiscardThenDrawOrMill -> mempty
-  DrawRewrite.KeepOneOfTopThenDraw quantity -> quantityNames asking quantity
-  DrawRewrite.MaySkipFor effects -> foldMap onEffect effects
 
 dungeonRoomNames :: (Monoid r) => Asking r -> (card -> r) -> DungeonRoom.DungeonRoom card -> r
 dungeonRoomNames asking onCard x = case x of
@@ -915,10 +843,6 @@ effectNames asking onCard onAbility =
           Children.onChosenPermanents = Const.Const . chosenPermanentsNames asking
         }
 
-entersWithNames :: (Monoid r) => Asking r -> (ability -> r) -> EntersWith.EntersWith ability -> r
-entersWithNames asking onAbility x = case x of
-  EntersWith.MkEntersWith counters keywords abilities -> foldMap (withCountersNames asking) counters <> foldMap (keywordNames asking) keywords <> foldMap onAbility abilities
-
 entryAttackNames :: (Monoid r) => Asking r -> EntryAttack.EntryAttack -> r
 entryAttackNames asking x = case x of
   EntryAttack.Chosen -> mempty
@@ -935,58 +859,9 @@ entryHostNames asking x = case x of
   EntryHost.Specified slotName -> slotNames asking slotName
   EntryHost.Chosen filter_ -> filterNames asking filter_
 
-entryFlipNames :: (Monoid r) => Asking r -> EntryFlip.EntryFlip -> r
-entryFlipNames asking x = case x of
-  EntryFlip.MkEntryFlip heads tails -> entryOptionNames asking heads <> entryOptionNames asking tails
-
-entryOptionNames :: (Monoid r) => Asking r -> EntryOption.EntryOption -> r
-entryOptionNames asking x = case x of
-  EntryOption.MkEntryOption _power _toughness keywords _subtypes -> foldMap (keywordNames asking) keywords
-
-entryPriceNames :: (Monoid r) => Asking r -> EntryPrice.EntryPrice -> r
-entryPriceNames asking x = case x of
-  EntryPrice.PayLife _natural -> mempty
-  EntryPrice.Reveal filter_ -> filterNames asking filter_
-  EntryPrice.Behold filter_ -> filterNames asking filter_
-
-entryRNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> EntryR.EntryR ability effect -> r
-entryRNames asking onAbility onEffect x = case x of
-  EntryR.MkEntryR matching rewrite -> filterNames asking matching <> entryRewriteNames asking onAbility onEffect rewrite
-
 entryRestrictionNames :: (Monoid r) => Asking r -> EntryRestriction.EntryRestriction -> r
 entryRestrictionNames asking x = case x of
   EntryRestriction.MkEntryRestriction affected _origins -> affectedNames asking affected
-
-entryRewriteNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> EntryRewrite.EntryRewrite ability effect -> r
-entryRewriteNames asking onAbility onEffect x = case x of
-  EntryRewrite.AsCopy asCopy -> asCopyNames asking onAbility onEffect asCopy
-  EntryRewrite.ChoiceOf items -> foldMap (entryOptionNames asking) items
-  EntryRewrite.ChoiceByCoinFlip entryFlip -> entryFlipNames asking entryFlip
-  EntryRewrite.ChooseQuality _ -> mempty
-  EntryRewrite.ChoosePlayer _relation -> mempty
-  EntryRewrite.ChooseCardNames filter_ -> filterNames asking filter_
-  EntryRewrite.ChooseCardName filter_ -> filterNames asking filter_
-  EntryRewrite.WithCounters withCounters -> withCountersNames asking withCounters
-  EntryRewrite.EntersWith entersWith -> entersWithNames asking onAbility entersWith
-  EntryRewrite.UnderControlOf _relation -> mempty
-  EntryRewrite.SacrificeAnyNumber sacrificeAnyNumber -> sacrificeAnyNumberNames asking sacrificeAnyNumber
-  EntryRewrite.SacrificeToEnter sacrificeToEnter -> sacrificeToEnterNames asking sacrificeToEnter
-  EntryRewrite.ExileFromGraveyard exileFromGraveyard -> exileFromGraveyardNames asking exileFromGraveyard
-  EntryRewrite.EntersAttachedTo filter_ -> filterNames asking filter_
-  EntryRewrite.Riot -> mempty
-  EntryRewrite.ReadAhead -> mempty
-  EntryRewrite.Unleash -> mempty
-  EntryRewrite.Sunburst -> mempty
-  EntryRewrite.ModularSunburst -> mempty
-  EntryRewrite.Bloodthirst _natural -> history asking HistoryRead.Damage
-  EntryRewrite.Amplify _natural -> mempty
-  EntryRewrite.Tribute _natural -> mempty
-  EntryRewrite.Compleated _natural -> mempty
-  EntryRewrite.Tapped -> mempty
-  EntryRewrite.Prepared -> mempty
-  EntryRewrite.OrTapped entryPrice -> entryPriceNames asking entryPrice
-  EntryRewrite.EntersTransformed -> mempty
-  EntryRewrite.RunEffects seq_ -> foldMap onEffect seq_
 
 entryRidersNames :: (Monoid r) => Asking r -> (count -> r) -> (ability -> r) -> EntryRiders.EntryRiders count ability -> r
 entryRidersNames asking onCount onAbility x = case x of
@@ -1045,10 +920,6 @@ floatingCandidateNames :: Asking r -> FloatingCandidate.FloatingCandidate -> r
 floatingCandidateNames asking x = case x of
   FloatingCandidate.MkFloatingCandidate source _timestamp -> names asking (== source)
 
-fromOutsideTheGameNames :: (Monoid r) => Asking r -> FromOutsideTheGame.FromOutsideTheGame -> r
-fromOutsideTheGameNames asking x = case x of
-  FromOutsideTheGame.MkFromOutsideTheGame _count _upTo _destination filter_ _reveal _differentIn _pick -> filterNames asking filter_
-
 fullTextNames :: (Monoid r) => Asking r -> (ability -> r) -> FullText.FullText ability -> r
 fullTextNames asking onAbility x = case x of
   FullText.MkFullText graveyard alsoHas -> playerRefNames asking graveyard <> foldMap onAbility alsoHas
@@ -1079,17 +950,6 @@ handActionNames asking onCard x = case x of
 inZoneNames :: (Monoid r) => Asking r -> InZone.InZone -> r
 inZoneNames asking x = case x of
   InZone.MkInZone _zone player -> playerRefNames asking player
-
-instructionRewriteNames :: (Monoid r) => Asking r -> InstructionRewrite.InstructionRewrite -> r
-instructionRewriteNames asking x = case x of
-  InstructionRewrite.Scaled scaling -> scalingNames asking scaling
-  InstructionRewrite.DrawInstead -> mempty
-  InstructionRewrite.RollD20Instead -> mempty
-  InstructionRewrite.DrawFirst -> mempty
-
-instructionRNames :: (Monoid r) => Asking r -> InstructionR.InstructionR -> r
-instructionRNames asking x = case x of
-  InstructionR.MkInstructionR _instruction whose rewrite -> controllerRelationNames asking whose <> instructionRewriteNames asking rewrite
 
 -- A keyword through its children, each through its own walk. Its history
 -- reads are the events Children.keywordChildren says the engine looks back
@@ -1124,31 +984,6 @@ libraryPlacementNames asking x = case x of
   LibraryPlacement.ArrangedBy (ArrangedArrival.MkArrangedArrival _libraryPosition chooser) -> playerRefNames asking chooser
   LibraryPlacement.Beneath quantity -> quantityNames asking quantity
   LibraryPlacement.BeneathOrBottom quantity -> quantityNames asking quantity
-
-lifeGainRewriteNames :: (Monoid r) => Asking r -> LifeGainRewrite.LifeGainRewrite -> r
-lifeGainRewriteNames asking x = case x of
-  LifeGainRewrite.Scaled scaling -> scalingNames asking scaling
-  LifeGainRewrite.DrawInstead -> mempty
-  LifeGainRewrite.LoseInstead -> mempty
-
-lifeLossRewriteNames :: (Monoid r) => Asking r -> LifeLossRewrite.LifeLossRewrite -> r
-lifeLossRewriteNames asking x = case x of
-  LifeLossRewrite.Scaled scaling -> scalingNames asking scaling
-  LifeLossRewrite.LeaveAtLeast _floor -> mempty
-  LifeLossRewrite.ExileFromTopOfYourLibrary -> mempty
-  LifeLossRewrite.GainInstead -> mempty
-
-lifeGainRNames :: (Monoid r) => Asking r -> LifeGainR.LifeGainR -> r
-lifeGainRNames asking x = case x of
-  LifeGainR.MkLifeGainR whose rewrite -> controllerRelationNames asking whose <> lifeGainRewriteNames asking rewrite
-
-lifeLossPatternNames :: (Monoid r) => Asking r -> LifeLossPattern.LifeLossPattern -> r
-lifeLossPatternNames asking x = case x of
-  LifeLossPattern.MkLifeLossPattern whose _whichCause -> controllerRelationNames asking whose
-
-lifeLossRNames :: (Monoid r) => Asking r -> LifeLossR.LifeLossR -> r
-lifeLossRNames asking x = case x of
-  LifeLossR.MkLifeLossR matching rewrite -> lifeLossPatternNames asking matching <> lifeLossRewriteNames asking rewrite
 
 limitUnlessNames :: (Monoid r) => Asking r -> LimitUnless.LimitUnless -> r
 limitUnlessNames asking x = case x of
@@ -1440,16 +1275,6 @@ projectedCharacteristicsNames :: (Monoid r) => Asking r -> ProjectedCharacterist
 projectedCharacteristicsNames asking x = case x of
   ProjectedCharacteristics.MkProjectedCharacteristics _names _supertypes keywords _colors _manaCost _manaValue _power _toughness _loyalty _defense _intensity characteristicPT _cardTypes _subtypes staticAbilities playerAbilities grantedPlayerAbilities grantedStaticAbilities grantedRuleAbilities specialActions activatedAbilities replacementEffects triggeredAbilities delayedAbilities enchant castingPermissions ruleAbilities _lostAllAbilities _hasFullText _wordChanges textChangedKeywords _combatDamageAmount _combatDamageOptions _grantsStationToughness additionalCosts additionalCostChoices alternativeCosts costReductions grantedCostReductions grantedAlternativeCosts _grantedSpendManaAsThough _halves exceptions mergedDonors prepare alternativeSpell _prototyped spell _circled _definesChosenColor flipped -> foldMap (keywordNames asking) (Map.keys keywords) <> foldMap (characteristicPTNames asking) characteristicPT <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty))) staticAbilities <> foldMap (playerStaticAbilityNames asking) playerAbilities <> foldMap (playerStaticAbilityNames asking . snd) grantedPlayerAbilities <> foldMap (staticAbilityNames asking (grantedAbilityNames asking (const mempty)) . snd) grantedStaticAbilities <> ruleAbilitiesNames asking grantedRuleAbilities <> foldMap (specialActionNames asking) specialActions <> foldMap (activatedAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) activatedAbilities <> foldMap (printedReplacementNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty)))) replacementEffects <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) triggeredAbilities <> foldMap (triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty))) delayedAbilities <> foldMap (targetSlotNames asking) enchant <> foldMap (castingPermissionNames asking) castingPermissions <> ruleAbilitiesNames asking ruleAbilities <> foldMap (keywordNames asking) (Map.keys textChangedKeywords) <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts <> foldMap (costChoiceNames asking) additionalCostChoices <> foldMap (alternativeCostNames asking) alternativeCosts <> foldMap (costReductionNames asking) costReductions <> foldMap (costReductionNames asking) grantedCostReductions <> foldMap (alternativeCostNames asking) grantedAlternativeCosts <> foldMap (copyExceptionNames asking (grantedAbilityNames asking (const mempty))) exceptions <> foldMap (projectedCharacteristicsNames asking) mergedDonors <> foldMap (faceNames asking (const mempty)) prepare <> foldMap (faceNames asking (const mempty)) alternativeSpell <> modalNames asking (const mempty) (grantedAbilityNames asking (const mempty)) spell <> foldMap (projectedCharacteristicsNames asking) flipped
 
--- Every slot, PlayerRef, Scope, Filter, keyword and nested quantity through
--- Parun.Engine.Children; the arms below are the history reads (CR 733.3) and
--- prevention reads (CR 615.13) a quantity makes of its own, beside them.
-scalingNames :: (Monoid r) => Asking r -> Scaling.Scaling -> r
-scalingNames asking x = case x of
-  Scaling.AddMore quantity -> quantityNames asking quantity
-  Scaling.Multiply _factor -> mempty
-  Scaling.Subtract _amount -> mempty
-  Scaling.Halve -> mempty
-
 quantityNames :: (Monoid r) => Asking r -> Quantity.Quantity -> r
 quantityNames asking x =
   let own = case x of
@@ -1517,51 +1342,38 @@ removalCountNames asking x = case x of
   RemovalCount.AnyNumber -> mempty
   RemovalCount.All -> mempty
 
+-- A replacement effect through its children, each through its own walk. The
+-- history reads sit in the children (a draw-step exception, bloodthirst).
 replacementEffectNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> ReplacementEffect.ReplacementEffect card ability effect -> r
-replacementEffectNames asking onCard onAbility onEffect x = case x of
-  ReplacementEffect.ZoneChangeR zoneChangeR -> zoneChangeRNames asking onEffect zoneChangeR
-  ReplacementEffect.EntryR entryR -> entryRNames asking onAbility onEffect entryR
-  ReplacementEffect.DamageR damageR -> damageRNames asking onEffect damageR
-  ReplacementEffect.DestructionR destructionR -> destructionRNames asking destructionR
-  ReplacementEffect.CounterR counterR -> counterRNames asking counterR
-  ReplacementEffect.TokenR tokenR -> tokenRNames asking onCard tokenR
-  ReplacementEffect.TurnUpR turnUpR -> turnUpRNames asking onAbility onEffect turnUpR
-  ReplacementEffect.AttachR attachR -> attachRNames asking onAbility onEffect attachR
-  ReplacementEffect.UntapR untapR -> untapRNames asking untapR
-  ReplacementEffect.LifeLossR lifeLossR -> lifeLossRNames asking lifeLossR
-  ReplacementEffect.LifeGainR lifeGainR -> lifeGainRNames asking lifeGainR
-  ReplacementEffect.DrawR drawR -> drawRNames asking onEffect drawR
-  ReplacementEffect.DrawCountR drawCountR -> drawCountRNames asking drawCountR
-  ReplacementEffect.InstructionR instructionR -> instructionRNames asking instructionR
-  ReplacementEffect.DieRollR dieRollR -> dieRollRNames asking dieRollR
-  ReplacementEffect.PerformerR row -> filterNames asking (PerformerR.performer row) <> instructionRewriteNames asking (PerformerR.rewrite row)
-  ReplacementEffect.ManaR (ManaR.MkManaR matching _) -> filterNames asking matching
-  ReplacementEffect.GameLossR (GameLossR.MkGameLossR whose effects) -> controllerRelationNames asking whose <> foldMap onEffect effects
-  ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR whose _cause rewrite) ->
-    controllerRelationNames asking whose <> case rewrite of
-      PlaneswalkRewrite.ArrangeTopTwo -> mempty
-      PlaneswalkRewrite.RunEffects effects -> foldMap onEffect effects
-  ReplacementEffect.PhaseR (PhaseR.MkPhaseR (PhasePattern.MkPhasePattern _whichPhase whose) rewrite) -> controllerRelationNames asking whose <> phaseRewriteNames onEffect rewrite
+replacementEffectNames asking onCard onAbility onEffect =
+  Const.getConst
+    . Children.replacementEffectChildren
+      Children.MkReplacementChildren
+        { Children.replacementFilter = Const.Const . filterNames asking,
+          Children.replacementQuantity = Const.Const . quantityNames asking,
+          Children.replacementEffect = Const.Const . onEffect,
+          Children.replacementAbility = Const.Const . onAbility,
+          Children.replacementCard = Const.Const . onCard,
+          Children.replacementKeyword = Const.Const . keywordNames asking,
+          -- A subtype names no object and reads no history.
+          Children.replacementSubtype = const (Const.Const mempty),
+          Children.replacementCounterKind = Const.Const . counterKindNames asking (keywordNames asking),
+          Children.replacementProcedureCost = Const.Const . costNames asking (keywordNames asking),
+          Children.replacementWhose = Const.Const . controllerRelationNames asking,
+          Children.replacementRecipient = Const.Const . recipientNames asking,
+          Children.replacementDamage = Const.Const . damagePatternNames asking,
+          Children.replacementCounters = Const.Const . withCountersNames asking,
+          Children.replacementCopy = Const.Const . asCopyNames asking onAbility onEffect,
+          Children.replacementLooksBack = Const.Const . history asking
+        }
 
 ruleAbilitiesNames :: (Monoid r) => Asking r -> RuleAbilities.RuleAbilities -> r
 ruleAbilitiesNames asking x = case x of
   RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions crewRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions -> foldMap (activationProhibitionNames asking) activationProhibitions <> foldMap (attachRestrictionNames asking) attachRestrictions <> foldMap (attackCostNames asking) attackCosts <> foldMap (rulePermissionNames asking) rulePermissions <> foldMap (attackRequirementNames asking) attackRequirements <> foldMap (blockCostNames asking) blockCosts <> foldMap (blockPermissionNames asking) blockPermissions <> foldMap (blockRequirementNames asking) blockRequirements <> foldMap (combatRestrictionNames asking) combatRestrictions <> foldMap (counterRestrictionNames asking) counterRestrictions <> foldMap (crewRestrictionNames asking) crewRestrictions <> foldMap (entryRestrictionNames asking) entryRestrictions <> foldMap (sacrificeRestrictionNames asking) sacrificeRestrictions <> foldMap (targetRestrictionNames asking (affectedNames asking)) targetRestrictions <> foldMap (untapRestrictionNames asking) untapRestrictions
 
-exileFromGraveyardNames :: (Monoid r) => Asking r -> ExileFromGraveyard.ExileFromGraveyard -> r
-exileFromGraveyardNames asking x = case x of
-  ExileFromGraveyard.MkExileFromGraveyard filter_ _players count _orGraveyard kinds each -> filterNames asking filter_ <> foldMap (quantityNames asking) (HowMany.quantity count) <> foldMap (counterKindNames asking (keywordNames asking)) kinds <> quantityNames asking each
-
-sacrificeAnyNumberNames :: (Monoid r) => Asking r -> SacrificeAnyNumber.SacrificeAnyNumber -> r
-sacrificeAnyNumberNames asking x = case x of
-  SacrificeAnyNumber.MkSacrificeAnyNumber filter_ kind each -> filterNames asking filter_ <> foldMap (counterKindNames asking (keywordNames asking)) kind <> quantityNames asking each
-
 sacrificeRestrictionNames :: (Monoid r) => Asking r -> SacrificeRestriction.SacrificeRestriction -> r
 sacrificeRestrictionNames asking x = case x of
   SacrificeRestriction.MkSacrificeRestriction affected -> affectedNames asking affected
-
-sacrificeToEnterNames :: (Monoid r) => Asking r -> SacrificeToEnter.SacrificeToEnter -> r
-sacrificeToEnterNames asking x = case x of
-  SacrificeToEnter.MkSacrificeToEnter _count filter_ -> filterNames asking filter_
 
 scopeNames :: (Monoid r) => Asking r -> Scope.Scope -> r
 scopeNames asking x = case x of
@@ -1608,20 +1420,6 @@ staticAbilityNames asking onAbility x = case x of
 targetSlotNames :: (Monoid r) => Asking r -> TargetSlot.TargetSlot -> r
 targetSlotNames asking x = case x of
   TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided _together asCast -> poolNames asking pool <> foldMap (filterNames asking) filter_ <> foldMap (filterNames asking) asCast <> slotCountNames asking count <> foldMap (quantityNames asking) amount <> foldMap (playerRefNames asking) chooser <> foldMap (slotPerPlayerNames asking) perPlayer <> foldMap (quantityNames asking) divided
-
-tokenPatternNames :: (Monoid r) => Asking r -> TokenPattern.TokenPattern -> r
-tokenPatternNames asking x = case x of
-  TokenPattern.MkTokenPattern whose whatToken _ -> controllerRelationNames asking whose <> filterNames asking whatToken
-
-tokenPlusNames :: Asking r -> (card -> r) -> TokenPlus.TokenPlus card -> r
-tokenPlusNames _asking onCard x = case x of
-  TokenPlus.One card -> onCard card
-  TokenPlus.ThatMany card -> onCard card
-  TokenPlus.Instead card -> onCard card
-
-tokenRNames :: (Monoid r) => Asking r -> (card -> r) -> TokenR.TokenR card -> r
-tokenRNames asking onCard x = case x of
-  TokenR.MkTokenR matching scaling plus -> tokenPatternNames asking matching <> foldMap (scalingNames asking) scaling <> foldMap (tokenPlusNames asking onCard) plus
 
 topOfLibraryNames :: (Monoid r) => Asking r -> TopOfLibrary.TopOfLibrary -> r
 topOfLibraryNames asking x = case x of
@@ -1680,37 +1478,9 @@ triggeredAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r)
 triggeredAbilityNames asking onCard onAbility x = case x of
   TriggeredAbility.MkTriggeredAbility condition modal intervening _name limit _functionsFrom -> triggerLimitNames asking limit <> triggerConditionNames asking condition <> modalNames asking onCard onAbility modal <> foldMap (conditionNames asking) intervening
 
-turnUpRNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> TurnUpR.TurnUpR ability effect -> r
-turnUpRNames asking onAbility onEffect x = case x of
-  TurnUpR.MkTurnUpR matching _requiring paying rewrite -> filterNames asking matching <> foldMap (costNames asking (keywordNames asking)) paying <> turnUpRewriteNames asking onAbility onEffect rewrite
-
-turnUpRewriteNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> TurnUpRewrite.TurnUpRewrite ability effect -> r
-turnUpRewriteNames asking onAbility onEffect x = case x of
-  TurnUpRewrite.WithCounters withCounters -> withCountersNames asking withCounters
-  TurnUpRewrite.MayAttachTo filter_ -> filterNames asking filter_
-  TurnUpRewrite.AsCopy asCopy -> asCopyNames asking onAbility onEffect asCopy
-
-attachRNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> AttachR.AttachR ability effect -> r
-attachRNames asking onAbility onEffect x = case x of
-  AttachR.MkAttachR matching rewrite -> filterNames asking matching <> attachRewriteNames asking onAbility onEffect rewrite
-
-attachRewriteNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> AttachRewrite.AttachRewrite ability effect -> r
-attachRewriteNames asking onAbility onEffect x = case x of
-  AttachRewrite.AsCopy asCopy -> asCopyNames asking onAbility onEffect asCopy
-  AttachRewrite.ChooseQuality _ -> mempty
-
-untapRNames :: (Monoid r) => Asking r -> UntapR.UntapR -> r
-untapRNames asking x = case x of
-  UntapR.MkUntapR _during rewrite -> untapRewriteNames asking rewrite
-
 untapRestrictionNames :: (Monoid r) => Asking r -> UntapRestriction.UntapRestriction -> r
 untapRestrictionNames asking x = case x of
   UntapRestriction.MkUntapRestriction affected _hold while -> affectedNames asking affected <> foldMap (conditionNames asking) while
-
-untapRewriteNames :: (Monoid r) => Asking r -> UntapRewrite.UntapRewrite -> r
-untapRewriteNames asking x = case x of
-  UntapRewrite.RemoveStunCounter -> mempty
-  UntapRewrite.RemoveCounterToUntap counterKind -> counterKindNames asking (keywordNames asking) counterKind
 
 whenSpentNames :: (Monoid r) => Asking r -> WhenSpent.WhenSpent -> r
 whenSpentNames asking x = case x of
@@ -1728,14 +1498,6 @@ whileNames asking x = case x of
 withCountersNames :: (Monoid r) => Asking r -> WithCounters.WithCounters -> r
 withCountersNames asking x = case x of
   WithCounters.MkWithCounters counters -> foldMap (counterKindNames asking (keywordNames asking)) (Map.keys counters) <> foldMap (quantityNames asking) counters
-
-zoneChangePatternNames :: (Monoid r) => Asking r -> ZoneChangePattern.ZoneChangePattern -> r
-zoneChangePatternNames asking x = case x of
-  ZoneChangePattern.MkZoneChangePattern _whenDestination whoseObject whatObject _whenDiscarded _causedBy _duringResolution -> controllerRelationNames asking whoseObject <> filterNames asking whatObject
-
-zoneChangeRNames :: (Monoid r) => Asking r -> (effect -> r) -> ZoneChangeR.ZoneChangeR effect -> r
-zoneChangeRNames asking onEffect x = case x of
-  ZoneChangeR.MkZoneChangeR matching _destination _revealing _shuffling _position _optional whenYouDo -> zoneChangePatternNames asking matching <> foldMap onEffect whenYouDo
 
 zoneScopeNames :: (Monoid r) => Asking r -> ZoneScope.ZoneScope -> r
 zoneScopeNames asking x = case x of
