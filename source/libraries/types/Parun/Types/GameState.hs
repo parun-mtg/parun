@@ -516,6 +516,12 @@ data GameState = MkGameState
     -- PermissionLimit.OnceEachTurn (Night Shift of the Living Dead); cleared at
     -- turn handoff. Keyed as castPermissionsUsedThisTurn above and for its reason.
     rollModifiersUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set ModifiedRoll.ModifiedRoll),
+    -- | CR 603.2h: each resolution this turn of a triggered ability whose
+    -- "Do this only once each turn" instruction was taken
+    -- (Parun.Types.SpentOn's TakingInstruction), as the record CR 603.3b's log
+    -- carries; cleared at turn handoff. A sequence for triggeredThisGame's
+    -- reason: Parun.Engine.Event.withinTriggerLimit counts it.
+    instructionsTakenThisTurn :: Seq.Seq AbilityTriggered.AbilityTriggered,
     -- | The printed rider "This ability triggers only once"
     -- (Parun.Types.TriggerLimit's OncePerGame), spent here: every triggering of an
     -- ability carrying that rider, as the same record CR 603.3b's log carries.

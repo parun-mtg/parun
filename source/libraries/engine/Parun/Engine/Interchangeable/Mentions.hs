@@ -424,6 +424,7 @@ import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -3122,7 +3123,9 @@ triggerFrequencyNames asking events x = case x of
 triggerLimitNames :: (Monoid r) => Asking r -> TriggerLimit.TriggerLimit -> r
 triggerLimitNames asking x = case x of
   TriggerLimit.Unlimited -> mempty
-  TriggerLimit.OncePerTurn -> history asking HistoryRead.Triggers
+  TriggerLimit.OncePerTurn SpentOn.Triggering -> history asking HistoryRead.Triggers
+  -- GameState.instructionsTakenThisTurn, which Parun.Engine.Fragmented.digest keeps.
+  TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> mempty
   -- GameState.triggeredThisGame, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerGame -> mempty
 

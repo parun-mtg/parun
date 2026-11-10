@@ -1346,6 +1346,28 @@ wellRestedSpec s registry =
           Spec.assertEqWith s "the second of two instances still triggers" (length (Event.withinTriggerLimit spent [pending 2])) 1
           Spec.assertEqWith s "while a lone instance is spent" (length (Event.withinTriggerLimit spent [pending 1])) 0
 
+-- CR 603.2h: "Do this only once each turn" is spent by taking the instruction,
+-- and only for "its source's controller". Baron Strucker, HYDRA Overlord, {2}{B}
+-- Legendary Creature -- Human Villain 2/2: "Villain spells you cast cost {1}
+-- less to cast. / Whenever another Villain you control enters, you may have it
+-- connive. Do this only once each turn." Driving withinTriggerLimit directly:
+-- the two Baron scenarios in data/scenarios prove the gameplay, and no board
+-- there changes Baron's control mid-turn.
+baronStruckerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+baronStruckerSpec s registry =
+  Spec.describe s "Baron Strucker, HYDRA Overlord" $ do
+    Spec.it s "CR 603.2h a taken instruction is spent only for the player who took it" $ do
+      baron <- S.printingOf s registry "Baron Strucker, HYDRA Overlord"
+      case Face.triggeredAbilities (S.combinedFace baron) of
+        [] -> Spec.assertFailure s "Baron Strucker should declare one triggered ability"
+        ability : _ -> do
+          let (oid, g0) = S.addPermanent baron S.alice (Setup.emptyGame S.bothPlayers)
+              taken = Event.instructionTaken (AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability) g0
+              pending who = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) who ability Map.empty Nothing Nothing 1 Map.empty
+          Spec.assertEqWith s "untaken, alice's instance triggers" (length (Event.withinTriggerLimit g0 [pending S.alice])) 1
+          Spec.assertEqWith s "taken by alice, her next instance does not" (length (Event.withinTriggerLimit taken [pending S.alice])) 0
+          Spec.assertEqWith s "while bob, controlling Baron now, has taken nothing" (length (Event.withinTriggerLimit taken [pending S.bob])) 1
+
 -- CR 701.68d's blight as a TRIGGER EVENT, which nothing could watch: the whole
 -- printed pool blights, and not one card triggers on a player doing it
 -- (Scryfall oracle:blight, every "whenever" clause read, 2026-09-05). So the
@@ -1501,4 +1523,5 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   brinebornCutthroatSpec s registry
   oreskosSunGuideSpec s registry
   wellRestedSpec s registry
+  baronStruckerSpec s registry
   blightChroniclerSpec s registry

@@ -71,7 +71,9 @@
               "player": "You"
             }
           },
-          "limit": "OncePerTurn",
+          "limit": {
+            "type": "OncePerTurn"
+          },
           "modal": {
             "modes": [
               {

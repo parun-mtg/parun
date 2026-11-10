@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -48,6 +49,7 @@ data TurnRegisters = MkTurnRegisters
     activationsThisTurn :: Seq.Seq PastActivation.PastActivation,
     castPermissionsUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set CastFromZone.CastFromZone),
     rollModifiersUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set ModifiedRoll.ModifiedRoll),
+    instructionsTakenThisTurn :: Seq.Seq AbilityTriggered.AbilityTriggered,
     turnResume :: TurnResume.TurnResume
   }
   deriving (Eq, Ord, Show)

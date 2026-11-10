@@ -289,6 +289,7 @@ import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
+import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -309,6 +310,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -11998,7 +12000,9 @@ triggeredSources boards gs =
 -- trigger too. Keyed on the SOURCE and the ABILITY, so two permanents with the
 -- same printed ability spend separate limits (CR 113.7), one that leaves and
 -- returns re-arms (CR 400.7), and two DISTINCT abilities of one source spend
--- separate limits; a change of CONTROL spends nothing. Spent on TRIGGERING.
+-- separate limits; a change of CONTROL spends nothing. Spent on TRIGGERING,
+-- except CR 603.2h's rider, which GameState.instructionsTakenThisTurn spends as
+-- its instruction is taken (instructionTaken).
 --
 -- COUNTED against PendingTrigger.copies, as stateTriggers counts CR 603.8's
 -- suppression: CR 113.2c makes two value-identical instances on one source two
@@ -12010,7 +12014,7 @@ triggeredSources boards gs =
 withinTriggerLimit :: GameState -> [PendingTrigger.PendingTrigger] -> [PendingTrigger.PendingTrigger]
 withinTriggerLimit gs =
   let spentKey record = limitKey (AbilityTriggered.source record) (AbilityTriggered.controller record) (AbilityTriggered.ability record)
-      perTurn record = TriggeredAbility.limit (AbilityTriggered.ability record) == TriggerLimit.OncePerTurn
+      perTurn record = TriggeredAbility.limit (AbilityTriggered.ability record) == TriggerLimit.OncePerTurn SpentOn.Triggering
       tally :: [LimitKey] -> Map LimitKey Natural
       tally = List.foldl' (\m key -> Map.insertWith (+) key 1 m) Map.empty
       go _ [] = []
@@ -12023,13 +12027,14 @@ withinTriggerLimit gs =
         ( tally
             ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (GameState.events gs))))
                 <> fmap spentKey (Foldable.toList (GameState.triggeredThisGame gs))
+                <> fmap spentKey (Foldable.toList (GameState.instructionsTakenThisTurn gs))
             )
         )
 
 -- What ONE INSTANCE of a triggered ability is, for the rider's purposes: what it
 -- hangs on and which ability it is -- the discriminator Parun.Types.TriggerEntry
 -- carries, and its haddock argues for the ability VALUE over an ordinal -- plus
--- the controller for a SOURCELESS ability and only for one. Rule 726.2 and rule
+-- the controller for a SOURCELESS ability or CR 603.2h's rider. Rule 726.2 and rule
 -- 702.179d give each player their own instance of one inherent ability with no
 -- object to tell them apart, where an object-borne ability is CR 113.7's one
 -- instance whoever controls it.
@@ -12037,6 +12042,8 @@ withinTriggerLimit gs =
 -- The controller component is proved by Parun.TeamSpec's "CR 702.179d each
 -- active teammate's speed rises once": under the shared team turns option two
 -- active players each spend their own instance of rule 702.179d's ability.
+-- CR 603.2h's by Parun.EventTriggerSpec's "CR 603.2h a taken instruction is
+-- spent only for the player who took it".
 --
 -- A grant is told apart by its name, drawn from its granter
 -- (Binding.acquiredFrom), so a new granter's grant is unspent; the Well Rested
@@ -12048,7 +12055,13 @@ limitKey src ctrl ability =
   ( src,
     case src of
       TriggerSource.Sourceless -> Just ctrl
-      TriggerSource.OfObject _ -> Nothing,
+      TriggerSource.OfObject _ -> case TriggeredAbility.limit ability of
+        -- CR 603.2h: what "its source's controller" has taken, so a new
+        -- controller's instance is unspent.
+        TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> Just ctrl
+        TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
+        TriggerLimit.Unlimited -> Nothing
+        TriggerLimit.OncePerGame -> Nothing,
     ability
   )
 
@@ -12059,8 +12072,41 @@ limitedKey pending =
   let key = limitKey (PendingTrigger.source pending) (PendingTrigger.controller pending) (PendingTrigger.ability pending)
    in case TriggeredAbility.limit (PendingTrigger.ability pending) of
         TriggerLimit.Unlimited -> Nothing
-        TriggerLimit.OncePerTurn -> Just key
+        TriggerLimit.OncePerTurn _ -> Just key
         TriggerLimit.OncePerGame -> Just key
+
+-- CR 603.2h: the record a resolving triggered ability spends by taking its
+-- "Do this only once each turn" instruction, keyed as limitedKey keys a pending
+-- trigger, or Nothing when its ability prints no such rider. `controller` is the
+-- ability's (CR 603.3a). Only an object-borne ability reaches the stack as a
+-- Parun.Types.TriggeredAbilitySource, so the source is always an object.
+instructionRecord :: PlayerId -> TriggeredAbilitySource.TriggeredAbilitySource -> Maybe AbilityTriggered.AbilityTriggered
+instructionRecord controller src =
+  let ability = TriggeredAbilitySource.ability src
+   in case TriggeredAbility.limit ability of
+        TriggerLimit.OncePerTurn SpentOn.TakingInstruction ->
+          Just
+            AbilityTriggered.MkAbilityTriggered
+              { AbilityTriggered.source = TriggerSource.OfObject (TriggeredAbilitySource.source src),
+                AbilityTriggered.controller = controller,
+                AbilityTriggered.ability = ability
+              }
+        TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
+        TriggerLimit.Unlimited -> Nothing
+        TriggerLimit.OncePerGame -> Nothing
+
+-- CR 603.2h: has this instruction been taken this turn? An instance that
+-- triggered before it was taken does nothing as it resolves (Nykthos Paragon's
+-- ruling of 2021-06-18), so the resolution asks this as well as
+-- withinTriggerLimit.
+instructionSpent :: GameState -> AbilityTriggered.AbilityTriggered -> Bool
+instructionSpent gs record =
+  let key r = limitKey (AbilityTriggered.source r) (AbilityTriggered.controller r) (AbilityTriggered.ability r)
+   in any ((== key record) . key) (GameState.instructionsTakenThisTurn gs)
+
+-- CR 603.2h: spend the instruction's turn.
+instructionTaken :: AbilityTriggered.AbilityTriggered -> GameState -> GameState
+instructionTaken record gs = gs {GameState.instructionsTakenThisTurn = GameState.instructionsTakenThisTurn gs Seq.|> record}
 
 -- `triggeredEvent` read back: the record an event carries if it is one ability
 -- triggering (CR 603.3b), and nothing otherwise.

@@ -879,8 +879,8 @@ resolveModesWith runSubgame stackId srcId modes = do
                       after <- State.get
                       pure (answers2, recordTaken limb admitted before after limbIdx ran)
                in -- CR 608.2e's clause is what each gate covers. Run only when
-                  -- `fizzles` is False.
-                  Monad.foldM_
+                  -- `fizzles` is False. Its last component is the clauses taken.
+                  Monad.foldM
                     ( \(answers, picked, ran) (cIdx, clause) -> do
                         -- CR 118.12's "If you do" first, off the same fold the
                         -- spell path keeps. Proved on this path, not merely
@@ -943,10 +943,20 @@ resolveModesWith runSubgame stackId srcId modes = do
                     )
                     (Map.empty, Map.empty, Set.empty)
                     indexedClauses
+          -- CR 603.2h: the "Do this only once each turn" record this ability
+          -- spends, and whether an earlier instance already spent it, in which
+          -- case this one does nothing (Nykthos Paragon's ruling of 2021-06-18).
+          instruction = case Object.source obj of
+            Source.OfTrigger triggered -> Event.instructionRecord effectController triggered
+            _ -> Nothing
+          spent = maybe False (Event.instructionSpent gs) instruction
        in do
             Monad.unless fizzles $ do
               recordAbilityResolution obj
-              Monad.forM_ modes resolveOne
+              Monad.unless spent $ do
+                folds <- traverse resolveOne modes
+                let took = any (\(_, _, ran) -> not (Set.null ran)) folds
+                Monad.when took (Monad.forM_ instruction (State.modify' . Event.instructionTaken))
             State.modify' (Game.cease stackId)
 
 -- CR 608.2n / 608.2i: file this resolution against the ability that is
