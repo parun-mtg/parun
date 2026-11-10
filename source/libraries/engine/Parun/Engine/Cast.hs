@@ -719,7 +719,7 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- Rejection is priced on its own target" and its promised Into the Flood
         -- Maw under Kopala prove the two halves.
         castFor = Game.lookupObject oid gs >>= Object.castUsing
-        trimmed = (Face.spell face) {Modal.Type.modes = fmap (trimModeTargetSlots pid oid gs) (Modal.Type.modes (Face.spell face))}
+        trimmed = trimModal pid oid gs (Face.spell face)
         readings
           | Game.beingCast gs oid = fmap (\paid -> trimModalForCandidate castFor paid (Face.spell face)) paidReadings
           | otherwise = [trimmed]
@@ -3328,14 +3328,17 @@ closeTargetSlotNames declared have =
 -- sibling slot's pool/filter/bound, or the Filters of a delayed ability it arms,
 -- union over the whole mode rather than any one clause.
 --
+-- The modal's shared clauses (Parun.Types.Modal's `shared`) read every mode's
+-- slots, so each mode's own clauses are joined by them.
+--
 -- Parametric in HOW a clause's applicability is judged, so this one fold
 -- serves both readers: Cast.castProposed's CR 601.2c step passes
 -- clauseAppliesAt (the live, post-announcement board), and Cast.targetable and
 -- the CR 700.2a mode gate below pass clauseAppliesForCandidate (no board yet,
 -- only which alternative-cost candidate is being asked about).
-trimModeTargetSlotsBy :: (Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool) -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-trimModeTargetSlotsBy applies mode =
-  let clauses = Foldable.toList (Mode.clauses mode)
+trimModeTargetSlotsBy :: (Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool) -> [Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+trimModeTargetSlotsBy applies shared mode =
+  let clauses = Foldable.toList (Mode.clauses mode) <> shared
       applying = filter applies clauses
       -- CR 603.7a / 603.7c: a delayed ability this creates may refer to an
       -- object the spell targeted, so a declared slot no clause reads is the
@@ -3350,23 +3353,24 @@ trimModeTargetSlotsBy applies mode =
       needed = closeTargetSlotNames (Mode.targetSlots mode) direct
    in mode {Mode.targetSlots = Map.restrictKeys (Mode.targetSlots mode) needed}
 
-trimModeTargetSlots :: PlayerId -> ObjectId -> GameState -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-trimModeTargetSlots pid sid gs = trimModeTargetSlotsBy (clauseAppliesAt pid sid gs)
+-- trimModeTargetSlotsBy over every mode of a modal.
+trimModalBy :: (Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+trimModalBy applies modal = modal {Modal.Type.modes = fmap (trimModeTargetSlotsBy applies (Foldable.toList (Modal.Type.shared modal))) (Modal.Type.modes modal)}
+
+-- Cast.castProposed's CR 601.2c reader: trims against the live board.
+trimModal :: PlayerId -> ObjectId -> GameState -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+trimModal pid sid gs = trimModalBy (clauseAppliesAt pid sid gs)
 
 -- Cast.targetable's and the CR 700.2a mode gate's own reader: trims by WHICH
 -- alternative-cost candidate is being asked about, not by a board.
-trimModeTargetSlotsForCandidate :: Maybe Keyword -> Integer -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-trimModeTargetSlotsForCandidate castFor paid = trimModeTargetSlotsBy (clauseAppliesForCandidate castFor paid)
-
--- trimModeTargetSlotsForCandidate over a whole Modal, Modal.untargeted's shape
--- one level up -- CR 700.2a's own generalization: "if one of the modes would
--- be illegal (due to an inability to choose legal targets, for example), that
--- mode can't be chosen" is judged per CANDIDATE, since CR 601.2b's modes are
+-- Modal.untargeted's shape one level up -- CR 700.2a's own generalization: "if
+-- one of the modes would be illegal (due to an inability to choose legal
+-- targets, for example), that mode can't be chosen" is judged per CANDIDATE, since CR 601.2b's modes are
 -- chosen before its cost is, and a mode illegal under the printed cost may be
 -- legal under an alternative one or vice versa (Cyclonic Rift overloaded,
 -- Part the Waterveil awakened).
 trimModalForCandidate :: Maybe Keyword -> Integer -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-trimModalForCandidate castFor paid modal = modal {Modal.Type.modes = fmap (trimModeTargetSlotsForCandidate castFor paid) (Modal.Type.modes modal)}
+trimModalForCandidate castFor paid = trimModalBy (clauseAppliesForCandidate castFor paid)
 
 -- CR 601.2b-i for a spell already on the stack -- castSpell's body once its CR
 -- 601.2a move has happened. `oid` is the card before that move, named only to
@@ -3769,9 +3773,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               bestowedGs <- State.get
               let -- CR 702.33g/702.113b: the face CR 601.2c reads its slots off,
                   -- each mode's declared targets narrowed to the ones some
-                  -- currently-applying clause reads -- trimModeTargetSlots'
+                  -- currently-applying clause reads -- trimModeTargetSlotsBy's
                   -- doc has the worked example (Part the Waterveil).
-                  faceForTargets = face {Face.spell = (Face.spell face) {Modal.Type.modes = fmap (trimModeTargetSlots pid sid bestowedGs) (Modal.Type.modes (Face.spell face))}}
+                  faceForTargets = face {Face.spell = trimModal pid sid bestowedGs (Face.spell face)}
                   -- CR 702.96b: the overload candidate's spell "won't require any
                   -- targets", so CR 601.2c announces none -- read off the tag
                   -- stamped one step up rather than off the face, which prints

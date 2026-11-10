@@ -58,7 +58,7 @@ codec :: Codec.Codec (GrantedAbility.GrantedAbility Text.Text)
 codec = GrantedAbility.codec Common.text
 
 emptyModal :: Modal.Modal Text.Text (GrantedAbility.GrantedAbility Text.Text)
-emptyModal = Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory
+emptyModal = Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty
 
 -- Every arm, since the whole point of the type is that CR 613.1f's grant reaches
 -- several of CR 113.3's ability kinds and the wire has to say which.

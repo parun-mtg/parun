@@ -1406,7 +1406,8 @@ rewriteWithCounters pairs w =
     . fmap (rewriteQuantity pairs)
     $ WithCounters.counters w
 
--- The modal payload both abilities carry. Both halves of a mode: its clauses'
+-- The modal payload both abilities carry, its shared clauses too. Both halves
+-- of a mode: its clauses'
 -- effects, and its TARGET SLOTS, whose Filter is the candidate set CR 601.2c
 -- (imported by CR 602.2b) reads. The Pool is not an omission: it names a rules
 -- category (CR 115) rather than a word printed on the card.
@@ -1423,7 +1424,7 @@ rewriteModal pairs modal =
           { Mode.clauses = fmap rewriteClause (Mode.clauses m),
             Mode.targetSlots = fmap (rewriteTargetSlot pairs) (Mode.targetSlots m)
           }
-   in modal {Modal.Type.modes = fmap rewriteMode (Modal.Type.modes modal)}
+   in modal {Modal.Type.modes = fmap rewriteMode (Modal.Type.modes modal), Modal.Type.shared = fmap rewriteClause (Modal.Type.shared modal)}
 
 -- CR 612.1 through the cost a clause offers as it resolves (CR 118.12).
 -- Lithophage's "sacrifice this creature unless you sacrifice a Mountain" is the

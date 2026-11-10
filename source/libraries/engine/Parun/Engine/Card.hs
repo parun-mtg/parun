@@ -951,7 +951,7 @@ fuseSpells ::
 fuseSpells spells = do
   halves <- traverse selectionModes (NonEmpty.toList spells)
   merged <- traverse (Foldable.foldlM mergeDisjointModes emptyMode) (sequence halves)
-  pure (Modal.Type.MkModal (Seq.fromList merged) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory)
+  pure (Modal.Type.MkModal (Seq.fromList merged) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
 
 -- One half's every legal answer to its own CR 700.2 instruction, each as its
 -- chosen modes merged in printed order (Parun.Engine.Modal.selections), or Nothing

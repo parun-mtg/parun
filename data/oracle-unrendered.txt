@@ -491,6 +491,7 @@ caged-sun
 caged-zombie
 caldera-breaker
 calim-djinn-emperor
+call-damage-control
 call-of-the-full-moon
 call-of-the-wild
 caltrops

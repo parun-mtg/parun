@@ -704,6 +704,7 @@ defaultSpell =
     (Seq.singleton (Mode.MkMode Seq.empty Map.empty))
     (ModeSelection.ChooseExactly 1)
     ModeMemory.NoMemory
+    Seq.empty
 
 -- | The keywords a face prints, with the multiplicity dropped. What a
 -- membership question wants -- "does this card print flash" -- where the count

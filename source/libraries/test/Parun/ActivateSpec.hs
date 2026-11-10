@@ -853,6 +853,7 @@ cyclingSpec s registry = Spec.describe s "Cycling" $ do
                 (Seq.fromList [Mode.MkMode Seq.empty Map.empty, Mode.MkMode Seq.empty Map.empty])
                 (ModeSelection.ChooseExactly 1)
                 ModeMemory.NoMemory
+                Seq.empty
             )
             []
             (Activator.Related PlayerRelation.You)

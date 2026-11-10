@@ -51,6 +51,7 @@ drawOne =
     )
     (ModeSelection.ChooseExactly 1)
     ModeMemory.NoMemory
+    Seq.empty
 
 -- One constructor, so two cases: a room with arrows and an ability, and a room
 -- writing neither optional key -- the bottommost room of a dungeon whose printed

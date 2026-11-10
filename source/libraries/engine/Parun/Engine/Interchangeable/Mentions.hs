@@ -1544,7 +1544,7 @@ measuresNames asking x = case x of
 
 modalNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Modal.Modal card ability -> r
 modalNames asking onCard onAbility x = case x of
-  Modal.MkModal modes selection _memory -> foldMap (modeNames asking onCard onAbility) modes <> modeSelectionNames asking selection
+  Modal.MkModal modes selection _memory shared -> foldMap (modeNames asking onCard onAbility) modes <> modeSelectionNames asking selection <> foldMap (clauseNames asking onCard onAbility) shared
 
 modeSelectionNames :: (Monoid r) => Asking r -> ModeSelection.ModeSelection -> r
 modeSelectionNames asking x = case x of

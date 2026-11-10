@@ -249,9 +249,9 @@ modesOf oid gs = case Game.lookupObject oid gs of
 -- 'modesOf', an ability's off its own modal (Stack.resolveOneWith's reads).
 resolvingMode :: ObjectId -> ModeIndex -> GameState -> Maybe (Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
 resolvingMode oid idx gs = case fmap Object.source (Game.lookupObject oid gs) of
-  Just (Source.OfAbility src) -> Modal.modeAtIndex idx (ActivatedAbility.modal (ActivatedAbilitySource.ability src))
-  Just (Source.OfTrigger src) -> Modal.modeAtIndex idx (TriggeredAbility.modal (TriggeredAbilitySource.ability src))
-  Just (Source.OfInherentTrigger src) -> Modal.modeAtIndex idx (TriggeredAbility.modal (InherentTriggerSource.ability src))
+  Just (Source.OfAbility src) -> Modal.resolvingModeAt idx (ActivatedAbility.modal (ActivatedAbilitySource.ability src))
+  Just (Source.OfTrigger src) -> Modal.resolvingModeAt idx (TriggeredAbility.modal (TriggeredAbilitySource.ability src))
+  Just (Source.OfInherentTrigger src) -> Modal.resolvingModeAt idx (TriggeredAbility.modal (InherentTriggerSource.ability src))
   Just (Source.OfCard _) -> spell
   Just (Source.OfSpellCopy _) -> spell
   Just (Source.OfCardCopy _) -> spell

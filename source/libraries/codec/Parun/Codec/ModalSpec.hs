@@ -43,9 +43,9 @@ toJson = Codec.encode codec
 fromJson :: Value.Value -> Either Text.Text (Modal.Modal Text.Text Text.Text)
 fromJson = Codec.decode codec
 
--- One constructor, so three cases: a populated payload in CR 700.2's non-modal
--- shape, the `selection` field defaulted (the only omissible one -- `modes` is
--- required and non-empty by invariant), and the empty-modes decode failure.
+-- One constructor, so four cases: a populated payload in CR 700.2's non-modal
+-- shape, the `selection` field defaulted (`modes` is required and non-empty by
+-- invariant), the `shared` clauses, and the empty-modes decode failure.
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Modal" $ do
   Spec.it s "MkModal, rule 702.6a's equip payload" $
@@ -62,6 +62,7 @@ spec s = Spec.describe s "Parun.Codec.Modal" $ do
           )
           (ModeSelection.ChooseExactly 1)
           ModeMemory.NoMemory
+          Seq.empty
       )
       " {\"modes\":[{\"clauses\":[{\"effects\":[{\"type\":\"Attach\",\"value\":\"target\"}]}],\"targetSlots\":{\"target\":{\"pool\":{\"type\":\"Creatures\"},\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}}]} "
   Spec.it s "omits a ChooseExactly 1 selection" $
@@ -69,8 +70,22 @@ spec s = Spec.describe s "Parun.Codec.Modal" $ do
       s
       toJson
       fromJson
-      (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) Modal.defaultSelection ModeMemory.NoMemory)
+      (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) Modal.defaultSelection ModeMemory.NoMemory Seq.empty)
       " {\"modes\":[{}]} "
+  -- CR 608.2c: Call Damage Control's shape, a mode declaring only a target
+  -- and one instruction the chosen modes share.
+  Spec.it s "carries shared clauses" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      ( Modal.MkModal
+          (Seq.singleton (Mode.MkMode Seq.empty (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing))))
+          (ModeSelection.ChooseExactly 1)
+          ModeMemory.NoMemory
+          (Seq.singleton (Clause.MkClause Nothing Nothing Nothing Optionality.Mandatory Nothing (Seq.singleton (Effect.Attach (SlotName.MkSlotName (Text.pack "target"))))))
+      )
+      " {\"modes\":[{\"targetSlots\":{\"target\":{\"pool\":{\"type\":\"Creatures\"}}}}],\"shared\":[{\"effects\":[{\"type\":\"Attach\",\"value\":\"target\"}]}]} "
   -- CR 700.2's non-modal payload is a single Mode: a modal PAYLOAD has at
   -- least one mode by invariant, so an empty `modes` array is a decode
   -- failure, not a spell that offers no choices.

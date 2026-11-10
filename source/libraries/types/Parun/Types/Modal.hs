@@ -1,6 +1,7 @@
 module Parun.Types.Modal where
 
 import qualified Data.Sequence as Seq
+import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
@@ -18,6 +19,10 @@ data Modal card ability = MkModal
     -- (Parun.Engine.Engine.placeBorne).
     --
     -- Not implemented: on an activated ability (#5782), or "this turn" (#5783).
-    memory :: ModeMemory.ModeMemory
+    memory :: ModeMemory.ModeMemory,
+    -- | CR 608.2c: the instruction the chosen modes share, run once after them
+    -- and reading every chosen mode's targets (Call Damage Control's "Return
+    -- those cards"). Empty on every other payload.
+    shared :: Seq.Seq (Clause.Clause card ability)
   }
   deriving (Eq, Ord, Show)

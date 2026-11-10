@@ -127,6 +127,7 @@ minimalModal =
     (Seq.singleton (Mode.MkMode Seq.empty Map.empty))
     (ModeSelection.ChooseExactly 1)
     ModeMemory.NoMemory
+    Seq.empty
 
 -- | CR 603.6a's simplest trigger. The shape does not matter here, only that it
 -- is a well-typed TriggeredAbility Card.

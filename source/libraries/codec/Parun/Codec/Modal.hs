@@ -5,6 +5,7 @@ module Parun.Codec.Modal where
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.Clause as Clause
 import qualified Parun.Codec.Mode as Mode
 import qualified Parun.Codec.ModeMemory as ModeMemory
 import qualified Parun.Codec.ModeSelection as ModeSelection
@@ -37,4 +38,5 @@ codec cardCodec abilityCodec =
         modes <- Fields.required "modes" (Common.seq (Mode.codec cardCodec abilityCodec)) Modal.modes
         selection <- Fields.defaulted "selection" defaultSelection ModeSelection.codec Modal.selection
         memory <- Fields.defaulted "memory" ModeMemory.NoMemory ModeMemory.codec Modal.memory
-        pure Modal.MkModal {Modal.modes = modes, Modal.selection = selection, Modal.memory = memory}
+        shared <- Fields.defaulted "shared" Seq.empty (Common.seq (Clause.codec cardCodec abilityCodec)) Modal.shared
+        pure Modal.MkModal {Modal.modes = modes, Modal.selection = selection, Modal.memory = memory, Modal.shared = shared}

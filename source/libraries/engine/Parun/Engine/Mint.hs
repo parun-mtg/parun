@@ -74,7 +74,7 @@ oneModeTargeting slots = oneModeOf slots . Seq.singleton . mandatory
 -- general form of `oneModeTargeting`, for a clause that is optional, gated or
 -- one of several.
 oneModeOf :: Map.Map SlotName TargetSlot -> Seq.Seq (Clause.Clause card ability) -> Modal.Modal card ability
-oneModeOf slots clauses = Modal.MkModal (Seq.singleton (Mode.MkMode clauses slots)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory
+oneModeOf slots clauses = Modal.MkModal (Seq.singleton (Mode.MkMode clauses slots)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty
 
 -- | A triggered ability (CR 603.1) of one `oneMode`, with no intervening "if"
 -- (CR 603.4), no name and no "only once" rider.

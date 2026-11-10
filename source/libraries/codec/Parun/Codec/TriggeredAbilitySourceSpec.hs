@@ -34,7 +34,8 @@ ability =
         Modal.MkModal
           (Seq.singleton (Mode.MkMode Seq.empty Map.empty))
           (ModeSelection.ChooseExactly 1)
-          ModeMemory.NoMemory,
+          ModeMemory.NoMemory
+          Seq.empty,
       TriggeredAbility.intervening = Nothing,
       TriggeredAbility.name = Nothing,
       TriggeredAbility.limit = TriggerLimit.Unlimited,
