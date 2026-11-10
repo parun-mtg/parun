@@ -285,6 +285,7 @@ bard-the-bowman
 bards-company
 barkhide-troll
 barls-cage
+baron-helmut-zemo
 barrin
 barrin-tolarian-archmage
 bartered-cow

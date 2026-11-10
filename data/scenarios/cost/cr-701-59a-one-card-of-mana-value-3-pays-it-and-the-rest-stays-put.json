@@ -58,7 +58,7 @@
       "player": "alice",
       "refuse": {
         "Answer": {
-          "prompt": "ChooseCollectEvidence",
+          "prompt": "ChooseExilesTotalling",
           "with": [
             "$researcher"
           ]
@@ -71,7 +71,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseCollectEvidence",
+          "prompt": "ChooseExilesTotalling",
           "with": [
             "$soil"
           ]

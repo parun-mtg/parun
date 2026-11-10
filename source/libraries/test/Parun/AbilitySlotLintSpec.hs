@@ -388,6 +388,10 @@ activatedAbilityOffends ability =
         if exilesPermanentsAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.exiledPermanent
           else Set.empty
+      totalled =
+        if exilesTotallingAsCost (ActivatedAbility.cost ability)
+          then Set.singleton Binding.totalledExiles
+          else Set.empty
       discarded =
         if discardsAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.discardedCard
@@ -396,7 +400,7 @@ activatedAbilityOffends ability =
         if removesCountersAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.removedCounters
           else Set.empty
-   in modalSlotsOffend (const Set.empty) (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
+   in modalSlotsOffend (const Set.empty) (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
 -- Does this cost tap permanents the payer CHOOSES? sacrificesAsCost's shape, and
 -- the same reason: CR 601.2h's payment binds Binding.tappedPermanent
@@ -463,6 +467,17 @@ exilesPermanentsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 exilesPermanentsAsCost =
   let isExile component = case component of
         CostComponent.ExilePermanents {} -> True
+        _ -> False
+   in any isExile . Cost.Type.components
+
+-- Does this cost exile cards to reach a THRESHOLD? exilesPermanentsAsCost's
+-- shape: CR 601.2h's payment binds Binding.totalledExiles (Cost.payComponent's
+-- ExileCardsTotalling arm), so Baron Helmut Zemo's "copy those exiled cards" is
+-- an ordinary slot read.
+exilesTotallingAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
+exilesTotallingAsCost =
+  let isExile component = case component of
+        CostComponent.ExileCardsTotalling {} -> True
         _ -> False
    in any isExile . Cost.Type.components
 

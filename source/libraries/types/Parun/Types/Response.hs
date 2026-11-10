@@ -666,7 +666,7 @@ data Response
     -- ChoseTaps' reason below: replaying a transcript against the wrong one
     -- would sacrifice what it should have exiled.
     --
-    -- Shared by Prompt.ChooseExilesFromGraveyard and Prompt.ChooseCollectEvidence,
+    -- Shared by Prompt.ChooseExilesFromGraveyard and Prompt.ChooseExilesTotalling,
     -- which is ChoseTaps' relation to its two prompts: the two ask for the same
     -- cards out of the same zone and differ only in whether the Natural beside
     -- them counts the cards or totals their mana values, so a transcript replayed

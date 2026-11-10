@@ -125,7 +125,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   -- CR 702.122a / 701.59a: any group whose total power or mana value reaches
   -- the threshold, judged by the values the prompt carries.
   Prompt.ChooseTapsForTotalPower _ _ _ candidates power -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger power) candidates)
-  Prompt.ChooseCollectEvidence _ _ _ candidates total -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger total) candidates)
+  Prompt.ChooseExilesTotalling _ _ _ _ candidates total -> fmap (maybe (Replay.defaultAnswer (Asked.prompt asked)) Set.fromList) (reaching (toInteger total) candidates)
   -- CR 702.167a: the count exactly, or at least it where "one or more" makes
   -- it a floor.
   Prompt.ChooseMaterials _ _ _ candidates count orMore

@@ -92,7 +92,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseCollectEvidence",
+          "prompt": "ChooseExilesTotalling",
           "with": [
             "$soil1",
             "$soil2"

@@ -9,6 +9,7 @@ import qualified Parun.Codec.CountersOnThis as CountersOnThis
 import qualified Parun.Codec.DiscardCards as DiscardCards
 import qualified Parun.Codec.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Codec.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Codec.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Codec.ExileMaterials as ExileMaterials
 import qualified Parun.Codec.ExilePermanents as ExilePermanents
 import qualified Parun.Codec.Filter as Filter
@@ -75,6 +76,7 @@ codec keywordCodec =
       Arm.payload "ExileMaterials" (ExileMaterials.codec keywordCodec) CostComponent.ExileMaterials (\x -> case x of CostComponent.ExileMaterials y -> Just y; _ -> Nothing),
       Arm.payload "CollectEvidence" Common.natural CostComponent.CollectEvidence (\x -> case x of CostComponent.CollectEvidence y -> Just y; _ -> Nothing),
       Arm.nullary "CollectEvidenceOfTargets" CostComponent.CollectEvidenceOfTargets,
+      Arm.payload "ExileCardsTotalling" (ExileCardsTotalling.codec keywordCodec) CostComponent.ExileCardsTotalling (\x -> case x of CostComponent.ExileCardsTotalling y -> Just y; _ -> Nothing),
       Arm.payload "ExileTopFromGraveyard" (Filter.codec keywordCodec) CostComponent.ExileTopFromGraveyard (\x -> case x of CostComponent.ExileTopFromGraveyard y -> Just y; _ -> Nothing),
       Arm.payload "ExileCardsFromHand" (ExileCardsFromHand.codec keywordCodec) CostComponent.ExileCardsFromHand (\x -> case x of CostComponent.ExileCardsFromHand y -> Just y; _ -> Nothing),
       Arm.payload "RevealCardFromHand" (Filter.codec keywordCodec) CostComponent.RevealCardFromHand (\x -> case x of CostComponent.RevealCardFromHand y -> Just y; _ -> Nothing),
@@ -118,6 +120,7 @@ tagOf x = case x of
   CostComponent.ExileMaterials {} -> "ExileMaterials"
   CostComponent.CollectEvidence {} -> "CollectEvidence"
   CostComponent.CollectEvidenceOfTargets {} -> "CollectEvidenceOfTargets"
+  CostComponent.ExileCardsTotalling {} -> "ExileCardsTotalling"
   CostComponent.ExileTopFromGraveyard {} -> "ExileTopFromGraveyard"
   CostComponent.ExileCardsFromHand {} -> "ExileCardsFromHand"
   CostComponent.RevealCardFromHand {} -> "RevealCardFromHand"

@@ -47,7 +47,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseCollectEvidence",
+          "prompt": "ChooseExilesTotalling",
           "with": [
             "$lightning-bolt",
             "$lightning-bolt-2",

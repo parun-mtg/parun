@@ -544,6 +544,16 @@ exiledCard = SlotName.MkSlotName (Text.pack "thatExiledCard")
 craftMaterials :: SlotName
 craftMaterials = SlotName.MkSlotName (Text.pack "thoseCraftMaterials")
 
+-- CR 601.2h: the reserved slot under which a CostComponent.ExileCardsTotalling
+-- payment binds the cards' EXILE incarnations, craftMaterials' reason -- Baron
+-- Helmut Zemo's "copy those exiled cards". Folded onto the ability by
+-- Parun.Engine.Activate as every payment's slots are.
+--
+-- Not a target, so the same CR 608.2b posture and the same "no card's
+-- targetSlots may name it" sweep as sacrificedPermanent above.
+totalledExiles :: SlotName
+totalledExiles = SlotName.MkSlotName (Text.pack "thoseExiledCards")
+
 -- CR 702.167c: the ExileLink.ability a craft material's link carries, so "the
 -- exiled cards used to craft it" reads those cards alone and not what the
 -- permanent's other abilities exile (CR 607.2a). Reserved, as the slot names

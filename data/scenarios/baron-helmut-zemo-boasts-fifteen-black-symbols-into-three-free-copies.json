@@ -1,0 +1,507 @@
+{
+  "description": "CR 702.142a / 707.12 / 202.1 Baron Helmut Zemo connives for a black spell cast from alice's hand, then boasts, exiling black cards whose mana costs hold fifteen black mana symbols, and casts three of the copies free",
+  "note": "After attacking, alice's black graveyard cards total mana value 21 but eleven black mana symbols, so the boast is refused. Opt, a blue spell from her hand, makes Zemo do nothing; Dark Ritual makes him connive: alice draws a Swamp and discards Wasp Lancer, a nonland card, so Zemo gets a counter. The Ritual and the Lancer bring the symbols to fifteen, the hybrid Lancer and Stalker Hag counting each symbol once; all seven black cards pay, and neither the Lightning Bolt nor the Opt is a black card. Three copies are cast and no fourth is offered; none is cast from the hand, so Zemo does not connive again. The Lancer copy becomes a token, and the Bargain and Contract copies draw alice eight more and halve her life twice.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Baron Helmut Zemo",
+            "label": "zemo",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Opt",
+            "label": "opt"
+          },
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          },
+          {
+            "card": "Wasp Lancer",
+            "label": "lancer"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Shambling Attendants",
+            "label": "attendants"
+          },
+          {
+            "card": "Zombie Brute",
+            "label": "brute"
+          },
+          {
+            "card": "Infernal Contract",
+            "label": "contract"
+          },
+          {
+            "card": "Cruel Bargain",
+            "label": "bargain"
+          },
+          {
+            "card": "Stalker Hag",
+            "label": "hag"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp",
+            "label": "alib1"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib2"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib3"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib4"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib5"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib6"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib7"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib8"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib9"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib10"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib11"
+          },
+          {
+            "card": "Swamp",
+            "label": "alib12"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island",
+            "label": "blib1"
+          },
+          {
+            "card": "Island",
+            "label": "blib2"
+          },
+          {
+            "card": "Island",
+            "label": "blib3"
+          },
+          {
+            "card": "Island",
+            "label": "blib4"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$zemo"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "object": "$zemo"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$opt",
+          "mana": [
+            "$island",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "Opt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseScry",
+          "with": [
+            [
+              "$alib1"
+            ],
+            []
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$ritual",
+          "mana": [
+            "$swamp"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $zemo",
+            "Dark Ritual"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$lancer"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$zemo",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$zemo"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseExilesTotalling",
+          "with": [
+            "$attendants",
+            "$brute",
+            "$contract",
+            "$bargain",
+            "$hag",
+            "Wasp Lancer",
+            "Dark Ritual",
+            "$bolt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesTotalling",
+          "with": [
+            "$attendants",
+            "$brute",
+            "$contract",
+            "$bargain",
+            "$hag",
+            "Wasp Lancer",
+            "Dark Ritual"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard",
+          "is": [
+            "$bolt",
+            "Opt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "Infernal Contract#2",
+            "Infernal Contract"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "Cruel Bargain#2",
+            "Cruel Bargain"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "Wasp Lancer#2",
+            "Wasp Lancer"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "Wasp Lancer#2",
+            "Cruel Bargain#2",
+            "Infernal Contract#2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Wasp Lancer",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Swamp",
+          "count": 10
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Exile",
+          "card": "Infernal Contract",
+          "count": 1
+        }
+      }
+    }
+  ]
+}
