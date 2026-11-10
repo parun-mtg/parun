@@ -340,6 +340,7 @@ blankGame settings order active =
       GameState.activationsThisTurn = mempty,
       GameState.castPermissionsUsedThisTurn = mempty,
       GameState.rollModifiersUsedThisTurn = mempty,
+      GameState.instructionsTakenThisTurn = mempty,
       GameState.triggeredThisGame = mempty,
       GameState.pendingControl = Map.empty,
       GameState.control = Map.empty,

@@ -822,7 +822,7 @@ triggeredEvent pending =
 perGameRecord :: PendingTrigger.PendingTrigger -> Maybe AbilityTriggered.AbilityTriggered
 perGameRecord pending = case TriggeredAbility.limit (PendingTrigger.ability pending) of
   TriggerLimit.Unlimited -> Nothing
-  TriggerLimit.OncePerTurn -> Nothing
+  TriggerLimit.OncePerTurn _ -> Nothing
   TriggerLimit.OncePerGame ->
     Just
       AbilityTriggered.MkAbilityTriggered
@@ -1947,13 +1947,14 @@ registersOf gs =
       TurnRegisters.activationsThisTurn = GameState.activationsThisTurn gs,
       TurnRegisters.castPermissionsUsedThisTurn = GameState.castPermissionsUsedThisTurn gs,
       TurnRegisters.rollModifiersUsedThisTurn = GameState.rollModifiersUsedThisTurn gs,
+      TurnRegisters.instructionsTakenThisTurn = GameState.instructionsTakenThisTurn gs,
       TurnRegisters.turnResume = GameState.turnResume gs
     }
 
 -- registersOf's inverse: these registers in GameState's fields. Positional,
 -- so a field TurnRegisters gains is a build error here.
 installRegisters :: TurnRegisters.TurnRegisters -> GameState -> GameState
-installRegisters (TurnRegisters.MkTurnRegisters activePlayer' phase' remaining' stack' stackedIn' priority' passed' combat' events' scannedThrough' damageScannedThrough' turnNumber' turnAnchor' extraTurnUnderWay' permanentsAsTurnBegan' endTurnSignal' drawsThisTurn' couldAttackThisTurn' activatedThisTurn' activationsThisTurn' castPermissionsUsedThisTurn' rollModifiersUsedThisTurn' turnResume') gs =
+installRegisters (TurnRegisters.MkTurnRegisters activePlayer' phase' remaining' stack' stackedIn' priority' passed' combat' events' scannedThrough' damageScannedThrough' turnNumber' turnAnchor' extraTurnUnderWay' permanentsAsTurnBegan' endTurnSignal' drawsThisTurn' couldAttackThisTurn' activatedThisTurn' activationsThisTurn' castPermissionsUsedThisTurn' rollModifiersUsedThisTurn' instructionsTakenThisTurn' turnResume') gs =
   gs
     { GameState.activePlayer = activePlayer',
       GameState.phase = phase',
@@ -1977,6 +1978,7 @@ installRegisters (TurnRegisters.MkTurnRegisters activePlayer' phase' remaining' 
       GameState.activationsThisTurn = activationsThisTurn',
       GameState.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn',
       GameState.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn',
+      GameState.instructionsTakenThisTurn = instructionsTakenThisTurn',
       GameState.turnResume = turnResume'
     }
 
@@ -2198,6 +2200,9 @@ closeTurn gs =
           -- Night Shift of the Living Dead's "Do this only once each turn", the
           -- budget on a CR 706.2 modifier, cleared for every object for its reason.
           GameState.rollModifiersUsedThisTurn = Map.empty,
+          -- CR 603.2h's "that turn": a taken instruction frees its ability at
+          -- the next turn, for every object.
+          GameState.instructionsTakenThisTurn = Seq.empty,
           -- CR 502.2 / 732.2: the count the NEXT turn's untap step asks about
           -- "the previous turn's active player".
           --

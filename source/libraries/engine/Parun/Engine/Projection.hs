@@ -345,7 +345,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
                   TriggerLimit.Unlimited -> t
-                  TriggerLimit.OncePerTurn -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
+                  TriggerLimit.OncePerTurn _ -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
                   TriggerLimit.OncePerGame -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
              in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named]}
           GrantedAbility.Static sa -> case affected of

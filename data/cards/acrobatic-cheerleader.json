@@ -81,7 +81,9 @@
               }
             }
           },
-          "limit": "OncePerGame",
+          "limit": {
+            "type": "OncePerGame"
+          },
           "modal": {
             "modes": [
               {

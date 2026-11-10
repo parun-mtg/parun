@@ -24,16 +24,18 @@ data TriggeredAbility card ability = MkTriggeredAbility
     -- or Nothing; the same reference Parun.Types.ActivatedAbility.name is, read
     -- by CR 613.1f's Modification.LoseNamedAbility.
     name :: Maybe AbilityName.AbilityName,
-    -- | Whispering Wizard's "This ability triggers only once each turn" and
-    -- Acrobatic Cheerleader's "This ability triggers only once". A rider on the
+    -- | Whispering Wizard's "This ability triggers only once each turn",
+    -- Acrobatic Cheerleader's "This ability triggers only once" and Baron
+    -- Strucker, HYDRA Overlord's "Do this only once each turn". A rider on the
     -- ABILITY rather than a narrowing of the event, which is why it sits here and
     -- not in the TriggerCondition beside it: the condition still matches every
     -- occurrence, and the rider says the ability declines all but the first.
     -- Unlimited for every ability that prints no such rider.
     --
     -- Enforced at Parun.Engine.Event.withinTriggerLimit, off the turn-scoped log
-    -- for the per-turn rider and off Parun.Types.GameState.triggeredThisGame for
-    -- the per-game one.
+    -- for the per-turn rider, off Parun.Types.GameState.triggeredThisGame for
+    -- the per-game one and off GameState.instructionsTakenThisTurn for CR
+    -- 603.2h's.
     limit :: TriggerLimit.TriggerLimit,
     -- | CR 113.6b: the zones this ability states it functions in, overriding
     -- every condition's own classification (Summitfest Closing Ceremony's

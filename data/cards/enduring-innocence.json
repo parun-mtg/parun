@@ -80,7 +80,9 @@
               }
             }
           },
-          "limit": "OncePerTurn",
+          "limit": {
+            "type": "OncePerTurn"
+          },
           "modal": {
             "modes": [
               {

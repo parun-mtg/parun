@@ -746,6 +746,7 @@ import qualified Parun.Codec.SpellWasCastSpec
 import qualified Parun.Codec.SpellWasCopiedSpec
 import qualified Parun.Codec.SpendManaAsThoughSpec
 import qualified Parun.Codec.SpendTriggerSpec
+import qualified Parun.Codec.SpentOnSpec
 import qualified Parun.Codec.SpliceSpec
 import qualified Parun.Codec.StackObjectKindSpec
 import qualified Parun.Codec.StackedAbilitySpec
@@ -1841,6 +1842,7 @@ spec s registry corpus = do
   Parun.Codec.TriggeredAbilitySpec.spec s
   Parun.Codec.TriggerFrequencySpec.spec s
   Parun.Codec.TriggerLimitSpec.spec s
+  Parun.Codec.SpentOnSpec.spec s
   Parun.Codec.ModeMemorySpec.spec s
   Parun.Codec.TriggerSourceSpec.spec s
   Parun.Codec.TurnedFaceUpSpec.spec s

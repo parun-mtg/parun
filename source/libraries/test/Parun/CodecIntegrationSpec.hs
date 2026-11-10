@@ -353,6 +353,23 @@ gameStateRoundTripSpec s registry corpus = do
                 }
          in roundTrips "a spent per-game rider" gs {GameState.triggeredThisGame = Seq.singleton spent}
 
+  -- GameState.instructionsTakenThisTurn: CR 603.2h's spent "Do this only once
+  -- each turn", carrying a record for the reason the case above does.
+  Spec.it s "a taken once-each-turn instruction round trips" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    baron <- S.printingOf s registry "Baron Strucker, HYDRA Overlord"
+    let (oid, gs) = S.addPermanent baron S.alice (S.oneMountainState mountain Phase.PrecombatMain)
+    case Face.triggeredAbilities (S.combinedFace baron) of
+      [] -> Spec.assertFailure s "Baron Strucker should declare one triggered ability"
+      ability : _ ->
+        let taken =
+              AbilityTriggered.MkAbilityTriggered
+                { AbilityTriggered.source = TriggerSource.OfObject oid,
+                  AbilityTriggered.controller = S.alice,
+                  AbilityTriggered.ability = ability
+                }
+         in roundTrips "a taken instruction" gs {GameState.instructionsTakenThisTurn = Seq.singleton taken}
+
   -- GameState.castsBeforeThisTurn, CR 601.2i's casts of earlier turns, the
   -- other record the handoff keeps. Built through a real cast and handoff, so
   -- the record is non-empty for the reason the case above gives.

@@ -287,6 +287,7 @@ bards-company
 barkhide-troll
 barls-cage
 baron-helmut-zemo
+baron-strucker-hydra-overlord
 barrin
 barrin-tolarian-archmage
 bartered-cow
@@ -1793,6 +1794,7 @@ jared-carthalion-true-heir
 jazal-goldmane
 jeering-homunculus
 jegantha-the-wellspring
+jennifer-walters-the-sensational-she-hulk
 jessica-jones-private-eye
 jesters-cap
 jet-medallion

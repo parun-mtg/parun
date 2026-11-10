@@ -1585,6 +1585,8 @@ library codec
     Parun.Codec.SpendManaAsThoughSpec
     Parun.Codec.SpendTrigger
     Parun.Codec.SpendTriggerSpec
+    Parun.Codec.SpentOn
+    Parun.Codec.SpentOnSpec
     Parun.Codec.Splice
     Parun.Codec.SpliceSpec
     Parun.Codec.StackedAbility
@@ -3439,6 +3441,7 @@ library types
     Parun.Types.SpellWasCopied
     Parun.Types.SpendManaAsThough
     Parun.Types.SpendTrigger
+    Parun.Types.SpentOn
     Parun.Types.Splice
     Parun.Types.StackedAbility
     Parun.Types.StackObjectKind

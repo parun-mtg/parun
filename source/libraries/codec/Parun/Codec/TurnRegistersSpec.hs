@@ -46,6 +46,7 @@ spec s = Spec.describe s "Parun.Codec.TurnRegisters" $ do
           TurnRegisters.activationsThisTurn = Seq.empty,
           TurnRegisters.castPermissionsUsedThisTurn = Map.empty,
           TurnRegisters.rollModifiersUsedThisTurn = Map.empty,
+          TurnRegisters.instructionsTakenThisTurn = Seq.empty,
           TurnRegisters.turnResume = TurnResume.InWindow
         }
       (" {\"activePlayer\":4,\"phase\":{\"type\":\"Beginning\",\"value\":\"Upkeep\"},\"remaining\":[],\"stack\":[7],\"priority\":5,\"combat\":" <> CombatSpec.emptyJson <> ",\"turnNumber\":2,\"turnResume\":\"InWindow\"} ")

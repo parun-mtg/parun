@@ -51,6 +51,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
@@ -143,7 +144,7 @@ increaseAbility =
       -- the data because the rule states it, and enforced from there like every
       -- other rider: Event.withinTriggerLimit reads the CR 603.3b log, which
       -- records a sourceless trigger under its controller.
-      TriggeredAbility.limit = TriggerLimit.OncePerTurn
+      TriggeredAbility.limit = TriggerLimit.OncePerTurn SpentOn.Triggering
     }
 
 -- | CR 702.179d's "whenever one or more opponents lose life during your turn".
