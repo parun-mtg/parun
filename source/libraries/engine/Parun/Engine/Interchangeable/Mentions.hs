@@ -13,7 +13,9 @@
 -- error, rather than an ObjectId or a history read this silently stops
 -- reading. A field whose type can hold no ObjectId, slot name, Filter or
 -- history read is a named discard, and that is the one site nothing forces: a
--- type that later gains one owes every discard of it here a function.
+-- type that later gains one owes every discard of it here a function. A type
+-- with a traversal in Parun.Engine.Children (Filter, Quantity, Effect,
+-- TriggerCondition) is matched there instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -35,9 +37,6 @@ import qualified Data.Monoid as Monoid
 import qualified Parun.Engine.Binding as Binding.Engine
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Types.AbilityAct as AbilityAct
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
-import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
-import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
@@ -59,27 +58,17 @@ import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachedToBound as AttachedToBound
-import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
-import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
-import qualified Parun.Types.AttackTrigger as AttackTrigger
-import qualified Parun.Types.AttackerTarget as AttackerTarget
-import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.Backup as Backup
-import qualified Parun.Types.BecomesTapState as BecomesTapState
-import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.BlockCost as BlockCost
-import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.BlockRole as BlockRole
-import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
@@ -90,7 +79,6 @@ import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
-import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
@@ -117,36 +105,27 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CouldProduce as CouldProduce
-import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CounterSubject as CounterSubject
-import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.CrewRestriction as CrewRestriction
-import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DamageTally as DamageTally
-import qualified Parun.Types.DamageTrigger as DamageTrigger
-import qualified Parun.Types.DealtDamage as DealtDamage
-import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.Devour as Devour
-import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.DiscardCards as DiscardCards
-import qualified Parun.Types.DiscardSubject as DiscardSubject
-import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
@@ -161,7 +140,6 @@ import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EnteredZone as EnteredZone
-import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryAttack as EntryAttack
@@ -185,7 +163,6 @@ import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Expiry as Expiry
-import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
@@ -211,9 +188,6 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
-import qualified Parun.Types.LeavesTrigger as LeavesTrigger
-import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
-import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
@@ -221,9 +195,7 @@ import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeTally as LifeTally
-import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LimitUnless as LimitUnless
-import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.MadnessCost as MadnessCost
@@ -257,26 +229,18 @@ import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
-import qualified Parun.Types.PermanentActed as PermanentActed
-import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
-import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
-import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
-import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerEffect as PlayerEffect
-import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
-import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
@@ -285,7 +249,6 @@ import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Protection as Protection
-import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
@@ -294,7 +257,6 @@ import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
-import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -307,30 +269,24 @@ import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
-import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
-import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
 import qualified Parun.Types.Suspend as Suspend
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
-import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
-import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
-import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
-import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
@@ -502,10 +458,6 @@ filterNames asking criterion = case criterion of
             Children.object = \oid -> Const.Const (names asking (== oid))
           }
         criterion
-
-abilityAddsManaNames :: (Monoid r) => Asking r -> AbilityAddsMana.AbilityAddsMana -> r
-abilityAddsManaNames asking x = case x of
-  AbilityAddsMana.MkAbilityAddsMana _player source _mana -> filterNames asking source
 
 activatedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> ActivatedAbility.ActivatedAbility card ability -> r
 activatedAbilityNames asking onCard onAbility x = case x of
@@ -868,15 +820,6 @@ counterPatternNames :: (Monoid r) => Asking r -> CounterPattern.CounterPattern -
 counterPatternNames asking x = case x of
   CounterPattern.MkCounterPattern whichKind subject whose onWhat onWho -> foldMap (counterKindNames asking (keywordNames asking)) whichKind <> counterSubjectNames asking subject <> controllerRelationNames asking whose <> filterNames asking onWhat <> foldMap (controllerRelationNames asking) onWho
 
-counterHolderNames :: (Monoid r) => Asking r -> CounterHolder.CounterHolder -> r
-counterHolderNames asking x = case x of
-  CounterHolder.Self -> mempty
-  CounterHolder.Permanent permanents -> filterNames asking permanents
-
-counterTriggerNames :: (Monoid r) => Asking r -> CounterTrigger.CounterTrigger -> r
-counterTriggerNames asking x = case x of
-  CounterTrigger.MkCounterTrigger kind _motion holder _threshold _grouping -> whichCountersNames asking (keywordNames asking) kind <> counterHolderNames asking holder
-
 counterRNames :: (Monoid r) => Asking r -> CounterR.CounterR -> r
 counterRNames asking x = case x of
   CounterR.MkCounterR matching _scaling -> counterPatternNames asking matching
@@ -966,19 +909,6 @@ destructionRNames asking x = case x of
 devourNames :: (Monoid r) => Asking r -> Devour.Devour keyword -> r
 devourNames asking x = case x of
   Devour.MkDevour quality _count -> foldMap (filterNames asking) quality
-
-permanentActedNames :: Asking r -> (permanent -> r) -> PermanentActed.PermanentActed permanent -> r
-permanentActedNames _asking onPermanent x = case x of
-  PermanentActed.MkPermanentActed _action permanent -> onPermanent permanent
-
-actingPermanentNames :: (Monoid r) => Asking r -> ActingPermanent.ActingPermanent -> r
-actingPermanentNames asking x = case x of
-  ActingPermanent.Self -> mempty
-  ActingPermanent.Matching filter_ -> filterNames asking filter_
-
-dieResultNames :: Asking r -> (player -> r) -> DieResult.DieResult player -> r
-dieResultNames _asking onPlayer x = case x of
-  DieResult.MkDieResult roller _result -> onPlayer roller
 
 dieRollRNames :: (Monoid r) => Asking r -> DieRollR.DieRollR -> r
 dieRollRNames asking x = case x of
@@ -1760,33 +1690,9 @@ perCreatureNames asking x = case x of
   PerCreature.Fixed cost -> costNames asking (keywordNames asking) cost
   PerCreature.Counted quantity -> quantityNames asking quantity
 
-permanentBecomesDesignatedNames :: (Monoid r) => Asking r -> PermanentBecomesDesignated.PermanentBecomesDesignated -> r
-permanentBecomesDesignatedNames asking x = case x of
-  PermanentBecomesDesignated.MkPermanentBecomesDesignated _designation filter_ -> filterNames asking filter_
-
 permanentCandidateNames :: (Monoid r) => Asking r -> PermanentCandidate.PermanentCandidate -> r
 permanentCandidateNames asking x = case x of
   PermanentCandidate.MkPermanentCandidate source _provenance effect _ordinal -> names asking (== source) <> replacementEffectNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effect
-
--- A kind and a recipient hold no names: a relation and a card type name no
--- object.
-damageTriggerNames :: (Monoid r) => Asking r -> DamageTrigger.DamageTrigger -> r
-damageTriggerNames asking x = case x of
-  DamageTrigger.MkDamageTrigger actor _kind _recipients -> actingPermanentNames asking actor
-
-playerActsOnNames :: (Monoid r) => Asking r -> PlayerActsOn.PlayerActsOn -> r
-playerActsOnNames asking x = case x of
-  PlayerActsOn.MkPlayerActsOn _player filter_ -> filterNames asking filter_
-
-tappedForManaTriggerNames :: (Monoid r) => Asking r -> TappedForManaTrigger.TappedForManaTrigger -> r
-tappedForManaTriggerNames asking x = case x of
-  TappedForManaTrigger.MkTappedForManaTrigger permanent _player _mana -> case permanent of
-    TappedPermanent.Attached -> mempty
-    TappedPermanent.Matching filter_ -> filterNames asking filter_
-
-permanentsDealCombatDamageToPlayerNames :: (Monoid r) => Asking r -> PermanentsDealCombatDamageToPlayer.PermanentsDealCombatDamageToPlayer -> r
-permanentsDealCombatDamageToPlayerNames asking x = case x of
-  PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer filter_ _recipient _oneOrMorePlayers -> filterNames asking filter_
 
 playerCounterTallyNames :: (Monoid r) => Asking r -> PlayerCounterTally.PlayerCounterTally -> r
 playerCounterTallyNames asking x = case x of
@@ -1920,10 +1826,6 @@ playerRefNames asking x = case x of
 playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.PlayerStaticAbility -> r
 playerStaticAbilityNames asking x = case x of
   PlayerStaticAbility.MkPlayerStaticAbility _scope condition _name effect -> foldMap (conditionNames asking) condition <> playerEffectNames asking effect
-
-playsLandNames :: (Monoid r) => Asking r -> PlaysLand.PlaysLand -> r
-playsLandNames asking x = case x of
-  PlaysLand.MkPlaysLand _player _from filter_ -> filterNames asking filter_
 
 freeCastFromHandNames :: (Monoid r) => Asking r -> FreeCastFromHand.FreeCastFromHand -> r
 freeCastFromHandNames asking x = case x of
@@ -2133,10 +2035,6 @@ specialActionNames asking x = case x of
   SpecialAction.DiscardThisAnyTime -> mempty
   SpecialAction.IgnoreThisUntilEndOfTurn _abilityName cost -> costNames asking (keywordNames asking) cost
 
-spellCastNames :: (Monoid r) => Asking r -> SpellCast.SpellCast -> r
-spellCastNames asking x = case x of
-  SpellCast.MkSpellCast subject scope _zone ordinal _phase _copies -> actingPermanentNames asking subject <> turnScopeNames asking scope <> foldMap (const (history asking HistoryRead.Casts)) ordinal
-
 spliceNames :: (Monoid r) => Asking r -> (keyword -> r) -> Splice.Splice keyword -> r
 spliceNames asking onKeyword x = case x of
   Splice.MkSplice onto cost -> filterNames asking onto <> costNames asking onKeyword cost
@@ -2144,14 +2042,6 @@ spliceNames asking onKeyword x = case x of
 statedFlipNames :: (Monoid r) => Asking r -> StatedFlip.StatedFlip -> r
 statedFlipNames asking x = case x of
   StatedFlip.MkStatedFlip _face _wins firstEachTurn -> if firstEachTurn then history asking HistoryRead.CoinFlips else mempty
-
-playerIsDealtDamageNames :: (Monoid r) => Asking r -> PlayerIsDealtDamage.PlayerIsDealtDamage -> r
-playerIsDealtDamageNames asking x = case x of
-  PlayerIsDealtDamage.MkPlayerIsDealtDamage _dealt _orTheirPlaneswalkers _batching scope -> turnScopeNames asking scope
-
-stepBeginsNames :: (Monoid r) => Asking r -> StepBegins.StepBegins -> r
-stepBeginsNames asking x = case x of
-  StepBegins.MkStepBegins _phase ordinal scope -> foldMap (const (history asking HistoryRead.StepBegins)) ordinal <> turnScopeNames asking scope
 
 -- CR 102.1: a named player's turn reads whatever its reference reads.
 turnScopeNames :: (Monoid r) => Asking r -> TurnScope.TurnScope -> r
@@ -2208,187 +2098,30 @@ toughnessNames :: (Monoid r) => Asking r -> Toughness.Toughness -> r
 toughnessNames asking x = case x of
   Toughness.MkToughness unwrap -> quantityNames asking unwrap
 
-attackTriggerNames :: (Monoid r) => Asking r -> AttackTrigger.AttackTrigger -> r
-attackTriggerNames asking x = case x of
-  AttackTrigger.Attacker attackerTrigger -> attackerTriggerNames asking attackerTrigger
-  -- Relations and a subject, which name nothing.
-  AttackTrigger.Attacked _attackedTrigger -> mempty
-  AttackTrigger.Declaration declarationTrigger -> declarationTriggerNames asking declarationTrigger
-  AttackTrigger.Unblocked filter_ -> filterNames asking filter_
-
-becomesTargetedTriggerNames :: (Monoid r) => Asking r -> BecomesTargetedTrigger.BecomesTargetedTrigger -> r
-becomesTargetedTriggerNames asking x = case x of
-  BecomesTargetedTrigger.MkBecomesTargetedTrigger subject _relation _kind _batching -> targetedSubjectNames asking subject
-
-targetedSubjectNames :: (Monoid r) => Asking r -> TargetedSubject.TargetedSubject -> r
-targetedSubjectNames asking x = case x of
-  TargetedSubject.Permanent permanent -> actingPermanentNames asking permanent
-  TargetedSubject.You -> mempty
-  TargetedSubject.YouOrPermanent permanent -> actingPermanentNames asking permanent
-
-exploitTriggerNames :: (Monoid r) => Asking r -> ExploitTrigger.ExploitTrigger -> r
-exploitTriggerNames asking x = case x of
-  ExploitTrigger.MkExploitTrigger exploiter exploited -> actingPermanentNames asking exploiter <> filterNames asking exploited
-
-entersTriggerNames :: (Monoid r) => Asking r -> EntersTrigger.EntersTrigger -> r
-entersTriggerNames asking x = case x of
-  -- A batching, which names nothing.
-  EntersTrigger.MkEntersTrigger permanent _batching -> actingPermanentNames asking permanent
-
-leavesZoneTriggerNames :: (Monoid r) => Asking r -> LeavesZoneTrigger.LeavesZoneTrigger -> r
-leavesZoneTriggerNames asking x = case x of
-  -- Zones, a pile's relation and a batching, which name nothing.
-  LeavesZoneTrigger.MkLeavesZoneTrigger card _from _to _whose scope _batching -> actingPermanentNames asking card <> turnScopeNames asking scope
-
-putIntoZoneTriggerNames :: (Monoid r) => Asking r -> PutIntoZoneTrigger.PutIntoZoneTrigger -> r
-putIntoZoneTriggerNames asking x = case x of
-  -- Zones, a flag and a batching, which name nothing.
-  PutIntoZoneTrigger.MkPutIntoZoneTrigger card _from _to scope _duringResolution _batching -> actingPermanentNames asking card <> turnScopeNames asking scope
-
-leavesTriggerNames :: (Monoid r) => Asking r -> LeavesTrigger.LeavesTrigger -> r
-leavesTriggerNames asking x = case x of
-  -- Zones and a batching, which name nothing.
-  LeavesTrigger.MkLeavesTrigger permanent _destinations _batching -> leavingPermanentNames asking permanent
-
-leavingPermanentNames :: (Monoid r) => Asking r -> LeavingPermanent.LeavingPermanent -> r
-leavingPermanentNames asking x = case x of
-  LeavingPermanent.Self -> mempty
-  LeavingPermanent.Matching filter_ -> filterNames asking filter_
-  LeavingPermanent.Attached -> mempty
-  LeavingPermanent.Haunted -> mempty
-  LeavingPermanent.Bound slotName -> slotNames asking slotName
-
-attackerTriggerNames :: (Monoid r) => Asking r -> AttackerTrigger.AttackerTrigger -> r
-attackerTriggerNames asking x = case x of
-  AttackerTrigger.MkAttackerTrigger creature target company frequency while_ ->
-    filterNames asking creature
-      <> attackerTargetNames asking target
-      <> attackCompanyNames asking company
-      <> triggerFrequencyNames asking HistoryRead.Attacks frequency
-      <> foldMap (conditionNames asking) while_
-
-attackerTargetNames :: (Monoid r) => Asking r -> AttackerTarget.AttackerTarget -> r
-attackerTargetNames asking x = case x of
-  AttackerTarget.AnyTarget -> mempty
-  AttackerTarget.Defending _relation -> mempty
-  AttackerTarget.Permanent filter_ -> filterNames asking filter_
-  AttackerTarget.PlayerWithMostLife -> mempty
-
-attackCompanyNames :: (Monoid r) => Asking r -> AttackCompany.AttackCompany -> r
-attackCompanyNames asking x = case x of
-  AttackCompany.AnyCompany -> mempty
-  AttackCompany.Alone _among -> mempty
-  AttackCompany.WithAnother filter_ -> filterNames asking filter_
-
-declarationTriggerNames :: (Monoid r) => Asking r -> DeclarationTrigger.DeclarationTrigger -> r
-declarationTriggerNames asking x = case x of
-  DeclarationTrigger.MkDeclarationTrigger _player attackers frequency while_ ->
-    ( case attackers of
-        Nothing -> mempty
-        Just (AttackCount.MkAttackCount _measure _floor filter_) -> filterNames asking filter_
-    )
-      <> triggerFrequencyNames asking HistoryRead.Attacks frequency
-      <> foldMap (conditionNames asking) while_
-
-blockTriggerNames :: (Monoid r) => Asking r -> BlockTrigger.BlockTrigger -> r
-blockTriggerNames asking x = case x of
-  BlockTrigger.MkBlockTrigger _role creature count -> filterNames asking creature <> blockCountNames asking count
-
-blockCountNames :: (Monoid r) => Asking r -> BlockCount.BlockCount -> r
-blockCountNames asking x = case x of
-  BlockCount.Once -> mempty
-  BlockCount.EachCreature others -> filterNames asking others
-  BlockCount.AtLeast _floor others -> filterNames asking others
-
+-- A trigger condition through its children, each through its own walk. The
+-- one condition answering itself reads what its source's prevention stopped
+-- (CR 615.13); the history reads sit in the children (an ordinal, a
+-- frequency, a turn scope's player).
 triggerConditionNames :: (Monoid r) => Asking r -> TriggerCondition.TriggerCondition -> r
 triggerConditionNames asking x = case x of
-  TriggerCondition.Enters entersTrigger -> entersTriggerNames asking entersTrigger
-  TriggerCondition.StepBegins stepBegins -> stepBeginsNames asking stepBegins
-  TriggerCondition.StateIs condition -> conditionNames asking condition
-  TriggerCondition.DealsDamage damageTrigger -> damageTriggerNames asking damageTrigger
-  TriggerCondition.IsDealtDamage watched -> actingPermanentNames asking (DealtDamage.recipient (PermanentIsDealtDamage.dealt watched))
-  TriggerCondition.PlayerIsDealtDamage watched -> playerIsDealtDamageNames asking watched
-  TriggerCondition.PermanentsDealCombatDamageToPlayer permanentsDealCombatDamageToPlayer -> permanentsDealCombatDamageToPlayerNames asking permanentsDealCombatDamageToPlayer
-  TriggerCondition.CreatureDealtCombatDamageToMonarch -> mempty
-  TriggerCondition.CreaturesDealtCombatDamageToInitiative -> mempty
-  TriggerCondition.PlayerTookInitiative -> mempty
-  TriggerCondition.SelfRevealedForMiracle -> mempty
-  TriggerCondition.RevealedThisWay (RevealedThisWay.MkRevealedThisWay filter_ _timing) -> filterNames asking filter_
-  TriggerCondition.Discards discardTrigger -> discardTriggerNames asking discardTrigger
-  TriggerCondition.PlayerDrawsNthCard _playerDrawsNthCard -> mempty
-  TriggerCondition.Attacks attackTrigger -> attackTriggerNames asking attackTrigger
-  TriggerCondition.Blocks blockTrigger -> blockTriggerNames asking blockTrigger
-  TriggerCondition.Leaves leavesTrigger -> leavesTriggerNames asking leavesTrigger
-  TriggerCondition.LeavesZone leavesZoneTrigger -> leavesZoneTriggerNames asking leavesZoneTrigger
-  TriggerCondition.PutIntoZone putIntoZoneTrigger -> putIntoZoneTriggerNames asking putIntoZoneTrigger
-  TriggerCondition.BecomesTapState becomesTapState -> actingPermanentNames asking (BecomesTapState.actor becomesTapState)
-  TriggerCondition.TappedForMana tappedForMana -> tappedForManaTriggerNames asking tappedForMana
-  TriggerCondition.AbilityAddsMana abilityAddsMana -> abilityAddsManaNames asking abilityAddsMana
-  TriggerCondition.SelfManaAbilityResolves -> mempty
-  TriggerCondition.Countered _counteringTrigger -> mempty
-  TriggerCondition.DamageToPlayerPrevented _playerRelation -> mempty
   TriggerCondition.SelfPreventsDamage filter_ -> prevention asking <> filterNames asking filter_
-  TriggerCondition.LifeChanges lifeTrigger -> lifeTriggerNames asking lifeTrigger
-  TriggerCondition.CountersChange counterTrigger -> counterTriggerNames asking counterTrigger
-  TriggerCondition.SelfBecomesClassLevel _classLevel -> mempty
-  TriggerCondition.SpellCast spellCast -> spellCastNames asking spellCast
-  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ _kind) -> filterNames asking filter_
-  TriggerCondition.BecomesTargeted becomesTargetedTrigger -> becomesTargetedTriggerNames asking becomesTargetedTrigger
-  TriggerCondition.SelfHalfUnlocked _cardName -> mempty
-  TriggerCondition.RoomFullyUnlocked _playerRelation -> mempty
-  TriggerCondition.AnyOf items -> foldMap (triggerConditionNames asking) items
-  TriggerCondition.CausedBy narrowed -> triggerConditionNames asking (CausedBy.condition narrowed)
-  TriggerCondition.TurnedFaceUp actingPermanent -> actingPermanentNames asking actingPermanent
-  TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent _into) -> actingPermanentNames asking permanent
-  TriggerCondition.FaceDownPermanentLeavesRevealed -> mempty
-  TriggerCondition.PermanentBecomesDesignated permanentBecomesDesignated -> permanentBecomesDesignatedNames asking permanentBecomesDesignated
-  TriggerCondition.PermanentActs permanentActs -> permanentActedNames asking (actingPermanentNames asking) permanentActs
-  TriggerCondition.AttachedCreatureMentors -> mempty
-  TriggerCondition.Exploits exploitTrigger -> exploitTriggerNames asking exploitTrigger
-  TriggerCondition.Crews role -> case role of
-    CrewRole.Vehicle triggerFrequency -> triggerFrequencyNames asking HistoryRead.Crews triggerFrequency
-    CrewRole.Crewer -> mempty
-  TriggerCondition.PermanentSacrificed permanentSacrificed -> playerActsOnNames asking permanentSacrificed
-  TriggerCondition.SagaFinalChapterTriggers _playerRelation -> mempty
-  TriggerCondition.PlayerBecomesMonarch _playerRelation -> mempty
-  TriggerCondition.LosesControl subject -> case subject of
-    LostPermanent.Self -> mempty
-    LostPermanent.Bound slotName -> slotNames asking slotName
-  TriggerCondition.RoomEntered _roomIndex -> mempty
-  TriggerCondition.PlayerActs _playerActs -> mempty
-  TriggerCondition.PlayerLosesGame _playerRelation -> mempty
-  TriggerCondition.PlayerPlaysLand playsLand -> playsLandNames asking playsLand
-  TriggerCondition.PlayerManifestsDread _playerRelation -> mempty
-  TriggerCondition.PlayerFacesDilemma _playerRelation -> mempty
-  TriggerCondition.ChaosEnsues -> mempty
-  TriggerCondition.PlayerRollsPlaneswalker _playerRelation -> mempty
-  TriggerCondition.SelfTurnedUpOffDeck -> mempty
-  TriggerCondition.SelfPlaneswalkedAwayFrom -> mempty
-  TriggerCondition.PlayerRollsResult dieResult -> dieResultNames asking (const mempty) dieResult
-  TriggerCondition.Visit -> mempty
-  TriggerCondition.FlipsCoin _ -> mempty
-  TriggerCondition.SelfBecomesPlotted -> mempty
-  TriggerCondition.AttachmentChanges t -> filterNames asking (AttachmentTrigger.other t)
-  TriggerCondition.Reflexive -> mempty
-  TriggerCondition.PlacesSticker placesSticker -> filterNames asking (PlacesSticker.object placesSticker)
-
-discardTriggerNames :: (Monoid r) => Asking r -> DiscardTrigger.DiscardTrigger -> r
-discardTriggerNames asking x = case x of
-  DiscardTrigger.MkDiscardTrigger subject _way _batching -> case subject of
-    DiscardSubject.Self -> mempty
-    DiscardSubject.Discarder playerActsOn -> playerActsOnNames asking playerActsOn
-
-lifeTriggerNames :: (Monoid r) => Asking r -> LifeTrigger.LifeTrigger -> r
-lifeTriggerNames asking x = case x of
-  LifeTrigger.MkLifeTrigger direction _playerRelation scope _batching frequency ->
-    turnScopeNames asking scope
-      <> triggerFrequencyNames
-        asking
-        ( case direction of
-            LifeDirection.Gained -> HistoryRead.LifeGains
-            LifeDirection.Lost -> HistoryRead.LifeLosses
-        )
-        frequency
+  _ ->
+    Const.getConst
+      ( Children.triggerConditionChildren
+          Children.MkTriggerChildren
+            { Children.triggerFilter = Const.Const . filterNames asking,
+              Children.triggerNested = Const.Const . triggerConditionNames asking,
+              Children.triggerState = Const.Const . conditionNames asking,
+              Children.triggerSlot = Const.Const . slotNames asking,
+              Children.triggerTurn = Const.Const . turnScopeNames asking,
+              Children.triggerOrdinal = \events _ -> Const.Const (history asking events),
+              Children.triggerFrequency = \events -> Const.Const . triggerFrequencyNames asking events,
+              Children.triggerCounters = Const.Const . whichCountersNames asking (keywordNames asking),
+              -- A colour of mana names no object and reads no history.
+              Children.triggerMana = const (Const.Const mempty)
+            }
+          x
+      )
 
 -- The look-back a first-time-each-turn trigger makes, over the events its
 -- condition names.
