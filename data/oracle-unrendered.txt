@@ -2976,6 +2976,7 @@ shadowgrange-archfiend
 shadows-of-the-past
 shahrazad
 shahrazad-and-sindbad
+shang-chi-master-of-kung-fu
 shapeshifter
 shared-summons
 shattered-ego
@@ -3428,6 +3429,7 @@ thornvault-forager
 thought-distortion
 thoughtlace
 thoughtleech
+thousand-year-elixir
 thousand-year-storm
 thraben-gargoyle-stonewing-antagonizer
 thraben-inspector
