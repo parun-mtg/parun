@@ -104,7 +104,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   A cast's `cost` picks a candidate cost by its mana (CR 601.2b); where two
   share it, `costOffer` names what offered the one wanted, `{ "type":
   "ByKeyword", "value": { "type": "OfFamily", "value": "Blitz" } }`
-  or `{ "type": "ByNoKeyword" }`.
+  or `{ "type": "ByNoKeyword" }`. A move naming neither leaves the
+  candidate to an `Answer` to `ChooseCost` by index, which alone tells an
+  activation cost's options apart (Bullseye, Death Dealer).
   `Take` takes any other action offered at priority (CR 116.2, 605.3a), named
   as the `Offered` view renders it, with a cast's choices such as `mana`:
   `{ "action": "TurnFaceUp $piker", "mana": ["$mountain"] }`.

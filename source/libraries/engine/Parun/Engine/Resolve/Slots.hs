@@ -907,7 +907,7 @@ effectPlayerRefs effect = case effect of
   Effect.FlipCoin flipCoin -> [FlipCoin.flipper flipCoin]
   Effect.ExileHandThenDraw -> []
   Effect.NoteManaSpent -> []
-  Effect.Proliferate -> []
+  Effect.Proliferate _ -> []
   Effect.Rethrow -> []
   Effect.RerollStoredResults _ -> []
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName ref _ _) -> [ref]
@@ -1082,7 +1082,8 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       -- be about, which is what Parun.Engine.Filter.slotOneObject already reports.
       (maybe Map.empty oneSlot subject)
   Effect.ExileAllGraveyards -> Map.empty
-  Effect.Proliferate -> Map.empty
+  -- The whole set: the arm gives every recipient in the slot its counters.
+  Effect.Proliferate slot -> foldMap (`Map.singleton` SlotArity.Many) slot
   Effect.Rethrow -> Map.empty
   -- A READ: the slot names the permanent whose stored results are rerolled.
   Effect.RerollStoredResults slot -> oneSlot slot
@@ -1972,7 +1973,7 @@ ownSlotsAreExhaustive effect = case effect of
   -- Quantity.slotsAreExhaustive to be about.
   Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ _ _ _ _ _ _) -> all Quantity.slotsAreExhaustive quantity
   Effect.ExileAllGraveyards -> True
-  Effect.Proliferate -> True
+  Effect.Proliferate _ -> True
   Effect.Rethrow -> True
   Effect.RerollStoredResults _ -> True
   Effect.ChooseCardName _ -> True
@@ -2276,7 +2277,7 @@ hasRead wanted =
         -- X itself (Operand.AmountInSlot), which no Quantity holds.
         Effect.Search (Search.MkSearch _ _ _ _ quantity filter_ descriptions _ _ _ _ _ _ _ _) -> any (Quantity.hasRead wanted) quantity || (isX && any (Set.member Binding.variableX . Filter.boundSlots) (filter_ : Foldable.toList descriptions))
         Effect.ExileAllGraveyards -> False
-        Effect.Proliferate -> False
+        Effect.Proliferate _ -> False
         Effect.Rethrow -> False
         Effect.RerollStoredResults _ -> False
         -- No Quantity: rule 201.4 chooses one name and states no count.
@@ -2563,7 +2564,7 @@ boundSlots effect = case effect of
   -- CR 400.7: the incarnations the destination minted.
   Effect.Search search -> foldMap Set.singleton (Search.slot search) <> foldMap Set.singleton (Search.handSlot search)
   Effect.ExileAllGraveyards -> Set.empty
-  Effect.Proliferate -> Set.empty
+  Effect.Proliferate _ -> Set.empty
   Effect.Rethrow -> Set.empty
   Effect.RerollStoredResults _ -> Set.empty
   -- Binds nothing: the name goes on the SOURCE (Object.chosenNames) and is read
@@ -3529,6 +3530,7 @@ poolSlot pool = case pool of
   Pool.SpellsAndPermanents -> Map.empty
   Pool.SpellsAndAbilities -> Map.empty
   Pool.PlayersAndPlaneswalkers -> Map.empty
+  Pool.PermanentsAndPlayers -> Map.empty
   Pool.CardsInGraveyard scope -> case scope of
     ZoneScope.Scoped _ -> Map.empty
     ZoneScope.InSlot slot -> oneSlot slot

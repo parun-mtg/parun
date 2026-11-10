@@ -43,4 +43,11 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       EventShape.codec
       (EventShape.SpellCast CastWindow.BeforeEvaluated)
       " {\"type\":\"SpellCast\",\"value\":\"BeforeEvaluated\"} "
+  -- CR 508.1a: payloadless, the bare tag.
+  Spec.it s "AttackerDeclared" $
+    Common.assertCodec
+      s
+      EventShape.codec
+      EventShape.AttackerDeclared
+      " {\"type\":\"AttackerDeclared\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s EventShape.codec

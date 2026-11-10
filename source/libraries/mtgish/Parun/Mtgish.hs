@@ -439,7 +439,8 @@ triple n = do
 activatedAbility :: Cost.Cost Keyword.Keyword -> Modal -> ActivatedAbility.ActivatedAbility Card.Card Ability
 activatedAbility c m =
   ActivatedAbility.MkActivatedAbility
-    { ActivatedAbility.cost = c,
+    { ActivatedAbility.costChoices = [],
+      ActivatedAbility.cost = c,
       ActivatedAbility.maximumX = [],
       ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
@@ -475,7 +476,7 @@ activationRestrictions n = case Node.tag n of
   "ActivateNoMoreThanNumberTimesEachTurn" -> do
     k <- Node.child n >>= integer >>= natural n
     if k == 0 then Node.untranslated n else Right [ActivationRestriction.TimesEachTurn k]
-  "ActivateOnlyOnce" -> Right [ActivationRestriction.OnlyOnce]
+  "ActivateOnlyOnce" -> Right [ActivationRestriction.TimesEver 1]
   "ActivateOnlyIf" -> Node.child n >>= onlyIf
   _ -> Node.untranslated n
   where

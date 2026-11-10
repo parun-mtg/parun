@@ -10,8 +10,8 @@ import qualified Parun.Types.Zone as Zone
 -- so the log's extent IS the window -- "this turn" -- for every shape but
 -- SpellCast, which names its own (Parun.Types.CastWindow).
 --
--- Only the zone changes, GameEvent.LeftTheGame and the cast have a shape: every
--- other GameEvent constructor is recorded in the log with no EventShape arm, so a
+-- Only the zone changes, GameEvent.LeftTheGame, the cast and the attacker
+-- declaration have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
 -- count cannot fold over any of them (#162).
 --
 -- That is not the same as the log being unreadable for those events, and the
@@ -48,6 +48,11 @@ data EventShape
     -- out of a HAND). CR 903.9c is what makes the destination the load-bearing
     -- half: a melded commander's two cards can land in two different zones, and
     -- only the one that arrived in the named zone is counted.
+    --
+    -- Into the battlefield it counts every permanent that entered, a created
+    -- token among them (CR 111.2), under the controller it entered under:
+    -- Iron Man, Master of Machines' "if an artifact entered the battlefield
+    -- under your control this turn".
     CardArrivedIn CardArrivedIn.CardArrivedIn
   | -- | CR 601.2i: a spell became cast. What "for each spell you've cast this
     -- turn" folds over (Aetherflux Reservoir).
@@ -60,4 +65,10 @@ data EventShape
     -- Filter.HasCardType -- so putting any of it here would be a second way to
     -- say what the Count's own filter already says.
     SpellCast CastWindow.CastWindow
+  | -- | CR 508.1a / 608.2i: a creature was declared as an attacker -- "you
+    -- attacked with a Hero this turn" (Avengers Assemble!). Each member is the
+    -- attacker as it is or last was, controlled by the player who attacked
+    -- with it. A creature put onto the battlefield attacking never "attacked"
+    -- (CR 508.4).
+    AttackerDeclared
   deriving (Eq, Ord, Show)

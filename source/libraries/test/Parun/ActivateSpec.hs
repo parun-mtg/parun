@@ -130,7 +130,7 @@ chooseNoModes p = case p of
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
@@ -309,7 +309,8 @@ spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
         (srcId, gs1) = S.addPermanent piker S.alice gs
         costlyAbility =
           ActivatedAbility.MkActivatedAbility
-            { ActivatedAbility.cost =
+            { ActivatedAbility.costChoices = [],
+              ActivatedAbility.cost =
                 Cost.Type.MkCost
                   { Cost.Type.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2]),
                     Cost.Type.components = []
@@ -844,6 +845,7 @@ cyclingSpec s registry = Spec.describe s "Cycling" $ do
         twoModes =
           ActivatedAbility.MkActivatedAbility
             (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [])
+            []
             []
             0
             Nothing

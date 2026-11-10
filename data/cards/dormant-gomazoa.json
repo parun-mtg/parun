@@ -56,9 +56,12 @@
           "condition": {
             "type": "BecomesTargeted",
             "value": {
-              "kind": "Spell",
+              "kinds": [
+                "Spell"
+              ],
               "subject": {
-                "type": "You"
+                "type": "Player",
+                "value": "You"
               }
             }
           },

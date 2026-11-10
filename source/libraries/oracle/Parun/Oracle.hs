@@ -35,12 +35,14 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Layout as Layout
+import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -228,8 +230,14 @@ activated context a
     Maybe.isNothing (ActivatedAbility.condition a),
     Maybe.isNothing (ActivatedAbility.name a),
     Maybe.isNothing (ActivatedAbility.keyword a) = do
-      cost <- Cost.cost (Target.self context) (Target.keyword context) (ActivatedAbility.cost a)
+      printed <- Cost.cost (Target.self context) (Target.keyword context) (ActivatedAbility.cost a)
       let components = Cost.Type.components (ActivatedAbility.cost a)
+      -- CR 602.2b: each choice printed inside the cost follows the rest of it,
+      -- "{3}, {T}, Sacrifice an artifact or discard a nonland card" (Bullseye,
+      -- Death Dealer). A cost of nothing else prints no {0} before it.
+      choices <- traverse (fmap (Prose.capitalise . fst) . Cost.paymentChoice (Target.self context) (Target.keyword context) . CostChoice.unwrap) (ActivatedAbility.costChoices a)
+      let shared = [printed | null choices || not (null components) || maybe False (not . null . ManaCost.unwrap) (Cost.Type.mana (ActivatedAbility.cost a))]
+          cost = Text.intercalate (Text.pack ", ") (shared <> choices)
       after <- if any Cost.namesSelf components then [context {Target.self = Text.pack "it"}, context] else [context]
       effect <- Effect.modal after (ActivatedAbility.modal a)
       rider <- case ActivatedAbility.restrictions a of
@@ -278,7 +286,7 @@ restriction r = case r of
   ActivationRestriction.SorcerySpeed -> [Text.pack "as a sorcery"]
   ActivationRestriction.InstantSpeed -> [Text.pack "as an instant"]
   ActivationRestriction.TimesEachTurn 1 -> [Text.pack "once each turn"]
-  ActivationRestriction.OnlyOnce -> [Text.pack "once"]
+  ActivationRestriction.TimesEver 1 -> [Text.pack "once"]
   ActivationRestriction.DuringTurn (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) -> [Text.pack "during your turn"]
   ActivationRestriction.DuringTurn (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) -> [Text.pack "during an opponent's turn"]
   ActivationRestriction.BeforeStep (Phase.Combat CombatStep.DeclareAttackers) -> [Text.pack "before attackers are declared"]

@@ -6,6 +6,7 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Quantity as Quantity
@@ -19,6 +20,12 @@ import qualified Parun.Types.Quantity as Quantity
 -- (CR 118.1).
 data ActivatedAbility card ability = MkActivatedAbility
   { cost :: Cost.Cost Keyword.Keyword,
+    -- | CR 602.2b through CR 601.2b: the choices printed inside the activation
+    -- cost, each settled as the cost is announced and paid beside `cost` --
+    -- Bullseye, Death Dealer's "Sacrifice an artifact or discard a nonland
+    -- card". Face.additionalCostChoices' shape, offered the same way
+    -- (Parun.Engine.Cost.withChoices). Empty is every other ability.
+    costChoices :: [CostChoice.CostChoice],
     -- | CR 101.1: the ceilings this ABILITY's own words put on the value of X its
     -- activator announces at CR 602.2b via rule 601.2b -- Blighted Nightmare's "X
     -- can't be greater than the greatest toughness among creatures you control".

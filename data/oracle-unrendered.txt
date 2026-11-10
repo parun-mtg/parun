@@ -240,6 +240,7 @@ aven-trailblazer
 aven-windreader
 avenge
 avenger-of-the-fallen
+avengers-assemble
 avengers-disassembled
 avengers-tower
 avengers-under-siege
@@ -308,6 +309,7 @@ baxter-building
 beacon-of-destruction
 beacon-of-immortality
 beacon-of-unrest
+beast-erudite-aerialist
 beatrix-loyal-general
 befoul
 befriending-the-moths-imperial-moth
@@ -465,6 +467,7 @@ bubble-smuggler
 bubbling-cauldron
 budding-insurgent
 bulk-up
+bullseye-death-dealer
 bumper-cars
 bureau-headmaster
 burlfist-oak
@@ -496,6 +499,7 @@ canopy-stalker
 cant-stay-away
 cantankerous-keepers
 capricious-efreet
+captain-america-living-legend
 captain-america-super-soldier
 captain-america-wings-of-freedom
 captain-americas-shield
@@ -1753,6 +1757,7 @@ iron-hills-blacksmith
 iron-hills-stalwart
 iron-lad-diverging-destiny
 iron-man-armor
+iron-man-master-of-machines
 iron-monger-sadistic-tycoon
 ironclaw-buzzardiers
 ironclaw-curse
@@ -1848,6 +1853,7 @@ key-to-the-side-door
 keys-to-the-house
 khabal-ghoul
 kharn-the-betrayer
+kid-loki
 kili-the-resourceful
 kill-suit-cultist
 killing-wave
@@ -1997,6 +2003,7 @@ loathsome-catoblepas
 loathsome-chimera
 localized-destruction
 lofty-denial
+loki-god-of-mischief
 loki-laufeyson
 lone-revenant
 lone-wolf
@@ -2527,6 +2534,7 @@ possessed-skaab
 power-leak
 power-play
 power-sink
+powerful-broker
 pox
 prayer-of-binding
 precursor-golem
@@ -3140,6 +3148,7 @@ sphinxs-decree
 sphinxs-tutelage
 spider-man-to-the-rescue
 spider-punk
+spider-woman-secret-agent
 spike-cannibal
 spiked-corridor-torture-pit
 spikeshell-harrier
@@ -3408,13 +3417,16 @@ the-rack
 the-ravens-warning
 the-royal-scions
 the-ruinous-powers
+the-ruinous-wrecking-crew
 the-sackville-bagginses
 the-scarlet-witch
 the-sentry-golden-guardian
+the-serpent-society
 the-stasis-coffin
 the-super-hero-civil-war
 the-ten-rings
 the-theorist-jace-beleren
+the-thing-ben-grimm
 the-unagi-of-kyoshi-island
 the-underworld-cookbook
 the-valeyard
@@ -3498,6 +3510,7 @@ tinybones-joins-up
 tinybones-pocket-nuisance
 tinybones-the-pickpocket
 titanbones-towering-heart
+titania-rugged-rumbler
 titanias-song
 tithing-blade-consuming-sepulcher
 tivit-seller-of-secrets
@@ -3860,6 +3873,7 @@ wolf-pack
 wolfir-silverheart
 wolfriders-saddle
 wolverine-fierce-fighter
+wonder-man-hollywood-hero
 wood-elemental
 woodland-bellower
 woodland-champion

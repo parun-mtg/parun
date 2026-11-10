@@ -1,0 +1,345 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wonder Man, Hollywood Hero",
+            "label": "wm",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m7",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m8",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m9",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m10",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m11",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m12",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m13",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m14",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m15",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m16",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m17",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m18",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m19",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m20",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m21",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m22",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m23",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m24",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m25",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m26",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m27",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m28",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spark Double",
+            "label": "double"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.193a / 602.5b Wonder Man, Hollywood Hero and a Spark Double copying him: each grant is one more activation, so his power-up activates three times",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$wm",
+        "power": 10,
+        "toughness": 10
+      }
+    }
+  ],
+  "note": "The copy is not legendary (Spark Double), so both stay. Twenty-eight Mountains pay four of Wonder Man's power-ups, so the seven left untapped show the fourth refused by its count rather than its cost; the copy's own power-up, unspent and reduced by its mana cost, stays offered.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            null
+          ],
+          "object": "$double"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "$wm"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5",
+            "$m6",
+            "$m7",
+            null
+          ],
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$m8",
+            "$m9",
+            "$m10",
+            "$m11",
+            "$m12",
+            "$m13",
+            "$m14",
+            null
+          ],
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$m15",
+            "$m16",
+            "$m17",
+            "$m18",
+            "$m19",
+            "$m20",
+            "$m21",
+            null
+          ],
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 6,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$wm"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate Spark Double",
+            "ActivateManaAbility $m22",
+            "ActivateManaAbility $m23",
+            "ActivateManaAbility $m24",
+            "ActivateManaAbility $m25",
+            "ActivateManaAbility $m26",
+            "ActivateManaAbility $m27",
+            "ActivateManaAbility $m28"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

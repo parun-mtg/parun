@@ -1149,7 +1149,7 @@ moveCounters resolving source controller legal (MoveCounters.MkMoveCounters from
 --
 -- Candidates and kinds are read BEFORE the prompt and before any counter
 -- lands (CR 608.2h), so a CR 614 replacement cannot widen the kinds.
--- Targetless: no CR 608.2b legality to re-check.
+-- Chosen, not targeted: no CR 608.2b legality to re-check.
 --
 -- The roster is Game.stillPlaying, not the keys of GameState.players, whose
 -- departed seats keep counters CR 800.4a does not remove.
@@ -1158,11 +1158,22 @@ moveCounters resolving source controller legal (MoveCounters.MkMoveCounters from
 -- like Tekuthal, Inquiry Dominus's can make it several proliferates -- each its
 -- own CR 701.34a choice, read off the board the previous one left. No
 -- printed row cancels the event; a cancelled one proliferates nothing.
-proliferate :: ObjectId -> PlayerId -> Game ()
-proliferate source controller = do
-  outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.Proliferate Nothing controller 1)
-  Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Proliferate) $ \(_, times) ->
-    Monad.replicateM_ (Natural.toIntSaturating times) (Common.proliferateOnce source controller)
+--
+-- A slot is Powerful Broker's targeted form instead: its targets that CR
+-- 608.2b left standing, read once (CR 608.2h). Not CR 701.34a's keyword action,
+-- so no WouldPerform and no "whenever you proliferate" event.
+proliferate :: ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe SlotName -> Game ()
+proliferate source controller legal targeted = case targeted of
+  Nothing -> do
+    outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.Proliferate Nothing controller 1)
+    Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Proliferate) $ \(_, times) ->
+      Monad.replicateM_ (Natural.toIntSaturating times) (Common.proliferateOnce source controller)
+  Just slot -> do
+    gs <- State.get
+    let recipients = Set.toList (Map.findWithDefault Set.empty slot legal)
+        permanents = Maybe.mapMaybe Recipient.objectOf recipients
+        players = [pid | Recipient.ToPlayer pid <- recipients]
+    Common.giveAnotherOfEachKind controller gs permanents players
 
 -- CR 701.39a: "bolster N" -- put N +1/+1 counters on a creature you control
 -- with the least toughness, or tied for least. The prompt is raised only for a

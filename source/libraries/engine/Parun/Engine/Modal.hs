@@ -33,6 +33,7 @@ import qualified Parun.Types.ModeInstance as ModeInstance
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Pool as Pool
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
@@ -78,7 +79,7 @@ selectionClauses :: Modal.Modal card ability -> [[Clause.Clause card ability]]
 selectionClauses m =
   let enumerate = if allowsRepeats m then combinationsWithRepeats else combinations
       modeClauses = fmap (Foldable.toList . Mode.clauses) (Foldable.toList (Modal.modes m))
-   in fmap concat (concatMap (\n -> enumerate n modeClauses) (selectionSizes (Modal.selection m)))
+   in fmap concat (concatMap (\n -> enumerate n modeClauses) (selectionSizes (modeCount m) (Modal.selection m)))
 
 -- CR 700.2d: "If a player is allowed to choose more than one mode for a modal
 -- spell or ability, that player normally can't choose the same mode more than
@@ -304,6 +305,7 @@ instancePool rename pool = case pool of
   Pool.SpellsAndPermanents -> pool
   Pool.SpellsAndAbilities -> pool
   Pool.PlayersAndPlaneswalkers -> pool
+  Pool.PermanentsAndPlayers -> pool
   Pool.CardsInExile -> pool
   Pool.CardsInAnte -> pool
 
@@ -372,15 +374,19 @@ leastOf selection = case selection of
   ModeSelection.ChooseExactlyWithRepeats n -> n
   ModeSelection.ChooseBetween cb -> ChooseBetween.least cb
   ModeSelection.ChooseInstead ci -> min (leastOf (ChooseInstead.ordinary ci)) (leastOf (ChooseInstead.instead ci))
+  ModeSelection.ChooseUpTo _ -> 0
 
 -- CR 700.2: the MOST modes a selection satisfying this instruction may name --
 -- leastOf's counterpart, and the same number for every exact instruction.
-mostOf :: ModeSelection.ModeSelection -> Natural
+-- Nothing for an unsettled ChooseUpTo, which could still compute any number
+-- (Target.countAt's posture), leaving the legal modes as the only ceiling.
+mostOf :: ModeSelection.ModeSelection -> Maybe Natural
 mostOf selection = case selection of
-  ModeSelection.ChooseExactly n -> n
-  ModeSelection.ChooseExactlyWithRepeats n -> n
-  ModeSelection.ChooseBetween cb -> ChooseBetween.most cb
-  ModeSelection.ChooseInstead ci -> max (mostOf (ChooseInstead.ordinary ci)) (mostOf (ChooseInstead.instead ci))
+  ModeSelection.ChooseExactly n -> Just n
+  ModeSelection.ChooseExactlyWithRepeats n -> Just n
+  ModeSelection.ChooseBetween cb -> Just (ChooseBetween.most cb)
+  ModeSelection.ChooseInstead ci -> max <$> mostOf (ChooseInstead.ordinary ci) <*> mostOf (ChooseInstead.instead ci)
+  ModeSelection.ChooseUpTo _ -> Nothing
 
 -- CR 700.2d: does this instruction print "You may choose the same mode more than
 -- once"? False is that rule's default -- "that player normally can't choose the
@@ -396,24 +402,30 @@ allowsRepeatsIn selection = case selection of
   ModeSelection.ChooseExactlyWithRepeats _ -> True
   ModeSelection.ChooseBetween {} -> False
   ModeSelection.ChooseInstead ci -> allowsRepeatsIn (ChooseInstead.ordinary ci) || allowsRepeatsIn (ChooseInstead.instead ci)
+  ModeSelection.ChooseUpTo _ -> False
 
 -- Every size a selection satisfying the printed instruction may have, ascending.
 -- One element for an exact instruction, `most - least + 1` for a range, and
--- either instruction's for an unsettled ChooseInstead.
-selectionSizes :: ModeSelection.ModeSelection -> [Natural]
-selectionSizes selection = case selection of
-  ModeSelection.ChooseInstead ci -> Set.toAscList (Set.fromList (selectionSizes (ChooseInstead.ordinary ci) <> selectionSizes (ChooseInstead.instead ci)))
-  _ -> [leastOf selection .. mostOf selection]
+-- either instruction's for an unsettled ChooseInstead. `ceiling` stands in for
+-- a most the instruction does not fix (mostOf), and is never below the sizes
+-- that can matter: the legal modes, or the printed ones.
+selectionSizes :: Natural -> ModeSelection.ModeSelection -> [Natural]
+selectionSizes ceiling_ selection = case selection of
+  ModeSelection.ChooseInstead ci -> Set.toAscList (Set.fromList (selectionSizes ceiling_ (ChooseInstead.ordinary ci) <> selectionSizes ceiling_ (ChooseInstead.instead ci)))
+  _ -> [leastOf selection .. Maybe.fromMaybe ceiling_ (mostOf selection)]
 
 -- CR 601.4: the instruction an unsettled ChooseInstead stands for once its
--- condition can be read, `holds` reading it. Every other selection is already
--- settled. Until then, every other function here reads it as EITHER
--- instruction: the player may announce modes only the replacing one allows, and
--- the announcement is judged once the choices it depends on are made
+-- condition can be read, `holds` reading it, and the range an unsettled
+-- ChooseUpTo stands for once its number can be, `counting` reading it. Every
+-- other selection is already settled. Until then, every other function here
+-- reads a ChooseInstead as EITHER instruction and a ChooseUpTo as having no
+-- ceiling: the player may announce modes only the settled instruction refuses,
+-- and the announcement is judged once the choices it depends on are made
 -- (Parun.Engine.Cast).
-settle :: (Condition.Condition -> Bool) -> ModeSelection.ModeSelection -> ModeSelection.ModeSelection
-settle holds selection = case selection of
-  ModeSelection.ChooseInstead ci -> settle holds (if holds (ChooseInstead.condition ci) then ChooseInstead.instead ci else ChooseInstead.ordinary ci)
+settle :: (Condition.Condition -> Bool) -> (Quantity.Quantity -> Natural) -> ModeSelection.ModeSelection -> ModeSelection.ModeSelection
+settle holds counting selection = case selection of
+  ModeSelection.ChooseInstead ci -> settle holds counting (if holds (ChooseInstead.condition ci) then ChooseInstead.instead ci else ChooseInstead.ordinary ci)
+  ModeSelection.ChooseUpTo q -> ModeSelection.ChooseBetween ChooseBetween.MkChooseBetween {ChooseBetween.least = 0, ChooseBetween.most = counting q}
   _ -> selection
 
 -- allowsRepeatsIn over the payload's own printed selection.
@@ -450,10 +462,10 @@ forcedSelection legal selection
        in if ordinary == forcedSelection legal (ChooseInstead.instead ci) then ordinary else Nothing
   -- "Choose zero" names nothing whatever is legal. No printing says it; the arm
   -- is here so the two below may assume a positive ceiling.
-  | mostOf selection == 0 = Just Seq.empty
+  | mostOf selection == Just 0 = Just Seq.empty
   | allowsRepeatsIn selection = case Set.toAscList legal of
       [] -> Just Seq.empty
-      [only] -> Just (Seq.replicate (Natural.toIntSaturating (mostOf selection)) only)
+      [only] -> Just (Seq.replicate (Natural.toIntSaturating (Maybe.fromMaybe 0 (mostOf selection))) only)
       _ -> Nothing
   | Natural.length legal <= leastOf selection = Just (Seq.fromList (Set.toAscList legal))
   | otherwise = Nothing
@@ -469,7 +481,7 @@ forcedSelection legal selection
 selectionPossible :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Bool
 selectionPossible legal selection
   | ModeSelection.ChooseInstead ci <- selection = selectionPossible legal (ChooseInstead.ordinary ci) || selectionPossible legal (ChooseInstead.instead ci)
-  | mostOf selection == 0 = True
+  | mostOf selection == Just 0 = True
   | allowsRepeatsIn selection = not (Set.null legal)
   | otherwise = Natural.length legal >= leastOf selection
 
@@ -484,7 +496,7 @@ selectionSatisfiedBy legal selection chosen =
   let distinct = Set.fromList (Foldable.toList chosen)
       size = Natural.length chosen
    in size >= leastOf selection
-        && size <= mostOf selection
+        && all (size <=) (mostOf selection)
         && Set.isSubsetOf distinct legal
         && (allowsRepeatsIn selection || Set.size distinct == Seq.length chosen)
 
@@ -501,7 +513,7 @@ selections legal selection =
         | otherwise = case pool of
             [] -> []
             m : rest -> fmap (m :) (choose (n - 1) (if allowsRepeatsIn selection then pool else rest)) <> choose n rest
-   in [Seq.fromList picked | n <- selectionSizes selection, picked <- choose n (Set.toAscList legal)]
+   in [Seq.fromList picked | n <- selectionSizes (Natural.length legal) selection, picked <- choose n (Set.toAscList legal)]
 
 -- How many modes are PRINTED, which is not the same question as how many the
 -- selection demands. CR 702.42a's entwine is what asks it: this is the count

@@ -80,7 +80,8 @@
           },
           "restrictions": [
             {
-              "type": "OnlyOnce"
+              "type": "TimesEver",
+              "value": 1
             }
           ]
         }

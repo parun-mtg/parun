@@ -188,7 +188,7 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
@@ -392,6 +392,7 @@ filterChildren children predicate = case predicate of
   Filter.DealtDamageThisTurn -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
   Filter.EnteredThisTurn _ -> pure predicate
+  Filter.CountersPutThisTurn relation kind -> fmap (Filter.CountersPutThisTurn relation) (counterKindChildren children kind)
   Filter.ControlledSinceTurnBegan -> pure predicate
   Filter.AttachedTo f -> fmap Filter.AttachedTo (nest children f)
   Filter.BeforeMove f -> fmap Filter.BeforeMove (nest children f)
@@ -569,6 +570,7 @@ quantityChildren children quantity = case quantity of
   Quantity.WasAttacking -> pure quantity
   Quantity.WasBlocking -> pure quantity
   Quantity.WasBlockedThisTurn -> pure quantity
+  Quantity.TimesTappedThisTurn -> pure quantity
   Quantity.ControlGained window ref -> fmap (Quantity.ControlGained window) (player children ref)
   Quantity.PlayedBy ref -> fmap Quantity.PlayedBy (player children ref)
   Quantity.OpponentsAttacked ref -> fmap Quantity.OpponentsAttacked (player children ref)
@@ -985,7 +987,7 @@ effectChildren c effect = case effect of
     fmap Effect.Guess (Guess.MkGuess <$> onObjectRef c subject <*> onSlot c named <*> onPlayer c guesser <*> onFilter c proposition <*> onSlot c right)
   Effect.ExileHandThenDraw -> pure effect
   Effect.NoteManaSpent -> pure effect
-  Effect.Proliferate -> pure effect
+  Effect.Proliferate named -> fmap Effect.Proliferate (traverse (onSlot c) named)
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among)
   Effect.ChooseQuality _ -> pure effect
@@ -1250,8 +1252,8 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching) ->
     fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching)) (actingChildren c recipient)
   TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)
-  TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer filter_ recipient oneOrMore) ->
-    fmap (\renamed -> TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer renamed recipient oneOrMore)) (triggerFilter c filter_)
+  TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer filter_ kind recipient oneOrMore) ->
+    fmap (\renamed -> TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer renamed kind recipient oneOrMore)) (triggerFilter c filter_)
   TriggerCondition.CreatureDealtCombatDamageToMonarch -> pure condition
   TriggerCondition.CreaturesDealtCombatDamageToInitiative -> pure condition
   TriggerCondition.PlayerTookInitiative -> pure condition
@@ -1339,13 +1341,13 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies) ->
     fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies)
   TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ kind) -> fmap (\renamed -> TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger renamed kind)) (triggerFilter c filter_)
-  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kind batching) ->
+  TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching) ->
     fmap
-      (\renamed -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kind batching))
+      (\renamed -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kinds batching))
       ( case subject of
           TargetedSubject.Permanent permanent -> fmap TargetedSubject.Permanent (actingChildren c permanent)
-          TargetedSubject.You -> pure subject
-          TargetedSubject.YouOrPermanent permanent -> fmap TargetedSubject.YouOrPermanent (actingChildren c permanent)
+          TargetedSubject.Player _ -> pure subject
+          TargetedSubject.PlayerOrPermanent who permanent -> fmap (TargetedSubject.PlayerOrPermanent who) (actingChildren c permanent)
       )
   TriggerCondition.SelfHalfUnlocked _ -> pure condition
   TriggerCondition.RoomFullyUnlocked _ -> pure condition
@@ -1484,7 +1486,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Trample -> pure keyword_
   Keyword.TrampleOverPlaneswalkers -> pure keyword_
   Keyword.Vigilance -> pure keyword_
-  Keyword.Ward (Ward.MkWard cost perEach) -> fmap Keyword.Ward (Ward.MkWard <$> keywordCost c cost <*> traverse (keywordCountChildren c) perEach)
+  Keyword.Ward (Ward.MkWard cost perEach) -> fmap Keyword.Ward (Ward.MkWard <$> traverse (keywordCost c) cost <*> traverse (keywordCountChildren c) perEach)
   Keyword.Banding -> pure keyword_
   Keyword.Rampage _natural -> pure keyword_
   Keyword.CumulativeUpkeep cost -> fmap Keyword.CumulativeUpkeep (keywordCost c cost)

@@ -1,5 +1,6 @@
 module Parun.Codec.ActivatedAbilitySpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -14,6 +15,8 @@ import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Effect as Effect
@@ -59,12 +62,12 @@ toJson = Codec.encode codec
 fromJson :: Value.Value -> Either Text.Text (ActivatedAbility.ActivatedAbility Text.Text Text.Text)
 fromJson = Codec.decode codec
 
--- One constructor, so four cases: rule 702.6a's equip ability as
+-- One constructor, so five cases: rule 702.6a's equip ability as
 -- Parun.Engine.Keyword mints it, carrying CR 602.5d's SorcerySpeed clause, CR
 -- 117.1b's default of no clause at all,
 -- whose key is elided, Kongming's Contraptions' TWO clauses, which is what
--- the key being an array is for, and the same equip ability carrying the stamp
--- its minter put on it.
+-- the key being an array is for, the same equip ability carrying the stamp
+-- its minter put on it, and a cost choice (CR 602.2b).
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
   Spec.it s "MkActivatedAbility, rule 702.6a's equip ability" $
@@ -74,6 +77,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
       fromJson
       ( ActivatedAbility.MkActivatedAbility
           (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) [])
+          []
           []
           0
           Nothing
@@ -94,6 +98,27 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"modal\":{\"modes\":[{\"clauses\":[{\"effects\":[{\"type\":\"Attach\",\"value\":\"target\"}]}],\"targetSlots\":{\"target\":{\"pool\":{\"type\":\"Creatures\"},\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}}]},\"restrictions\":[{\"type\":\"SorcerySpeed\"}]} "
+  -- CR 602.2b: a choice printed inside the activation cost, Bullseye, Death
+  -- Dealer's shape, rides `costChoices` beside the shared cost.
+  Spec.it s "MkActivatedAbility with a cost choice" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      ( ActivatedAbility.MkActivatedAbility
+          (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [CostComponent.TapThis])
+          [CostChoice.MkCostChoice (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.PayLife (CostAmount.Fixed 2)] NonEmpty.:| [Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []])]
+          []
+          0
+          Nothing
+          (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory)
+          []
+          (Activator.Related PlayerRelation.You)
+          Nothing
+          Nothing
+          Nothing
+      )
+      " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}],\"components\":[{\"type\":\"TapThis\"}]},\"costChoices\":[[{\"mana\":[],\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],\"modal\":{\"modes\":[{}]}} "
   -- CR 602.5's conjunction, in the JSON: two clauses in printed order, which is
   -- the shape a single tagged object could not hold.
   Spec.it s "MkActivatedAbility, Kongming's Contraptions' two clauses" $
@@ -103,6 +128,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
       fromJson
       ( ActivatedAbility.MkActivatedAbility
           (Cost.MkCost Nothing [CostComponent.TapThis])
+          []
           []
           0
           Nothing
@@ -128,6 +154,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
       ( ActivatedAbility.MkActivatedAbility
           (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) [])
           []
+          []
           0
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory)
@@ -147,6 +174,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
       fromJson
       ( ActivatedAbility.MkActivatedAbility
           (Cost.MkCost Nothing [])
+          []
           []
           0
           Nothing
@@ -168,6 +196,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
       ( ActivatedAbility.MkActivatedAbility
           (Cost.MkCost Nothing [])
           []
+          []
           1
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory)
@@ -187,6 +216,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
       fromJson
       ( ActivatedAbility.MkActivatedAbility
           (Cost.MkCost Nothing [])
+          []
           []
           0
           (Just (Quantity.Literal 2))

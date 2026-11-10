@@ -24,6 +24,8 @@ data HistoryRead
     CoinFlips
   | -- | Spells convoked (CR 702.51a).
     Convokes
+  | -- | Counters put on objects (CR 122.6).
+    CounterPlacements
   | -- | Vehicles crewed, and creatures crewing them (CR 702.122a).
     Crews
   | -- | Damage dealt (CR 120.1).
@@ -54,6 +56,8 @@ data HistoryRead
     Saddles
   | -- | Steps and phases that began (CR 500.1).
     StepBegins
+  | -- | Permanents that became tapped (CR 701.26a).
+    Taps
   | -- | Abilities that triggered (CR 603.2).
     Triggers
   deriving (Eq, Ord, Show)

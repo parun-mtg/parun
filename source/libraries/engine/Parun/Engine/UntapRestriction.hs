@@ -45,6 +45,7 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.UntapHold as UntapHold
 import qualified Parun.Types.UntapRestriction as UntapRestriction
+import qualified Parun.Types.UntapScope as UntapScope
 
 -- CR 502.3 with CR 101.2: each restriction in force right now over
 -- `candidates`, by its `hold`, with the candidates it names:
@@ -120,9 +121,13 @@ gathered candidates gs =
              in [(UntapRestriction.hold restriction, Set.fromList (filter (named source (if null changes then affected else Projection.rewriteAffected changes affected)) candidates))]
         | otherwise = []
       -- CR 611.2b: a stored row is in force from the moment its window opens
-      -- (Expiry.begun) until Expiry's sweep drops it. Every one is a "can't".
-      stored = RestrictedCreatures.prohibited Prohibition.Untap candidates gs
-   in (UntapHold.Forbidden, stored) : concatMap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
+      -- (Expiry.begun) until Expiry's sweep drops it. Every one is a "can't":
+      -- of the untap step's untap, or of every untap (Spider-Woman, Secret
+      -- Agent; CR 701.26b).
+      stored scope = RestrictedCreatures.prohibited (Prohibition.Untap scope) candidates gs
+   in (UntapHold.Forbidden, stored UntapScope.UntapStep)
+        : (UntapHold.Never, stored UntapScope.AnyUntap)
+        : concatMap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
 
 -- CR 502.3 / 101.2: which of `offered` untap, given the active player's
 -- `chosen` and the caps (UntapHold.AtMost) in force. Every cap holds at once
@@ -142,7 +147,8 @@ settle caps elective offered chosen =
    in List.foldl' add kept (filter (\oid -> not (Set.member oid elective) && not (Set.member oid kept)) offered)
 
 -- CR 701.26b with CR 101.2: does an effect in force say `oid` can't become
--- untapped (UntapHold.Never, Blossombind)? Asked by Parun.Engine.Event's untap
+-- untapped (UntapHold.Never: Blossombind, or a stored row's
+-- UntapScope.AnyUntap)? Asked by Parun.Engine.Event's untap
 -- funnel, so the untap step, Effect.Untap and CR 107.6's untap symbol all see it.
 cantBecomeUntapped :: ObjectId -> GameState -> Bool
 cantBecomeUntapped oid gs = any (\(hold, named) -> hold == UntapHold.Never && Set.member oid named) (gathered [oid] gs)

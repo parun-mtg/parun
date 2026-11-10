@@ -135,12 +135,12 @@ spec s = Spec.describe s "Parun.Codec.ActivationRestriction" $ do
       " {\"type\":\"OnlyIf\",\"value\":{\"type\":\"Compares\",\"value\":{\"comparison\":\"AtLeast\",\"measured\":{\"type\":\"Count\",\"value\":{\"aggregation\":{\"type\":\"Members\"},\"filter\":{\"type\":\"And\",\"value\":[]},\"scope\":{\"type\":\"InZone\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"zone\":\"Graveyard\"}}}},\"threshold\":{\"type\":\"Literal\",\"value\":7}}}} "
   -- CR 602.5b's counted rider, which CR 702.177a's exhaust rewrites into:
   -- Greenbelt Guardian's "Activate only once".
-  Spec.it s "OnlyOnce" $
+  Spec.it s "TimesEver" $
     Common.assertCodec
       s
       ActivationRestriction.codec
-      ActivationRestriction.OnlyOnce
-      " {\"type\":\"OnlyOnce\"} "
+      (ActivationRestriction.TimesEver 1)
+      " {\"type\":\"TimesEver\",\"value\":1} "
   -- CR 602.5b's own example, the same rider timed per turn: Locust Swarm's
   -- "Activate only once each turn".
   Spec.it s "TimesEachTurn" $

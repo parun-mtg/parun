@@ -388,11 +388,13 @@ loyaltyOk pid srcId ability gs =
 
 -- CR 602.5: the ability's printed rider holds, or holds once every grant
 -- reaching it has relaxed its clause -- Leonin Shikari's reads CR 602.5d's
--- clause as CR 602.5e's, Birgi's raises CR 602.5b's count. Each relaxation only
--- widens, so applying all of them at once admits whatever any subset would. The
--- grants are asked only when the rider as printed refuses, so a board without
--- one pays nothing for them. Parun.ActivateSpec's InstantSpeedEquip group
--- proves the first, data/scenarios/activate's Birgi cases the second.
+-- clause as CR 602.5e's, Birgi's raises CR 602.5b's per-turn count, Wonder
+-- Man's its once-only count. Each relaxation only widens, so applying all of
+-- them at once admits whatever any subset would. The grants are asked only when
+-- the rider as printed refuses, so a board without one pays nothing for them.
+-- Parun.ActivateSpec's InstantSpeedEquip group proves the first,
+-- data/scenarios/activate's Birgi cases the second, and data/scenarios'
+-- wonder-man-hollywood-hero cases the third.
 riderOk :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> Bool
 riderOk pid srcId ability gs =
   let printed = Keyword.restrictionsOf ability
@@ -619,16 +621,17 @@ affordableX :: Maybe Natural -> [(Map.Map SlotName (Natural, Natural), Map.Map S
 affordableX mCeiling aimable stamp named spendable pid srcId gs cost = Cost.greatestPayableX mCeiling (\x -> payableCostAt aimable x stamp named spendable pid srcId gs cost) cost
 
 -- CR 601.2b / 118.9 through CR 602.2b: the costs a player may announce for this
--- activation -- its printed activation cost, then each alternative an effect
+-- activation -- its printed activation cost, once per way of paying the choices
+-- printed inside it (ActivatedAbility.costChoices), then each alternative an effect
 -- offers in its place (Kíli the Resourceful's {0} for an equip cost), duplicates
 -- dropped. The gate offers the activation if any is payable, and
 -- Parun.Engine.Activate.activateAbility asks which one when two are. `effects`
 -- is the player's rows (PlayerEffect.applying), taken once per enumeration.
 costsFor :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> PlayerId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> [Cost Keyword]
 costsFor effects pid ability gs =
-  let printed = ActivatedAbility.cost ability
+  let printed = Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability)
       alternatives = fmap (\m -> Cost.Type.MkCost (Just m) []) (PlayerEffect.alternativeActivationCosts effects pid (ActivatedAbility.keyword ability) gs)
-   in ListUtils.nubOrd (printed : alternatives)
+   in ListUtils.nubOrd (printed <> alternatives)
 
 -- CR 602.2/602.5: the ability is a member of the source's abilities
 -- (abilitiesFor), it is not a mana ability, the whole activation cost is payable

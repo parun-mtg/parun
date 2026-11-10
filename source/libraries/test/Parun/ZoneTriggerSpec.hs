@@ -165,7 +165,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlacesSticker as PlacesSticker
@@ -1850,8 +1850,8 @@ representativeEvents cond =
       noTable e = (Map.empty, e)
       one e = noTable e NonEmpty.:| []
       becameTargetEvents c =
-        let targeting recipient = noTable (GameEvent.BecameTarget (BecameTarget.MkBecameTarget recipient arrived (Maybe.fromMaybe StackObjectKind.Spell (BecomesTargetedTrigger.kind c)) S.bob))
-         in targeting (Recipient.ToObject departed) NonEmpty.:| [targeting (Recipient.ToPlayer S.alice) | TargetedSubject.includesYou (BecomesTargetedTrigger.subject c)]
+        let targeting recipient = noTable (GameEvent.BecameTarget (BecameTarget.MkBecameTarget recipient arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob))
+         in targeting (Recipient.ToObject departed) NonEmpty.:| [targeting (Recipient.ToPlayer S.alice) | Maybe.isJust (TargetedSubject.playerOf (BecomesTargetedTrigger.subject c))]
       -- The batch's CR 400.7e table, with the sacrificed permanent's graveyard
       -- arrival in it -- Event.Trigger.eventTriggersGiven's `becameInGraveyard` for a sacrifice
       -- that reached a graveyard.
@@ -1911,7 +1911,7 @@ representativeEvents cond =
         -- Event.matchesTrigger answers alike for both (its batch arm delegates to
         -- DealsDamage's), CR 603.2c's once-per-step scoping living in
         -- Event.eventTriggers instead -- a OneOrMore Leaves' posture above.
-        TriggerCondition.PermanentsDealCombatDamageToPlayer _ -> one combatDamage
+        TriggerCondition.PermanentsDealDamageToPlayer _ -> one combatDamage
         -- CR 726.2's and CR 727.2's damage, dealt to alice: the inherent
         -- abilities' "you" is the monarch or the holder, the player hit.
         TriggerCondition.CreatureDealtCombatDamageToMonarch -> one combatDamageToAlice
@@ -2086,17 +2086,17 @@ representativeEvents cond =
         -- that. With "you" included, alice herself is a recipient too, so the
         -- floor is read on the path where no permanent is named as well.
         --
-        -- Under a You subject, a targeted PLAYER and nothing else, the kind taken
-        -- from the condition for the same reason -- Dormant Gomazoa's Just Spell
-        -- and Amulet of Safekeeping's Nothing, for which Spell is as
+        -- Under a Player subject, a targeted PLAYER and nothing else, the kind
+        -- taken from the condition for the same reason -- Dormant Gomazoa's Spell
+        -- and Amulet of Safekeeping's every kind, for which Spell is as
         -- representative as Ability. The controller is bob, an opponent of the
         -- targeted alice.
         TriggerCondition.BecomesTargeted c -> case BecomesTargetedTrigger.subject c of
           TargetedSubject.Permanent ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice))
-          TargetedSubject.YouOrPermanent ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice))
-          TargetedSubject.You -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (BecomesTargetedTrigger.kind c)) S.bob))
+          TargetedSubject.PlayerOrPermanent _ ActingPermanent.Self -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToObject departed) arrived StackObjectKind.ActivatedAbility S.alice))
+          TargetedSubject.Player _ -> one (GameEvent.BecameTarget (BecameTarget.MkBecameTarget (Recipient.ToPlayer S.alice) arrived (Maybe.fromMaybe StackObjectKind.Spell (Set.lookupMin (BecomesTargetedTrigger.kinds c))) S.bob))
           TargetedSubject.Permanent (ActingPermanent.Matching _) -> becameTargetEvents c
-          TargetedSubject.YouOrPermanent (ActingPermanent.Matching _) -> becameTargetEvents c
+          TargetedSubject.PlayerOrPermanent _ (ActingPermanent.Matching _) -> becameTargetEvents c
         -- CR 709.5h's own event, on the BEARER and naming the same door the
         -- condition does, so the pair really matches -- the door below is the one
         -- everyTriggerCondition names.
@@ -2325,7 +2325,7 @@ everyTriggerCondition =
     TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Noncombat) Nothing) False Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
     TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.You (Just DamageKind.Combat) Nothing) True Batching.EachOccurrence (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
     TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage (DealtDamage.MkDealtDamage PlayerRelation.Opponent (Just DamageKind.Combat) Nothing) False Batching.OneOrMore (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))),
-    TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer (Filter.Type.And []) PlayerRelation.AnyPlayer False),
+    TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.Type.And []) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False),
     TriggerCondition.CreatureDealtCombatDamageToMonarch,
     TriggerCondition.CreaturesDealtCombatDamageToInitiative,
     TriggerCondition.PlayerTookInitiative,
@@ -2462,21 +2462,24 @@ everyTriggerCondition =
     -- unseen if only rule 702.21a's own Opponent were listed.
     TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.relation = PlayerRelation.Opponent},
     TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.relation = PlayerRelation.You},
-    -- A You subject, for the Self pair's reason just above and one axis more: it
+    -- A Player subject, for the Self pair's reason just above and one axis more: it
     -- narrows on a relation AND on a kind. Amulet of Safekeeping's pair first,
     -- then Dormant Gomazoa's.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger TargetedSubject.You PlayerRelation.Opponent Nothing Batching.EachOccurrence),
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger TargetedSubject.You PlayerRelation.AnyPlayer (Just StackObjectKind.Spell) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Player PlayerRelation.You) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Player PlayerRelation.You) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.Spell) Batching.EachOccurrence),
     -- Professor Hojo's own: a Filter beside the pair above's relation and kind.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Just StackObjectKind.ActivatedAbility) Batching.OneOrMore),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.ActivatedAbility) Batching.OneOrMore),
     -- Venerated Rotpriest's per-creature twin, and Diffusion Sliver's: both
     -- relations, for the Self BecomesTargeted pair's reason.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Just StackObjectKind.Spell) Batching.EachOccurrence),
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent Nothing Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.singleton StackObjectKind.Spell) Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.Permanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence),
     -- Leyline of Combustion's and Unsettled Mariner's, "you" included: their
     -- representative events name alice as well, the path only these admit.
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.YouOrPermanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent Nothing Batching.OneOrMore),
-    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.YouOrPermanent (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent Nothing Batching.EachOccurrence),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.OneOrMore),
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.Opponent (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) Batching.EachOccurrence),
+    -- Loki, God of Mischief's any player beside any permanent, an ability of
+    -- either kind.
+    TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger (TargetedSubject.PlayerOrPermanent PlayerRelation.AnyPlayer (ActingPermanent.Matching Filter.Type.IsSource)) PlayerRelation.AnyPlayer (Set.fromList [StackObjectKind.ActivatedAbility, StackObjectKind.TriggeredAbility]) Batching.EachOccurrence),
     TriggerCondition.SelfHalfUnlocked (CardName.MkCardName (Text.pack "Steaming Sauna")),
     TriggerCondition.RoomFullyUnlocked PlayerRelation.You,
     -- Balemurk Leech's own pair, and not an arbitrary one: a Matching Enters binds

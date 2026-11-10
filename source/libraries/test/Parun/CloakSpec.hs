@@ -16,6 +16,7 @@
 module Parun.CloakSpec where
 
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -54,7 +55,7 @@ import qualified Parun.Types.Zone as Zone
 -- engine's value, so the assertion is about rule 701.58a and not about
 -- FaceDownCharacteristics.disguisedValue agreeing with itself.
 ward2 :: Keyword.Keyword
-ward2 = Keyword.Ward (Ward.MkWard (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []) Nothing)
+ward2 = Keyword.Ward (Ward.MkWard (NonEmpty.singleton (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) Nothing)
 
 -- Take this mode of the ability being activated. PINNED by index rather than
 -- searched for, so a mutation cannot be repaired by an answerer that goes

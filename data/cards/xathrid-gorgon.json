@@ -115,7 +115,9 @@
                           "duration": {
                             "type": "Indefinite"
                           },
-                          "what": "Activate"
+                          "what": {
+                            "type": "Activate"
+                          }
                         }
                       }
                     ]

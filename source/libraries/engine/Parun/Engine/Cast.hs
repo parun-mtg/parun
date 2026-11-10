@@ -39,6 +39,7 @@ import qualified Parun.Engine.SplitSecond as SplitSecond
 import qualified Parun.Engine.Sticker as Sticker
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
@@ -3641,7 +3642,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- or one with it, has no candidate and rewinds below.
           settledFor candidate =
             let proposed = stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)
-             in Modal.selectionSatisfiedBy legal (Modal.settle (Condition.holds (Projection.fullView proposed) (Projection.sourceContext proposed (Just pid) sid) proposed sid) selection) chosenModes
+                context = Projection.sourceContext proposed (Just pid) sid
+                counting = Integer.toNaturalSaturating . Maybe.fromMaybe 0 . Quantity.evaluate (Projection.fullView proposed) context proposed sid
+             in Modal.selectionSatisfiedBy legal (Modal.settle (Condition.holds (Projection.fullView proposed) context proposed sid) counting selection) chosenModes
           -- CR 702.27a's cost is additional too, so it rides the same fold.
           withBuyback candidate = maybe candidate (Cost.plus candidate) boughtBack
           -- CR 702.47a's costs are additional too, one per spliced card.

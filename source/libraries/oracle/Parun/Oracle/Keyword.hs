@@ -3,6 +3,7 @@ module Parun.Oracle.Keyword where
 
 import qualified Data.Char as Char
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
@@ -97,9 +98,11 @@ printed self keyword = case keyword of
   Keyword.Trample -> [Text.pack "Trample"]
   Keyword.TrampleOverPlaneswalkers -> [Text.pack "Trample over planeswalkers"]
   Keyword.Vigilance -> [Text.pack "Vigilance"]
-  Keyword.Ward w -> case Ward.perEach w of
-    Nothing -> Cost.keyworded self (keywordWord self) (Text.pack "Ward") (Ward.cost w)
-    Just _ -> []
+  Keyword.Ward w -> case (Ward.perEach w, Ward.cost w) of
+    (Nothing, only NonEmpty.:| []) -> Cost.keyworded self (keywordWord self) (Text.pack "Ward") only
+    -- "Ward--Discard a card or pay {2}." (Titania, Rugged Rumbler).
+    (Nothing, options) -> fmap (\(second, _) -> Text.pack "Ward\8212" <> Prose.sentence second) (Cost.paymentChoice self (keywordWord self) options)
+    (Just _, _) -> []
   Keyword.Banding -> [Text.pack "Banding"]
   Keyword.Rampage n -> [numbered "Rampage" n]
   Keyword.CumulativeUpkeep c -> Cost.keyworded self (keywordWord self) (Text.pack "Cumulative upkeep") c
@@ -508,7 +511,7 @@ costedKeywords :: [Cost.Type.Cost Keyword.Keyword -> Keyword.Keyword]
 costedKeywords =
   [ \c -> Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature},
     Keyword.MoreThanMeetsTheEye,
-    \c -> Keyword.Ward Ward.MkWard {Ward.cost = c, Ward.perEach = Nothing},
+    \c -> Keyword.Ward Ward.MkWard {Ward.cost = NonEmpty.singleton c, Ward.perEach = Nothing},
     Keyword.CumulativeUpkeep,
     Keyword.Buyback,
     \c -> Keyword.Cycling Cycling.MkCycling {Cycling.cost = c, Cycling.searchFor = Nothing},

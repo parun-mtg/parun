@@ -100,12 +100,13 @@
       "triggeredAbilities": [
         {
           "condition": {
-            "type": "PermanentsDealCombatDamageToPlayer",
+            "type": "PermanentsDealDamageToPlayer",
             "value": {
               "filter": {
                 "type": "HasCardType",
                 "value": "Creature"
               },
+              "kind": "Combat",
               "recipient": "You"
             }
           },

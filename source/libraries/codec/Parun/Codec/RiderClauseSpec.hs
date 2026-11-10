@@ -19,4 +19,10 @@ spec s = Spec.describe s "Parun.Codec.RiderClause" $ do
       RiderClause.codec
       (RiderClause.TimesEachTurn 2)
       " {\"type\":\"TimesEachTurn\",\"value\":2} "
+  Spec.it s "AdditionalTime" $
+    Common.assertCodec
+      s
+      RiderClause.codec
+      RiderClause.AdditionalTime
+      " {\"type\":\"AdditionalTime\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s RiderClause.codec

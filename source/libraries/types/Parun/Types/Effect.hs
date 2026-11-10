@@ -698,10 +698,11 @@ data Effect card ability
   | -- | CR 607.2e: note, for the source, the type and amount of mana spent to
     -- activate this ability (Ice Cauldron), replacing any earlier note.
     NoteManaSpent
-  | -- | CR 701.34a: choose any number of permanents and/or players that have a
-    -- counter, then give each one additional counter of each kind it already
-    -- has. Choose, not target, so the set is picked on resolution.
-    Proliferate
+  | -- | Give each recipient one additional counter of each kind it already has
+    -- (CR 122.1): 'Nothing' is CR 701.34a's proliferate, the recipients chosen
+    -- on resolution; 'Just' is Powerful Broker's targets in that slot (CR
+    -- 115.1), which is not a proliferate.
+    Proliferate (Maybe SlotName.SlotName)
   | -- | CR 201.4 via CR 608.2c: the players the payload's PlayerRef names each
     -- choose a card name, written to Object.chosenNames on the resolving object
     -- (Ancient Vendetta, Petra Sphinx). The Filter is CR 201.4a's restriction,

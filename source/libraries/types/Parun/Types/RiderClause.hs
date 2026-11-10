@@ -11,4 +11,6 @@ data RiderClause
   | -- | CR 602.5b's per-turn limit raised to this many (Birgi, God of
     -- Storytelling).
     TimesEachTurn Natural
+  | -- | CR 602.5b's once-only limit raised by one (Wonder Man, Hollywood Hero).
+    AdditionalTime
   deriving (Eq, Ord, Show)

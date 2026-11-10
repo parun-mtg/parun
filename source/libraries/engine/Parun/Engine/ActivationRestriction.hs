@@ -78,7 +78,7 @@ import qualified Parun.Types.RiderClause as RiderClause
 -- asked at both of CR 605.3a's windows.
 --
 -- THE ABILITY rides along beside its restrictions because CR 602.5b's counted
--- rider is about the ability and not only about the object: OnlyOnce asks which
+-- rider is about the ability and not only about the object: TimesEver asks which
 -- ability of this source has been spent, and the source may hold two. Both
 -- callers have one -- Parun.Engine.Activate off the ability it is activating, and
 -- CR 605.3a's mana window off Parun.Types.ManaOption, which carries it for this.
@@ -166,10 +166,11 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- its Synthetic Hollow Spring cases the admitted one.
   ActivationRestriction.OnlyIf condition -> onlyIfHolds pid srcId (Game.withoutBeingCast gs) condition
   -- CR 602.5b's counted rider, one of the two arms that read neither a window nor
-  -- the board: has THIS ability of THIS object already been activated, EVER? CR 400.7
-  -- ends the memory with the incarnation (Object.newIncarnation), so a permanent
-  -- that leaves and returns answers True again -- Parun.ActivateSpec's "CR 400.7 /
-  -- 602.5b the permanent that returns may activate it again" is what proves it.
+  -- the board: has THIS ability of THIS object been activated fewer than `limit`
+  -- times, EVER? CR 400.7 ends the memory with the incarnation
+  -- (Object.newIncarnation), so a permanent that leaves and returns answers True
+  -- again -- Parun.ActivateSpec's "CR 400.7 / 602.5b the permanent that returns
+  -- may activate it again" is what proves it.
   --
   -- An object that is GONE answers True: CR 602.5b's restriction is a fact about
   -- an object, and Activatable.activatable has already required this one to be
@@ -181,11 +182,11 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- data/scenarios/mana's Loot boards prove. Nothing is CR 305.6's intrinsic
   -- route alone, which prints no rider, so the answer below is unreachable rather
   -- than a claim about one.
-  ActivationRestriction.OnlyOnce -> case ability of
+  ActivationRestriction.TimesEver limit -> case ability of
     Nothing -> False
     Just this -> case Game.lookupObject srcId gs of
       Nothing -> True
-      Just object -> unspent 1 srcId this (Object.activatedOnce object) gs
+      Just object -> unspent limit srcId this (Object.activatedOnce object) gs
   -- CR 602.5b's own example, the same question asked of THIS TURN: has this
   -- ability of this object been activated fewer than `limit` times since the
   -- turn began? The record is GameState.activatedThisTurn, which
@@ -193,7 +194,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- nothing on the object survives it.
   --
   -- Nothing is CR 305.6's intrinsic route, which prints no rider, exactly as
-  -- OnlyOnce above. No object is looked up: the record is keyed by the id, so a
+  -- TimesEver above. No object is looked up: the record is keyed by the id, so a
   -- source that has left keeps whatever it spent until the turn ends, and
   -- Activatable.activatable has already required the source of an OFFER to be
   -- somewhere it offers abilities from.
@@ -238,13 +239,16 @@ onlyIfHolds pid srcId board =
 -- Leonin Shikari's ruling. Its "any time you could cast an instant" reads CR
 -- 602.5d's sorcery-speed rider as CR 602.5e's; Birgi's "twice rather than once"
 -- sets CR 602.5b's per-turn count, so a second grant adds nothing and none
--- lowers a count, as Oath of Teferi's ruling reads the same words. Exhaustive,
--- so a new clause is named here by -Werror.
+-- lowers a count, as Oath of Teferi's ruling reads the same words. Wonder Man's
+-- "an additional time" adds one to the once-only count, each grant its own
+-- (docs/decisions.md, "Whether two "an additional time" grants stack").
+-- Exhaustive, so a new clause is named here by -Werror.
 relaxedBy :: RiderClause.RiderClause -> ActivationRestriction.ActivationRestriction -> ActivationRestriction.ActivationRestriction
 relaxedBy clause restriction = case restriction of
   ActivationRestriction.SorcerySpeed -> case clause of
     RiderClause.InstantSpeed -> ActivationRestriction.InstantSpeed
     RiderClause.TimesEachTurn _ -> restriction
+    RiderClause.AdditionalTime -> restriction
   ActivationRestriction.DuringPhase _ -> restriction
   ActivationRestriction.DuringTurn _ -> restriction
   ActivationRestriction.AttackedThisStep -> restriction
@@ -252,10 +256,14 @@ relaxedBy clause restriction = case restriction of
   ActivationRestriction.DuringCombatBefore _ -> restriction
   ActivationRestriction.BeforeStep _ -> restriction
   ActivationRestriction.OnlyIf _ -> restriction
-  ActivationRestriction.OnlyOnce -> restriction
+  ActivationRestriction.TimesEver limit -> case clause of
+    RiderClause.AdditionalTime -> ActivationRestriction.TimesEver (limit + 1)
+    RiderClause.InstantSpeed -> restriction
+    RiderClause.TimesEachTurn _ -> restriction
   ActivationRestriction.TimesEachTurn limit -> case clause of
     RiderClause.InstantSpeed -> restriction
     RiderClause.TimesEachTurn raised -> ActivationRestriction.TimesEachTurn (max limit raised)
+    RiderClause.AdditionalTime -> restriction
   ActivationRestriction.DuringThrow -> restriction
   ActivationRestriction.SpendOnly _ -> restriction
   ActivationRestriction.InstantSpeed -> restriction
@@ -304,7 +312,9 @@ unspent limit srcId this spent gs = case Map.findWithDefault 0 (Projection.print
 recordActivation :: ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> GameState
 recordActivation srcId ability gs =
   let key = Projection.printedActivatedAbility srcId gs ability
-      prints restriction = elem restriction (Keyword.restrictionsOf ability)
+      perGameLimited r = case r of
+        ActivationRestriction.TimesEver _ -> True
+        _ -> False
       perTurnLimited r = case r of
         ActivationRestriction.TimesEachTurn _ -> True
         _ -> False
@@ -313,7 +323,7 @@ recordActivation srcId ability gs =
       perTurn g =
         g {GameState.activatedThisTurn = Map.insertWith (Map.unionWith (+)) srcId (Map.singleton key 1) (GameState.activatedThisTurn g)}
    in (if any perTurnLimited (Keyword.restrictionsOf ability) then perTurn else id)
-        ((if prints ActivationRestriction.OnlyOnce then perGame else id) gs)
+        ((if any perGameLimited (Keyword.restrictionsOf ability) then perGame else id) gs)
 
 -- CR 602.2: log that `pid` began activating an ability of `srcId` aimed at
 -- `targets`, for Parun.Types.CostModifier.onlyFirst,
@@ -376,7 +386,7 @@ needsEmptyStack restriction = case restriction of
   -- A record of past activations reads no stack either, and CR 601.2a's and CR
   -- 602.2a's move cannot write one: nothing is spent until the payment
   -- `restrictionsOk` gates.
-  ActivationRestriction.OnlyOnce -> False
+  ActivationRestriction.TimesEver _ -> False
   -- The same record, timed per turn, and the same argument: CR 601.2a's and CR
   -- 602.2a's move ends no turn and spends no activation.
   ActivationRestriction.TimesEachTurn _ -> False
@@ -407,7 +417,7 @@ refusedMidPayment restriction = case restriction of
   ActivationRestriction.DuringCombatBefore _ -> False
   ActivationRestriction.BeforeStep _ -> False
   ActivationRestriction.OnlyIf _ -> False
-  ActivationRestriction.OnlyOnce -> False
+  ActivationRestriction.TimesEver _ -> False
   ActivationRestriction.TimesEachTurn _ -> False
   ActivationRestriction.DuringThrow -> False
   ActivationRestriction.SpendOnly _ -> False

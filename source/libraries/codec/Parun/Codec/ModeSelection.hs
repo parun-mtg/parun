@@ -2,6 +2,7 @@ module Parun.Codec.ModeSelection where
 
 import qualified Parun.Codec.ChooseBetween as ChooseBetween
 import qualified Parun.Codec.ChooseInstead as ChooseInstead
+import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -21,7 +22,8 @@ codec =
       Arm.payload "ChooseExactlyWithRepeats" Common.natural ModeSelection.ChooseExactlyWithRepeats (\x -> case x of ModeSelection.ChooseExactlyWithRepeats y -> Just y; _ -> Nothing),
       Arm.payload "ChooseBetween" ChooseBetween.codec ModeSelection.ChooseBetween (\x -> case x of ModeSelection.ChooseBetween y -> Just y; _ -> Nothing),
       -- Recurses on 'codec' itself, Parun.Codec.Condition's reason.
-      Arm.payload "ChooseInstead" (ChooseInstead.codec codec) ModeSelection.ChooseInstead (\x -> case x of ModeSelection.ChooseInstead y -> Just y; _ -> Nothing)
+      Arm.payload "ChooseInstead" (ChooseInstead.codec codec) ModeSelection.ChooseInstead (\x -> case x of ModeSelection.ChooseInstead y -> Just y; _ -> Nothing),
+      Arm.payload "ChooseUpTo" Quantity.codec ModeSelection.ChooseUpTo (\x -> case x of ModeSelection.ChooseUpTo y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ModeSelection.ModeSelection -> String
@@ -30,3 +32,4 @@ tagOf x = case x of
   ModeSelection.ChooseExactlyWithRepeats {} -> "ChooseExactlyWithRepeats"
   ModeSelection.ChooseBetween {} -> "ChooseBetween"
   ModeSelection.ChooseInstead {} -> "ChooseInstead"
+  ModeSelection.ChooseUpTo {} -> "ChooseUpTo"

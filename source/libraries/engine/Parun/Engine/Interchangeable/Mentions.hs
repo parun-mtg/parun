@@ -430,6 +430,7 @@ filterNames asking criterion = case criterion of
   Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
+  Filter.CountersPutThisTurn _ _ -> keyed asking <> history asking HistoryRead.CounterPlacements
   Filter.EnteredWithSource -> keyed asking
   Filter.CounterLinkedToSource _moved -> keyed asking <> counterLinks asking
   Filter.AttachedNoLaterThanSource -> contextNames asking
@@ -447,7 +448,7 @@ filterNames asking criterion = case criterion of
 
 activatedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> ActivatedAbility.ActivatedAbility card ability -> r
 activatedAbilityNames asking onCard onAbility x = case x of
-  ActivatedAbility.MkActivatedAbility cost maximumX _minimumX definedX modal restrictions _activator condition _name keyword -> costNames asking (keywordNames asking) cost <> foldMap (quantityNames asking) maximumX <> foldMap (quantityNames asking) definedX <> modalNames asking onCard onAbility modal <> foldMap (activationRestrictionNames asking) restrictions <> foldMap (conditionNames asking) condition <> foldMap (keywordNames asking) keyword
+  ActivatedAbility.MkActivatedAbility cost costChoices maximumX _minimumX definedX modal restrictions _activator condition _name keyword -> costNames asking (keywordNames asking) cost <> foldMap (costChoiceNames asking) costChoices <> foldMap (quantityNames asking) maximumX <> foldMap (quantityNames asking) definedX <> modalNames asking onCard onAbility modal <> foldMap (activationRestrictionNames asking) restrictions <> foldMap (conditionNames asking) condition <> foldMap (keywordNames asking) keyword
 
 activationProhibitionNames :: (Monoid r) => Asking r -> ActivationProhibition.ActivationProhibition -> r
 activationProhibitionNames asking x = case x of
@@ -463,7 +464,7 @@ activationRestrictionNames asking x = case x of
   ActivationRestriction.DuringCombatBefore _step -> mempty
   ActivationRestriction.BeforeStep _phase -> history asking HistoryRead.StepBegins
   ActivationRestriction.OnlyIf condition -> conditionNames asking condition
-  ActivationRestriction.OnlyOnce -> mempty
+  ActivationRestriction.TimesEver _ -> mempty
   ActivationRestriction.TimesEachTurn _ -> mempty
   ActivationRestriction.DuringThrow -> mempty
   ActivationRestriction.InstantSpeed -> mempty
@@ -744,6 +745,7 @@ costComponentNames asking onKeyword x = case x of
   CostComponent.RemoveCountersFromThis countersOnThis -> countersOnThisNames asking onKeyword countersOnThis
   CostComponent.RemoveCounters countersFromPermanents -> countersFromPermanentsNames asking onKeyword countersFromPermanents
   CostComponent.PutCountersOnThis countersOnThis -> countersOnThisNames asking onKeyword countersOnThis
+  CostComponent.PutCountersOnPayer _ -> mempty
   CostComponent.Blight amount -> costAmountNames asking amount
   CostComponent.Forage -> mempty
   CostComponent.FlipCoin -> mempty
@@ -1133,6 +1135,7 @@ eventShapeNames asking x = case x of
   EventShape.MovedFrom _zone -> history asking HistoryRead.Moves
   EventShape.CardArrivedIn _cardArrivedIn -> history asking HistoryRead.Moves
   EventShape.SpellCast _castWindow -> history asking HistoryRead.Casts
+  EventShape.AttackerDeclared -> history asking HistoryRead.Attacks
 
 eventExpiryNames :: (Monoid r) => Asking r -> EventExpiry.EventExpiry -> r
 eventExpiryNames asking x = case x of
@@ -1294,6 +1297,7 @@ modeSelectionNames asking x = case x of
   ModeSelection.ChooseExactlyWithRepeats _ -> mempty
   ModeSelection.ChooseBetween _ -> mempty
   ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> conditionNames asking condition <> modeSelectionNames asking ordinary <> modeSelectionNames asking instead
+  ModeSelection.ChooseUpTo quantity -> quantityNames asking quantity
 
 modeNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Mode.Mode card ability -> r
 modeNames asking onCard onAbility x = case x of
@@ -1594,6 +1598,7 @@ poolNames asking x = case x of
   Pool.SpellsAndPermanents -> mempty
   Pool.SpellsAndAbilities -> mempty
   Pool.PlayersAndPlaneswalkers -> mempty
+  Pool.PermanentsAndPlayers -> mempty
   Pool.CardsInGraveyard zoneScope -> zoneScopeNames asking zoneScope
   Pool.CardsInExile -> mempty
   Pool.CardsInAnte -> mempty
@@ -1626,6 +1631,7 @@ quantityNames :: (Monoid r) => Asking r -> Quantity.Quantity -> r
 quantityNames asking x =
   let own = case x of
         Quantity.WasBlockedThisTurn -> history asking HistoryRead.Blocks
+        Quantity.TimesTappedThisTurn -> history asking HistoryRead.Taps
         Quantity.AttackersDeclaredThisTurn _ -> history asking HistoryRead.Attacks
         Quantity.AttackersInTheirLastTurn _ -> history asking HistoryRead.Attacks
         -- Draws and land plays read player-keyed tallies naming no object

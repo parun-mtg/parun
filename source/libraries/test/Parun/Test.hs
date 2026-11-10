@@ -270,6 +270,7 @@ import qualified Parun.Codec.CounteringSpec
 import qualified Parun.Codec.CounteringTriggerSpec
 import qualified Parun.Codec.CountersAreSpec
 import qualified Parun.Codec.CountersFromPermanentsSpec
+import qualified Parun.Codec.CountersOnPayerSpec
 import qualified Parun.Codec.CountersOnThisSpec
 import qualified Parun.Codec.CountersPlacedSpec
 import qualified Parun.Codec.CraftSpec
@@ -593,7 +594,7 @@ import qualified Parun.Codec.PermanentBecomesDesignatedSpec
 import qualified Parun.Codec.PermanentCandidateSpec
 import qualified Parun.Codec.PermanentIsDealtDamageSpec
 import qualified Parun.Codec.PermanentWasSacrificedSpec
-import qualified Parun.Codec.PermanentsDealCombatDamageToPlayerSpec
+import qualified Parun.Codec.PermanentsDealDamageToPlayerSpec
 import qualified Parun.Codec.PermissionCostSpec
 import qualified Parun.Codec.PermissionLimitSpec
 import qualified Parun.Codec.PermissionPoolSpec
@@ -828,6 +829,7 @@ import qualified Parun.Codec.UntapHoldSpec
 import qualified Parun.Codec.UntapRSpec
 import qualified Parun.Codec.UntapRestrictionSpec
 import qualified Parun.Codec.UntapRewriteSpec
+import qualified Parun.Codec.UntapScopeSpec
 import qualified Parun.Codec.UntilPaidSpec
 import qualified Parun.Codec.UsesSpec
 import qualified Parun.Codec.VanguardSpec
@@ -1301,6 +1303,7 @@ spec s registry corpus = do
   Parun.Codec.CounterRSpec.spec s
   Parun.Codec.CountersAreSpec.spec s
   Parun.Codec.CountersFromPermanentsSpec.spec s
+  Parun.Codec.CountersOnPayerSpec.spec s
   Parun.Codec.CountersOnThisSpec.spec s
   Parun.Codec.CounterSpec.spec s
   Parun.Codec.CounterSpreadSpec.spec s
@@ -1633,7 +1636,7 @@ spec s registry corpus = do
   Parun.Codec.BlockTriggerSpec.spec s
   Parun.Codec.PlayerActsOnSpec.spec s
   Parun.Codec.BecomesTargetedTriggerSpec.spec s
-  Parun.Codec.PermanentsDealCombatDamageToPlayerSpec.spec s
+  Parun.Codec.PermanentsDealDamageToPlayerSpec.spec s
   Parun.Codec.TappedForManaTriggerSpec.spec s
   Parun.Codec.TappedPermanentSpec.spec s
   Parun.Codec.PermanentWasSacrificedSpec.spec s
@@ -1867,6 +1870,7 @@ spec s registry corpus = do
   Parun.Codec.UntapHoldSpec.spec s
   Parun.Codec.UntapRestrictionSpec.spec s
   Parun.Codec.UntapRewriteSpec.spec s
+  Parun.Codec.UntapScopeSpec.spec s
   Parun.Codec.UntapRSpec.spec s
   Parun.Codec.UsesSpec.spec s
   Parun.Codec.VanguardSpec.spec s

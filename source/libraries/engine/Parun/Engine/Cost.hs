@@ -111,6 +111,7 @@ import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
+import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
@@ -430,13 +431,17 @@ frontFaceKeywords oid card gs =
 -- beheld" reads is the SLOT the chosen option's own payment bound
 -- (Binding.beheldObject), so no clause has to ask which candidate carried it.
 choiceVariants :: Face.Face card -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
-choiceVariants face =
-  let variants candidates choice =
-        [ candidate {CandidateCost.cost = plus (CandidateCost.cost candidate) option}
-        | candidate <- candidates,
-          option <- NonEmpty.toList (CostChoice.unwrap choice)
-        ]
-   in \candidate -> List.foldl' variants [candidate] (Face.additionalCostChoices face)
+choiceVariants face candidate =
+  fmap (\cost -> candidate {CandidateCost.cost = cost}) (withChoices (Face.additionalCostChoices face) (CandidateCost.cost candidate))
+
+-- | One cost per way of paying these choices beside `cost`, the product over
+-- them in printed order. A spell's (`choiceVariants`) and an activated
+-- ability's (Parun.Engine.Activatable.costsFor, CR 602.2b) are the same
+-- expansion.
+withChoices :: [CostChoice.CostChoice] -> Cost Keyword.Type.Keyword -> [Cost Keyword.Type.Keyword]
+withChoices choices cost =
+  let variants costs choice = [plus sofar option | sofar <- costs, option <- NonEmpty.toList (CostChoice.unwrap choice)]
+   in List.foldl' variants [cost] choices
 
 -- | CR 702.48a: offering, an optional ADDITIONAL cost, so a candidate is offered
 -- as it stands and once more per sacrificeable [quality] permanent, which
@@ -1831,6 +1836,7 @@ traverseAmount f component = case component of
   CostComponent.AddLoyaltyToThis _ -> pure component
   CostComponent.RemoveCountersFromThis _ -> pure component
   CostComponent.PutCountersOnThis _ -> pure component
+  CostComponent.PutCountersOnPayer _ -> pure component
   -- Nullary: CR 701.61a states no number at all, so there is nothing for CR
   -- 601.2b to announce.
   CostComponent.Forage -> pure component
@@ -1982,6 +1988,7 @@ componentDemandGrowsWith slot component = case component of
   -- admits between them, so a big enough X refuses.
   CostComponent.RemoveCounters remove -> CountersFromPermanents.count remove == announced
   CostComponent.PutCountersOnThis _ -> False
+  CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
   CostComponent.ChooseOpponent _ -> False
@@ -2344,6 +2351,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.RemoveCountersFromThis _ -> False
   CostComponent.RemoveCounters {} -> False
   CostComponent.PutCountersOnThis _ -> False
+  CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Blight _ -> False
   -- Cards, but in PUBLIC zones (CR 400.2) on both halves of rule 701.61a, so the
   -- first conjunct fails -- the Sacrifice and ExileCardsFromGraveyard arms above,
@@ -3051,6 +3059,7 @@ claimOfGiven board slots pid oid component gs =
         -- the Blight arm below's shape.
         CostComponent.RemoveCounters {} -> Nothing
         CostComponent.PutCountersOnThis _ -> Nothing
+        CostComponent.PutCountersOnPayer _ -> Nothing
         -- Nothing, though this one DOES pick an object out of a pool: CR 701.68a takes
         -- nothing out of a zone. Two blights in one cost may choose the same creature,
         -- which is right -- no rule caps the counters a creature can bear.
@@ -3524,6 +3533,7 @@ uncountedCeiling pid oid claims gs component = case component of
   -- arm below and for its reason; a FENCE, no mana ability in `data/cards/`
   -- pairing it with a counted resource.
   CostComponent.PutCountersOnThis _ -> Nothing
+  CostComponent.PutCountersOnPayer _ -> Nothing
   -- Nothing, the arm above's answer: CR 701.20c lets a revealed card be
   -- revealed again, so CR 701.20b spends nothing. A FENCE, the arm above's.
   CostComponent.RevealCardFromHand _ -> Nothing
@@ -3869,6 +3879,7 @@ targetComputed component = case component of
   CostComponent.RemoveCountersFromThis _ -> False
   CostComponent.RemoveCounters _ -> False
   CostComponent.PutCountersOnThis _ -> False
+  CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Blight _ -> False
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
@@ -3923,6 +3934,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.RemoveCountersFromThis _ -> 0
   CostComponent.RemoveCounters {} -> 0
   CostComponent.PutCountersOnThis _ -> 0
+  CostComponent.PutCountersOnPayer _ -> 0
   CostComponent.Blight _ -> 0
   CostComponent.Forage -> 0
   CostComponent.FlipCoin -> 0
@@ -3975,6 +3987,7 @@ energyOwedByComponent component = case component of
   CostComponent.RemoveCountersFromThis _ -> 0
   CostComponent.RemoveCounters {} -> 0
   CostComponent.PutCountersOnThis _ -> 0
+  CostComponent.PutCountersOnPayer _ -> 0
   CostComponent.Blight _ -> 0
   CostComponent.Forage -> 0
   CostComponent.FlipCoin -> 0
@@ -4016,6 +4029,7 @@ countersOwedByComponent component = case component of
   -- `oid`'s counters has nothing to learn from it.
   CostComponent.RemoveCounters {} -> []
   CostComponent.PutCountersOnThis _ -> []
+  CostComponent.PutCountersOnPayer _ -> []
   CostComponent.PayLife _ -> []
   CostComponent.PayComputedLife _ -> []
   CostComponent.TapThis -> []
@@ -4320,6 +4334,12 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.PutCountersOnThis placement ->
     Set.member oid (GameState.battlefield gs)
       && not (CounterRestriction.prohibited oid (CountersOnThis.kind placement) gs)
+  -- PutCountersOnThis' gate on CR 122.1's other holder: CR 118.3 with CR 101.2
+  -- makes it unpayable while an effect says the payer can't get counters of
+  -- that kind (Melira, Sylvok Outcast; Solemnity's ruling of 2017-07-14).
+  -- Nothing else can refuse it, no player lacking room for a counter.
+  CostComponent.PutCountersOnPayer placement ->
+    not (PlayerEffect.prohibitsCounters pid (CountersOnPayer.kind placement) gs)
   -- CR 701.68b: a player unable to put the counters on a creature they control
   -- can't choose to blight. Nothing about `oid` and nothing about N -- rule
   -- 701.68a's candidate is qualified by CONTROL, the whole difference from
@@ -4566,6 +4586,7 @@ criteriaOf component = case component of
   CostComponent.RemoveLoyaltyFromThis _ -> []
   CostComponent.RemoveCountersFromThis _ -> []
   CostComponent.PutCountersOnThis _ -> []
+  CostComponent.PutCountersOnPayer _ -> []
   CostComponent.Blight _ -> []
   -- Rule 701.61a's two candidate sets are the rulebook's own and carry no card
   -- Filter, so there is no criterion for the lint to sweep.
@@ -5640,6 +5661,7 @@ paidInSecondPass component = case component of
   CostComponent.RemoveCountersFromThis _ -> False
   CostComponent.RemoveCounters {} -> False
   CostComponent.PutCountersOnThis _ -> False
+  CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Blight _ -> False
   -- CR 701.61a moves cards from a graveyard to exile, or a Food from the
   -- battlefield to a graveyard, and neither is a library, so the first pass holds
@@ -5747,6 +5769,7 @@ sourceOnly component = case component of
   CostComponent.RemoveLoyaltyFromThis _ -> Just False
   CostComponent.RemoveCountersFromThis _ -> Just False
   CostComponent.PutCountersOnThis _ -> Just False
+  CostComponent.PutCountersOnPayer _ -> Nothing
   CostComponent.Sacrifice {} -> Nothing
   CostComponent.ReturnPermanents {} -> Nothing
   CostComponent.ExilePermanents {} -> Nothing
@@ -5839,6 +5862,7 @@ orderSensitive component = case component of
   CostComponent.RemoveCounters {} -> True
   CostComponent.RemoveLoyaltyFromThis _ -> True
   CostComponent.PutCountersOnThis _ -> True
+  CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Blight _ -> True
   -- True: CR 701.61a moves three cards out of a graveyard or a Food off the
   -- battlefield, either of which another part of the same cost could have spent.
@@ -7404,6 +7428,11 @@ payPayable perform paidFor slots pid oid component = case component of
   -- way. Paid whatever the funnel then places.
   CostComponent.PutCountersOnThis placement -> do
     Monad.void (Event.putCounters (CounterCause.ByPayment pid) oid (CountersOnThis.kind placement) (CountersOnThis.count placement))
+    pure bindsNothing
+  -- The arm above on the payer, through Event.putPlayerCounters and with the
+  -- same cause, so a cost's counters meet the replacements an effect's do.
+  CostComponent.PutCountersOnPayer placement -> do
+    Monad.void (Event.putPlayerCounters (CounterCause.ByPayment pid) pid (CountersOnPayer.kind placement) (CountersOnPayer.count placement))
     pure bindsNothing
   -- CR 701.68a's whole procedure, which Parun.Engine.Blight owns. Unpaid on rule
   -- 701.68b's board, which canPayComponent has already refused, so reaching it

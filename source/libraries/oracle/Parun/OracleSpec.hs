@@ -60,6 +60,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
+import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.DamageKind as DamageKind
@@ -133,6 +134,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -220,7 +222,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints a keyword with its payload" $ do
     Spec.assertEq s (Just (Text.pack "Rampage 2")) (Oracle.render (card Layout.Normal [[Keyword.Rampage 2]]))
     Spec.assertEq s (Just (Text.pack "Echo {1}{G}")) (Oracle.render (card Layout.Normal [[Keyword.Echo (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, green])) [])]]))
-    Spec.assertEq s (Just (Text.pack "Ward\8212Pay 3 life.")) (Oracle.render (card Layout.Normal [[Keyword.Ward (Ward.MkWard (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.PayLife (CostAmount.Fixed 3)]) Nothing)]]))
+    Spec.assertEq s (Just (Text.pack "Ward\8212Pay 3 life.")) (Oracle.render (card Layout.Normal [[Keyword.Ward (Ward.MkWard (NonEmpty.singleton (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.PayLife (CostAmount.Fixed 3)])) Nothing)]]))
     Spec.assertEq s (Just (Text.pack "Protection from red")) (Oracle.render (card Layout.Normal [[Keyword.Protection (Protection.MkProtection (Filter.HasColor Color.Red) Nothing)]]))
     Spec.assertEq s (Just (Text.pack "Affinity for artifacts")) (Oracle.render (card Layout.Normal [[Keyword.Affinity (Filter.HasCardType CardType.Artifact)]]))
     Spec.assertEq s (Just (Text.pack "Nonbasic landwalk")) (Oracle.render (card Layout.Normal [[Keyword.Landwalk (Filter.Not (Filter.HasSupertype Supertype.Basic))]]))
@@ -459,6 +461,18 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render calls a sacrificed source it" $ do
     let mob = activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.SacrificeThis]) (damage [(you, 3)])
     Spec.assertEq s [[Text.pack "Sacrifice Spark: It deals 3 damage to you.", Text.pack "Sacrifice Spark: Spark deals 3 damage to you."]] (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [mob]})))
+
+  -- CR 602.2b: a choice printed inside an activation cost follows the rest of
+  -- it (Bullseye, Death Dealer), and CR 702.21a's ward cost may be one
+  -- (Titania, Rugged Rumbler).
+  Spec.it s "render prints a cost choice after the shared cost" $ do
+    let life = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.PayLife (CostAmount.Fixed 2)]
+        one = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []
+        choosing = (activated (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [CostComponent.TapThis]) (damage [(you, 3)])) {ActivatedAbility.costChoices = [CostChoice.MkCostChoice (life NonEmpty.:| [one])]}
+        alone = (activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) (damage [(you, 3)])) {ActivatedAbility.costChoices = [CostChoice.MkCostChoice (life NonEmpty.:| [one])]}
+    Spec.assertBool s (elem (Text.pack "{3}, {T}, Pay 2 life or {1}: Spark deals 3 damage to you.") (concat (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [choosing]}))))) "after {3}, {T}"
+    Spec.assertBool s (elem (Text.pack "Pay 2 life or {1}: Spark deals 3 damage to you.") (concat (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [alone]}))))) "with no {0} before it"
+    Spec.assertBool s (elem (Text.pack "Ward\8212Pay 2 life or {1}.") (concat (Oracle.abilities (card Layout.Normal [[Keyword.Ward (Ward.MkWard (life NonEmpty.:| [one]) Nothing)]])))) "a ward choosing"
 
   -- CR 113.2c: a paragraph break starts another ability, so the renderer breaks
   -- only a spell's instructions, whose sentences it pairs as one unit.
@@ -798,6 +812,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Exile Spark from your hand: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Hand])
     Spec.assertEq s (Just (Text.pack "Pay {E}{E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Fixed 2)])
     Spec.assertEq s (Just (Text.pack "Pay X {E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))])
+    Spec.assertEq s (Just (Text.pack "Get five poison counters: Draw a card.")) (costed [CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Poison 5)])
+    Spec.assertEq s (Just (Text.pack "Get an experience counter: Draw a card.")) (costed [CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Experience 1)])
     Spec.assertEq s (Just (Text.pack "Remove two wish counters from Spark: Draw a card.")) (costed [CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "wish"))) 2)])
     Spec.assertEq s (Just (Text.pack "Remove a -1/-1 counter from Spark: Draw a card.")) (costed [CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis CounterKind.MinusOneMinusOne 1)])
     Spec.assertEq s (Just (Text.pack "Remove a +1/+1 counter from a creature you control: Draw a card.")) (costed [removing (CostAmount.Fixed 1) CounterSpread.FromOne yours])
@@ -864,7 +880,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Choose two \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactly 2) three))
     Spec.assertEq s (Just (Text.pack "Choose one or more \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 3)) three))
     let adding c = Mode.MkMode (Seq.singleton (clause [Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored c)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing)])) Map.empty
-        elf = ActivatedAbility.MkActivatedAbility (mana [ManaSymbol.Generic 1]) [] 0 Nothing (Modal.MkModal (Seq.fromList [adding Color.Red, adding Color.White]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+        elf = ActivatedAbility.MkActivatedAbility (mana [ManaSymbol.Generic 1]) [] [] 0 Nothing (Modal.MkModal (Seq.fromList [adding Color.Red, adding Color.White]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
     Spec.assertEq s (Just (Text.pack "{1}: Add {R} or {W}.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [elf]})))
 
   -- CR 608.2c: three or more instructions read one or two at a time (Frantic
@@ -1202,7 +1218,7 @@ spell clauses slots = withFace (\f -> f {Face.spell = payload clauses slots, Fac
 
 -- An activated ability of this cost and the one instruction.
 activated :: Cost.Cost Keyword.Keyword -> Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card) -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
-activated cost e = ActivatedAbility.MkActivatedAbility cost [] 0 Nothing (payload [clause [e]] []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+activated cost e = ActivatedAbility.MkActivatedAbility cost [] [] 0 Nothing (payload [clause [e]] []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
 
 -- A normal card of one face named Spark, changed as given.
 withFace :: (Face.Face Card.Card -> Face.Face Card.Card) -> Card.Card

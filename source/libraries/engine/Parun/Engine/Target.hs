@@ -590,6 +590,8 @@ poolHeldLastKnown pool view =
         -- 702.5d keeps an Aura that can enchant a player off permanents, which
         -- rules this pair out, so answering False here reddens nothing.
         Pool.PlayersAndPlaneswalkers -> hasType CardType.Planeswalker
+        -- The permanent half, Pool.Permanents's answer, for the arm above's reason.
+        Pool.PermanentsAndPlayers -> any Card.isPermanentType (Set.toList types)
         Pool.Players -> False
         Pool.Spells -> False
         Pool.Abilities -> False
@@ -937,6 +939,8 @@ basePoolGiven pools context bindings pool gs = case pool of
   -- Disjoint halves (CR 113.9), so no object appears under two tags.
   Pool.SpellsAndAbilities -> Set.union (spellPool pools) (abilityPool pools)
   Pool.PlayersAndPlaneswalkers -> playersAndPlaneswalkersPool pools
+  -- A player and an object, so no candidate appears under two tags.
+  Pool.PermanentsAndPlayers -> Set.union (permanentPool pools) (playerPool pools)
   Pool.CardsInGraveyard scope -> graveyardRecipients context bindings scope gs
   -- CR 406.1's whole zone, face-down cards included, and hoisted because CR 400.1
   -- shares it between all players the way no graveyard is shared.
@@ -1619,6 +1623,7 @@ scopeSlot pool = case pool of
   Pool.SpellsAndPermanents -> Nothing
   Pool.SpellsAndAbilities -> Nothing
   Pool.PlayersAndPlaneswalkers -> Nothing
+  Pool.PermanentsAndPlayers -> Nothing
   Pool.CardsInGraveyard scope -> zoneScopeSlot scope
   Pool.CardsInExile -> Nothing
   Pool.CardsInAnte -> Nothing
@@ -2604,6 +2609,7 @@ bakePerPlayer name pid slot =
         Pool.SpellsAndPermanents -> pool
         Pool.SpellsAndAbilities -> pool
         Pool.PlayersAndPlaneswalkers -> pool
+        Pool.PermanentsAndPlayers -> pool
         Pool.CardsInExile -> pool
         Pool.CardsInAnte -> pool
    in baked {TargetSlot.pool = bakePool (TargetSlot.pool baked), TargetSlot.perPlayer = Nothing}

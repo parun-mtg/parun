@@ -30,7 +30,7 @@ import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
@@ -73,11 +73,10 @@ data TriggerCondition
     -- planeswalkers, was dealt damage of the kind, once per simultaneous batch
     -- or per damaged recipient (Fblthp, Impossibly Lost; Lich, Vengeful Pharaoh).
     PlayerIsDealtDamage PlayerIsDealtDamage.PlayerIsDealtDamage
-  | -- | CR 603.2c's batch reading of DealsDamage's combat damage to a player, with the damaged player
-    -- narrowed: "whenever one or more artifact creatures you control deal combat
-    -- damage to a player" (Pia Nalaar, Chief Mechanic), once per CR 510.2 step,
-    -- damagers' controller and damaged player.
-    PermanentsDealCombatDamageToPlayer PermanentsDealCombatDamageToPlayer.PermanentsDealCombatDamageToPlayer
+  | -- | CR 603.2c's batch reading of DealsDamage's damage to a player, once per
+    -- simultaneous batch, damagers' controller and damaged player (Pia Nalaar,
+    -- Chief Mechanic; The Thing, Ben Grimm).
+    PermanentsDealDamageToPlayer PermanentsDealDamageToPlayer.PermanentsDealDamageToPlayer
   | -- | CR 726.2: a creature dealt combat damage to the monarch. Borne by no
     -- card.
     CreatureDealtCombatDamageToMonarch

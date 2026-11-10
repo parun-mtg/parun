@@ -718,6 +718,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- every blocker leaves combat, and a snapshot taken as it dies has lost the
         -- blockers CR 400.7 already deleted along with it.
         Quantity.WasBlockedThisTurn -> fmap (\oid -> if Game.wasBlockedThisTurn gs oid then 1 else 0) mOid
+        -- CR 701.26a counted off the log, the arm above's look-back. Keyed by
+        -- id, so CR 400.7's new object starts again at 0.
+        Quantity.TimesTappedThisTurn -> fmap (Game.timesTappedThisTurn gs) mOid
         -- CR 702.30a's window as a 0/1 -- echo's intervening "if", read of the
         -- ability's own source at both CR 603.4 and CR 608.2a.
         --
@@ -1645,6 +1648,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.WasAttacking -> False
   Quantity.WasBlocking -> False
   Quantity.WasBlockedThisTurn -> False
+  Quantity.TimesTappedThisTurn -> False
   Quantity.ControlGained _ _ -> False
   Quantity.PlayedBy _ -> False
   Quantity.DamageDealtThisTurn _ -> False
@@ -1785,7 +1789,7 @@ partySizeOf viewOf pid gs =
 -- else `current`, the controller it has or last had.
 controlGainedThisTurn :: GameState -> PlayerId.PlayerId -> ObjectId -> Maybe PlayerId.PlayerId -> Bool
 controlGainedThisTurn gs pid oid current =
-  let changes = [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)), ControlChanged.object change == oid]
+  let changes = Game.controlChangesThisTurn oid gs
       enteredUnder = maybe current (Just . ControlChanged.before) (Maybe.listToMaybe changes)
    in any ((== pid) . ControlChanged.after) changes || (Game.enteredThisTurn oid gs && enteredUnder == Just pid)
 

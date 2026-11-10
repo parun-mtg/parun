@@ -590,6 +590,8 @@ library codec
     Parun.Codec.CountersAreSpec
     Parun.Codec.CountersFromPermanents
     Parun.Codec.CountersFromPermanentsSpec
+    Parun.Codec.CountersOnPayer
+    Parun.Codec.CountersOnPayerSpec
     Parun.Codec.CountersOnThis
     Parun.Codec.CountersOnThisSpec
     Parun.Codec.CounterSpec
@@ -1261,8 +1263,8 @@ library codec
     Parun.Codec.PermanentCandidateSpec
     Parun.Codec.PermanentIsDealtDamage
     Parun.Codec.PermanentIsDealtDamageSpec
-    Parun.Codec.PermanentsDealCombatDamageToPlayer
-    Parun.Codec.PermanentsDealCombatDamageToPlayerSpec
+    Parun.Codec.PermanentsDealDamageToPlayer
+    Parun.Codec.PermanentsDealDamageToPlayerSpec
     Parun.Codec.PermanentWasSacrificed
     Parun.Codec.PermanentWasSacrificedSpec
     Parun.Codec.PermissionCost
@@ -1755,6 +1757,8 @@ library codec
     Parun.Codec.UntapRewrite
     Parun.Codec.UntapRewriteSpec
     Parun.Codec.UntapRSpec
+    Parun.Codec.UntapScope
+    Parun.Codec.UntapScopeSpec
     Parun.Codec.UntilPaid
     Parun.Codec.UntilPaidSpec
     Parun.Codec.Uses
@@ -2871,6 +2875,7 @@ library types
     Parun.Types.CounterRestriction
     Parun.Types.CountersAre
     Parun.Types.CountersFromPermanents
+    Parun.Types.CountersOnPayer
     Parun.Types.CountersOnThis
     Parun.Types.CountersPlaced
     Parun.Types.CounterSpread
@@ -3259,7 +3264,7 @@ library types
     Parun.Types.PermanentBecomesDesignated
     Parun.Types.PermanentCandidate
     Parun.Types.PermanentIsDealtDamage
-    Parun.Types.PermanentsDealCombatDamageToPlayer
+    Parun.Types.PermanentsDealDamageToPlayer
     Parun.Types.PermanentWasSacrificed
     Parun.Types.PermissionCost
     Parun.Types.PermissionLimit
@@ -3545,6 +3550,7 @@ library types
     Parun.Types.UntapR
     Parun.Types.UntapRestriction
     Parun.Types.UntapRewrite
+    Parun.Types.UntapScope
     Parun.Types.UntilPaid
     Parun.Types.Uses
     Parun.Types.Vanguard

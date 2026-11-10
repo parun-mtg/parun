@@ -1810,7 +1810,8 @@ cycling cost searchFor =
                 Search.andOr = False
               }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.DiscardThis DiscardCause.ToPayCyclingCost]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.DiscardThis DiscardCause.ToPayCyclingCost]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -1851,7 +1852,8 @@ reinforce n cost =
               Nothing
           )
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.DiscardThis DiscardCause.Ordinary]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.DiscardThis DiscardCause.Ordinary]},
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton reinforceTarget slot) (Seq.singleton effect),
           -- CR 702.77a states no timing restriction, which leaves CR 117.1b's
@@ -1929,7 +1931,8 @@ craft spec =
               MoveToZone.duration = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = printed {Cost.components = Cost.components printed <> [CostComponent.ExileThis, CostComponent.ExileMaterials (Craft.materials spec)]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = printed {Cost.components = Cost.components printed <> [CostComponent.ExileThis, CostComponent.ExileMaterials (Craft.materials spec)]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton returned),
           ActivatedAbility.maximumX = [],
@@ -1995,7 +1998,8 @@ searchForSameManaValue cost filter_ destination =
               Search.andOr = False
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost,
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -2088,7 +2092,8 @@ ninjutsu (Ninjutsu.MkNinjutsu cost variant) =
               MoveToZone.duration = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ReturnPermanents returned]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ReturnPermanents returned]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -2218,7 +2223,8 @@ unearth cost =
                   )
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost,
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [returned, hasted, armed, redirected]),
           ActivatedAbility.maximumX = [],
@@ -2330,7 +2336,8 @@ graveyardTokenCopy exceptions cost =
               CreateCopy.linked = False
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton copied),
           ActivatedAbility.maximumX = [],
@@ -2374,7 +2381,8 @@ scavenge cost =
               Nothing
           )
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton scavengeTarget slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
@@ -2480,7 +2488,8 @@ encore cost =
               ArmDelayedTrigger.ability = Nothing
             }
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.ExileThisFrom Zone.Graveyard]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [loop, hasted, armed]),
           ActivatedAbility.maximumX = [],
@@ -2598,7 +2607,8 @@ crew n =
               Nothing
           )
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost =
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost =
             Cost.MkCost
               { -- CR 118.5: rule 702.122a's cost has no mana part, which is
                 -- `Just` an empty one and not the Nothing that means unpayable.
@@ -2654,7 +2664,8 @@ saddle n =
             Filter.Not Filter.IsSource
           ]
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost =
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost =
             Cost.MkCost
               { -- CR 118.5, crew's note above.
                 Cost.mana = Just (ManaCost.MkManaCost []),
@@ -2724,7 +2735,8 @@ station =
               Nothing
           )
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost =
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost =
             Cost.MkCost
               { -- CR 118.5, crew's note above: no mana part is `Just` an empty one
                 -- and not the Nothing that means unpayable.
@@ -2775,7 +2787,8 @@ levelUp :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility 
 levelUp cost =
   let gain = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.Level (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing)
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost,
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton gain),
           ActivatedAbility.maximumX = [],
@@ -2805,7 +2818,8 @@ outlast :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility 
 outlast cost =
   let grow = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne (Quantity.Literal 1) (ObjectRef.InSlot Binding.triggerSource) Nothing)
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.TapThis]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost {Cost.components = Cost.components cost <> [CostComponent.TapThis]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton grow),
           ActivatedAbility.maximumX = [],
@@ -2866,7 +2880,8 @@ equip payload =
         EquipTarget.Creature -> (TargetSlot.required Pool.Creatures (narrowed []), Effect.Attach equipTarget)
         EquipTarget.Planeswalker -> (TargetSlot.required Pool.Permanents (narrowed [Filter.HasCardType CardType.Planeswalker]), Effect.AttachAsThoughCreature equipTarget)
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = Equip.cost payload,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = Equip.cost payload,
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton equipTarget slot) (Seq.singleton effect),
           -- CR 702.6a's "Activate only as a sorcery", which CR 307.5 spells out.
@@ -2914,7 +2929,8 @@ fortify cost =
           (Just (Filter.And [Filter.HasCardType CardType.Land, Filter.HeldBy Holder.Controller PlayerRelation.You]))
       effect = Effect.Attach fortifyTarget
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost,
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton fortifyTarget slot) (Seq.singleton effect),
           -- CR 702.67a's "Activate only as a sorcery", which CR 307.5 spells out.
@@ -2959,7 +2975,8 @@ reconfigure cost =
           (Just (Filter.And [Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsSource]))
       effect = Effect.Attach reconfigureTarget
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost,
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton reconfigureTarget slot) (Seq.singleton effect),
           -- CR 702.151a's "Activate only as a sorcery", which CR 307.5 spells out.
@@ -2990,7 +3007,8 @@ reconfigureTarget = SlotName.MkSlotName (Text.pack "reconfigured")
 reconfigureOff :: Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 reconfigureOff cost =
   ActivatedAbility.MkActivatedAbility
-    { ActivatedAbility.cost = cost,
+    { ActivatedAbility.costChoices = [],
+      ActivatedAbility.cost = cost,
       ActivatedAbility.modal =
         Mint.oneMode (Seq.singleton (Effect.Unattach (ObjectRef.EachMatching Filter.IsSource))),
       ActivatedAbility.maximumX = [],
@@ -3030,7 +3048,8 @@ auraSwap cost =
   let chosen = ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) (Filter.HasSubtype Subtype.Aura) HowMany.one
       effect = Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (ObjectRef.InSlot Binding.triggerSource) (ObjectRef.ChosenCardInHand chosen))
    in ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = cost,
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = cost,
           ActivatedAbility.modal =
             Mint.oneModeOf Map.empty (Seq.singleton (Mint.youMay (Seq.singleton effect))),
           ActivatedAbility.maximumX = [],
@@ -4704,8 +4723,8 @@ printedRiders keyword = case keyword of
     [ ActivationRestriction.DuringPhase (DuringPhase.MkDuringPhase (PhaseSelector.Step (Phase.Beginning BeginningStep.Upkeep)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))),
       ActivationRestriction.TimesEachTurn 1
     ]
-  Keyword.Exhaust -> [ActivationRestriction.OnlyOnce]
-  Keyword.PowerUp -> [ActivationRestriction.OnlyOnce]
+  Keyword.Exhaust -> [ActivationRestriction.TimesEver 1]
+  Keyword.PowerUp -> [ActivationRestriction.TimesEver 1]
   Keyword.ClassLevel level ->
     [ ActivationRestriction.OnlyIf
         ( Condition.Compares
@@ -4760,7 +4779,7 @@ countsActivations :: ActivatedAbility Card (GrantedAbility.GrantedAbility Card) 
 countsActivations = any counted . restrictionsOf
   where
     counted restriction = case restriction of
-      ActivationRestriction.OnlyOnce -> True
+      ActivationRestriction.TimesEver _ -> True
       ActivationRestriction.TimesEachTurn _ -> True
       ActivationRestriction.SorcerySpeed -> False
       ActivationRestriction.DuringPhase _ -> False
@@ -6206,7 +6225,7 @@ ward w =
       gate =
         PayGate.MkPayGate
           { PayGate.payer = PlayerRef.HolderOfBound Holder.Controller Hop.Itself Binding.targetingObject,
-            PayGate.cost = CostChoice.MkCostChoice (Ward.cost w NonEmpty.:| []),
+            PayGate.cost = CostChoice.MkCostChoice (Ward.cost w),
             PayGate.basis = Nothing,
             PayGate.branch = PayBranch.IfNotPaid,
             PayGate.obligation = PayObligation.Optional,
@@ -7105,7 +7124,8 @@ predefinedArtifactToken name subtype mana effect =
     Set.empty
     Nothing
     [ ActivatedAbility.MkActivatedAbility
-        { ActivatedAbility.cost = Cost.MkCost {Cost.mana = mana, Cost.components = [CostComponent.TapThis, CostComponent.SacrificeThis]},
+        { ActivatedAbility.costChoices = [],
+          ActivatedAbility.cost = Cost.MkCost {Cost.mana = mana, Cost.components = [CostComponent.TapThis, CostComponent.SacrificeThis]},
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],

@@ -1,0 +1,132 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Serpent Society",
+            "label": "serpent",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          }
+        ],
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 2
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.21a / 122.1f The Serpent Society's ward is paid by its targeting opponent getting five poison counters, and the spell resolves",
+  "note": "Bob starts with two poison counters so seven tells the payment's five apart from a counter set rather than added.",
+  "timeline": [
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$serpent"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $serpent",
+            "Shock"
+          ],
+          "of": "Stack"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "PlayerCounters": {
+          "count": 7,
+          "kind": "Poison",
+          "player": "bob"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "is": [
+            "Shock"
+          ],
+          "of": "Stack"
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "PlayerCounters": {
+        "count": 7,
+        "kind": "Poison",
+        "player": "bob"
+      }
+    },
+    {
+      "Damage": {
+        "damage": 2,
+        "object": "$serpent"
+      }
+    },
+    {
+      "Count": {
+        "card": "Shock",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    }
+  ]
+}

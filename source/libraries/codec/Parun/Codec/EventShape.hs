@@ -18,7 +18,8 @@ codec =
     [ Arm.payload "MovedBetween" MovedBetween.codec EventShape.MovedBetween (\x -> case x of EventShape.MovedBetween y -> Just y; _ -> Nothing),
       Arm.payload "MovedFrom" Zone.codec EventShape.MovedFrom (\x -> case x of EventShape.MovedFrom y -> Just y; _ -> Nothing),
       Arm.payload "CardArrivedIn" CardArrivedIn.codec EventShape.CardArrivedIn (\x -> case x of EventShape.CardArrivedIn y -> Just y; _ -> Nothing),
-      Arm.payload "SpellCast" CastWindow.codec EventShape.SpellCast (\x -> case x of EventShape.SpellCast y -> Just y; _ -> Nothing)
+      Arm.payload "SpellCast" CastWindow.codec EventShape.SpellCast (\x -> case x of EventShape.SpellCast y -> Just y; _ -> Nothing),
+      Arm.nullary "AttackerDeclared" EventShape.AttackerDeclared
     ]
 
 tagOf :: EventShape.EventShape -> String
@@ -27,3 +28,4 @@ tagOf x = case x of
   EventShape.MovedFrom {} -> "MovedFrom"
   EventShape.CardArrivedIn {} -> "CardArrivedIn"
   EventShape.SpellCast {} -> "SpellCast"
+  EventShape.AttackerDeclared -> "AttackerDeclared"

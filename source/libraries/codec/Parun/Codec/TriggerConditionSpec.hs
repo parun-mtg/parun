@@ -63,7 +63,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
-import qualified Parun.Types.PermanentsDealCombatDamageToPlayer as PermanentsDealCombatDamageToPlayer
+import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -161,15 +161,15 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.watching (DealtDamage.MkDealtDamage PlayerRelation.Opponent (Just DamageKind.Noncombat) Nothing)))
       " {\"type\":\"PlayerIsDealtDamage\",\"value\":{\"dealt\":{\"recipient\":\"Opponent\",\"kind\":\"Noncombat\"}}} "
-  -- CR 603.2c's batch reading of DealsDamage's combat damage to a player, so a
+  -- CR 603.2c's batch reading of DealsDamage's damage to a player, so a
   -- separate tag is the only thing that keeps Pia Nalaar's once-per-step card and
   -- Tovolar's once-per-damager card apart on the wire.
-  Spec.it s "PermanentsDealCombatDamageToPlayer round-trips with its Filter and recipient" $
+  Spec.it s "PermanentsDealDamageToPlayer round-trips with its Filter, kind and recipient" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentsDealCombatDamageToPlayer (PermanentsDealCombatDamageToPlayer.MkPermanentsDealCombatDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) PlayerRelation.AnyPlayer False))
-      " {\"type\":\"PermanentsDealCombatDamageToPlayer\",\"value\":{\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"recipient\":\"AnyPlayer\"}} "
+      (TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False))
+      " {\"type\":\"PermanentsDealDamageToPlayer\",\"value\":{\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"kind\":\"Combat\",\"recipient\":\"AnyPlayer\"}} "
   -- CR 726.2: a creature dealt combat damage to the monarch.
   Spec.it s "CreatureDealtCombatDamageToMonarch" $
     Common.assertCodec
@@ -410,36 +410,36 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.relation = PlayerRelation.Opponent})
       " {\"type\":\"BecomesTargeted\",\"value\":{\"relation\":\"Opponent\"}} "
-  -- The same rule from the PLAYER's side, a You subject: Amulet of
+  -- The same rule from the PLAYER's side, a Player subject: Amulet of
   -- Safekeeping's "a spell or ability an opponent controls" and Dormant
   -- Gomazoa's "a spell".
-  Spec.it s "BecomesTargeted round-trips a You subject, a spell or ability alike" $
+  Spec.it s "BecomesTargeted round-trips a Player subject, a spell or ability alike" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.subject = TargetedSubject.You, BecomesTargetedTrigger.relation = PlayerRelation.Opponent})
-      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"You\"},\"relation\":\"Opponent\"}} "
-  Spec.it s "BecomesTargeted round-trips a You subject, a spell only" $
+      (TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.subject = TargetedSubject.Player PlayerRelation.You, BecomesTargetedTrigger.relation = PlayerRelation.Opponent})
+      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Player\",\"value\":\"You\"},\"relation\":\"Opponent\"}} "
+  Spec.it s "BecomesTargeted round-trips a Player subject, a spell only" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.subject = TargetedSubject.You, BecomesTargetedTrigger.kind = Just StackObjectKind.Spell})
-      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"You\"},\"kind\":\"Spell\"}} "
+      (TriggerCondition.BecomesTargeted BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.subject = TargetedSubject.Player PlayerRelation.You, BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.Spell})
+      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Player\",\"value\":\"You\"},\"kinds\":[\"Spell\"]}} "
   -- CR 603.2c's batch reading with a Filter over the targeted permanents:
   -- Professor Hojo's.
   Spec.it s "BecomesTargeted round-trips a batch over a Matching subject and its kind" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) {BecomesTargetedTrigger.kind = Just StackObjectKind.ActivatedAbility, BecomesTargetedTrigger.batching = Batching.OneOrMore})
-      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Permanent\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}},\"kind\":\"ActivatedAbility\",\"batching\":\"OneOrMore\"}} "
+      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) {BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.ActivatedAbility, BecomesTargetedTrigger.batching = Batching.OneOrMore})
+      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Permanent\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}},\"kinds\":[\"ActivatedAbility\"],\"batching\":\"OneOrMore\"}} "
   -- Venerated Rotpriest's per-permanent reading, an opponent's spell.
   Spec.it s "BecomesTargeted round-trips a Matching subject per permanent" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) {BecomesTargetedTrigger.relation = PlayerRelation.Opponent, BecomesTargetedTrigger.kind = Just StackObjectKind.Spell})
-      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Permanent\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}},\"relation\":\"Opponent\",\"kind\":\"Spell\"}} "
+      (TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) {BecomesTargetedTrigger.relation = PlayerRelation.Opponent, BecomesTargetedTrigger.kinds = Set.singleton StackObjectKind.Spell})
+      " {\"type\":\"BecomesTargeted\",\"value\":{\"subject\":{\"type\":\"Permanent\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}},\"relation\":\"Opponent\",\"kinds\":[\"Spell\"]}} "
   -- CR 601.2i read off the spell itself, Desolation Twin's "when you cast this
   -- spell": a Self subject, every other field at SpellCast.self's value.
   Spec.it s "SpellCast round-trips a Self subject" $

@@ -1,5 +1,6 @@
 module Parun.Types.Ward where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.KeywordCount as KeywordCount
 
@@ -12,7 +13,11 @@ data Ward keyword = MkWard
   { -- | CR 702.21a's [cost]. Raffine, Scheming Seer's is {1}, Auntie Ool,
     -- Cursewretch's is a blight. With @perEach@ set this is the cost of ONE of
     -- the things counted, so ward {X} writes {1} here.
-    cost :: Cost.Cost keyword,
+    --
+    -- A choice of whole costs in printed order, Parun.Types.CostChoice's shape:
+    -- Titania, Rugged Rumbler's "Ward--Discard a card or pay {2}" is two, every
+    -- other ward one. Not a CostChoice, which is monomorphic in the keyword.
+    cost :: NonEmpty.NonEmpty (Cost.Cost keyword),
     -- | CR 702.21b's "some ward abilities include an X in their cost and state
     -- what X is equal to", as a multiplier on the cost above rather than as an
     -- {X} symbol inside it: ward {X} is X copies of {1}, and one copy of a cost

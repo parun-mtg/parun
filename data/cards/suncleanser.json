@@ -95,7 +95,9 @@
                               }
                             }
                           },
-                          "what": "Counters"
+                          "what": {
+                            "type": "Counters"
+                          }
                         }
                       }
                     ]

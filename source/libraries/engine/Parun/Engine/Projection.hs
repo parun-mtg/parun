@@ -68,6 +68,7 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamagePattern as DamagePattern
@@ -341,7 +342,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
             let named
                   | Keyword.countsActivations a = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
                   | otherwise = a
-             in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a)}]}
+             in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a)}]}
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
                   TriggerLimit.Unlimited -> t
@@ -4102,6 +4103,7 @@ filterReads f = case f of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
     _ -> Set.empty
   Filter.Type.EnteredThisTurn _ -> Set.empty
+  Filter.Type.CountersPutThisTurn _ _ -> Set.empty
   Filter.Type.CrewedSourceThisTurn -> Set.empty
   Filter.Type.ConvokedSourceThisTurn -> Set.empty
   Filter.Type.SaddledSourceThisTurn -> Set.empty
@@ -4397,6 +4399,7 @@ filterReadsPeers f = case f of
   Filter.Type.DealtDamageThisTurn -> False
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
+  Filter.Type.CountersPutThisTurn _ _ -> False
   Filter.Type.CrewedSourceThisTurn -> False
   Filter.Type.ConvokedSourceThisTurn -> False
   Filter.Type.SaddledSourceThisTurn -> False
@@ -4736,6 +4739,7 @@ quantityReads q = case q of
   Quantity.Type.WasAttacking -> Set.empty
   Quantity.Type.WasBlocking -> Set.empty
   Quantity.Type.WasBlockedThisTurn -> Set.empty
+  Quantity.Type.TimesTappedThisTurn -> Set.empty
   Quantity.Type.ControlGained _ _ -> Set.empty
   Quantity.Type.PlayedBy _ -> Set.empty
   Quantity.Type.DamageDealtThisTurn _ -> Set.empty
