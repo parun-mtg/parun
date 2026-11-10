@@ -103,6 +103,7 @@ zonesFunctionedFrom itself delayed = zonesFunctionedAgainst itself (Just (Map.un
 
 -- zonesFunctionedFrom's walk, against exactly the map it is given -- and with no map
 -- inside a delayed ability's own effects, where no arm is read at all.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 zonesFunctionedAgainst :: Set.Set SlotName.SlotName -> Maybe (Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set Zone
 zonesFunctionedAgainst itself delayed effect = case effect of
   -- Only an InSlot naming one of the `itself` slots can be "the object it's on".

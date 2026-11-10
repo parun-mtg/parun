@@ -17,6 +17,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Plane as Plane
@@ -62,7 +63,6 @@ import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
-import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
@@ -86,9 +86,7 @@ import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
-import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
-import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
@@ -111,7 +109,6 @@ import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Divide as Divide
-import qualified Parun.Types.DoesNotUntapNext as DoesNotUntapNext
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
@@ -135,8 +132,6 @@ import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
-import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
-import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
 import qualified Parun.Types.ExchangeSides as ExchangeSides
 import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
@@ -158,7 +153,6 @@ import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
@@ -176,12 +170,10 @@ import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LookAt as LookAt
-import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaR as ManaR
-import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
@@ -233,7 +225,6 @@ import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
-import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
 import qualified Parun.Types.RemovePlayerCounters as RemovePlayerCounters
 import qualified Parun.Types.Repeat as Repeat
 import qualified Parun.Types.RepeatIf as RepeatIf
@@ -273,10 +264,8 @@ import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
-import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
-import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.Vote as Vote
 import qualified Parun.Types.VoteChoices as VoteChoices
@@ -713,256 +702,26 @@ groupingRefs grouping = case grouping of
   Grouping.Sectors -> []
   Grouping.Piles slots -> fmap ObjectRef.InSlot (NonEmpty.toList slots)
 
--- The refs a CR 707.10 answer names: rule 707.10d's candidates, and nothing for
--- the other two, neither of which describes anything.
-copyTargetsRefs :: CopyTargets.CopyTargets -> [ObjectRef]
-copyTargetsRefs targets = case targets of
-  CopyTargets.Copied -> []
-  CopyTargets.ChosenByController -> []
-  CopyTargets.ForEach ref -> [ref]
-  CopyTargets.Stated ref -> [ref]
-
--- Every ObjectRef this ONE effect holds, its own only: a nested effect's refs
--- are its own answer here, reached by whichever caller recurses.
+-- Every ObjectRef this ONE effect holds, its own only: Parun.Engine.Children's
+-- traversal at Const, so a nested effect's refs are its own answer here,
+-- reached by whichever caller recurses, and a ref inside a child visited whole
+-- (a Duration, a replacement) is that child's.
 --
 -- The single enumeration of where an ObjectRef sits in an opcode. Its readers
 -- -- slotsOf here, and slotsAreExhaustive, hasRead and Parun.CardSpec's Count
 -- traversal below -- call this rather than naming the opcodes themselves, so
--- they cannot come to disagree about which opcodes hold a ref. The test a
--- reader can apply: no arm of any of those four names an ObjectRef field.
---
--- No wildcard, and the arms that hold a ref destructure positionally: a new
--- opcode the compiler forces, and so does a new FIELD on a payload that already
--- holds one. What neither the compiler nor this shape catches is an existing
--- field WIDENED to an ObjectRef, which is how a nested Quantity went unread
--- once (#2729). Two things pay for that: slotsOf's corpus lints, since a ref
--- dropped here stops being reported there, and Parun.CardSpec's planted
--- objectRefPositions, which is the only observer of a position no card writes.
+-- they cannot come to disagree about which opcodes hold a ref. A field
+-- WIDENED to an ObjectRef is what nothing forces (#2729); slotsOf's corpus
+-- lints and Parun.CardSpec's planted objectRefPositions pay for that.
 effectObjectRefs :: Effect card ability -> [ObjectRef]
 effectObjectRefs effect = case effect of
-  Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> Foldable.toList (fmap DamagePart.ref parts)
-  Effect.Fight {} -> []
-  Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [ref]
-  Effect.ChangeText {} -> []
-  Effect.AddMana {} -> []
-  Effect.Firebend {} -> []
-  Effect.ActivateManaAbilities {} -> []
-  Effect.MoveMana {} -> []
-  Effect.Search {} -> []
-  Effect.ExileAllGraveyards -> []
-  -- CR 728.5's exemption, absent when nothing is exempt.
-  Effect.RestartGame exempt -> Maybe.maybeToList exempt
-  Effect.ControlPlayerNextTurn {} -> []
-  Effect.ControlPlayerThisResolution {} -> []
-  Effect.Destroy (Destroy.MkDestroy ref _ _ _ _) -> [ref]
-  Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref _ _) -> [ref]
-  Effect.Attach {} -> []
-  Effect.AttachAsThoughCreature {} -> []
-  Effect.AttachTarget {} -> []
-  Effect.AttachTargetToEach {} -> []
-  Effect.AttachBound {} -> []
-  Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [ref]
-  Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ _ _ _ _) -> [ref]
-  Effect.Draw {} -> []
-  Effect.Mill {} -> []
-  Effect.Reveal (Reveal.MkReveal ref _) -> [ref]
-  Effect.FromOutsideTheGame {} -> []
-  Effect.ExileThisSpell -> []
-  Effect.LookAt (LookAt.MkLookAt ref _ _) -> [ref]
-  Effect.Guess (Guess.MkGuess subject _ _ _ _) -> [subject]
-  Effect.Scry {} -> []
-  Effect.Surveil {} -> []
-  Effect.Fateseal {} -> []
-  Effect.Clash {} -> []
   -- The batch CR 702.85b's actions choose from.
   Effect.AsYouCascade slot -> [ObjectRef.InSlot slot]
-  Effect.Explore ref -> [ref]
-  Effect.Assemble ref -> Maybe.maybeToList ref
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _) -> [ref]
-  Effect.Connive (Connive.MkConnive _ ref) -> [ref]
-  Effect.Discard subject -> case subject of
-    Discard.Counted {} -> []
-    Discard.These (TheseDiscard.MkTheseDiscard ref _) -> [ref]
-    Discard.AnyNumber {} -> []
-  Effect.LoseLife {} -> []
-  Effect.GainLife {} -> []
-  Effect.ExchangeLifeTotals {} -> []
-  Effect.ExchangeValues (ExchangeValues.MkExchangeValues one other _) -> foldMap exchangedObjectRefs [one, other]
-  Effect.ExchangeZones {} -> []
-  Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones one other) -> [one, other]
-  Effect.SetLifeTotal {} -> []
-  Effect.LoseGame {} -> []
-  Effect.WinGame {} -> []
-  Effect.DrawGame {} -> []
-  Effect.RedistributeLifeTotals -> []
-  Effect.IncreaseSpeed {} -> []
-  Effect.DecreaseSpeed {} -> []
-  Effect.Create {} -> []
-  -- A written conjure names no object -- its candidates are card data -- and nor
-  -- does a reference pick, whose candidates are in no game; a duplicate names
-  -- the object it is a duplicate OF, which is the arm that makes a conjure able
-  -- to target (Sinister Reflections).
-  Effect.Conjure (Conjure.MkConjure _ cards _ _ _) -> case cards of
-    ConjureCards.Written {} -> []
-    ConjureCards.Duplicate ref -> [ref]
-    ConjureCards.Reference {} -> []
-  Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _) -> [ref]
-  -- Both sides: CR 707.2's copiable values come off one and go onto the other.
-  -- The exceptions beside them read no slot: CR 707.9a's "this ability" is the
-  -- resolving object's own, and neither of CR 707.9b's arms names an object.
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> case original of
-    CopyOriginal.OfObject ref -> [ref, subject]
-    CopyOriginal.Named _ -> [subject]
-  -- BOTH refs: CR 707.10d's candidates are named by a ref of their own, and a
-  -- slot it reads is as much a read of this effect's as the copied object's.
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _) -> ref : copyTargetsRefs targets
-  Effect.Replace {} -> []
-  Effect.SkipPhase {} -> []
-  -- Absent where the shield's recipients are described rather than named.
-  Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ ref _ _ _ _ _) -> Maybe.maybeToList ref
-  Effect.LaterPayment x -> foldMap effectObjectRefs (LaterPayment.effects x)
-  Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ ref _ _ _ _ _ _) -> Maybe.maybeToList ref
-  -- One ref, and never optional: this opcode has no described recipient side.
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ ref _ _ _) -> [ref]
-  -- CR 614.9's two sides, the damage's old recipient -- absent where the card
-  -- describes it instead -- and its new one.
-  Effect.RedirectDamage (RedirectDamage.MkRedirectDamage _ _ _ from _ _ to _ _ _) -> Maybe.maybeToList from <> [to]
-  Effect.Counter (Counter.MkCounter ref _ _ _) -> [ref]
-  Effect.PutCounters (PutCounters.MkPutCounters _ _ ref _) -> [ref]
-  Effect.Divide divide -> [Divide.among divide]
-  Effect.RemoveCounters {} -> []
-  Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong _ from _ _) -> [from]
-  -- CR 122.5's two sides, either of which may name a group.
-  Effect.MoveCounters (MoveCounters.MkMoveCounters from _ _ to) -> [from, to]
-  -- CR 122.8's taker; the giver is a slot.
-  Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom _ _ ref) -> [ref]
-  Effect.GainPlayerCounters {} -> []
-  Effect.RemovePlayerCounters {} -> []
-  Effect.PayAnyEnergy {} -> []
-  Effect.ChooseNumber {} -> []
-  Effect.BindAmount {} -> []
-  Effect.Tap tap -> [Tap.ref tap]
-  Effect.Untap ref -> [ref]
-  Effect.Unattach ref -> [ref]
-  Effect.Detain ref -> [ref]
-  Effect.Goad ref -> [ref]
-  Effect.Pair ref -> [ref]
-  Effect.DoesNotUntapNext payload -> [DoesNotUntapNext.ref payload]
-  Effect.Transform ref -> [ref]
-  Effect.Convert ref -> [ref]
-  Effect.Flip ref -> [ref]
-  -- The components; the combined face beside them is card data, not a ref.
-  Effect.Meld (Meld.MkMeld objects _) -> [objects]
-  Effect.PhaseOut ref -> [ref]
-  Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown ref _) -> [ref]
-  Effect.TurnFaceUp {} -> []
-  Effect.RemoveFromCombat payload -> [RemoveFromCombat.removed payload]
-  Effect.BlockAttacker ref -> [ref]
-  Effect.BecomesBlocked {} -> []
-  -- The two attackers come out of a target SLOT, not an ObjectRef.
-  Effect.SwitchBlockers {} -> []
-  Effect.ExchangeBlocks {} -> []
-  Effect.AddPhases {} -> []
-  Effect.EndTurn -> []
-  Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl _ ref _) -> [ref]
-  Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger {} -> []
-  Effect.AffectPlayers {} -> []
-  -- CR 509.1a's two sides, the creature required to block and what it blocks,
-  -- each only when a ref names it: the Matching arm is a Filter.
-  Effect.RequireBlock (RequireBlock.MkRequireBlock _ blocker attacker _) -> namedRefs blocker <> foldMap namedRefs attacker
-  Effect.Prohibit (Prohibit.MkProhibit _ _ affected) -> namedRefs affected
-  -- Both sides, each only when a ref names it: the attacker's Matching arm is a
-  -- Filter, and a defender naming players is effectPlayerRefs'.
-  Effect.RequireAttack (RequireAttack.MkRequireAttack _ attacker defender) ->
-    namedRefs attacker
-      <> case defender of
-        Nothing -> []
-        Just (AttackTargetRef.Players _) -> []
-        Just (AttackTargetRef.Permanents ref) -> [ref]
-  -- One side only, and only when a ref names it: the Matching arm is a Filter
-  -- (CR 611.2c's class), and what the attack is aimed at is effectPlayerRefs'.
-  Effect.ForbidAttack (ForbidAttack.MkForbidAttack _ affected _) -> namedRefs affected
-  -- No ref at all: the class is a Filter (CR 611.2c).
-  Effect.ForbidBeingBlocked {} -> []
-  Effect.CreateEmblem {} -> []
-  Effect.BecomeMonarch {} -> []
-  Effect.TakeTheInitiative {} -> []
-  Effect.Designate {} -> []
-  Effect.SetClassLevel {} -> []
-  Effect.Undesignate (Undesignate.MkUndesignate _ ref) -> [ref]
-  Effect.SetHalfLocked {} -> []
-  Effect.CounterAndMark {} -> []
-  Effect.BecomeProtector {} -> []
-  Effect.Mentor {} -> []
-  Effect.Exploit -> []
-  Effect.GiveGift -> []
-  Effect.ItBecomes {} -> []
-  Effect.ExileHaunting {} -> []
-  Effect.PlaySubgame {} -> []
-  Effect.ChoosePlayer {} -> []
-  Effect.ChoosePlayerAtRandom {} -> []
-  Effect.ChoosePermanents {} -> []
   -- CR 700.3: the piles an earlier instruction bound, and what the choice is for.
   Effect.ChooseGroup choice -> groupingRefs (ChooseGroup.among choice) <> Foldable.toList (ChooseGroup.about choice)
-  Effect.RollDie {} -> []
-  Effect.FlipCoin {} -> []
-  Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
-  Effect.Proliferate -> []
-  Effect.Rethrow -> []
-  Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName {} -> []
-  Effect.ChooseQuality _ -> []
-  Effect.Bolster {} -> []
-  Effect.Amass {} -> []
-  Effect.Blight {} -> []
-  -- CR 701.66a's "target land you control".
-  Effect.Earthbend (Earthbend.MkEarthbend _ ref) -> [ref]
-  -- CR 701.65a's "those objects".
-  Effect.Airbend ref -> [ref]
-  Effect.Assimilate ref -> [ref]
-  Effect.TemptWithTheRing -> []
-  Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
-  Effect.Abandon -> []
-  Effect.ClaimPrize -> []
-  Effect.Forage -> []
-  Effect.Populate -> []
-  Effect.TimeTravel -> []
-  Effect.Recruit -> []
-  Effect.Learn -> []
-  Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
-  Effect.Venture {} -> []
-  Effect.PlayerSacrifices {} -> []
-  Effect.Vote {} -> []
-  Effect.Bid {} -> []
-  Effect.TakeExtraTurn {} -> []
-  Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary _ ref _) -> [ref]
-  Effect.Ante (Ante.MkAnte _ ref _) -> [ref]
-  Effect.PutSticker (PutSticker.MkPutSticker _ ref _ _ _ _) -> [ref]
-  Effect.SetOwner (SetOwner.MkSetOwner _ ref) -> [ref]
-  Effect.ExchangeOwnership (ExchangeOwnership.MkExchangeOwnership one other) -> [one, other]
-  Effect.Shuffle {} -> []
-  Effect.OfferCast (OfferCast.MkOfferCast ref _ _ _ _ _ _ _ _) -> [ref]
-  Effect.OfferNamedCopy {} -> []
-  Effect.OfferNotedCopy {} -> []
-  Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile _ _ ref _ _ _ _ _ _ _ _) -> [ref]
-  Effect.GrantLookAtExiled grant -> [GrantLookAtExiled.cards grant]
-  Effect.MakePlotted ref -> [ref]
-  Effect.MakeForetold x -> [MakeForetold.cards x]
-  Effect.MakeWarped ref -> [ref]
-  -- CR 608.2f's set, swept once; the body's own refs are the caller's recursion.
-  Effect.ForEach (ForEach.MkForEach ref _ _ _ _ _ _) -> [ref]
-  Effect.ForEachNumber {} -> []
-  Effect.Repeat {} -> []
-  Effect.RepeatIf {} -> []
-  Effect.Heal ref -> [ref]
-  Effect.ChooseNewTargets ref -> [ref]
-  Effect.ChangeTargets x -> ChangeTargets.objects x : Maybe.maybeToList (ChangeTargets.onto x)
+  -- CR 116.2c's effects, which no caller's recursion reaches.
+  Effect.LaterPayment x -> foldMap effectObjectRefs (LaterPayment.effects x)
+  _ -> Functor.getConst (Children.effectChildren Children.effectLeaves {Children.onObjectRef = \ref -> Functor.Const [ref]} effect)
 
 -- Every PlayerRef this ONE effect holds in a field of its own: not the ones
 -- nested in an ObjectRef it carries (objectRefPlayerRefs), not the ones nested
@@ -989,6 +748,7 @@ effectObjectRefs effect = case effect of
 -- duration on eight of them, and ArmDelayedTrigger captures the whole
 -- environment (CR 603.7c) rather than enumerating it -- save the player its
 -- onset names, which the arming itself reads.
+-- Exhaustive, not over Parun.Engine.Children: a classification, each arm choosing which nested references (a duration's, a rider's, an onset's) it joins.
 effectPlayerRefs :: Effect card ability -> [PlayerRef]
 effectPlayerRefs effect = case effect of
   Effect.DealDamage {} -> []
@@ -1284,6 +1044,7 @@ controlSidesSlots sides = case sides of
 sequenceSlots :: Set SlotName -> [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Map.Map SlotName SlotArity
 sequenceSlots defined = joinSlots . snd . List.mapAccumL (\seen effect -> (seen <> boundSlots effect, Map.withoutKeys (slotsOf effect) seen)) defined
 
+-- Exhaustive, not over Parun.Engine.Children: a classification, every slot judged a read or a definition, at its reader's arity.
 slotsOf :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Map.Map SlotName SlotArity
 slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectRefs effect))) (joinSlots (fmap playerRefSlots (effectPlayerRefs effect)))) $ case effect of
   -- The dealer is a read like any other (CR 120.2b), and one object (CR 120.1).
@@ -2189,6 +1950,7 @@ slotsAreExhaustive effect = all (all Quantity.slotsAreExhaustive . objectRefQuan
 --
 -- No wildcard: a new opcode must answer here as well as in slotsOf. The `{}`
 -- arms answer a constant, so a new FIELD on one is not forced.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 ownSlotsAreExhaustive :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 ownSlotsAreExhaustive effect = case effect of
   Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> all (Quantity.slotsAreExhaustive . DamagePart.quantity) parts
@@ -2487,6 +2249,7 @@ conditionHasRead wanted condition = case condition of
 -- one it does not, since an arm written `{} -> False` keeps compiling. That is
 -- how a Quantity nested in an ObjectRef went unread once (#2729), so those are
 -- taken from effectObjectRefs ahead of the case and no arm below names one.
+-- Exhaustive, not over Parun.Engine.Children: a classification, each arm choosing which of its positions can make the read.
 hasRead :: StaticRead.StaticRead -> [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Bool
 hasRead wanted =
   let isX = wanted == StaticRead.ReadsX
@@ -2711,6 +2474,7 @@ hasRead wanted =
 -- is also the set Parun.CardSpec's reserved-name sweep ranges over. Exhaustive
 -- deliberately: a wildcard would file a new bind position under "binds nothing"
 -- in both the dataflow lint and that sweep, with no diagnostic.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 boundSlots :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set SlotName
 boundSlots effect = case effect of
   -- CR 400.7: the incarnation minted at the destination.

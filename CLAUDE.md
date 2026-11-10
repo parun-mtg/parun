@@ -317,7 +317,9 @@ to agents as written. What it doesn't say:
     A RECORD UPDATE keeps the old value of a field you added, so a descent
     that rebuilds a record drops it: grep `{ SomeRecord.field = ` and say in
     the PR which you checked. The recurring site is
-    `Parun.Engine.Projection.Rewrite`'s `rewriteEffect` (CR 612.1). The one
+    `Parun.Engine.Projection.Rewrite`'s walks over payload types (CR 612.1);
+    its `rewriteEffect` is forced by `Parun.Engine.Children`'s positional
+    match. The one
     update that keeps fields ON PURPOSE is
     `Parun.Engine.Resolve.Common.happenedBetween` (CR 603.12): any write an
     instruction makes whether or not it happened --- a prune, a cache, a

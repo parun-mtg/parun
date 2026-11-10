@@ -530,6 +530,7 @@ applyEffectWith runSubgame resolving source controller legal chosen effect = Eve
 -- environment is read back, and where CR 601.2b's announced X lives. Not
 -- `source`: for an ability the two differ (CR 113.7a), and that permanent can be
 -- gone before a later effect of the same list runs.
+-- Exhaustive, not over Parun.Engine.Children: an interpreter, every arm a call into its own Parun.Engine.Resolve.Arms function.
 applyOneEffect :: Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 applyOneEffect runSubgame resolving source controller legal chosen effect = case effect of
   Effect.DealDamage payload -> Damage.dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal payload

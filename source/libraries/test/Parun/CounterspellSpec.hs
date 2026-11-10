@@ -1364,7 +1364,7 @@ moonmistShieldChain s registry swap = do
 -- CR 612.1 through a quoted ability handed over by a RESOLUTION rather than by
 -- a static ability.
 -- Presence of Gond (Parun.ActivateSpec) is the static half; this is the half that
--- goes through Projection.rewriteEffect's Effect.ModifyTarget arm.
+-- goes through Projection.rewriteEffect's descent into an Effect.ModifyTarget.
 --
 -- Clavileño, First of the Blessed {1}{W}{B} Legendary Creature -- Vampire Cleric
 -- 2/2, "Whenever you attack, target attacking Vampire that isn't a Demon becomes

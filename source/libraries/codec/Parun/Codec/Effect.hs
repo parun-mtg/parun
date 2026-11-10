@@ -135,6 +135,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.Effect as Effect
 
+-- Exhaustive, not over Parun.Engine.Children: the codec is an interpreter, every constructor an arm of its own.
 codec :: (Typeable.Typeable card, Eq card, Typeable.Typeable ability, Eq ability) => Codec.Codec card -> Codec.Codec ability -> Codec.Codec (Effect.Effect card ability)
 codec cardCodec abilityCodec =
   let createCodec = Create.codec cardCodec abilityCodec
@@ -333,6 +334,7 @@ codec cardCodec abilityCodec =
           Arm.payload "ChangeTargets" ChangeTargets.codec Effect.ChangeTargets (\x -> case x of Effect.ChangeTargets y -> Just y; _ -> Nothing)
         ]
 
+-- Exhaustive, not over Parun.Engine.Children: the codec is an interpreter, every constructor a tag of its own.
 tagOf :: Effect.Effect card ability -> String
 tagOf x = case x of
   Effect.DealDamage {} -> "DealDamage"
