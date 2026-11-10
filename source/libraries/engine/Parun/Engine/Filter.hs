@@ -10,6 +10,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.Sector as Sector
@@ -1984,6 +1985,7 @@ cardTypesAmong among = maybe id Set.intersection among . cardTypes
 -- The one generic matcher. A pure fold over the Filter tree; it never inspects
 -- which effect produced the Filter. Identity checks like IsSource consult the
 -- supplied Context, not information baked into the predicate.
+-- Exhaustive, not over Parun.Engine.Children: an interpreter, every atom meaning something of its own.
 matches :: Context -> View -> Filter.Filter Keyword.Type.Keyword -> Bool
 matches context view predicate = case predicate of
   Filter.HasCardType t -> Set.member t (cardTypes view)
@@ -2654,14 +2656,15 @@ stickerKindOf content = case content of
 -- module owns. Parun.Engine.Resolve threads one call per Filter-carrying effect
 -- arm rather than learning what is inside each one.
 --
--- HasSubtype, HasColor and HasKeyword are the atoms REWRITTEN here. The rest
--- name a card type, a supertype, a number, a relation, a status, a designation,
--- or a keyword FAMILY, none of which a text changer's word families name
--- (Parun.Types.WordFamily; CR 612.2's are examples) -- see the
--- HasKeywordFamily arm below for why the family is in that list while HasKeyword
--- is not. Written
--- out exhaustively rather than with a catch-all, so a later atom that can carry a
--- subtype fails to compile here instead of silently going unrewritten.
+-- HasSubtype and HasColor are the atoms REWRITTEN here, and every keyword the
+-- tree holds (rewriteKeyword); every nest is descended into. The rest name a
+-- card type, a supertype, a number, a relation, a status, a designation, a
+-- slot, or a keyword FAMILY, none of which a text changer's word families name
+-- (Parun.Types.WordFamily; CR 612.2's are examples). A family names no word:
+-- Magical Hack turning "Swamp" into "Island" turns a swampwalk into an
+-- islandwalk, but "creature with landwalk" still reads landwalk afterwards. And
+-- CR 612.2 keeps a card name whole even where it holds a colour word or a
+-- subtype, which is why HasName and HasNameOriginallyPrintedIn stand.
 --
 -- CR 612.2's family gate is not restated on the HasSubtype arm, for the reason
 -- Parun.Engine.Projection's type-line half gives: a HasSubtype atom may name a
@@ -2671,181 +2674,23 @@ stickerKindOf content = case content of
 rewrite :: [(TextWord.TextWord, TextWord.TextWord)] -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
 rewrite pairs predicate = case predicate of
   Filter.HasSubtype s -> Filter.HasSubtype (TextWord.subtypeAfter pairs s)
-  Filter.And fs -> Filter.And (fmap (rewrite pairs) fs)
-  Filter.Or fs -> Filter.Or (fmap (rewrite pairs) fs)
-  Filter.Not f -> Filter.Not (rewrite pairs f)
+  -- CR 612.2's colour word used as a colour word: "black creature", and the
+  -- "black" in "nonblack" under a Not, as Mind Bend's reminder text says.
+  Filter.HasColor c -> Filter.HasColor (TextWord.colorAfter pairs c)
   -- Stopped, which is the atom's whole point: a colour the card never writes
   -- as a word is none CR 612.2 can swap. The scenario "CR 702.16h / 612.2 a
   -- Sleight of Mind on Spectra Ward leaves its protection from each color
   -- whole" proves it.
   Filter.Unwritten _ -> predicate
-  Filter.HasCardType _ -> predicate
-  Filter.HasSupertype _ -> predicate
-  -- CR 612.2's colour word used as a colour word: "black creature", and the
-  -- "black" in "nonblack" under a Not, as Mind Bend's reminder text says.
-  Filter.HasColor c -> Filter.HasColor (TextWord.colorAfter pairs c)
-  Filter.Shares trait anchor -> Filter.Shares trait (mapAnchor (rewrite pairs) anchor)
-  -- Untouched, and CR 612.2 says so outright: "an effect that changes a color
-  -- word or a subtype can't change a card name, even if that name contains a
-  -- word ... that is the same as a Magic color word, basic land type, or
-  -- creature type". This function's pairs are exactly such a swap.
-  Filter.HasName _ -> predicate
-  Filter.NameWordsAtLeast _ -> predicate
-  -- Untouched for HasName's reason, one indirection along: the atom names an
-  -- expansion, and the names it stands for are card names too.
-  Filter.HasNameOriginallyPrintedIn _ -> predicate
-  -- CR 702.14a: a keyword can hold a land-type word too, so "creature with
-  -- swampwalk" is text a swap reaches exactly as "creature that's a Swamp" is.
-  -- rewriteKeyword below is the descent, shared with the two sites that rewrite
-  -- a keyword rather than a filter over one.
-  Filter.HasKeyword k -> Filter.HasKeyword (rewriteKeyword pairs k)
-  -- DESCENT, like And/Or/Not above: the nested filter describes the permanents
-  -- being counted ("more LANDS than you"), so a word swap reaches it exactly as it
-  -- reaches the same description written at the top level.
-  Filter.Controls n f -> Filter.Controls n (rewrite pairs f)
-  -- Untouched, where the atom above is rewritten, and the contrast is CR 612's
-  -- rather than an omission: rule 612.1's swap acts on a WORD in the text, and a
-  -- family names no word. Magical Hack turning "Swamp" into "Island" turns a
-  -- swampwalk into an islandwalk, so "creature with swampwalk" has to follow it;
-  -- "creature with landwalk" still reads landwalk afterwards, and CR 702.14a's
-  -- generic term is not itself a land type to swap.
-  Filter.HasKeywordFamily _ -> predicate
-  -- Untouched: the atom names a comparison, and CR 612.1 finds no word in it to
-  -- swap -- nor in a slot name it may carry.
-  Filter.Measures _ -> predicate
-  Filter.ManaValueParity _ -> predicate
-  Filter.ManaCostRepeatsSymbol -> predicate
-  -- Untouched: CR 612.1 swaps a WORD in the text, and this atom names a player
-  -- relation rather than a subtype.
-  Filter.ControllerIsOwner -> predicate
-  Filter.HeldBy _ _ -> predicate
-  -- Untouched for HeldBy's reason.
-  Filter.ControlledByRole _ -> predicate
-  -- Untouched for the same reason twice over: neither a slot name nor a player id
-  -- is a word CR 612.1's swap can find in the text.
-  Filter.HeldByBound _ _ -> predicate
-  Filter.HeldByPlayer _ _ -> predicate
-  -- Untouched for HeldBy's reason.
-  Filter.HeldByRecipient _ -> predicate
-  Filter.IsSource -> predicate
-  Filter.IsObject _ -> predicate
-  -- Untouched for IsSource's reason: a target relation is not a word CR 612.1
-  -- swaps.
-  Filter.TargetsSource -> predicate
-  Filter.HasSingleTarget -> predicate
-  -- DESCENDED into, unlike the two atoms above: the nest describes an OBJECT and
-  -- so may name a subtype -- Precursor Golem's "targets only a single Golem" is
-  -- the shape a CR 612.1 swap would find there.
-  Filter.TargetsOnlyOne f -> Filter.TargetsOnlyOne (rewrite pairs f)
-  Filter.TargetsMatching f -> Filter.TargetsMatching (rewrite pairs f)
-  Filter.TargetsPlayer _ -> predicate
-  Filter.IsBound _ -> predicate
-  Filter.IsTarget -> predicate
-  Filter.ControllerRelatesToBound {} -> predicate
-  Filter.HasChosenName {} -> predicate
-  Filter.HasChosenColor -> predicate
-  Filter.HasChosenSubtype -> predicate
-  Filter.HasChosenCardType -> predicate
-  Filter.IsExiledWithSource _ -> predicate
-  Filter.IsLastExiledWithSource -> predicate
-  Filter.OfChosenPlayer -> predicate
-  Filter.OfRelatedPlayer _ -> predicate
-  Filter.IsPlayer _ -> predicate
-  -- Untouched for IsPlayer's reason: CR 612.1 swaps a WORD in the text, and this
-  -- atom names a slot rather than a subtype.
-  Filter.IsControllerOfBound _ -> predicate
-  -- Untouched for IsPlayer's reason: CR 612.1 swaps a WORD in the text, and a
-  -- card count is a number rather than one. "Graveyard" is a zone name, which
-  -- rule 612.1 does not reach either.
-  Filter.CardsInGraveyardAtLeast _ -> predicate
-  Filter.OwnsBoundAtLeast n slot f -> Filter.OwnsBoundAtLeast n slot (rewrite pairs f)
-  Filter.IsAttacking -> predicate
-  Filter.IsAttackingPlayer _ -> predicate
-  Filter.IsAttackingPlaneswalker _ -> predicate
-  Filter.IsAttackingBattle _ -> predicate
-  Filter.IsBlocking -> predicate
-  Filter.HasBlockStatus _ -> predicate
-  Filter.DeclaredThisTurn _ -> predicate
-  Filter.CouldAttackThisTurn -> predicate
-  Filter.DeclaredAttackerThisCombat -> predicate
-  Filter.DeclaredAttackedThisCombat -> predicate
-  Filter.DeclaredBlockerThisCombat -> predicate
-  Filter.LeftLibraryThisTurn _ -> predicate
-  Filter.CantCrewVehicles -> predicate
-  Filter.DealtDamageThisTurn -> predicate
-  Filter.DealtDamageTo _ -> predicate
-  Filter.EnteredThisTurn _ -> predicate
-  Filter.CrewedSourceThisTurn -> predicate
-  Filter.ConvokedSourceThisTurn -> predicate
-  Filter.SaddledSourceThisTurn -> predicate
-  -- Untouched for DeclaredThisTurn's reason: the atom names no subtype.
-  Filter.ControlledSinceTurnBegan -> predicate
-  -- DESCENT, for Controls' reason above: the nested filter describes
-  -- the HOST ("attached to a Swamp"), so CR 612.1's word swap reaches it exactly
-  -- as it reaches the same description written at the top level.
-  Filter.AttachedTo f -> Filter.AttachedTo (rewrite pairs f)
-  Filter.BeforeMove f -> Filter.BeforeMove (rewrite pairs f)
-  -- DESCENT, for the atom above's reason: the nest is a description a card
-  -- author wrote ("if it's a Forest card"), so CR 612.1's word swap reaches it
-  -- exactly as it reaches the same description written at the top level. The
-  -- swap is on the ABILITY's text and never on the card the nest describes.
-  Filter.RepresentedByCard f -> Filter.RepresentedByCard (rewrite pairs f)
-  -- DESCENT, for the atom above's reason one direction over: the nest describes
-  -- the ATTACHER ("enchanted by an Aura"), so CR 612.1's word swap reaches it as
-  -- it reaches the same description written at the top level.
-  Filter.HasAttached f -> Filter.HasAttached (rewrite pairs f)
-  Filter.IsAttachedTo anchor -> Filter.IsAttachedTo (mapAnchor (rewrite pairs) anchor)
-  Filter.IsEvaluated -> predicate
-  Filter.IsHostOfSource -> predicate
-  Filter.EnteredWithSource -> predicate
-  -- Rewritten THROUGH the kind, HasCounters' reason below.
-  Filter.CounterLinkedToSource moved -> Filter.CounterLinkedToSource (case moved of CounterLinked.PutWith kind -> CounterLinked.PutWith (rewriteCounterKind pairs kind); CounterLinked.RemovedWith kind -> CounterLinked.RemovedWith (rewriteCounterKind pairs kind))
-  Filter.AttachedNoLaterThanSource -> predicate
-  Filter.CanHostSubject -> predicate
-  Filter.CanAttachToSubject -> predicate
-  Filter.HasEntryHost -> predicate
-  Filter.HostOfSubjectHasCardType _ -> predicate
-  Filter.IsCommander -> predicate
-  Filter.IsToken -> predicate
-  Filter.IsActivatedAbility _ -> predicate
-  Filter.IsAbility -> predicate
-  Filter.IsEmblem -> predicate
-  -- Descended into, HasAttached's reason: the nest describes the SOURCE.
-  Filter.FromSource f -> Filter.FromSource (rewrite pairs f)
-  Filter.IsTapped -> predicate
-  Filter.IsFaceDown -> predicate
-  Filter.IsExiledFaceDown -> predicate
-  Filter.Transformed -> predicate
-  Filter.IsRingBearer -> predicate
-  Filter.IsPaired -> predicate
-  Filter.IsPairedWithSource -> predicate
-  Filter.BlockPartnerOfSource _ -> predicate
-  Filter.HasDesignation _ -> predicate
-  -- Untouched: a text change swaps a word used as its family (CR 612.2), and this
-  -- atom names none -- "an activated ability that isn't a mana ability" has no
-  -- word inside it for Artificial Evolution to reach.
-  Filter.HasActivatedAbility _ -> predicate
-  Filter.IsInZone _ -> predicate
-  -- Untouched for IsInZone's reason: a text change swaps a word used as its family
-  -- (CR 612.2), and a zone name is none.
-  Filter.WasCastFrom _ -> predicate
-  -- Untouched for IsInZone's reason once more: a text change swaps a word used as
-  -- its family (CR 612.2), and a Parun.Types.ProductionTag names none --
-  -- "mana from an artifact" is a fact about a PAST production event, not a word
-  -- on this object for Artificial Evolution to reach.
-  Filter.TagWasSpent _ -> predicate
   -- Untouched for Quantity.TimesPaid's reason (Parun.Engine.Projection.Rewrite).
   Filter.Paid _ -> predicate
-  Filter.IsPrototyped -> predicate
-  Filter.IsPreparedSpell -> predicate
-  -- Rewritten THROUGH the kind, for the reason rewriteCounterKind gives.
-  Filter.HasCounters kind -> Filter.HasCounters (rewriteCounterKind pairs kind)
-  -- Left standing where the atom above is rewritten: CR 612.1 swaps WORDS, and a
-  -- kind-agnostic atom names none -- there is no CounterKind here to carry a
-  -- subtype word through the swap.
-  Filter.HasCountersOfAnyKind -> predicate
-  Filter.HasSticker _ -> predicate
-  Filter.Stickered -> predicate
+  _ ->
+    Identity.runIdentity $
+      Children.filterChildren
+        (Children.descending (Identity.Identity . rewrite pairs))
+          { Children.keyword = Identity.Identity . rewriteKeyword pairs
+          }
+        predicate
 
 -- CR 612.1's word swap inside a COUNTER KIND. Rewritten THROUGH the kind: CR
 -- 122.1b's keyword counter carries a keyword, and rule 612.1 reaches a word
@@ -3454,68 +3299,26 @@ bakeCost slot object cost = cost {Cost.components = fmap (overComponent (bakeBou
 -- slot nothing bound admits no candidate, exactly as an absent perspective makes
 -- HeldBy Controller vacuous.
 --
+-- Every nest is descended into, the descent overBoundSlotsWith makes: a slot
+-- named inside one must be baked before the match or it can never be answered.
+-- No other slot is substituted: a Measures operand's slot holds a number or an
+-- object, which the Context carries into the match, and IsControllerOfBound's
+-- and OwnsBoundAtLeast's hold objects, answered by
+-- Parun.Engine.Count.bakePerspective.
+--
 -- NO DESCENT INTO A KEYWORD, unlike `rewrite` above, and the difference is
 -- load-bearing: HasKeyword compares its keyword against the PROJECTION's keyword
 -- map by equality, so baking a player into a Filter one carries would produce a
 -- key the projection can never hold. There is no reading of a card under which a
 -- keyword's own criterion names a trigger's player anyway -- CR 702.14c's
 -- criterion is a land description.
---
--- Exhaustive rather than a catch-all, `rewrite`'s posture: a later atom that can
--- carry a Filter must fail to compile here instead of silently keeping an
--- unbaked one.
 bakeBound :: Map.Map SlotName.SlotName PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId) -> Map.Map SlotName.SlotName (PlayerRelation.PlayerRelation -> Set.Set PlayerId.PlayerId) -> Filter.Filter Keyword.Type.Keyword -> Filter.Filter Keyword.Type.Keyword
 bakeBound players objects controllers predicate = case predicate of
   Filter.HeldByBound holder slot -> maybe predicate (Filter.HeldByPlayer holder) (Map.lookup slot players)
-  Filter.And fs -> Filter.And (fmap (bakeBound players objects controllers) fs)
-  Filter.Or fs -> Filter.Or (fmap (bakeBound players objects controllers) fs)
-  Filter.Not f -> Filter.Not (bakeBound players objects controllers f)
-  Filter.Unwritten f -> Filter.Unwritten (bakeBound players objects controllers f)
-  -- Descended into for the reason `rewrite` descends: the nested filter is a
-  -- filter like any other, and a slot named inside it must be baked before the
-  -- match or it can never be answered.
-  Filter.Controls n f -> Filter.Controls n (bakeBound players objects controllers f)
-  Filter.HeldByPlayer _ _ -> predicate
-  -- Untouched: CR 603.2's slot is not the recipient an effect has reached, and no
-  -- binding could answer this atom -- Parun.Engine.Filter.Context carries it.
-  Filter.HeldByRecipient _ -> predicate
-  Filter.HasCardType _ -> predicate
-  Filter.HasSupertype _ -> predicate
-  Filter.HasColor _ -> predicate
-  Filter.Shares trait anchor -> Filter.Shares trait (mapAnchor (bakeBound players objects controllers) anchor)
-  Filter.HasSubtype _ -> predicate
-  Filter.HasName _ -> predicate
-  Filter.NameWordsAtLeast _ -> predicate
-  Filter.HasNameOriginallyPrintedIn _ -> predicate
-  Filter.HasKeyword _ -> predicate
-  Filter.HasKeywordFamily _ -> predicate
-  -- Untouched: CR 603.2's map holds PLAYERS, and a slot this atom's operand
-  -- names holds a number or an object. It stays answerable where it is written,
-  -- the Context carrying the number into the match rather than a substitution
-  -- making it.
-  Filter.Measures _ -> predicate
-  Filter.ManaValueParity _ -> predicate
-  Filter.ManaCostRepeatsSymbol -> predicate
-  Filter.ControllerIsOwner -> predicate
-  Filter.HeldBy _ _ -> predicate
-  Filter.ControlledByRole _ -> predicate
-  Filter.IsSource -> predicate
-  Filter.IsObject _ -> predicate
-  -- Untouched for IsSource's reason: both read the Context, and neither names a
-  -- slot.
-  Filter.TargetsSource -> predicate
-  Filter.HasSingleTarget -> predicate
-  -- DESCENDED into for the reason AttachedTo below is: the nest is a description
-  -- of another object and may name a bound slot, which this function's pairing
-  -- with overBoundSlots requires be baked here and reported there.
-  Filter.TargetsOnlyOne f -> Filter.TargetsOnlyOne (bakeBound players objects controllers f)
-  Filter.TargetsMatching f -> Filter.TargetsMatching (bakeBound players objects controllers f)
-  Filter.TargetsPlayer _ -> predicate
   -- The objects the slot holds, named outright, so a class stored past the
   -- resolution still knows them: Oracle en-Vec's "other creatures can't
   -- attack". Left standing where the map does not bind the slot.
   Filter.IsBound slot -> maybe predicate (Filter.Or . fmap Filter.IsObject . Set.toList) (Map.lookup slot objects)
-  Filter.IsTarget -> predicate
   -- CR 608.2h: the players standing in the relation to the controllers the
   -- slot's objects had as the resolution read them, named outright for
   -- IsBound's reason -- Mark for Death's "other creatures that player
@@ -3523,100 +3326,7 @@ bakeBound players objects controllers predicate = case predicate of
   -- offer before the sibling target is chosen. A host hop is left standing
   -- too: the host is read live as the ability resolves.
   Filter.ControllerRelatesToBound relation Hop.Itself slot -> maybe predicate (\related -> Filter.Or (fmap (Filter.HeldByPlayer Holder.Controller) (Set.toList (related relation)))) (Map.lookup slot controllers)
-  Filter.ControllerRelatesToBound _ Hop.Host _ -> predicate
-  Filter.HasChosenName {} -> predicate
-  Filter.HasChosenColor -> predicate
-  Filter.HasChosenSubtype -> predicate
-  Filter.HasChosenCardType -> predicate
-  Filter.IsExiledWithSource _ -> predicate
-  Filter.IsLastExiledWithSource -> predicate
-  Filter.OfChosenPlayer -> predicate
-  Filter.OfRelatedPlayer _ -> predicate
-  Filter.IsPlayer _ -> predicate
-  -- Untouched: CR 603.2's binding map holds PLAYERS, and this atom names a slot
-  -- holding an OBJECT -- there is nothing here to substitute.
-  -- Parun.Engine.Count.bakePerspective is where it is answered instead.
-  Filter.IsControllerOfBound _ -> predicate
-  -- Untouched: the atom names no slot at all, so CR 603.2's map has nothing to
-  -- substitute into it. Baked one module out, as the atom above is.
-  Filter.CardsInGraveyardAtLeast _ -> predicate
-  -- Descended into for Controls' reason; the slot holds OBJECTS, which this
-  -- map does not substitute, so it is answered one module out.
-  Filter.OwnsBoundAtLeast n slot f -> Filter.OwnsBoundAtLeast n slot (bakeBound players objects controllers f)
-  Filter.IsAttacking -> predicate
-  Filter.IsAttackingPlayer _ -> predicate
-  Filter.IsAttackingPlaneswalker _ -> predicate
-  Filter.IsAttackingBattle _ -> predicate
-  Filter.IsBlocking -> predicate
-  Filter.HasBlockStatus _ -> predicate
-  Filter.DeclaredThisTurn _ -> predicate
-  Filter.CouldAttackThisTurn -> predicate
-  Filter.DeclaredAttackerThisCombat -> predicate
-  Filter.DeclaredAttackedThisCombat -> predicate
-  Filter.DeclaredBlockerThisCombat -> predicate
-  Filter.LeftLibraryThisTurn _ -> predicate
-  Filter.CantCrewVehicles -> predicate
-  Filter.DealtDamageThisTurn -> predicate
-  Filter.DealtDamageTo _ -> predicate
-  Filter.EnteredThisTurn _ -> predicate
-  Filter.CrewedSourceThisTurn -> predicate
-  Filter.ConvokedSourceThisTurn -> predicate
-  Filter.SaddledSourceThisTurn -> predicate
-  -- Untouched: the atom names no slot for CR 603.2's map to substitute into.
-  Filter.ControlledSinceTurnBegan -> predicate
-  -- DESCENT, for Controls' reason above: a HeldByBound written
-  -- into the HOST's description is baked exactly as the same atom written at the
-  -- top level would be. Parun.Engine.Filter.boundSlots descends to match, which is
-  -- the pairing that function's comment insists on.
-  Filter.AttachedTo f -> Filter.AttachedTo (bakeBound players objects controllers f)
-  Filter.BeforeMove f -> Filter.BeforeMove (bakeBound players objects controllers f)
-  -- DESCENT, for the atom above's reason: a HeldByBound written into the
-  -- represented card's description is baked exactly as the same atom at the top
-  -- level would be, and Parun.Engine.Filter.boundSlots descends to match.
-  Filter.RepresentedByCard f -> Filter.RepresentedByCard (bakeBound players objects controllers f)
-  -- DESCENT, for the atom above's reason: a HeldByBound written into the
-  -- ATTACHER's description is baked exactly as the same atom at the top level
-  -- would be, and Parun.Engine.Filter.boundSlots descends to match.
-  Filter.HasAttached f -> Filter.HasAttached (bakeBound players objects controllers f)
-  Filter.IsAttachedTo anchor -> Filter.IsAttachedTo (mapAnchor (bakeBound players objects controllers) anchor)
-  Filter.IsEvaluated -> predicate
-  Filter.IsHostOfSource -> predicate
-  Filter.EnteredWithSource -> predicate
-  Filter.CounterLinkedToSource _ -> predicate
-  Filter.AttachedNoLaterThanSource -> predicate
-  Filter.CanHostSubject -> predicate
-  Filter.CanAttachToSubject -> predicate
-  Filter.HasEntryHost -> predicate
-  Filter.HostOfSubjectHasCardType _ -> predicate
-  Filter.IsCommander -> predicate
-  Filter.IsToken -> predicate
-  Filter.IsActivatedAbility _ -> predicate
-  Filter.IsAbility -> predicate
-  Filter.IsEmblem -> predicate
-  -- Descended into, HasAttached's reason: the SOURCE's description is baked
-  -- exactly as the same atom at the top level would be, and boundSlots descends
-  -- to match.
-  Filter.FromSource f -> Filter.FromSource (bakeBound players objects controllers f)
-  Filter.IsTapped -> predicate
-  Filter.IsFaceDown -> predicate
-  Filter.IsExiledFaceDown -> predicate
-  Filter.Transformed -> predicate
-  Filter.IsRingBearer -> predicate
-  Filter.IsPaired -> predicate
-  Filter.IsPairedWithSource -> predicate
-  Filter.BlockPartnerOfSource _ -> predicate
-  Filter.HasDesignation _ -> predicate
-  Filter.HasCounters _ -> predicate
-  Filter.HasCountersOfAnyKind -> predicate
-  Filter.HasSticker _ -> predicate
-  Filter.Stickered -> predicate
-  Filter.HasActivatedAbility _ -> predicate
-  Filter.IsInZone _ -> predicate
-  Filter.WasCastFrom _ -> predicate
-  Filter.TagWasSpent _ -> predicate
-  Filter.Paid _ -> predicate
-  Filter.IsPrototyped -> predicate
-  Filter.IsPreparedSpell -> predicate
+  _ -> Identity.runIdentity (Children.filterChildren (Children.descending (Identity.Identity . bakeBound players objects controllers)) predicate)
 
 -- The mana-value LITERALS a Filter compares against: every `n` a Measures atom
 -- compares the candidate's mana value with, at any depth.
@@ -3632,12 +3342,13 @@ bakeBound players objects controllers predicate = case predicate of
 -- a mana value too, and the position is why none widens the sample -- see the
 -- Measures arm below.
 --
--- Exhaustive rather than a catch-all, bakeBound's posture and for a sharper
--- reason: an atom reading the mana value some other way -- a multiple-of-three
--- test -- would break that argument, so it must break this build instead of
--- silently narrowing the search.
+-- Exhaustive rather than a catch-all, for a sharp reason: an atom reading the
+-- mana value some other way -- a multiple-of-three test -- would break that
+-- argument, so it must break this build instead of silently narrowing the
+-- search.
 --
 -- Polymorphic in the keyword, since no arm reads one.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every atom judged by someone reading it.
 manaValueThresholds :: Filter.Filter keyword -> [Integer]
 manaValueThresholds predicate = case predicate of
   -- A literal against the candidate's mana value, whichever way it compares:
@@ -3821,6 +3532,7 @@ manaValueThresholds predicate = case predicate of
 -- someone reading it rather than by a wildcard.
 --
 -- Polymorphic in the keyword, since no arm reads one.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every atom judged by someone reading it.
 statesAQuality :: Filter.Filter keyword -> Bool
 statesAQuality predicate = case predicate of
   Filter.And fs -> any statesAQuality fs
@@ -3993,6 +3705,7 @@ statesAQuality predicate = case predicate of
 --
 -- Every nest is descended into, since `matches` judges a nest in the same
 -- Context; statesAQuality's exhaustive posture, for its reason.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every atom judged by someone reading it.
 readsSourceValues :: Filter.Filter keyword -> Bool
 readsSourceValues predicate = case predicate of
   Filter.And fs -> any readsSourceValues fs
@@ -4138,12 +3851,12 @@ boundSlots :: Filter.Filter Keyword.Type.Keyword -> Set.Set SlotName.SlotName
 boundSlots = Const.getConst . overBoundSlots (Const.Const . Set.singleton)
 
 -- Every slot a Filter NAMES, with the arity its atom reads it at, as one
--- exhaustive traversal: `boundSlots` READS the names, `renameBound` REWRITES
+-- traversal: `boundSlots` READS the names, `renameBound` REWRITES
 -- them (CR 700.2d), `singularSlots` keeps the ones read as ONE, and `slotArities`
 -- hands all of them to the dataflow and arity lints. One walk, because the
 -- consumers disagreeing about which atoms name a slot is a live defect shape
--- (#2802), and with no fallthrough, so a new atom naming a slot is named by
--- -Werror rather than absorbed. That matters beyond the lints:
+-- (#2802), and the arities are Parun.Engine.Children.filterChildren's, so a new
+-- atom naming a slot is named by -Werror there rather than absorbed. That matters beyond the lints:
 -- Parun.Engine.Resolve.Slots.replacementRowReads decides which of the installing
 -- resolution's bindings a waiting replacement CAPTURES through here, and
 -- Parun.Engine.Target.jointlyJudged fires CR 601.2c's joint check on
@@ -4162,169 +3875,9 @@ boundSlots = Const.getConst . overBoundSlots (Const.Const . Set.singleton)
 -- AMOUNT: the slot holds a number (Context's boundAmounts), never a recipient.
 overBoundSlotsWith :: (Applicative f) => (SlotArity.SlotArity -> SlotName.SlotName -> f SlotName.SlotName) -> Filter.Filter Keyword.Type.Keyword -> f (Filter.Filter Keyword.Type.Keyword)
 overBoundSlotsWith f predicate = case predicate of
-  Filter.HasCardType _ -> pure predicate
-  Filter.HasSupertype _ -> pure predicate
-  Filter.HasColor _ -> pure predicate
-  Filter.Shares trait anchor -> fmap (Filter.Shares trait) (overAnchorSlot f anchor)
-  Filter.HasSubtype _ -> pure predicate
-  Filter.HasName _ -> pure predicate
-  Filter.HasNameOriginallyPrintedIn _ -> pure predicate
-  Filter.NameWordsAtLeast _ -> pure predicate
-  -- The keyword's own Filter, left alone for the reason above.
-  Filter.HasKeyword _ -> pure predicate
-  Filter.HasKeywordFamily _ -> pure predicate
-  Filter.Measures m ->
-    let rebuild x = Filter.Measures m {Measures.operand = x}
-     in case Measures.operand m of
-          -- The slot holds an AMOUNT (Context's boundAmounts), never a recipient.
-          Operand.AmountInSlot slot -> rebuild . Operand.AmountInSlot <$> f SlotArity.Amount slot
-          -- CR 208.1's comparison wants ONE object's number, and
-          -- Parun.Engine.Projection.framedBySlots declines a slot that names several.
-          Operand.OfBound bound -> (\slot -> rebuild (Operand.OfBound bound {BoundMeasure.slot = slot})) <$> f SlotArity.One (BoundMeasure.slot bound)
-          Operand.Literal _ -> pure predicate
-          Operand.OfSource _ -> pure predicate
-          Operand.Own _ -> pure predicate
-          Operand.EnclosingAmount -> pure predicate
-          Operand.OfEachOtherCandidate _ -> pure predicate
-  Filter.ManaValueParity _ -> pure predicate
-  Filter.ManaCostRepeatsSymbol -> pure predicate
-  Filter.ControllerIsOwner -> pure predicate
-  Filter.HeldBy _ _ -> pure predicate
-  Filter.ControlledByRole _ -> pure predicate
-  -- A PLAYER slot, read singly all the same: `matches` answers it off a slot
-  -- naming exactly one player, and bakeBound off Binding.playerSlots, which is
-  -- Binding.onlyOne.
-  Filter.HeldByBound holder slot -> fmap (Filter.HeldByBound holder) (f SlotArity.One slot)
-  Filter.HeldByPlayer _ _ -> pure predicate
-  Filter.HeldByRecipient _ -> pure predicate
-  Filter.IsSource -> pure predicate
-  Filter.IsObject _ -> pure predicate
-  Filter.TargetsSource -> pure predicate
-  Filter.HasSingleTarget -> pure predicate
-  -- DESCENT, for AttachedTo's reason below: CR 115.1's atom carries the one
-  -- target's description, which a card author writes like any other filter.
-  Filter.TargetsOnlyOne g -> fmap Filter.TargetsOnlyOne (overBoundSlotsWith f g)
-  Filter.TargetsMatching g -> fmap Filter.TargetsMatching (overBoundSlotsWith f g)
-  Filter.TargetsPlayer _ -> pure predicate
-  -- Reads the whole bound set off Filter.Context, so a group is every one of its
-  -- members rather than nothing.
-  Filter.IsBound slot -> fmap Filter.IsBound (f SlotArity.Many slot)
+  -- The announced targets, holding no field: reported, never renamed.
   Filter.IsTarget -> fmap (const Filter.IsTarget) (f SlotArity.Many Binding.announcedTargets)
-  -- Reads the whole set too, one field over.
-  -- Names no slot at all: CR 702.60a's comparison is against the SOURCE, whose
-  -- names arrive on Filter.Context.
-  -- Reads the whole set too, one field further over.
-  -- Under a host hop, off its own field: a slot naming a group answers with
-  -- every member's host's controller.
-  Filter.ControllerRelatesToBound relation hop slot -> fmap (Filter.ControllerRelatesToBound relation hop) (f SlotArity.Many slot)
-  -- Reads the whole set too, off its own field.
-  Filter.HasChosenName {} -> pure predicate
-  -- Reads no slot either: CR 105.2's colour arrives on Filter.Context.
-  Filter.HasChosenColor -> pure predicate
-  -- Reads no slot either: CR 205.3's subtype arrives on Filter.Context.
-  Filter.HasChosenSubtype -> pure predicate
-  Filter.HasChosenCardType -> pure predicate
-  Filter.IsExiledWithSource _ -> pure predicate
-  Filter.IsLastExiledWithSource -> pure predicate
-  -- Reads no slot at all: rule 702.16k's player arrives on Filter.Context.
-  Filter.OfChosenPlayer -> pure predicate
-  Filter.OfRelatedPlayer _ -> pure predicate
-  Filter.IsPlayer _ -> pure predicate
-  -- The candidate is the controller of the ONE object the slot names (CR
-  -- 608.2h), read through slotOneObject.
-  Filter.IsControllerOfBound slot -> fmap Filter.IsControllerOfBound (f SlotArity.One slot)
-  -- DESCENT: the nest is card text like any other, and an atom written into it
-  -- is read exactly as one written at the top level.
-  Filter.Controls n g -> fmap (Filter.Controls n) (overBoundSlotsWith f g)
-  Filter.CardsInGraveyardAtLeast _ -> pure predicate
-  -- Reads the whole bound set, IsBound's arity, and descends for Controls'.
-  Filter.OwnsBoundAtLeast n slot g -> Filter.OwnsBoundAtLeast n <$> f SlotArity.Many slot <*> overBoundSlotsWith f g
-  Filter.IsAttacking -> pure predicate
-  Filter.IsAttackingPlayer _ -> pure predicate
-  Filter.IsAttackingPlaneswalker _ -> pure predicate
-  Filter.IsAttackingBattle _ -> pure predicate
-  Filter.DeclaredAttackedThisCombat -> pure predicate
-  Filter.IsBlocking -> pure predicate
-  Filter.HasBlockStatus _ -> pure predicate
-  Filter.DeclaredAttackerThisCombat -> pure predicate
-  Filter.DeclaredBlockerThisCombat -> pure predicate
-  Filter.DeclaredThisTurn _ -> pure predicate
-  Filter.CouldAttackThisTurn -> pure predicate
-  Filter.LeftLibraryThisTurn _ -> pure predicate
-  Filter.CantCrewVehicles -> pure predicate
-  Filter.DealtDamageThisTurn -> pure predicate
-  -- MANY: a slot party is membership, IsBound's reading.
-  Filter.DealtDamageTo asked -> case DealtDamageTo.party asked of
-    DamagedParty.InSlot slot -> fmap (\renamed -> Filter.DealtDamageTo asked {DealtDamageTo.party = DamagedParty.InSlot renamed}) (f SlotArity.Many slot)
-    DamagedParty.Source -> pure predicate
-    DamagedParty.Related _ -> pure predicate
-    DamagedParty.Anyone -> pure predicate
-    DamagedParty.HolderOfCandidate _ -> pure predicate
-  Filter.EnteredThisTurn _ -> pure predicate
-  Filter.CrewedSourceThisTurn -> pure predicate
-  Filter.ConvokedSourceThisTurn -> pure predicate
-  Filter.SaddledSourceThisTurn -> pure predicate
-  Filter.ControlledSinceTurnBegan -> pure predicate
-  -- DESCENT, for Controls' reason.
-  Filter.AttachedTo g -> fmap Filter.AttachedTo (overBoundSlotsWith f g)
-  Filter.BeforeMove g -> fmap Filter.BeforeMove (overBoundSlotsWith f g)
-  -- DESCENT, for the atom above's reason.
-  Filter.HasAttached g -> fmap Filter.HasAttached (overBoundSlotsWith f g)
-  Filter.IsAttachedTo anchor -> fmap Filter.IsAttachedTo (overAnchorSlot f anchor)
-  Filter.IsEvaluated -> pure predicate
-  Filter.IsHostOfSource -> pure predicate
-  Filter.EnteredWithSource -> pure predicate
-  Filter.CounterLinkedToSource _ -> pure predicate
-  Filter.AttachedNoLaterThanSource -> pure predicate
-  Filter.CanHostSubject -> pure predicate
-  Filter.CanAttachToSubject -> pure predicate
-  Filter.HasEntryHost -> pure predicate
-  Filter.HostOfSubjectHasCardType _ -> pure predicate
-  Filter.IsCommander -> pure predicate
-  Filter.IsToken -> pure predicate
-  Filter.IsActivatedAbility _ -> pure predicate
-  Filter.IsAbility -> pure predicate
-  Filter.IsEmblem -> pure predicate
-  -- DESCENT, for RepresentedByCard's reason below.
-  Filter.FromSource g -> fmap Filter.FromSource (overBoundSlotsWith f g)
-  Filter.IsTapped -> pure predicate
-  Filter.IsFaceDown -> pure predicate
-  -- DESCENT, for the atom above's reason.
-  Filter.RepresentedByCard g -> fmap Filter.RepresentedByCard (overBoundSlotsWith f g)
-  Filter.IsExiledFaceDown -> pure predicate
-  Filter.Transformed -> pure predicate
-  Filter.IsRingBearer -> pure predicate
-  Filter.IsPaired -> pure predicate
-  Filter.IsPairedWithSource -> pure predicate
-  Filter.BlockPartnerOfSource _ -> pure predicate
-  Filter.HasDesignation _ -> pure predicate
-  -- The kind may be a whole Keyword hiding a Filter, left alone for the reason
-  -- the keyword atom above is.
-  Filter.HasCounters _ -> pure predicate
-  Filter.HasCountersOfAnyKind -> pure predicate
-  Filter.HasSticker _ -> pure predicate
-  Filter.Stickered -> pure predicate
-  Filter.HasActivatedAbility _ -> pure predicate
-  Filter.IsInZone _ -> pure predicate
-  Filter.WasCastFrom _ -> pure predicate
-  Filter.TagWasSpent _ -> pure predicate
-  Filter.Paid _ -> pure predicate
-  Filter.IsPrototyped -> pure predicate
-  Filter.IsPreparedSpell -> pure predicate
-  Filter.And fs -> fmap Filter.And (traverse (overBoundSlotsWith f) fs)
-  Filter.Or fs -> fmap Filter.Or (traverse (overBoundSlotsWith f) fs)
-  Filter.Not g -> fmap Filter.Not (overBoundSlotsWith f g)
-  Filter.Unwritten g -> fmap Filter.Unwritten (overBoundSlotsWith f g)
-
--- The slot an Anchor names, at MANY: an anchored atom takes the whole set the
--- slot names.
-overAnchorSlot :: (Applicative f) => (SlotArity.SlotArity -> SlotName.SlotName -> f SlotName.SlotName) -> Anchor.Anchor (Filter.Filter Keyword.Type.Keyword) -> f (Anchor.Anchor (Filter.Filter Keyword.Type.Keyword))
-overAnchorSlot f anchor = case anchor of
-  Anchor.Bound slot -> fmap Anchor.Bound (f SlotArity.Many slot)
-  Anchor.Evaluated -> pure anchor
-  Anchor.Source -> pure anchor
-  Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (overBoundSlotsWith f group)
-  Anchor.YourCommander -> pure anchor
+  _ -> Children.filterChildren (Children.descending (overBoundSlotsWith f)) {Children.slot = f} predicate
 
 -- The filter an anchor nests, for a traversal that descends into one.
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
@@ -4334,15 +3887,6 @@ anchorFilter anchor = case anchor of
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
   Anchor.YourCommander -> Nothing
-
--- A rewrite of the filter an anchor nests.
-mapAnchor :: (nested -> nested) -> Anchor.Anchor nested -> Anchor.Anchor nested
-mapAnchor f anchor = case anchor of
-  Anchor.AnyPermanent group -> Anchor.AnyPermanent (f group)
-  Anchor.Bound _ -> anchor
-  Anchor.Evaluated -> anchor
-  Anchor.Source -> anchor
-  Anchor.YourCommander -> anchor
 
 -- overBoundSlotsWith without the arity: CR 700.2d's rename.
 overBoundSlots :: (Applicative f) => (SlotName.SlotName -> f SlotName.SlotName) -> Filter.Filter Keyword.Type.Keyword -> f (Filter.Filter Keyword.Type.Keyword)

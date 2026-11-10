@@ -29,9 +29,11 @@
 -- cost on one (Parun.Engine.Keyword, Parun.Engine.Cost.candidateCostsGiven).
 module Parun.Engine.Interchangeable.Mentions where
 
+import qualified Data.Functor.Const as Const
 import qualified Data.Map.Strict as Map
 import qualified Data.Monoid as Monoid
 import qualified Parun.Engine.Binding as Binding.Engine
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Types.AbilityAct as AbilityAct
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
@@ -59,7 +61,6 @@ import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
-import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
@@ -613,57 +614,9 @@ contextNames = context
 -- player counts -- which may be one of the two, so it is recursed into.
 filterNames :: (Monoid r) => Asking r -> Filter.Filter keyword -> r
 filterNames asking criterion = case criterion of
-  Filter.HasCardType _cardType -> mempty
-  Filter.HasSupertype _supertype -> mempty
-  Filter.HasColor _color -> mempty
-  Filter.Shares _trait anchor -> anchorNames asking anchor
-  Filter.HasSubtype _subtype -> mempty
-  Filter.HasName _name -> mempty
-  Filter.NameWordsAtLeast _n -> mempty
-  Filter.HasNameOriginallyPrintedIn _expansion -> mempty
-  Filter.HasKeyword _keyword -> mempty
-  Filter.HasKeywordFamily _family -> mempty
+  -- The operand may read the enclosing amount as well as a slot.
   Filter.Measures measures -> measuresNames asking measures
-  Filter.ManaValueParity _operand -> mempty
-  Filter.ManaCostRepeatsSymbol -> mempty
-  Filter.ControllerIsOwner -> mempty
-  Filter.HeldBy _holder _relation -> mempty
-  Filter.ControlledByRole _ -> mempty
-  Filter.HeldByBound _holder slot -> slotNames asking slot
-  Filter.HeldByPlayer _holder _player -> mempty
-  Filter.HeldByRecipient _holder -> mempty
-  Filter.IsSource -> mempty
-  Filter.IsObject oid -> names asking (== oid)
-  Filter.TargetsSource -> mempty
-  Filter.TargetsOnlyOne nested -> filterNames asking nested
-  Filter.HasSingleTarget -> mempty
-  Filter.TargetsMatching nested -> filterNames asking nested
-  Filter.TargetsPlayer _relation -> mempty
-  Filter.IsBound slot -> slotNames asking slot
   Filter.IsTarget -> slotNames asking Binding.Engine.announcedTargets
-  Filter.ControllerRelatesToBound _playerRelation _hop slot -> slotNames asking slot
-  Filter.HasChosenName {} -> mempty
-  Filter.HasChosenColor -> mempty
-  Filter.HasChosenSubtype -> mempty
-  Filter.HasChosenCardType -> mempty
-  Filter.IsExiledWithSource _ -> mempty
-  Filter.IsLastExiledWithSource -> mempty
-  Filter.OfChosenPlayer -> mempty
-  Filter.OfRelatedPlayer _ -> mempty
-  Filter.IsPlayer _relation -> mempty
-  Filter.IsControllerOfBound slot -> slotNames asking slot
-  Filter.Controls _margin nested -> filterNames asking nested
-  Filter.CardsInGraveyardAtLeast _n -> mempty
-  Filter.OwnsBoundAtLeast _n slot nested -> slotNames asking slot <> filterNames asking nested
-  Filter.IsAttacking -> mempty
-  Filter.IsAttackingPlayer _relation -> mempty
-  Filter.IsAttackingPlaneswalker _relation -> mempty
-  Filter.IsAttackingBattle _relation -> mempty
-  Filter.DeclaredAttackedThisCombat -> mempty
-  Filter.IsBlocking -> mempty
-  Filter.HasBlockStatus _ -> mempty
-  Filter.DeclaredAttackerThisCombat -> mempty
-  Filter.DeclaredBlockerThisCombat -> mempty
   Filter.DeclaredThisTurn role -> keyed asking <> history asking (case role of BlockRole.Attacker -> HistoryRead.Attacks; BlockRole.Blocker -> HistoryRead.Blockers)
   Filter.CouldAttackThisTurn -> keyed asking
   Filter.LeftLibraryThisTurn how -> keyed asking <> case how of LibraryDeparture.Drawn -> mempty; LibraryDeparture.LastDrawn -> mempty; LibraryDeparture.Milled -> history asking HistoryRead.Mills
@@ -674,51 +627,21 @@ filterNames asking criterion = case criterion of
   Filter.DealtDamageThisTurn -> keyed asking <> history asking HistoryRead.Damage
   Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
-  Filter.ControlledSinceTurnBegan -> mempty
-  Filter.AttachedTo nested -> filterNames asking nested
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested
-  Filter.HasAttached nested -> filterNames asking nested
-  Filter.IsAttachedTo anchor -> anchorNames asking anchor
-  Filter.IsEvaluated -> mempty
-  Filter.IsHostOfSource -> mempty
   Filter.EnteredWithSource -> keyed asking
   Filter.CounterLinkedToSource _moved -> keyed asking <> counterLinks asking
   Filter.AttachedNoLaterThanSource -> contextNames asking
   Filter.CanHostSubject -> contextNames asking
   Filter.CanAttachToSubject -> contextNames asking
-  Filter.HasEntryHost -> mempty
   Filter.HostOfSubjectHasCardType _cardType -> contextNames asking
-  Filter.IsToken -> mempty
-  Filter.IsCommander -> mempty
-  Filter.IsActivatedAbility _ -> mempty
-  Filter.IsAbility -> mempty
-  Filter.IsEmblem -> mempty
-  Filter.FromSource nested -> filterNames asking nested
-  Filter.IsTapped -> mempty
-  Filter.IsFaceDown -> mempty
-  Filter.RepresentedByCard nested -> filterNames asking nested
-  Filter.IsExiledFaceDown -> mempty
-  Filter.Transformed -> mempty
-  Filter.IsRingBearer -> mempty
-  Filter.IsPaired -> mempty
-  Filter.IsPairedWithSource -> mempty
-  Filter.BlockPartnerOfSource _ -> mempty
-  Filter.HasDesignation _designation -> mempty
-  Filter.HasCounters _kind -> mempty
-  Filter.HasCountersOfAnyKind -> mempty
-  Filter.HasSticker _kind -> mempty
-  Filter.Stickered -> mempty
-  Filter.HasActivatedAbility _ -> mempty
-  Filter.IsInZone _zone -> mempty
-  Filter.WasCastFrom _zone -> mempty
-  Filter.TagWasSpent _tag -> mempty
-  Filter.Paid _keywordDesignator -> mempty
-  Filter.IsPrototyped -> mempty
-  Filter.IsPreparedSpell -> mempty
-  Filter.And nested -> foldMap (filterNames asking) nested
-  Filter.Or nested -> foldMap (filterNames asking) nested
-  Filter.Not nested -> filterNames asking nested
-  Filter.Unwritten nested -> filterNames asking nested
+  _ ->
+    Const.getConst $
+      Children.filterChildren
+        (Children.descending (Const.Const . filterNames asking))
+          { Children.slot = \_arity slot -> Const.Const (slotNames asking slot),
+            Children.object = \oid -> Const.Const (names asking (== oid))
+          }
+        criterion
 
 abilityAddsManaNames :: (Monoid r) => Asking r -> AbilityAddsMana.AbilityAddsMana -> r
 abilityAddsManaNames asking x = case x of
@@ -3414,13 +3337,3 @@ zoneScopeNames asking x = case x of
   ZoneScope.InSlot slotName -> slotNames asking slotName
   ZoneScope.ControllerOfBound slotName -> slotNames asking slotName
   ZoneScope.BoundPlayer _playerId -> mempty
-
--- The slot an Anchor names, or what its nested group names; the evaluated
--- object and the source name none.
-anchorNames :: (Monoid r) => Asking r -> Anchor.Anchor (Filter.Filter keyword) -> r
-anchorNames asking anchor = case anchor of
-  Anchor.Bound slot -> slotNames asking slot
-  Anchor.Evaluated -> mempty
-  Anchor.Source -> mempty
-  Anchor.AnyPermanent group -> filterNames asking group
-  Anchor.YourCommander -> mempty

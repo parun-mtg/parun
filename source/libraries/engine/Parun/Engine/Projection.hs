@@ -3952,6 +3952,7 @@ traitReads trait = case trait of
 -- attacking as a combat record (CR 109.3), and every writer of that record runs
 -- BETWEEN projections, so it is a fixed input to any single projection. What
 -- that costs is timing, not dependency.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every atom judged by someone reading it.
 filterReads :: Filter.Type.Filter Keyword.Type.Keyword -> Set Aspect
 filterReads f = case f of
   Filter.Type.HasCardType _ -> Set.singleton Types
@@ -4267,6 +4268,7 @@ filterReads f = case f of
 -- that effect did not land on, so `changesHere` asks only where it did land.
 -- Exhaustive, and over-approximating is the safe direction -- a True costs the
 -- board-wide re-ask, a wrong False loses a dependency.
+-- Exhaustive, not over Parun.Engine.Children: a classification, every atom judged by someone reading it.
 filterReadsPeers :: Filter.Type.Filter Keyword.Type.Keyword -> Bool
 filterReadsPeers f = case f of
   -- The atoms that read a peer view directly, off a field of the candidate's
