@@ -3304,6 +3304,7 @@ overComponent onFilter onCounters component = case component of
   CostComponent.RemoveLoyaltyFromThis _ -> component
   CostComponent.RemoveCountersFromThis _ -> component
   CostComponent.PutCountersOnThis _ -> component
+  CostComponent.PutCountersOnPayer _ -> component
   CostComponent.Blight _ -> component
   CostComponent.Forage -> component
   CostComponent.FlipCoin -> component

@@ -4102,6 +4102,7 @@ costComponentFilters component = case component of
   -- control", Retribution of the Ancients' "creatures you control".
   CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents _ _ f _) -> [f]
   CostComponent.PutCountersOnThis _ -> []
+  CostComponent.PutCountersOnPayer _ -> []
   CostComponent.Blight _ -> []
   CostComponent.Forage -> []
   CostComponent.FlipCoin -> []

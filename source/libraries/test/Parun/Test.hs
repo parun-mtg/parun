@@ -270,6 +270,7 @@ import qualified Parun.Codec.CounteringSpec
 import qualified Parun.Codec.CounteringTriggerSpec
 import qualified Parun.Codec.CountersAreSpec
 import qualified Parun.Codec.CountersFromPermanentsSpec
+import qualified Parun.Codec.CountersOnPayerSpec
 import qualified Parun.Codec.CountersOnThisSpec
 import qualified Parun.Codec.CountersPlacedSpec
 import qualified Parun.Codec.CraftSpec
@@ -1301,6 +1302,7 @@ spec s registry corpus = do
   Parun.Codec.CounterRSpec.spec s
   Parun.Codec.CountersAreSpec.spec s
   Parun.Codec.CountersFromPermanentsSpec.spec s
+  Parun.Codec.CountersOnPayerSpec.spec s
   Parun.Codec.CountersOnThisSpec.spec s
   Parun.Codec.CounterSpec.spec s
   Parun.Codec.CounterSpreadSpec.spec s

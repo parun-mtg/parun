@@ -60,6 +60,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
+import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.DamageKind as DamageKind
@@ -133,6 +134,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -798,6 +800,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Exile Spark from your hand: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Hand])
     Spec.assertEq s (Just (Text.pack "Pay {E}{E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Fixed 2)])
     Spec.assertEq s (Just (Text.pack "Pay X {E}: Draw a card.")) (costed [CostComponent.PayEnergy (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))])
+    Spec.assertEq s (Just (Text.pack "Get five poison counters: Draw a card.")) (costed [CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Poison 5)])
+    Spec.assertEq s (Just (Text.pack "Get an experience counter: Draw a card.")) (costed [CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Experience 1)])
     Spec.assertEq s (Just (Text.pack "Remove two wish counters from Spark: Draw a card.")) (costed [CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "wish"))) 2)])
     Spec.assertEq s (Just (Text.pack "Remove a -1/-1 counter from Spark: Draw a card.")) (costed [CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis CounterKind.MinusOneMinusOne 1)])
     Spec.assertEq s (Just (Text.pack "Remove a +1/+1 counter from a creature you control: Draw a card.")) (costed [removing (CostAmount.Fixed 1) CounterSpread.FromOne yours])

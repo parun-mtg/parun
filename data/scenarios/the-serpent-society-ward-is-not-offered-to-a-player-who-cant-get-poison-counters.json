@@ -1,0 +1,102 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Serpent Society",
+            "label": "serpent",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          },
+          {
+            "card": "Melira, Sylvok Outcast",
+            "label": "melira",
+            "ready": true
+          }
+        ],
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 2
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 118.3 / 101.2 The Serpent Society's ward is not offered to a player who can't get poison counters, and the spell is countered",
+  "note": "The paying scenario's board plus Melira under bob's control. An offered payment would be an unscheduled prompt and fail the run.",
+  "timeline": [
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$serpent"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $serpent",
+            "Shock"
+          ],
+          "of": "Stack"
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "PlayerCounters": {
+        "count": 2,
+        "kind": "Poison",
+        "player": "bob"
+      }
+    },
+    {
+      "Damage": {
+        "damage": 0,
+        "object": "$serpent"
+      }
+    },
+    {
+      "Count": {
+        "card": "Shock",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    }
+  ]
+}

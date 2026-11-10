@@ -18,6 +18,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
+import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
@@ -30,6 +31,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectCount as ObjectCount
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -216,6 +218,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "verse"))) 1))
       " {\"type\":\"PutCountersOnThis\",\"value\":{\"count\":1,\"kind\":{\"type\":\"Named\",\"value\":\"verse\"}}} "
+  -- The Serpent Society's ward: the payer gets the counters.
+  Spec.it s "PutCountersOnPayer" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.PutCountersOnPayer (CountersOnPayer.MkCountersOnPayer PlayerCounterKind.Poison 5))
+      " {\"type\":\"PutCountersOnPayer\",\"value\":{\"count\":5,\"kind\":\"Poison\"}} "
   -- CR 701.68a as a cost, CR 601.2f/602.1a/118.12's three positions for it.
   Spec.it s "Blight" $
     Common.assertCodec
