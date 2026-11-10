@@ -8,13 +8,12 @@ import qualified Parun.Types.DieRollR as DieRollR
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.EntryR as EntryR
-import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.InstructionR as InstructionR
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.ManaR as ManaR
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.TokenR as TokenR
@@ -185,12 +184,11 @@ data ReplacementEffect card ability effect
     -- Carries no pattern beyond CR 109.5's relation, InstructionR's reason --
     -- see Parun.Types.DieRollR.
     DieRollR DieRollR.DieRollR
-  | -- | The Unstable FAQ with CR 614.1a: "if a Rigger you control would assemble
-    -- a Contraption, it assembles two Contraptions instead" (Steamflogger Boss),
-    -- the Filter judging the permanent that assembles. No rewrite field: the
-    -- doubling is the one rewrite any card prints for the event (Scryfall
-    -- o:"would assemble", 2026-10-12, Steamflogger Boss alone).
-    AssembleR (Filter.Filter Keyword.Keyword)
+  | -- | CR 614.1a: an instruction a permanent carries out for its player,
+    -- judged by that permanent (Steamflogger Boss's "a Rigger you control would
+    -- assemble", Leader, Super-Genius's "a creature you control would connive")
+    -- -- ProposedEvent's WouldPerform with its ObjectId.
+    PerformerR PerformerR.PerformerR
   | -- | CR 104.3 / 614.1a: "if you would lose the game, instead" (Lich's
     -- Mirror).
     GameLossR (GameLossR.GameLossR effect)

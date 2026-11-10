@@ -218,6 +218,7 @@ import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
@@ -1701,9 +1702,9 @@ rewriteReplacementEffect pairs effect = case effect of
   -- CR 614.1a / 706.1: a DieRollR is one CR 109.5 relation and one nullary
   -- rewrite, so CR 612.1's text change has nothing to walk into.
   ReplacementEffect.DieRollR {} -> effect
-  -- The Unstable FAQ: an AssembleR's Filter names a subtype (Steamflogger Boss's
+  -- The Unstable FAQ: a PerformerR's Filter names a subtype (Steamflogger Boss's
   -- Rigger), which CR 612.1's text change reaches.
-  ReplacementEffect.AssembleR matching -> ReplacementEffect.AssembleR (Filter.rewrite pairs matching)
+  ReplacementEffect.PerformerR row -> ReplacementEffect.PerformerR row {PerformerR.performer = Filter.rewrite pairs (PerformerR.performer row)}
   -- Naked Singularity's ruling of 2004-10-04: a text change reaches the land
   -- type a ManaR's Filter names.
   ReplacementEffect.ManaR r -> ReplacementEffect.ManaR r {ManaR.matching = Filter.rewrite pairs (ManaR.matching r)}

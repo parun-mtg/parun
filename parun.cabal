@@ -1247,6 +1247,7 @@ library codec
     Parun.Codec.PendingSkipEffect
     Parun.Codec.PendingSkipEffectSpec
     Parun.Codec.PerCreature
+    Parun.Codec.PerformerR
     Parun.Codec.PermanentActed
     Parun.Codec.PermanentAction
     Parun.Codec.PermanentActionSpec
@@ -3242,6 +3243,7 @@ library types
     Parun.Types.PendingSkipEffect
     Parun.Types.PendingTrigger
     Parun.Types.PerCreature
+    Parun.Types.PerformerR
     Parun.Types.PermanentActed
     Parun.Types.PermanentAction
     Parun.Types.PermanentBecomesDesignated

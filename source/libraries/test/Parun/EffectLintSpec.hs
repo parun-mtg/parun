@@ -183,6 +183,7 @@ import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
@@ -644,7 +645,7 @@ idleTokenRowOffends replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -711,13 +712,13 @@ phasePatternOffends replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
 
--- CR 614.1a: an InstructionR pairing an instruction with a rewrite its funnel
--- cannot carry out. Parun.Types.InstructionR admits every pair, and these go
+-- CR 614.1a: an InstructionR or a PerformerR pairing an instruction with a
+-- rewrite its funnel cannot carry out. Both types admit every pair, and these go
 -- silently wrong:
 --
 -- - DrawInstead on anything but a scry. A flip has no road for "it does not
@@ -730,20 +731,21 @@ phasePatternOffends replacement = case replacement of
 -- - RollD20Instead on anything but a flip. Only Event.flipOneCoin reads a roll
 --   back as what it replaced; any other funnel would perform its instruction
 --   anyway.
+-- - DrawFirst on a flip, which is a WouldThrow and not the WouldPerform its
+--   arm reads.
+-- - A PerformerR naming an instruction no permanent carries out, which no
+--   event ever reaches: only an assembly and a connive name their performer.
 --
--- Every printed row is Multiply 2, AddMore 1, Eligeth's DrawInstead on a scry or
--- Pokey, the Scallywagg's RollD20Instead on a flip.
+-- Every printed row is Multiply 2, AddMore 1, Eligeth's DrawInstead on a scry,
+-- Pokey, the Scallywagg's RollD20Instead on a flip or Leader, Super-Genius's
+-- DrawFirst on a connive.
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 instructionRowOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 instructionRowOffends replacement = case replacement of
-  ReplacementEffect.InstructionR row -> case InstructionR.rewrite row of
-    InstructionRewrite.DrawInstead -> InstructionR.instruction row /= PlayerInstruction.Scry
-    InstructionRewrite.RollD20Instead -> InstructionR.instruction row /= PlayerInstruction.FlipCoin
-    InstructionRewrite.Scaled scaling -> case scaling of
-      Scaling.Multiply m -> m == 0
-      Scaling.AddMore _ -> False
-      Scaling.Subtract _ -> True
-      Scaling.Halve -> True
+  ReplacementEffect.InstructionR row -> rewriteOffends (InstructionR.instruction row) (InstructionR.rewrite row)
+  ReplacementEffect.PerformerR row ->
+    List.notElem (PerformerR.instruction row) [PlayerInstruction.Assemble, PlayerInstruction.Connive]
+      || rewriteOffends (PerformerR.instruction row) (PerformerR.rewrite row)
   ReplacementEffect.PhaseR _ -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
@@ -759,14 +761,24 @@ instructionRowOffends replacement = case replacement of
   ReplacementEffect.DrawR {} -> False
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
+  where
+    rewriteOffends instruction rewrite = case rewrite of
+      InstructionRewrite.DrawInstead -> instruction /= PlayerInstruction.Scry
+      InstructionRewrite.RollD20Instead -> instruction /= PlayerInstruction.FlipCoin
+      InstructionRewrite.DrawFirst -> instruction == PlayerInstruction.FlipCoin
+      InstructionRewrite.Scaled scaling -> case scaling of
+        Scaling.Multiply m -> m == 0
+        Scaling.AddMore _ -> False
+        Scaling.Subtract _ -> True
+        Scaling.Halve -> True
 
 isInstructionR :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 isInstructionR replacement = case replacement of
   ReplacementEffect.InstructionR _ -> True
+  ReplacementEffect.PerformerR _ -> True
   _ -> False
 
 -- Every replacement shape the codec accepts and no card may author, for
@@ -833,7 +845,7 @@ engineOnlyArmOffends replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -954,7 +966,7 @@ turnUpRequiringOffends replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -1006,7 +1018,7 @@ riderWithoutPreventionOffends replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -1061,7 +1073,7 @@ shufflingOutsideLibraryOffends replacement = case replacement of
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
   ReplacementEffect.DieRollR {} -> False
-  ReplacementEffect.AssembleR {} -> False
+  ReplacementEffect.PerformerR {} -> False
   ReplacementEffect.ManaR {} -> False
   ReplacementEffect.GameLossR {} -> False
   ReplacementEffect.PlaneswalkR {} -> False
@@ -3306,7 +3318,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (any instructionRowOffends . cardReplacementEffects) . Printing.card) ps
     -- Guards against a vacuous sweep: these cards printing an InstructionR are
     -- all swept.
-    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Pokey, the Scallywagg", "Tekuthal, Inquiry Dominus", "The Valeyard"])) []
+    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard"])) []
     Spec.assertEqWith s "every instruction row is one its funnel carries out" (fmap (S.nameOf . Printing.card) offenders) []
   -- The rejecting direction, against Eligeth's and Krark's Thumb's real rows with
   -- one field changed, never a card file -- Eon Hub's posture below.

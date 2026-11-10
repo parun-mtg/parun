@@ -1816,7 +1816,7 @@ referentsOfReplacement re = case re of
   ReplacementEffect.DrawCountR _ -> []
   ReplacementEffect.InstructionR _ -> []
   ReplacementEffect.DieRollR _ -> []
-  ReplacementEffect.AssembleR _ -> []
+  ReplacementEffect.PerformerR _ -> []
   ReplacementEffect.ManaR _ -> []
   ReplacementEffect.GameLossR _ -> []
   ReplacementEffect.PlaneswalkR _ -> []
@@ -4648,9 +4648,15 @@ exploreOne settle resolving oid = do
 -- double-faced card in a graveyard has only its front face's characteristics
 -- (CR 712.6a).
 conniveOne :: Game () -> Natural -> ObjectId -> Game ()
-conniveOne settle n oid = Monad.when (n > 0) $ do
+conniveOne settle proposed oid = Monad.when (proposed > 0) $ do
   gs <- State.get
-  Monad.forM_ (Projection.controllerWithLastKnown oid gs) $ \pid -> do
+  -- CR 614.1a: the connive is one replaceable instruction, settled before the
+  -- draw inside it (CR 616.1g); Leader, Super-Genius draws first, then leaves
+  -- it standing. The scenario
+  -- leader-super-genius-draws-before-a-creature-you-control-connives proves it.
+  settled <- Monad.forM (Projection.controllerWithLastKnown oid gs) $ \controller ->
+    Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Connive (Just oid) controller proposed)
+  Monad.forM_ (Monad.join settled >>= Replacement.asPerformed PlayerInstruction.Connive) $ \(pid, n) -> Monad.when (n > 0) $ do
     -- CR 121.2a: the N-card draw is one replaceable instruction, settled before
     -- any of CR 121.2's individual draws -- Effect.Draw's arm, line for line,
     -- `settle` included (CR 614.11a).
