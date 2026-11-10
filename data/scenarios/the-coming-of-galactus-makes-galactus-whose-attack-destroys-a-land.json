@@ -1,48 +1,320 @@
 {
-  "description": "CR 715.2b, 715.3c, 715.4, 111.4, 508.1m: The Coming of Galactus' chapter IV makes Galactus, a legendary 16/16 black Elder Alien token with flying and trample whose attack trigger destroys target land, and the Saga is then sacrificed",
-  "note": "The Saga starts with three lore counters, so turn 1's precombat main adds the fourth. Bob's Sol Ring is refused as the attack trigger's target (not a land); carol's Forest is destroyed while bob's Forest stays. Galactus attacks bob, unblocked: 20 - 16 = 4.",
   "board": {
     "active": "alice",
-    "step": "Upkeep",
     "seats": [
       {
-        "name": "alice",
-        "battlefield": [{ "card": "The Coming of Galactus", "label": "saga", "counters": [{ "key": { "type": "Lore" }, "value": 3 }] }],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
-      },
-      {
-        "name": "bob",
         "battlefield": [
-          { "card": "Sol Ring", "label": "b-ring" },
-          { "card": "Forest", "label": "b-forest" }
+          {
+            "card": "The Coming of Galactus",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 3
+              }
+            ],
+            "label": "saga"
+          }
         ],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
       },
       {
-        "name": "carol",
-        "battlefield": [{ "card": "Forest", "label": "c-forest" }],
-        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+        "battlefield": [
+          {
+            "card": "Sol Ring",
+            "label": "b-ring"
+          },
+          {
+            "card": "Forest",
+            "label": "b-forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "c-forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "Upkeep"
   },
+  "description": "CR 715.2b, 715.3c, 715.4, 111.4, 508.1m: The Coming of Galactus' chapter IV makes Galactus, a legendary 16/16 black Elder Alien token with flying and trample whose attack trigger destroys target land, and the Saga is then sacrificed",
+  "note": "The Saga starts with three lore counters, so turn 1's precombat main adds the fourth. Bob's Sol Ring is refused as the attack trigger's target (not a land); carol's Forest is destroyed while bob's Forest stays. Galactus attacks bob, unblocked: 20 - 16 = 4.",
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Galactus", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "The Coming of Galactus", "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Galactus", "power": 16, "toughness": 16 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Supertypes", "object": "Galactus", "is": ["Legendary"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Colors", "object": "Galactus", "is": ["Black"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "Galactus", "subtypes": ["Elder", "Alien"] } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "Galactus", "keyword": { "type": "Flying" }, "count": 1 } } },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "Galactus", "keyword": { "type": "Trample" }, "count": 1 } } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["Galactus"] } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "Answer": { "prompt": "ChooseAttackTarget", "with": ["Player", "bob"] } } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$b-ring"] } } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "target": ["$c-forest"] } } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Graveyard", "card": "Forest", "count": 1 } } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Forest", "count": 1 } } },
-    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Sol Ring", "count": 1 } } },
-    { "turn": 4, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 4 } } }
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Galactus",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "The Coming of Galactus",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Galactus",
+          "power": 16,
+          "toughness": 16
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Legendary"
+          ],
+          "object": "Galactus",
+          "of": "Supertypes"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Black"
+          ],
+          "object": "Galactus",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Galactus",
+          "subtypes": [
+            "Elder",
+            "Alien"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "Galactus"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "Galactus"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "Galactus"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttackTarget",
+          "with": [
+            "Player",
+            "bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$b-ring"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$c-forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 4,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 4
+    }
   ]
 }

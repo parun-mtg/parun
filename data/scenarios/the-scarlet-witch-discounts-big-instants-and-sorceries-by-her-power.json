@@ -1,0 +1,39 @@
+{
+  "description": "CR 601.2f, 118.7a, 202.3, 208.1: The Scarlet Witch reduces the generic cost of her controller's instant and sorcery spells with mana value 4 or greater by her current power, and leaves a mana value 3 spell alone",
+  "note": "Burn Bright (mana value 3) is not reduced while the Witch's power is 2, so it takes all three red mana in alice's pool; it then makes her 4/3, and Lava Axe ({4}{R}, mana value 5) costs a single Mountain, which only a reduction of 4 allows.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "RRR",
+        "battlefield": [
+          { "card": "The Scarlet Witch", "label": "witch" },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" }
+        ],
+        "hand": [
+          { "card": "Burn Bright", "label": "bright" },
+          { "card": "Lava Axe", "label": "axe" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$witch", "power": 2, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bright", "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$witch", "power": 4, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$axe", "targets": ["$bob"], "mana": ["$m1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$m2", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 15 } } }
+  ]
+}

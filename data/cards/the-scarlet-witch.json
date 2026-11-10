@@ -1,0 +1,48 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        { "type": "Generic", "value": 2 },
+        { "type": "OfType", "value": { "type": "Colored", "value": "Red" } }
+      ],
+      "name": "The Scarlet Witch",
+      "oracleText": "Instant and sorcery spells you cast with mana value 4 or greater cost {X} less to cast, where X is The Scarlet Witch's power.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": { "type": "Reduce", "value": { "amount": [{ "type": "Generic", "value": 1 }] } },
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Or",
+                    "value": [
+                      { "type": "HasCardType", "value": "Instant" },
+                      { "type": "HasCardType", "value": "Sorcery" }
+                    ]
+                  },
+                  {
+                    "type": "Measures",
+                    "value": { "comparison": "AtLeast", "measure": "ManaValue", "operand": { "type": "Literal", "value": 4 } }
+                  }
+                ]
+              },
+              "perEach": { "type": "Measure", "value": "Power" },
+              "subject": { "type": "Spells" }
+            }
+          },
+          "scope": { "type": "You" }
+        }
+      ],
+      "power": { "type": "Literal", "value": 2 },
+      "toughness": { "type": "Literal", "value": 3 },
+      "typeLine": {
+        "subtypes": ["Mutant", "Warlock", "Hero"],
+        "supertypes": ["Legendary"],
+        "types": ["Creature"]
+      }
+    }
+  ]
+}
