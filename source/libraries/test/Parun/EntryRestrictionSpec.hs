@@ -54,6 +54,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -201,10 +202,10 @@ tokenCase s registry = do
     let before = board willow [worms]
     -- The trigger really is on the stack, so the empty answer below cannot be an
     -- ability that never resolved.
-    Spec.assertBool s (not (null (GameState.stack (settled before)))) "the Willow's enters trigger is on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn (settled before))))) "the Willow's enters trigger is on the stack"
     let after = run before
     Spec.assertEqWith s "CR 111.5 the token is not created" (arrivals before after) []
-    Spec.assertEqWith s "and the ability resolved off the stack" (GameState.stack after) []
+    Spec.assertEqWith s "and the ability resolved off the stack" (TurnRegisters.stack (GameState.turn after)) []
   -- THE DISCRIMINATOR against a gate that refuses a token whenever any entry
   -- prohibition is in force. Grafdigger's Cage names creature cards in graveyards
   -- and libraries; a token is a card in neither, so the same trigger mints the

@@ -56,6 +56,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -100,9 +101,12 @@ board mountain suddenShock lightningBolt prodigal =
           bobBolt = d,
           state =
             gs5
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn gs5)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
         }
 
@@ -272,9 +276,9 @@ stillAllowedSpec s registry =
           (_, withSwiftspear) = S.addPermanent swiftspear S.alice (state b)
           bare = after (subject b) (state b)
           armed = after (subject b) withSwiftspear
-      Spec.assertEqWith s "without the Swiftspear the spell is alone on the stack" (length (GameState.stack bare)) 1
-      Spec.assertEqWith s "with it, prowess is on the stack above the spell" (length (GameState.stack armed)) 2
-      Spec.assertBool s (fmap (\oid -> Game.isAbility oid armed) (take 1 (GameState.stack armed)) == [True]) "and the ability is the top object"
+      Spec.assertEqWith s "without the Swiftspear the spell is alone on the stack" (length (TurnRegisters.stack (GameState.turn bare))) 1
+      Spec.assertEqWith s "with it, prowess is on the stack above the spell" (length (TurnRegisters.stack (GameState.turn armed))) 2
+      Spec.assertBool s (fmap (\oid -> Game.isAbility oid armed) (take 1 (TurnRegisters.stack (GameState.turn armed))) == [True]) "and the ability is the top object"
 
 durationSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 durationSpec s registry =
@@ -290,7 +294,7 @@ durationSpec s registry =
       let b = board mountain suddenShock lightningBolt prodigal
           shocked = after (subject b) (state b)
           resolved = S.runPure S.identityAnswer shocked Stack.resolveTop
-      Spec.assertEqWith s "the stack is empty again" (GameState.stack resolved) []
+      Spec.assertEqWith s "the stack is empty again" (TurnRegisters.stack (GameState.turn resolved)) []
       Spec.assertEqWith s "with the Sudden Shock card in a graveyard -- CR 400.7 gives it a new id, so it is named rather than compared" (fmap (\oid -> S.soleFaceName oid resolved) (Game.zoneMembers Zone.Graveyard S.alice resolved)) [S.printingName suddenShock]
       Spec.assertBool s (elem (castOf (bobBolt b) lightningBolt) (Action.legalActions S.bob resolved)) "and bob may cast again"
 
@@ -333,9 +337,12 @@ shadowBoard s registry withShadow = do
         bobsBolt = boltId,
         shadowState =
           gs5
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn gs5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
       }
 
@@ -371,4 +378,4 @@ grantedFromOutsideSpec s registry =
           bySeat = castRecall (seat b) b
       Spec.assertBool s (elem (castOf (bobsBolt b) boltPrinting) (Action.legalActions S.bob byIsland)) "control: paid off the Island, bob's Bolt is still offered"
       Spec.assertEqWith s "paid off the Seat of the Synod, split second takes every cast of his away" (filter isCast (Action.legalActions S.bob bySeat)) []
-      Spec.assertEqWith s "and both boards put exactly one spell on the stack, so neither answer is about an empty stack" (length (GameState.stack byIsland), length (GameState.stack bySeat)) (1, 1)
+      Spec.assertEqWith s "and both boards put exactly one spell on the stack, so neither answer is about an empty stack" (length (TurnRegisters.stack (GameState.turn byIsland)), length (TurnRegisters.stack (GameState.turn bySeat))) (1, 1)

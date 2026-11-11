@@ -34,6 +34,7 @@ import qualified Parun.Engine.Sba as Sba
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -93,6 +94,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Zone as Zone
 
@@ -179,7 +181,7 @@ creaturePlaneswalkerSpec s registry =
           (_, withMarch) = S.addPermanent march S.alice board
           (coatingId, withCoating) = S.addPermanent coating S.alice withMarch
           (sorcererId, withSorcerer) = S.addPermanent sorcerer S.alice withCoating
-          ready = withSorcerer {GameState.priority = Just S.alice}
+          ready = withSorcerer {GameState.turn = (GameState.turn withSorcerer) {TurnRegisters.priority = Just S.alice}}
       case (Face.activatedAbilities (S.combinedFace coating), Face.activatedAbilities (S.combinedFace sorcerer)) of
         (coat : _, ping : _) -> do
           let coated = S.runPure (aimedAt jaceId) ready (do Activate.activateAbility S.alice coatingId coat; Stack.resolveTop)
@@ -568,8 +570,8 @@ lifelinkSpec s registry =
       basiliskCollar <- S.printingOf s registry "Basilisk Collar"
       let (srcId, g0) = S.addPermanent prodigalSorcerer S.alice (Setup.emptyGame S.bothPlayers)
           (collarId, g1) = S.addPermanent basiliskCollar S.alice g0
-          equipped = (S.attach collarId srcId g1) {GameState.priority = Just S.alice}
-          bare = g1 {GameState.priority = Just S.alice}
+          equipped = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.attach collarId srcId g1)
+          bare = g1 {GameState.turn = (GameState.turn g1) {TurnRegisters.priority = Just S.alice}}
           ping board ability = S.runPure pingsBob board (Activate.activateAbility S.alice srcId ability Monad.>> Stack.resolveTop)
       case Face.activatedAbilities (S.combinedFace prodigalSorcerer) of
         [] -> Spec.assertFailure s "Prodigal Sorcerer should declare one activated ability"
@@ -594,7 +596,7 @@ lifelinkSpec s registry =
       let (gs0, _, theirs) = S.combatBoardOf [] [childOfNight]
           withIslands = List.foldl' (\g _ -> snd (S.addPermanent island S.alice g)) gs0 [1 :: Int .. 4]
           (rayId, withRay) = S.addHandCard rayOfCommand S.alice withIslands
-          ready = withRay {GameState.priority = Just S.alice}
+          ready = withRay {GameState.turn = (GameState.turn withRay) {TurnRegisters.priority = Just S.alice}}
           stolen = S.runPure S.identityAnswer ready (S.cast S.alice rayId Monad.>> Stack.resolveTop)
           after = S.fightWith S.aggressiveAnswer stolen
       case theirs of
@@ -690,8 +692,8 @@ lastKnownRiderSpec s registry =
         ability : _ -> do
           let (srcId, g0) = S.addPermanent ghituFireEater S.alice (Setup.emptyGame S.bothPlayers)
               (collarId, g1) = S.addPermanent basiliskCollar S.alice g0
-              equipped = (S.attach collarId srcId g1) {GameState.priority = Just S.alice}
-              bare = g1 {GameState.priority = Just S.alice}
+              equipped = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.attach collarId srcId g1)
+              bare = g1 {GameState.turn = (GameState.turn g1) {TurnRegisters.priority = Just S.alice}}
               fire board = S.runPure pingsBob board (Activate.activateAbility S.alice srcId ability Monad.>> Stack.resolveTop)
               withCollar = fire equipped
               without = fire bare
@@ -801,7 +803,10 @@ lastKnownRiderSpec s registry =
               planted =
                 humbled
                   { GameState.lastKnown = Map.insert srcId snapshot (GameState.lastKnown humbled),
-                    GameState.priority = Just S.alice
+                    GameState.turn =
+                      (GameState.turn humbled)
+                        { TurnRegisters.priority = Just S.alice
+                        }
                   }
               after = S.runPure pingsBob planted (Activate.activateAbility S.alice srcId ability Monad.>> Stack.resolveTop)
           Spec.assertBool s (Map.member Keyword.Lifelink (PC.keywords (LastKnown.characteristics snapshot))) "the planted snapshot really says lifelink"
@@ -2076,48 +2081,51 @@ departedAttackerSpec s registry =
           (blocker, b2) = S.addPermanent piker S.bob b1
           fighting =
             b2
-              { GameState.combat =
-                  Combat.Type.MkCombat
-                    { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.blockers = Map.singleton attacker (Set.singleton blocker),
-                      Combat.Type.struckFirst = Nothing,
-                      -- CR 508.1k / 509.1g: each joined combat under its own
-                      -- controller, which is what a declaration would have
-                      -- recorded and what CR 506.4 compares against.
-                      -- CR 802.2a: the seat each attack names, which is what a
-                      -- declaration would have recorded.
-                      Combat.Type.attackedUnder = Map.singleton attacker S.bob,
-                      Combat.Type.attackedControlledBy = Map.empty,
-                      Combat.Type.joinedUnder = Map.fromList [(attacker, S.alice), (blocker, S.bob)],
-                      Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.declaredAttackedBy = Map.singleton S.alice (Set.singleton (AttackTarget.OfPlayer S.bob)),
-                      -- Empty, because this board stands after the declare attackers
-                      -- step ended: CR 500.1 scopes this half to the step, and
-                      -- Combat.clearAttackedThisStep empties it as one ends.
-                      Combat.Type.declaredAttackedThisStep = Set.empty,
-                      -- CR 508.1a / 509.1a: this board is hand-built rather
-                      -- than declared, so nothing was declared on it.
-                      Combat.Type.declaredAttackers = Set.empty,
-                      Combat.Type.declaredBlockers = Set.empty,
-                      -- CR 506.8b: the fixture stands after CR 509.1's
-                      -- declaration, which is what put the entry in
-                      -- Combat.blockers above.
-                      Combat.Type.blockersDeclared = True,
-                      Combat.Type.attackingNothing = Set.empty,
-                      Combat.Type.blockingNothing = Set.empty,
-                      Combat.Type.removedDefending = Map.empty,
-                      Combat.Type.defenders = [S.bob],
-                      Combat.Type.barred = [],
-                      Combat.Type.bands = [],
-                      Combat.Type.pileBlocks = Nothing,
-                      Combat.Type.blockedBy = Map.empty
+              { GameState.turn =
+                  (GameState.turn b2)
+                    { TurnRegisters.combat =
+                        Combat.Type.MkCombat
+                          { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.blockers = Map.singleton attacker (Set.singleton blocker),
+                            Combat.Type.struckFirst = Nothing,
+                            -- CR 508.1k / 509.1g: each joined combat under its own
+                            -- controller, which is what a declaration would have
+                            -- recorded and what CR 506.4 compares against.
+                            -- CR 802.2a: the seat each attack names, which is what a
+                            -- declaration would have recorded.
+                            Combat.Type.attackedUnder = Map.singleton attacker S.bob,
+                            Combat.Type.attackedControlledBy = Map.empty,
+                            Combat.Type.joinedUnder = Map.fromList [(attacker, S.alice), (blocker, S.bob)],
+                            Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.declaredAttackedBy = Map.singleton S.alice (Set.singleton (AttackTarget.OfPlayer S.bob)),
+                            -- Empty, because this board stands after the declare attackers
+                            -- step ended: CR 500.1 scopes this half to the step, and
+                            -- Combat.clearAttackedThisStep empties it as one ends.
+                            Combat.Type.declaredAttackedThisStep = Set.empty,
+                            -- CR 508.1a / 509.1a: this board is hand-built rather
+                            -- than declared, so nothing was declared on it.
+                            Combat.Type.declaredAttackers = Set.empty,
+                            Combat.Type.declaredBlockers = Set.empty,
+                            -- CR 506.8b: the fixture stands after CR 509.1's
+                            -- declaration, which is what put the entry in
+                            -- Combat.blockers above.
+                            Combat.Type.blockersDeclared = True,
+                            Combat.Type.attackingNothing = Set.empty,
+                            Combat.Type.blockingNothing = Set.empty,
+                            Combat.Type.removedDefending = Map.empty,
+                            Combat.Type.defenders = [S.bob],
+                            Combat.Type.barred = [],
+                            Combat.Type.bands = [],
+                            Combat.Type.pileBlocks = Nothing,
+                            Combat.Type.blockedBy = Map.empty
+                          }
                     }
               }
           gone = S.departs Departure.Type.Conceded S.alice fighting
           (assignedAfter, _) = S.runPureWith S.identityAnswer gone (Damage.gatherCombatDamage (const True))
           (assignedBefore, _) = S.runPureWith S.identityAnswer fighting (Damage.gatherCombatDamage (const True))
-      Spec.assertBool s (Map.member attacker (Combat.Type.blockers (GameState.combat gone))) "CR 509.1h: the blockers key really is still there, so this is the live path"
+      Spec.assertBool s (Map.member attacker (Combat.Type.blockers (TurnRegisters.combat (GameState.turn gone)))) "CR 509.1h: the blockers key really is still there, so this is the live path"
       Spec.assertEqWith s "no assignment names the departed attacker" (filter (\ev -> DamageEvent.target ev == Recipient.ToCreature attacker) assignedAfter) []
       Spec.assertEqWith s "and with alice still in the game the blocker's hit is assigned -- the filter is what did it" (fmap DamageEvent.amount (filter (\ev -> DamageEvent.target ev == Recipient.ToCreature attacker) assignedBefore)) [2]
 
@@ -2133,36 +2141,39 @@ departedDefenderSpec s registry =
       let (attacker, board) = S.addPermanent piker S.alice S.threePlayerGame
           attacking =
             board
-              { GameState.combat =
-                  Combat.Type.MkCombat
-                    { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.blockers = Map.empty,
-                      Combat.Type.struckFirst = Nothing,
-                      Combat.Type.attackedUnder = Map.singleton attacker S.bob,
-                      Combat.Type.attackedControlledBy = Map.empty,
-                      Combat.Type.joinedUnder = Map.singleton attacker S.alice,
-                      Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.declaredAttackedBy = Map.singleton S.alice (Set.singleton (AttackTarget.OfPlayer S.bob)),
-                      -- Empty, because this board stands after the declare attackers
-                      -- step ended: CR 500.1 scopes this half to the step, and
-                      -- Combat.clearAttackedThisStep empties it as one ends.
-                      Combat.Type.declaredAttackedThisStep = Set.empty,
-                      -- CR 508.1a / 509.1a: this board is hand-built rather
-                      -- than declared, so nothing was declared on it.
-                      Combat.Type.declaredAttackers = Set.empty,
-                      Combat.Type.declaredBlockers = Set.empty,
-                      -- CR 506.8b: attackers are declared and blockers are not,
-                      -- which is the moment the comment above describes.
-                      Combat.Type.blockersDeclared = False,
-                      Combat.Type.attackingNothing = Set.empty,
-                      Combat.Type.blockingNothing = Set.empty,
-                      Combat.Type.removedDefending = Map.empty,
-                      Combat.Type.defenders = [S.bob],
-                      Combat.Type.barred = [],
-                      Combat.Type.bands = [],
-                      Combat.Type.pileBlocks = Nothing,
-                      Combat.Type.blockedBy = Map.empty
+              { GameState.turn =
+                  (GameState.turn board)
+                    { TurnRegisters.combat =
+                        Combat.Type.MkCombat
+                          { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.blockers = Map.empty,
+                            Combat.Type.struckFirst = Nothing,
+                            Combat.Type.attackedUnder = Map.singleton attacker S.bob,
+                            Combat.Type.attackedControlledBy = Map.empty,
+                            Combat.Type.joinedUnder = Map.singleton attacker S.alice,
+                            Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.declaredAttackedBy = Map.singleton S.alice (Set.singleton (AttackTarget.OfPlayer S.bob)),
+                            -- Empty, because this board stands after the declare attackers
+                            -- step ended: CR 500.1 scopes this half to the step, and
+                            -- Combat.clearAttackedThisStep empties it as one ends.
+                            Combat.Type.declaredAttackedThisStep = Set.empty,
+                            -- CR 508.1a / 509.1a: this board is hand-built rather
+                            -- than declared, so nothing was declared on it.
+                            Combat.Type.declaredAttackers = Set.empty,
+                            Combat.Type.declaredBlockers = Set.empty,
+                            -- CR 506.8b: attackers are declared and blockers are not,
+                            -- which is the moment the comment above describes.
+                            Combat.Type.blockersDeclared = False,
+                            Combat.Type.attackingNothing = Set.empty,
+                            Combat.Type.blockingNothing = Set.empty,
+                            Combat.Type.removedDefending = Map.empty,
+                            Combat.Type.defenders = [S.bob],
+                            Combat.Type.barred = [],
+                            Combat.Type.bands = [],
+                            Combat.Type.pileBlocks = Nothing,
+                            Combat.Type.blockedBy = Map.empty
+                          }
                     }
               }
           gone = S.departs Departure.Type.Conceded S.bob attacking
@@ -2500,7 +2511,7 @@ excessDamageSpec s registry = Spec.describe s "ExcessDamage" $ do
         jaceId = permanentNamed "Jace Beleren" board
         (_, withMarch) = S.addPermanent march S.alice board
         (coatingId, withCoating) = S.addPermanent coating S.alice withMarch
-        ready = (S.landsFor mountain S.alice 3 withCoating) {GameState.priority = Just S.alice}
+        ready = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.landsFor mountain S.alice 3 withCoating)
     case Face.activatedAbilities (S.combinedFace coating) of
       coat : _ -> do
         let coated = S.runPure (aimedAt jaceId) ready (do Activate.activateAbility S.alice coatingId coat; Stack.resolveTop)
@@ -2821,7 +2832,7 @@ dealtDamageThisTurnSpec s registry =
           let (sorcererId, gs1) = S.addPermanent sorcerer S.alice (S.landsInPlay island 1)
               (hurtId, gs2) = S.addPermanent hillGiant S.bob gs1
               (wholeId, gs3) = S.addPermanent hillGiant S.bob gs2
-              ready = gs3 {GameState.priority = Just S.alice}
+              ready = gs3 {GameState.turn = (GameState.turn gs3) {TurnRegisters.priority = Just S.alice}}
               pinged = S.runPure (aimedAt hurtId) ready (do Activate.activateAbility S.alice sorcererId ping; Stack.resolveTop)
               board = S.settleSba pinged
           Spec.assertEqWith
@@ -2851,7 +2862,7 @@ dealtDamageThisTurnSpec s registry =
         (ping : _, Just theSlot) -> do
           let (sorcererId, gs1) = S.addPermanent sorcerer S.alice (S.landsInPlay island 1)
               (hurtId, gs2) = S.addPermanent hillGiant S.bob gs1
-              ready = gs2 {GameState.priority = Just S.alice}
+              ready = gs2 {GameState.turn = (GameState.turn gs2) {TurnRegisters.priority = Just S.alice}}
               board = S.settleSba (S.runPure (aimedAt hurtId) ready (do Activate.activateAbility S.alice sorcererId ping; Stack.resolveTop))
               nextTurn = Engine.beginTurnOf S.bob board
           Spec.assertEqWith s "legal while the damage is this turn's" (Set.toList (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource theSlot board)) [Recipient.ToCreature hurtId]
@@ -2883,7 +2894,7 @@ dealtDamageThisTurnSpec s registry =
               -- CR 121.4: the draw clause needs a card to take, an empty library
               -- losing alice the game at the next state-based check instead.
               (_, stocked) = S.addLibraryCard island S.alice withDrop
-              ready = stocked {GameState.priority = Just S.alice}
+              ready = stocked {GameState.turn = (GameState.turn stocked) {TurnRegisters.priority = Just S.alice}}
               board = S.settleSba (S.runPure (aimedAtPlayer S.bob) ready (do Activate.activateAbility S.alice sorcererId ping; Stack.resolveTop))
               resolved = S.settleSba (S.runPure (aimedAtPlayer S.bob) board (do S.cast S.alice dropId; Stack.resolveTop))
           Spec.assertEqWith
@@ -2924,7 +2935,7 @@ dealtDamageToThisTurnSpec s registry =
               (second, gs2) = S.addPermanent sorcerer S.alice gs1
               (elsewhere, gs3) = S.addPermanent sorcerer S.alice gs2
               (hagId, gs4) = S.addPermanent brineHag S.bob gs3
-              ready = gs4 {GameState.priority = Just S.alice}
+              ready = gs4 {GameState.turn = (GameState.turn gs4) {TurnRegisters.priority = Just S.alice}}
               pingBy who = do
                 Activate.activateAbility S.alice who ping
                 Stack.resolveTop
@@ -2938,7 +2949,7 @@ dealtDamageToThisTurnSpec s registry =
           -- mutation of the atom.
           Spec.assertEqWith s "the third ping hit bob" (S.lifeOf S.bob pinged) (Just 19)
           Spec.assertBool s (not (inPlay hagId settled)) "CR 704.5g: two damage killed the 2/2 Hag"
-          Spec.assertEqWith s "CR 603.3: and its trigger was put on the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "CR 603.3: and its trigger was put on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         _ -> Spec.assertFailure s "Prodigal Sorcerer should print an activated ability"
 
     -- THREE seats, for the Needle Drop case's reason: bob's first Sorcerer pings
@@ -2957,14 +2968,14 @@ dealtDamageToThisTurnSpec s registry =
               (atGiant, gs3) = S.addPermanent sorcerer S.bob gs2
               (giant, gs4) = S.addPermanent hillGiant S.alice gs3
               (withSpell, spellId) = S.handOne retaliate gs4
-              bobsTurn = withSpell {GameState.priority = Just S.bob}
+              bobsTurn = withSpell {GameState.turn = (GameState.turn withSpell) {TurnRegisters.priority = Just S.bob}}
               pingBy who = do
                 Activate.activateAbility S.bob who ping
                 Stack.resolveTop
               afterAlice = S.runPure (aimedAtPlayer S.alice) bobsTurn (pingBy atAlice)
               afterCarol = S.runPure (aimedAtPlayer S.carol) afterAlice (pingBy atCarol)
               afterGiant = S.runPure (aimedAt giant) afterCarol (pingBy atGiant)
-              ready = (S.settleSba afterGiant) {GameState.priority = Just S.alice}
+              ready = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.settleSba afterGiant)
               resolved = S.settleSba (S.runPure S.identityAnswer ready (do S.cast S.alice spellId; Stack.resolveTop))
           Spec.assertEqWith
             s

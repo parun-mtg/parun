@@ -20,6 +20,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnRole as TurnRole
 
 -- CR 506.2 / CR 802.2: the players defending the combat in progress, in APNAP
@@ -40,7 +41,7 @@ import qualified Parun.Types.TurnRole as TurnRole
 -- one specific one, resolved per attacking creature from what that creature is
 -- attacking (playerOf below), never the whole group.
 defendingPlayers :: GameState -> [PlayerId]
-defendingPlayers = Combat.defenders . GameState.combat
+defendingPlayers = Combat.defenders . (TurnRegisters.combat . GameState.turn)
 
 -- CR 802.2: EVERY defending player, the ones CR 811.4 bars attacks on
 -- (Parun.Types.Combat's barred) included. defendingPlayers above is the
@@ -140,7 +141,7 @@ playerOf controllerOf target gs = case target of
 playerOfAttacker :: (ObjectId -> GameState -> Maybe PlayerId) -> ObjectId -> GameState -> Maybe PlayerId
 playerOfAttacker controllerOf attacker gs =
   (\target -> defenderOfAttack controllerOf attacker target gs)
-    =<< Map.lookup attacker (Combat.attackers (GameState.combat gs))
+    =<< Map.lookup attacker (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 508.5 whole: playerOfAttacker while the creature is attacking, and once it
 -- has been removed from combat, the player it was attacking before that
@@ -151,7 +152,7 @@ playerOfAttacker controllerOf attacker gs =
 defendingPlayerOf :: (ObjectId -> GameState -> Maybe PlayerId) -> ObjectId -> GameState -> Maybe PlayerId
 defendingPlayerOf controllerOf attacker gs =
   playerOfAttacker controllerOf attacker gs
-    Applicative.<|> Map.lookup attacker (Combat.removedDefending (GameState.combat gs))
+    Applicative.<|> Map.lookup attacker (Combat.removedDefending (TurnRegisters.combat (GameState.turn gs)))
 
 -- playerOfAttacker with the target already in hand, for a caller walking
 -- Combat.attackers' own entries (Parun.Engine.Damage).
@@ -159,5 +160,5 @@ defenderOfAttack :: (ObjectId -> GameState -> Maybe PlayerId) -> ObjectId -> Att
 defenderOfAttack controllerOf attacker target gs = case target of
   AttackTarget.OfPlayer {} -> playerOf controllerOf target gs
   _ ->
-    Map.lookup attacker (Combat.attackedUnder (GameState.combat gs))
+    Map.lookup attacker (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs)))
       Applicative.<|> playerOf controllerOf target gs

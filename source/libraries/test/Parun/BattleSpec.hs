@@ -90,6 +90,7 @@ import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhichCounters as WhichCounters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -240,7 +241,7 @@ attackSpec s registry = Spec.describe s "Attacking" $ do
     Spec.assertEqWith
       s
       "CR 508.1k: attacking the battle it was declared against"
-      (Map.lookup wraith (Combat.Type.attackers (GameState.combat after)))
+      (Map.lookup wraith (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))))
       (Just (AttackTarget.OfBattle battle))
   Spec.it s "CR 702.14c and the same toll board with the Swamp moved to carol forbids the block" $ do
     -- The other half, differing in which of bob and carol holds the Swamp:
@@ -259,7 +260,7 @@ attackSpec s registry = Spec.describe s "Attacking" $ do
     case mine of
       [arrival] -> do
         let after = S.runPure (attackTheBattle battle) gs (Combat.putOntoBattlefieldAttacking Combat.Any arrival)
-            combat = GameState.combat after
+            combat = TurnRegisters.combat (GameState.turn after)
         Spec.assertEqWith s "it is attacking the Siege" (Map.lookup arrival (Combat.Type.attackers combat)) (Just (AttackTarget.OfBattle battle))
         -- The two records hold DIFFERENT seats, which is the whole reason there
         -- are two: CR 310.9d makes the defending player the protector, and rule
@@ -290,7 +291,7 @@ damageSpec s registry = Spec.describe s "Damage" $ do
         dealt = S.runPure returning attacked (Monad.void (Damage.dealCombatDamage (pure ())) >> Engine.settleForPriority)
         resolved = S.runPure returning dealt Stack.resolveTop
     Spec.assertEqWith s "CR 603.2 the Hill Giant returned to the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.alice resolved) 1
-    Spec.assertEqWith s "the Archpriest attacked the battle" (fmap (\a -> Map.lookup a (Combat.Type.attackers (GameState.combat attacked))) mine) [Just (AttackTarget.OfBattle battle)]
+    Spec.assertEqWith s "the Archpriest attacked the battle" (fmap (\a -> Map.lookup a (Combat.Type.attackers (TurnRegisters.combat (GameState.turn attacked)))) mine) [Just (AttackTarget.OfBattle battle)]
     Spec.assertEqWith s "CR 310.6 and dealt it 4 of its 5 defense" (S.counterOf CounterKind.Defense battle dealt) 1
 
 -- CR 310.12b, CR 310.7 / 704.5v and CR 310.8 / 704.5w: what happens when the last
@@ -416,13 +417,13 @@ sacrificedMidToll s registry theirs hers = do
     ([wraith, ironworks, coatingId, mountain], blocker : _, coat : _) -> do
       let (aura, withAura) = S.addPermanent rays S.alice gs
           board = S.attach aura wraith (bothDefending withAura)
-          atBeginning = board {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat, GameState.priority = Just S.alice}
+          atBeginning = board {GameState.turn = (GameState.turn board) {TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat, TurnRegisters.priority = Just S.alice}}
           coatTheSiege :: Prompt.Prompt r -> r
           coatTheSiege p = case p of
             Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, legal) -> Set.filter ((== Just battle) . Recipient.objectOf) legal) asked
             _ -> S.identityAnswer p
           coated = S.runPure coatTheSiege atBeginning (Activate.activateAbility S.alice coatingId coat >> Stack.resolveTop)
-          declaring = coated {GameState.phase = Phase.Combat CombatStep.DeclareAttackers}
+          declaring = coated {GameState.turn = (GameState.turn coated) {TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers}}
           -- CR 605.3a's window pinned by identity: the Mountain while it is
           -- offered, then the Ironworks, whose sacrifice takes the Siege.
           pay :: Prompt.Prompt r -> r
@@ -447,7 +448,7 @@ declaredDefender attacker gs =
 -- CR 802.2: both of alice's opponents defending, bob ahead of carol in CR 101.4's
 -- APNAP order, on a board battleCombat left with one designated seat.
 bothDefending :: GameState.GameState -> GameState.GameState
-bothDefending gs = gs {GameState.combat = (GameState.combat gs) {Combat.Type.defenders = [S.bob, S.carol]}}
+bothDefending gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs)) {Combat.Type.defenders = [S.bob, S.carol]}}}
 
 -- battleCombat by card NAME, for the cases whose printings differ per seat.
 battleCombatOf ::
@@ -501,9 +502,12 @@ battleCombat s registry protector defender mine theirs hers = do
       (theirsToo, gs3) = addAll S.carol hers gs2
   pure
     ( gs3
-        { GameState.activePlayer = S.alice,
-          GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-          GameState.combat = (GameState.combat gs3) {Combat.Type.defenders = [defender]}
+        { GameState.turn =
+            (GameState.turn gs3)
+              { TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs3)) {Combat.Type.defenders = [defender]}
+              }
         },
       battle,
       ours,
@@ -562,9 +566,12 @@ castInvasionThreeSeated s registry answer = do
       (spellId, handed) = S.addHandCard invasion S.alice stocked
       ready =
         handed
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn handed)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       cast = S.runPure answer ready (S.cast S.alice spellId)
       after = S.runPure answer cast Stack.resolveTop

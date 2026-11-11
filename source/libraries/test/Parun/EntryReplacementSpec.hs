@@ -29,6 +29,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import Parun.PreventionSpec (answersFor, castAndResolve, counterBoard, countersOn, newestNamed, nextTurn, raceAnswer, theAbility, wasAskedToReplace)
 import qualified Parun.Registry as Registry
@@ -69,6 +70,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 
@@ -345,9 +347,12 @@ revealingEverything p = case p of
 readyForAlice :: GameState.GameState -> GameState.GameState
 readyForAlice gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = S.alice,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- alice holds one card and controls exactly the lands named, untapped, in her
@@ -615,12 +620,16 @@ brineBoard island savor brine piker =
       (brineId, g4) = S.addHandCard brine S.bob g3
       stock g pid = List.foldl' (\g5 _ -> snd (S.addLibraryCard piker pid g5)) g [1 .. (15 :: Int)]
       stocked = List.foldl' stock g4 [S.alice, S.bob, S.carol]
-   in ( (S.tapObject carolPiker (S.tapObject alicePiker stocked))
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice,
-            GameState.turnNumber = 1
-          },
+   in ( Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.turnNumber = 1
+                }
+          )
+          (S.tapObject carolPiker (S.tapObject alicePiker stocked)),
         savorId,
         brineId,
         alicePiker,
@@ -683,7 +692,7 @@ assertBrineRun s answer gs alicePiker carolPiker aliceAfter left =
       Spec.assertEqWith
         s
         "the turns run alice (extra), bob, carol, alice, bob, carol, alice"
-        (fmap GameState.activePlayer [startExtra, startBob, startCarol, startAlice, startBobAgain, startCarolAgain, startLast])
+        (fmap (TurnRegisters.activePlayer . GameState.turn) [startExtra, startBob, startCarol, startAlice, startBobAgain, startCarolAgain, startLast])
         [S.alice, S.bob, S.carol, S.alice, S.bob, S.carol, S.alice]
       -- CR 500.11: the extra turn's untap step is skipped either way -- one of the
       -- two rows takes it, and WHICH one is exactly what is not observable yet.
@@ -749,7 +758,7 @@ brineElementalSpec s registry = Spec.describe s "BrineElemental" $ do
             Spec.assertEqWith
               s
               "and the extra turn is alice's second"
-              (GameState.turnNumber atExtra, GameState.activePlayer atExtra)
+              (TurnRegisters.turnNumber (GameState.turn atExtra), TurnRegisters.activePlayer (GameState.turn atExtra))
               (2, S.alice)
             Spec.assertEqWith s "whose beginning added Savor's own, for three" (length (GameState.replacements atExtra)) 3
           _ -> Spec.assertFailure s "the extra turn did not begin"
@@ -946,7 +955,7 @@ stuffyDollSpec s registry =
                   gone = settleAll (S.withEffect dollId minusTwo triggered)
                   after = resolveAll gone
               Spec.assertEqWith s "CR 608.2h carol was chosen, so carol loses 3" (lives after) (Just 20, Just 20, Just 17)
-              Spec.assertEqWith s "and the trigger was on the stack as the Doll left" (length (GameState.stack gone), Set.member dollId (GameState.battlefield gone)) (1, False)
+              Spec.assertEqWith s "and the trigger was on the stack as the Doll left" (length (TurnRegisters.stack (GameState.turn gone)), Set.member dollId (GameState.battlefield gone)) (1, False)
             _ -> Spec.assertFailure s "the Doll did not reach the battlefield"
         -- The STAMP, asserted independently of the payload, so a JSON typo in the
         -- trigger cannot hide behind a green read-back -- and the other way round.
@@ -1590,9 +1599,12 @@ magneticLockdownSpec s registry = Spec.describe s "Synthetic Magnetic Lockdown (
             (baubleId, g2) = S.addHandCard bauble S.alice g1
             ready =
               g2
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn g2)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             armed = castAndResolve S.identityAnswer ready lockdownId
         pure (armed, castAndResolve S.identityAnswer armed baubleId)
@@ -1733,9 +1745,12 @@ zameckGuildmageSpec s registry = Spec.describe s "Zameck Guildmage (CR 614.3)" $
             stocked = List.foldl' stock withBobs [1 .. (4 :: Int)]
             ready =
               stocked
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn stocked)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
         pure (theAbility guildmage, mageId, alicesPiker, bobsPiker, ready)
       -- Activate the first ability and resolve it, which is what installs the row.

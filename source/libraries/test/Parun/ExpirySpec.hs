@@ -37,6 +37,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -103,6 +104,7 @@ import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.While as While
 import qualified Parun.Types.Zone as Zone
@@ -159,9 +161,9 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
         armed = effectWith (Expiry.Type.AtTurnOf S.alice) gs0
         bobsTurn = S.runPure S.identityAnswer armed Engine.handoffTurn
         alicesTurn = S.runPure S.identityAnswer bobsTurn Engine.handoffTurn
-    Spec.assertEqWith s "alice is active when it is created" (GameState.activePlayer armed) S.alice
+    Spec.assertEqWith s "alice is active when it is created" (TurnRegisters.activePlayer (GameState.turn armed)) S.alice
     Spec.assertEqWith s "it survives the creating turn's handoff" (length (GameState.continuousEffects bobsTurn)) 1
-    Spec.assertEqWith s "bob is active" (GameState.activePlayer bobsTurn) S.bob
+    Spec.assertEqWith s "bob is active" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
     Spec.assertEqWith s "it ends as alice's next turn begins" (GameState.continuousEffects alicesTurn) []
   Spec.it s "CR 514.2 does not touch an AtTurnOf effect" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
@@ -174,13 +176,13 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
     Spec.assertEqWith s "bob's turn ends bob's effect" (GameState.continuousEffects bobsTurn) []
   Spec.it s "CR 611.2a dropAtTurnOf ends the NAMED player's AtTurnOf effects, whoever is active" $ do
     -- alice is the active player throughout; the sweep is told to fire for
-    -- BOB, and does. That divorce from GameState.activePlayer is the whole
+    -- BOB, and does. That divorce from TurnRegisters.activePlayer is the whole
     -- generalization -- it is what lets CR 800.4m fire at a seat whose turn
     -- never begins.
     let gs0 = S.threePlayerGame
         armed = effectWith (Expiry.Type.AtTurnOf S.alice) (effectWith (Expiry.Type.AtTurnOf S.bob) gs0)
         after = Expiry.dropAtTurnOf S.bob armed
-    Spec.assertEqWith s "alice is still the active player" (GameState.activePlayer after) S.alice
+    Spec.assertEqWith s "alice is still the active player" (TurnRegisters.activePlayer (GameState.turn after)) S.alice
     Spec.assertEqWith s "only alice's effect survives" (fmap ContinuousEffect.expiry (GameState.continuousEffects after)) [Expiry.Type.AtTurnOf S.alice]
   Spec.it s "CR 611.2a dropAtTurnOf touches no other expiry" $ do
     let gs0 = S.threePlayerGame
@@ -196,7 +198,7 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
         armed = effectWith (Expiry.Type.AtTurnOf S.bob) gone
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
     Spec.assertEqWith s "it survived bob's departure itself" (length (GameState.continuousEffects armed)) 1
-    Spec.assertEqWith s "carol takes the turn, not bob" (GameState.activePlayer after) S.carol
+    Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
     Spec.assertEqWith s "bob's effect ended at bob's seat" (GameState.continuousEffects after) []
   Spec.it s "CR 800.4m the walk sweeps only the seats it passes" $ do
     -- Same board. The walk goes bob's seat -> carol's seat and STOPS. Alice's
@@ -209,7 +211,7 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         armed = effectWith (Expiry.Type.AtTurnOf S.alice) (effectWith (Expiry.Type.AtTurnOf S.bob) gone)
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
-    Spec.assertEqWith s "carol takes the turn, not bob" (GameState.activePlayer after) S.carol
+    Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
     Spec.assertEqWith s "alice's survives, bob's does not" (fmap ContinuousEffect.expiry (GameState.continuousEffects after)) [Expiry.Type.AtTurnOf S.alice]
   Spec.it s "CR 800.4m the sweep reaches a seat the walk only passes through, not just the seat it lands next to" $ do
     -- alice, bob, carol; bob AND carol both departed, alice active. The walk
@@ -228,7 +230,7 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
             (S.departs Departure.Type.Conceded S.bob S.threePlayerGame)
         armed = effectWith (Expiry.Type.AtTurnOf S.carol) gone
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
-    Spec.assertEqWith s "alice takes the turn (wrapping past both departed seats)" (GameState.activePlayer after) S.alice
+    Spec.assertEqWith s "alice takes the turn (wrapping past both departed seats)" (TurnRegisters.activePlayer (GameState.turn after)) S.alice
     Spec.assertEqWith s "carol's effect ended at carol's seat, two hops past alice" (GameState.continuousEffects after) []
 
 -- One turn handoff, through the real Engine.handoffTurn -- the same idiom
@@ -249,16 +251,16 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 1)) gs0
         ownCleanup = Expiry.dropAtCleanup armed
         bobsTurn = Expiry.dropAtCleanup (handoff ownCleanup)
-    Spec.assertEqWith s "alice is active on turn 1, the turn it was created on" (GameState.activePlayer armed, GameState.turnNumber armed) (S.alice, 1)
+    Spec.assertEqWith s "alice is active on turn 1, the turn it was created on" (TurnRegisters.activePlayer (GameState.turn armed), TurnRegisters.turnNumber (GameState.turn armed)) (S.alice, 1)
     Spec.assertEqWith s "its own turn's cleanup leaves it" (length (GameState.continuousEffects ownCleanup)) 1
-    Spec.assertEqWith s "bob is active on turn 2" (GameState.activePlayer bobsTurn, GameState.turnNumber bobsTurn) (S.bob, 2)
+    Spec.assertEqWith s "bob is active on turn 2" (TurnRegisters.activePlayer (GameState.turn bobsTurn), TurnRegisters.turnNumber (GameState.turn bobsTurn)) (S.bob, 2)
     Spec.assertEqWith s "and bob's cleanup leaves it too" (length (GameState.continuousEffects bobsTurn)) 1
   Spec.it s "CR 611.2a it ends at the cleanup of the controller's next turn, not as that turn begins" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 1)) gs0
         alicesNext = handoff (handoff (Expiry.dropAtCleanup armed))
         ended = Expiry.dropAtCleanup alicesNext
-    Spec.assertEqWith s "alice is active again on turn 3" (GameState.activePlayer alicesNext, GameState.turnNumber alicesNext) (S.alice, 3)
+    Spec.assertEqWith s "alice is active again on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
     -- Where an AtTurnOf effect is already gone (handoffSpec above).
     Spec.assertEqWith s "it is still there as that turn begins" (length (GameState.continuousEffects alicesNext)) 1
     Spec.assertEqWith s "and gone once that turn's cleanup runs" (GameState.continuousEffects ended) []
@@ -271,15 +273,15 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 2)) gs0
         alicesNext = handoff (Expiry.dropAtCleanup armed)
         ended = Expiry.dropAtCleanup alicesNext
-    Spec.assertEqWith s "bob is active on turn 2, the turn it was created on" (GameState.activePlayer armed, GameState.turnNumber armed) (S.bob, 2)
+    Spec.assertEqWith s "bob is active on turn 2, the turn it was created on" (TurnRegisters.activePlayer (GameState.turn armed), TurnRegisters.turnNumber (GameState.turn armed)) (S.bob, 2)
     Spec.assertEqWith s "bob's cleanup leaves it" (length (GameState.continuousEffects (Expiry.dropAtCleanup armed))) 1
-    Spec.assertEqWith s "alice is active on turn 3" (GameState.activePlayer alicesNext, GameState.turnNumber alicesNext) (S.alice, 3)
+    Spec.assertEqWith s "alice is active on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
     Spec.assertEqWith s "and it ends at that turn's cleanup" (GameState.continuousEffects ended) []
   Spec.it s "CR 611.2a another player's cleanup never ends it, whatever the turn number" $ do
     let gs0 = S.threePlayerGame
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.bob 1)) gs0
         carolsTurn = handoff (handoff armed)
-    Spec.assertEqWith s "carol is active on turn 3, past bob's own turn 2" (GameState.activePlayer carolsTurn, GameState.turnNumber carolsTurn) (S.carol, 3)
+    Spec.assertEqWith s "carol is active on turn 3, past bob's own turn 2" (TurnRegisters.activePlayer (GameState.turn carolsTurn), TurnRegisters.turnNumber (GameState.turn carolsTurn)) (S.carol, 3)
     Spec.assertEqWith s "carol's cleanup is not bob's" (length (GameState.continuousEffects (Expiry.dropAtCleanup carolsTurn))) 1
   Spec.it s "CR 611.2a the turn handoff leaves it alone: it ends at that turn's END" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
@@ -294,7 +296,7 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.bob 1)) gone
         after = handoff armed
     Spec.assertEqWith s "it survived bob's departure itself" (length (GameState.continuousEffects armed)) 1
-    Spec.assertEqWith s "carol takes the turn, not bob" (GameState.activePlayer after) S.carol
+    Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
     Spec.assertEqWith s "bob's effect ended at bob's seat" (GameState.continuousEffects after) []
 
 -- CR 611.2a's WINDOW, the one arm that states a beginning as well as an end. It
@@ -313,13 +315,13 @@ windowSpec s = Spec.describe s "DuringTurnOf" $ do
         bobsTurn = handoff (Expiry.dropAtCleanup armed)
         carolsTurn = handoff (Expiry.dropAtCleanup bobsTurn)
         alicesNext = handoff (Expiry.dropAtCleanup carolsTurn)
-    Spec.assertEqWith s "alice is active on turn 1, the turn it was armed on" (GameState.activePlayer armed, GameState.turnNumber armed) (S.alice, 1)
+    Spec.assertEqWith s "alice is active on turn 1, the turn it was armed on" (TurnRegisters.activePlayer (GameState.turn armed), TurnRegisters.turnNumber (GameState.turn armed)) (S.alice, 1)
     Spec.assertBool s (not (Expiry.begun armed window)) "alice's own turn 1 is not the turn it names"
-    Spec.assertEqWith s "bob is active on turn 2" (GameState.activePlayer bobsTurn, GameState.turnNumber bobsTurn) (S.bob, 2)
+    Spec.assertEqWith s "bob is active on turn 2" (TurnRegisters.activePlayer (GameState.turn bobsTurn), TurnRegisters.turnNumber (GameState.turn bobsTurn)) (S.bob, 2)
     Spec.assertBool s (not (Expiry.begun bobsTurn window)) "nor is bob's"
-    Spec.assertEqWith s "carol is active on turn 3" (GameState.activePlayer carolsTurn, GameState.turnNumber carolsTurn) (S.carol, 3)
+    Spec.assertEqWith s "carol is active on turn 3" (TurnRegisters.activePlayer (GameState.turn carolsTurn), TurnRegisters.turnNumber (GameState.turn carolsTurn)) (S.carol, 3)
     Spec.assertBool s (not (Expiry.begun carolsTurn window)) "nor carol's"
-    Spec.assertEqWith s "alice is active again on turn 4" (GameState.activePlayer alicesNext, GameState.turnNumber alicesNext) (S.alice, 4)
+    Spec.assertEqWith s "alice is active again on turn 4" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 4)
     Spec.assertBool s (Expiry.begun alicesNext window) "and the window is open on alice's next turn"
     -- Which is the point of the arm: the row was there for all four turns and
     -- only the last one may read it.
@@ -330,7 +332,7 @@ windowSpec s = Spec.describe s "DuringTurnOf" $ do
         armed = effectWith window gs0
         alicesNext = handoff (handoff (Expiry.dropAtCleanup armed))
         ended = Expiry.dropAtCleanup alicesNext
-    Spec.assertEqWith s "alice is active again on turn 3" (GameState.activePlayer alicesNext, GameState.turnNumber alicesNext) (S.alice, 3)
+    Spec.assertEqWith s "alice is active again on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
     Spec.assertBool s (Expiry.begun alicesNext window) "the window is open while that turn runs"
     Spec.assertEqWith s "and the row is gone once its cleanup has run" (GameState.continuousEffects ended) []
   -- Where the turn handoff leaves an AtEndOfTurnOf row alone, it ends this one
@@ -342,13 +344,13 @@ windowSpec s = Spec.describe s "DuringTurnOf" $ do
         armed = effectWith window gone
         after = handoff armed
     Spec.assertEqWith s "it survived bob's departure itself" (length (GameState.continuousEffects armed)) 1
-    Spec.assertEqWith s "carol takes the turn, not bob" (GameState.activePlayer after) S.carol
+    Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
     Spec.assertEqWith s "and bob's window ended at bob's seat" (GameState.continuousEffects after) []
   Spec.it s "CR 611.2a a seat still in the game keeps their window as their turn begins" $ do
     let window = Expiry.Type.DuringTurnOf (AfterTurn.MkAfterTurn S.bob 1)
         armed = effectWith window S.threePlayerGame
         bobsTurn = handoff armed
-    Spec.assertEqWith s "bob is active" (GameState.activePlayer bobsTurn) S.bob
+    Spec.assertEqWith s "bob is active" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
     Spec.assertEqWith s "and the sweep that ends an AtTurnOf row keeps this one" (length (GameState.continuousEffects bobsTurn)) 1
     Spec.assertBool s (Expiry.begun bobsTurn window) "with its window now open"
 
@@ -554,7 +556,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
         onStack = masterThiefSettle entering
         lethal = S.settleSba (S.markDamage thief 2 onStack)
         after = masterThiefResolveAll lethal
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the trigger really was on the stack"
     Spec.assertEqWith s "Master Thief died before it resolved" (Game.lookupObject thief after) Nothing
     Spec.assertEqWith s "nothing was stored" (GameState.continuousEffects after) []
     Spec.assertEqWith s "control never changed" (Projection.controllerOf myr after) (Just S.bob)
@@ -581,7 +583,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
         onStack = masterThiefSettle entering
         taken = S.giveControl thief S.bob onStack
         after = masterThiefResolveAll taken
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the trigger really was on the stack"
     Spec.assertEqWith s "Master Thief is still on the battlefield, under bob" (Projection.controllerOf thief taken) (Just S.bob)
     Spec.assertBool s (Maybe.isJust (Game.lookupObject thief after)) "Master Thief is still on the battlefield after resolution"
     Spec.assertEqWith s "control never changed" (Projection.controllerOf myr after) (Just S.bob)
@@ -717,7 +719,7 @@ monarchSpec s registry = Spec.describe s "Monarch" $ do
         (jailer, gs2) = S.addPermanent palaceJailer S.alice gs1
         entered = ZoneChange.MkZoneChange jailer jailer Zone.Stack Zone.Battlefield
         gs3 = S.withEvents [GameEvent.Moved (Moved.moved entered (Projection.project jailer gs2))] gs2
-        afterEtb = monarchResolveAll (monarchSettle (gs3 {GameState.activePlayer = S.carol}))
+        afterEtb = monarchResolveAll (monarchSettle (gs3 {GameState.turn = (GameState.turn gs3) {TurnRegisters.activePlayer = S.carol}}))
         gone = S.departs Departure.Type.Conceded S.alice afterEtb
         settled = monarchSettle gone
     Spec.assertEqWith s "alice is the monarch on ETB" (GameState.monarch afterEtb) (Just S.alice)
@@ -842,7 +844,7 @@ hagUpkeep :: Phase.Phase
 hagUpkeep = Phase.Beginning BeginningStep.Upkeep
 
 hagBeginUpkeep :: GameState.GameState -> GameState.GameState
-hagBeginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan hagUpkeep S.alice)) (gs {GameState.phase = hagUpkeep, GameState.activePlayer = S.alice})
+hagBeginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan hagUpkeep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = hagUpkeep, TurnRegisters.activePlayer = S.alice}})
 
 hagSettle :: GameState.GameState -> GameState.GameState
 hagSettle gs = S.runPure S.identityAnswer gs Engine.settleForPriority
@@ -882,7 +884,7 @@ hagSpec s registry = Spec.describe s "HagOfInnerWeakness" $ do
         bobsTurn = handoff ended
         bobsTurnSwept = Expiry.dropAtCleanup bobsTurn
     Spec.assertEqWith s "survives its own turn's CR 514.2 cleanup sweep" (Projection.powerOf mammoth ended) (Just 1)
-    Spec.assertEqWith s "bob is active" (GameState.activePlayer bobsTurn) S.bob
+    Spec.assertEqWith s "bob is active" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
     Spec.assertEqWith s "power still 1 at the start of bob's turn" (Projection.powerOf mammoth bobsTurn) (Just 1)
     Spec.assertEqWith s "toughness still 2 at the start of bob's turn" (Projection.toughnessOf mammoth bobsTurn) (Just 2)
     Spec.assertEqWith s "power survives bob's own CR 514.2 cleanup sweep too" (Projection.powerOf mammoth bobsTurnSwept) (Just 1)
@@ -892,7 +894,7 @@ hagSpec s registry = Spec.describe s "HagOfInnerWeakness" $ do
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (mammoth, afterTrigger) = hagBoardWith hag warMammoth
         alicesTurn = handoff (handoff (Expiry.dropAtCleanup afterTrigger))
-    Spec.assertEqWith s "alice is active again" (GameState.activePlayer alicesTurn) S.alice
+    Spec.assertEqWith s "alice is active again" (TurnRegisters.activePlayer (GameState.turn alicesTurn)) S.alice
     -- Asserted BEFORE the upkeep trigger fires a second time, so
     -- the two effects can never be confused.
     Spec.assertEqWith s "back to 3/3" (Projection.powerOf mammoth alicesTurn) (Just 3)
@@ -1001,9 +1003,12 @@ jadeBoard statue mountain theirs =
    in ( statueId,
         theirIds,
         gs4
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-            GameState.remaining = restOfTurnFromDeclareAttackers
+          { GameState.turn =
+              (GameState.turn gs4)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                  TurnRegisters.remaining = restOfTurnFromDeclareAttackers
+                }
           }
       )
 
@@ -1112,9 +1117,12 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
                 (PlayerEffect.DontLoseUnspentMana ManaFilter.Any)
                 S.alice
                 floated
-                  { GameState.activePlayer = S.alice,
-                    GameState.phase = Phase.Combat CombatStep.EndOfCombat,
-                    GameState.remaining = Seq.fromList [Phase.PostcombatMain, Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+                  { GameState.turn =
+                      (GameState.turn floated)
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.Combat CombatStep.EndOfCombat,
+                          TurnRegisters.remaining = Seq.fromList [Phase.PostcombatMain, Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+                        }
                   }
         expiring = staged (Expiry.Type.AtEndOf PhaseSelector.CombatPhase)
         permanent = staged Expiry.Type.Never
@@ -1143,7 +1151,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     let (statueId, _, jade) = jadeBoard statue mountain []
         afterBeginningOfCombat = animateStep jade
     Spec.assertBool s (not (Projection.isCreatureOf statueId jade)) "a Jade Statue is a noncreature artifact to begin with"
-    Spec.assertEqWith s "the beginning of combat step is over" (GameState.phase afterBeginningOfCombat) (Phase.Combat CombatStep.DeclareAttackers)
+    Spec.assertEqWith s "the beginning of combat step is over" (TurnRegisters.phase (GameState.turn afterBeginningOfCombat)) (Phase.Combat CombatStep.DeclareAttackers)
     Spec.assertBool s (Projection.isCreatureOf statueId afterBeginningOfCombat) "and it is a creature in the NEXT step, not just the one it was animated in"
     Spec.assertEqWith s "a 3/6" (S.powerToughnessOf statueId afterBeginningOfCombat) (Just (3, 6))
     Spec.assertEqWith
@@ -1171,10 +1179,10 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
         afterDeclareBlockers = animateStep afterDeclareAttackers
         afterCombatDamage = animateStep afterDeclareBlockers
         afterEndOfCombat = animateStep afterCombatDamage
-    Spec.assertEqWith s "the end of combat step is the one about to run" (GameState.phase afterCombatDamage) (Phase.Combat CombatStep.EndOfCombat)
+    Spec.assertEqWith s "the end of combat step is the one about to run" (TurnRegisters.phase (GameState.turn afterCombatDamage)) (Phase.Combat CombatStep.EndOfCombat)
     Spec.assertBool s (Projection.isCreatureOf statueId afterCombatDamage) "CR 500.5a it is STILL a creature as the end of combat step begins"
     Spec.assertEqWith s "still a 3/6" (S.powerToughnessOf statueId afterCombatDamage) (Just (3, 6))
-    Spec.assertEqWith s "CR 511.3 the combat phase is over" (GameState.phase afterEndOfCombat) Phase.PostcombatMain
+    Spec.assertEqWith s "CR 511.3 the combat phase is over" (TurnRegisters.phase (GameState.turn afterEndOfCombat)) Phase.PostcombatMain
     Spec.assertBool s (not (Projection.isCreatureOf statueId afterEndOfCombat)) "and the animation expired with the phase"
     Spec.assertEqWith s "nothing is left stored" (GameState.continuousEffects afterEndOfCombat) []
     Spec.assertEqWith s "it kept its printed 3 damage to bob on the way through" (S.lifeOf S.bob afterEndOfCombat) (Just 17)
@@ -1194,7 +1202,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     desert <- S.printingOf s registry "Desert"
     let (statueId, deserts, jade) = jadeBoard statue mountain [desert]
         after = S.runCombat animateAnswer jade
-    Spec.assertEqWith s "the whole combat phase ran" (GameState.phase after) Phase.PostcombatMain
+    Spec.assertEqWith s "the whole combat phase ran" (TurnRegisters.phase (GameState.turn after)) Phase.PostcombatMain
     Spec.assertEqWith s "bob took 3 from a 3/6 attacker" (S.lifeOf S.bob after) (Just 17)
     Spec.assertEqWith s "and pinged it for 1 while it was still an attacking creature" (S.damageOf statueId after) (Just 1)
     Spec.assertEqWith s "the Desert paid its {T}" (fmap Object.tapped (Maybe.listToMaybe deserts >>= \d -> Game.lookupObject d after)) (Just TapState.Tapped)
@@ -1264,7 +1272,10 @@ lingeringSpec s registry = Spec.describe s "TitaniasSong" $ do
         (statueId, withStatue) = S.addPermanent jadeStatue S.alice exiled
         toCleanup =
           withStatue
-            { GameState.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+            { GameState.turn =
+                (GameState.turn withStatue)
+                  { TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+                  }
             }
         afterMain = S.runPure S.identityAnswer toCleanup Engine.runStep
         afterEnd = S.runPure S.identityAnswer afterMain Engine.runStep
@@ -1284,7 +1295,7 @@ lingeringSpec s registry = Spec.describe s "TitaniasSong" $ do
     Spec.assertEqWith s "still a 1/1" (S.powerToughnessOf axeId exiled) (Just (1, 1))
     Spec.assertEqWith s "still no abilities" (Projection.abilitiesOf axeId exiled) []
     -- 5. CR 514.2: and the whole thing ends in the cleanup step.
-    Spec.assertEqWith s "the cleanup step ran" (GameState.phase afterEnd) (Phase.Ending EndingStep.Cleanup)
+    Spec.assertEqWith s "the cleanup step ran" (TurnRegisters.phase (GameState.turn afterEnd)) (Phase.Ending EndingStep.Cleanup)
     Spec.assertBool s (not (Projection.isCreatureOf axeId afterCleanup)) "CR 514.2 no longer a creature after cleanup"
     Spec.assertEqWith s "and its Equip ability is back" (length (Projection.abilitiesOf axeId afterCleanup)) 1
   -- The control, and CR 604.2 read straight: a static ability whose card says
@@ -1389,7 +1400,7 @@ castingFromExile oid p = case p of
 runToTurn :: (forall r. Prompt.Prompt r -> r) -> Natural -> GameState.GameState -> GameState.GameState
 runToTurn answer turn =
   let go budget gs =
-        if budget <= 0 || GameState.turnNumber gs >= turn || Maybe.isJust (GameState.result gs)
+        if budget <= 0 || TurnRegisters.turnNumber (GameState.turn gs) >= turn || Maybe.isJust (GameState.result gs)
           then gs
           else go (budget - 1) (S.runPure answer gs Engine.runStep)
    in go (128 :: Int)
@@ -1446,7 +1457,7 @@ soulfireSpec s registry = Spec.describe s "SoulfireEruption" $ do
     -- difference from the case above is which turn the cast is attempted on.
     let afterwards = runToTurn S.identityAnswer 4 resolved
         later = runToTurn (castingFromExile pikerId) 6 afterwards
-    Spec.assertEqWith s "turn 4 began, so alice's next turn is over" (GameState.activePlayer afterwards, GameState.turnNumber afterwards) (S.bob, 4)
+    Spec.assertEqWith s "turn 4 began, so alice's next turn is over" (TurnRegisters.activePlayer (GameState.turn afterwards), TurnRegisters.turnNumber (GameState.turn afterwards)) (S.bob, 4)
     Spec.assertEqWith s "the permission is gone" (permissionOn pikerId afterwards) Nothing
     Spec.assertEqWith s "the card itself is untouched, still in exile" (Game.zoneMembers Zone.Exile S.alice afterwards) [pikerId]
     Spec.assertEqWith s "and alice cannot play it on turn 5 either" (S.creaturesInPlay S.alice later, Game.zoneMembers Zone.Exile S.alice later) (0, [pikerId])
@@ -1520,11 +1531,11 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
     Spec.assertEqWith s "it ended at bob's seat" (GameState.continuousEffects (handoff armed)) []
   Spec.it s "CR 500.5a whole card: the permission ends as alice's next combat phase ends" $ do
     (pikerId, armed) <- cannonadeBoard s registry
-    let atTurn n phase gs = GameState.turnNumber gs == n && GameState.phase gs == phase
+    let atTurn n phase gs = TurnRegisters.turnNumber (GameState.turn gs) == n && TurnRegisters.phase (GameState.turn gs) == phase
         beforeCombat = runUntil S.identityAnswer (atTurn 3 (Phase.Combat CombatStep.EndOfCombat)) armed
         afterCombat = runUntil S.identityAnswer (atTurn 3 Phase.PostcombatMain) beforeCombat
         later = runToTurn (castingFromExile pikerId) 6 afterCombat
-    Spec.assertEqWith s "the end of combat step of turn 3 began" (GameState.turnNumber beforeCombat, GameState.phase beforeCombat) (3, Phase.Combat CombatStep.EndOfCombat)
+    Spec.assertEqWith s "the end of combat step of turn 3 began" (TurnRegisters.turnNumber (GameState.turn beforeCombat), TurnRegisters.phase (GameState.turn beforeCombat)) (3, Phase.Combat CombatStep.EndOfCombat)
     Spec.assertEqWith s "the permission is live in it" (permissionOn pikerId beforeCombat) (Just S.alice)
     Spec.assertEqWith s "and gone once the phase is over" (permissionOn pikerId afterCombat) Nothing
     Spec.assertEqWith s "so alice never plays the card" (S.creaturesInPlay S.alice later, Game.zoneMembers Zone.Exile S.alice later) (1, [pikerId])
@@ -1539,8 +1550,11 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
         attacked = S.runCombat S.aggressiveAnswer withCannonade
         bobAttacks =
           withCannonade
-            { GameState.activePlayer = S.bob,
-              GameState.combat = (GameState.combat withCannonade) {Combat.Type.defenders = [S.alice]}
+            { GameState.turn =
+                (GameState.turn withCannonade)
+                  { TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn withCannonade)) {Combat.Type.defenders = [S.alice]}
+                  }
             }
         blocked = S.runCombat S.aggressiveAnswer bobAttacks
     Spec.assertEqWith s "alice's attacking Piker died" (S.creaturesInPlay S.alice attacked) 0
@@ -1622,7 +1636,7 @@ suspendAggressionSpec s registry = Spec.describe s "SuspendAggression" $ do
     Spec.assertEqWith s "bob played the exiled card during his next turn, beside the Bog Wraith he kept" (S.creaturesInPlay S.bob played) 2
     Spec.assertEqWith s "so it is no longer in exile" (Game.zoneMembers Zone.Exile S.bob played) []
     -- Proxies, after the behaviour so neither can absorb a mutation ahead of it.
-    Spec.assertEqWith s "turn 4 is bob's" (GameState.activePlayer bobsNext, GameState.turnNumber bobsNext) (S.bob, 4)
+    Spec.assertEqWith s "turn 4 is bob's" (TurnRegisters.activePlayer (GameState.turn bobsNext), TurnRegisters.turnNumber (GameState.turn bobsNext)) (S.bob, 4)
     Spec.assertEqWith s "and the permission that survived into it is his" (permissionOn pikerId bobsNext) (Just S.bob)
   -- CR 514.2: the same window ends at the end of that turn, and no later turn of
   -- bob's reopens it. The same board and the same answerer as the case above,
@@ -1632,7 +1646,7 @@ suspendAggressionSpec s registry = Spec.describe s "SuspendAggression" $ do
     let afterwards = runToTurn S.identityAnswer 5 resolved
         later = runToTurn (castingFromExile pikerId) 7 afterwards
     Spec.assertEqWith s "bob cannot play it on turn 6 either, and the card is untouched" (S.creaturesInPlay S.bob later, Game.zoneMembers Zone.Exile S.bob later) (1, [pikerId])
-    Spec.assertEqWith s "turn 5 began, so bob's next turn is over" (GameState.activePlayer afterwards, GameState.turnNumber afterwards) (S.alice, 5)
+    Spec.assertEqWith s "turn 5 began, so bob's next turn is over" (TurnRegisters.activePlayer (GameState.turn afterwards), TurnRegisters.turnNumber (GameState.turn afterwards)) (S.alice, 5)
     Spec.assertEqWith s "the permission is gone" (permissionOn pikerId afterwards) Nothing
   -- ONE clause, TWO seats: the reference is read per loop member, so the
   -- iteration over the card alice exiled from her own library names her and
@@ -1655,7 +1669,7 @@ suspendAggressionSpec s registry = Spec.describe s "SuspendAggression" $ do
   -- are put into exile", 2026-10-18). The War Doctor would; see #5189.
   Spec.it s "CR 608.2f the permanent and the library card are exiled in one event" $ do
     (pikerId, mineId, resolved) <- suspendAggressionBoard s registry
-    let logged = Foldable.toList (GameState.events resolved)
+    let logged = Foldable.toList (TurnRegisters.events (GameState.turn resolved))
         arrivals =
           [ (LoggedEvent.group entry, (ZoneChange.from change, ZoneChange.object change))
           | entry <- logged,
@@ -1774,7 +1788,7 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
       -- The behaviour first and the stored row second: a sweep that wrongly ate
       -- the shield has to be reported as the damage it let through, not as a
       -- count of GameState.replacements absorbing the mutation ahead of it.
-      Spec.assertEqWith s "bob's turn began" (GameState.activePlayer bobsTurn) S.bob
+      Spec.assertEqWith s "bob's turn began" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
       Spec.assertEqWith s "the same damage is still prevented" (S.damageOf shielded after) (Just 0)
       Spec.assertEqWith s "cleanup leaves both rows alone" (length (GameState.replacements (Expiry.dropAtCleanup gs))) 2
       Spec.assertEqWith s "and so does the handoff" (length (GameState.replacements bobsTurn)) 2
@@ -1784,7 +1798,7 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
       let nextSeat g = S.runPure S.identityAnswer g Engine.handoffTurn
           alicesNext = nextSeat (nextSeat gs)
           after = settleDamage alicesNext [hit attacker (Recipient.ToCreature shielded) 2]
-      Spec.assertEqWith s "alice is active again" (GameState.activePlayer alicesNext) S.alice
+      Spec.assertEqWith s "alice is active again" (TurnRegisters.activePlayer (GameState.turn alicesNext)) S.alice
       -- Ordered as the case above is, and for the same reason.
       Spec.assertEqWith s "the whole 2 is marked now" (S.damageOf shielded after) (Just 2)
       Spec.assertEqWith s "and the event happened" (amounts after) [2]
@@ -1848,9 +1862,12 @@ advanceSaga :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameSt
 advanceSaga answer gs =
   let atMain =
         gs
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       advanced = S.runPure answer atMain (Engine.runTurnBasedActions Phase.PrecombatMain)
    in S.runPure answer advanced Engine.priorityLoop
@@ -2070,14 +2087,14 @@ perpetualSpec s registry = Spec.describe s "Perpetual" $ do
         (mineId, g1) = S.addPermanent sorcerer S.alice g0
         (controlId, g2) = S.addPermanent sorcerer S.alice g1
         g3 = S.landsFor plains S.alice 3 g2
-        ready = (lifelinkUnder Expiry.Type.Never controlId g3) {GameState.priority = Just S.alice}
+        ready = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (lifelinkUnder Expiry.Type.Never controlId g3)
     case Face.activatedAbilities (S.combinedFace collector) of
       [] -> Spec.assertFailure s "Pearl Collector should declare one activated ability"
       ability : _ -> do
         let granted = S.runPure (aimedAtObject mineId) ready (do Activate.activateAbility S.alice collectorId ability; Stack.resolveTop)
             (mineAgain, once) = bounce mineId granted
             (controlAgain, both) = bounce controlId once
-            back = unsick controlAgain (unsick mineAgain both) {GameState.priority = Just S.alice}
+            back = unsick controlAgain (Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (unsick mineAgain both))
             ping oid = case Face.activatedAbilities (S.combinedFace sorcerer) of
               [] -> back
               a : _ -> S.runPure pingsBob back (do Activate.activateAbility S.alice oid a; Stack.resolveTop)

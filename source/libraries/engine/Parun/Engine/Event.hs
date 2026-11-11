@@ -312,6 +312,7 @@ import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -436,7 +437,7 @@ sampleControl = do
 -- log's clearing at turn handoff makes it "of the turn".
 lifeChanged :: LifeDirection.LifeDirection -> PlayerId -> Natural -> GameState -> GameEvent
 lifeChanged direction pid amount gs =
-  lifeChangeEvent direction (LifeChange.MkLifeChange {LifeChange.player = pid, LifeChange.amount = amount, LifeChange.first = firstLifeChange direction pid (GameState.events gs)})
+  lifeChangeEvent direction (LifeChange.MkLifeChange {LifeChange.player = pid, LifeChange.amount = amount, LifeChange.first = firstLifeChange direction pid (TurnRegisters.events (GameState.turn gs))})
 
 lifeChangeEvent :: LifeDirection.LifeDirection -> LifeChange.LifeChange -> GameEvent
 lifeChangeEvent direction = case direction of
@@ -469,15 +470,16 @@ restampLifeChanges logged =
 recordEventOver :: Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameEvent -> GameState -> GameState
 recordEventOver sample event gs =
   let group = GameState.nextEventGroup gs
-   in (involveActedOn event (exposeShown event gs))
-        { GameState.events = GameState.events gs Seq.|> LoggedEvent.MkLoggedEvent {LoggedEvent.group = group, LoggedEvent.event = event},
-          GameState.nextEventGroup =
-            if GameState.eventGroupDepth gs == 0
-              then EventGroup.next group
-              else group,
-          GameState.battlefieldWhenTriggered =
-            Map.insert group sample (GameState.battlefieldWhenTriggered gs)
-        }
+   in Turn.withTurn
+        (\turn -> turn {TurnRegisters.events = TurnRegisters.events (GameState.turn gs) Seq.|> LoggedEvent.MkLoggedEvent {LoggedEvent.group = group, LoggedEvent.event = event}})
+        (involveActedOn event (exposeShown event gs))
+          { GameState.nextEventGroup =
+              if GameState.eventGroupDepth gs == 0
+                then EventGroup.next group
+                else group,
+            GameState.battlefieldWhenTriggered =
+              Map.insert group sample (GameState.battlefieldWhenTriggered gs)
+          }
 
 -- CR 801.16: every object an event acts on is involved in whatever the game is
 -- doing, so under limited range its controller is stamped (Game.involve) --
@@ -1361,7 +1363,7 @@ revealOf event = case event of
 -- consumed.
 unscannedGrouped :: GameState -> [LoggedEvent.LoggedEvent]
 unscannedGrouped gs =
-  Foldable.toList (Seq.drop (Natural.toIntSaturating (GameState.scannedThrough gs)) (GameState.events gs))
+  Foldable.toList (Seq.drop (Natural.toIntSaturating (TurnRegisters.scannedThrough (GameState.turn gs))) (TurnRegisters.events (GameState.turn gs)))
 
 -- CR 117.5: the events the trigger scan has not yet consumed.
 unscannedEvents :: GameState -> [GameEvent]
@@ -1373,7 +1375,7 @@ unscannedEvents = fmap LoggedEvent.event . unscannedGrouped
 -- other reader.
 unscannedSbaEvents :: GameState -> [GameEvent]
 unscannedSbaEvents gs =
-  fmap LoggedEvent.event (Foldable.toList (Seq.drop (Natural.toIntSaturating (GameState.damageScannedThrough gs)) (GameState.events gs)))
+  fmap LoggedEvent.event (Foldable.toList (Seq.drop (Natural.toIntSaturating (TurnRegisters.damageScannedThrough (GameState.turn gs))) (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 704.5h: the damage the state-based-action check has not yet consumed.
 unscannedDamage :: GameState -> [DamageEvent]
@@ -5346,7 +5348,7 @@ apply settle batch applied batchPrevented candidate event =
       let decider = Maybe.fromMaybe pid (ReplacementCandidate.controller candidate)
           queued = GameState.pendingSkipEffects gs
           involved = foldMap (Set.singleton . PendingReplacementEffect.controller . PendingSkipEffect.pending) queued
-          fromActive = let (before, after) = List.break (== GameState.activePlayer gs) (GameState.turnOrder gs) in after <> before
+          fromActive = let (before, after) = List.break (== TurnRegisters.activePlayer (GameState.turn gs)) (GameState.turnOrder gs) in after <> before
           breaker = List.find (`Set.member` involved) fromActive
           floating = Set.fromList (fmap ActiveReplacement.timestamp (GameState.replacements gs))
           position = (GameState.extraTurns gs, GameState.turnMarkers gs, floating)
@@ -7851,7 +7853,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
       -- loop.
       --
       -- Both ids are `oid` in the PROPOSED event: nothing has moved yet.
-      loggedBefore <- State.gets (Seq.length . GameState.events)
+      loggedBefore <- State.gets (Seq.length . (TurnRegisters.events . GameState.turn))
       (resolved, exiledBy, shuffling, splitOff, position) <- resolveZoneChange asOf discarded requestedPosition resolving (ZoneChange.MkZoneChange oid oid fromZone requestedDest)
       case resolved of
         -- CR 614.6: nothing survived the loop, so no zone change happens. No
@@ -8440,7 +8442,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
               -- predates the reveal a search makes just before its move, though no
               -- board observes that half yet. Forced, so the log entry holds no
               -- thunk over the pre-move board.
-              loggedByLeaving <- State.gets (Seq.drop loggedBefore . GameState.events)
+              loggedByLeaving <- State.gets (Seq.drop loggedBefore . (TurnRegisters.events . GameState.turn))
               let revealedHere logged = case LoggedEvent.event logged of
                     GameEvent.Revealed r -> Revealed.card r == oid
                     _ -> False
@@ -8451,18 +8453,21 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                 let g1 = Game.removeFromZones oid g
                  in g1
                       { GameState.objects = Map.delete oid (GameState.objects g1),
-                        -- CR 506.4, first clause: "a permanent is removed from
-                        -- combat if it leaves the battlefield". In the same write
-                        -- that deletes the object, so nothing can observe a board
-                        -- where the permanent has gone and the combat record still
-                        -- calls it an attacker -- which is what CR 704.5x's
-                        -- "currently attacking" asks (Battle.isBeingAttacked).
-                        --
-                        -- Game.ceaseAttacking and not Game.removeFromCombat, for
-                        -- CR 509.1g's sake; that function's haddock has the
-                        -- difference. CR 508.8's declaration history is untouched
-                        -- either way.
-                        GameState.combat = if fromZone == Zone.Battlefield then GameState.combat (Game.ceaseAttacking oid g1) else GameState.combat g1,
+                        GameState.turn =
+                          (GameState.turn g1)
+                            { -- CR 506.4, first clause: "a permanent is removed from
+                              -- combat if it leaves the battlefield". In the same write
+                              -- that deletes the object, so nothing can observe a board
+                              -- where the permanent has gone and the combat record still
+                              -- calls it an attacker -- which is what CR 704.5x's
+                              -- "currently attacking" asks (Battle.isBeingAttacked).
+                              --
+                              -- Game.ceaseAttacking and not Game.removeFromCombat, for
+                              -- CR 509.1g's sake; that function's haddock has the
+                              -- difference. CR 508.8's declaration history is untouched
+                              -- either way.
+                              TurnRegisters.combat = if fromZone == Zone.Battlefield then TurnRegisters.combat (GameState.turn (Game.ceaseAttacking oid g1)) else TurnRegisters.combat (GameState.turn g1)
+                            },
                         -- Stored as the permanent goes, in the same write that
                         -- removes it: nothing can observe a board where the
                         -- permanent has left and its effect has not yet been handed
@@ -10302,13 +10307,16 @@ unenter unentered oid newId gs =
         | otherwise = Just eff
       deleted = Game.deleteObject newId gs
       placed = maybe deleted (\origin -> Game.returnToOrigin oid origin deleted) (Game.entryOriginOf oid unentered)
-      stacked = case List.elemIndex oid (GameState.stack unentered) of
-        Just index -> let (above, below) = List.splitAt index (GameState.stack placed) in above <> (oid : below)
-        Nothing -> GameState.stack placed
+      stacked = case List.elemIndex oid (TurnRegisters.stack (GameState.turn unentered)) of
+        Just index -> let (above, below) = List.splitAt index (TurnRegisters.stack (GameState.turn placed)) in above <> (oid : below)
+        Nothing -> TurnRegisters.stack (GameState.turn placed)
    in placed
         { GameState.objects = restore GameState.objects (GameState.objects placed),
-          GameState.stack = stacked,
-          GameState.stackedIn = restore GameState.stackedIn (GameState.stackedIn placed),
+          GameState.turn =
+            (GameState.turn placed)
+              { TurnRegisters.stack = stacked,
+                TurnRegisters.stackedIn = restore (TurnRegisters.stackedIn . GameState.turn) (TurnRegisters.stackedIn (GameState.turn placed))
+              },
           GameState.lastKnown = restore GameState.lastKnown (GameState.lastKnown placed),
           GameState.stackArchive = restore GameState.stackArchive (GameState.stackArchive placed),
           GameState.continuousEffects = Maybe.mapMaybe unanchor (GameState.continuousEffects placed),
@@ -10991,11 +10999,14 @@ leaveTheGame asOf g oid = case lastKnownRecord asOf oid of
           | Set.member oid (GameState.battlefield asOf) = lingeringHandover oid (LastKnown.controller known) asOf
           | otherwise = []
         g1 = Game.ceaseAttacking oid (Game.deleteObject oid g)
-        combat = GameState.combat g1
+        combat = TurnRegisters.combat (GameState.turn g1)
      in g1
           { GameState.lastKnown = Map.insert oid known (GameState.lastKnown g1),
             GameState.continuousEffects = handover <> GameState.continuousEffects g1,
-            GameState.combat = combat {Combat.struckFirst = fmap (Set.delete oid) (Combat.struckFirst combat)},
+            GameState.turn =
+              (GameState.turn g1)
+                { TurnRegisters.combat = combat {Combat.struckFirst = fmap (Set.delete oid) (Combat.struckFirst combat)}
+                },
             GameState.movedUntil = Map.delete oid (GameState.movedUntil g1),
             GameState.haunting = Map.delete oid (GameState.haunting g1),
             GameState.encoded = Map.delete oid (GameState.encoded g1),
@@ -11185,8 +11196,8 @@ performDraw settle pid = do
         Seq.EmptyL -> pure Nothing
         drawn Seq.:< _ -> do
           nth <- State.state $ \g ->
-            let tally = Map.insertWith (flip (<>)) pid (Seq.singleton drawn) (GameState.drawsThisTurn g)
-             in (Natural.length (Map.findWithDefault Seq.empty pid tally), g {GameState.drawsThisTurn = tally})
+            let tally = Map.insertWith (flip (<>)) pid (Seq.singleton drawn) (TurnRegisters.drawsThisTurn (GameState.turn g))
+             in (Natural.length (Map.findWithDefault Seq.empty pid tally), g {GameState.turn = (GameState.turn g) {TurnRegisters.drawsThisTurn = tally}})
           State.modify' (recordEvent (GameEvent.Drew (Drew.MkDrew pid nth)))
           -- CR 121.8: drawn while a spell is being cast or an ability
           -- activated, the card is kept face down and any reveal waits for
@@ -11936,14 +11947,14 @@ settleOnsets begun gs =
         -- skipped: the step is lost, not deferred (CR 614.10a's first sentence).
         TurnWindow.NextTurnOf named
           | maybe True (Turn.isActive gs) named ->
-              entry {DelayedTrigger.window = TurnWindow.OnTurn (GameState.turnNumber gs)}
+              entry {DelayedTrigger.window = TurnWindow.OnTurn (TurnRegisters.turnNumber (GameState.turn gs))}
         -- Anyone else's turn, including an intervening one: still waiting.
         TurnWindow.NextTurnOf _ -> entry
         -- CR 500.7: the extra turn the entry names, and no other, including
         -- another extra turn created after it and so taken first.
         TurnWindow.OnExtraTurn stamp
           | Just stamp == begun ->
-              entry {DelayedTrigger.window = TurnWindow.OnTurn (GameState.turnNumber gs)}
+              entry {DelayedTrigger.window = TurnWindow.OnTurn (TurnRegisters.turnNumber (GameState.turn gs))}
         TurnWindow.OnExtraTurn _ -> entry
         TurnWindow.AnyTurn -> entry
         -- Already settled, and this is a later turn -- `live` is what ends it.
@@ -11952,7 +11963,7 @@ settleOnsets begun gs =
         TurnWindow.AnyTurn -> True
         TurnWindow.NextTurnOf _ -> True
         TurnWindow.OnExtraTurn stamp -> any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs)
-        TurnWindow.OnTurn n -> n >= GameState.turnNumber gs
+        TurnWindow.OnTurn n -> n >= TurnRegisters.turnNumber (GameState.turn gs)
    in gs {GameState.delayedTriggers = Seq.filter live (fmap settled (GameState.delayedTriggers gs))}
 
 -- Everything that has triggered and is not yet on the stack, from all three
@@ -12022,7 +12033,7 @@ triggeredSources boards gs =
 -- batch: drop every entry whose ability carries a rider and has already triggered
 -- inside that rider's window as often as its source bears it. The per-TURN
 -- window needs no stored flag -- the record is CR 603.3b's own log, and
--- GameState.events is cleared at the turn handoff, which makes "in the log" mean
+-- TurnRegisters.events is cleared at the turn handoff, which makes "in the log" mean
 -- "this turn". The per-GAME window reads GameState.triggeredThisGame, which
 -- survives that handoff and which Engine.reactions writes. The log records a
 -- per-game trigger too, so each window is tallied from its own store alone and
@@ -12032,7 +12043,7 @@ triggeredSources boards gs =
 -- same printed ability spend separate limits (CR 113.7), one that leaves and
 -- returns re-arms (CR 400.7), and two DISTINCT abilities of one source spend
 -- separate limits; a change of CONTROL spends nothing. Spent on TRIGGERING,
--- except CR 603.2h's rider, which GameState.instructionsTakenThisTurn spends as
+-- except CR 603.2h's rider, which TurnRegisters.instructionsTakenThisTurn spends as
 -- its instruction is taken (instructionTaken).
 --
 -- COUNTED against PendingTrigger.copies, as stateTriggers counts CR 603.8's
@@ -12056,9 +12067,9 @@ withinTriggerLimit gs =
           | otherwise -> pending : go (Map.insertWith (+) key 1 spent) rest
    in go
         ( tally
-            ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (GameState.events gs))))
+            ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
                 <> fmap spentKey (Foldable.toList (GameState.triggeredThisGame gs))
-                <> fmap spentKey (Foldable.toList (GameState.instructionsTakenThisTurn gs))
+                <> fmap spentKey (Foldable.toList (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs)))
             )
         )
 
@@ -12133,11 +12144,11 @@ instructionRecord controller src =
 instructionSpent :: GameState -> AbilityTriggered.AbilityTriggered -> Bool
 instructionSpent gs record =
   let key r = limitKey (AbilityTriggered.source r) (AbilityTriggered.controller r) (AbilityTriggered.ability r)
-   in any ((== key record) . key) (GameState.instructionsTakenThisTurn gs)
+   in any ((== key record) . key) (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs))
 
 -- CR 603.2h: spend the instruction's turn.
 instructionTaken :: AbilityTriggered.AbilityTriggered -> GameState -> GameState
-instructionTaken record gs = gs {GameState.instructionsTakenThisTurn = GameState.instructionsTakenThisTurn gs Seq.|> record}
+instructionTaken record gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.instructionsTakenThisTurn = TurnRegisters.instructionsTakenThisTurn (GameState.turn gs) Seq.|> record}}
 
 -- `triggeredEvent` read back: the record an event carries if it is one ability
 -- triggering (CR 603.3b), and nothing otherwise.

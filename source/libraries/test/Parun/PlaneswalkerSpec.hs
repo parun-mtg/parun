@@ -78,6 +78,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
@@ -116,6 +117,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Jace Beleren's abilities in printed order: +2, -1, -10. Indexed rather than
@@ -180,7 +182,7 @@ alicesNextTurn :: GameState.GameState -> GameState.GameState
 alicesNextTurn gs =
   let bobs = S.runPure S.identityAnswer gs Engine.handoffTurn
       back = S.runPure S.identityAnswer bobs Engine.handoffTurn
-   in back {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+   in back {GameState.turn = (GameState.turn back) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
 
 -- Jace on the battlefield with his three CR 306.5b counters, an untapped Mountain
 -- beside him for the {R}, and one burn spell in alice's hand. The three Islands
@@ -456,7 +458,7 @@ countersRemovedSpec s registry = Spec.describe s "CountersRemoved" $ do
         -- top trigger's damage under either.
         after = S.runPure attackingChandra dealt (Monad.replicateM_ 2 Stack.resolveTop)
     Spec.assertEqWith s "alice took four: 2 + 2, once and not once per damage event" (S.lifeOf S.alice after) (Just 16)
-    Spec.assertEqWith s "one trigger on the stack, not one per damage event" (length (GameState.stack dealt)) 1
+    Spec.assertEqWith s "one trigger on the stack, not one per damage event" (length (TurnRegisters.stack (GameState.turn dealt))) 1
     Spec.assertEqWith s "CR 306.8: 6 - 4" (S.counterOf CounterKind.Loyalty chandraId dealt) 2
     Spec.assertEqWith s "CR 510.1b: none of it reached the defending player" (S.lifeOf S.bob after) (Just 20)
 
@@ -819,9 +821,12 @@ throughBeginningOfCombat gs =
     ( S.runPure
         S.identityAnswer
         gs
-          { GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
         Engine.runStep
     )
@@ -928,11 +933,16 @@ tamiyoNotebookSpec s registry = Spec.describe s "TamiyoNotebook" $ do
         (divinationId, held) = S.addHandCard divination S.alice stocked
         (tamiyoId, placed) = S.addPermanent tamiyo S.alice held
         board =
-          (S.addCounter CounterKind.Loyalty 8 tamiyoId placed)
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
-            }
+          Turn.withTurn
+            ( \turn ->
+                turn
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.addCounter CounterKind.Loyalty 8 tamiyoId placed)
+
         ultimate = filter (elem (CostComponent.RemoveLoyaltyFromThis (CostAmount.Fixed 7)) . Cost.Type.components . ActivatedAbility.cost) (Face.activatedAbilities (S.combinedFace tamiyo))
         created = S.runPure S.identityAnswer board (do mapM_ (Activate.activateAbility S.alice tamiyoId) ultimate; Stack.resolveTop)
         notebooks = Set.toList (Set.difference (GameState.battlefield created) (GameState.battlefield board))
@@ -960,11 +970,16 @@ tamiyoMinusXBoard s registry = do
       (tyrantId, g1) = S.addGraveyardCard tyrant S.alice placed
       (_, g2) = S.addGraveyardCard giant S.alice g1
       board =
-        (S.addCounter CounterKind.Loyalty 5 tamiyoId g2)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (S.addCounter CounterKind.Loyalty 5 tamiyoId g2)
+
   pure (tamiyo, tamiyoId, tyrantId, board)
 
 -- Announces X and narrows the target slot to one card by FILTERING the offered
@@ -1032,7 +1047,7 @@ wanderingEmperorSpec s registry = Spec.describe s "WanderingEmperor" $ do
       toEndOfCombat =
         let go n = do
               gs <- State.get
-              Monad.unless (n <= (0 :: Int) || GameState.phase gs == S.endOfCombat || Maybe.isJust (GameState.result gs)) (Engine.runStep >> go (n - 1))
+              Monad.unless (n <= (0 :: Int) || TurnRegisters.phase (GameState.turn gs) == S.endOfCombat || Maybe.isJust (GameState.result gs)) (Engine.runStep >> go (n - 1))
          in go 8
   Spec.it s "CR 606.3 already on the battlefield, she is not offered on bob's turn" $ do
     let resident = (S.aliased "emperor" (S.permanent "The Wandering Emperor")) {Placement.counters = Map.singleton CounterKind.Loyalty 3}

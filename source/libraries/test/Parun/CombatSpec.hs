@@ -35,6 +35,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
@@ -91,10 +92,11 @@ import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 declaredAttackers :: GameState.GameState -> [ObjectId.ObjectId]
-declaredAttackers gs = Map.keys (Combat.Type.attackers (GameState.combat gs))
+declaredAttackers gs = Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 declareSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 declareSpec s registry = Spec.describe s "Declare" $ do
@@ -211,12 +213,12 @@ attackMultiplePlayersSpec s registry = Spec.describe s "AttackMultiplePlayers" $
             settled = S.runPure S.identityAnswer staged (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat))
             declared = S.runPure declaring settled (Combat.declareAttackers S.manaPerformer S.alice)
         -- CR 802.2: nobody was chosen and BOTH opponents defend, in APNAP order.
-        Spec.assertEqWith s "CR 802.2 both opponents are defending players" (Combat.Type.defenders (GameState.combat declared)) [S.bob, S.carol]
+        Spec.assertEqWith s "CR 802.2 both opponents are defending players" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn declared))) [S.bob, S.carol]
         -- CR 802.3: one declaration, two victims.
         Spec.assertEqWith
           s
           "CR 802.3 two creatures attack bob and two attack carol"
-          (Map.elems (Combat.Type.attackers (GameState.combat declared)))
+          (Map.elems (Combat.Type.attackers (TurnRegisters.combat (GameState.turn declared))))
           [AttackTarget.OfPlayer S.bob, AttackTarget.OfPlayer S.bob, AttackTarget.OfPlayer S.carol, AttackTarget.OfPlayer S.carol]
         -- CR 802.4 / 802.4a: each defending player is asked, in APNAP order, and
         -- offered only the creatures attacking them. Recorded as (who was asked,
@@ -359,7 +361,7 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
           State.runState
             (fmap snd (Engine.runGame (choosesDefender S.bob) alone (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat))))
             []
-    Spec.assertEqWith s "nobody defends" (Combat.Type.defenders (GameState.combat after)) []
+    Spec.assertEqWith s "nobody defends" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn after))) []
     Spec.assertEqWith s "nobody was asked" asked []
   Spec.it s "CR 800.4h designateDefenders called directly reassigns the same way" $ do
     -- CR 800.4h reached WITHOUT Engine.runTurnBasedActions, so that only
@@ -371,7 +373,7 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
             (fmap snd (Engine.runGame (choosesDefender S.carol) gone Combat.designateDefenders))
             []
     Spec.assertEqWith s "bob, the next player in turn order, is who was asked" asked [S.bob]
-    Spec.assertEqWith s "and carol, his answer, is the defending player" (Combat.Type.defenders (GameState.combat after)) [S.carol]
+    Spec.assertEqWith s "and carol, his answer, is the defending player" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn after))) [S.carol]
   Spec.it s "CR 507.1 an answer that is not one of the candidates falls back to the first" $ do
     -- A broken interpreter, not a game state: it names the ACTIVE player.
     -- Discriminating against `defender = Just answer` unchecked, which would
@@ -381,7 +383,7 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
           State.runState
             (fmap snd (Engine.runGame (choosesDefender S.alice) (S.oneDefendingPlayer S.threePlayerGame) (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat))))
             []
-    Spec.assertEqWith s "the first candidate, never the active player" (Combat.Type.defenders (GameState.combat after)) [S.bob]
+    Spec.assertEqWith s "the first candidate, never the active player" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn after))) [S.bob]
   Spec.it s "CR 506.2a the candidates are every other player still in the game" $
     -- Three seats, because two cannot tell "the chosen opponent" from "the
     -- only opponent". Discriminating: an implementation that forgot to drop
@@ -407,9 +409,9 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
     -- both read it in that order. Discriminating: the roster reading answers
     -- carol first, and the players-map reading answers bob first for the wrong
     -- reason -- which the case below separates by leaving carol out.
-    let rotated = (Setup.emptyGame (S.carol NonEmpty.:| [S.alice, S.bob])) {GameState.activePlayer = S.alice}
+    let rotated = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.alice}) (Setup.emptyGame (S.carol NonEmpty.:| [S.alice, S.bob]))
     Spec.assertEqWith s "bob, the seat after alice, comes first" (Combat.attackableOpponents rotated) [S.bob, S.carol]
-    let rotatedFour = (Setup.emptyGame (S.carol NonEmpty.:| [S.dave, S.alice, S.bob])) {GameState.activePlayer = S.alice}
+    let rotatedFour = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.alice}) (Setup.emptyGame (S.carol NonEmpty.:| [S.dave, S.alice, S.bob]))
     Spec.assertEqWith s "and the wrap-around follows the seating, not the ids" (Combat.attackableOpponents rotatedFour) [S.bob, S.carol, S.dave]
   Spec.it s "CR 506.2 the designation does not outlive the combat phase" $ do
     -- CR 506.2's sentences are all scoped "During the combat phase", and
@@ -417,8 +419,8 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
     -- combat phase in one turn chooses again. Discriminating: a clearCombat
     -- that reset only attackers and blockers would leave Just carol here, and
     -- the next combat phase would inherit a stale defender.
-    let busy = S.threePlayerGame {GameState.combat = (GameState.combat S.threePlayerGame) {Combat.Type.defenders = [S.carol]}}
-    Spec.assertEqWith s "cleared at end of combat" (Combat.Type.defenders (GameState.combat (Combat.clearCombat busy))) []
+    let busy = Turn.withTurn (\turn -> turn {TurnRegisters.combat = ((TurnRegisters.combat . GameState.turn) S.threePlayerGame) {Combat.Type.defenders = [S.carol]}}) S.threePlayerGame
+    Spec.assertEqWith s "cleared at end of combat" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn (Combat.clearCombat busy)))) []
   Spec.it s "CR 508.1 with no defending player chosen, nothing attacks" $ do
     -- Discriminating against a declareAttackers that fell back to computing a
     -- defender when the field is Nothing -- which is the head-of-list
@@ -427,10 +429,10 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
     -- the prompt never being issued.
     piker <- S.printingOf s registry "Goblin Piker"
     let (board, mine, _, _) = S.threePlayerCombat [piker] [piker] [piker]
-        ready = board {GameState.phase = Phase.Combat CombatStep.DeclareAttackers}
+        ready = board {GameState.turn = (GameState.turn board) {TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers}}
         after = S.runPure S.aggressiveAnswer ready (Combat.declareAttackers S.manaPerformer S.alice)
     Spec.assertEqWith s "alice really had a legal attacker" (fmap (\oid -> Combat.canAttack S.alice oid ready) mine) [True]
-    Spec.assertEqWith s "nobody attacked" (Combat.Type.attackers (GameState.combat after)) Map.empty
+    Spec.assertEqWith s "nobody attacked" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) Map.empty
     Spec.assertEqWith s "and nothing was tapped" (S.tappedCount S.alice after) 0
 
 -- Re-sicken alice's creatures, as though they had just resolved this turn.
@@ -524,9 +526,12 @@ barricadeCombat plains barricade kicks =
       ready =
         cast
           { GameState.objects = maybe id (Map.adjust settle) wall (GameState.objects cast),
-            GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-            GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+            GameState.turn =
+              (GameState.turn cast)
+                { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
+                  TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+                }
           }
    in (S.runCombat (S.attackTo S.bob) ready, wall)
 
@@ -694,7 +699,7 @@ castHackAt hackId target from to gs =
         Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject target))) sets
         Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
         _ -> S.identityAnswer p
-   in S.runPure answer (gs {GameState.priority = Just S.alice}) (do S.cast S.alice hackId; Stack.resolveTop)
+   in S.runPure answer (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}}) (do S.cast S.alice hackId; Stack.resolveTop)
 
 -- The board both landwalk text-change groups attack from: alice attacks with
 -- everything she has, bob defends with a Goblin Piker and one land of
@@ -950,7 +955,7 @@ menaceSpec s registry = Spec.describe s "Menace" $ do
     case (mine, theirs) of
       (a : _, b : _) -> do
         Spec.assertBool s (Combat.canAttack S.alice a before) "a menace creature may attack"
-        Spec.assertEqWith s "and it does" (Map.keys (Combat.Type.attackers (GameState.combat gs))) [a]
+        Spec.assertEqWith s "and it does" (Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))) [a]
         Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton b (Set.singleton a)) gs)) "but one creature may not block it"
       _ -> Spec.assertFailure s "fixture should have an attacker and a blocker"
     let (gs2, mine2, theirs2) = attacking [piker] [boggartBrute]
@@ -1628,7 +1633,7 @@ cantBlockCreaturesSpec s registry = Spec.describe s "CantBlockCreatures" $ do
             moved = S.runPure S.identityAnswer gs1 (Event.changeZone (pure ()) cardId Zone.Library)
             settle g =
               let g' = S.runPure S.identityAnswer g Engine.settleForPriority
-               in if null (GameState.stack g') then g' else settle (S.runPure S.identityAnswer g' Stack.resolveTop)
+               in if null (TurnRegisters.stack (GameState.turn g')) then g' else settle (S.runPure S.identityAnswer g' Stack.resolveTop)
         pure (settle moved)
   Spec.it s "CR 509.1b Wan Shi Tong's Spirit tokens can't block a non-Spirit, and can block a Spirit" $ do
     wan <- S.printingOf s registry "Wan Shi Tong, All-Knowing"
@@ -1808,8 +1813,11 @@ defendingPlayerRestrictionSpec s registry = Spec.describe s "DefendingPlayerComb
     let (gs, mine, _, _) = S.threePlayerCombat [galleon] [] [island]
         defendedBy who =
           gs
-            { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = (GameState.combat gs) {Combat.Type.defenders = [who]}
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs)) {Combat.Type.defenders = [who]}
+                  }
             }
     case mine of
       [ship] -> do
@@ -1963,8 +1971,11 @@ perDefenderRestrictionSpec s registry = Spec.describe s "PerDefenderAttackRestri
     let (gs, mine, _, _) = S.threePlayerCombat [galleon] [] [island]
         declaring g =
           g
-            { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = (GameState.combat g) {Combat.Type.defenders = [S.bob, S.carol]}
+            { GameState.turn =
+                (GameState.turn g)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.Type.defenders = [S.bob, S.carol]}
+                  }
             }
         board = declaring gs
         -- The PAIR: the same board with carol's Island taken away, where the
@@ -1994,10 +2005,15 @@ perDefenderRestrictionSpec s registry = Spec.describe s "PerDefenderAttackRestri
     case (mine, theirs) of
       ([ship], [jaceId]) -> do
         let board =
-              (S.addCounter CounterKind.Loyalty 3 jaceId gs)
-                { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-                  GameState.combat = (GameState.combat gs) {Combat.Type.defenders = [S.bob, S.carol]}
-                }
+              Turn.withTurn
+                ( \turn ->
+                    turn
+                      { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                        TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs)) {Combat.Type.defenders = [S.bob, S.carol]}
+                      }
+                )
+                (S.addCounter CounterKind.Loyalty 3 jaceId gs)
+
         Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.alice [(ship, AttackTarget.OfPlaneswalker jaceId)] board)) "CR 508.5: bob controls the planeswalker and no Island, so his planeswalker is off limits too"
         Spec.assertBool s (Combat.legalAttackDeclarationAs S.alice [(ship, AttackTarget.OfPlayer S.carol)] board) "while carol, who controls the Island, may still be attacked"
         Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.alice [(ship, AttackTarget.OfPlayer S.bob)] board)) "and bob himself may not"
@@ -2025,8 +2041,11 @@ perDefenderWholeRestrictionSpec :: (Monad m, Monad n) => Spec.Spec m n -> Regist
 perDefenderWholeRestrictionSpec s registry = Spec.describe s "PerDefenderWholeRestriction" $ do
   let declaring g =
         g
-          { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = (GameState.combat g) {Combat.Type.defenders = [S.bob, S.carol]}
+          { GameState.turn =
+              (GameState.turn g)
+                { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.Type.defenders = [S.bob, S.carol]}
+                }
           }
   Spec.it s "CR 508.5a the bound counts only the creatures attacking a defender without an Island" $ do
     palisade <- S.printingOf s registry "Synthetic Tidal Palisade"
@@ -2089,12 +2108,15 @@ defendingPlayerOfBlockGateSpec s registry = Spec.describe s "DefendingPlayerOfBl
       ([grax, atCarol, atBob], blocker : _) -> do
         let board =
               gs
-                { GameState.phase = Phase.Combat CombatStep.DeclareBlockers,
-                  GameState.combat =
-                    (GameState.combat gs)
-                      { Combat.Type.defenders = [S.bob, S.carol],
-                        Combat.Type.attackers = Map.fromList [(grax, AttackTarget.OfPlayer S.carol), (atCarol, AttackTarget.OfPlayer S.carol), (atBob, AttackTarget.OfPlayer S.bob)],
-                        Combat.Type.blockers = Map.singleton atCarol (Set.singleton blocker)
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.phase = Phase.Combat CombatStep.DeclareBlockers,
+                        TurnRegisters.combat =
+                          (TurnRegisters.combat (GameState.turn gs))
+                            { Combat.Type.defenders = [S.bob, S.carol],
+                              Combat.Type.attackers = Map.fromList [(grax, AttackTarget.OfPlayer S.carol), (atCarol, AttackTarget.OfPlayer S.carol), (atBob, AttackTarget.OfPlayer S.bob)],
+                              Combat.Type.blockers = Map.singleton atCarol (Set.singleton blocker)
+                            }
                       }
                 }
             switched = Combat.switchBlockers atCarol grax board
@@ -2117,12 +2139,15 @@ defendingPlayerOfBlockGateSpec s registry = Spec.describe s "DefendingPlayerOfBl
            in ( grax,
                 blocker,
                 g3
-                  { GameState.activePlayer = S.alice,
-                    GameState.phase = Phase.Combat CombatStep.DeclareBlockers,
-                    GameState.combat =
-                      (GameState.combat g3)
-                        { Combat.Type.defenders = [S.carol, S.dave],
-                          Combat.Type.attackers = Map.singleton grax (AttackTarget.OfPlayer S.dave)
+                  { GameState.turn =
+                      (GameState.turn g3)
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.Combat CombatStep.DeclareBlockers,
+                          TurnRegisters.combat =
+                            (TurnRegisters.combat (GameState.turn g3))
+                              { Combat.Type.defenders = [S.carol, S.dave],
+                                Combat.Type.attackers = Map.singleton grax (AttackTarget.OfPlayer S.dave)
+                              }
                         }
                   }
               )
@@ -2165,9 +2190,12 @@ crossingAttackBoundsSpec s registry = Spec.describe s "CrossingAttackBounds" $ d
         g5 = lure daveSiren S.dave toDave (lure carolSiren S.carol toCarol g4)
         board =
           g5
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = (GameState.combat g5) {Combat.Type.defenders = [S.bob, S.carol, S.dave]}
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g5)) {Combat.Type.defenders = [S.bob, S.carol, S.dave]}
+                  }
             }
     Spec.assertBool s (Combat.legalAttackDeclarationAs S.alice [(toDave, AttackTarget.OfPlayer S.dave)] board) "CR 508.1d: obeying dave's Siren alone obeys the maximum"
     Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.alice [(toDave, AttackTarget.OfPlayer S.dave), (toCarol, AttackTarget.OfPlayer S.carol)] board)) "CR 508.1c: obeying both puts two under Tidal's bound"
@@ -2247,7 +2275,7 @@ castHackPaying island hackId target from to gs =
         Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
         Prompt.ChooseManaSource {} -> Just island
         _ -> S.identityAnswer p
-   in S.runPure answer (gs {GameState.priority = Just S.alice}) (do S.cast S.alice hackId; Stack.resolveTop)
+   in S.runPure answer (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}}) (do S.cast S.alice hackId; Stack.resolveTop)
 
 -- CR 612.1 reaching the AFFECTED SET of a combat requirement or restriction --
 -- the other half of the sentence textChangedCombatRestrictionSpec above proves
@@ -2372,9 +2400,12 @@ renewBoard rakshasa swamp piker =
         attacker,
         theirs,
         board
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn board)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -2401,8 +2432,11 @@ declaringAttackers gs =
   S.runPure
     S.aggressiveAnswer
     gs
-      { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-        GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+              TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
+            }
       }
     (Combat.declareAttackers S.manaPerformer S.alice)
 
@@ -2570,9 +2604,12 @@ zirdaResolved s registry pick = do
       (twin, placed) = S.addPermanent piker S.bob withVictim
       board =
         placed
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn placed)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       abilities = Activatable.abilitiesFor zirdaId board
       resolved = activatingZirda zirdaId (pick attacker victim twin) board
@@ -2736,8 +2773,11 @@ cursedNetterBoards s registry = do
 facingBob :: GameState.GameState -> GameState.GameState
 facingBob gs =
   gs
-    { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
+          }
     }
 
 -- Alice active with priority in her precombat main phase, which is when the
@@ -2787,11 +2827,11 @@ storedClassAttackRestrictionSpec s registry = Spec.describe s "StoredClassAttack
     let carolsTurn = handoff restricted
         alicesTurn = handoff carolsTurn
         bobsSecondTurn = handoff alicesTurn
-    Spec.assertEqWith s "carol is active" (GameState.activePlayer carolsTurn) S.carol
+    Spec.assertEqWith s "carol is active" (TurnRegisters.activePlayer (GameState.turn carolsTurn)) S.carol
     Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.bob [(late, AttackTarget.OfPlayer S.alice)] (bobDeclaring carolsTurn))) "still in force through carol's turn"
-    Spec.assertEqWith s "alice is active" (GameState.activePlayer alicesTurn) S.alice
+    Spec.assertEqWith s "alice is active" (TurnRegisters.activePlayer (GameState.turn alicesTurn)) S.alice
     Spec.assertEqWith s "and nothing is stored once her turn has begun" (GameState.attackProhibitions alicesTurn) []
-    Spec.assertEqWith s "bob is active again" (GameState.activePlayer bobsSecondTurn) S.bob
+    Spec.assertEqWith s "bob is active again" (TurnRegisters.activePlayer (GameState.turn bobsSecondTurn)) S.bob
     Spec.assertBool s (Combat.legalAttackDeclarationAs S.bob [(late, AttackTarget.OfPlayer S.alice)] (bobDeclaring bobsSecondTurn)) "and his Piker may attack alice on his next turn"
 
 -- Alice's Chronomantic Escape, cast from her hand off six Plains in her
@@ -2851,7 +2891,7 @@ windowAttackRestrictionSpec s registry = Spec.describe s "WindowAttackRestrictio
     Spec.assertEqWith s "the block stored one row, over the creature the Wall blocked" (fmap ActiveAttackProhibition.affected (GameState.attackProhibitions blocked)) [RestrictedCreatures.Named giant]
     Spec.assertEqWith s "and the pair stored none" (GameState.attackProhibitions control) []
     Spec.assertEqWith s "the row is still stored on bob's turn" (length (GameState.attackProhibitions bobsTurn)) 1
-    Spec.assertEqWith s "bob controls the Giant and is active" (Projection.controllerOf giant bobsTurn, GameState.activePlayer bobsTurn) (Just S.bob, S.bob)
+    Spec.assertEqWith s "bob controls the Giant and is active" (Projection.controllerOf giant bobsTurn, TurnRegisters.activePlayer (GameState.turn bobsTurn)) (Just S.bob, S.bob)
     Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.bob [(giant, AttackTarget.OfPlayer S.alice)] (declaringAt S.alice bobsTurn))) "CR 611.2a: bob now controls the Giant on his turn, so the Giant may not attack"
     Spec.assertBool s (Combat.legalAttackDeclarationAs S.bob [(openGiant, AttackTarget.OfPlayer S.alice)] (declaringAt S.alice openTurn)) "as the pair's Giant does"
     -- Ordered LAST so a card that printed the end-only duration reddens the
@@ -2864,7 +2904,7 @@ windowAttackRestrictionSpec s registry = Spec.describe s "WindowAttackRestrictio
     (openGiant, _, control) <- wallBoard s registry "Wall of Stone"
     let alicesTurn = handoffUntapping (handoffUntapping blocked)
         openAlices = handoffUntapping (handoffUntapping control)
-    Spec.assertEqWith s "alice is active on turn 3" (GameState.activePlayer alicesTurn, GameState.turnNumber alicesTurn) (S.alice, 3)
+    Spec.assertEqWith s "alice is active on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesTurn), TurnRegisters.turnNumber (GameState.turn alicesTurn)) (S.alice, 3)
     Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.alice [(giant, AttackTarget.OfPlayer S.bob)] (declaringAt S.bob alicesTurn))) "the window is open, so the Giant may not attack"
     Spec.assertBool s (not (Combat.canAttack S.alice giant (declaringAt S.bob alicesTurn))) "and it is off CR 508.1a's candidate list"
     Spec.assertBool s (Combat.legalAttackDeclarationAs S.alice [(openGiant, AttackTarget.OfPlayer S.bob)] (declaringAt S.bob openAlices)) "the pair: with nothing stored the same Giant attacks"
@@ -2909,7 +2949,7 @@ aliasOf name built = Map.lookup (Label.MkLabel (Text.pack name)) (Staged.objects
 -- on a turn that is not its owner's.
 stealing :: ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 stealing treason giant gs =
-  let board = gs {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+  let board = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.bob}}
    in S.runPure (namingTarget giant) board (S.cast S.bob treason >> Stack.resolveTop)
 
 -- CR 514.2, then the seat walk, then CR 502.3: this turn's cleanup sweep, the
@@ -2929,8 +2969,11 @@ handoffUntapping gs =
 declaringAt :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 declaringAt defending gs =
   gs
-    { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [defending]}
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defending]}
+          }
     }
 
 -- CR 506.2 / 802.2: bob in his declare attackers step with both opponents
@@ -2938,8 +2981,11 @@ declaringAt defending gs =
 bobDeclaring :: GameState.GameState -> GameState.GameState
 bobDeclaring gs =
   gs
-    { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice, S.carol]}
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice, S.carol]}
+          }
     }
 
 -- CR 514.2 then CR 500.7: this turn's cleanup sweep, then the next seat's turn
@@ -2953,9 +2999,12 @@ handoff gs = S.runPure S.identityAnswer (Expiry.dropAtCleanup gs) Engine.handoff
 mainPhaseFor :: GameState.GameState -> GameState.GameState
 mainPhaseFor gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.PrecombatMain,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- Netter en-Dal's one ability, activated and resolved with its target slot aimed
@@ -3055,8 +3104,8 @@ creatureBattleDeclarationSpec s registry = Spec.describe s "CreatureBattleDeclar
     plain <- muster 0
     battle <- muster 1
     let soldiers = Scenario.namedObjects (CardName.MkCardName (Text.pack "Soldier Token"))
-    Spec.assertEqWith s "CR 508.8 the creature-battle attacked nothing, so the step after declare attackers is end of combat" (GameState.phase battle) S.endOfCombat
-    Spec.assertEqWith s "CR 508.8 while the plain Soldier keeps the declare blockers step" (GameState.phase plain) S.declareBlockers
+    Spec.assertEqWith s "CR 508.8 the creature-battle attacked nothing, so the step after declare attackers is end of combat" (TurnRegisters.phase (GameState.turn battle)) S.endOfCombat
+    Spec.assertEqWith s "CR 508.8 while the plain Soldier keeps the declare blockers step" (TurnRegisters.phase (GameState.turn plain)) S.declareBlockers
     Spec.assertEqWith s "and each mode really made one tapped Soldier, the second a creature that is a battle" (fmap (\gs -> fmap (\oid -> (fmap Object.tapped (Game.lookupObject oid gs), Projection.isCreatureOf oid gs, Projection.isBattleOf oid gs)) (soldiers gs)) [plain, battle]) [[(Just TapState.Tapped, True, False)], [(Just TapState.Tapped, True, True)]]
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

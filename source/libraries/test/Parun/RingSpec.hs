@@ -37,6 +37,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- How many times the Ring has tempted this player (CR 701.54c).
@@ -189,7 +190,7 @@ spec s registry = Spec.describe s "Parun.Engine.Ring" $ do
         (g2, escapeId) = S.handOne escape withBobsLands
         (treasonId, g3) = S.addHandCard treason S.bob g2
         designated = castAndResolve S.identityAnswer S.alice escapeId g3
-        bobsTurn = designated {GameState.activePlayer = S.bob, GameState.priority = Just S.bob}
+        bobsTurn = designated {GameState.turn = (GameState.turn designated) {TurnRegisters.activePlayer = S.bob, TurnRegisters.priority = Just S.bob}}
         cast = S.runPure S.identityAnswer bobsTurn (S.cast S.bob treasonId)
         unsettled = S.runPure S.identityAnswer cast Stack.resolveTop
     Spec.assertBool s (isLegendary bearer designated) "alice's Ring-bearer is legendary before the theft"

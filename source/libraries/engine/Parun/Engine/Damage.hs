@@ -54,6 +54,7 @@ import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 
 -- CR 514.2: during the cleanup step, all damage marked on permanents is removed.
@@ -280,7 +281,7 @@ combatRecipient gs attacker target =
       -- because rule 506.4 names events -- see Parun.Types.Combat's
       -- attackingNothing.
       notNotedAsAttackingNothing =
-        Set.notMember attacker (Combat.Type.attackingNothing (GameState.combat gs))
+        Set.notMember attacker (Combat.Type.attackingNothing (TurnRegisters.combat (GameState.turn gs)))
    in case target of
         AttackTarget.OfPlayer defender -> stillPlaying defender
         AttackTarget.OfPlaneswalker oid
@@ -529,9 +530,9 @@ blockerChooser gs attackers controller =
     (source : _, controllers) ->
       let chooser = case controllers of
             [one] -> one
-            _ -> Game.primaryOf gs (GameState.activePlayer gs)
+            _ -> Game.primaryOf gs (TurnRegisters.activePlayer (GameState.turn gs))
           live = filter (\pid -> List.elem pid (Game.stillPlaying gs) && any (\c -> Game.inRangeOf c pid gs) controllers) (Turn.activePlayers gs)
-       in fmap (Maybe.fromMaybe (GameState.activePlayer gs)) (Game.chooseAmong (\decider asked -> Prompt.ChoosePlayer decider asked source) chooser live)
+       in fmap (Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn gs))) (Game.chooseAmong (\decider asked -> Prompt.ChoosePlayer decider asked source) chooser live)
   where
     banding = filter (\attacker -> Projection.hasKeyword Keyword.Banding attacker gs) attackers
 
@@ -641,7 +642,7 @@ divisionEvents = Either.fromRight []
 gatherCombatDamage :: (ObjectId -> Bool) -> Game [DamageEvent.DamageEvent]
 gatherCombatDamage assigns = do
   gs <- State.get
-  let combat = GameState.combat gs
+  let combat = TurnRegisters.combat (GameState.turn gs)
       attackers = filter (assigns . fst) (Map.toList (Combat.Type.attackers combat))
       blocking =
         Map.toList . Map.fromListWith Set.union $ do
@@ -1008,7 +1009,7 @@ excessDealt before source aimed settled =
 -- creatures (CR 120.3e), drain life from players (CR 120.3a), take loyalty and
 -- defense counters off (CR 120.3c, CR 120.3h), place the counters infect, wither
 -- and toxic cause (CR 120.3b, CR 120.3d, CR 120.3g) -- AND record each event into
--- GameState.events. The change-and-emit funnel for combat's two waves and
+-- TurnRegisters.events. The change-and-emit funnel for combat's two waves and
 -- resolving effects alike.
 --
 -- CR 615 / 616: EACH event in the batch runs its OWN CR 616.1 loop, and the
@@ -1440,7 +1441,7 @@ processDamage settle events = do
         pure n
       _ -> pure 0
   -- CR 608.2i: each surviving event is RECORDED, not enqueued. Sba consumes by
-  -- bumping GameState.damageScannedThrough; the record survives the check.
+  -- bumping TurnRegisters.damageScannedThrough; the record survives the check.
   --
   -- CR 615.13's preventions are recorded FIRST, which is the order they happened
   -- in: a prevention is applied inside the CR 616.1 loop, which settles what the
@@ -1616,7 +1617,7 @@ lifelinkGains survivors =
 dealCombatDamage :: Game () -> Game Bool
 dealCombatDamage settle = do
   gs <- State.get
-  let combat = GameState.combat gs
+  let combat = TurnRegisters.combat (GameState.turn gs)
       -- CR 510.4's "attacking or blocking creature": Combat.blockingNothing's
       -- count (CR 509.1g).
       participants = Combat.combatants combat
@@ -1632,7 +1633,7 @@ dealCombatDamage settle = do
       -- CR 510.4: a striker is present. This is the first of two steps; only
       -- first strikers and double strikers deal, and a second step follows.
       | otherwise -> do
-          State.modify' (\g -> g {GameState.combat = (GameState.combat g) {Combat.Type.struckFirst = Just strikers}})
+          State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.Type.struckFirst = Just strikers}}})
           dealWave settle (\oid -> alive oid && Set.member oid strikers)
           pure True
     -- CR 510.4 second step: those that had neither first strike nor double strike

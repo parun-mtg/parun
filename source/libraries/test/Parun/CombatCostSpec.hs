@@ -66,6 +66,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
 
@@ -175,7 +176,7 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
     Spec.assertEqWith
       s
       "attacking Jace: the record names the planeswalker"
-      (Map.elems (Combat.Type.attackers (GameState.combat atJace)))
+      (Map.elems (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atJace))))
       [AttackTarget.OfPlaneswalker jaceId]
     Spec.assertBool s (allUntapped forests atJace) "attacking Jace: nothing was paid"
     Spec.assertEqWith s "attacking bob: the Piker was declared" (S.attackerDeclarationsOf atBob) mine
@@ -202,7 +203,7 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
     Spec.assertEqWith
       s
       "the record names the planeswalker"
-      (Map.elems (Combat.Type.attackers (GameState.combat atJace)))
+      (Map.elems (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atJace))))
       [AttackTarget.OfPlaneswalker jaceId]
     Spec.assertBool s (allTapped forests atJace) "and the {X} was paid for it"
   Spec.it s "CR 508.1h Sphere of Safety's share is the enchantment count, not a constant" $ do
@@ -314,7 +315,7 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
         Spec.assertEqWith
           s
           "attacking Jace: the record names the planeswalker"
-          (Map.elems (Combat.Type.attackers (GameState.combat atJace)))
+          (Map.elems (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atJace))))
           [AttackTarget.OfPlaneswalker jaceId]
         Spec.assertBool s (allTapped forests atJace) "attacking Jace: the {3} was paid all the same"
         Spec.assertEqWith s "attacking bob: the Piker was declared" (S.attackerDeclarationsOf atBob) mine
@@ -333,7 +334,7 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
         after = S.runPure S.aggressiveAnswer board (Combat.declareAttackers S.manaPerformer S.alice)
     Spec.assertEqWith s "the land is still on the battlefield" (stillThere forests after) 1
     Spec.assertEqWith s "nothing was declared" (S.attackerDeclarationsOf after) []
-    Spec.assertEqWith s "and nothing is attacking" (Combat.Type.attackers (GameState.combat after)) Map.empty
+    Spec.assertEqWith s "and nothing is attacking" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) Map.empty
     Spec.assertBool s (allUntapped mine after) "CR 508.1f's tapping was undone too"
 
   Spec.it s "CR 734.1 a card revealed to attack stays revealed when a later toll fails" $ do
@@ -363,10 +364,10 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
           Prompt.OrderCombatTolls _ _ tags -> pure (Maybe.mapMaybe (\oid -> Int.toNatural =<< List.elemIndex oid tags) mine)
           _ -> pure (S.aggressiveAnswer p)
         after = snd (State.evalState (Engine.runGame answer board (Combat.declareAttackers S.manaPerformer S.alice)) 0)
-        revealed = [Revealed.card r | GameEvent.Revealed r <- fmap LoggedEvent.event (Foldable.toList (GameState.events after)), Revealed.player r == S.alice]
+        revealed = [Revealed.card r | GameEvent.Revealed r <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn after))), Revealed.player r == S.alice]
     Spec.assertBool s (any (`elem` [first, second]) revealed) "CR 734.1 the reveal from alice's library stands"
     Spec.assertEqWith s "and so does the mill" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "while the declaration is reversed" (Combat.Type.attackers (GameState.combat after)) Map.empty
+    Spec.assertEqWith s "while the declaration is reversed" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) Map.empty
   Spec.it s "CR 118.3 an empty library cannot pay Synthetic Tithe of Omens' reveal" $ do
     -- The pair differs in the one library card: with it the Tithe attacks, and
     -- without it there is nothing to reveal and the attack is reversed.
@@ -374,7 +375,7 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
     island <- S.printingOf s registry "Island"
     let (empty, _, _) = S.combatBoardOf [omens] []
         (_, stocked) = S.addLibraryCard island S.alice empty
-        attackersAfter board = Map.size (Combat.Type.attackers (GameState.combat (S.runPure S.aggressiveAnswer board (Combat.declareAttackers S.manaPerformer S.alice))))
+        attackersAfter board = Map.size (Combat.Type.attackers (TurnRegisters.combat (GameState.turn (S.runPure S.aggressiveAnswer board (Combat.declareAttackers S.manaPerformer S.alice)))))
     Spec.assertEqWith s "CR 118.3 nothing to reveal, so nothing attacks" (attackersAfter empty) 0
     Spec.assertEqWith s "while one card pays and the Tithe attacks" (attackersAfter stocked) 1
 
@@ -407,13 +408,13 @@ runCombatCounting answer gs0 =
         Phase.Combat _ -> True
         _ -> False
       go n g =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || not (inCombat (GameState.phase g))
+        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || not (inCombat (TurnRegisters.phase (GameState.turn g)))
           then pure g
           else Engine.runGame answer g Engine.runStep >>= (go (n - 1) . snd)
    in State.evalState (go 24 gs0) 0
 
 blockersOf :: ObjectId.ObjectId -> GameState.GameState -> Set.Set ObjectId.ObjectId
-blockersOf attacker gs = Map.findWithDefault Set.empty attacker (Combat.Type.blockers (GameState.combat gs))
+blockersOf attacker gs = Map.findWithDefault Set.empty attacker (Combat.Type.blockers (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 509.1c's cost clause and CR 509.1d-509.1f, proved by Oppressive Rays
 -- ("Enchanted creature can't attack or block unless its controller pays {3}") --
@@ -802,7 +803,7 @@ becomesBlockedSpec s registry = Spec.describe s "BecomesBlocked" $ do
             -- The other reading: blocked by the DECLARATION rather than by the
             -- effect. Same board again, and the only change is that bob blocks.
             declared = runToEndOfCombat S.aggressiveAnswer atBlockers
-        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the spell is cast after the declaration" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
+        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the spell is cast after the declaration" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
         -- The discriminating assertions: blocked, and blocked by NOTHING.
         Spec.assertBool s (Combat.isBlocked attacker cast) "CR 509.1h: the effect made it a blocked creature"
         Spec.assertEqWith s "and no creature is blocking it" (Combat.blockersOf attacker cast) Set.empty
@@ -814,7 +815,7 @@ becomesBlockedSpec s registry = Spec.describe s "BecomesBlocked" $ do
         -- effect rather than a creature". The event that condition reads is the
         -- one the declaration leg below does record, so this pair is what says
         -- the effect records the attacking side and only that.
-        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (GameState.events cast))) "no blocker was declared for it"
+        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn cast)))) "no blocker was declared for it"
         -- Never blocked: the trigger is silent and the Prey connects.
         Spec.assertBool s (not (Combat.isBlocked attacker uncast)) "control: with no spell the attacker is unblocked"
         Spec.assertEqWith s "control: so bob takes the Prey's 1" (S.lifeOf S.bob uncast) (Just 19)
@@ -826,7 +827,7 @@ becomesBlockedSpec s registry = Spec.describe s "BecomesBlocked" $ do
         Spec.assertEqWith s "declaration leg: but the Piker is what is blocking it" (Combat.blockersOf attacker declared) (Set.singleton blocker)
         Spec.assertEqWith s "declaration leg: the same trigger fires" (S.lifeOf S.alice declared) (Just 21)
         Spec.assertBool s (not (S.onBattlefield attacker declared) && not (S.onBattlefield blocker declared)) "declaration leg: and the two creatures trade"
-        Spec.assertBool s (any (blockerWasDeclared . LoggedEvent.event) (GameState.events declared)) "declaration leg: and CR 509.3d's event IS recorded there"
+        Spec.assertBool s (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn declared))) "declaration leg: and CR 509.3d's event IS recorded there"
       _ -> Spec.assertFailure s "fixture should have one attacker and two blockers"
 
 -- alice attacks with a Spined Thopter and a Sacred Prey; bob defends with NO
@@ -1034,7 +1035,7 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
             -- it, and once run to the end, where the life totals are.
             blocking = S.runToStep (Phase.Combat CombatStep.CombatDamage) (castFoliage flier) atBlockers
             atEnd = runToEndOfCombat (castFoliage flier) atBlockers
-        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the spell is cast after the declaration" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
+        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the spell is cast after the declaration" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
         -- GAMEPLAY FIRST: the Thopter's 2 never reached bob, so the token really
         -- did block it, and only the Prey's 1 got through.
         Spec.assertEqWith s "CR 510.1c: the Thopter's 2 was assigned to the token, so bob takes only the Prey's 1" (S.lifeOf S.bob atEnd) (Just 19)
@@ -1051,12 +1052,12 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
             -- hypothetical declaration names.
             Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton saproling (Set.singleton flier)) blocking)) "CR 702.9b / CR 509.1b: declaring that same Saproling as a blocker for the flier would have been illegal"
             Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton saproling (Set.singleton ground)) blocking) "control: and legal against the attacker without flying, so the refusal above is the flying"
-            Spec.assertEqWith s "CR 506.4: the token joined combat under bob" (Map.lookup saproling (Combat.Type.joinedUnder (GameState.combat blocking))) (Just S.bob)
+            Spec.assertEqWith s "CR 506.4: the token joined combat under bob" (Map.lookup saproling (Combat.Type.joinedUnder (TurnRegisters.combat (GameState.turn blocking)))) (Just S.bob)
             Spec.assertEqWith s "CR 509.4b: and it is not tapped, CR 509.1a's condition belonging to the declaration" (tapStateOf saproling blocking) (Just TapState.Untapped)
           other -> Spec.assertFailure s ("expected exactly one token, got " <> show (length other))
         -- CR 509.3a and CR 509.3b's last sentence, at event level: the entry
         -- records no declaration.
-        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (GameState.events atEnd))) "CR 509.3a / CR 509.3b: no blocker was declared"
+        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn atEnd)))) "CR 509.3a / CR 509.3b: no blocker was declared"
         -- Both traded: the Thopter's 1 toughness took the Saproling's 1, and the
         -- Saproling's 1 toughness took the Thopter's 2. That is CR 510.1c damage
         -- being assigned in both directions, which only a real blocker gets.
@@ -1084,14 +1085,14 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
         Spec.assertEqWith s "CR 510.1c: so the Prey's 1 was assigned to the token and bob takes only the Thopter's 2" (S.lifeOf S.bob atEnd) (Just 18)
         Spec.assertEqWith s "CR 509.4: the Saproling is blocking the Prey" (Combat.blockersOf ground blocking) (Set.fromList (S.tokensOf blocking))
         Spec.assertEqWith s "and nothing is blocking the Thopter" (Combat.blockersOf flier blocking) Set.empty
-        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (GameState.events atEnd))) "CR 509.3a / CR 509.3b: no blocker was declared here either"
+        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn atEnd)))) "CR 509.3a / CR 509.3b: no blocker was declared here either"
         Spec.assertBool s (S.onBattlefield flier atEnd) "the unblocked Thopter is untouched"
         Spec.assertBool s (not (S.onBattlefield ground atEnd)) "and the Prey traded with the Saproling"
         -- The control leg, differing from the first only in whether the spell is
         -- cast: nothing is blocked, nothing triggers, and both attackers connect.
         Spec.assertEqWith s "control: with no spell bob takes 2 and 1" (S.lifeOf S.bob uncast) (Just 17)
         Spec.assertEqWith s "control: and the Prey's trigger is silent" (S.lifeOf S.alice uncast) (Just 20)
-        Spec.assertEqWith s "control: nothing is blocking anything" (Combat.Type.blockers (GameState.combat uncast)) Map.empty
+        Spec.assertEqWith s "control: nothing is blocking anything" (Combat.Type.blockers (TurnRegisters.combat (GameState.turn uncast))) Map.empty
         Spec.assertEqWith s "control: bob's library is untouched" (length (Game.zoneMembers Zone.Library S.bob uncast)) 1
       _ -> Spec.assertFailure s "fixture should have two attackers"
   -- CR 509.3d's third sentence -- "In addition, it will trigger if a creature is
@@ -1141,9 +1142,9 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
         -- to be read at all: CR 509.1g's blocking creature, and not CR 509.1a's
         -- declared one.
         Spec.assertEqWith s "CR 509.1g: the surviving token is blocking the control's attacker" (Combat.blockersOf plain control) (Set.fromList (S.tokensOf control))
-        Spec.assertEqWith s "CR 509.4b: and it is in no declaration, so it is blocking without ever having blocked" (Combat.Type.declaredBlockers (GameState.combat control)) Set.empty
-        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (GameState.events struck))) "CR 509.4: nothing was declared as a blocker on this board"
-        Spec.assertBool s (any (blockerEnteredBlocking . LoggedEvent.event) (GameState.events struck)) "and the event that fired the trigger is the entry's own"
+        Spec.assertEqWith s "CR 509.4b: and it is in no declaration, so it is blocking without ever having blocked" (Combat.Type.declaredBlockers (TurnRegisters.combat (GameState.turn control))) Set.empty
+        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn struck)))) "CR 509.4: nothing was declared as a blocker on this board"
+        Spec.assertBool s (any (blockerEnteredBlocking . LoggedEvent.event) (TurnRegisters.events (GameState.turn struck))) "and the event that fired the trigger is the entry's own"
       _ -> Spec.assertFailure s "fixture should have one attacker per board"
   -- CR 509.4's OTHER door, and the one nothing could reach until Aetherplasm:
   -- the creature put onto the battlefield blocking is a CARD moved out of a
@@ -1202,10 +1203,10 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
         case battlefieldNamed evangelName S.bob blocking of
           [arrival] -> do
             Spec.assertEqWith s "CR 509.4: the creature card from hand is blocking the Golem" (liveBlockersOf golem blocking) [arrival]
-            Spec.assertEqWith s "CR 506.4: and it joined combat under bob" (Map.lookup arrival (Combat.Type.joinedUnder (GameState.combat blocking))) (Just S.bob)
+            Spec.assertEqWith s "CR 506.4: and it joined combat under bob" (Map.lookup arrival (Combat.Type.joinedUnder (TurnRegisters.combat (GameState.turn blocking)))) (Just S.bob)
             -- CR 509.4's "never blocked": the DECLARED blocker was Aetherplasm,
             -- so read the arrival specifically rather than the whole set.
-            Spec.assertBool s (not (Set.member arrival (Combat.Type.declaredBlockers (GameState.combat blocking)))) "CR 509.4: the arrival was never declared as a blocker"
+            Spec.assertBool s (not (Set.member arrival (Combat.Type.declaredBlockers (TurnRegisters.combat (GameState.turn blocking))))) "CR 509.4: the arrival was never declared as a blocker"
           other -> Spec.assertFailure s ("expected exactly one arrival on bob's battlefield, got " <> show (length other))
         -- Clause 0 ran, which is what clause 1's "If you do" hangs on.
         Spec.assertBool s (not (S.onBattlefield plasm atEnd)) "CR 506.4: Aetherplasm left the battlefield, so it was removed from combat"
@@ -1265,7 +1266,7 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
             atEnd = runToEndOfCombat castMirrorMatch atBlockers
             after = S.runToStep Phase.PostcombatMain castMirrorMatch atBlockers
             liveTokens g = filter (`S.onBattlefield` g) (S.tokensOf g)
-        Spec.assertEqWith s "the leg hands over at the declare blockers step, which is the only window the spell may be cast in" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
+        Spec.assertEqWith s "the leg hands over at the declare blockers step, which is the only window the spell may be cast in" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
         -- GAMEPLAY FIRST: neither attacker's damage reached bob, so BOTH
         -- iterations put their token onto the battlefield blocking the creature
         -- that iteration copied.
@@ -1282,7 +1283,7 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
         Spec.assertEqWith s "and so is the Brigade, by a different one" (length (liveBlockersOf brigade blocking)) 1
         Spec.assertEqWith s "CR 509.4: and between them the blockers are the two tokens, so neither token blocks both" (Set.fromList (liveBlockersOf guard blocking <> liveBlockersOf brigade blocking)) (Set.fromList (liveTokens blocking))
         -- CR 509.4b: nothing was declared, on the board the tokens are blocking.
-        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (GameState.events atEnd))) "CR 509.4: no blocker was declared on this board"
+        Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn atEnd)))) "CR 509.4: no blocker was declared on this board"
         Spec.assertBool s (S.onBattlefield guard atEnd && S.onBattlefield brigade atEnd) "and both attackers survived their copy's damage, which is what keeps the tokens alive to be exiled"
       _ -> Spec.assertFailure s "fixture should have two attackers"
 
@@ -1298,7 +1299,7 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
 --
 -- The pair that carries the rule is `beforeDeclaration` against `declared`:
 -- identical states but for CR 509.1's turn-based action having run. Everything
--- after that pair moves GameState.phase on the DECLARED board, which is how the
+-- after that pair moves TurnRegisters.phase on the DECLARED board, which is how the
 -- combat damage and end of combat steps -- the two the old transcription's
 -- declare-blockers-step window left out -- get read.
 --
@@ -1326,10 +1327,10 @@ castingWindowSpec s registry = Spec.describe s "CastingWindow" $ do
         -- stays an unblocked attacking creature and every later leg keeps the
         -- same legal target.
         declared = S.runPure declineBlocks beforeDeclaration (Combat.declareBlockers S.manaPerformer)
-        inStep step = declared {GameState.phase = Phase.Combat step}
+        inStep step = declared {GameState.turn = (GameState.turn declared) {TurnRegisters.phase = Phase.Combat step}}
         -- The other side of CR 506.8b, on the board that has NOT declared: a
         -- reachable priority window one step earlier.
-        atAttackers = beforeDeclaration {GameState.phase = Phase.Combat CombatStep.DeclareAttackers}
+        atAttackers = beforeDeclaration {GameState.turn = (GameState.turn beforeDeclaration) {TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers}}
     -- Anti-vacuity: bob's unrestricted instant is castable on every one of these
     -- boards, so a leg that refuses the Curtain is refusing the Curtain.
     Spec.assertBool s (all (S.castable S.bob boltId) [beforeDeclaration, declared, inStep CombatStep.CombatDamage, inStep CombatStep.EndOfCombat, atAttackers]) "bob can pay for and legally cast an unrestricted instant on every leg"
@@ -1478,7 +1479,7 @@ alluringSirenSpec s registry = Spec.describe s "AlluringSiren" $ do
       Just (control, lured, _, jaceId, activated) -> do
         let after = S.runPure (announcing jaceId) activated (Combat.declareAttackers S.manaPerformer S.alice)
             without = S.runPure (announcing jaceId) control (Combat.declareAttackers S.manaPerformer S.alice)
-            announced gs oid = Map.lookup oid (Combat.Type.attackers (GameState.combat gs))
+            announced gs oid = Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
         Spec.assertEqWith s "the lured creature attacks bob, not the Jace it was announced against" (announced after lured) (Just (AttackTarget.OfPlayer S.bob))
         -- The SAME interpreter, the same board bar the Siren's resolution: without
         -- the requirement its announcement stands, so the redirect above is CR
@@ -1516,7 +1517,7 @@ sirenBoard siren jace piker centaur =
    in case (mine, theirs, Face.activatedAbilities (S.combinedFace siren)) of
         ([lured, free], [jaceId, sirenId], ability : _) ->
           let control = S.addCounter CounterKind.Loyalty 3 jaceId gs0
-              ready = control {GameState.priority = Just S.bob}
+              ready = control {GameState.turn = (GameState.turn control) {TurnRegisters.priority = Just S.bob}}
               activated = snd (Engine.runGamePure (aimingAt lured) ready (Activate.activateAbility S.bob sirenId ability))
            in Just (control, lured, free, jaceId, snd (Engine.runGamePure (aimingAt lured) activated Stack.resolveTop))
         _ -> Nothing
@@ -1544,12 +1545,12 @@ tauntSpec s registry = Spec.describe s "Taunt" $ do
         g1 = S.landsFor island S.alice 1 (Setup.emptyGame S.bothPlayers)
         g2 = snd (S.addPermanent piker S.bob (snd (S.addPermanent orrery S.alice g1)))
         (g3, spell) = S.handOne taunt (stockedWith S.bob (stockedWith S.alice g2))
-        bobsMain = turnsUntil (\gs -> GameState.turnNumber gs == 2 && GameState.phase gs == Phase.PrecombatMain) g3
+        bobsMain = turnsUntil (\gs -> TurnRegisters.turnNumber (GameState.turn gs) == 2 && TurnRegisters.phase (GameState.turn gs) == Phase.PrecombatMain) g3
         cast = S.runPure (aimingAtPlayer S.bob) bobsMain (S.cast S.alice spell)
         resolved = S.runPure (aimingAtPlayer S.bob) cast Engine.priorityLoop
         withGiant = snd (S.addPermanent giant S.bob resolved)
-        afterTurn n = turnsUntil (\gs -> GameState.turnNumber gs > n) withGiant
-    Spec.assertEqWith s "Taunt resolved on bob's turn 2" (length (GameState.attackRequirements resolved), GameState.turnNumber resolved, GameState.activePlayer resolved) (1, 2, S.bob)
+        afterTurn n = turnsUntil (\gs -> TurnRegisters.turnNumber (GameState.turn gs) > n) withGiant
+    Spec.assertEqWith s "Taunt resolved on bob's turn 2" (length (GameState.attackRequirements resolved), TurnRegisters.turnNumber (GameState.turn resolved), TurnRegisters.activePlayer (GameState.turn resolved)) (1, 2, S.bob)
     Spec.assertEqWith s "CR 611.2a bob's current turn is not his next one, so nothing attacked" (S.lifeOf S.alice (afterTurn 2)) (Just 20)
     Spec.assertEqWith s "CR 611.2c on his next turn both creatures attacked alice, the Giant too" (S.lifeOf S.alice (afterTurn 4)) (Just 15)
     Spec.assertEqWith s "and the turn after that, nothing is required" (S.lifeOf S.alice (afterTurn 6)) (Just 15)
@@ -1598,8 +1599,11 @@ publicEnemySpec s registry = Spec.describe s "PublicEnemy" $ do
         -- states both, as combatBoardOf does for two seats.
         defending =
           base
-            { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
+            { GameState.turn =
+                (GameState.turn base)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]}
+                  }
             }
         enchanting host =
           let (aura, withAura) = S.addPermanent enemy S.alice defending
@@ -1667,7 +1671,7 @@ publicEnemySpec s registry = Spec.describe s "PublicEnemy" $ do
             (aura, withAura) = S.addPermanent enemy S.alice loyal
             narrowed = S.attach aura host withAura
             control = cursingBoard curse S.alice loyal
-            announced gs = Map.lookup attacker (Combat.Type.attackers (GameState.combat (S.runPure (announcing jaceId) gs (Combat.declareAttackers S.manaPerformer S.alice))))
+            announced gs = Map.lookup attacker (Combat.Type.attackers (TurnRegisters.combat (GameState.turn (S.runPure (announcing jaceId) gs (Combat.declareAttackers S.manaPerformer S.alice)))))
         Spec.assertEqWith s "the attacker is redirected to bob" (announced narrowed) (Just (AttackTarget.OfPlayer S.bob))
         Spec.assertEqWith s "where a requirement naming no object leaves the announcement alone" (announced control) (Just (AttackTarget.OfPlaneswalker jaceId))
       _ -> Spec.assertFailure s "fixture should have one attacker and bob's two permanents"
@@ -1702,8 +1706,11 @@ mostLifeRequirementSpec s registry = Spec.describe s "MostLifeRequirement" $ do
         -- first (CR 101.4).
         defending gs =
           gs
-            { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+                  }
             }
         carolAhead = defending (atLife S.bob 17 (atLife S.carol 23 base))
         bobAhead = defending (atLife S.bob 23 (atLife S.carol 17 base))
@@ -1741,8 +1748,11 @@ mostLifeRequirementSpec s registry = Spec.describe s "MostLifeRequirement" $ do
     let (base, mine, _, _) = S.threePlayerCombat [galactus] [piker] [piker]
         defending gs =
           gs
-            { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+                  }
             }
         carolAhead = defending (atLife S.bob 17 (atLife S.carol 23 base))
         bobAhead = defending (atLife S.bob 23 (atLife S.carol 17 base))
@@ -1750,7 +1760,7 @@ mostLifeRequirementSpec s registry = Spec.describe s "MostLifeRequirement" $ do
         announcingBob p = case p of
           Prompt.ChooseAttackTarget {} -> AttackTarget.OfPlayer S.bob
           _ -> S.aggressiveAnswer p
-        announced gs oid = Map.lookup oid (Combat.Type.attackers (GameState.combat (S.runPure announcingBob gs (Combat.declareAttackers S.manaPerformer S.alice))))
+        announced gs oid = Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn (S.runPure announcingBob gs (Combat.declareAttackers S.manaPerformer S.alice)))))
     case mine of
       [devourer] -> do
         Spec.assertEqWith s "the announcement against bob is refused and Galactus is redirected to carol" (announced carolAhead devourer) (Just (AttackTarget.OfPlayer S.carol))
@@ -1788,8 +1798,11 @@ troveOfTemptationSpec s registry = Spec.describe s "TroveOfTemptation" $ do
         -- player; a direct-call test states the step and CR 802.2's pair itself.
         let defending gs =
               gs
-                { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-                  GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                        TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+                      }
                 }
             board = defending (S.addCounter CounterKind.Loyalty 3 jaceId base)
         -- THE GAMEPLAY ASSERTION, and the half no other card in the pool states:

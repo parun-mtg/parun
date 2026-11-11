@@ -73,6 +73,7 @@ import Parun.Types.StateDigest (StateDigest)
 import qualified Parun.Types.StateDigest as StateDigest
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Text.Read as Read
 
 -- | The game state as CR 733.3 compares it: the whole record, by its derived
@@ -114,8 +115,16 @@ digest gs =
   let (effects, objects, reacquire) = canonicalStamps gs
       trimmed =
         gs
-          { GameState.events = Seq.empty,
-            GameState.activationsThisTurn = Seq.empty,
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.events = Seq.empty,
+                  TurnRegisters.activationsThisTurn = Seq.empty,
+                  TurnRegisters.scannedThrough = 0,
+                  TurnRegisters.damageScannedThrough = 0,
+                  TurnRegisters.stackedIn = Map.empty,
+                  -- One value for a whole turn, and the digest keeps turnNumber.
+                  TurnRegisters.permanentsAsTurnBegan = Nothing
+                },
             GameState.counteredWith = Map.filter (not . Set.null) (fmap (Set.map (\link -> link {CounterLink.acquisition = reacquire (CounterLink.acquisition link)}) . Set.filter (readsOwnCounterLinks gs . CounterLink.source)) (GameState.counteredWith gs)),
             -- Only a countdown shield's key is read, and its row, compared here, shrinks as it grows.
             GameState.damagePreventedBy = Map.empty,
@@ -130,8 +139,6 @@ digest gs =
             GameState.undone = Map.empty,
             GameState.printings = Map.empty,
             GameState.printingIds = Map.empty,
-            GameState.scannedThrough = 0,
-            GameState.damageScannedThrough = 0,
             GameState.boardAfterEvent = Map.empty,
             GameState.boardBeforeEvent = Map.empty,
             GameState.battlefieldWhenTriggered = Map.empty,
@@ -141,9 +148,6 @@ digest gs =
             GameState.lastKnown = Map.empty,
             GameState.stackArchive = Map.empty,
             GameState.cardsPlayed = Map.empty,
-            GameState.stackedIn = Map.empty,
-            -- One value for a whole turn, and the digest keeps turnNumber.
-            GameState.permanentsAsTurnBegan = Nothing,
             -- Canonical rather than dropped, so CR 733.3's own example recurs,
             -- and a loop that moves a counter back.
             GameState.continuousEffects = effects,
@@ -167,8 +171,8 @@ digest gs =
         { StateDigest.unwrap = trimmed,
           StateDigest.canonical = renumber ids (ranked timestampTag rendered) rendered,
           StateDigest.objectRanks = ids,
-          StateDigest.events = GameState.events gs,
-          StateDigest.activations = GameState.activationsThisTurn gs
+          StateDigest.events = TurnRegisters.events (GameState.turn gs),
+          StateDigest.activations = TurnRegisters.activationsThisTurn (GameState.turn gs)
         }
 
 -- | CR 607.1 / 608.2h: can `source`, live or gone, read the counters its own
@@ -355,7 +359,7 @@ layeredStamps gs =
 -- extension of `there`'s counts as read.
 lapIsRead :: StateDigest -> GameState -> Bool
 lapIsRead there gs =
-  case (appended (StateDigest.events there) (GameState.events gs), appended (StateDigest.activations there) (GameState.activationsThisTurn gs)) of
+  case (appended (StateDigest.events there) (TurnRegisters.events (GameState.turn gs)), appended (StateDigest.activations there) (TurnRegisters.activationsThisTurn (GameState.turn gs))) of
     (Just events, Just activations) ->
       let wrote reading = case reading of
             HistoryRead.Activations -> not (Seq.null activations)
@@ -408,7 +412,7 @@ historyReads =
     }
 
 -- | Does this logged event record part of what `reading` reads? Through the read
--- site's own projection wherever it has one. GameState.activationsThisTurn
+-- site's own projection wherever it has one. TurnRegisters.activationsThisTurn
 -- records the activations that read reads, mana abilities included, so
 -- GameEvent.AbilityActivated does not.
 records :: HistoryRead.HistoryRead -> GameEvent -> Bool
@@ -561,7 +565,7 @@ forbidden here gs pid loopTrail =
           firstSeen = minimum occurrences
           acted (_, _, action, _) = action /= Action.Pass
           involved = Set.fromList [who | (_, who, _, _) <- filter acted (Foldable.toList (Seq.drop firstSeen choices))]
-          named = List.find (`Set.member` involved) (Game.turnOrderFrom (GameState.activePlayer gs) gs)
+          named = List.find (`Set.member` involved) (Game.turnOrderFrom (TurnRegisters.activePlayer (GameState.turn gs)) gs)
           made = [(there, action, completed) | (there, who, action, completed) <- Maybe.mapMaybe (`Seq.lookup` choices) occurrences, who == pid]
           taken = Set.fromList [choiceKey there action | (there, action, _) <- made, choiceless action]
           completedWith = Set.fromList [(choiceKey there action, completionKey there completion) | (there, action, Just completion) <- made]
@@ -608,7 +612,10 @@ paid paidFor gs = case paidFor of
     digest
       gs
         { GameState.objects = Map.delete oid (GameState.objects gs),
-          GameState.stack = filter (/= oid) (GameState.stack gs)
+          GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.stack = filter (/= oid) (TurnRegisters.stack (GameState.turn gs))
+              }
         }
 
 -- | Note that `pid`, asked at `here`, chose `action`. Held as pending until

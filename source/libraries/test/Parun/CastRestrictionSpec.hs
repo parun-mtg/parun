@@ -72,6 +72,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 printedCastingRestrictionSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -94,7 +95,7 @@ printedCastingRestrictionSpec s registry = Spec.describe s "PrintedCastingRestri
   -- changed; a printing that drops that clause would refute this and replace it.
   --
   -- The boundary is crossed by RUNNING the engine rather than by writing
-  -- GameState.phase, as the case above does: what makes the answer flip is a
+  -- TurnRegisters.phase, as the case above does: what makes the answer flip is a
   -- reset at the end of every step (Parun.Engine.Combat.clearAttackedThisStep),
   -- which a hand-set phase never reaches.
   Spec.it s "CR 508.6 / 500.1 the record is empty in the declare blockers step" $ do
@@ -110,14 +111,14 @@ printedCastingRestrictionSpec s registry = Spec.describe s "PrintedCastingRestri
         attacked = S.runPure S.aggressiveAnswer withBolt (Combat.declareAttackers S.manaPerformer S.alice)
         later = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) S.aggressiveAnswer withBolt
     Spec.assertBool s (S.castable S.bob bobsBelated attacked) "castable in the step the attack was declared"
-    Spec.assertEqWith s "the engine reached the next step" (GameState.phase later) (Phase.Combat CombatStep.DeclareBlockers)
+    Spec.assertEqWith s "the engine reached the next step" (TurnRegisters.phase (GameState.turn later)) (Phase.Combat CombatStep.DeclareBlockers)
     Spec.assertBool s (not (S.castable S.bob bobsBelated later)) "not castable once that step has ended"
     Spec.assertBool s (not (any (S.isCastOf bobsBelated) (Action.legalActions S.bob later))) "and not offered"
     -- What separates "the step ended" from "combat ended": the phase-scoped
     -- record still names bob, CR 511.3 emptying it only as the combat phase
     -- ends, so the answer changed because of the step and nothing else.
-    Spec.assertBool s (Set.member (AttackTarget.OfPlayer S.bob) (Combat.Type.declaredAttacked (GameState.combat later))) "bob is still on the phase-scoped record"
-    Spec.assertBool s (Set.null (Combat.Type.declaredAttackedThisStep (GameState.combat later))) "and off the step-scoped one"
+    Spec.assertBool s (Set.member (AttackTarget.OfPlayer S.bob) (Combat.Type.declaredAttacked (TurnRegisters.combat (GameState.turn later)))) "bob is still on the phase-scoped record"
+    Spec.assertBool s (Set.null (Combat.Type.declaredAttackedThisStep (TurnRegisters.combat (GameState.turn later)))) "and off the step-scoped one"
     -- CR 117.1a, as for Rally above: the step is not closed to bob.
     Spec.assertBool s (elem (A.Cast boltId (S.printingName bolt) Facing.FaceUp) (Action.legalActions S.bob later)) "bob's unrestricted instant is castable there"
   -- CR 508.4's last-but-one sentence: "Such creatures are 'attacking' but, for
@@ -145,7 +146,7 @@ printedCastingRestrictionSpec s registry = Spec.describe s "PrintedCastingRestri
     let (bobsRally, _, _, board) = rallyBoard piker plains rally
         mine = Projection.controls S.alice board
         joined = S.runPure S.identityAnswer board (Foldable.traverse_ (Combat.putOntoBattlefieldAttacking Combat.Any) mine)
-        combat = GameState.combat joined
+        combat = TurnRegisters.combat (GameState.turn joined)
     Spec.assertEqWith s "nothing was DECLARED" (S.attackerDeclarationsOf joined) []
     -- CR 508.8's record does count it -- that is the rule's second clause, and
     -- the skip depends on it.
@@ -241,7 +242,7 @@ necrologiaSpec s registry = Spec.describe s "Necrologia" $ do
     necrologia <- S.printingOf s registry "Necrologia"
     bolt <- S.printingOf s registry "Lightning Bolt"
     let (oid, boltId, board) = necrologiaBoard swamp mountain necrologia bolt (Phase.Ending EndingStep.EndStep)
-        bobsTurn = board {GameState.activePlayer = S.bob}
+        bobsTurn = board {GameState.turn = (GameState.turn board) {TurnRegisters.activePlayer = S.bob}}
     Spec.assertBool s (not (S.castable S.alice oid bobsTurn)) "(TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) refuses it"
     Spec.assertBool s (not (any (S.isCastOf oid) (Action.legalActions S.alice bobsTurn))) "and it is not offered"
     Spec.assertBool s (S.castable S.alice boltId bobsTurn) "though the control instant still is"
@@ -315,7 +316,7 @@ flashSpec s registry = Spec.describe s "Flash" $ do
     pouncingCheetah <- S.printingOf s registry "Pouncing Cheetah"
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (gs, cheetahId, mammothId) = cheetahAndMammothInHand forest pouncingCheetah warMammoth
-        bobsTurn = gs {GameState.activePlayer = S.bob}
+        bobsTurn = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.bob}}
     Spec.assertBool s (S.castable S.alice cheetahId bobsTurn) "the Cheetah is castable"
     Spec.assertBool s (elem (A.Cast cheetahId (S.printingName pouncingCheetah) Facing.FaceUp) (Action.legalActions S.alice bobsTurn)) "and offered as a legal action"
     Spec.assertBool s (not (S.castable S.alice mammothId bobsTurn)) "the Mammoth is not"
@@ -326,7 +327,7 @@ flashSpec s registry = Spec.describe s "Flash" $ do
     pouncingCheetah <- S.printingOf s registry "Pouncing Cheetah"
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (gs, cheetahId, mammothId) = cheetahAndMammothInHand forest pouncingCheetah warMammoth
-        busy = gs {GameState.stack = [ObjectId.MkObjectId 999]}
+        busy = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.stack = [ObjectId.MkObjectId 999]}}
     Spec.assertBool s (S.castable S.alice cheetahId busy) "the Cheetah is castable"
     Spec.assertBool s (not (S.castable S.alice mammothId busy)) "the Mammoth is not"
   -- CR 302.1's "during a MAIN PHASE", same pair.
@@ -335,7 +336,7 @@ flashSpec s registry = Spec.describe s "Flash" $ do
     pouncingCheetah <- S.printingOf s registry "Pouncing Cheetah"
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (gs, cheetahId, mammothId) = cheetahAndMammothInHand forest pouncingCheetah warMammoth
-        upkeep = gs {GameState.phase = Phase.Beginning BeginningStep.Upkeep}
+        upkeep = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep}}
     Spec.assertBool s (S.castable S.alice cheetahId upkeep) "the Cheetah is castable"
     Spec.assertBool s (not (S.castable S.alice mammothId upkeep)) "the Mammoth is not"
   -- Rule 702.8a's second sentence is about WHEN, and says nothing about WHERE:
@@ -363,7 +364,7 @@ flashSpec s registry = Spec.describe s "Flash" $ do
     warMammoth <- S.printingOf s registry "War Mammoth"
     humility <- S.printingOf s registry "Humility"
     let (gs, cheetahId, mammothId) = cheetahAndMammothInHand forest pouncingCheetah warMammoth
-        humbled = (S.withHumility humility gs) {GameState.activePlayer = S.bob}
+        humbled = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.bob}) (S.withHumility humility gs)
     Spec.assertBool s (Projection.hasKeyword Keyword.Flash cheetahId humbled) "the Cheetah projects flash"
     Spec.assertBool s (not (Projection.hasKeyword Keyword.Flash mammothId humbled)) "the Mammoth does not"
     Spec.assertBool s (S.castable S.alice cheetahId humbled) "and it is still castable on bob's turn"
@@ -397,7 +398,7 @@ flashSpec s registry = Spec.describe s "Flash" $ do
         after = play withTeferi
     Spec.assertEqWith s "the Mammoth is on the battlefield" (S.countOnBattlefieldByName (S.printingName warMammoth) S.alice after) 1
     Spec.assertEqWith s "and without Teferi it never left her hand" (S.countOnBattlefieldByName (S.printingName warMammoth) S.alice (play bare)) 0
-    Spec.assertEqWith s "bob was the active player throughout" (GameState.activePlayer after) S.bob
+    Spec.assertEqWith s "bob was the active player throughout" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
     Spec.assertBool s (Projection.hasKeyword Keyword.Flash mammothId withTeferi) "the card in hand projects flash"
     Spec.assertBool s (not (Projection.hasKeyword Keyword.Flash mammothId bare)) "and does not without Teferi"
 
@@ -433,8 +434,11 @@ teferiBoard forest warMammoth mTeferi =
       gs1 = maybe gs0 (\teferi -> snd (S.addPermanent teferi S.alice gs0)) mTeferi
    in ( mammothId,
         gs1
-          { GameState.activePlayer = S.bob,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.activePlayer = S.bob,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -537,7 +541,7 @@ waxWaneSpec s registry = Spec.describe s "WaxWane" $ do
     Spec.assertEqWith s "and has Wax" (Projection.hasName waxName oid gs) True
     Spec.assertEqWith s "and has Wane" (Projection.hasName waneName oid gs) True
     Spec.assertEqWith s "and does NOT have the two joined" (Projection.hasName (CardName.MkCardName (Text.pack "Wax//Wane")) oid gs) False
-    case GameState.stack cast of
+    case TurnRegisters.stack (GameState.turn cast) of
       [] -> Spec.assertFailure s "expected the spell on the stack"
       top : _ -> do
         -- CR 709.3b narrows the pair to one: the half being cast.
@@ -607,7 +611,7 @@ waxWaneSpec s registry = Spec.describe s "WaxWane" $ do
         (gs, oid) = S.handOne waxWane withInterdiction
         after = snd (Engine.runGamePure S.identityAnswer gs (Cast.castSpell S.manaPerformer S.alice oid waneName Facing.FaceUp))
     -- What CR 601.2b-i do afterwards is the next case's.
-    Spec.assertEqWith s "the redirect fired, so nothing reached the stack" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "the redirect fired, so nothing reached the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     case Game.zoneMembers Zone.Exile S.alice after of
       [exiled] -> do
         Spec.assertEqWith s "in exile, CR 709.4's combined view has both names" (Projection.namesOf exiled after) (Set.fromList [waxName, waneName])
@@ -633,7 +637,7 @@ waxWaneSpec s registry = Spec.describe s "WaxWane" $ do
         cast = S.runPure S.identityAnswer gs (Cast.castSpell S.manaPerformer S.alice oid waxName Facing.FaceUp)
         after = S.runPure S.identityAnswer cast Engine.priorityLoop
         elemental = CardName.MkCardName (Text.pack "Elemental Token")
-    Spec.assertEqWith s "the redirect fired, so nothing reached the stack" (length (GameState.stack cast)) 0
+    Spec.assertEqWith s "the redirect fired, so nothing reached the stack" (length (TurnRegisters.stack (GameState.turn cast))) 0
     Spec.assertEqWith s "CR 601.2h the Forest paid Wax's {G}" (tapStateOf forestId cast) (Just TapState.Tapped)
     Spec.assertEqWith s "CR 601.2i Young Pyromancer saw a cast" (S.countOnBattlefieldByName elemental S.alice after) 1
     Spec.assertEqWith s "and the card stays in exile, never resolving" (length (Game.zoneMembers Zone.Exile S.alice after)) 1
@@ -860,9 +864,12 @@ boundedBoard mountain plains piker sphere blaze artifacts =
       (spellId, withSpell) = S.addHandCard blaze S.alice withArtifacts
    in ( spellId,
         withSpell
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withSpell)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1032,9 +1039,12 @@ offeredPlays pid gs =
 inHerMainPhase :: GameState.GameState -> GameState.GameState
 inHerMainPhase gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = S.alice,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 victorManchaSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -1109,7 +1119,7 @@ victorManchaSpec s registry = Spec.describe s "VictorMancha" $ do
     let (_, victors, placed) = victorTriggered plains victor hero
         dead = S.runPure S.identityAnswer placed (Event.destroy (pure ()) Regenerability.Regenerable victors)
         after = S.runPure S.identityAnswer dead Stack.resolveTop
-    Spec.assertBool s (not (null (GameState.stack placed))) "the trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn placed)))) "the trigger really was on the stack"
     Spec.assertEqWith s "Victor died before it resolved" (namedOnBattlefield victorName after) []
     case filter (\o -> Projection.hasName benalishHeroName o after) (Game.zoneMembers Zone.Exile S.alice after) of
       [exiledId] -> do
@@ -1138,7 +1148,7 @@ victorManchaSpec s registry = Spec.describe s "VictorMancha" $ do
         resolved = S.runPure S.identityAnswer placed Stack.resolveTop
         (herMountain, withHers) = S.addHandCard mountain S.alice (inHerMainPhase resolved)
         (hisMountain, after) = S.addHandCard mountain S.bob withHers
-        bobsTurn = after {GameState.activePlayer = S.bob, GameState.priority = Just S.bob}
+        bobsTurn = after {GameState.turn = (GameState.turn after) {TurnRegisters.activePlayer = S.bob, TurnRegisters.priority = Just S.bob}}
     case Game.zoneMembers Zone.Exile S.alice after of
       [exiledId] -> do
         Spec.assertEqWith
@@ -1363,7 +1373,7 @@ direFleetDaredevilSpec s registry = Spec.describe s "DireFleetDaredevil" $ do
     faith <- S.printingOf s registry "Renewed Faith"
     let cast = daredevilFaithCast mountain plains daredevil faith
         after = S.runPure S.identityAnswer cast Stack.resolveTop
-    Spec.assertBool s (not (null (GameState.stack cast))) "the Faith really was cast"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn cast)))) "the Faith really was cast"
     Spec.assertEqWith s "alice cast it, so alice gains the life" (S.lifeOf S.alice after) (Just 26)
     Spec.assertEqWith s "its owner gains nothing" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "and the third seat is untouched" (S.lifeOf S.carol after) (Just 20)
@@ -1391,7 +1401,7 @@ direFleetDaredevilSpec s registry = Spec.describe s "DireFleetDaredevil" $ do
       [exiledId] -> do
         let cast = S.runPure S.identityAnswer board (Cast.castSpell S.manaPerformer S.alice exiledId renewedFaithName Facing.FaceUp)
             after = S.runPure S.identityAnswer cast Stack.resolveTop
-        Spec.assertBool s (not (null (GameState.stack cast))) "the exiled Faith really was cast"
+        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn cast)))) "the exiled Faith really was cast"
         Spec.assertEqWith s "and it resolved, so alice gained its 6 life" (S.lifeOf S.alice after) (Just 26)
         Spec.assertEqWith s "CR 400.7h: the SPELL was exiled, so its owner's graveyard is empty" (Game.zoneMembers Zone.Graveyard S.bob after) []
         Spec.assertEqWith s "and the card the spell became is in exile" (length (Game.zoneMembers Zone.Exile S.bob after)) 1
@@ -1400,7 +1410,7 @@ direFleetDaredevilSpec s registry = Spec.describe s "DireFleetDaredevil" $ do
         -- goes where CR 608.2n sends it.
         let fromHand = S.runPure S.identityAnswer after (Cast.castSpell S.manaPerformer S.alice handFaithId renewedFaithName Facing.FaceUp)
             resolved = S.runPure S.identityAnswer fromHand Stack.resolveTop
-        Spec.assertBool s (not (null (GameState.stack fromHand))) "the hand Faith really was cast"
+        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn fromHand)))) "the hand Faith really was cast"
         Spec.assertEqWith s "CR 608.2n: the hand copy goes to alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice resolved)) 1
         Spec.assertEqWith s "and alice gained the second Faith's life too" (S.lifeOf S.alice resolved) (Just 32)
       other -> Spec.assertFailure s ("expected exactly one exiled Faith, got " <> show (length other))
@@ -1437,7 +1447,7 @@ direFleetDaredevilSpec s registry = Spec.describe s "DireFleetDaredevil" $ do
         Spec.assertEqWith s "two Mountains paid for the Daredevil" (S.tappedCount S.alice board) 2
         let cast = S.runPure S.identityAnswer board (Cast.castSpell S.manaPerformer S.alice exiledId renewedFaithName Facing.FaceUp)
             after = S.runPure S.identityAnswer cast Stack.resolveTop
-        Spec.assertBool s (not (null (GameState.stack cast))) "the Faith really was cast"
+        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn cast)))) "the Faith really was cast"
         Spec.assertEqWith s "CR 118.14: the {2}{W} was paid, and alice gains the 6 life" (S.lifeOf S.alice after) (Just 26)
         -- WHAT WAS SPENT, which is rule 609.4b's second clause: three more
         -- Mountains, so the mana that paid the {W} was red and stayed red.
@@ -1521,7 +1531,7 @@ hostageTakerSpec s registry = Spec.describe s "HostageTaker" $ do
         Spec.assertBool s (offeredCast exiledId goblinPikerName board) "alice is offered the cast"
         let cast = S.runPure S.identityAnswer board (Cast.castSpell S.manaPerformer S.alice exiledId goblinPikerName Facing.FaceUp)
             after = S.runPure S.identityAnswer cast Stack.resolveTop
-        Spec.assertBool s (not (null (GameState.stack cast))) "the Piker really was cast"
+        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn cast)))) "the Piker really was cast"
         case namedOnBattlefield goblinPikerName after of
           [pikerId] -> do
             -- THE GAMEPLAY ASSERTION, ahead of every proxy: the permanent the
@@ -1688,9 +1698,12 @@ soulImmolationBoard mountain piker guard wolves immolation =
         guardId,
         wolvesId,
         withSpell
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withSpell)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1789,7 +1802,7 @@ drannithMagistrateSpec s registry = Spec.describe s "Drannith Magistrate" $ do
     let (bobGrave, bobHand, _, _, open) = drannithBoard island thinkTwice
         board = withMagistrate magistrate open
         cast = S.runPure S.identityAnswer board (S.cast S.bob bobHand)
-    Spec.assertEqWith s "the hand cast is on the stack" (length (GameState.stack cast)) 1
+    Spec.assertEqWith s "the hand cast is on the stack" (length (TurnRegisters.stack (GameState.turn cast))) 1
     Spec.assertBool s (not (S.castable S.bob bobGrave cast)) "and the graveyard copy is still refused with it there"
 
 -- Teferi, Mage of Zhalfir {2}{U}{U}{U} Legendary Creature -- Human Wizard 3/4:
@@ -1824,8 +1837,8 @@ teferiSorcerySpeedSpec s registry = Spec.describe s "Teferi, Mage of Zhalfir" $ 
     bolt <- S.printingOf s registry "Lightning Bolt"
     let (aliceBolt, bobBolt, carolBolt, open) = teferiSorceryBoard mountain bolt
         board = addTeferi teferi open
-        bobsTurn gs = gs {GameState.activePlayer = S.bob}
-        busy gs = gs {GameState.stack = [ObjectId.MkObjectId 999]}
+        bobsTurn gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.bob}}
+        busy gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.stack = [ObjectId.MkObjectId 999]}}
         casting pid oid gs = elem (A.Cast oid (S.printingName bolt) Facing.FaceUp) (offeredTo pid gs)
     Spec.assertBool s (not (casting S.bob bobBolt board)) "bob may not cast an instant in alice's main phase"
     Spec.assertBool s (not (casting S.carol carolBolt board)) "and neither may carol, the third seat"
@@ -1861,7 +1874,7 @@ teferiSorcerySpeedSpec s registry = Spec.describe s "Teferi, Mage of Zhalfir" $ 
     bolt <- S.printingOf s registry "Lightning Bolt"
     let (_, _, _, open) = teferiSorceryBoard mountain bolt
         (bobLand, stocked) = S.addHandCard mountain S.bob open
-        board = (addTeferi teferi stocked) {GameState.activePlayer = S.bob}
+        board = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.bob}) (addTeferi teferi stocked)
     Spec.assertBool s (elem (A.Play bobLand Nothing) (offeredTo S.bob board)) "bob may still play a land with Teferi standing"
   -- THE OTHER PATH, and the reason the clause is read in prohibitsCasting rather
   -- than conjoined onto Cast.timingOk: Cast.castableWhileSearching asks
@@ -1882,7 +1895,7 @@ teferiSorcerySpeedSpec s registry = Spec.describe s "Teferi, Mage of Zhalfir" $ 
         offers gs = length (Cast.castableWhileSearching S.bob gs)
     Spec.assertEqWith s "bob's mid-search cast is refused on alice's turn" (offers board) 0
     Spec.assertEqWith s "without Teferi the same offer stands, off the same seven Forests" (offers stocked) 1
-    Spec.assertEqWith s "and with Teferi it stands again once it is bob's own turn" (offers (board {GameState.activePlayer = S.bob})) 1
+    Spec.assertEqWith s "and with Teferi it stands again once it is bob's own turn" (offers (board {GameState.turn = (GameState.turn board) {TurnRegisters.activePlayer = S.bob}})) 1
 
 -- Three seats, one untapped Mountain and one Lightning Bolt in hand each, alice
 -- on her own turn in her precombat main phase with an empty stack. No Teferi yet
@@ -2023,7 +2036,7 @@ answerSenTriplets p = case p of
 senTripletsResolved :: GameState.GameState -> GameState.GameState
 senTripletsResolved gs =
   let upkeep = Phase.Beginning BeginningStep.Upkeep
-      begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.phase = upkeep})
+      begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep}})
       onStack = snd (Engine.runGamePure answerSenTriplets begun Engine.settleForPriority)
    in S.runPure answerSenTriplets onStack Stack.resolveTop
 
@@ -2076,7 +2089,7 @@ senTripletsSpec s registry =
         Spec.it s "CR 601.3 alice casts a spell out of bob's hand, and the card goes to bob's graveyard" $ do
           ((_, bobSpell, _, _, open), name) <- board
           let after = senTripletsResolved open
-              resolved = S.runPure (takeOnly (A.Cast bobSpell name Facing.FaceUp)) (after {GameState.priority = Just S.alice}) Engine.priorityLoop
+              resolved = S.runPure (takeOnly (A.Cast bobSpell name Facing.FaceUp)) (after {GameState.turn = (GameState.turn after) {TurnRegisters.priority = Just S.alice}}) Engine.priorityLoop
           -- The GAMEPLAY assertions first, so no offer count absorbs a mutation
           -- ahead of them. CR 601.2a: alice controls the spell, so Think Twice's
           -- draw is hers -- two cards, the one she held and the one she drew.
@@ -2121,9 +2134,9 @@ senTripletsSpec s registry =
         -- MAIN phase, CR 305.1's own window, where the cases above sit in upkeep.
         Spec.it s "CR 305.1 alice may play a land out of bob's hand" $ do
           ((_, _, _, bobLand, open), _) <- board
-          let after = (senTripletsResolved open) {GameState.phase = Phase.PrecombatMain}
+          let after = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain}) (senTripletsResolved open)
               controlledBy pid gs = length (filter (\o -> Projection.controllerOf o gs == Just pid) (Set.toList (GameState.battlefield gs)))
-              played = S.runPure (takeOnly (A.Play bobLand Nothing)) (after {GameState.priority = Just S.alice}) Engine.priorityLoop
+              played = S.runPure (takeOnly (A.Play bobLand Nothing)) (after {GameState.turn = (GameState.turn after) {TurnRegisters.priority = Just S.alice}}) Engine.priorityLoop
           -- The GAMEPLAY assertions first, so no offer count absorbs a mutation
           -- ahead of them. CR 305.1: the land enters under the player who PLAYED
           -- it, so alice's side of the battlefield grows and bob's does not.
@@ -2153,7 +2166,7 @@ senTripletsSpec s registry =
           let (_, bobSpell, open) = senReboundBoard mountain staggershock triplets
               name = S.printingName staggershock
               granted = senTripletsResolved open
-              resolved = S.runPure (senReboundAnswer (A.Cast bobSpell name Facing.FaceUp)) (granted {GameState.priority = Just S.alice}) Engine.priorityLoop
+              resolved = S.runPure (senReboundAnswer (A.Cast bobSpell name Facing.FaceUp)) (granted {GameState.turn = (GameState.turn granted) {TurnRegisters.priority = Just S.alice}}) Engine.priorityLoop
           -- The GAMEPLAY assertion first. CR 608.2n: the card is in its owner's
           -- graveyard, where rule 702.88a read for the ZONE alone exiles it.
           Spec.assertEqWith s "CR 608.2n: the card is in bob's graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob resolved)) 1
@@ -2172,7 +2185,7 @@ senTripletsSpec s registry =
           let (aliceSpell, _, open) = senReboundBoard mountain staggershock triplets
               name = S.printingName staggershock
               granted = senTripletsResolved open
-              resolved = S.runPure (senReboundAnswer (A.Cast aliceSpell name Facing.FaceUp)) (granted {GameState.priority = Just S.alice}) Engine.priorityLoop
+              resolved = S.runPure (senReboundAnswer (A.Cast aliceSpell name Facing.FaceUp)) (granted {GameState.turn = (GameState.turn granted) {TurnRegisters.priority = Just S.alice}}) Engine.priorityLoop
           Spec.assertEqWith s "CR 702.88a: the card is in exile" (length (GameState.exile resolved)) 1
           Spec.assertEqWith s "and alice's graveyard is empty" (Game.zoneMembers Zone.Graveyard S.alice resolved) []
           Spec.assertEqWith s "the spell resolved here too: carol took its 2" (S.lifeOf S.carol resolved) (Just 18)
@@ -2227,7 +2240,7 @@ senReboundAnswer wanted p = case p of
 -- Parun.SpecialActionSpec's Damping Engine cases use: legalActions answers for the
 -- player holding priority, and every seat here is asked the same question.
 offeredTo :: PlayerId.PlayerId -> GameState.GameState -> [A.Action]
-offeredTo pid gs = Action.legalActions pid (gs {GameState.priority = Just pid})
+offeredTo pid gs = Action.legalActions pid (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just pid}})
 
 -- Aven Interrupter (OTJ 5) {1}{W}{W} Creature -- Bird Rogue 2/2, "Flash /
 -- Flying / When this creature enters, exile target spell. It becomes plotted.
@@ -2340,10 +2353,13 @@ avenInterrupterSpec s registry = Spec.describe s "Aven Interrupter" $ do
         -- bob's own turn, with every land he has still tapped for the Piker.
         later =
           after
-            { GameState.turnNumber = GameState.turnNumber after + 1,
-              GameState.activePlayer = S.bob,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.bob
+            { GameState.turn =
+                (GameState.turn after)
+                  { TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn after) + 1,
+                    TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.bob
+                  }
             }
         -- The Bird taxes the very card it plotted -- "spells your opponents cast
         -- from graveyards or from exile" names no exception for its own -- so
@@ -2363,7 +2379,7 @@ avenInterrupterSpec s registry = Spec.describe s "Aven Interrupter" $ do
     Spec.assertEqWith s "and not under the player whose card exiled it" (avenNamed piker Zone.Exile S.alice after) 0
     Spec.assertEqWith s "and not in a graveyard, which is where CR 701.6a's countering would have put it" (avenNamed piker Zone.Graveyard S.bob after) 0
     Spec.assertEqWith s "the Bird itself resolved" (S.countOnBattlefieldByName (S.printingName aven) S.alice after) 1
-    Spec.assertEqWith s "and the stack is empty, so the trigger resolved" (GameState.stack after) []
+    Spec.assertEqWith s "and the stack is empty, so the trigger resolved" (TurnRegisters.stack (GameState.turn after)) []
     case filter (\oid -> fmap S.nameOf (Game.cardOf oid after) == Just (S.printingName piker)) (Game.zoneMembers Zone.Exile S.bob after) of
       [exiledId] -> do
         -- Every land bob has is tapped for the Piker, so a permission that
@@ -2375,7 +2391,7 @@ avenInterrupterSpec s registry = Spec.describe s "Aven Interrupter" $ do
           s
           "CR 702.170c the exiled card is stamped with the turn it became plotted"
           (fmap Object.plotted (Game.lookupObject exiledId after))
-          (Just (Just (GameState.turnNumber after)))
+          (Just (Just (TurnRegisters.turnNumber (GameState.turn after))))
       other -> Spec.assertFailure s ("expected one exiled Piker, got " <> show (length other))
   -- The third sentence, on the zone the Bird itself never puts anything in: CR
   -- 702.34a's flashback cast out of a GRAVEYARD. Think Twice ({1}{U} Instant,
@@ -2459,9 +2475,9 @@ terrorOfThePeaksSpec s registry = Spec.describe s "Terror of the Peaks" $ do
         atPiker = S.runPure (avenAnswer pikerId) board (S.cast S.bob boltId)
     Spec.assertEqWith s "both seats start at 20" (S.lifeOf S.bob board) (Just 20)
     Spec.assertEqWith s "CR 601.2f / 118.8 the Bolt at the Dragon cost bob 3 life" (S.lifeOf S.bob atDragon) (Just 17)
-    Spec.assertEqWith s "and it is on the stack, so the cast was made and not refused" (length (GameState.stack atDragon)) 1
+    Spec.assertEqWith s "and it is on the stack, so the cast was made and not refused" (length (TurnRegisters.stack (GameState.turn atDragon))) 1
     Spec.assertEqWith s "the same Bolt at the Piker cost no life" (S.lifeOf S.bob atPiker) (Just 20)
-    Spec.assertEqWith s "and is on the stack too" (length (GameState.stack atPiker)) 1
+    Spec.assertEqWith s "and is on the stack too" (length (TurnRegisters.stack (GameState.turn atPiker))) 1
     Spec.assertEqWith s "the {R} was paid on both boards" (S.tappedCount S.bob atDragon, S.tappedCount S.bob atPiker) (1, 1)
   -- CR 109.5 / PlayerScope.Related Opponent: "your opponents" excludes the Dragon's
   -- own controller, so alice's Bolt at her own Dragon costs her nothing. Same
@@ -2474,7 +2490,7 @@ terrorOfThePeaksSpec s registry = Spec.describe s "Terror of the Peaks" $ do
     let (terrorId, _, boltId, board) = terrorBoard mountain terror piker bolt S.alice
         after = S.runPure (avenAnswer terrorId) board (S.cast S.alice boltId)
     Spec.assertEqWith s "alice's own Bolt at her own Dragon cost her no life" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "and is on the stack" (length (GameState.stack after)) 1
+    Spec.assertEqWith s "and is on the stack" (length (TurnRegisters.stack (GameState.turn after))) 1
   -- The third sentence, on its own: a Goblin Piker (2/1) entering under alice
   -- has the Dragon deal 2 -- the PIKER's power, not the Dragon's 5 -- to the
   -- target alice names. The Dragon entering with the Piker already out deals
@@ -2549,7 +2565,7 @@ hinataSpec s registry = Spec.describe s "Hinata, Dawn-Crowned" $ do
     Spec.assertEqWith s "CR 601.2c one Piker named by both words is one target: {1}{R}, two Mountains" (S.tappedCount S.alice once) 2
     Spec.assertEqWith s "two Pikers are two targets: {R}, one Mountain" (S.tappedCount S.alice twice) 1
     Spec.assertBool s (S.castable S.alice shortId short) "CR 601.2 on one Mountain the cast is offered, since aiming at both Pikers pays it"
-    Spec.assertEqWith s "and both casts were made" (length (GameState.stack once), length (GameState.stack twice)) (1, 1)
+    Spec.assertEqWith s "and both casts were made" (length (TurnRegisters.stack (GameState.turn once)), length (TurnRegisters.stack (GameState.turn twice))) (1, 1)
   -- The increase, and a PLAYER target counts: bob's Lightning Bolt at alice
   -- costs {1}{R}. The same Bolt with Hinata under bob costs his own {R}, which
   -- is "your opponents" (CR 109.5).
@@ -2566,7 +2582,7 @@ hinataSpec s registry = Spec.describe s "Hinata, Dawn-Crowned" $ do
         ownAtAlice = S.runPure (aimAtPlayer S.alice) own (S.cast S.bob ownId)
     Spec.assertEqWith s "CR 601.2f bob's Bolt at alice cost {1}{R}" (S.tappedCount S.bob atAlice) 2
     Spec.assertEqWith s "CR 109.5 with Hinata his own, the same Bolt cost {R}" (S.tappedCount S.bob ownAtAlice) 1
-    Spec.assertEqWith s "and both are on the stack" (length (GameState.stack atAlice), length (GameState.stack ownAtAlice)) (1, 1)
+    Spec.assertEqWith s "and both are on the stack" (length (TurnRegisters.stack (GameState.turn atAlice)), length (TurnRegisters.stack (GameState.turn ownAtAlice))) (1, 1)
   -- CR 700.2: a "choose two" aims across both chosen modes. Ojutai's Command
   -- ({2}{W}{U}) with modes 0 and 2 targets a creature card in alice's graveyard
   -- and bob's creature spell -- two targets, so {W}{U}, which her Island and
@@ -2592,7 +2608,7 @@ hinataSpec s registry = Spec.describe s "Hinata, Dawn-Crowned" $ do
         after = S.runPure answer board (S.cast S.alice commandId)
     Spec.assertBool s (S.castable S.alice commandId board) "CR 601.2 the cast is offered on an Island and a Plains"
     Spec.assertEqWith s "CR 601.2f two targets took {2} off: both lands paid {W}{U}" (S.tappedCount S.alice after) 2
-    Spec.assertEqWith s "and the Command is on the stack above bob's Piker" (length (GameState.stack after)) 2
+    Spec.assertEqWith s "and the Command is on the stack above bob's Piker" (length (TurnRegisters.stack (GameState.turn after))) 2
 
 -- Shell of the Last Kappa (CHK 269) {3} Legendary Artifact, Oracle text checked
 -- against Scryfall: "{3}, {T}: Exile target instant or sorcery spell that
@@ -2755,7 +2771,7 @@ shellOfTheLastKappaSpec s registry = Spec.describe s "Shell of the Last Kappa" $
     Spec.assertEqWith s "the Bolt at carol resolved: she took 3" (S.lifeOf S.carol atCarol) (Just 17)
     Spec.assertEqWith s "nothing of it is in exile" (avenNamed bolt Zone.Exile S.bob atCarol) 0
     Spec.assertEqWith s "and the Shell never tapped, there being no spell targeting alice for it to aim at" (S.tappedCount S.alice atCarol) 0
-    Spec.assertEqWith s "the stack is empty on both boards" (GameState.stack atAlice, GameState.stack atCarol) ([], [])
+    Spec.assertEqWith s "the stack is empty on both boards" (TurnRegisters.stack (GameState.turn atAlice), TurnRegisters.stack (GameState.turn atCarol)) ([], [])
   Spec.it s "CR 115.10a a Bolt aimed at a creature alice controls does not target her" $ do
     island <- S.printingOf s registry "Island"
     mountain <- S.printingOf s registry "Mountain"

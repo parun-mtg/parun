@@ -59,6 +59,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 609.4b: "If an effect allows a player to spend mana 'as though it were mana
@@ -221,7 +222,7 @@ sunglassesOfUrzaSpec s registry = Spec.describe s "Sunglasses of Urza" $ do
     let (spell, without) = S.addHandCard palm S.alice (S.landsInPlay plains 2)
         with = snd (S.addPermanent sunglasses S.alice without)
         after = S.runPure S.identityAnswer with (S.cast S.alice spell)
-    Spec.assertEqWith s "under Sunglasses of Urza the two Plains cast Deflecting Palm" (length (GameState.stack after), Game.zoneMembers Zone.Hand S.alice after) (1, [])
+    Spec.assertEqWith s "under Sunglasses of Urza the two Plains cast Deflecting Palm" (length (TurnRegisters.stack (GameState.turn after)), Game.zoneMembers Zone.Hand S.alice after) (1, [])
     Spec.assertEqWith s "and both Plains tapped for it" (S.tappedCount S.alice after) 2
     Spec.assertBool s (not (S.castable S.alice spell without)) "and without it the same Plains cannot pay {R}"
 
@@ -521,7 +522,7 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
       -- CR 601.2h rolled the whole attempt back.
       castsOff javelin gs =
         let (g, spellId) = S.handOne javelin gs
-         in length (GameState.stack (snd (Engine.runGamePure S.identityAnswer g (S.cast S.alice spellId))))
+         in length (TurnRegisters.stack (GameState.turn (snd (Engine.runGamePure S.identityAnswer g (S.cast S.alice spellId)))))
 
   Spec.it s "CR 107.4e one {2/R} takes one Mountain OR two Islands, and one Island is not enough" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -606,7 +607,7 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
     let (gs, spellId) = S.handOne flameJavelin (S.landsInPlay mountain 6)
         (asked, resolved) = castAndResolve (announcesHybrid HybridPayment.PaysTyped) gs spellId
     Spec.assertEqWith s "one announcement per symbol, all coloured" (hybridAnnouncements asked) (replicate 3 HybridPayment.PaysTyped)
-    Spec.assertEqWith s "the Javelin resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Javelin resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "three Mountains paid for it" (S.tappedCount S.alice resolved) 3
     Spec.assertEqWith s "with nothing left floating" (poolSize S.alice resolved) 0
 
@@ -616,7 +617,7 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
     let (gs, spellId) = S.handOne flameJavelin (S.landsInPlay mountain 6)
         (asked, resolved) = castAndResolve (announcesHybrid HybridPayment.PaysGeneric) gs spellId
     Spec.assertEqWith s "one announcement per symbol, all generic" (hybridAnnouncements asked) (replicate 3 HybridPayment.PaysGeneric)
-    Spec.assertEqWith s "the Javelin resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Javelin resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "all six Mountains paid for it" (S.tappedCount S.alice resolved) 6
     Spec.assertEqWith s "with nothing left floating" (poolSize S.alice resolved) 0
 
@@ -644,7 +645,7 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
     Spec.assertEqWith s "and cost FIVE Mountains, not six" (S.tappedCount S.alice afterGeneric) 5
     Spec.assertEqWith s "the coloured route was announced three times" (hybridAnnouncements askedTyped) (replicate 3 HybridPayment.PaysTyped)
     Spec.assertEqWith s "and still cost three -- Baral has nothing generic to reduce" (S.tappedCount S.alice afterTyped) 3
-    Spec.assertEqWith s "both resolved" (length (GameState.stack afterGeneric), length (GameState.stack afterTyped)) (0, 0)
+    Spec.assertEqWith s "both resolved" (length (TurnRegisters.stack (GameState.turn afterGeneric)), length (TurnRegisters.stack (GameState.turn afterTyped))) (0, 0)
 
   -- The elision, both directions. Where only ONE route is payable there is
   -- nothing to ask, and the interpreter asking for the other route does
@@ -656,7 +657,7 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
     let (gs, spellId) = S.handOne flameJavelin (S.landsInPlay island 6)
         (asked, resolved) = castAndResolve (announcesHybrid HybridPayment.PaysTyped) gs spellId
     Spec.assertEqWith s "no choice existed, so none was asked" (hybridAnnouncements asked) []
-    Spec.assertEqWith s "the Javelin resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Javelin resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "off all six Islands" (S.tappedCount S.alice resolved) 6
 
   Spec.it s "CR 118.13a three Mountains cannot afford any {2} half, so nothing is asked" $ do
@@ -665,7 +666,7 @@ monocoloredHybridSpec s registry = Spec.describe s "MonocoloredHybrid" $ do
     let (gs, spellId) = S.handOne flameJavelin (S.landsInPlay mountain 3)
         (asked, resolved) = castAndResolve (announcesHybrid HybridPayment.PaysGeneric) gs spellId
     Spec.assertEqWith s "no choice existed, so none was asked" (hybridAnnouncements asked) []
-    Spec.assertEqWith s "the Javelin resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Javelin resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "off all three Mountains" (S.tappedCount S.alice resolved) 3
 
   -- CR 107.4e's last sentence, as CR 202.2d restates it for the whole
@@ -834,7 +835,7 @@ phyrexianSpec s registry = Spec.describe s "Phyrexian" $ do
         castableAt n = let (g, spellId) = inHandAt n in S.castable S.alice spellId g
         castsAt n =
           let (g, spellId) = inHandAt n
-           in length (GameState.stack (snd (Engine.runGamePure S.identityAnswer g (S.cast S.alice spellId))))
+           in length (TurnRegisters.stack (GameState.turn (snd (Engine.runGamePure S.identityAnswer g (S.cast S.alice spellId)))))
     Spec.assertBool s (not (castableAt 1)) "at 1 life it is not castable"
     Spec.assertEqWith s "and it does not cast" (castsAt 1) 0
     Spec.assertBool s (castableAt 2) "at 2 life it is -- the Piker it targets has not moved"
@@ -931,7 +932,7 @@ phyrexianSpec s registry = Spec.describe s "Phyrexian" $ do
     let (growthId, elvesId, gs) = phyrexianBoard forest piker growth elves
         (asked, resolved) = castAndResolve (announces PhyrexianPayment.PaysLife) gs growthId
     Spec.assertBool s (wasAskedHowToPayPhyrexian asked) "the engine asked rather than deciding"
-    Spec.assertEqWith s "the Growth resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Growth resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "exactly 2 life" (S.lifeOf S.alice resolved) (Just 18)
     Spec.assertEqWith s "and the Forest is untapped" (S.tappedCount S.alice resolved) 0
     Spec.assertBool s (S.castable S.alice elvesId resolved) "so the Elves can still be cast"
@@ -964,7 +965,7 @@ phyrexianSpec s registry = Spec.describe s "Phyrexian" $ do
         (_, gs) = S.addHandCard elves S.alice withGrowth
         (asked, resolved) = castAndResolve (announces PhyrexianPayment.PaysMana) gs growthId
     Spec.assertBool s (not (wasAskedHowToPayPhyrexian asked)) "no choice existed, so none was asked"
-    Spec.assertEqWith s "the Growth resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Growth resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "and 2 life paid for it" (S.lifeOf S.alice resolved) (Just 18)
 
   -- CR 119.4's floor closing the life route instead: one Forest, one life.
@@ -978,7 +979,7 @@ phyrexianSpec s registry = Spec.describe s "Phyrexian" $ do
         gs = atLife 1 board
         (asked, resolved) = castAndResolve (announces PhyrexianPayment.PaysLife) gs growthId
     Spec.assertBool s (not (wasAskedHowToPayPhyrexian asked)) "no choice existed, so none was asked"
-    Spec.assertEqWith s "the Growth resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Growth resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "the Forest paid for it" (S.tappedCount S.alice resolved) 1
     Spec.assertEqWith s "and the life total is untouched" (S.lifeOf S.alice resolved) (Just 1)
 
@@ -1028,7 +1029,7 @@ totalCostSpec s registry = Spec.describe s "TotalCost" $ do
     Spec.assertEqWith s "no life was paid" (S.lifeOf S.alice resolved) (Just 20)
     Spec.assertEqWith s "both Islands paid the reduced {1}{U}" (S.tappedCount S.alice resolved) 2
     Spec.assertBool s (wasAskedHowToPayPhyrexian asked) "and the engine asked rather than deciding"
-    Spec.assertEqWith s "the Thopter resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Thopter resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
   -- The control, one answer different on the same board: CR 107.4f's life
   -- route leaves an Island up. Both legs are needed -- either alone would
@@ -1040,7 +1041,7 @@ totalCostSpec s registry = Spec.describe s "TotalCost" $ do
     let (gs, thopterId) = S.handOne thopter (withPermanent island medallion 2)
         (asked, resolved) = castAndResolve (announces PhyrexianPayment.PaysLife) gs thopterId
     Spec.assertBool s (wasAskedHowToPayPhyrexian asked) "asked here too"
-    Spec.assertEqWith s "the Thopter resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Thopter resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "one Island paid the reduced {1}" (S.tappedCount S.alice resolved) 1
     Spec.assertEqWith s "and 2 life paid the symbol" (S.lifeOf S.alice resolved) (Just 18)
 
@@ -1070,7 +1071,7 @@ totalCostSpec s registry = Spec.describe s "TotalCost" $ do
     Spec.assertEqWith s "the Piker really was pumped" (Projection.powerOf (pikerOn resolved) resolved) (Just 4)
     Spec.assertEqWith s "the Forest paid Thalia's {1}" (S.tappedCount S.alice resolved) 1
     Spec.assertBool s (not (wasAskedHowToPayPhyrexian asked)) "and no route existed, so none was asked"
-    Spec.assertEqWith s "the Growth resolved rather than evaporating" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Growth resolved rather than evaporating" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
   -- The increase again, with TWO symbols, which is what makes it a cast lost
   -- rather than a cast made awkwardly: Dismember's total under Thalia is
@@ -1092,7 +1093,7 @@ totalCostSpec s registry = Spec.describe s "TotalCost" $ do
     Spec.assertEqWith s "4 life paid both symbols" (S.lifeOf S.alice resolved) (Just 16)
     Spec.assertEqWith s "both Swamps paid Thalia's {2}" (S.tappedCount S.alice resolved) 2
     Spec.assertEqWith s "and neither symbol was a choice" (phyrexianAnnouncements asked) []
-    Spec.assertEqWith s "Dismember resolved rather than evaporating" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "Dismember resolved rather than evaporating" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
   -- The REDUCTION the other way round, and one that reads CR 601.2c's target:
   -- Hinata, Dawn-Crowned takes {1} off Dismember for its one target, so two
@@ -1263,7 +1264,7 @@ phyrexianTollSpec s registry = Spec.describe s "SyntheticPhyrexianToll" $ do
         castableAt n = let (g, tollId) = inHandAt n in S.castable S.alice tollId g
         castsAt n =
           let (g, tollId) = inHandAt n
-           in length (GameState.stack (snd (Engine.runGamePure S.identityAnswer g (S.cast S.alice tollId))))
+           in length (TurnRegisters.stack (GameState.turn (snd (Engine.runGamePure S.identityAnswer g (S.cast S.alice tollId)))))
     Spec.assertBool s (not (castableAt 3)) "at 3 life it is not castable, though either half alone would be payable"
     Spec.assertEqWith s "and it does not cast" (castsAt 3) 0
     Spec.assertBool s (castableAt 4) "at 4 life it is"
@@ -1285,7 +1286,7 @@ phyrexianTollSpec s registry = Spec.describe s "SyntheticPhyrexianToll" $ do
     Spec.assertEqWith s "no choice existed, so none was asked" (phyrexianAnnouncements asked) []
     Spec.assertEqWith s "the Forest paid the symbol" (S.tappedCount S.alice resolved) 1
     Spec.assertEqWith s "so only the additional cost's 2 life was paid" (S.lifeOf S.alice resolved) (Just 1)
-    Spec.assertEqWith s "the Toll resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Toll resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "and the Piker really was pumped" (Projection.powerOf (pikerOn resolved) resolved) (Just 4)
 
   -- The control for the case above, and the guard against a floor that simply
@@ -1303,7 +1304,7 @@ phyrexianTollSpec s registry = Spec.describe s "SyntheticPhyrexianToll" $ do
     Spec.assertEqWith s "the engine asked rather than deciding" (phyrexianAnnouncements asked) [PhyrexianPayment.PaysLife]
     Spec.assertEqWith s "the Forest is untapped" (S.tappedCount S.alice resolved) 0
     Spec.assertEqWith s "and 4 life paid the whole cost" (S.lifeOf S.alice resolved) (Just 1)
-    Spec.assertEqWith s "the Toll resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the Toll resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
 -- Moltensteel Dragon ({4}{R/P}{R/P}, with "{R/P}: This creature gets +1/+0 until
 -- end of turn") -- the first card in the pool with a Phyrexian mana symbol
@@ -1395,7 +1396,7 @@ moltensteelSpec s registry = Spec.describe s "Moltensteel" $ do
 dragonBoard :: Printing.Printing -> Printing.Printing -> Int -> (ObjectId.ObjectId, GameState.GameState)
 dragonBoard mountain dragon n =
   let (dragonId, gs) = S.addPermanent dragon S.alice (S.landsInPlay mountain n)
-   in (dragonId, gs {GameState.priority = Just S.alice})
+   in (dragonId, gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}})
 
 -- The one Moltensteel Dragon on the battlefield -- pikerOn's shape, for the card
 -- a cast has just put there under a fresh CR 400.7 id.
@@ -1472,7 +1473,7 @@ tamiyoSpec s registry = Spec.describe s "Tamiyo, Compleated Sage" $ do
     Spec.assertEqWith s "and asked which half, both being payable here" (halfAnnouncements asked) [greenMana]
     Spec.assertEqWith s "all five lands paid {2}{G}{G}{U}" (S.tappedCount S.alice resolved) 5
     Spec.assertEqWith s "and no life did" (S.lifeOf S.alice resolved) (Just 20)
-    Spec.assertEqWith s "she resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "she resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
   -- The same board, one answer different. This is the case rule 702.150a exists
   -- for, and the loyalty assertion is the one that can DIFFER: an engine that
@@ -1488,7 +1489,7 @@ tamiyoSpec s registry = Spec.describe s "Tamiyo, Compleated Sage" $ do
     Spec.assertEqWith s "and never asked which half, life naming no colour" (halfAnnouncements asked) []
     Spec.assertEqWith s "four lands paid {2}{G}{U}, the fifth is up" (S.tappedCount S.alice resolved) 4
     Spec.assertEqWith s "and CR 107.4f's 2 life paid the symbol" (S.lifeOf S.alice resolved) (Just 18)
-    Spec.assertEqWith s "she resolved all the same" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "she resolved all the same" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
   -- The blue half, on the board that admits it: two Islands pay the {U} and the
   -- symbol, and the three Forests cover {G} and the {2}. Same total, other
@@ -1515,7 +1516,7 @@ tamiyoSpec s registry = Spec.describe s "Tamiyo, Compleated Sage" $ do
     let (gs, tamiyoId) = S.handOne tamiyo (mixedLands forest island 1 4)
         (asked, resolved) = castAndResolve (announcesBoth PhyrexianPayment.PaysMana greenMana) gs tamiyoId
     Spec.assertEqWith s "no half was a choice, so none was asked" (halfAnnouncements asked) []
-    Spec.assertEqWith s "the cast completed off the blue one anyway" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "the cast completed off the blue one anyway" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertEqWith s "five lands paid it" (S.tappedCount S.alice resolved) 5
     Spec.assertEqWith s "and no life" (S.lifeOf S.alice resolved) (Just 20)
 
@@ -1692,7 +1693,7 @@ sigilSpec s registry = Spec.describe s "SyntheticHybridPhyrexianSigil" $ do
     Spec.assertEqWith s "CR 107.4f: 2 life" (S.lifeOf S.alice resolved) (Just 18)
     Spec.assertEqWith s "no mana route existed, so nothing was asked" (phyrexianAnnouncements asked) []
     Spec.assertEqWith s "nor about a half" (halfAnnouncements asked) []
-    Spec.assertEqWith s "and the Sigil resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "and the Sigil resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
 -- The Sigil's printed cost, restated rather than read off the card -- the
 -- phyrexianCost posture, and Parun.CardSpec pins it against
@@ -1890,7 +1891,7 @@ bergBoard s registry snowy = do
   let (victim, board) = S.addPermanent piker S.bob (S.landsFor filler S.alice 4 (S.landsInPlay island 1))
       (gs, spellId) = S.handOne strider board
       resolved = S.runPure S.identityAnswer gs (S.cast S.alice spellId *> Stack.resolveTop *> Engine.placePendingTriggers [] *> Stack.resolveTop)
-  pure (victim, resolved {GameState.activePlayer = S.bob})
+  pure (victim, resolved {GameState.turn = (GameState.turn resolved) {TurnRegisters.activePlayer = S.bob}})
 
 -- The untap step's turn-based actions, run for whoever the state says is active
 -- (CR 502.3) -- Parun.UntapRestrictionSpec's `untapStep`, kept here rather than
@@ -2043,7 +2044,7 @@ forswornPaladinSpec s registry = Spec.describe s "ForswornPaladin" $ do
             armed = S.runPure S.identityAnswer g2 (Activate.activateAbility S.alice paladinId makeTreasure *> Stack.resolveTop)
             treasure = treasureIn armed
             onStack = S.runPure (aimedAtSpending paladinId treasure) armed (Activate.activateAbility S.alice paladinId pump)
-            abilityId = case GameState.stack onStack of
+            abilityId = case TurnRegisters.stack (GameState.turn onStack) of
               oid : _ -> oid
               [] -> ObjectId.MkObjectId 0
             tagsOn oid gs = foldMap ManaUnit.tags (foldMap (Mana.Type.unwrap . Object.manaSpent) (Game.lookupObject oid gs))

@@ -25,6 +25,7 @@ import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Sba as Sba
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -68,6 +69,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 import Parun.ZoneTriggerSpec (paysFor)
@@ -173,7 +175,7 @@ runToTurnStep turn phase gs0 =
   let go n g =
         if n <= (0 :: Int)
           || Maybe.isJust (GameState.result g)
-          || (GameState.turnNumber g == turn && GameState.phase g == phase)
+          || (TurnRegisters.turnNumber (GameState.turn g) == turn && TurnRegisters.phase (GameState.turn g) == phase)
           then g
           else go (n - 1) (snd (Engine.runGamePure S.aggressiveAnswer g Engine.runStep))
    in go 128 gs0
@@ -226,7 +228,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
   Spec.it s "CR 726.4 the monarch departs on someone else's turn: the active player takes the crown" $ do
     let board = S.withMonarch S.bob S.threePlayerGame
         gone = S.departs Departure.Type.Conceded S.bob board
-    Spec.assertEqWith s "alice is the active player on this board" (GameState.activePlayer board) S.alice
+    Spec.assertEqWith s "alice is the active player on this board" (TurnRegisters.activePlayer (GameState.turn board)) S.alice
     Spec.assertEqWith s "so alice is the monarch" (GameState.monarch gone) (Just S.alice)
     -- CR 603.2: that is a player BECOMING the monarch, so the reassignment
     -- records the event a "whenever you become the monarch" ability matches --
@@ -255,7 +257,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     -- case below is what actually discriminates the two anchor readings.
     let board = S.withMonarch S.carol (S.departs Departure.Type.Conceded S.alice S.threePlayerGame)
         gone = S.departs Departure.Type.Conceded S.carol board
-    Spec.assertEqWith s "alice is still the active player's seat (CR 800.4j)" (GameState.activePlayer gone) S.alice
+    Spec.assertEqWith s "alice is still the active player's seat (CR 800.4j)" (TurnRegisters.activePlayer (GameState.turn gone)) S.alice
     Spec.assertEqWith s "bob takes the crown" (GameState.monarch gone) (Just S.bob)
 
   -- CR 726.4: the anchor-discriminating case. Four seats, not three: once the
@@ -296,7 +298,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     let (jaredId, gs1) = S.addPermanent jared S.alice S.threePlayerGame
         board = entersResolved jaredId gs1
         gone = S.departs Departure.Type.Conceded S.bob board
-    Spec.assertEqWith s "alice is the active player" (GameState.activePlayer board) S.alice
+    Spec.assertEqWith s "alice is the active player" (TurnRegisters.activePlayer (GameState.turn board)) S.alice
     Spec.assertEqWith s "bob was crowned by Jared's trigger" (GameState.monarch board) (Just S.bob)
     Spec.assertEqWith s "carol takes the crown, not the restricted active player" (GameState.monarch gone) (Just S.carol)
     Spec.assertEqWith s "and the two crownings are bob's then carol's" (crownings gone) [S.bob, S.carol]
@@ -317,7 +319,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         (bobsJared, gs2) = S.addPermanent jared S.bob gs1
         board = entersResolved bobsJared (entersResolved alicesJared gs2)
         gone = S.departs Departure.Type.Conceded S.carol (S.withMonarch S.carol board)
-    Spec.assertEqWith s "alice is the active player" (GameState.activePlayer board) S.alice
+    Spec.assertEqWith s "alice is the active player" (TurnRegisters.activePlayer (GameState.turn board)) S.alice
     -- Bob's Jared targeted the first opponent his slot offered, which is alice --
     -- already restricted by her own Jared, so that crowning did nothing and bob
     -- keeps the crown his own opponent handed him.
@@ -358,7 +360,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertEqWith s "bob's graveyard card is gone" (Game.lookupObject inGraveyard gone) Nothing
     Spec.assertEqWith s "bob's spell on the stack is gone" (Game.lookupObject onStack gone) Nothing
     Spec.assertEqWith s "the shared battlefield set no longer names it" (Set.member onField (GameState.battlefield gone)) False
-    Spec.assertEqWith s "the stack list no longer names it" (filter (== onStack) (GameState.stack gone)) []
+    Spec.assertEqWith s "the stack list no longer names it" (filter (== onStack) (TurnRegisters.stack (GameState.turn gone))) []
     -- Only the zones this fixture actually PUT something in: Exile and
     -- Command hold nothing here, so including them would pass vacuously --
     -- Game.zoneMembers filters through ownedBy, which is False for a
@@ -459,9 +461,9 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
   Spec.it s "CR 510.4 a departing player's id is dropped from the struckFirst snapshot" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (onField, g1) = S.addPermanent piker S.bob S.threePlayerGame
-        snapshotted = g1 {GameState.combat = (GameState.combat g1) {Combat.Type.struckFirst = Just (Set.singleton onField)}}
+        snapshotted = g1 {GameState.turn = (GameState.turn g1) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g1)) {Combat.Type.struckFirst = Just (Set.singleton onField)}}}
         gone = S.departs Departure.Type.Conceded S.bob snapshotted
-    Spec.assertEqWith s "bob's id is pruned from the CR 510.4 first-strike snapshot" (Combat.Type.struckFirst (GameState.combat gone)) (Just Set.empty)
+    Spec.assertEqWith s "bob's id is pruned from the CR 510.4 first-strike snapshot" (Combat.Type.struckFirst (TurnRegisters.combat (GameState.turn gone))) (Just Set.empty)
 
   Spec.it s "CR 726 a crowning watch KEYED on the departing player's own object is dropped" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -481,11 +483,11 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     let (attacker, g1) = S.addPermanent piker S.alice S.threePlayerGame
         (blocker, g2) = S.addPermanent piker S.bob g1
         combat =
-          (GameState.combat g2)
+          (TurnRegisters.combat (GameState.turn g2))
             { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob),
               Combat.Type.blockers = Map.singleton attacker (Set.singleton blocker)
             }
-        blocked = g2 {GameState.combat = combat}
+        blocked = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.combat = combat}}
         gone = S.departs Departure.Type.Conceded S.bob blocked
     Spec.assertEqWith s "the blocker's object is gone (it was bob's)" (Game.lookupObject blocker gone) Nothing
     Spec.assertEqWith s "but the attacker is still recorded as blocked" (Combat.blockersOf attacker gone) (Set.singleton blocker)
@@ -518,10 +520,12 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
   Spec.it s "CR 800.4a a Mindslaver controller departing releases their victim, pending and active alike" $ do
     let pending = S.threePlayerGame {GameState.pendingControl = Map.singleton S.carol (S.turnControlRow S.bob)}
         duringTurn =
-          S.threePlayerGame
-            { GameState.activePlayer = S.carol,
-              GameState.control = S.turnControl S.bob S.carol
-            }
+          Turn.withTurn
+            (\turn -> turn {TurnRegisters.activePlayer = S.carol})
+            S.threePlayerGame
+              { GameState.control = S.turnControl S.bob S.carol
+              }
+
         pendingGone = S.departs Departure.Type.Conceded S.bob pending
         activeGone = S.departs Departure.Type.Conceded S.bob duringTurn
     Spec.assertEqWith s "the scheduled control is gone" (GameState.pendingControl pendingGone) Map.empty
@@ -549,7 +553,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertEqWith s "bob really controlled alice's Myr before he left" (Projection.controllerOf aliceMyr g5) (Just S.bob)
     Spec.assertEqWith s "bob owns nothing" (ownedBy S.bob) []
     Spec.assertEqWith s "bob controls nothing" (controlledBy S.bob) []
-    Spec.assertEqWith s "nothing of his is left on the stack -- his spell IS a card, so clause 1 is what removed it" (GameState.stack gone) []
+    Spec.assertEqWith s "nothing of his is left on the stack -- his spell IS a card, so clause 1 is what removed it" (TurnRegisters.stack (GameState.turn gone)) []
     Spec.assertEqWith s "alice's Myr survived and reverted to her" (Projection.controllerOf aliceMyr gone) (Just S.alice)
     Spec.assertEqWith s "CR 104.2a: two survivors, so the game continues" (GameState.result gone) Nothing
 
@@ -661,7 +665,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     let lands = S.landsFor forest S.carol 5 (S.landsFor island S.alice 6 (Setup.emptyGame S.threePlayers))
         (aliceGather, g1) = S.addHandCard gatherSpecimens S.alice lands
         (carolsTusk, g2) = S.addHandCard thragtusk S.carol g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        board = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
         resolveFor pid oid g = S.runPure S.identityAnswer g (S.cast pid oid >> Stack.resolveTop)
         -- Settled after the Thragtusk enters, so its CR 603.6a entry trigger is
         -- off the stack before the departure and the only ability left pending
@@ -678,7 +682,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     -- the priority loop, because a trigger that did reach the stack would resolve
     -- and be gone by then -- and CR 800.4d's FIRST sentence would stop its token
     -- anyway, so the token count alone cannot tell the two sentences apart.
-    Spec.assertEqWith s "the settle put nothing on the stack: the trigger is alice's and she has left (CR 800.4d)" (GameState.stack settled) []
+    Spec.assertEqWith s "the settle put nothing on the stack: the trigger is alice's and she has left (CR 800.4d)" (TurnRegisters.stack (GameState.turn settled)) []
     Spec.assertEqWith s "so no Beast token was created, for anybody" (fmap (\pid -> S.countOnBattlefieldByName beastToken pid after) [S.alice, S.bob, S.carol]) [0, 0, 0]
 
   -- CR 603.6c's SECOND trigger event, which is CR 800.4a's FIRST clause rather
@@ -710,7 +714,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     shadows <- S.printingOf s registry "Shadows of the Past"
     let (pikerId, withPiker) = S.addPermanent piker S.alice S.threePlayerGame
         (shadowsId, board) = S.addPermanent shadows S.carol withPiker
-        triggered gs = fmap (\oid -> fmap Object.source (Game.lookupObject oid gs)) (GameState.stack gs)
+        triggered gs = fmap (\oid -> fmap Object.source (Game.lookupObject oid gs)) (TurnRegisters.stack (GameState.turn gs))
         bearer = [Just (Source.OfTrigger TriggeredAbilitySource.MkTriggeredAbilitySource {TriggeredAbilitySource.source = shadowsId, TriggeredAbilitySource.ability = ab, TriggeredAbilitySource.createdAt = Nothing, TriggeredAbilitySource.delayed = Map.empty, TriggeredAbilitySource.acquisition = Acquisition.Own}) | ab <- Face.triggeredAbilities (S.combinedFace shadows)]
         destroyed = S.runPure S.identityAnswer board (Event.destroy (pure ()) Regenerability.Regenerable [pikerId] >> Engine.settleForPriority)
         departed = S.runPure S.identityAnswer board (Departure.leaveGame Departure.Type.Conceded S.alice >> Engine.settleForPriority)
@@ -739,7 +743,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertEqWith s "and alice controls it -- CR 405.4, she cast it" (fmap (\(oid, _) -> Projection.controllerOf oid cast) (spellOf cast)) (Just (Just S.alice))
     -- The rule under test.
     Spec.assertEqWith s "alice leaving EXILES it" (fmap (Object.zone . snd) (spellOf after)) (Just Zone.Exile)
-    Spec.assertEqWith s "the stack no longer holds it" (fmap (\(oid, _) -> List.elem oid (GameState.stack after)) (spellOf after)) (Just False)
+    Spec.assertEqWith s "the stack no longer holds it" (fmap (\(oid, _) -> List.elem oid (TurnRegisters.stack (GameState.turn after))) (spellOf after)) (Just False)
     Spec.assertEqWith s "and exile really holds it" (fmap (\(oid, _) -> List.elem oid (Game.zoneMembers Zone.Exile S.bob after)) (spellOf after)) (Just True)
     Spec.assertEqWith s "CR 104.2a: bob and carol are still playing" (GameState.result after) Nothing
 
@@ -868,7 +872,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         after = S.runPure S.identityAnswer settled Engine.priorityLoop
     Spec.assertEqWith s "carol both owns and controls the Soul Warden" (fmap Object.owner (Game.lookupObject wardenId board), Projection.controllerOf wardenId board) (Just S.carol, Just S.carol)
     Spec.assertEqWith s "carol gains 1 life: the trigger was hers all along" (S.lifeOf S.carol after) (Just 21)
-    Spec.assertEqWith s "the same settle that took bob out of the game put her trigger on the stack" (length (GameState.stack settled), statusOf S.bob settled) (1, Just (Status.Departed Departure.Type.Lost))
+    Spec.assertEqWith s "the same settle that took bob out of the game put her trigger on the stack" (length (TurnRegisters.stack (GameState.turn settled)), statusOf S.bob settled) (1, Just (Status.Departed Departure.Type.Lost))
 
   -- CR 102.1: carol has conceded a four-seat game, and alice's Fanatic of
   -- Mogis ("When this creature enters, it deals damage to each opponent equal to
@@ -915,9 +919,12 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         at pid n = Map.adjust (\pl -> pl {Player.life = n}) pid
         board =
           withGrowth
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice,
+            { GameState.turn =
+                (GameState.turn withGrowth)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  },
               GameState.players = at S.alice 41 (at S.bob 37 (at S.carol 29 (GameState.players withGrowth)))
             }
         -- The Shieldmage is the board's only creature, so identityAnswer's
@@ -929,8 +936,8 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         ((_, staying), stayingTranscript) = Replay.record (paysFor S.bob) onStack Stack.resolveTop
     -- The setup: the ward really fired over the Growth, and bob's departure
     -- really took the Growth with him, leaving the trigger to resolve alone.
-    Spec.assertEqWith s "the Growth and the ward trigger are both on the stack" (length (GameState.stack onStack)) 2
-    Spec.assertEqWith s "bob leaving takes his Growth with it, leaving the trigger" (length (GameState.stack gone)) 1
+    Spec.assertEqWith s "the Growth and the ward trigger are both on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 2
+    Spec.assertEqWith s "bob leaving takes his Growth with it, leaving the trigger" (length (TurnRegisters.stack (GameState.turn gone))) 1
     Spec.assertEqWith s "and bob is out of the game holding 37 life" (statusOf S.bob gone, S.lifeOf S.bob gone) (Just (Status.Departed Departure.Type.Conceded), Just 37)
     -- The rule.
     Spec.assertEqWith s "CR 800.4f the ward cost is not paid, so bob is still at 37" (S.lifeOf S.bob after) (Just 37)
@@ -984,7 +991,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         (keptId, g2) = S.addPermanent bears S.alice g1
         (mirrorId, g3) = S.addPermanent mirror S.alice g2
         lent = underControlOf S.bob lentId g3
-        board = lent {GameState.activePlayer = S.alice, GameState.contested = Map.fromList [(lentId, Just mirrorId), (keptId, Just mirrorId)]}
+        board = lent {GameState.turn = (GameState.turn lent) {TurnRegisters.activePlayer = S.alice}, GameState.contested = Map.fromList [(lentId, Just mirrorId), (keptId, Just mirrorId)]}
         step :: Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
         step p = case p of
           Prompt.ChooseRedirect _ pid _ _ -> do
@@ -1076,9 +1083,12 @@ blossomDepartureBoard s registry lent = do
       upkeep = Phase.Beginning BeginningStep.Upkeep
       dying =
         borrowed
-          { GameState.phase = upkeep,
-            GameState.activePlayer = S.bob,
-            GameState.priority = Just S.bob,
+          { GameState.turn =
+              (GameState.turn borrowed)
+                { TurnRegisters.phase = upkeep,
+                  TurnRegisters.activePlayer = S.bob,
+                  TurnRegisters.priority = Just S.bob
+                },
             GameState.players = Map.adjust (\pl -> pl {Player.life = 1}) S.bob (GameState.players borrowed)
           }
   pure (wardenId, Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.bob)) dying)

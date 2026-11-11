@@ -39,6 +39,7 @@ import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Start as Start
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
 
 -- | Hands each answer's entry to `sink` as it is taken, so a game cut short
@@ -62,12 +63,12 @@ entryFor seats asked answer = case prompt of
   _
     | Scenario.recorded prompt ->
         let replied = Reply.encode (Reply.shapeOf prompt) (namer seats gs) answer
-         in Just (at (Maybe.fromMaybe (GameState.activePlayer gs) (Driver.deciderOf prompt)) (Move.Answer (Answer.MkAnswer (Scenario.Prompt.kindOf prompt) replied False)))
+         in Just (at (Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn gs)) (Driver.deciderOf prompt)) (Move.Answer (Answer.MkAnswer (Scenario.Prompt.kindOf prompt) replied False)))
     | otherwise -> Nothing
   where
     prompt = Asked.prompt asked
     gs = Asked.game asked
-    at pid move = Timed.MkTimed (When.MkWhen (GameState.turnNumber gs) (GameState.phase gs) (labelOf seats pid)) Nothing (Entry.Do move)
+    at pid move = Timed.MkTimed (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (labelOf seats pid)) Nothing (Entry.Do move)
 
 -- | Objects by card name and creation order, as the runner reads them back
 -- on the same state, and an object with no card, an ability on the stack (CR
@@ -79,7 +80,7 @@ namer seats gs =
         Just card ->
           let name = Face.name (NonEmpty.head (Card.faces card))
            in Reference.Printed name (maybe 0 ((+ 1) . Int.toNaturalSaturating) (List.elemIndex oid (Scenario.namedObjects name gs)))
-        Nothing -> case List.elemIndex oid (GameState.stack gs) of
+        Nothing -> case List.elemIndex oid (TurnRegisters.stack (GameState.turn gs)) of
           Just index -> Reference.OnStack (Int.toNaturalSaturating index + 1)
           Nothing -> Reference.Labelled (Label.MkLabel (Text.pack ("object " <> show (ObjectId.unwrap oid)))),
       Reply.namePlayer = labelOf seats

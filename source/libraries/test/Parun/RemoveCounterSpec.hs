@@ -31,6 +31,7 @@ import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -199,9 +200,12 @@ overseerBoard s registry onOverseer onForest = do
       giantId,
       bobsId,
       counted
-        { GameState.activePlayer = S.alice,
-          GameState.phase = beginning,
-          GameState.remaining = S.phasesAfter beginning
+        { GameState.turn =
+            (GameState.turn counted)
+              { TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.phase = beginning,
+                TurnRegisters.remaining = S.phasesAfter beginning
+              }
         }
     )
 
@@ -259,9 +263,12 @@ shadowBoard s registry = do
       pikerId,
       giantId,
       counted
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn counted)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 

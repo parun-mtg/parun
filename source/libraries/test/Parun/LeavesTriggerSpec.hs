@@ -36,6 +36,7 @@ import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -113,6 +114,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Ward as Ward
@@ -316,7 +318,7 @@ permanentsReturnedToHandSpec s registry =
             (withRetract, retractId) = S.handOne retract stocked
         pure (tameshiId, justiceId, solRingId, bonesplitterId, pikerId, retractId, withRetract)
       resolveWholeStack gs =
-        if null (GameState.stack gs)
+        if null (TurnRegisters.stack (GameState.turn gs))
           then gs
           else resolveWholeStack (S.runPure S.identityAnswer gs Stack.resolveTop)
       -- Move one permanent to hand by hand, let CR 117.5's scan place what
@@ -332,7 +334,7 @@ permanentsReturnedToHandSpec s registry =
                   GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Hand -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
-              (Foldable.toList (GameState.events gs))
+              (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
           )
    in Spec.describe s "PermanentsReturnedToHand" $ do
         -- The printed "noncreature", the condition's own Filter: one board, two
@@ -390,11 +392,16 @@ kishlaSkimmerSpec s registry =
       -- it is when `active` says so.
       board skimmer skeleton swamp forest active owner =
         let base =
-              (S.landsFor swamp owner 2 (Setup.emptyGame S.bothPlayers))
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = active,
-                  GameState.priority = Just owner
-                }
+              Turn.withTurn
+                ( \turn ->
+                    turn
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = active,
+                        TurnRegisters.priority = Just owner
+                      }
+                )
+                (S.landsFor swamp owner 2 (Setup.emptyGame S.bothPlayers))
+
             withSkimmer = snd (S.addPermanent skimmer S.alice base)
          in S.addGraveyardCard skeleton owner (snd (S.addLibraryCard forest S.alice withSkimmer))
       -- Activate the Skeleton's graveyard ability, resolve it so the card leaves
@@ -421,7 +428,7 @@ kishlaSkimmerSpec s registry =
             -- mutation aimed at the condition.
             Spec.assertEqWith s "the card that left is on the battlefield, not in the graveyard the trigger would have scanned" (S.countOnBattlefieldByName skeletonName S.alice returned) 1
             Spec.assertEqWith s "nothing was in alice's hand before the trigger resolved" (S.handSize S.alice returned) 0
-            Spec.assertEqWith s "and the trigger was the one object on the stack" (length (GameState.stack (settle returned))) 1
+            Spec.assertEqWith s "and the trigger was the one object on the stack" (length (TurnRegisters.stack (GameState.turn (settle returned)))) 1
         -- "During your turn", one difference from the case above: bob is the
         -- active player, and alice activates her own Skeleton at instant speed.
         Spec.it s "CR 603.10a the same departure on bob's turn draws nothing"
@@ -429,7 +436,7 @@ kishlaSkimmerSpec s registry =
           $ \returned after -> do
             Spec.assertEqWith s "the Skimmer's trigger did not fire, so alice drew nothing" (S.handSize S.alice after) 0
             Spec.assertEqWith s "off the same departure the case above draws on" (S.countOnBattlefieldByName skeletonName S.alice returned) 1
-            Spec.assertEqWith s "and nothing reached the stack" (length (GameState.stack (settle returned))) 0
+            Spec.assertEqWith s "and nothing reached the stack" (length (TurnRegisters.stack (GameState.turn (settle returned)))) 0
         -- "Your graveyard", one difference from the proving case: the card leaves
         -- bob's graveyard, on alice's turn, while alice's Skimmer watches.
         Spec.it s "CR 400.3 a card leaving bob's graveyard on alice's turn draws nothing"
@@ -437,7 +444,7 @@ kishlaSkimmerSpec s registry =
           $ \returned after -> do
             Spec.assertEqWith s "the Skimmer watches its controller's graveyard alone, so alice drew nothing" (S.handSize S.alice after) 0
             Spec.assertEqWith s "off the same departure, out of bob's graveyard" (S.countOnBattlefieldByName skeletonName S.bob returned) 1
-            Spec.assertEqWith s "and nothing reached the stack" (length (GameState.stack (settle returned))) 0
+            Spec.assertEqWith s "and nothing reached the stack" (length (TurnRegisters.stack (GameState.turn (settle returned)))) 0
 
 -- CR 603.2c's batch reading of the family above: Spirit Mascot {R}{W} Creature
 -- -- Spirit Ox, 2/2, "Whenever one or more cards leave your graveyard, put a
@@ -458,7 +465,7 @@ kishlaSkimmerSpec s registry =
 spiritMascotSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spiritMascotSpec s registry =
   let resolveWholeStack gs =
-        if null (GameState.stack gs)
+        if null (TurnRegisters.stack (GameState.turn gs))
           then gs
           else resolveWholeStack (S.runPure S.identityAnswer gs Stack.resolveTop)
       -- alice's Mascot watching, and two cards in `owner`'s graveyard. Two
@@ -492,7 +499,7 @@ spiritMascotSpec s registry =
           -- The proxies, AFTER the assertion above so neither can absorb a
           -- mutation aimed at the scoping.
           Spec.assertEqWith s "one +1/+1 counter" (S.counterOf CounterKind.PlusOnePlusOne mascotId after) 1
-          Spec.assertEqWith s "exactly one trigger reached the stack" (length (GameState.stack (S.runPure S.identityAnswer gone Engine.settleForPriority))) 1
+          Spec.assertEqWith s "exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn (S.runPure S.identityAnswer gone Engine.settleForPriority)))) 1
           Spec.assertEqWith s "and both cards really did leave: alice's graveyard is empty" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
         -- CR 608.2f through a real effect: Rest in Peace ({1}{W} Enchantment,
         -- "When this enchantment enters, exile all graveyards. / If a card or
@@ -531,7 +538,7 @@ spiritMascotSpec s registry =
 rakshasaVizierSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 rakshasaVizierSpec s registry =
   let resolveWholeStack gs =
-        if null (GameState.stack gs)
+        if null (TurnRegisters.stack (GameState.turn gs))
           then gs
           else resolveWholeStack (S.runPure S.identityAnswer gs Stack.resolveTop)
       -- alice's Vizier, and two different nontoken cards in her graveyard, as
@@ -558,7 +565,7 @@ rakshasaVizierSpec s registry =
           Spec.assertEqWith s "CR 603.2c the printed 4/4 is a 6/6, not the 5/5 the first event alone would leave" (Projection.powerOf vizierId after, Projection.toughnessOf vizierId after) (Just 6, Just 6)
           -- The proxies, AFTER the assertion above so neither can absorb a
           -- mutation aimed at the join.
-          Spec.assertEqWith s "exactly one trigger reached the stack" (length (GameState.stack (S.runPure S.identityAnswer gone Engine.settleForPriority))) 1
+          Spec.assertEqWith s "exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn (S.runPure S.identityAnswer gone Engine.settleForPriority)))) 1
           Spec.assertEqWith s "two +1/+1 counters" (S.counterOf CounterKind.PlusOnePlusOne vizierId after) 2
           Spec.assertEqWith s "and both cards really did leave: alice's graveyard is empty" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
         -- "Put into exile", one difference from the proving case: the same two
@@ -567,7 +574,7 @@ rakshasaVizierSpec s registry =
           (vizierId, firstId, secondId, gs) <- board
           let (gone, after) = moveBoth Zone.Hand firstId secondId gs
           Spec.assertEqWith s "the Vizier watches exile alone, so it is still the printed 4/4" (Projection.powerOf vizierId after, Projection.toughnessOf vizierId after) (Just 4, Just 4)
-          Spec.assertEqWith s "nothing reached the stack" (length (GameState.stack (S.runPure S.identityAnswer gone Engine.settleForPriority))) 0
+          Spec.assertEqWith s "nothing reached the stack" (length (TurnRegisters.stack (GameState.turn (S.runPure S.identityAnswer gone Engine.settleForPriority)))) 0
           Spec.assertEqWith s "off the same departures: alice's graveyard is empty" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
 
 -- CR 603.10 against CR 603.6c, for a bearer exiled with the cards it watches
@@ -588,18 +595,18 @@ exiledWatcherSpec s registry =
         watcher <- S.printingOf s registry name
         plains <- S.printingOf s registry "Plains"
         let (watcherId, gs) = S.addPermanent watcher S.alice (S.landsFor plains S.alice 3 (Setup.emptyGame S.bothPlayers))
-            board = gs {GameState.activePlayer = S.alice}
+            board = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.alice}}
             moved = S.runPure S.identityAnswer board (Event.changeZone (pure ()) watcherId Zone.Exile)
         pure (S.runPure S.identityAnswer moved Engine.settleForPriority)
    in Spec.describe s "PutIntoZone" $ do
         Spec.it s "CR 603.10 a Stonebinder's Familiar exiled during alice's turn does not see its own exile" $ do
           settled <- exiledOnAlicesTurn "Stonebinder's Familiar"
           Spec.assertEqWith s "setup: the Familiar is in exile" (length (Game.zoneMembers Zone.Exile S.alice settled)) 1
-          Spec.assertEqWith s "CR 603.10 nothing reached the stack" (length (GameState.stack settled)) 0
+          Spec.assertEqWith s "CR 603.10 nothing reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 0
         Spec.it s "CR 603.6c a Ketramose exiled from the battlefield during alice's turn looks back at its own exile" $ do
           settled <- exiledOnAlicesTurn "Ketramose, the New Dawn"
           Spec.assertEqWith s "setup: Ketramose is in exile" (length (Game.zoneMembers Zone.Exile S.alice settled)) 1
-          Spec.assertEqWith s "CR 603.10a its trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "CR 603.10a its trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
 
 -- CR 603.10a's fourth family: Dutiful Knowledge Seeker {2}{U} Creature -- Fox
 -- Spirit 2/2, "Whenever one or more cards are put into a library from anywhere,
@@ -618,7 +625,7 @@ exiledWatcherSpec s registry =
 dutifulKnowledgeSeekerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 dutifulKnowledgeSeekerSpec s registry =
   let resolveWholeStack gs =
-        if null (GameState.stack gs)
+        if null (TurnRegisters.stack (GameState.turn gs))
           then gs
           else resolveWholeStack (S.runPure S.identityAnswer gs Stack.resolveTop)
       -- One move, then CR 117.5's scan: the board with whatever triggered on the
@@ -639,9 +646,9 @@ dutifulKnowledgeSeekerSpec s registry =
           lands <- islands
           let (seekerId, gs) = S.addPermanent seeker S.alice lands
               (settled, after) = settleAfter (Event.changeZone (pure ()) seekerId Zone.Library) gs
-          Spec.assertEqWith s "CR 603.10a the look-back put the Seeker's trigger on the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "CR 603.10a the look-back put the Seeker's trigger on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertEqWith s "the Seeker is a library card by the time the scan ran" (length (Game.zoneMembers Zone.Library S.alice settled)) 1
-          Spec.assertEqWith s "and the trigger resolved to nothing, \"this creature\" being gone" (GameState.stack after) []
+          Spec.assertEqWith s "and the trigger resolved to nothing, \"this creature\" being gone" (TurnRegisters.stack (GameState.turn after)) []
         -- The hidden-origin negative, one difference from the proving case: the Seeker
         -- starts in alice's hand, a hidden zone.
         Spec.it s "CR 603.10a the same Seeker put into her library from her hand does not" $ do
@@ -649,7 +656,7 @@ dutifulKnowledgeSeekerSpec s registry =
           lands <- islands
           let (seekerId, gs) = S.addHandCard seeker S.alice lands
               (settled, _) = settleAfter (Event.changeZone (pure ()) seekerId Zone.Library) gs
-          Spec.assertEqWith s "no look-back for an object only its owner could see" (GameState.stack settled) []
+          Spec.assertEqWith s "no look-back for an object only its owner could see" (TurnRegisters.stack (GameState.turn settled)) []
           Spec.assertEqWith s "off the same move: the Seeker is in the library" (length (Game.zoneMembers Zone.Library S.alice settled)) 1
         -- "From anywhere" read by a bearer still standing: a hand card put into a
         -- library is a card put into a library.
@@ -673,7 +680,7 @@ dutifulKnowledgeSeekerSpec s registry =
               (secondId, gs) = S.addGraveyardCard forest S.bob withFirst
               (settled, after) = settleAfter (Event.simultaneously (Event.changeZone (pure ()) firstId Zone.Library >> Event.changeZone (pure ()) secondId Zone.Library)) gs
           Spec.assertEqWith s "CR 603.2c the printed 2/2 is a 3/3, not the 4/4 a per-card reading would leave" (Projection.powerOf seekerId after, Projection.toughnessOf seekerId after) (Just 3, Just 3)
-          Spec.assertEqWith s "exactly one trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         -- "Cards": a token is none (CR 111.1). A regression fence, not a proof of
         -- the card's `Not IsToken`: CR 704.5d has removed the token's library
         -- incarnation before CR 117.5's scan reads the arrival, so it is
@@ -686,7 +693,7 @@ dutifulKnowledgeSeekerSpec s registry =
               (tokenId, gs) = S.addToken pikerCard S.alice withSeeker
               (settled, after) = settleAfter (Event.changeZone (pure ()) tokenId Zone.Library) gs
           Spec.assertEqWith s "the Seeker is still the printed 2/2" (Projection.powerOf seekerId after, Projection.toughnessOf seekerId after) (Just 2, Just 2)
-          Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+          Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
         -- CR 731.3 puts every component of a merged permanent into the zone, and
         -- CR 731.2d makes the permanent a token when its topmost component is
         -- one. Cubwarden {3}{W} (mutate {2}{W}{W}) mutated UNDER alice's Goblin
@@ -703,7 +710,7 @@ dutifulKnowledgeSeekerSpec s registry =
               (seekerId, withSeeker) = S.addPermanent seeker S.alice (S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers))
               (tokenId, withToken) = S.addToken pikerCard S.alice withSeeker
               (board, spellId) = S.handOne cubwarden withToken
-              main = board {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+              main = board {GameState.turn = (GameState.turn board) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
               under :: Prompt.Prompt r -> r
               under p = case p of
                 Prompt.ChooseCost _ _ _ candidates _ -> Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just mutateCost) . Cost.Type.mana . CandidateCost.cost) candidates)
@@ -729,7 +736,7 @@ dutifulKnowledgeSeekerSpec s registry =
               (cardId, gs) = S.addLibraryCard island S.alice withForest
               (settled, after) = settleAfter (Event.changeZone (pure ()) cardId Zone.Library) gs
           Spec.assertEqWith s "the Seeker is still the printed 2/2" (Projection.powerOf seekerId after, Projection.toughnessOf seekerId after) (Just 2, Just 2)
-          Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+          Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
           Spec.assertEqWith s "CR 400.7 the same Island, now under the Forest" (Game.zoneMembers Zone.Library S.alice settled) [forestId, cardId]
         -- CR 603.10a's "an object that all players can see" leaving a HIDDEN
         -- zone. Caustic Exhale {B} Instant, "As an additional cost to cast this
@@ -752,7 +759,7 @@ dutifulKnowledgeSeekerSpec s registry =
                   (seekerId, withSeeker) = S.addPermanent seeker S.alice withVictim
                   (dragonId, withDragon) = S.addHandCard dragon S.alice withSeeker
                   (spellId, staged) = S.addHandCard exhale S.alice withDragon
-                  ready = staged {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+                  ready = staged {GameState.turn = (GameState.turn staged) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
                   -- CR 601.2b's announcement, filtered out of the costs offered:
                   -- the behold is the only component either option carries.
                   announcing :: Prompt.Prompt r -> r
@@ -766,12 +773,12 @@ dutifulKnowledgeSeekerSpec s registry =
               pure (dragonId, cast, settled)
         Spec.it s "CR 603.10a an exiled Seeker looks back at a beheld Dragon card put into a library from a hand" $ do
           (dragonId, cast, settled) <- exhaleBoard True
-          Spec.assertEqWith s "CR 603.10a the Seeker's trigger joined the Exhale on the stack" (length (GameState.stack settled)) 2
+          Spec.assertEqWith s "CR 603.10a the Seeker's trigger joined the Exhale on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 2
           Spec.assertEqWith s "CR 701.20a the Exhale was waiting with the Dragon card revealed to bob" (Visibility.sees S.bob dragonId cast) Visibility.Type.Visible
           Spec.assertEqWith s "and the Dragon card is in alice's library" (length (Game.zoneMembers Zone.Library S.alice settled)) 1
         Spec.it s "CR 603.10a an exiled Seeker does not see the same Dragon card put there unrevealed" $ do
           (dragonId, cast, settled) <- exhaleBoard False
-          Spec.assertEqWith s "CR 603.10a the Exhale is alone on the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "CR 603.10a the Exhale is alone on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertEqWith s "CR 400.2 paying the {1} left the Dragon card hidden from bob" (Visibility.sees S.bob dragonId cast) Visibility.Type.Obscured
           Spec.assertEqWith s "off the same move: the Dragon card is in alice's library" (length (Game.zoneMembers Zone.Library S.alice settled)) 1
         -- The momentary reveal (CR 701.20a) of a replacement rather than a
@@ -788,7 +795,7 @@ dutifulKnowledgeSeekerSpec s registry =
           let (seekerId, withSeeker) = S.addPermanent seeker S.alice lands
               (nexusId, gs) = S.addHandCard nexus S.bob withSeeker
               (settled, _) = settleAfter (Event.simultaneously (Event.changeZone (pure ()) seekerId Zone.Exile >> Event.changeZone (pure ()) nexusId Zone.Graveyard)) gs
-          Spec.assertEqWith s "CR 603.10a the look-back put the Seeker's trigger on the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "CR 603.10a the look-back put the Seeker's trigger on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertEqWith s "CR 701.20a bob revealed the Nexus" (S.revealsOf settled) [(S.bob, Set.singleton (S.printingName nexus))]
           Spec.assertEqWith s "CR 614.1a and it went to his library instead" (length (Game.zoneMembers Zone.Library S.bob settled)) 1
         -- An EFFECT's reveal (CR 701.20a), which lasts while the parts of the
@@ -811,7 +818,7 @@ dutifulKnowledgeSeekerSpec s registry =
               (wanId, withWan) = S.addToken wanCard S.alice base
               (_, withPiker) = S.addHandCard piker S.alice withWan
               (spellId, staged) = S.addHandCard undertow S.alice withPiker
-              ready = staged {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+              ready = staged {GameState.turn = (GameState.turn staged) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
               aiming :: Prompt.Prompt r -> r
               aiming p = case p of
                 Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, legal) -> Set.filter ((== Just wanId) . Recipient.objectOf) legal) asked
@@ -841,7 +848,7 @@ dutifulKnowledgeSeekerSpec s registry =
               let base = S.landsFor island S.alice 4 (Setup.emptyGame S.bothPlayers)
                   (wanId, withWan) = S.addToken wanCard S.alice base
                   (spellId, withSpell) = S.addHandCard recall S.alice withWan
-                  onMain g = g {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+                  onMain g = g {GameState.turn = (GameState.turn g) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
                   staged
                     | foretelling =
                         let (handId, withRaven) = S.addHandCard raven S.alice withSpell
@@ -880,7 +887,7 @@ dutifulKnowledgeSeekerSpec s registry =
           case Foldable.toList entered of
             [faceDownId] -> do
               let (settled, _) = settleAfter (Event.simultaneously (Event.changeZone (pure ()) seekerId Zone.Exile >> Event.changeZone (pure ()) faceDownId Zone.Library)) gs
-              Spec.assertEqWith s "CR 603.10a the look-back put the Seeker's trigger on the stack" (length (GameState.stack settled)) 1
+              Spec.assertEqWith s "CR 603.10a the look-back put the Seeker's trigger on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
               Spec.assertEqWith s "CR 708.5 alice could not see the face-down permanent before it left" (Visibility.sees S.alice faceDownId gs) Visibility.Type.Obscured
               Spec.assertEqWith s "off the same move: the Island card is in bob's library" (length (Game.zoneMembers Zone.Library S.bob settled)) 1
             _ -> Spec.assertFailure s "setup: the Island card did not enter face down"
@@ -900,7 +907,7 @@ dutifulKnowledgeSeekerSpec s registry =
 handArrivalSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 handArrivalSpec s registry =
   let resolveWholeStack gs =
-        if null (GameState.stack gs)
+        if null (TurnRegisters.stack (GameState.turn gs))
           then gs
           else resolveWholeStack (S.runPure S.identityAnswer gs Stack.resolveTop)
       settleAfter move gs =
@@ -922,19 +929,19 @@ handArrivalSpec s registry =
         Spec.it s "Kithkin Brinefarer conjures a duplicate of the Kithkin card alice draws" $ do
           (name, (settled, after)) <- brinefarerDraws "Burrenton Forge-Tender"
           Spec.assertEqWith s "alice holds the drawn Forge-Tender and its duplicate" (handNames S.alice after) [name, name]
-          Spec.assertEqWith s "one trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         -- "A Kithkin card", one difference from the case above.
         Spec.it s "Kithkin Brinefarer conjures nothing for a Goblin" $ do
           (name, (settled, after)) <- brinefarerDraws "Goblin Piker"
           Spec.assertEqWith s "alice holds the drawn Piker alone" (handNames S.alice after) [name]
-          Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+          Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
         -- The slot, and CR 400.7e's `became` withheld beside it.
         Spec.it s "CR 400.7e a library-to-hand move binds handArrival and not became" $ do
           (_, (settled, _)) <- brinefarerDraws "Burrenton Forge-Tender"
           let arrived = Game.zoneMembers Zone.Hand S.alice settled
               condition = TriggerCondition.LeavesZone (LeavesZoneTrigger.self Zone.Library) {LeavesZoneTrigger.card = ActingPermanent.Matching (Filter.Type.And []), LeavesZoneTrigger.to = Just Zone.Hand}
               bindingsOf = Event.eventBindings settled Nothing Map.empty (ObjectId.MkObjectId 0) S.alice condition
-              drew = [bindingsOf event | event@(GameEvent.Moved m) <- fmap LoggedEvent.event (Foldable.toList (GameState.events settled)), ZoneChange.to (Moved.change m) == Zone.Hand]
+              drew = [bindingsOf event | event@(GameEvent.Moved m) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn settled))), ZoneChange.to (Moved.change m) == Zone.Hand]
           Spec.assertEqWith s "the arrival is the card in alice's hand" drew (fmap (Map.singleton Binding.handArrival . Binding.toObject) arrived)
         -- X counts COLORS, not permanents: the Rift (red and green), a white
         -- Forge-Tender, a red Piker and a colorless Forest are four permanents in
@@ -963,7 +970,7 @@ handArrivalSpec s registry =
               (giantId, gs) = S.addGraveyardCard giant S.alice withGhoulcaller
               (settled, after) = settleAfter (Event.changeZone (pure ()) giantId Zone.Hand) gs
           Spec.assertEqWith s "alice holds the Giant and its duplicate" (handNames S.alice after) [S.printingName giant, S.printingName giant]
-          Spec.assertEqWith s "one trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         -- CR 603.10a's fourth family: the Brinefarer is exiled in the same event
         -- as the Forge-Tender atop alice's library is put into her hand, so only
         -- the look-back can see the card. Future Sight {2}{U}{U}{U} Enchantment,
@@ -985,12 +992,12 @@ handArrivalSpec s registry =
           (name, seen, settled, after) <- exiledBeside True
           Spec.assertEqWith s "CR 603.10a alice holds the Forge-Tender and its duplicate" (handNames S.alice after) [name, name]
           Spec.assertEqWith s "Future Sight showed bob the Forge-Tender" seen Visibility.Type.Visible
-          Spec.assertEqWith s "one trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         Spec.it s "CR 603.10a an exiled Kithkin Brinefarer does not see the same Kithkin card put there unrevealed" $ do
           (name, seen, settled, after) <- exiledBeside False
           Spec.assertEqWith s "CR 603.10a alice holds the Forge-Tender alone" (handNames S.alice after) [name]
           Spec.assertEqWith s "CR 400.2 without Future Sight bob could not see it" seen Visibility.Type.Obscured
-          Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+          Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
         -- CR 603.10: the look-back reads the board the batch began on, where Future
         -- Sight shows the Forge-Tender atop alice's library and not the Knight of
         -- Meadowgrain {W}{W} Creature -- Kithkin Knight 2/2, "First strike /
@@ -1017,7 +1024,7 @@ handArrivalSpec s registry =
               (knightId, g3) = S.addLibraryCard knight S.alice g2
               (tenderId, g4) = S.addLibraryCard tender S.alice g3
               (spellId, staged) = S.addHandCard recall S.alice g4
-              gs = staged {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+              gs = staged {GameState.turn = (GameState.turn staged) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
               aiming :: Prompt.Prompt r -> r
               aiming p = case p of
                 Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, legal) -> Set.filter ((== Just brinefarerId) . Recipient.objectOf) legal) asked
@@ -1027,7 +1034,7 @@ handArrivalSpec s registry =
           Spec.assertEqWith s "CR 603.10a alice holds the Brinefarer, the Knight, the Forge-Tender and the Forge-Tender's duplicate alone" (handNames S.alice after) (List.sort [S.printingName brinefarer, S.printingName knight, S.printingName tender, S.printingName tender])
           Spec.assertEqWith s "CR 401.5 Future Sight showed bob the Forge-Tender" (Visibility.sees S.bob tenderId gs) Visibility.Type.Visible
           Spec.assertEqWith s "CR 401.5 and not the Knight beneath it" (Visibility.sees S.bob knightId gs) Visibility.Type.Obscured
-          Spec.assertEqWith s "one trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
 
 -- What a bystander return to hand's bindings are FOR -- Warped Devotion {2}{B}
 -- Enchantment, "Whenever a permanent is returned to a player's hand, that
@@ -1115,7 +1122,7 @@ warpedDevotionSpec s registry =
                       ev@(GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)) | ZoneChange.departed zc == pikerId -> Just ev
                       _ -> Nothing
                   )
-                  (Foldable.toList (GameState.events gone))
+                  (Foldable.toList (TurnRegisters.events (GameState.turn gone)))
           case moves of
             [ev] ->
               Spec.assertEqWith
@@ -1178,7 +1185,7 @@ becameSlotSpec s registry =
           (roachId, board) <- roachBoard
           let (settled, _) = boltIt board
               bindingsOn oid = maybe Map.empty Object.bindings (Game.lookupObject oid settled)
-              slots = concatMap (Map.toList . Binding.oneBySlot . Binding.targetsOf . bindingsOn) (GameState.stack settled)
+              slots = concatMap (Map.toList . Binding.oneBySlot . Binding.targetsOf . bindingsOn) (TurnRegisters.stack (GameState.turn settled))
               slotFor name = lookup name slots
           Spec.assertEqWith s "self is the permanent that died" (slotFor Binding.triggerSource) (Just (Recipient.ToObject roachId))
           Spec.assertBool s (Maybe.isNothing (Game.lookupObject roachId settled)) "and that id is gone (CR 400.7)"
@@ -1409,7 +1416,7 @@ promiseOfTomorrowSpec s registry =
         Spec.it s "CR 700.4 whole card: alice's Goblin Piker dies and Promise of Tomorrow exiles the graveyard card" $ do
           (pikerId, sentryId, board) <- promiseBoard
           let (settled, after) = killIt pikerId board
-          Spec.assertEqWith s "the trigger reached the stack in that settle" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "the trigger reached the stack in that settle" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertBool s (Maybe.isNothing (Game.lookupObject pikerId settled)) "the battlefield id is gone (CR 400.7)"
           Spec.assertEqWith s "and the card is in the graveyard when the trigger is placed" (namesIn Zone.Graveyard S.alice settled) [pikerName]
           -- (a), (b) and (c) as one tuple. (a) and (b) are the same fact from
@@ -1490,7 +1497,7 @@ cleopatraSpec s registry =
             (S.handSize S.alice after, S.lifeOf S.alice after)
             (3, Just 18)
           Spec.assertEqWith s "alice held nothing before the trigger resolved" (S.handSize S.alice settled) 0
-          Spec.assertEqWith s "and the trigger reached the stack in that settle" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "and the trigger reached the stack in that settle" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertBool s (Maybe.isNothing (Game.lookupObject jeditId after)) "the battlefield id is gone (CR 400.7)"
         -- The control the case above cannot be read without, and the ONE thing
         -- that differs is the dying creature's supertype: carol's Piker carries
@@ -1499,7 +1506,7 @@ cleopatraSpec s registry =
           (_, pikerId, board) <- cleopatraBoard
           let (settled, after) = killIt pikerId board
           Spec.assertEqWith s "no cards drawn and no life lost" (S.handSize S.alice after, S.lifeOf S.alice after) (0, Just 20)
-          Spec.assertEqWith s "because nothing triggered at all" (length (GameState.stack settled)) 0
+          Spec.assertEqWith s "because nothing triggered at all" (length (TurnRegisters.stack (GameState.turn settled))) 0
 
 -- CR 607.2a's linked pair read from the SECOND ability, which is the half
 -- promiseOfTomorrowSpec above could not reach: "At the beginning of each end
@@ -1597,7 +1604,7 @@ promiseOfTomorrowReturnSpec s registry =
           Spec.assertEqWith s "and alice controls no creatures" (controlledNames S.alice exiled) [named "Promise of Tomorrow"]
           Spec.assertEqWith s "while bob still has one on the battlefield" (controlledNames S.bob exiled) [named "Hill Giant"]
           let (placed, after) = endStepOf exiled
-          Spec.assertEqWith s "CR 603.4: the ability triggered" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "CR 603.4: the ability triggered" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertBool s (not (S.onBattlefield promiseId after)) "CR 701.21a: the enchantment sacrificed itself"
           Spec.assertEqWith s "and it is in alice's graveyard" (fmap Face.name (Maybe.mapMaybe (`Game.faceOf` after) (Game.zoneMembers Zone.Graveyard S.alice after))) [named "Promise of Tomorrow"]
           -- The three separations, as one tuple so a failure says which.
@@ -1622,7 +1629,7 @@ promiseOfTomorrowReturnSpec s registry =
           Spec.assertEqWith s "exile holds the same three cards" (exiledNames exiled) (fmap named ["Goblin Piker", "Ogre Sentry", "Wall of Stone"])
           Spec.assertEqWith s "but alice still controls the Giant" (controlledNames S.alice exiled) (fmap named ["Hill Giant", "Promise of Tomorrow"])
           let (placed, after) = endStepOf exiled
-          Spec.assertEqWith s "CR 603.4: nothing was placed on the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "CR 603.4: nothing was placed on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertBool s (S.onBattlefield promiseId after) "the enchantment is still there"
           Spec.assertEqWith s "and exile is unchanged" (exiledNames after) (fmap named ["Goblin Piker", "Ogre Sentry", "Wall of Stone"])
         -- CR 607.2b: the SAME resolution, with Rest in Peace on the battlefield
@@ -1649,7 +1656,7 @@ promiseOfTomorrowReturnSpec s registry =
           let exiled = killIt sentryId (killIt pikerId board0)
               (ripId, guarded) = S.addPermanent rip S.alice exiled
               (placed, after) = endStepOf guarded
-          Spec.assertEqWith s "CR 603.4: the ability still triggered" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "CR 603.4: the ability still triggered" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertBool s (not (S.onBattlefield promiseId after)) "CR 701.21a: the enchantment sacrificed itself"
           -- The discriminating pair. Under the ambient diff the Promise card is
           -- filed against its own permanent, so it comes back on the battlefield
@@ -1728,9 +1735,9 @@ counterLookBackSpec s registry =
                         (GameState.lastKnown settled)
                   }
               after = S.runPure S.identityAnswer forgotten Stack.resolveTop
-          Spec.assertEqWith s "the trigger reached the stack on the gather read" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "the trigger reached the stack on the gather read" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertEqWith s "and was removed on the resolution read, drawing nothing" (S.handSize S.alice after, librarySize S.alice after) (0, 5)
-          Spec.assertEqWith s "the stack is empty either way" (GameState.stack after) []
+          Spec.assertEqWith s "the stack is empty either way" (TurnRegisters.stack (GameState.turn after)) []
 
 -- CR 702.93a undying and CR 702.79a persist: one sentence in two counter kinds,
 -- minted by Parun.Engine.Keyword.returns.
@@ -1777,7 +1784,7 @@ undyingSpec s registry =
         Spec.it s ("CR 702 " <> name <> " returns once, with its counter, and not a second time") $ do
           (firstId, gs, m1, m2) <- board name
           let (settled, after) = murderWith m1 gs
-          Spec.assertEqWith s "the dies trigger reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "the dies trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertBool s (Maybe.isNothing (Game.lookupObject firstId after)) "CR 400.7: the permanent that died is a spent id"
           case named name after of
             [backId] -> do
@@ -1786,7 +1793,7 @@ undyingSpec s registry =
               Spec.assertEqWith s "CR 110.2a: under its owner's control" (Projection.controllerOf backId after) (Just S.alice)
               Spec.assertBool s (not (inGraveyard name S.alice after)) "and no longer in the graveyard"
               let (settled2, after2) = murderWith m2 after
-              Spec.assertEqWith s "CR 603.4: with the counter on it, the second death triggers nothing" (GameState.stack settled2) []
+              Spec.assertEqWith s "CR 603.4: with the counter on it, the second death triggers nothing" (TurnRegisters.stack (GameState.turn settled2)) []
               Spec.assertEqWith s "so nothing comes back" (named name after2) []
               Spec.assertBool s (inGraveyard name S.alice after2) "and it stays in the graveyard"
             other -> Spec.assertFailure s ("expected exactly one " <> name <> " back on the battlefield, got " <> show other)
@@ -1922,7 +1929,7 @@ fabricateSpec s registry =
               -- The controls: the Artisan really entered, and its trigger really
               -- reached the stack, before anything below is read.
               Spec.assertEqWith s "it entered as a 2/2 with no counters" (S.powerToughnessOf artisanId onStack, S.counterOf CounterKind.PlusOnePlusOne artisanId onStack) (Just (2, 2), 0)
-              Spec.assertEqWith s "CR 603.6a: its enters trigger is on the stack" (length (GameState.stack onStack)) 1
+              Spec.assertEqWith s "CR 603.6a: its enters trigger is on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
               Spec.assertEqWith s "alice was asked exactly once, and paid" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Pays]
               Spec.assertEqWith s "CR 122.6: one +1/+1 counter went on" (S.counterOf CounterKind.PlusOnePlusOne artisanId after) 1
               Spec.assertEqWith s "CR 613.4c: so it reads 3/3" (S.powerToughnessOf artisanId after) (Just (3, 3))
@@ -2006,9 +2013,12 @@ wardSpec s registry =
               bobsGrowth,
               alicesGrowth,
               gs
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             )
       -- The Honor Guard is the board's only creature, so identityAnswer's
@@ -2028,12 +2038,12 @@ wardSpec s registry =
           -- The controls: the spell really was cast -- rule 702.21a is not a CR
           -- 115 targeting restriction -- and the ability really reached the
           -- stack over it.
-          Spec.assertEqWith s "the Growth and the ward trigger are both on the stack" (length (GameState.stack onStack)) 2
+          Spec.assertEqWith s "the Growth and the ward trigger are both on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 2
           Spec.assertEqWith s "the Guard is still a 3/1 with the Growth unresolved" (S.powerToughnessOf guardId onStack) (Just (3, 1))
           -- alice is the one paid for, and she is never asked: the offer went to
           -- bob, who declined through the identity fallback.
           Spec.assertEqWith s "bob was asked exactly once, and declined" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Declines]
-          Spec.assertEqWith s "CR 701.6a: the Growth was countered, so the stack is empty" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "CR 701.6a: the Growth was countered, so the stack is empty" (length (TurnRegisters.stack (GameState.turn after))) 0
           Spec.assertEqWith s "and it is in bob's graveyard" (Seq.length (Map.findWithDefault Seq.empty S.bob (GameState.graveyard after))) 1
           Spec.assertEqWith s "so the Guard is still a 3/1" (S.powerToughnessOf guardId after) (Just (3, 1))
         -- The same board and the same cast as the case above, differing in
@@ -2101,7 +2111,7 @@ cutpurseSpec s registry =
           let ((_, after), transcript) = Replay.record (paysFor S.bob) onStack Stack.resolveTop
           -- The controls: the Cutpurse really entered and its trigger really
           -- reached the stack, and the three seats really start apart.
-          Spec.assertEqWith s "CR 603.6a: its enters trigger is on the stack" (length (GameState.stack onStack)) 1
+          Spec.assertEqWith s "CR 603.6a: its enters trigger is on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
           Spec.assertEqWith s "alice, bob and carol start with 4, 3 and 5 permanents" (controls S.alice onStack, controls S.bob onStack, controls S.carol onStack) (4, 3, 5)
           -- THE BEHAVIOUR: carol alone lost a permanent. bob's answer bought him
           -- out of an edict carol's answer did not buy her out of, and alice --
@@ -2191,9 +2201,12 @@ gomazoaSpec s registry =
             ratsId,
             growthId,
             tapped
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.bob,
-                GameState.priority = Just S.bob
+              { GameState.turn =
+                  (GameState.turn tapped)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.bob,
+                      TurnRegisters.priority = Just S.bob
+                    }
               }
           )
       -- Cast one spell at `r`, settle so any trigger reaches the stack, then
@@ -2214,7 +2227,7 @@ gomazoaSpec s registry =
           Spec.assertEqWith s "the Gomazoa starts tapped" (tapStateOf gomazoaId gs) (Just TapState.Tapped)
           Spec.assertEqWith s "CR 701.26b the trigger untapped it" (tapStateOf gomazoaId after) (Just TapState.Untapped)
           Spec.assertEqWith s "CR 603.5 its controller was asked the may exactly once" (optionalResponses transcript) [Response.ChoseOptional OptionalDecision.Exercises]
-          Spec.assertEqWith s "the Fatigue and the trigger were both on the stack" (length (GameState.stack onStack)) 2
+          Spec.assertEqWith s "the Fatigue and the trigger were both on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 2
         -- CR 112.1 against CR 113.3, which is the whole of BecameTarget.kind:
         -- Ravenous Rats' SPELL targets nothing and its enters-trigger targets an
         -- opponent, so the only BecameTarget on this board is an ability's.
@@ -2228,14 +2241,14 @@ gomazoaSpec s registry =
           Spec.assertEqWith s "and nobody was offered the may" (optionalResponses transcript) []
           -- The controls, which are what stop this leg passing because nothing
           -- happened at all: the ability reached the stack and really named her.
-          Spec.assertEqWith s "CR 603.3d the Rats' enters trigger reached the stack" (length (GameState.stack triggerOnStack)) 1
+          Spec.assertEqWith s "CR 603.3d the Rats' enters trigger reached the stack" (length (TurnRegisters.stack (GameState.turn triggerOnStack))) 1
           Spec.assertEqWith s "and alice discarded the card it targeted her for" (S.handSize S.alice after) 0
         -- The card's third line, which is what makes the trigger worth printing:
         -- CR 502.3's turn-based untap passes the Gomazoa over while CR 701.26b's
         -- Untap action above does not. The Piker is the pair's other half.
         Spec.it s "CR 502.3 the Gomazoa does not untap in its controller's untap step, and an ordinary creature does" $ do
           (gomazoaId, pikerId, _, _, _, gs) <- board
-          let untapped = S.runPure S.identityAnswer (gs {GameState.activePlayer = S.alice}) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
+          let untapped = S.runPure S.identityAnswer (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.alice}}) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
           Spec.assertEqWith s "the Gomazoa is still tapped" (tapStateOf gomazoaId untapped) (Just TapState.Tapped)
           Spec.assertEqWith s "and the Piker untapped" (tapStateOf pikerId untapped) (Just TapState.Untapped)
 
@@ -2305,9 +2318,12 @@ amuletSpec s registry =
             fodderId,
             alicesBolt,
             stocked
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.bob,
-                GameState.priority = Just S.bob
+              { GameState.turn =
+                  (GameState.turn stocked)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.bob,
+                      TurnRegisters.priority = Just S.bob
+                    }
               }
           )
       -- Cast one spell at `r`, settle so any trigger reaches the stack, then
@@ -2334,7 +2350,7 @@ amuletSpec s registry =
           Spec.assertEqWith s "CR 405.4 bob, the Bolt's controller, was asked exactly once and declined" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Declines]
           -- The controls: the spell really was cast, and the trigger really
           -- reached the stack over it.
-          Spec.assertEqWith s "the Bolt and the trigger were both on the stack" (length (GameState.stack onStack)) 2
+          Spec.assertEqWith s "the Bolt and the trigger were both on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 2
           Spec.assertEqWith s "CR 701.6a and the countered Bolt is in bob's graveyard" (Seq.length (Map.findWithDefault Seq.empty S.bob (GameState.graveyard after))) 1
         -- The same board and the same cast as the case above, differing in
         -- NOTHING but bob's answer.
@@ -2359,7 +2375,7 @@ amuletSpec s registry =
           -- all: the Rats' SPELL resolved, and its ability really reached the
           -- stack under the Amulet's trigger.
           Spec.assertEqWith s "the Rats are on the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Ravenous Rats")) S.bob after) 1
-          Spec.assertEqWith s "CR 603.3d the Rats' trigger and the Amulet's were both on the stack" (length (GameState.stack triggerOnStack)) 2
+          Spec.assertEqWith s "CR 603.3d the Rats' trigger and the Amulet's were both on the stack" (length (TurnRegisters.stack (GameState.turn triggerOnStack))) 2
         -- The RELATION, moved on its own: the same board and the same spell at
         -- the same seat, differing only in who casts it. CR 405.4's controller
         -- is then alice herself, whom PlayerRelation.Opponent excludes.
@@ -2368,7 +2384,7 @@ amuletSpec s registry =
           let (onStack, after, transcript) = castThenResolve (Recipient.ToPlayer S.alice) S.carol S.alice alicesBolt gs
           Spec.assertEqWith s "her own Bolt resolved onto her" (S.lifeOf S.alice after) (Just 17)
           Spec.assertEqWith s "and nobody was offered the {1}" (payResponses transcript) []
-          Spec.assertEqWith s "only the Bolt was on the stack" (length (GameState.stack onStack)) 1
+          Spec.assertEqWith s "only the Bolt was on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
         -- The RECIPIENT, moved on its own: the same cast by the same player, one
         -- seat over. CR 109.5's "you" is the Amulet's controller, and carol is
         -- neither that nor the caster.
@@ -2378,7 +2394,7 @@ amuletSpec s registry =
           Spec.assertEqWith s "the Bolt resolved onto carol" (S.lifeOf S.carol after) (Just 17)
           Spec.assertEqWith s "and alice is untouched" (S.lifeOf S.alice after) (Just 20)
           Spec.assertEqWith s "and nobody was offered the {1}" (payResponses transcript) []
-          Spec.assertEqWith s "only the Bolt was on the stack" (length (GameState.stack onStack)) 1
+          Spec.assertEqWith s "only the Bolt was on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
 
 -- The CR 603.5 "may" answers in a transcript, in order -- paysFor's
 -- payResponses one Response constructor over. A transcript with no
@@ -2483,7 +2499,7 @@ hauntSpec s registry =
               (placed, after) = settleAndResolve (aimAt (Recipient.ToPlayer S.carol)) killed
           Spec.assertEqWith s "the card is out of exile" (Set.size (GameState.exile moved)) 0
           Spec.assertEqWith s "and still haunts the Piker" (Map.size (GameState.haunting moved)) 1
-          Spec.assertEqWith s "nothing reached the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "nothing reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "and no life total moved" (lives after) (Just 20, Just 20, Just 20)
 
 -- CR 702.55a's SECOND sentence: Cry of Contrition, {B} Sorcery, "Target player
@@ -2560,7 +2576,7 @@ hauntSpellSpec s registry =
               (_, after) = settleAndResolve (aimAt (Recipient.ToPlayer S.carol)) (bolt victimId exiled)
               (bystanderPlaced, _) = settleAndResolve (aimAt (Recipient.ToPlayer S.carol)) (bolt bystanderId exiled)
           Spec.assertEqWith s "CR 702.55c carol discarded to the ability in exile" (handSizes after) (0, 1, 1)
-          Spec.assertEqWith s "CR 702.55b the other Piker's death fires nothing" (length (GameState.stack bystanderPlaced)) 0
+          Spec.assertEqWith s "CR 702.55b the other Piker's death fires nothing" (length (TurnRegisters.stack (GameState.turn bystanderPlaced))) 0
 
 -- CR 601.2c read by a BYSTANDER, batched by CR 603.2c and narrowed to CR
 -- 113.3b's half of CR 113.3: Professor Hojo, {1}{G} Legendary Creature -- Human
@@ -2643,9 +2659,12 @@ professorHojoSpec s registry =
             bobsPiker,
             jugglerId,
             stocked
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn stocked)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               },
             hojoId
           )
@@ -2741,7 +2760,7 @@ strippedTriggerSpec s registry =
               (fountainId, gs) = S.addPermanent radiantFountain S.alice withMoon
               after = entering fountainId gs
           Spec.assertBool s (Set.member Subtype.Mountain (Projection.subtypesOf fountainId after)) "it entered as a Mountain"
-          Spec.assertEqWith s "nothing reached the stack" (GameState.stack after) []
+          Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn after)) []
           Spec.assertEqWith s "and no life was gained" (S.lifeOf S.alice after) (Just 20)
           -- CR 305.7's last clause, on the same board: the printed mana ability
           -- goes and the new basic land type's replaces it.
@@ -2878,7 +2897,7 @@ bystanderZoneSpec s registry =
             began =
               S.withEvents
                 [GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)]
-                (g2 {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+                (g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
             after = S.runPure S.identityAnswer began (remove [squeeId, blossomId])
         pure (squeeId, blossomId, after, fmap PendingTrigger.source (gathered after))
    in Spec.describe s "BystanderZone" $ do
@@ -2924,10 +2943,13 @@ bystanderZoneSpec s registry =
               doomed = S.addCounter CounterKind.MinusOneMinusOne 1 squeeId g2
               atUpkeep =
                 doomed
-                  { GameState.phase = upkeep,
-                    GameState.activePlayer = S.alice,
-                    GameState.priority = Just S.alice,
-                    GameState.remaining = Seq.drop 1 (GameState.remaining doomed)
+                  { GameState.turn =
+                      (GameState.turn doomed)
+                        { TurnRegisters.phase = upkeep,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice,
+                          TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn doomed))
+                        }
                   }
               after = S.runPure exercising atUpkeep Engine.runStep
               squeesIn zone = filter (\oid -> fmap Face.name (Game.faceOf oid after) == Just squeeName) (Game.zoneMembers zone S.alice after)
@@ -3068,10 +3090,10 @@ aetherFlashSpec s registry =
               buried = S.runPure S.identityAnswer hit Engine.settleForPriority
               -- The second trigger, resolving against an id CR 400.7 deleted.
               after = S.runPure S.identityAnswer buried Stack.resolveTop
-          Spec.assertEqWith s "both triggers were placed" (length (GameState.stack placed)) 2
+          Spec.assertEqWith s "both triggers were placed" (length (TurnRegisters.stack (GameState.turn placed))) 2
           Spec.assertEqWith s "the Piker is dead before the second resolves" (S.countOnBattlefieldByName pikerName S.alice buried) 0
           Spec.assertEqWith s "one damage event so far" (fmap DamageEvent.amount (damageEventsIn buried)) [2]
-          Spec.assertEqWith s "the second trigger did resolve" (GameState.stack after) []
+          Spec.assertEqWith s "the second trigger did resolve" (TurnRegisters.stack (GameState.turn after)) []
           Spec.assertEqWith s "and dealt nothing: still one damage event" (fmap DamageEvent.amount (damageEventsIn after)) [2]
           Spec.assertEqWith s "the card is in the graveyard once, not twice" (namesIn Zone.Graveyard S.alice after) [pikerName]
 
@@ -3082,7 +3104,7 @@ aetherFlashSpec s registry =
 kindredSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 kindredSpec s registry =
   let upkeep = Phase.Beginning BeginningStep.Upkeep
-      beginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+      beginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
       settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
       resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
       -- Bitterblossom on alice's battlefield, alice's upkeep begun. The middle
@@ -3129,7 +3151,7 @@ kindredSpec s registry =
         Spec.it s "CR 603.3a Bitterblossom's upkeep trigger costs its controller 1 life and mints a 1/1 flying black Faerie Rogue" $ do
           bitterblossom <- S.printingOf s registry "Bitterblossom"
           let (blossomId, onStack, after) = board bitterblossom
-          Spec.assertBool s (not (null (GameState.stack onStack))) "the upkeep trigger really reached the stack"
+          Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the upkeep trigger really reached the stack"
           Spec.assertEqWith s "no life was lost before it resolved" (S.lifeOf S.alice onStack) (Just 20)
           Spec.assertEqWith s "alice paid the 1 life" (S.lifeOf S.alice after) (Just 19)
           case filter (/= blossomId) (Set.toList (GameState.battlefield after)) of
@@ -3233,7 +3255,7 @@ screamsFromWithinSpec s registry =
           Spec.assertEqWith
             s
             "CR 113.6m the Aura's death trigger is on the stack"
-            (fmap (\oid -> fmap Object.source (Game.lookupObject oid after)) (GameState.stack after))
+            (fmap (\oid -> fmap Object.source (Game.lookupObject oid after)) (TurnRegisters.stack (GameState.turn after)))
             (fmap (\ab -> Just (Source.OfTrigger TriggeredAbilitySource.MkTriggeredAbilitySource {TriggeredAbilitySource.source = aura, TriggeredAbilitySource.ability = ab, TriggeredAbilitySource.createdAt = Nothing, TriggeredAbilitySource.delayed = Map.empty, TriggeredAbilitySource.acquisition = Acquisition.Own})) (Face.triggeredAbilities (S.combinedFace screams)))
           -- The preconditions the assertion above rests on, AFTER it so neither
           -- can absorb a mutation aimed at the clause.
@@ -3257,7 +3279,7 @@ screamsFromWithinSpec s registry =
           Spec.assertEqWith
             s
             "CR 603.10a the Aura's death trigger is still on the stack"
-            (fmap (\oid -> fmap Object.source (Game.lookupObject oid after)) (GameState.stack after))
+            (fmap (\oid -> fmap Object.source (Game.lookupObject oid after)) (TurnRegisters.stack (GameState.turn after)))
             (fmap (\ab -> Just (Source.OfTrigger TriggeredAbilitySource.MkTriggeredAbilitySource {TriggeredAbilitySource.source = aura, TriggeredAbilitySource.ability = ab, TriggeredAbilitySource.createdAt = Nothing, TriggeredAbilitySource.delayed = Map.empty, TriggeredAbilitySource.acquisition = Acquisition.Own})) (Face.triggeredAbilities (S.combinedFace screams)))
           Spec.assertEqWith s "and both really left the battlefield in one batch" (fmap (`Game.lookupObject` after) [enchanted, aura]) [Nothing, Nothing]
         -- CR 400.7f's second sentence, and the unit's own proving leg: the Aura
@@ -3279,7 +3301,7 @@ screamsFromWithinSpec s registry =
           -- graveyard. The preconditions follow it.
           Spec.assertEqWith s "under a new id, the battlefield one being gone" (Game.lookupObject aura after) Nothing
           Spec.assertEqWith s "and alice's graveyard no longer holds it" (inGraveyard after) 0
-          Spec.assertEqWith s "the trigger really resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "the trigger really resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
           Spec.assertEqWith s "and the board before it resolved held no Aura, one in the graveyard" (census placed, inGraveyard placed) ([0, 1, 1], 1)
         -- The same rule's FIRST sentence, on the wrath board above: host and Aura
         -- reach their graveyards in one EventGroup, "at the same time the
@@ -3359,7 +3381,7 @@ widowedBladeSpec s registry =
         Spec.it s "CR 113.6m an Equipment gets no Aura exception, so its ability never triggers from the battlefield" $ do
           (host, equipment, _, gs) <- board
           let after = kill host gs
-          Spec.assertEqWith s "CR 113.6m the Equipment's ability is pinned to the graveyard, so the stack is empty" (fmap (\oid -> fmap Object.source (Game.lookupObject oid after)) (GameState.stack after)) []
+          Spec.assertEqWith s "CR 113.6m the Equipment's ability is pinned to the graveyard, so the stack is empty" (fmap (\oid -> fmap Object.source (Game.lookupObject oid after)) (TurnRegisters.stack (GameState.turn after))) []
           -- The preconditions the assertion rests on, AFTER it so neither can
           -- absorb a mutation aimed at the subtype gate.
           Spec.assertEqWith s "the equipped Hill Giant really died" (Game.lookupObject host after) Nothing
@@ -3406,7 +3428,7 @@ heirloomBladeSpec s registry =
         Spec.assertEqWith s "CR 205.3m the Human Warrior went to alice's hand" (named Zone.Hand after) ["Mardu Skullhunter"]
         Spec.assertEqWith s "and the Shapeshifter above it to the bottom" (named Zone.Library after) ["Hill Giant", "Primal Plasma"]
         Spec.assertEqWith s "the host was a 2/1 copy of the Piker" (Projection.powerOf host g5) (Just 2)
-        Spec.assertEqWith s "and the trigger was on the stack" (length (GameState.stack placed)) 1
+        Spec.assertEqWith s "and the trigger was on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
       _ -> Spec.assertFailure s "the Clone did not resolve onto the battlefield"
 
 -- CR 603.10a's look-back at an attachment, on the EQUIPMENT side. Skullclamp
@@ -3466,13 +3488,13 @@ skullclampSpec s registry =
           Spec.assertEqWith s "so the Equipment filed no record of its own" (Map.lookup equipment (GameState.lastKnown after)) Nothing
           Spec.assertEqWith s "the host's record is the one that names it" (fmap LastKnown.attached (Map.lookup host (GameState.lastKnown after))) (Just (Set.singleton equipment))
           Spec.assertEqWith s "alice held nothing before the trigger resolved" (S.handSize S.alice placed) 0
-          Spec.assertEqWith s "and the trigger really was on the stack" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "and the trigger really was on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
         -- The negative, one creature over: the same board, the same removal, the
         -- same library -- and a permanent the Equipment was never attached to.
         Spec.it s "CR 303.4m another creature of the same controller dying is not the equipped creature dying" $ do
           (_, bystander, _, gs) <- board
           let placed = kill bystander gs
-          Spec.assertEqWith s "no trigger is placed" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "no trigger is placed" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "so alice draws nothing" (S.handSize S.alice placed) 0
           Spec.assertEqWith s "and the Goblin Piker really died" (Game.lookupObject bystander placed) Nothing
         -- CR 603.10a's own case: the Equipment leaves in the SAME batch as its
@@ -3537,7 +3559,7 @@ prizedAmalgamSpec s registry =
       -- TriggerSpec's tokenSetSpec's step: the phase written and the CR 513.1
       -- event recorded, which is what a "beginning of the next end step" delayed
       -- ability watches for.
-      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = endStep}})
       settle gs = S.runPure S.identityAnswer gs Engine.settleForPriority
       resolveTop gs = S.runPure S.identityAnswer gs Stack.resolveTop
       amalgamName = CardName.MkCardName (Text.pack "Prized Amalgam")
@@ -3555,11 +3577,15 @@ prizedAmalgamSpec s registry =
       -- her graveyard, and the Amalgam wherever `place` puts it.
       board place amalgam skeleton swamp =
         let base =
-              (S.landsInPlay swamp 2)
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
-                }
+              Turn.withTurn
+                ( \turn ->
+                    turn
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                )
+                (S.landsInPlay swamp 2)
          in S.addGraveyardCard skeleton S.alice (snd (place amalgam S.alice base))
       -- Activate the Skeleton's graveyard ability, resolve it, and settle, so
       -- CR 603.3 has placed whatever the entry triggered.
@@ -3604,7 +3630,7 @@ prizedAmalgamSpec s registry =
           swamp <- S.printingOf s registry "Swamp"
           raiseWith S.addPermanent amalgam skeleton swamp $ \raised -> do
             let after = throughEndStep raised
-            Spec.assertEqWith s "CR 113.6m nothing triggered off the entry" (length (GameState.stack raised)) 0
+            Spec.assertEqWith s "CR 113.6m nothing triggered off the entry" (length (TurnRegisters.stack (GameState.turn raised))) 0
             Spec.assertEqWith s "so nothing was armed to fire at the end step" (Seq.length (GameState.delayedTriggers after)) 0
             Spec.assertEqWith s "and the one Amalgam is the untapped one that was already there" (amalgamTapStates after) [Just TapState.Untapped]
             Spec.assertEqWith s "off the same entry the leg above triggers on" (length (onBattlefieldNamed skeletonName raised)) 1
@@ -3664,7 +3690,7 @@ banewaspAfflictionSpec s registry =
           -- The preconditions the assertion rests on, AFTER it so neither can
           -- absorb a mutation aimed at the binding.
           Spec.assertEqWith s "the enchanted Giant Spider really died" (Game.lookupObject enchanted after) Nothing
-          Spec.assertEqWith s "and the trigger really resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "and the trigger really resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- The same board with the host moved one seat, which is the only
         -- difference: CR 109.5's "you" is alice in both legs, so a reading that
         -- had substituted her would answer the same pair twice.
@@ -3728,7 +3754,7 @@ ivoryGargoyleSpec s registry =
       -- prizedAmalgamSpec's step, and for its reason: the phase written and CR
       -- 513.1's event recorded is what a "beginning of the next end step"
       -- delayed ability watches for.
-      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = endStep}})
       throughEndStep gs = S.runPure S.identityAnswer (settle (beginEndStep gs)) Engine.priorityLoop
       gargoyleName = CardName.MkCardName (Text.pack "Ivory Gargoyle")
       -- CR 400.7 mints a fresh id for the returned card, so both censuses go by
@@ -3746,7 +3772,7 @@ ivoryGargoyleSpec s registry =
           gargoyle <- S.printingOf s registry "Ivory Gargoyle"
           let (victim, g1) = S.addPermanent gargoyle S.alice (Setup.emptyGame S.bothPlayers)
               placed = kill victim g1
-          Spec.assertEqWith s "CR 113.6m the dies trigger reached the stack" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "CR 113.6m the dies trigger reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
           -- The precondition the assertion above rests on, AFTER it so it
           -- cannot absorb a mutation aimed at the exception.
           Spec.assertEqWith s "the creature really died first" (Game.lookupObject victim placed) Nothing
@@ -3844,7 +3870,7 @@ biolumeEggSpec s registry =
   let settle gs = S.runPure S.identityAnswer gs Engine.settleForPriority
       resolveTop gs = S.runPure S.identityAnswer gs Stack.resolveTop
       endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = endStep}})
       throughEndStep gs = S.runPure S.identityAnswer (settle (beginEndStep gs)) Engine.priorityLoop
       eggName = CardName.MkCardName (Text.pack "Biolume Egg")
       serpentName = CardName.MkCardName (Text.pack "Biolume Serpent")
@@ -3869,7 +3895,7 @@ biolumeEggSpec s registry =
               after = throughEndStep (resolveTop placed)
           Spec.assertEqWith s "CR 712.11a the Serpent is on the battlefield" (length (named serpentName Zone.Battlefield after)) 1
           -- The preconditions, AFTER the assertion so none absorbs a mutation.
-          Spec.assertEqWith s "the sacrifice trigger reached the stack" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "the sacrifice trigger reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "the Egg really left first" (Game.lookupObject eggId placed) Nothing
           Spec.assertEqWith s "and no Egg card is left in the graveyard" (length (named eggName Zone.Graveyard after)) 0
           Spec.assertEqWith s "the delayed entry fired and was spent" (Seq.length (GameState.delayedTriggers after)) 0
@@ -3880,18 +3906,18 @@ biolumeEggSpec s registry =
               placed = settle (S.runPure S.identityAnswer g' (Event.sacrifice (pure ()) S.alice eggId))
               after = throughEndStep (resolveTop placed)
           Spec.assertEqWith s "CR 712.11a the Serpent is on the battlefield" (length (named serpentName Zone.Battlefield after)) 1
-          Spec.assertEqWith s "the sacrifice trigger reached the stack" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "the sacrifice trigger reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "CR 614.1 the Egg went to exile, not the graveyard" (length (named eggName Zone.Exile placed), length (named eggName Zone.Graveyard placed)) (1, 0)
           Spec.assertEqWith s "and no Egg card is left in exile" (length (named eggName Zone.Exile after)) 0
         Spec.it s "CR 700.4 the Egg dying without a sacrifice does not trigger it" $ do
           (eggId, _, g) <- board
           let placed = settle (S.runPure S.identityAnswer g (Event.destroy (pure ()) Regenerability.Regenerable [eggId]))
-          Spec.assertEqWith s "nothing reached the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "nothing reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "the Egg really died into the graveyard" (length (named eggName Zone.Graveyard placed)) 1
         Spec.it s "CR 603.10a sacrificing another permanent does not trigger it" $ do
           (eggId, pikerId, g) <- board
           let placed = settle (S.runPure S.identityAnswer g (Event.sacrifice (pure ()) S.alice pikerId))
-          Spec.assertEqWith s "nothing reached the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "nothing reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "the Piker really was sacrificed and the Egg stayed" (Game.lookupObject pikerId placed, fmap Object.zone (Game.lookupObject eggId placed)) (Nothing, Just Zone.Battlefield)
         Spec.it s "CR 113.6m both triggered abilities function on the battlefield" $ do
           egg <- S.printingOf s registry "Biolume Egg"

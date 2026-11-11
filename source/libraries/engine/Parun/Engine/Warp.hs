@@ -24,6 +24,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 702.185b: what makes it a warped card, stamped with the turn the warp
 -- ability's delayed trigger exiled it on -- which is what CR 702.185a's "after
@@ -40,5 +41,5 @@ becomeWarped :: ObjectId -> GameState -> GameState
 becomeWarped newId gs =
   gs
     { GameState.objects =
-        Map.adjust (\o -> o {Object.warped = Just (GameState.turnNumber gs)}) newId (GameState.objects gs)
+        Map.adjust (\o -> o {Object.warped = Just (TurnRegisters.turnNumber (GameState.turn gs))}) newId (GameState.objects gs)
     }

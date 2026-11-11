@@ -77,6 +77,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 702.70: poisonous -- the first keyword whose rule text IS a triggered
@@ -164,7 +165,7 @@ poisonousSpec s registry =
             (gs0, attacker : _, _) -> do
               let withSwamps = List.foldl' (\g _ -> snd (S.addPermanent swamp S.alice g)) gs0 (replicate 4 ())
                   (spellId, inHand) = S.addHandCard initiation S.alice withSwamps
-                  cast = S.runPure S.aggressiveAnswer inHand {GameState.priority = Just S.alice} (S.cast S.alice spellId)
+                  cast = S.runPure S.aggressiveAnswer inHand {GameState.turn = (GameState.turn inHand) {TurnRegisters.priority = Just S.alice}} (S.cast S.alice spellId)
                   resolved = S.runPure S.aggressiveAnswer cast Stack.resolveTop
                   after = S.runCombat S.aggressiveAnswer resolved
               Spec.assertBool s (Projection.hasKeyword (Keyword.Type.Poisonous 3) attacker resolved) "the Aura granted poisonous 3"
@@ -1237,9 +1238,12 @@ cascadeSpec s registry = Spec.describe s "Cascade" $ do
               g4 = if withImoti then snd (S.addPermanent imoti S.alice g3) else g3
               (_, g5) = S.addHandCard baloth S.alice g4
            in g5
-                { GameState.activePlayer = S.alice,
-                  GameState.phase = Phase.PrecombatMain,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn g5)
+                      { TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
         isIn zone name gs = elem (CardName.MkCardName (Text.pack name)) (Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone S.alice gs))
         without = S.runPure cascading (board False) Engine.priorityLoop
@@ -1289,14 +1293,14 @@ rippleSpec s registry =
             g3 = S.landsFor swamp S.alice 2 g2
             g4 = List.foldl' (\g _ -> snd (S.addHandCard mountain S.bob g)) g3 (replicate 4 ())
             (oid, g5) = S.addHandCard dementia S.alice g4
-        pure (oid, g5 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice})
+        pure (oid, g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}})
       -- alice casts the Dementia at bob and the stack is resolved down to empty,
       -- keeping the whole transcript: CR 401.4's arrangement is a RESPONSE and
       -- not a board, so nothing else can tell a stated order from a random one.
       runWith :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> ([Response.Response], GameState.GameState)
       runWith answer oid gs =
         let step (log_, g) action = let ((_, g'), more) = Replay.record answer g (action >> Engine.settleForPriority) in (log_ <> more, g')
-            resolveAll acc = if null (GameState.stack (snd acc)) then acc else resolveAll (step acc Stack.resolveTop)
+            resolveAll acc = if null (TurnRegisters.stack (GameState.turn (snd acc))) then acc else resolveAll (step acc Stack.resolveTop)
          in resolveAll (step ([], gs) (S.cast S.alice oid))
       run = runWith rippling
       namesIn zone pid gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone pid gs)
@@ -1425,7 +1429,7 @@ replicateSpec s registry = Spec.describe s "Replicate" $ do
         (myrId, g3) = S.addPermanent myr S.alice g2
         (stifleId, g4) = S.addHandCard stifle S.bob g3
         (spellId, g5) = S.addHandCard current S.alice g4
-        board = g5 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        board = g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
         -- Each ChooseKicker takes the next answer, so the two identical
         -- questions get different ones; every target is the Myr, or the Stifle's.
         answering :: Maybe ObjectId.ObjectId -> Prompt.Prompt r -> State.State [Natural.Natural] r
@@ -1438,10 +1442,10 @@ replicateSpec s registry = Spec.describe s "Replicate" $ do
           Prompt.ChooseTargets _ _ _ asked -> pure (fmap (\(_, offered) -> Set.filter ((== Just (Maybe.fromMaybe myrId stifled)) . Recipient.objectOf) offered) asked)
           _ -> pure (S.identityAnswer p)
         run stifled answers gs action = fst (State.runState (fmap snd (Engine.runGame (answering stifled) gs (action >> Engine.settleForPriority))) answers)
-        resolveAll gs = if null (GameState.stack gs) then gs else resolveAll (run Nothing [] gs Stack.resolveTop)
+        resolveAll gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll (run Nothing [] gs Stack.resolveTop)
         cast answers = run Nothing answers board (S.cast S.alice spellId)
-        stifling gs = case GameState.stack gs of
-          top : _ -> run (Just top) [] gs {GameState.priority = Just S.bob} (S.cast S.bob stifleId)
+        stifling gs = case TurnRegisters.stack (GameState.turn gs) of
+          top : _ -> run (Just top) [] gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.bob}} (S.cast S.bob stifleId)
           [] -> gs
         gained answers stifled = fmap (subtract 20) (S.lifeOf S.alice (resolveAll ((if stifled then stifling else id) (cast answers))))
     Spec.assertEqWith s "CR 702.56b paid once each, one trigger Stifled: the other still copies, two resolutions" (gained [1, 1] True) (Just 4)
@@ -1482,16 +1486,19 @@ casualtySpec s registry = Spec.describe s "Casualty" $ do
         (spellId, g1) = S.addHandCard bolt S.alice withJedit
         board =
           g1
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         answer :: Natural.Natural -> Prompt.Prompt r -> r
         answer times p = case p of
           Prompt.ChooseSacrifices _ _ _ candidates _ _ -> Set.fromList (filter (== jeditId) candidates)
           _ -> paidTimesAt times (Recipient.ToPlayer S.bob) p
         step times gs action = snd (Engine.runGamePure (answer times) gs (action >> Engine.settleForPriority))
-        resolveAll times gs = if null (GameState.stack gs) then gs else resolveAll times (step times gs Stack.resolveTop)
+        resolveAll times gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll times (step times gs Stack.resolveTop)
         after :: Natural.Natural -> GameState.GameState
         after times = resolveAll times (step times board (S.cast S.alice spellId))
     Spec.assertEqWith s "bob took the original's 3 and the copy's 3" (S.lifeOf S.bob (after 1)) (Just 14)
@@ -1518,9 +1525,12 @@ casualtySpec s registry = Spec.describe s "Casualty" $ do
         (spellId, g1) = S.addHandCard nuisance S.alice stocked
         board =
           g1
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         answer :: Natural.Natural -> Prompt.Prompt r -> r
         answer times p = case p of
@@ -1528,7 +1538,7 @@ casualtySpec s registry = Spec.describe s "Casualty" $ do
           Prompt.ChooseSacrifices _ _ _ candidates n _ -> Set.fromList (List.genericTake n (filter (`elem` [jeditId, giantId]) candidates))
           _ -> S.identityAnswer p
         step times gs action = snd (Engine.runGamePure (answer times) gs (action >> Engine.settleForPriority))
-        resolveAll times gs = if null (GameState.stack gs) then gs else resolveAll times (step times gs Stack.resolveTop)
+        resolveAll times gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll times (step times gs Stack.resolveTop)
         after :: Natural.Natural -> GameState.GameState
         after times = resolveAll times (step times board (S.cast S.alice spellId))
         fodder times = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Jedit Ojanen")) S.alice (after times) + S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Hill Giant")) S.alice (after times)
@@ -1552,16 +1562,19 @@ offspringSpec s registry = Spec.describe s "Offspring" $ do
         (spellId, g1) = S.addHandCard mage S.alice withZinnia
         board =
           g1
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         answer :: Natural.Natural -> Prompt.Prompt r -> r
         answer times p = case p of
           Prompt.ChooseKicker {} -> KickerDecision.MkKickerDecision times
           _ -> S.identityAnswer p
         step times gs action = snd (Engine.runGamePure (answer times) gs (action >> Engine.settleForPriority))
-        resolveAll times gs = if null (GameState.stack gs) then gs else resolveAll times (step times gs Stack.resolveTop)
+        resolveAll times gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll times (step times gs Stack.resolveTop)
         mages times = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Coruscation Mage")) S.alice (resolveAll times (step times board (S.cast S.alice spellId)))
     Spec.assertEqWith s "CR 702.175b both paid: the Mage and two tokens" (mages 2) 3
     Spec.assertEqWith s "CR 702.175b one paid: the Mage and one token" (mages 1) 2
@@ -1774,10 +1787,13 @@ echoSpec s registry =
       -- one twice.
       atStepOf step pid gs =
         gs
-          { GameState.phase = step,
-            GameState.activePlayer = pid,
-            GameState.priority = Just pid,
-            GameState.remaining = S.phasesAfter step
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = step,
+                  TurnRegisters.activePlayer = pid,
+                  TurnRegisters.priority = Just pid,
+                  TurnRegisters.remaining = S.phasesAfter step
+                }
           }
       atUpkeepOf = atStepOf upkeep
       ranUpkeep :: (forall r. Prompt.Prompt r -> r) -> PlayerId.PlayerId -> GameState.GameState -> (((), GameState.GameState), [Response.Response])
@@ -2372,7 +2388,7 @@ graftSpec s registry =
               Spec.assertEqWith s "and the land is still empty" (plusOnes landId after) 0
               -- The proxy, after the behaviour: the "if" is checked as the
               -- trigger would be PLACED, so nothing reached the stack to decline.
-              Spec.assertEqWith s "CR 603.4 no trigger was placed at all" (length (GameState.stack (placed taking giantCard once))) 0
+              Spec.assertEqWith s "CR 603.4 no trigger was placed at all" (length (TurnRegisters.stack (GameState.turn (placed taking giantCard once)))) 0
             _ -> Spec.assertFailure s "both creatures should have reached the battlefield"
         -- THE PAIR ON THE ANSWER. The first board with alice's one decision
         -- changed and nothing else: rule 702.58a's "you may" declined leaves the
@@ -2385,14 +2401,14 @@ graftSpec s registry =
             Just pikerId -> do
               Spec.assertEqWith s "CR 702.58a the creature got nothing" (plusOnes pikerId after) 0
               Spec.assertEqWith s "and the land kept its counter" (plusOnes landId after) 1
-              Spec.assertEqWith s "the trigger still reached the stack -- a declined may is not a fizzle" (length (GameState.stack (placed declining pikerCard board))) 1
+              Spec.assertEqWith s "the trigger still reached the stack -- a declined may is not a fizzle" (length (TurnRegisters.stack (GameState.turn (placed declining pikerCard board)))) 1
         -- THE PAIR ON THE ENTRANT'S TYPE. The first board with a LAND entering
         -- instead of a creature: rule 702.58a says "another CREATURE".
         Spec.it s "CR 702.58a a land entering does not fire it" $ do
           (landId, _, _, plainsCard, _, board) <- grafted
           let after = entersUnder taking plainsCard board
           Spec.assertEqWith s "CR 702.58a the land kept its counter" (plusOnes landId after) 1
-          Spec.assertEqWith s "and nothing was placed" (length (GameState.stack (placed taking plainsCard board))) 0
+          Spec.assertEqWith s "and nothing was placed" (length (TurnRegisters.stack (GameState.turn (placed taking plainsCard board)))) 0
         -- "ANOTHER" doing real work. The entrant is itself a graft permanent, so
         -- two abilities see one entry: the Reborn's fires, and the Initiate's own
         -- does not, it being no "another" to itself. The counters cannot tell
@@ -2402,7 +2418,7 @@ graftSpec s registry =
         Spec.it s "CR 702.58a an entering graft permanent does not trigger its own ability" $ do
           (landId, _, _, _, initiateCard, board) <- grafted
           let after = entersUnder taking initiateCard board
-          Spec.assertEqWith s "CR 702.58a exactly one ability triggered" (length (GameState.stack (placed taking initiateCard board))) 1
+          Spec.assertEqWith s "CR 702.58a exactly one ability triggered" (length (TurnRegisters.stack (GameState.turn (placed taking initiateCard board)))) 1
           case newestOnBattlefield (CardName.MkCardName $ Text.pack "Simic Initiate") after of
             Nothing -> Spec.assertFailure s "the Simic Initiate did not reach the battlefield"
             Just initiateId -> do

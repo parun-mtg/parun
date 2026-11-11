@@ -69,6 +69,7 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -112,7 +113,7 @@ check swamp n comparison threshold =
 monarchSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 monarchSpec s registry =
   let upkeep = Phase.Beginning BeginningStep.Upkeep
-      beginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+      beginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
       settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
       resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
       -- Alice's upkeep with Queen Marchesa already out, on `seats`, after
@@ -181,7 +182,7 @@ enteredFromSpec s registry =
       -- would run one of them and read the same one token either way.
       drain n gs =
         let settled = settle gs
-         in if n <= (0 :: Int) || null (GameState.stack settled)
+         in if n <= (0 :: Int) || null (TurnRegisters.stack (GameState.turn settled))
               then settled
               else drain (n - 1) (resolveTop settled)
       play pid oid gs = drain 8 (cast pid oid gs)
@@ -343,7 +344,7 @@ lastKnownTokenSpec s registry =
             Spec.assertEqWith s "alice drew her one library card" (librarySize after) 0
             Spec.assertEqWith s "off a library that held exactly one" (librarySize onStack) 1
             Spec.assertEqWith s "and the token really did leave the battlefield" (Set.member victimId (GameState.battlefield after)) False
-            Spec.assertEqWith s "with the Kirin's trigger on the stack before it resolved" (length (GameState.stack onStack)) 1
+            Spec.assertEqWith s "with the Kirin's trigger on the stack before it resolved" (length (TurnRegisters.stack (GameState.turn onStack))) 1
 
         -- The negative, one difference from the case above: the victim is a CARD.
         -- Bounced by the same clause into the same hidden zone, so "no draw" cannot
@@ -355,7 +356,7 @@ lastKnownTokenSpec s registry =
           run kirin swamp (S.addPermanent piker S.alice) $ \victimId onStack after -> do
             Spec.assertEqWith s "alice's library is untouched" (librarySize after) 1
             Spec.assertEqWith s "though the card really did leave the battlefield" (Set.member victimId (GameState.battlefield after)) False
-            Spec.assertEqWith s "with the Kirin's trigger on the stack before it resolved" (length (GameState.stack onStack)) 1
+            Spec.assertEqWith s "with the Kirin's trigger on the stack before it resolved" (length (TurnRegisters.stack (GameState.turn onStack))) 1
 
 -- Declares exactly `victim` as an attacker, or nobody at all: the ONE thing the
 -- two legs of lastKnownAttackingSpec differ in. Filters the offered set rather
@@ -375,7 +376,7 @@ attackingOnly attacks victim p = case p of
 -- Garna deals 1 damage to each opponent."
 -- (data/cards/garna-bloodfist-of-keld.json; Oracle text checked against
 -- api.scryfall.com, 2026-09-10.) CR 400.7 deletes the Hill Giant's id before the
--- ability resolves and CR 506.4 takes it out of GameState.combat, so the live
+-- ability resolves and CR 506.4 takes it out of TurnRegisters.combat, so the live
 -- read answers "not attacking" for exactly the creature that was.
 --
 -- The two legs are one board differing in ONE thing -- whether alice declares the
@@ -454,7 +455,7 @@ wasBlockedThisTurnSpec s registry =
               onStack = settle killed
            in k druidId blockerId declared fought killed onStack (S.runPure S.identityAnswer onStack Stack.resolveTop)
         _ -> Spec.assertFailure s "combatBoardOf should place the Druid and one blocker"
-      unblockedIn gs druidId = Set.null (Map.findWithDefault Set.empty druidId (Combat.Type.blockers (GameState.combat gs)))
+      unblockedIn gs druidId = Set.null (Map.findWithDefault Set.empty druidId (Combat.Type.blockers (TurnRegisters.combat (GameState.turn gs))))
    in Spec.describe s "WasBlockedThisTurn" $ do
         -- THE PROVING TEST for #3037. Nothing on the board can be asked whether the
         -- Druid was blocked: combat is over and its record emptied, and CR 400.7
@@ -469,7 +470,7 @@ wasBlockedThisTurnSpec s registry =
             Spec.assertEqWith s "off a Druid the Wall really had blocked" (unblockedIn declared druidId) False
             Spec.assertEqWith s "whose block CR 511.3 had since taken off the record" (unblockedIn fought druidId) True
             Spec.assertEqWith s "and which really did die" (Set.member druidId (GameState.battlefield killed)) False
-            Spec.assertEqWith s "with its trigger on the stack before it resolved" (length (GameState.stack onStack)) 1
+            Spec.assertEqWith s "with its trigger on the stack before it resolved" (length (TurnRegisters.stack (GameState.turn onStack))) 1
 
         -- The positive's twin, one difference: bob declines the block, so the Druid
         -- dies unblocked and CR 603.4 never puts the trigger onto the stack.
@@ -480,7 +481,7 @@ wasBlockedThisTurnSpec s registry =
             Spec.assertEqWith s "alice is untouched at 20" (S.lifeOf S.alice after) (Just 20)
             Spec.assertEqWith s "off a Druid nothing had blocked" (unblockedIn declared druidId) True
             Spec.assertEqWith s "which died the same way" (Set.member druidId (GameState.battlefield killed)) False
-            Spec.assertEqWith s "and nothing was gathered onto the stack" (length (GameState.stack onStack)) 0
+            Spec.assertEqWith s "and nothing was gathered onto the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 0
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Condition" $ do
@@ -633,7 +634,7 @@ ashlingSpec s registry = Spec.describe s "Ashling the Pilgrim (CR 608.2n)" $ do
 -- sentence), and the mana comes off her untapped Mountains.
 activateAshling :: ObjectId.ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState.GameState -> GameState.GameState
 activateAshling ashlingId pump gs =
-  let activated = S.runPure S.identityAnswer gs {GameState.priority = Just S.alice} (Activate.activateAbility S.alice ashlingId pump)
+  let activated = S.runPure S.identityAnswer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice ashlingId pump)
    in snd (Engine.runGamePure S.identityAnswer activated (Stack.resolveTop >> Engine.settleForPriority))
 
 -- CR 608.2n / 603.3: the same count on a TRIGGERED ability, read through the
@@ -733,11 +734,11 @@ necrobloomSpec s registry = Spec.describe s "The Necrobloom (CR 201.2b)"
 -- abilities it triggers are placed at the next settle, and the top one resolves.
 enterFromHand :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 enterFromHand oid gs =
-  S.runPure S.identityAnswer gs {GameState.priority = Just S.alice} (Event.changeZone (pure ()) oid Zone.Battlefield >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
+  S.runPure S.identityAnswer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}} (Event.changeZone (pure ()) oid Zone.Battlefield >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
 
 -- How many times a player has scried this turn (CR 701.22b's scry event).
 scriesBy :: PlayerId.PlayerId -> GameState.GameState -> Int
-scriesBy pid gs = length [() | GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry p) <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)), p == pid]
+scriesBy pid gs = length [() | GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Scry p) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))), p == pid]
 
 -- CR 404.1 read from inside a CONDITION: Scope.InPosition, which names ONE
 -- position in a graveyard so that a Filter over it TESTS that card rather than
@@ -781,7 +782,7 @@ guidingSpiritSpec s registry =
             g2 = List.foldl' (\g p -> snd (S.addGraveyardCard p S.bob g)) g1 stocked
             g3 = snd (S.addGraveyardCard giant S.alice g2)
             g4 = snd (S.addLibraryCard hero S.bob g3)
-        pure (spirit, spiritId, g4 {GameState.priority = Just S.alice})
+        pure (spirit, spiritId, g4 {GameState.turn = (GameState.turn g4) {TurnRegisters.priority = Just S.alice}})
       named = CardName.MkCardName . Text.pack
       -- Both piles in their own stored order: a graveyard reads OLDEST FIRST (CR
       -- 404.1's arrival end is the last member) and a library TOP FIRST, which is

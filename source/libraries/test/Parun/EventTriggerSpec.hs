@@ -61,6 +61,7 @@ import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- One board for every case below, differing in exactly one thing: WHICH seat
@@ -89,9 +90,12 @@ marmosetBoard marmoset mauler forest piker cycler =
    in ( marmosetId,
         maulerId,
         withMauler
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just cycler
+          { GameState.turn =
+              (GameState.turn withMauler)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just cycler
+                }
           }
       )
 
@@ -131,7 +135,7 @@ cyclesTriggerSpec s registry =
                         after = S.runPure S.identityAnswer placed Stack.resolveTop
                      in Just
                           ( length (Game.zoneMembers Zone.Graveyard cycler cycled),
-                            length (GameState.stack placed),
+                            length (TurnRegisters.stack (GameState.turn placed)),
                             S.powerToughnessOf marmosetId after
                           )
                   _ -> Nothing
@@ -158,7 +162,7 @@ cyclesTriggerSpec s registry =
           discarded = S.runPure S.identityAnswer gs (Cost.payComponent S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice S.noSource (CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.And []) CardSelection.ByChoice)))
           placed = S.runPure S.identityAnswer discarded Engine.settleForPriority
       Spec.assertEqWith s "the Mauler really did reach alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice discarded)) 1
-      Spec.assertEqWith s "nothing was put on the stack" (GameState.stack placed) []
+      Spec.assertEqWith s "nothing was put on the stack" (TurnRegisters.stack (GameState.turn placed)) []
       Spec.assertEqWith s "and the Marmoset is still a 2/3" (S.powerToughnessOf marmosetId placed) (Just (2, 3))
 
 -- The Food token Bartered Cow makes, by name, which is how the cases below read
@@ -198,7 +202,7 @@ discardPick wanted p = case p of
 selfDiscardTriggerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 selfDiscardTriggerSpec s registry =
   let settle gs = S.runPure S.identityAnswer gs Engine.priorityLoop
-      priorityTo gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+      priorityTo gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
    in Spec.describe s "SelfDiscardTrigger" $ do
         -- The whole card, discard half: one card in hand, discarded to pay a
         -- cost, and the Food is on the battlefield once the trigger resolves.
@@ -208,7 +212,7 @@ selfDiscardTriggerSpec s registry =
               discarded = discardOne S.identityAnswer gs
               placed = S.runPure S.identityAnswer discarded Engine.settleForPriority
           Spec.assertEqWith s "the Cow reached alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice discarded)) 1
-          Spec.assertEqWith s "one trigger on the stack, and only one" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "one trigger on the stack, and only one" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "and alice has one Food token afterwards" (S.countOnBattlefieldByName foodTokenName S.alice (settle discarded)) 1
         -- The discriminating pair: one board, two cards in alice's hand, and only
         -- which one CR 701.9b discards differs. What it pins is that the Food
@@ -251,7 +255,7 @@ selfDiscardTriggerSpec s registry =
           cow <- S.printingOf s registry "Bartered Cow"
           let (gs, cowId) = S.handOne cow (Setup.emptyGame S.bothPlayers)
               run cause = S.runPure S.identityAnswer gs (Event.discard (pure ()) cause S.alice cowId)
-              stackAfter g = length (GameState.stack (S.runPure S.identityAnswer g Engine.settleForPriority))
+              stackAfter g = length (TurnRegisters.stack (GameState.turn (S.runPure S.identityAnswer g Engine.settleForPriority)))
           Spec.assertEqWith s "an ordinary discard makes one Food" (S.countOnBattlefieldByName foodTokenName S.alice (settle (run DiscardCause.Ordinary))) 1
           Spec.assertEqWith s "a cycling discard makes one too" (S.countOnBattlefieldByName foodTokenName S.alice (settle (run DiscardCause.ToPayCyclingCost))) 1
           Spec.assertEqWith s "and the cycle placed ONE trigger, not two" (stackAfter (run DiscardCause.ToPayCyclingCost)) 1
@@ -287,10 +291,13 @@ conscriptBoard mountain piker megrim conscripts =
         landId,
         conscriptsId,
         g5
-          { GameState.activePlayer = S.alice,
-            GameState.turnNumber = 1,
-            GameState.phase = Phase.PostcombatMain,
-            GameState.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.turnNumber = 1,
+                  TurnRegisters.phase = Phase.PostcombatMain,
+                  TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+                }
           }
       )
 
@@ -391,7 +398,7 @@ counterTriggerSpec s registry =
           placed = S.runPure answer resolved Engine.settleForPriority
       Spec.assertEqWith s "the Bolt really did resolve into bob's graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob resolved)) 1
       Spec.assertEqWith s "alice took 3, so it resolved rather than fizzling" (S.lifeOf S.alice resolved) (fmap (subtract 3) (S.lifeOf S.alice gs))
-      Spec.assertEqWith s "nothing was put on the stack" (GameState.stack placed) []
+      Spec.assertEqWith s "nothing was put on the stack" (TurnRegisters.stack (GameState.turn placed)) []
       Spec.assertEqWith s "bob drew nothing" (length (Game.zoneMembers Zone.Library S.bob placed)) 1
 
 -- CR 603.2's binding half of a per-permanent counter trigger: the ability names
@@ -437,7 +444,7 @@ auntieOolSpec s registry =
       -- stack at the CR 117.5 scan after it.
       resolveEverything gs =
         let settled = S.runPure S.identityAnswer gs Engine.settleForPriority
-         in if null (GameState.stack settled)
+         in if null (TurnRegisters.stack (GameState.turn settled))
               then settled
               else resolveEverything (S.runPure S.identityAnswer settled Stack.resolveTop)
    in Spec.describe s "Auntie Ool, Cursewretch" $ do
@@ -468,7 +475,7 @@ auntieOolSpec s registry =
             "every creature took exactly one -1/-1 counter"
             (fmap (\oid -> S.counterOf CounterKind.MinusOneMinusOne oid after) [oolId, aliceWall, bobWall, carolWall, snuffersId])
             [1, 1, 1, 1, 1]
-          Spec.assertEqWith s "and the stack is empty" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "and the stack is empty" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- The same reading where the subject is GONE by the time the ability
         -- resolves: Goblin Piker is a 2/1, so its own -1/-1 counter takes it to
         -- 1/0 and CR 704.5f puts it in bob's graveyard at the very CR 117.5 scan
@@ -529,9 +536,12 @@ youngPyromancerSpec s registry =
             withLands = addLands S.bob 4 (addLands S.alice 4 S.threePlayerGame)
             (_, withPyromancer) = S.addPermanent pyromancer S.alice withLands
          in withPyromancer
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withPyromancer)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
    in Spec.describe s "SpellCast" $ do
@@ -591,9 +601,12 @@ whisperingWizardSpec s registry =
             stocked = List.foldl' stock withBearers [S.alice, S.bob, S.carol]
          in ( bearers,
               stocked
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn stocked)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             )
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
@@ -714,7 +727,7 @@ whisperingWizardSpec s registry =
 acrobaticCheerleaderSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 acrobaticCheerleaderSpec s registry =
   let -- Run whole steps until `phase` is the CURRENT one and has NOT yet run --
-      -- Engine.runStep runs GameState.phase and only then advances -- so a case
+      -- Engine.runStep runs TurnRegisters.phase and only then advances -- so a case
       -- can read the board as a step begins. Bounded so a fixture that never
       -- reaches the step ends rather than hangs.
       stepUntil done gs0 =
@@ -723,8 +736,8 @@ acrobaticCheerleaderSpec s registry =
                 then g
                 else go (n - 1) (snd (Engine.runGamePure S.identityAnswer g Engine.runStep))
          in go 40 gs0
-      atPhase p g = GameState.phase g == p
-      alicesPrecombatMain g = GameState.activePlayer g == S.alice && atPhase Phase.PrecombatMain g
+      atPhase p g = TurnRegisters.phase (GameState.turn g) == p
+      alicesPrecombatMain g = TurnRegisters.activePlayer (GameState.turn g) == S.alice && atPhase Phase.PrecombatMain g
       oneStep = snd . (\g -> Engine.runGamePure S.identityAnswer g Engine.runStep)
       tapState oid g = fmap Object.tapped (Map.lookup oid (GameState.objects g))
       board cheerleader plains =
@@ -735,16 +748,19 @@ acrobaticCheerleaderSpec s registry =
               S.tapObject
                 oid
                 stocked
-                  { GameState.phase = Phase.PrecombatMain,
-                    -- The schedule has to agree with the phase the board is set
-                    -- to. Setup.emptyGame's own `remaining` still holds the
-                    -- beginning phase and the precombat main, so stepping from
-                    -- here begins the precombat main a SECOND time -- and CR
-                    -- 505.1b counts main phases that have begun, which would make
-                    -- the postcombat main this turn's third.
-                    GameState.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
-                    GameState.activePlayer = S.alice,
-                    GameState.priority = Just S.alice
+                  { GameState.turn =
+                      (GameState.turn stocked)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          -- The schedule has to agree with the phase the board is set
+                          -- to. Setup.emptyGame's own `remaining` still holds the
+                          -- beginning phase and the precombat main, so stepping from
+                          -- here begins the precombat main a SECOND time -- and CR
+                          -- 505.1b counts main phases that have begun, which would make
+                          -- the postcombat main this turn's third.
+                          TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice
+                        }
                   }
             )
    in Spec.describe s "TriggerLimit" $ do
@@ -762,7 +778,7 @@ acrobaticCheerleaderSpec s registry =
               after = oneStep secondMain
           Spec.assertEqWith s "one instance of flying across both of alice's second main phases" (Map.lookup Keyword.Flying (Projection.keywordsOf oid after)) (Just 1)
           Spec.assertEqWith s "the first of the two is where it triggered" (Map.lookup Keyword.Flying (Projection.keywordsOf oid fired)) (Just 1)
-          Spec.assertEqWith s "and the second really offered the trigger again, tapped as its second main phase began" (GameState.phase secondMain, tapState oid secondMain, GameState.activePlayer secondMain) (Phase.PostcombatMain, Just TapState.Tapped, S.alice)
+          Spec.assertEqWith s "and the second really offered the trigger again, tapped as its second main phase began" (TurnRegisters.phase (GameState.turn secondMain), tapState oid secondMain, TurnRegisters.activePlayer (GameState.turn secondMain)) (Phase.PostcombatMain, Just TapState.Tapped, S.alice)
 
 -- CR 505.1b: "second main phase" counts the main phases that have occurred this
 -- turn, so an extra main phase moves which phase the card means -- it does not
@@ -795,7 +811,7 @@ acrobaticCheerleaderSpec s registry =
 -- bare "it does not fly" cannot stand in for it.
 secondMainPhaseSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 secondMainPhaseSpec s registry =
-  let atPhase p g = GameState.phase g == p
+  let atPhase p g = TurnRegisters.phase (GameState.turn g) == p
       -- Run whole steps until `phase` is the current one and has NOT yet run.
       -- Bounded so a fixture that never reaches the step ends rather than hangs.
       stepUntil :: (forall r. Prompt.Prompt r -> r) -> (GameState.GameState -> Bool) -> GameState.GameState -> GameState.GameState
@@ -822,14 +838,17 @@ secondMainPhaseSpec s registry =
          in ( oid,
               spell,
               withSpell
-                { GameState.phase = Phase.PrecombatMain,
-                  -- The same agreement between phase and schedule
-                  -- `acrobaticCheerleaderSpec`'s board makes, and for the same
-                  -- reason: a precombat main begun twice miscounts every later
-                  -- main phase.
-                  GameState.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        -- The same agreement between phase and schedule
+                        -- `acrobaticCheerleaderSpec`'s board makes, and for the same
+                        -- reason: a precombat main begun twice miscounts every later
+                        -- main phase.
+                        TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             )
       boardOf = do
@@ -852,8 +871,8 @@ secondMainPhaseSpec s registry =
               thirdMain = stepUntil S.aggressiveAnswer (atPhase Phase.PostcombatMain) afterSecond
               after = oneStep S.aggressiveAnswer thirdMain
           Spec.assertEqWith s "no flying counter: the third main phase is not the second" (flyingOn oid after) Nothing
-          Spec.assertEqWith s "the extra main phase really ran, with the Cheerleader untapped" (GameState.phase secondMain, tapState oid secondMain) (Phase.PostcombatMain, Just TapState.Untapped)
-          Spec.assertEqWith s "and the third main phase really ran, with it tapped" (GameState.phase thirdMain, tapState oid thirdMain) (Phase.PostcombatMain, Just TapState.Tapped)
+          Spec.assertEqWith s "the extra main phase really ran, with the Cheerleader untapped" (TurnRegisters.phase (GameState.turn secondMain), tapState oid secondMain) (Phase.PostcombatMain, Just TapState.Untapped)
+          Spec.assertEqWith s "and the third main phase really ran, with it tapped" (TurnRegisters.phase (GameState.turn thirdMain), tapState oid thirdMain) (Phase.PostcombatMain, Just TapState.Tapped)
           Spec.assertEqWith s "the rider is unspent, so nothing but the ordinal held the trigger back" (length (GameState.triggeredThisGame after)) 0
 
 -- The same CR 601.2i cast, read for WHICH cast of the turn it was --
@@ -893,9 +912,12 @@ clarionSpiritSpec s registry =
             withLands = addLands S.bob 4 (addLands S.alice 16 S.threePlayerGame)
             (_, withClarion) = S.addPermanent clarion S.alice withLands
          in withClarion
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withClarion)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
       -- n copies of Boil in a hand, returned in the order they were added.
@@ -937,7 +959,7 @@ clarionSpiritSpec s registry =
                   handed = S.runPure S.identityAnswer thisTurn Engine.handoffTurn
                   nextTurn = castAndResolve S.alice d (castAndResolve S.alice c handed)
               Spec.assertEqWith s "the first turn's second cast fired it once" (spiritsOf S.alice thisTurn) 1
-              Spec.assertEqWith s "the handoff clears the log the count reads" (GameState.events handed) Seq.empty
+              Spec.assertEqWith s "the handoff clears the log the count reads" (TurnRegisters.events (GameState.turn handed)) Seq.empty
               Spec.assertEqWith s "and the new turn's second cast fires it again" (spiritsOf S.alice nextTurn) 2
             _ -> Spec.assertFailure s "fixture should put four Boil in alice's hand"
         -- A spell the log holds no cast of has no ordinal, as it has no storm
@@ -951,7 +973,7 @@ clarionSpiritSpec s registry =
           case handOf boil S.alice 2 (board mountain clarion) of
             ([first, uncast], gs) -> do
               let afterFirst = castAndResolve S.alice first gs
-                  logged = Maybe.mapMaybe (Game.castOf . LoggedEvent.event) (Foldable.toList (GameState.events afterFirst))
+                  logged = Maybe.mapMaybe (Game.castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn afterFirst)))
                   context = Filter.contextFor (Game.teams afterFirst) (Just S.alice) Nothing
                   ordinal oid = Match.castOrdinal context (Filter.Type.And []) Nothing S.alice oid afterFirst
               case logged of
@@ -985,9 +1007,12 @@ desolationTwinSpec s registry =
       board mountain =
         let withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) (Setup.emptyGame S.bothPlayers) [1 .. (10 :: Int)]
          in withLands
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withLands)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
    in Spec.describe s "SpellCast, a Self subject" $ do
@@ -1043,9 +1068,12 @@ presenceOfTheMasterSpec s registry =
                 $ addLands S.alice 3 swamp S.threePlayerGame
             (_, withPresence) = S.addPermanent presence S.alice withLands
          in withPresence
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withPresence)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
    in Spec.describe s "SpellCast binds the spell" $ do
@@ -1117,9 +1145,12 @@ kambalSpec s registry =
             withLands = addLands S.bob 4 S.threePlayerGame
             (_, withKambal) = S.addPermanent kambal S.alice withLands
          in withKambal
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withKambal)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castAndResolve caster oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast caster oid)) Engine.priorityLoop
       lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
@@ -1174,7 +1205,7 @@ kambalSpec s registry =
 -- turn is the case only a third seat can make.
 --
 -- THE TURNS ARE SET ON THE FIXTURE rather than played out. Whose turn it is
--- reaches the condition as GameState.activePlayer and nothing else, so three
+-- reaches the condition as TurnRegisters.activePlayer and nothing else, so three
 -- assignments say exactly what three turn cycles would -- and CR 104.3c stays
 -- out of it, three untap/draw steps at three seats being three chances to deck a
 -- fixture library.
@@ -1187,7 +1218,7 @@ brinebornCutthroatSpec s registry =
   let -- alice bears the Cutthroat and three Forests, one per Fog: no untap step
       -- alice keeps priority throughout: CR 117.1a lets her cast an instant on
       -- anybody's turn, which is the whole premise of the card.
-      onTurnOf pid gs = gs {GameState.activePlayer = pid, GameState.priority = Just S.alice}
+      onTurnOf pid gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = pid, TurnRegisters.priority = Just S.alice}}
    in Spec.describe s "SpellCast during an opponent's turn" $ do
         -- CR 702.8a's flash, which the trigger above does not touch: casting an
         -- INSTANT on an opponent's turn is CR 117.1a and says nothing about the
@@ -1203,7 +1234,7 @@ brinebornCutthroatSpec s registry =
               lands = addLands mountain S.alice 3 (addLands island S.alice 2 S.threePlayerGame)
               (cutthroatId, withCutthroat) = S.addHandCard cutthroat S.alice lands
               (pikerId, gs) = S.addHandCard piker S.alice withCutthroat
-              bobsTurn = (onTurnOf S.bob gs) {GameState.phase = Phase.PrecombatMain}
+              bobsTurn = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain}) (onTurnOf S.bob gs)
           Spec.assertBool s (S.castable S.alice cutthroatId bobsTurn) "flash makes the Cutthroat castable on bob's turn"
           Spec.assertBool s (not (S.castable S.alice pikerId bobsTurn)) "and a creature without it is not"
 
@@ -1244,7 +1275,7 @@ oreskosSunGuideSpec s registry =
               stepped = untapStep board
               placed = placeTriggers stepped
           Spec.assertEqWith s "alice gains 2 once the trigger resolves" (S.lifeOf S.alice (resolveOne placed)) (Just 22)
-          Spec.assertEqWith s "one trigger reached the stack, and only one" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "one trigger reached the stack, and only one" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "and the Guide is upright" (fmap Object.tapped (Game.lookupObject guideId stepped)) (Just TapState.Untapped)
         -- The discriminating twin, one tap state apart: the Guide is ALREADY
         -- upright, so rule 701.26b's second sentence leaves it alone while the
@@ -1260,7 +1291,7 @@ oreskosSunGuideSpec s registry =
               stepped = untapStep board
               placed = placeTriggers stepped
           Spec.assertEqWith s "alice's life is untouched" (S.lifeOf S.alice (resolveOne placed)) (Just 20)
-          Spec.assertEqWith s "and nothing reached the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "and nothing reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "though the Piker did untap" (fmap Object.tapped (Game.lookupObject pikerId stepped)) (Just TapState.Untapped)
         -- CR 603.2e's second sentence, the collapse this condition has to
         -- survive: the Guide ENTERS the battlefield untapped, which is not a
@@ -1272,7 +1303,7 @@ oreskosSunGuideSpec s registry =
               entered = resolveOne staged
               placed = placeTriggers entered
           Spec.assertEqWith s "alice's life is untouched" (S.lifeOf S.alice (resolveOne placed)) (Just 20)
-          Spec.assertEqWith s "and nothing reached the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "and nothing reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "though the Guide is on the battlefield and upright" (S.countOnBattlefieldByName (S.printingName guide) S.alice entered) 1
         -- The OTHER road, one permanent at a time: Parun.Engine.Event.untap is
         -- what an Effect.Untap and CR 107.6's untap symbol both call, and it
@@ -1316,7 +1347,7 @@ wellRestedSpec s registry =
           countersOn gs = fmap (Map.findWithDefault 0 CounterKind.PlusOnePlusOne . Object.counters) (Game.lookupObject pikerId gs)
       Spec.assertEqWith s "both instances resolved: four +1/+1 counters" (countersOn rested1) (Just 4)
       Spec.assertEqWith s "and 4 life and two cards" (S.lifeOf S.alice rested1, S.handSize S.alice rested1) (Just 24, 2)
-      Spec.assertEqWith s "a second untap that turn triggers neither" (length (GameState.stack rested2)) 0
+      Spec.assertEqWith s "a second untap that turn triggers neither" (length (TurnRegisters.stack (GameState.turn rested2))) 0
       -- Each grant is named for its Aura (Binding.acquiredFrom), but CR
       -- 603.3b's ordering prompt shows the two as written (Engine.entryOf),
       -- so its two entries are equal.
@@ -1404,7 +1435,7 @@ blightChroniclerSpec s registry =
           Spec.assertEqWith s "bob loses 1 to his Chronicler" (S.lifeOf S.bob after) (Just 19)
           Spec.assertEqWith s "and draws the card beside it" (S.handSize S.bob after) 1
           Spec.assertEqWith s "the Gnarlbark took rule 701.68a's counter" (minusCountersOn gnarlbarkId blighted) (Just 1)
-          Spec.assertEqWith s "one trigger reached the stack, and only one" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "one trigger reached the stack, and only one" (length (TurnRegisters.stack (GameState.turn placed))) 1
         -- Rule 701.68d's "regardless of what events actually occurred", one
         -- permanent apart from the case above: Solemnity, {2}{W} Enchantment
         -- (data/cards/solemnity.json), "If a counter would be put on an
@@ -1449,7 +1480,7 @@ blightChroniclerSpec s registry =
           Spec.assertEqWith s "and he drew nothing" (S.handSize S.bob after) 0
           Spec.assertBool s (not (S.onBattlefield gnarlbarkId blighted)) "the Gnarlbark left before its trigger resolved"
           Spec.assertEqWith s "alice drew all the same" (S.handSize S.alice blighted) 1
-          Spec.assertEqWith s "and nothing reached the stack" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "and nothing reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 0
         -- CR 102.1's bare "a player", which PlayerRelation.AnyPlayer is and
         -- neither You nor Opponent is: a second Chronicler under ALICE, the
         -- blighting seat, fires beside bob's. An Opponent reading would leave
@@ -1462,7 +1493,7 @@ blightChroniclerSpec s registry =
               after = resolveOne (resolveOne placed)
           Spec.assertEqWith s "alice loses 1 to her own Chronicler" (S.lifeOf S.alice after) (Just 19)
           Spec.assertEqWith s "and bob loses 1 to his" (S.lifeOf S.bob after) (Just 19)
-          Spec.assertEqWith s "both triggers reached the stack" (length (GameState.stack placed)) 2
+          Spec.assertEqWith s "both triggers reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 2
 
 -- Answers Prompt.ChooseBlight with this creature, deferring everything else to
 -- S.identityAnswer.
@@ -1502,7 +1533,7 @@ blightChroniclerBoard s registry withSolemnity withOwnWatcher = do
       begun =
         Event.recordEvent
           (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          (g6 {GameState.phase = endStep, GameState.activePlayer = S.alice})
+          (g6 {GameState.turn = (GameState.turn g6) {TurnRegisters.phase = endStep, TurnRegisters.activePlayer = S.alice}})
   pure (gnarlbarkId, S.runPure S.identityAnswer begun Engine.settleForPriority)
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

@@ -120,6 +120,7 @@ import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 
@@ -132,7 +133,7 @@ upkeepOf gs =
       begun =
         Event.recordEvent
           (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+          (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
    in settleTriggers begun
 
 -- upkeepOf's tail on its own: settle whatever is pending onto the stack (CR
@@ -185,7 +186,7 @@ runStepsUntil :: Phase.Phase -> Game.Type.Game ()
 runStepsUntil phase =
   let go n = do
         gs <- State.get
-        Monad.unless (n <= (0 :: Int) || GameState.phase gs == phase || Maybe.isJust (GameState.result gs)) (Engine.runStep >> go (n - 1))
+        Monad.unless (n <= (0 :: Int) || TurnRegisters.phase (GameState.turn gs) == phase || Maybe.isJust (GameState.result gs)) (Engine.runStep >> go (n - 1))
    in go 24
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -207,7 +208,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         -- CR 302.1: a creature card is cast from a hand during a main phase with
         -- the stack empty, so `castable` below is asked there rather than in the
         -- upkeep the card arrived in.
-        main_ = conjured {GameState.phase = Phase.PrecombatMain}
+        main_ = conjured {GameState.turn = (GameState.turn conjured) {TurnRegisters.phase = Phase.PrecombatMain}}
         cast_ = case inHand of
           oid : _ -> S.runPure S.identityAnswer main_ (S.cast S.alice oid >> Stack.resolveTop)
           [] -> main_
@@ -271,7 +272,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         inYard = namedIn thinkTwice Zone.Graveyard conjured
         -- CR 117.1a: an instant needs only priority, so the main phase is where
         -- the cases above cast from rather than something this one requires.
-        main_ = conjured {GameState.phase = Phase.PrecombatMain}
+        main_ = conjured {GameState.turn = (GameState.turn conjured) {TurnRegisters.phase = Phase.PrecombatMain}}
         flashedBack = case inYard of
           oid : _ -> S.runPure S.identityAnswer main_ (S.cast S.alice oid >> Stack.resolveTop)
           [] -> main_
@@ -315,7 +316,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         inYard = namedIn thinkTwice Zone.Graveyard conjured
         -- CR 304.1: an instant needs only priority, and the cast is what puts the
         -- SECOND Think Twice into the graveyard out of a zone the card was in.
-        main_ = conjured {GameState.phase = Phase.PrecombatMain}
+        main_ = conjured {GameState.turn = (GameState.turn conjured) {TurnRegisters.phase = Phase.PrecombatMain}}
         cast_ = settleTriggers (S.runPure S.identityAnswer main_ (S.cast S.alice handCard >> Stack.resolveTop))
     Spec.assertEqWith
       s
@@ -352,7 +353,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     groundbreaker <- S.printingOf s registry "Foundry Groundbreaker"
     let board0 = S.landsInPlay islandPrinting 2
         (_, entered) = S.entersWithTrigger groundbreaker S.alice board0
-        final = (settleTriggers entered) {GameState.priority = Just S.alice, GameState.phase = Phase.PrecombatMain}
+        final = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice, TurnRegisters.phase = Phase.PrecombatMain}) (settleTriggers entered)
         foundries = namedIn mishrasFoundry Zone.Battlefield final
         islands = namedIn islandName Zone.Battlefield final
         manaOffers = Maybe.mapMaybe manaSource (Action.legalActions S.alice final)
@@ -427,7 +428,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
           built <- S.buildBoardOrFail s registry setup
           let stocked = built {Staged.state = snd (S.addLibraryCard top S.bob (Staged.state built))}
           (_, gs) <- S.runScriptOrFail s script stocked (runStepsUntil S.postcombatMain)
-          pure (Game.zoneMembers Zone.Exile S.bob gs, gs {GameState.priority = Just S.alice})
+          pure (Game.zoneMembers Zone.Exile S.bob gs, gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}})
         playsLand oid gs = any (\action -> case action of Action.Play played _ -> played == oid; _ -> False) (Action.legalActions S.alice gs)
     (bolts, boltGame) <- exiledAfter bolt
     (mountains, mountainGame) <- exiledAfter mountain
@@ -455,7 +456,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       _ -> Spec.assertFailure s "expected one Gate to Seatower in Follow the Tracks's spellbook"
     let (gateId, board0) = S.addPermanent gate S.alice (S.landsInPlay islandPrinting 4)
         stocked = List.foldl' (\gs printing -> snd (S.addLibraryCard printing S.alice gs)) board0 stock
-        board = stocked {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        board = stocked {GameState.turn = (GameState.turn stocked) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
         before = Game.zoneMembers Zone.Library S.alice board
         pinned = namedIn thinkTwice Zone.Library board
         who = Maybe.fromMaybe gateId (Maybe.listToMaybe pinned)
@@ -539,7 +540,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
           "CR 113.6k the duplicate returned: (Clone printings on alice's battlefield, in her graveyard)"
           (length (clonesOnBattlefield resolved), length (namedIn cloneName Zone.Graveyard resolved))
           (2, 0)
-        Spec.assertEqWith s "the landfall trigger reached the stack" (length (GameState.stack onStack)) 1
+        Spec.assertEqWith s "the landfall trigger reached the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
   -- CR 707.2 / 702.35a: the hand's side. A Clone copying bob's Arrogant Wurm
   -- (madness {2}{G}) is duplicated, so alice's hand holds a card printed Clone
   -- with the Wurm's madness, and discarding it discards it into exile.
@@ -571,7 +572,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         merged = mergingOnto skaabId withCubwarden cubwardenSpell
         (spell, board1) = S.addHandCard reflections S.alice (S.landsFor island S.alice 2 merged)
         before = Game.zoneMembers Zone.Hand S.alice board1
-        resolved = S.settleSba (S.runPure (aimingAtAll [skaabId]) board1 {GameState.phase = Phase.PrecombatMain} (S.cast S.alice spell >> Stack.resolveTop))
+        resolved = S.settleSba (S.runPure (aimingAtAll [skaabId]) board1 {GameState.turn = (GameState.turn board1) {TurnRegisters.phase = Phase.PrecombatMain}} (S.cast S.alice spell >> Stack.resolveTop))
     case filter (`notElem` before) (Game.zoneMembers Zone.Hand S.alice resolved) of
       [duplicate] -> do
         let bare = S.landsFor plains S.alice 4 resolved
@@ -594,7 +595,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     let (intruderId, board0) = S.addPermanent intruder S.alice (S.landsInPlay island 2)
         (spell, board1) = S.addHandCard reflections S.alice board0
         before = Game.zoneMembers Zone.Hand S.alice board1
-        resolved = S.settleSba (S.runPure (aimingAtAll [intruderId]) board1 {GameState.phase = Phase.PrecombatMain} (S.cast S.alice spell >> Stack.resolveTop))
+        resolved = S.settleSba (S.runPure (aimingAtAll [intruderId]) board1 {GameState.turn = (GameState.turn board1) {TurnRegisters.phase = Phase.PrecombatMain}} (S.cast S.alice spell >> Stack.resolveTop))
         paid = S.landsFor forest S.alice 1 resolved
         castableAs name oid = Cast.castable S.alice oid (CardName.MkCardName (Text.pack name)) Facing.FaceUp paid
     case filter (`notElem` before) (Game.zoneMembers Zone.Hand S.alice resolved) of
@@ -616,7 +617,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     clone <- S.printingOf s registry "Clone"
     reflections <- S.printingOf s registry "Sinister Reflections"
     intruder <- S.printingOf s registry "Flaxen Intruder"
-    let (intruderId, board0) = S.addPermanent intruder S.alice (S.landsInPlay island 2) {GameState.phase = Phase.PrecombatMain}
+    let (intruderId, board0) = S.addPermanent intruder S.alice (Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain}) (S.landsInPlay island 2))
     case duplicateOfCopy clone reflections intruderId board0 of
       Just (duplicate, conjured) -> do
         let paid = S.landsFor forest S.alice 7 conjured
@@ -626,7 +627,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         Spec.assertEqWith
           s
           "CR 716.3a/716.3b/716.3d (Welcome Home offered as a cast, lands it taps, the spell's names, Bears, cards in exile)"
-          (castOffered duplicate welcomeHome paid, S.tappedCount S.alice cast - S.tappedCount S.alice paid, fmap (\oid -> Projection.namesOf oid cast) (GameState.stack cast), length bears, length (Game.zoneMembers Zone.Exile S.alice played))
+          (castOffered duplicate welcomeHome paid, S.tappedCount S.alice cast - S.tappedCount S.alice paid, fmap (\oid -> Projection.namesOf oid cast) (TurnRegisters.stack (GameState.turn cast)), length bears, length (Game.zoneMembers Zone.Exile S.alice played))
           (True, 7, [Set.singleton welcomeHome], 3, 1)
       Nothing -> Spec.assertFailure s "expected one Clone and one duplicate"
   -- CR 707.2 / 702.37c / 702.37e: morph is copiable, so a duplicate of a Clone
@@ -640,12 +641,12 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     clone <- S.printingOf s registry "Clone"
     reflections <- S.printingOf s registry "Sinister Reflections"
     tracker <- S.printingOf s registry "Ainok Tracker"
-    let (trackerId, board0) = S.addPermanent tracker S.alice (S.landsInPlay island 2) {GameState.phase = Phase.PrecombatMain}
+    let (trackerId, board0) = S.addPermanent tracker S.alice (Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain}) (S.landsInPlay island 2))
         morphed = Facing.faceDown FaceDownReason.Morphed
     case duplicateOfCopy clone reflections trackerId board0 of
       Just (duplicate, conjured) -> do
         let paid = S.landsFor mountain S.alice 8 conjured
-            offeredDown = elem (Action.Cast duplicate cloneName morphed) (Action.legalActions S.alice paid {GameState.priority = Just S.alice})
+            offeredDown = elem (Action.Cast duplicate cloneName morphed) (Action.legalActions S.alice paid {GameState.turn = (GameState.turn paid) {TurnRegisters.priority = Just S.alice}})
             cast = S.settleSba (S.runPure S.identityAnswer paid (Cast.castSpell S.manaPerformer S.alice duplicate cloneName morphed >> Stack.resolveTop))
             arrived = Set.toList (Set.difference (GameState.battlefield cast) (GameState.battlefield paid))
             turnable = FaceDown.turnableFaceUp S.alice cast
@@ -669,7 +670,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     copyEnchantment <- S.printingOf s registry "Copy Enchantment"
     opalescence <- S.printingOf s registry "Opalescence"
     reflections <- S.printingOf s registry "Sinister Reflections"
-    let board0 = (S.landsInPlay mountain 8) {GameState.phase = Phase.PrecombatMain}
+    let board0 = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain}) (S.landsInPlay mountain 8)
         (roomId, board1) = S.addPermanent room S.alice board0
         (_, staged) = S.spellOnStack copyEnchantment S.alice board1
         entered = S.settleSba (copyingPiker roomId staged)
@@ -770,7 +771,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
         -- CR 117.1a: a noninstant spell is cast during a main phase with the
         -- stack empty, so the cast below is asked at one rather than in the step
         -- Engine.runStep left the board in.
-        main_ = fired {GameState.phase = Phase.PostcombatMain, GameState.priority = Just S.alice}
+        main_ = fired {GameState.turn = (GameState.turn fired) {TurnRegisters.phase = Phase.PostcombatMain, TurnRegisters.priority = Just S.alice}}
         cast_ = case inHand of
           oid : _ -> S.runPure S.identityAnswer main_ (S.cast S.alice oid >> Stack.resolveTop)
           [] -> main_
@@ -793,7 +794,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     Spec.assertEqWith
       s
       "the Bounty gained exactly the threshold, at a second main phase the trigger saw"
-      (S.lifeOf S.alice fired, GameState.phase secondMain)
+      (S.lifeOf S.alice fired, TurnRegisters.phase (GameState.turn secondMain))
       (Just 24, Phase.PostcombatMain)
     Spec.assertEqWith
       s
@@ -1084,7 +1085,7 @@ calimsBreath s registry leyline others = do
       (pikerId, withPiker) = S.addPermanent piker S.bob base
       stocked = List.foldl' (\g _ -> snd (S.addGraveyardCard calim S.alice g)) withPiker [1 .. others]
       (calimId, inHand) = S.addHandCard calim S.alice stocked
-      board = inHand {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+      board = inHand {GameState.turn = (GameState.turn inHand) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
       ability = case Game.faceOf calimId board of
         Just face -> take 1 (Face.activatedAbilities face)
         Nothing -> []
@@ -1147,7 +1148,7 @@ stepBegins phase gs =
   settleTriggers
     ( Event.recordEvent
         (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice))
-        (gs {GameState.phase = phase, GameState.activePlayer = S.alice, GameState.priority = Just S.alice})
+        (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = phase, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}})
     )
 
 -- Parun.SpeedSpec's atSpeed: alice at exactly this speed.
@@ -1218,23 +1219,26 @@ pearlBoard s registry = do
     ( bountyId,
       theftId,
       withTheft
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn withTheft)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 
 -- Parun.EventTriggerSpec's stepUntil: run whole steps until the postcombat main
 -- is the current phase and has NOT yet run -- Engine.runStep runs
--- GameState.phase and only then advances -- so a case can read the board as that
+-- TurnRegisters.phase and only then advances -- so a case can read the board as that
 -- step begins. Bounded so a fixture that never reaches it ends rather than
 -- hangs. S.identityAnswer declares no attackers, so nothing but the cast spell
 -- moves a life total on the way.
 postcombatMainOf :: GameState.GameState -> GameState.GameState
 postcombatMainOf gs0 =
   let go n g =
-        if n <= (0 :: Int) || GameState.phase g == Phase.PostcombatMain
+        if n <= (0 :: Int) || TurnRegisters.phase (GameState.turn g) == Phase.PostcombatMain
           then g
           else go (n - 1) (oneStep g)
    in go 24 gs0
@@ -1317,7 +1321,7 @@ conjuredDuplicate clone reflections original board0 = do
       entered = S.settleSba (copyingPiker original staged)
   cloneId <- Maybe.listToMaybe (clonesOnBattlefield entered)
   let (spell, board1) = S.addHandCard reflections S.alice entered
-      board = board1 {GameState.phase = Phase.PrecombatMain}
+      board = board1 {GameState.turn = (GameState.turn board1) {TurnRegisters.phase = Phase.PrecombatMain}}
       resolved = S.settleSba (S.runPure (aimingAtAll [cloneId]) board (S.cast S.alice spell >> Stack.resolveTop))
   duplicate <- Maybe.listToMaybe (namedIn cloneName Zone.Hand resolved)
   pure (duplicate, resolved)
@@ -1388,7 +1392,7 @@ duplicateOf reflections target board0 = do
 -- Is casting this card as the named half among alice's legal actions, with
 -- priority hers? The offer, which Cast.castable asked of a name does not check.
 castOffered :: ObjectId.ObjectId -> CardName.CardName -> GameState.GameState -> Bool
-castOffered oid name gs = elem (Action.Cast oid name Facing.FaceUp) (Action.legalActions S.alice gs {GameState.priority = Just S.alice})
+castOffered oid name gs = elem (Action.Cast oid name Facing.FaceUp) (Action.legalActions S.alice gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}})
 
 ainokTracker :: CardName.CardName
 ainokTracker = CardName.MkCardName (Text.pack "Ainok Tracker")

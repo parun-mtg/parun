@@ -11,6 +11,7 @@ import qualified Data.Text as Text
 import qualified Data.Word as Word
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Command as Command
@@ -31,6 +32,7 @@ import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -63,7 +65,7 @@ spec s registry = Spec.describe s "Match" $ do
     Spec.assertBool s (Match.seedAt (key 7) 2 /= key 7) "not the match's own key"
 
   Spec.it s "tallies each result, the stops, and the turns of a game with a result" $ do
-    let ended n result = Right (result, S.threePlayerGame {GameState.turnNumber = n})
+    let ended n result = Right (result, Turn.withTurn (\turn -> turn {TurnRegisters.turnNumber = n}) S.threePlayerGame)
         tally = foldr Match.tallied Tally.empty [ended 9 (Result.Won S.alice), ended 12 (Result.Won S.bob), ended 10 (Result.Won S.alice), ended 6 Result.Drawn, Left (Text.pack "end of input")]
     Spec.assertEqWith s "tally" tally Tally.MkTally {Tally.results = Map.fromList [(Result.Won S.alice, 2), (Result.Won S.bob, 1), (Result.Drawn, 1)], Tally.stopped = 1, Tally.turns = 37}
     Spec.assertEqWith

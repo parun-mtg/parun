@@ -32,6 +32,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Tally as Tally
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified System.Console.GetOpt as GetOpt
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
@@ -115,13 +116,13 @@ firstAt index = if even index then 1 else 2
 -- ended in.
 tallied :: Either Text.Text (Result.Result, GameState.GameState) -> Tally.Tally -> Tally.Tally
 tallied outcome tally = case outcome of
-  Right (result, gs) -> tally {Tally.results = Map.insertWith (+) result 1 (Tally.results tally), Tally.turns = Tally.turns tally + GameState.turnNumber gs}
+  Right (result, gs) -> tally {Tally.results = Map.insertWith (+) result 1 (Tally.results tally), Tally.turns = Tally.turns tally + TurnRegisters.turnNumber (GameState.turn gs)}
   Left _ -> tally {Tally.stopped = Tally.stopped tally + 1}
 
 -- | How one game ended.
 ended :: Either Text.Text (Result.Result, GameState.GameState) -> Text.Text
 ended outcome = case outcome of
-  Right (result, gs) -> Render.result result <> Text.pack (" Turn " <> show (GameState.turnNumber gs) <> ".")
+  Right (result, gs) -> Render.result result <> Text.pack (" Turn " <> show (TurnRegisters.turnNumber (GameState.turn gs)) <> ".")
   Left reason -> Text.pack "stopped: " <> reason <> Text.pack "."
 
 -- | The tally of `count` games: each seat's wins, any team's, the draws and

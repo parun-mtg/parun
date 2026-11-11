@@ -18,6 +18,7 @@ import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import Parun.PreventionSpec (atLife, attackNoBlock, bobAttacks, inMainPhase, theAbility)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -33,6 +34,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 614.1a / 120.4c: Worship ({3}{W} Enchantment, "If you control a creature,
@@ -178,10 +180,14 @@ bloodletterSpec s registry = Spec.describe s "Bloodletter of Aclazotz (CR 119.4 
           let (_, g1) = S.addPermanent bloodletter S.alice S.threePlayerGame
               (mirrorId, g2) = S.addPermanent mirror S.alice g1
               upkeep =
-                (atLife S.alice aliceLife (atLife S.bob bobLife (atLife S.carol 13 g2)))
-                  { GameState.activePlayer = S.alice,
-                    GameState.phase = Phase.Beginning BeginningStep.Upkeep
-                  }
+                Turn.withTurn
+                  ( \turn ->
+                      turn
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep
+                        }
+                  )
+                  (atLife S.alice aliceLife (atLife S.bob bobLife (atLife S.carol 13 g2)))
            in (mirrorId, upkeep)
         exchange aliceLife bobLife =
           let (mirrorId, gs) = board aliceLife bobLife

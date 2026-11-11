@@ -58,6 +58,7 @@ import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import Parun.PreventionSpec (answersFor, wasAskedToReplace)
 import qualified Parun.Registry as Registry
@@ -110,6 +111,7 @@ import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Trait as Trait
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -178,7 +180,7 @@ plusOneCounters oid gs =
 -- Where in the log the first event a predicate admits sits, so a case can compare
 -- WHEN two things were recorded and not merely that both were.
 eventIndex :: (GameEvent.GameEvent -> Bool) -> GameState.GameState -> Maybe Int
-eventIndex predicate gs = List.findIndex (predicate . LoggedEvent.event) (Foldable.toList (GameState.events gs))
+eventIndex predicate gs = List.findIndex (predicate . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
 
 -- alice's Hanweir Battlements and Hanweir Garrison put onto `base` and melded
 -- into Hanweir, the Writhing Township (CR 701.42a), answering the township's id
@@ -190,11 +192,16 @@ meldedBoard base battlements garrison mountain =
   let (battlementsId, g1) = S.addPermanent battlements S.alice base
       (_, g2) = S.addPermanent garrison S.alice g1
       board =
-        (S.landsFor mountain S.alice 5 g2)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (S.landsFor mountain S.alice 5 g2)
+
       townshipName = CardName.MkCardName (Text.pack "Hanweir, the Writhing Township")
    in case Projection.abilitiesOf battlementsId board of
         [_, _, melding] ->
@@ -266,11 +273,16 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
     let (vivienId, placed) = S.addPermanent vivien S.alice (S.landsInPlay mountain 1)
         board =
-          (stockPool [(signInBlood, 1), (bears, 1)] (S.addCounter CounterKind.Loyalty 5 vivienId placed))
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
-            }
+          Turn.withTurn
+            ( \turn ->
+                turn
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (stockPool [(signInBlood, 1), (bears, 1)] (S.addCounter CounterKind.Loyalty 5 vivienId placed))
+
     case Projection.abilitiesOf vivienId board of
       [_, _, wishing] -> do
         let resolved = S.runPure exercising board (do Activate.activateAbility S.alice vivienId wishing; Stack.resolveTop)
@@ -610,7 +622,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           _ -> S.identityAnswer p
         granting parent =
           let (faeId, sub1) = S.addHandCard fae S.alice (S.landsFor island S.alice 4 (Setup.subgameStateFrom S.alice parent))
-              sub2 = sub1 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+              sub2 = sub1 {GameState.turn = (GameState.turn sub1) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
               granted = CardName.MkCardName (Text.pack "Granted")
            in (faeId, S.runPure answer sub2 (Cast.castSpell S.manaPerformer S.alice faeId granted Facing.FaceUp >> Stack.resolveTop))
         hanweirIn gs = filter (`elem` [battlements, garrison]) (printingsIn Zone.Hand S.alice gs)
@@ -722,9 +734,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (_shahrazadId, g3) = S.addHandCard shahrazad S.alice g2
         before =
           g3
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         answer :: Prompt.Prompt r -> r
         answer p = case p of
@@ -736,7 +751,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           Prompt.RandomFirstPlayer _ -> S.alice
           _ -> S.castAnswer p
         after = snd (Engine.runGamePure answer before Engine.priorityLoop)
-        leftTheGame = [LeftTheGame.object l | GameEvent.LeftTheGame l <- fmap LoggedEvent.event (Foldable.toList (GameState.events after))]
+        leftTheGame = [LeftTheGame.object l | GameEvent.LeftTheGame l <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn after)))]
         hanweirIn zone = filter (`elem` [battlements, garrison]) (printingsIn zone S.alice after)
     -- The gameplay-level claims, first.
     Spec.assertEqWith s "CR 713.8/730.5: both of Hanweir's cards come back to her main-game library" (List.sort (hanweirIn Zone.Library)) (List.sort [battlements, garrison])
@@ -793,9 +808,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (_shahrazadId, g6) = S.addHandCard shahrazad S.alice g5
         before =
           g6
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g6)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         isPiker candidate = case candidate of
           OutsideCard.InAnotherGame oid -> oid == firstPiker || oid == secondPiker
@@ -894,9 +912,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (_shahrazadId, g5) = S.addHandCard shahrazad S.alice g4
         before =
           g5
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         answer :: Prompt.Prompt r -> r
         answer p = case p of
@@ -964,9 +985,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (_shahrazadId, g3) = S.addHandCard shahrazad S.alice g2
         before =
           g3
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         isFromAnotherGame candidate = case candidate of
           OutsideCard.InAnotherGame _ -> True
@@ -1021,9 +1045,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (_shahrazadId, g5) = S.addHandCard shahrazad S.alice g4
         before =
           g5
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         -- Pinned by id: the graveyard card, or the one other main-game sorcery
         -- offered, which is the resolving Shahrazad.
@@ -1075,9 +1102,12 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (_titheId, g3) = S.addHandCard tithe S.alice g2
         before =
           g3
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         playWith decision =
           let answer :: Prompt.Prompt r -> r
@@ -1298,7 +1328,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (wishLibraryId, g3) = S.addLibraryCard burningWish S.alice g2
         g4 = stockLibrary mountain 10 S.bob (stockLibrary mountain 9 S.alice g3)
         (_shahrazadId, g5) = S.addHandCard shahrazad S.alice g4
-        before = g5 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        before = g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
         wanted candidate = case candidate of
           OutsideCard.InAnotherGame oid -> oid == signId
           OutsideCard.InPool _ -> False
@@ -1339,7 +1369,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         (wishLibraryId, g3) = S.addLibraryCard burningWish S.alice g2
         g4 = stockLibrary mountain 10 S.bob (stockLibrary mountain 9 S.alice g3)
         (shahrazadId, g5) = S.addHandCard shahrazad S.alice g4
-        board = g5 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        board = g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
         -- bob declines the Efreet's 10 life (CR 608.2d), so the trade happens.
         trading :: Prompt.Prompt r -> r
         trading p = case p of
@@ -1396,7 +1426,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         g3 = S.landsFor plains S.alice 2 g2
         g4 = stockLibrary mountain 9 S.bob (stockLibrary forest 8 S.alice (stockLibrary livingWish 1 S.alice g3))
         (_shahrazadId, g5) = S.addHandCard shahrazad S.alice g4
-        before = g5 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        before = g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
         isKeeper candidate = case candidate of
           OutsideCard.InAnotherGame oid -> oid == keeperId
           OutsideCard.InPool _ -> False
@@ -1444,11 +1474,16 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         stock p = p {Player.outsideTheGame = Map.fromList entries}
         withPool = interned {GameState.players = Map.adjust stock S.alice (GameState.players interned)}
         ready =
-          (S.addCounter CounterKind.Lore 2 sagaId withPool)
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
-            }
+          Turn.withTurn
+            ( \turn ->
+                turn
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.addCounter CounterKind.Lore 2 sagaId withPool)
+
         advanced = S.runPure S.identityAnswer ready (Engine.runTurnBasedActions Phase.PrecombatMain)
         answeringLast :: Prompt.Prompt r -> r
         answeringLast p = case p of

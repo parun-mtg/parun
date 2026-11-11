@@ -41,6 +41,7 @@ import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -148,6 +149,7 @@ import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 
@@ -636,7 +638,10 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         g4 =
           g3
             { GameState.objects = Map.insert boilId boilObj (GameState.objects g3),
-              GameState.stack = boilId : GameState.stack g3
+              GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.stack = boilId : TurnRegisters.stack (GameState.turn g3)
+                  }
             }
         resolve g = snd (Engine.runGamePure S.identityAnswer g (Resolve.resolveSpell boilId))
         onBattlefield oid g = Set.member oid (GameState.battlefield g)
@@ -662,7 +667,10 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         g3 =
           g2
             { GameState.objects = Map.insert bloodMoonSpellId bmObj (GameState.objects g2),
-              GameState.stack = bloodMoonSpellId : GameState.stack g2
+              GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.stack = bloodMoonSpellId : TurnRegisters.stack (GameState.turn g2)
+                  }
             }
         hacked = S.withEffectAt bloodMoonSpellId (Timestamp.MkTimestamp 1) (Modification.ChangeWord (ChangeWord.MkChangeWord (TextWord.SubtypeWord Subtype.Mountain) (TextWord.SubtypeWord Subtype.Island))) g3
         after = snd (Engine.runGamePure S.identityAnswer hacked Stack.resolveTop)
@@ -702,12 +710,15 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         g3 =
           g2
             { GameState.objects = Map.insert abilId abilObj (GameState.objects g2),
-              GameState.stack = abilId : GameState.stack g2
+              GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.stack = abilId : TurnRegisters.stack (GameState.turn g2)
+                  }
             }
         resolved = snd (Engine.runGamePure S.identityAnswer g3 Stack.resolveTop)
     Spec.assertEqWith s "bob took 1" (S.lifeOf S.bob resolved) (Just 19)
     Spec.assertEqWith s "ability object gone" (Game.lookupObject abilId resolved) Nothing
-    Spec.assertEqWith s "stack empty" (GameState.stack resolved) []
+    Spec.assertEqWith s "stack empty" (TurnRegisters.stack (GameState.turn resolved)) []
   Spec.it s "CR 701.23 Search fetches a basic land to the battlefield tapped" $ do
     -- The fetched card gets a NEW object id (CR 400.7 changeZone), so assert by
     -- count/tapped-count, never by the library incarnation's id.
@@ -733,7 +744,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           (Object.newSettled S.alice (Source.OfAbility ActivatedAbilitySource.MkActivatedAbilitySource {ActivatedAbilitySource.source = ObjectId.MkObjectId 0, ActivatedAbilitySource.ability = ability, ActivatedAbilitySource.delayed = Map.empty, ActivatedAbilitySource.acquisition = Acquisition.Own}) Zone.Stack ts)
             { Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.stack = [abilId]}
+        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.turn = (GameState.turn g3) {TurnRegisters.stack = [abilId]}}
         resolved = snd (Engine.runGamePure findFirst g4 Stack.resolveTop)
     Spec.assertEqWith s "one permanent on the battlefield" (length (Game.zoneMembers Zone.Battlefield S.alice resolved)) 1
     Spec.assertEqWith s "it is tapped" (S.tappedCount S.alice resolved) 1
@@ -749,7 +760,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           (Object.newSettled S.alice (Source.OfAbility ActivatedAbilitySource.MkActivatedAbilitySource {ActivatedAbilitySource.source = ObjectId.MkObjectId 0, ActivatedAbilitySource.ability = ability, ActivatedAbilitySource.delayed = Map.empty, ActivatedAbilitySource.acquisition = Acquisition.Own}) Zone.Stack ts)
             { Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.stack = [abilId]}
+        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.turn = (GameState.turn g3) {TurnRegisters.stack = [abilId]}}
         resolved = snd (Engine.runGamePure findNothing g4 Stack.resolveTop)
     Spec.assertEqWith s "nothing entered the battlefield" (GameState.battlefield resolved) Set.empty
   Spec.it s "CR 701.23a Search (And [HasCardType Land, HasSupertype Basic]) offers a basic land, not a nonland" $ do
@@ -786,7 +797,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           (Object.newSettled S.alice (Source.OfAbility ActivatedAbilitySource.MkActivatedAbilitySource {ActivatedAbilitySource.source = ObjectId.MkObjectId 0, ActivatedAbilitySource.ability = ability, ActivatedAbilitySource.delayed = Map.empty, ActivatedAbilitySource.acquisition = Acquisition.Own}) Zone.Stack ts)
             { Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.stack = [abilId]}
+        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.turn = (GameState.turn g3) {TurnRegisters.stack = [abilId]}}
         resolved = snd (Engine.runGamePure findFirst g4 Stack.resolveTop)
     Spec.assertEqWith s "the basic land is offered and fetched to the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Mountain") S.alice resolved) 1
     Spec.assertBool s (elem (Just (S.printingName piker)) (libraryNames S.alice resolved)) "the nonland is not offered -- it remains in the library"
@@ -819,7 +830,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           (Object.newSettled S.alice (Source.OfAbility ActivatedAbilitySource.MkActivatedAbilitySource {ActivatedAbilitySource.source = ObjectId.MkObjectId 0, ActivatedAbilitySource.ability = ability, ActivatedAbilitySource.delayed = Map.empty, ActivatedAbilitySource.acquisition = Acquisition.Own}) Zone.Stack ts)
             { Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.stack = [abilId]}
+        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.turn = (GameState.turn g3) {TurnRegisters.stack = [abilId]}}
         resolved = snd (Engine.runGamePure (findForbidden pikerId) g4 Stack.resolveTop)
     Spec.assertEqWith s "the Piker was NOT fetched to the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Goblin Piker") S.alice resolved) 0
     Spec.assertBool s (elem (Just (S.printingName piker)) (libraryNames S.alice resolved)) "it is still in the library"
@@ -1072,7 +1083,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         (_, entered) = S.entersWithTrigger toll S.alice stocked
         resolveEverything gs =
           let settled = S.runPure S.identityAnswer gs Engine.settleForPriority
-           in if null (GameState.stack settled)
+           in if null (TurnRegisters.stack (GameState.turn settled))
                 then settled
                 else resolveEverything (S.runPure S.identityAnswer settled Stack.resolveTop)
         after = resolveEverything entered
@@ -1331,7 +1342,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           )
             { Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g6 = g5 {GameState.objects = Map.insert abilId abilObj (GameState.objects g5), GameState.stack = abilId : GameState.stack g5}
+        g6 = g5 {GameState.objects = Map.insert abilId abilObj (GameState.objects g5), GameState.turn = (GameState.turn g5) {TurnRegisters.stack = abilId : TurnRegisters.stack (GameState.turn g5)}}
         resolved = snd (Engine.runGamePure S.identityAnswer g6 Stack.resolveTop)
     Spec.assertEqWith s "bob's graveyard is empty" (length (Game.zoneMembers Zone.Graveyard S.bob resolved)) 0
     Spec.assertEqWith s "ability ceased" (Game.lookupObject abilId resolved) Nothing
@@ -1390,7 +1401,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           )
             { Object.bindings = Binding.fromChoices (Map.singleton slot (Set.singleton (Recipient.ToPlayer S.bob))) Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.stack = abilId : GameState.stack g3}
+        g4 = g3 {GameState.objects = Map.insert abilId abilObj (GameState.objects g3), GameState.turn = (GameState.turn g3) {TurnRegisters.stack = abilId : TurnRegisters.stack (GameState.turn g3)}}
         resolved = snd (Engine.runGamePure S.identityAnswer g4 Stack.resolveTop)
         bobsTurn = snd (Engine.runGamePure S.identityAnswer resolved Engine.handoffTurn)
         afterBob = snd (Engine.runGamePure S.identityAnswer bobsTurn Engine.handoffTurn)
@@ -1460,9 +1471,9 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
           )
             { Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
             }
-        g6 = g5 {GameState.objects = Map.insert abilId abilObj (GameState.objects g5), GameState.stack = abilId : GameState.stack g5}
+        g6 = g5 {GameState.objects = Map.insert abilId abilObj (GameState.objects g5), GameState.turn = (GameState.turn g5) {TurnRegisters.stack = abilId : TurnRegisters.stack (GameState.turn g5)}}
         after = snd (Engine.runGamePure S.identityAnswer g6 Stack.resolveTop)
-    Spec.assertEqWith s "the game restarted with bob as the starting player (CR 728.1a)" (GameState.activePlayer after) S.bob
+    Spec.assertEqWith s "the game restarted with bob as the starting player (CR 728.1a)" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
     Spec.assertEqWith s "alice's 8 cards all survived the restart, still hers (CR 728.2)" (length (filter (\o -> Object.owner o == S.alice) (Map.elems (GameState.objects after)))) 8
     Spec.assertEqWith s "the resolving ability object ceased to exist (not a card)" (Game.lookupObject abilId after) Nothing
   Spec.it s "CR 730.1b: PlaySubgame binds the winner, a later LoseLife reads it (mid-resolution binding visible)" $ do
@@ -1703,7 +1714,7 @@ installControlBy mindslaver controller target gs0 =
         )
           { Object.bindings = Binding.fromChoices (Map.singleton slot (Set.singleton (Recipient.ToPlayer target))) Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
           }
-      gs4 = gs3 {GameState.objects = Map.insert abilId abilObj (GameState.objects gs3), GameState.stack = abilId : GameState.stack gs3}
+      gs4 = gs3 {GameState.objects = Map.insert abilId abilObj (GameState.objects gs3), GameState.turn = (GameState.turn gs3) {TurnRegisters.stack = abilId : TurnRegisters.stack (GameState.turn gs3)}}
    in snd (Engine.runGamePure S.identityAnswer gs4 Stack.resolveTop)
 
 -- CR 205.4c / 701.23a: a basic land card is one with the Land card type and the
@@ -1809,7 +1820,7 @@ gluttonRun s registry holding = do
   giant <- S.printingOf s registry "Hill Giant"
   let (gluttonId, g0) = S.addPermanent glutton S.alice (Setup.emptyGame S.bothPlayers)
       stocked = List.foldl' (\gs _ -> snd (S.addLibraryCard piker S.alice gs)) g0 [1 :: Int .. 3]
-      board = (if holding then snd (S.addHandCard giant S.alice stocked) else stocked) {GameState.priority = Just S.alice}
+      board = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (if holding then snd (S.addHandCard giant S.alice stocked) else stocked)
   case Face.activatedAbilities (S.combinedFace glutton) of
     [ability] -> pure (S.runPure S.identityAnswer board (Activate.activateAbility S.alice gluttonId ability >> Stack.resolveTop))
     _ -> Spec.assertFailure s "Gristle Glutton should declare one activated ability"
@@ -1927,9 +1938,12 @@ emperorCombat :: Map.Map PlayerId.PlayerId ClauseIndex.ClauseIndex -> (GameState
 emperorCombat picks (gs, _) =
   let atCombat =
         gs
-          { GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       ((_, after), asks) = State.runState (Engine.runGame (emperorAnswer picks) atCombat (Engine.runStep >> Engine.priorityLoop)) []
    in (reverse asks, after)
@@ -1948,9 +1962,12 @@ valeyardCombat :: (GameState.GameState, ObjectId.ObjectId) -> GameState.GameStat
 valeyardCombat (gs, _) =
   let atCombat =
         gs
-          { GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       queues = Map.fromList [(S.bob, [ClauseIndex.MkClauseIndex 1, ClauseIndex.MkClauseIndex 0]), (S.carol, [ClauseIndex.MkClauseIndex 0, ClauseIndex.MkClauseIndex 1])]
    in snd (State.evalState (Engine.runGame (valeyardAnswer queues) atCombat (Engine.runStep >> Engine.priorityLoop)) Map.empty)
@@ -2120,7 +2137,7 @@ kamiBoard s registry startTapped = do
   let (kamiId, g0) = S.addPermanent kami S.alice (Setup.emptyGame S.bothPlayers)
       (pikerId, g1) = S.addPermanent piker S.bob g0
       placed = if startTapped then S.tapObject pikerId g1 else g1
-  pure (placed {GameState.priority = Just S.alice}, Maybe.listToMaybe (Face.activatedAbilities (S.combinedFace kami)), kamiId, pikerId)
+  pure (placed {GameState.turn = (GameState.turn placed) {TurnRegisters.priority = Just S.alice}}, Maybe.listToMaybe (Face.activatedAbilities (S.combinedFace kami)), kamiId, pikerId)
 
 -- One activation and resolution of that board, keeping the transcript for
 -- twiddleResolved's reason. The ability is read off the PRINTING rather than
@@ -2180,7 +2197,7 @@ splitReliquary s registry = do
   let (reliquaryId, g0) = S.addPermanent reliquary S.alice (Setup.emptyGame S.bothPlayers)
       (_, g1) = S.addGraveyardCard piker S.alice g0
       (_, g2) = S.addGraveyardCard forest S.alice g1
-      board = g2 {GameState.priority = Just S.alice}
+      board = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.priority = Just S.alice}}
       run ability gs = S.runPure S.identityAnswer gs (Activate.activateAbility S.alice reliquaryId ability >> Stack.resolveTop)
       untap gs = S.runPure S.identityAnswer gs (Event.untap reliquaryId)
   case Face.activatedAbilities (S.combinedFace reliquary) of
@@ -2396,7 +2413,7 @@ subgameSpellOn borrowed name effects gs0 =
           { Object.sickness = Sickness.Settled S.alice,
             Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))
           }
-   in (spellId, gs2 {GameState.objects = Map.insert spellId spellObj (GameState.objects gs2), GameState.stack = spellId : GameState.stack gs2})
+   in (spellId, gs2 {GameState.objects = Map.insert spellId spellObj (GameState.objects gs2), GameState.turn = (GameState.turn gs2) {TurnRegisters.stack = spellId : TurnRegisters.stack (GameState.turn gs2)}})
 
 -- CR 608.2d's either-or announced BY EACH PLAYER, with CR 118.12's cost on one
 -- branch and CR 603.5's "may" on the other, and CR 608.2c's "if a player does
@@ -2429,7 +2446,7 @@ wormsSpec s registry =
       -- TriggerCondition.StepBegins condition matches the EVENT, so the fixture
       -- records one beside setting the phase. @Relative AnyPlayer@ is "each
       -- upkeep", so alice's own is enough.
-      beginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+      beginUpkeep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
       settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
       lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
       lands gs = (landCount "Swamp" S.alice gs, landCount "Forest" S.bob gs, landCount "Mountain" S.carol gs)
@@ -2485,7 +2502,7 @@ wormsSpec s registry =
           Spec.assertEqWith s "CR 608.2d the branch he did not announce did not happen: no seat took the 5 damage" (lives after) (Just 20, Just 20, Just 20)
           Spec.assertEqWith s "CR 608.2c \"if a player does either\": the enchantment is gone" (wormsStands after) 0
           Spec.assertEqWith s "CR 701.8a and it is in its owner's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-          Spec.assertEqWith s "CR 603.2 the upkeep trigger really was on the stack" (length (GameState.stack onStack)) 1
+          Spec.assertEqWith s "CR 603.2 the upkeep trigger really was on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
           Spec.assertEqWith s "and the board it resolved against had every seat level, with three lands each" (lives onStack, lands onStack) ((Just 20, Just 20, Just 20), (3, 3, 3))
         Spec.it s "CR 608.2d the seat that announced the damage takes it instead, and the enchantment is destroyed" $ do
           (_, onStack) <- boardOf 3
@@ -2595,7 +2612,7 @@ crabSpec s registry =
           -- the battlefield before the trigger resolved, so each run had two
           -- candidates to tell apart and exile was empty to begin with.
           Spec.assertEqWith s "setup: alice controlled both candidates and the Crab, and exile was empty" (owned Zone.Exile entered, length (owned Zone.Battlefield entered)) ([], 3)
-          Spec.assertEqWith s "setup: the entry trigger really went on the stack" (length (GameState.stack (S.runPure S.identityAnswer entered Engine.settleForPriority))) 1
+          Spec.assertEqWith s "setup: the entry trigger really went on the stack" (length (TurnRegisters.stack (GameState.turn (S.runPure S.identityAnswer entered Engine.settleForPriority)))) 1
 
 -- Vapor Snag ({U} Instant, Scryfall 2026-09-17): "Return target creature to its
 -- owner's hand. Its controller loses 1 life." Two clauses in CR 608.2c's printed
@@ -2722,7 +2739,7 @@ perforatingSpec s registry =
             (_, g3) = S.addHandCard swamp S.bob g2
             (_, g4) = S.addHandCard swamp S.carol g3
             attacked = S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared artistId S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.attackerSnapshot artistId S.alice 0))] g4
-            begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (attacked {GameState.phase = endStep, GameState.activePlayer = S.alice})
+            begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (attacked {GameState.turn = (GameState.turn attacked) {TurnRegisters.phase = endStep, TurnRegisters.activePlayer = S.alice}})
         pure (bearsId, giantId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
       sacrifices cost = any (\c -> case c of CostComponent.Sacrifice {} -> True; _ -> False) (Cost.Type.components cost)
       -- bob picks the sacrifice exactly when `bobSacrifices`; carol logs what
@@ -2754,7 +2771,7 @@ perforatingSpec s registry =
           Spec.assertEqWith s "nobody lost life" (lives sacrificed, lives discarded) ([Just 20, Just 20], [Just 20, Just 20])
           Spec.assertEqWith s "CR 101.4b carol was told bob sacrificed, naming the Bears" (toldOf toldSacrifice) [[(S.bob, Just (True, Set.singleton bearsId))]]
           Spec.assertEqWith s "CR 101.4a carol was told bob discarded, naming no card" (toldOf toldDiscard) [[(S.bob, Just (False, Set.empty))]]
-          Spec.assertEqWith s "setup: the trigger is on the stack and bob's Bears with it" (length (GameState.stack onStack), S.onBattlefield bearsId onStack) (1, True)
+          Spec.assertEqWith s "setup: the trigger is on the stack and bob's Bears with it" (length (TurnRegisters.stack (GameState.turn onStack)), S.onBattlefield bearsId onStack) (1, True)
 
 -- CR 118.12 / 118.12a over a cost printed as a CHOICE: Torment of Venom's
 -- "Its controller loses 3 life unless they sacrifice another nonland permanent
@@ -3026,7 +3043,7 @@ truceSpec s registry =
             (withTruce, truceId) = S.handOne truce lands
             stock pid n gs = List.foldl' (\g _ -> snd (S.addLibraryCard giant pid g)) gs [1 .. n :: Int]
             stocked = stock S.carol carolLibrary (stock S.bob 3 (stock S.alice 3 withTruce))
-        pure (truceId, stocked {GameState.activePlayer = S.bob})
+        pure (truceId, stocked {GameState.turn = (GameState.turn stocked) {TurnRegisters.activePlayer = S.bob}})
       choices :: Map.Map PlayerId.PlayerId Natural.Natural
       choices = Map.fromList [(S.alice, 0), (S.bob, 1), (S.carol, 2)]
       answer :: Prompt.Prompt r -> r

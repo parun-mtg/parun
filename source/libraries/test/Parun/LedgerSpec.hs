@@ -34,6 +34,7 @@ import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- A write that skips its funnel: the status set with nothing logged.
 setTapped :: ObjectId.ObjectId -> TapState.TapState -> GameState.GameState -> GameState.GameState
@@ -180,7 +181,7 @@ spec s registry = Spec.describe s "Ledger" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
         tapped = S.runPure S.identityAnswer before (Event.tap land)
-        handedOff = tapped {GameState.turnNumber = GameState.turnNumber tapped + 1, GameState.eventsLastTurn = GameState.events tapped, GameState.events = Seq.empty}
+        handedOff = tapped {GameState.turn = (GameState.turn tapped) {TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn tapped) + 1, TurnRegisters.events = Seq.empty}, GameState.eventsLastTurn = TurnRegisters.events (GameState.turn tapped)}
         untapped = setTapped land TapState.Untapped handedOff
     Spec.assertEqWith s "the tap last turn is read" (Ledger.discrepancies before handedOff) []
     Spec.assertEqWith s "an unlogged untap this turn is named" (Ledger.discrepancies before untapped) [Discrepancy.MkTapState land TapState.Tapped TapState.Untapped]

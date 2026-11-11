@@ -92,6 +92,7 @@ import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The same arm with a CHOOSER other than the resolving controller:
@@ -138,7 +139,7 @@ exhumeSpec s registry =
         let mana = S.landsFor swamp S.alice 4 S.threePlayerGame
             withGraves = List.foldl' (\g (printing, pid) -> snd (S.addGraveyardCard printing pid g)) mana buried
             (withSpell, spell) = S.handOne exhume withGraves
-         in (spell, withSpell {GameState.priority = Just S.alice})
+         in (spell, withSpell {GameState.turn = (GameState.turn withSpell) {TurnRegisters.priority = Just S.alice}})
       -- Cast and resolve, keeping the RESPONSES beside the board so the same call
       -- answers both "what came back" and "how many players were asked".
       run :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> (GameState.GameState, [Response.Response])
@@ -368,7 +369,7 @@ illGottenGainsSpec s registry =
                   -- After the spell: S.handOne replaces alice's hand.
                   (g8, spell) = S.handOne gains g7
                   (_, withSpell) = S.addHandCard piker S.alice g8
-              pure (spell, withSpell {GameState.priority = Just S.alice}, (maidenId, sentryId, murderId))
+              pure (spell, withSpell {GameState.turn = (GameState.turn withSpell) {TurnRegisters.priority = Just S.alice}}, (maidenId, sentryId, murderId))
         Spec.it s "CR 608.2c each player discards, then returns up to three cards of their own graveyard, the discarded ones included" $ do
           (spell, gs, (maidenId, _, murderId)) <- stock
           let answer :: Prompt.Prompt r -> r
@@ -460,7 +461,7 @@ bloodForBonesSpec s registry =
             (_, withVictim) = S.addPermanent victim S.alice mana
             withGraves = List.foldl' (\g (printing, pid) -> snd (S.addGraveyardCard printing pid g)) withVictim buried
             (withSpell, spell) = S.handOne blood withGraves
-         in (spell, withSpell {GameState.priority = Just S.alice})
+         in (spell, withSpell {GameState.turn = (GameState.turn withSpell) {TurnRegisters.priority = Just S.alice}})
       named = Just . CardName.MkCardName . Text.pack
       arrivals gs =
         List.sort
@@ -605,7 +606,7 @@ skullwinderSpec s registry =
         let mana = S.landsFor forest S.alice 4 S.threePlayerGame
             withGraves = List.foldl' (\g (printing, pid) -> snd (S.addGraveyardCard printing pid g)) mana buried
             (withCard, handId) = S.handOne skullwinder withGraves
-         in (handId, withCard {GameState.priority = Just S.alice})
+         in (handId, withCard {GameState.turn = (GameState.turn withCard) {TurnRegisters.priority = Just S.alice}})
       -- Cast, let the creature enter, let CR 603.3b put the enters trigger on the
       -- stack (which is where CR 603.3d picks its target), then resolve it.
       run :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> (GameState.GameState, [Response.Response])
@@ -809,7 +810,7 @@ elvishPiperSpec s registry =
                 (withPiper, [])
                 mine
             withTheirs = List.foldl' (\g printing -> snd (S.addHandCard printing S.bob g)) withMine theirs
-         in (piperId, mineIds, withTheirs {GameState.priority = Just S.alice})
+         in (piperId, mineIds, withTheirs {GameState.turn = (GameState.turn withTheirs) {TurnRegisters.priority = Just S.alice}})
       -- Activate the Piper's one ability and resolve it, keeping the RESPONSES
       -- beside the board -- portOfKarfellSpec's run, one card over.
       run :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> Maybe (GameState.GameState, [Response.Response])
@@ -970,7 +971,7 @@ countOnLuckSpec s registry =
             begun =
               Event.recordEvent
                 (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-                (g3 {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+                (g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
             onStack = S.runPure S.identityAnswer begun Engine.settleForPriority
         pure (luckId, S.runPure S.identityAnswer onStack Engine.priorityLoop)
       -- What the top-level namesIn answers with. It reports a zone in its own
@@ -1127,7 +1128,7 @@ galvanicRelaySpec s registry =
           (Engine.handoffTurn >> Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
       -- The active player's precombat main phase with priority, which is where a
       -- sorcery-speed play is offered at all (CR 307.1).
-      mainPhase gs = gs {GameState.phase = Phase.PrecombatMain, GameState.priority = Just (GameState.activePlayer gs)}
+      mainPhase gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just (TurnRegisters.activePlayer (GameState.turn gs))}}
       offeredTo pid oid gs = any (S.isCastOf oid) (Action.legalActions pid (mainPhase gs))
       permissionFor oid gs = Game.lookupObject oid gs >>= Object.playPermission
    in Spec.describe s "GalvanicRelay" $ do
@@ -1146,7 +1147,7 @@ galvanicRelaySpec s registry =
           (exiled, relayed) <- relayBoard s registry "Galvanic Relay"
           let bobsTurn = handoff relayed
               alicesTurn = handoff bobsTurn
-          Spec.assertEqWith s "alice is active on turn 3" (GameState.activePlayer alicesTurn, GameState.turnNumber alicesTurn) (S.alice, 3)
+          Spec.assertEqWith s "alice is active on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesTurn), TurnRegisters.turnNumber (GameState.turn alicesTurn)) (S.alice, 3)
           Spec.assertBool s (offeredTo S.alice exiled alicesTurn) "CR 611.2a: the window is open, so alice may play the exiled card"
           -- Not swept on bob's turn, just not begun -- which is the whole claim.
           Spec.assertBool s (Maybe.isJust (permissionFor exiled bobsTurn)) "and the permission was still stored through bob's turn"
@@ -1154,7 +1155,7 @@ galvanicRelaySpec s registry =
           (exiled, relayed) <- relayBoard s registry "Galvanic Relay"
           let afterwards = handoff (handoff (handoff relayed))
               later = handoff afterwards
-          Spec.assertEqWith s "alice is active again on turn 5" (GameState.activePlayer later, GameState.turnNumber later) (S.alice, 5)
+          Spec.assertEqWith s "alice is active again on turn 5" (TurnRegisters.activePlayer (GameState.turn later), TurnRegisters.turnNumber (GameState.turn later)) (S.alice, 5)
           Spec.assertBool s (not (offeredTo S.alice exiled later)) "the card is no longer playable on the turn after the one the window named"
           -- Ordered BEHIND the offer so a sweep that kept the permission reddens
           -- the gameplay assertion rather than an absence here.
@@ -1174,9 +1175,12 @@ relayBoard s registry name = do
       (spellId, g2) = S.addHandCard spell S.alice g1
       board =
         g2
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g2)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       -- Commune with Lava's X, which Galvanic Relay never asks: its depth is a
       -- literal one.
@@ -1185,7 +1189,7 @@ relayBoard s registry name = do
         Prompt.ChooseX {} -> 1
         _ -> S.identityAnswer p
       step gs game = S.runPure announcing gs (game >> Engine.settleForPriority)
-      resolveAll gs = if null (GameState.stack gs) then gs else resolveAll (step gs Stack.resolveTop)
+      resolveAll gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll (step gs Stack.resolveTop)
       after = resolveAll (step board (S.cast S.alice spellId))
   Spec.assertEqWith s "one card is in exile" (length (Game.zoneMembers Zone.Exile S.alice after)) 1
   case Game.zoneMembers Zone.Exile S.alice after of
@@ -1395,8 +1399,11 @@ trumpetBoard mountain trumpetBlast mine theirs =
    in ( -- handOne parks its state in a precombat main phase; this board is
         -- mid-combat.
         withCard
-          { GameState.phase = GameState.phase gs0,
-            GameState.priority = GameState.priority gs0
+          { GameState.turn =
+              (GameState.turn withCard)
+                { TurnRegisters.phase = TurnRegisters.phase (GameState.turn gs0),
+                  TurnRegisters.priority = TurnRegisters.priority (GameState.turn gs0)
+                }
           },
         ours,
         yours
@@ -1416,7 +1423,7 @@ attackAndCast p = case p of
 runToStep :: Phase.Phase -> (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
 runToStep step answer gs0 =
   let go n g =
-        if n <= (0 :: Int) || GameState.phase g == step
+        if n <= (0 :: Int) || TurnRegisters.phase (GameState.turn g) == step
           then g
           else go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
    in go 8 gs0
@@ -1430,7 +1437,7 @@ affectedSets = fmap ContinuousEffect.affected . GameState.continuousEffects
 
 -- The attacking creatures, by id, in the engine's own combat record.
 attackerIds :: GameState.GameState -> [ObjectId.ObjectId]
-attackerIds = Map.keys . Combat.Type.attackers . GameState.combat
+attackerIds = Map.keys . Combat.Type.attackers . (TurnRegisters.combat . GameState.turn)
 
 -- ObjectRef.ChosenPermanents under Effect.MoveToZone: the CR 608.2d subset a
 -- MOVE names, where Tovolar's is the subset a CR 701.27a turn names.
@@ -1970,7 +1977,7 @@ trumpetBlastSpec s registry = Spec.describe s "TrumpetBlast" $ do
     let (board, ours, _) = trumpetBoard mountain trumpetBlast [garrison] []
         after = runToStep (Phase.Combat CombatStep.DeclareBlockers) attackAndCast board
         tokens = filter (`List.notElem` ours) (attackerIds after)
-    Spec.assertEqWith s "the stack is empty: both the spell and the trigger resolved" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "the stack is empty: both the spell and the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "the trigger made two tokens" (length tokens) 2
     Spec.assertEqWith s "the Garrison was attacking when the spell resolved, so it is a 4/3" (fmap (`Projection.powerOf` after) ours) (fmap (const (Just 4)) ours)
     Spec.assertEqWith s "the tokens ARE attacking" (length (filter (`List.elem` attackerIds after) tokens)) 2
@@ -2152,13 +2159,13 @@ swiftSilenceBoard plains island swiftSilence divination piker sorcerer mMongoose
         (mUncounterable, withMongoose) = case mMongoose of
           Nothing -> (Nothing, withHis)
           Just mongoose -> let (oid, g) = S.spellOnStack mongoose S.alice withHis in (Just oid, g)
-        onStack = GameState.stack withMongoose
+        onStack = TurnRegisters.stack (GameState.turn withMongoose)
         atAlice :: Prompt.Prompt r -> r
         atAlice p = case p of
           Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.alice))) sets
           _ -> S.identityAnswer p
-        activated = S.runPure atAlice (withMongoose {GameState.priority = Just S.alice}) (Activate.activateAbility S.alice sorcererId ability)
-        abilityIds = filter (`notElem` onStack) (GameState.stack activated)
+        activated = S.runPure atAlice (withMongoose {GameState.turn = (GameState.turn withMongoose) {TurnRegisters.priority = Just S.alice}}) (Activate.activateAbility S.alice sorcererId ability)
+        abilityIds = filter (`notElem` onStack) (TurnRegisters.stack (GameState.turn activated))
         (silence, board) = S.addHandCard swiftSilence S.bob activated
      in Just (hers, his, mUncounterable, abilityIds, silence, board)
 
@@ -2208,7 +2215,7 @@ swiftSilenceSpec s registry = Spec.describe s "SwiftSilence" $ do
         Spec.assertEqWith
           s
           "the ability and the uncounterable spell are still on the stack under their original ids, and they are all that is left"
-          (GameState.stack resolved)
+          (TurnRegisters.stack (GameState.turn resolved))
           (abilityIds <> Maybe.maybeToList mUncounterable)
         -- CR 608.2n: an ability that HAD been countered would have ceased to
         -- exist, so a live object here is the sweep having spared it.
@@ -2237,7 +2244,7 @@ swiftSilenceSpec s registry = Spec.describe s "SwiftSilence" $ do
       Just (hers, his, _, abilityIds, silence, board) -> do
         let resolved = swiftSilenceRun silence board
         Spec.assertEqWith s "still the same two" (List.sort (counteredSpells resolved)) (List.sort [hers, his])
-        Spec.assertEqWith s "and only the untouched ability is left on the stack" (GameState.stack resolved) abilityIds
+        Spec.assertEqWith s "and only the untouched ability is left on the stack" (TurnRegisters.stack (GameState.turn resolved)) abilityIds
         Spec.assertEqWith s "still two cards drawn" (S.handSize S.bob resolved) 2
 
 -- The Faerie tokens ONE player controls, by name and by CR 108.4's controller
@@ -2325,9 +2332,9 @@ glenElendraBoard island glenElendra baral piker mongoose sorcerer mCounterable =
           Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer pid))) sets
           _ -> S.identityAnswer p
         activate (ids, gs) (pid, oid) =
-          let before = GameState.stack gs
-              after = S.runPure (atSelf pid) (gs {GameState.priority = Just pid}) (Activate.activateAbility pid oid ability)
-           in (ids <> fmap ((,) pid) (filter (`notElem` before) (GameState.stack after)), after)
+          let before = TurnRegisters.stack (GameState.turn gs)
+              after = S.runPure (atSelf pid) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just pid}}) (Activate.activateAbility pid oid ability)
+           in (ids <> fmap ((,) pid) (filter (`notElem` before) (TurnRegisters.stack (GameState.turn after))), after)
         (abilityIds, activated) = List.foldl' activate ([], withHis) sorcerers
         (answer, board) = S.addHandCard glenElendra S.bob activated
         theirs = fmap snd (filter ((/= S.bob) . fst) abilityIds)
@@ -2342,7 +2349,7 @@ glenElendraRun answer gs =
   let cast = S.runPure S.identityAnswer gs (S.cast S.bob answer)
       resolved = S.runPure S.identityAnswer cast Stack.resolveTop
       settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
-   in (settled, filter (`notElem` GameState.stack resolved) (GameState.stack settled))
+   in (settled, filter (`notElem` TurnRegisters.stack (GameState.turn resolved)) (TurnRegisters.stack (GameState.turn settled)))
 
 -- Glen Elendra's Answer {2}{U}{U} Instant: "This spell can't be countered. /
 -- Counter all spells your opponents control and all abilities your opponents
@@ -2392,7 +2399,7 @@ glenElendrasAnswerSpec s registry = Spec.describe s "GlenElendrasAnswer" $ do
         Spec.assertEqWith
           s
           "what is left on the stack is bob's own two objects and CR 113.6g's uncounterable spell, under their original ids"
-          (List.sort (filter (`notElem` triggers) (GameState.stack resolved)))
+          (List.sort (filter (`notElem` triggers) (TurnRegisters.stack (GameState.turn resolved))))
           (List.sort (uncounterable : mine))
         Spec.assertEqWith s "CR 701.6a alice's countered spell reached her graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice resolved)) 1
         Spec.assertBool s (all (\oid -> not (S.onBattlefield oid resolved)) (Maybe.maybeToList mHers)) "the countered spell never resolved"
@@ -2503,7 +2510,7 @@ rampageOfTheClansSpec s registry = Spec.describe s "RampageOfTheClans" $ do
     Spec.assertEqWith s "bob controlled the destroyed enchantment, so bob controls a Centaur" (length (centaursControlledBy S.bob resolved)) 1
     Spec.assertEqWith s "alice controlled the destroyed artifact, so alice controls one and not two" (length (centaursControlledBy S.alice resolved)) 1
     Spec.assertEqWith s "CR 702.12b carol's indestructible artifact was matched and not destroyed, so carol gets nothing" (length (centaursControlledBy S.carol resolved)) 0
-    Spec.assertEqWith s "stack empty: the spell resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "stack empty: the spell resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
     Spec.assertBool s (not (S.onBattlefield equipment resolved)) "the artifact died"
     Spec.assertBool s (not (S.onBattlefield moon resolved)) "the enchantment died"
     Spec.assertBool s (S.onBattlefield myr resolved) "the indestructible artifact creature stands"
@@ -2629,7 +2636,7 @@ phyrexianRebirthSpec s registry = Spec.describe s "PhyrexianRebirth" $ do
     Spec.assertBool s (not (S.onBattlefield bobPiker resolved)) "bob's Piker died"
     Spec.assertBool s (not (S.onBattlefield bobEvangel resolved)) "bob's Evangel died"
     Spec.assertBool s (S.onBattlefield carolMyr resolved) "CR 702.12b carol's indestructible Myr was swept and stands"
-    Spec.assertEqWith s "stack empty: the spell resolved" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "stack empty: the spell resolved" (length (TurnRegisters.stack (GameState.turn resolved))) 0
   -- The STATIC-ANALYSIS half. The gameplay cases above pass whatever the walkers
   -- answer, because Parun.Engine.Resolve.Common.bakeTokenCharacteristics evaluates
   -- the box whether or not anything reported it -- so only this case says that
@@ -2769,7 +2776,7 @@ corrosiveGaleSpec s registry = Spec.describe s "CorrosiveGale" $ do
 teferiUntapSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 teferiUntapSpec s registry =
   let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = endStep}})
       -- Records every ChooseAnyNumber over permanents as (candidates, ceiling) and
       -- answers it with `pick` of the candidates -- offered or not, so an
       -- engine that trusted the answer would act on it.
@@ -2794,7 +2801,7 @@ teferiUntapSpec s registry =
             addLand (ids, g) (p, pid) = let (oid, g') = S.addPermanent p pid g in (ids <> [oid], S.tapObject oid g')
             (lands, g1) = List.foldl' addLand ([], withLoyalty) [(island, S.alice), (island, S.alice), (island, S.alice), (mountain, S.bob), (mountain, S.bob)]
             g2 = List.foldl' (\g _ -> snd (S.addLibraryCard piker S.alice g)) g1 [1 .. (3 :: Int)]
-            gs = g2 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice, GameState.turnNumber = 2}
+            gs = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice, TurnRegisters.turnNumber = 2}}
         pure $ case Face.activatedAbilities (S.combinedFace teferi) of
           plus : _ ->
             let armed = S.runPure S.identityAnswer gs (do Activate.activateAbility S.alice teferiId plus; Stack.resolveTop)
@@ -2846,7 +2853,7 @@ archfiendOfDepravitySpec s registry =
               addCreature (ids, g) pid = let (oid, g') = S.addPermanent piker pid g in (ids <> [oid], g')
               (bobs, g1) = List.foldl' addCreature ([], g0) [S.bob, S.bob, S.bob]
               (carols, g2) = List.foldl' addCreature ([], g1) [S.carol, S.carol, S.carol]
-              gs = g2 {GameState.phase = endStep, GameState.activePlayer = S.bob, GameState.turnNumber = 2}
+              gs = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = endStep, TurnRegisters.activePlayer = S.bob, TurnRegisters.turnNumber = 2}}
               began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.bob)) gs
               settled = S.runPure S.identityAnswer began Engine.settleForPriority
               (after, asked) = State.runState (fmap snd (Engine.runGame answering settled Engine.priorityLoop)) []
@@ -2890,7 +2897,7 @@ covetousElegySpec s registry =
             (bobs, g1) = List.foldl' addCreature ([], g0) [S.bob, S.bob, S.bob]
             (carols, g2) = List.foldl' addCreature ([], g1) [S.carol, S.carol, S.carol]
             (withSpell, spell) = S.handOne elegy g2
-            gs = withSpell {GameState.priority = Just S.alice}
+            gs = withSpell {GameState.turn = (GameState.turn withSpell) {TurnRegisters.priority = Just S.alice}}
             (after, asked) = State.runState (fmap snd (Engine.runGame answering gs (S.cast S.alice spell >> Stack.resolveTop))) []
         pure (alices, bobs, carols, after, asked)
    in Spec.describe s "CovetousElegy" $ do
@@ -2940,7 +2947,7 @@ summonValeforSpec s registry =
               (bobs, g0) = List.foldl' addCreature ([], lands) [(air, S.bob), (bears, S.bob)]
               (carols, g1) = List.foldl' addCreature ([], g0) [(air, S.carol), (angel, S.carol)]
               (withSpell, spell) = S.handOne valefor g1
-              gs = withSpell {GameState.priority = Just S.alice}
+              gs = withSpell {GameState.turn = (GameState.turn withSpell) {TurnRegisters.priority = Just S.alice}}
               (after, asked) = State.runState (fmap snd (Engine.runGame told gs (S.cast S.alice spell >> Engine.priorityLoop))) []
           Spec.assertEqWith
             s
@@ -2980,7 +2987,7 @@ standOrFallSpec s registry =
               (_, g0) = S.addPermanent standOrFall S.alice S.threePlayerGame
               (bobs, g1) = List.foldl' addCreature ([], g0) [(giant, S.bob), (bears, S.bob)]
               (carols, g2) = List.foldl' addCreature ([], g1) [(ogre, S.carol), (cadet, S.carol)]
-              gs = g2 {GameState.activePlayer = S.alice, GameState.phase = beginCombat, GameState.remaining = S.phasesAfter beginCombat}
+              gs = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = beginCombat, TurnRegisters.remaining = S.phasesAfter beginCombat}}
               asked = State.execState (Engine.runGame told gs Engine.runStep) []
               bobTook = Set.fromList (drop 1 bobs)
           Spec.assertEqWith
@@ -3007,7 +3014,7 @@ standOrFallSpec s registry =
 comeBackWrongSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 comeBackWrongSpec s registry =
   let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+      beginEndStep gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = endStep}})
       settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
       resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
       creaturesOnBattlefield gs = filter (`Projection.isCreatureOf` gs) (Set.toList (GameState.battlefield gs))
@@ -3077,7 +3084,7 @@ apocalypseChimeSpec s registry =
           (stormId, g3) = S.addPermanent storm S.alice g2
           (tokenId, g4) = S.addToken (Printing.card inquisitors) S.bob (S.addRegenShield stormId g3)
           (carolsId, g5) = S.addPermanent inquisitors S.carol g4
-          board = g5 {GameState.priority = Just S.alice}
+          board = g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.priority = Just S.alice}}
       case soleActivatedAbility chime of
         Nothing -> Spec.assertFailure s "Apocalypse Chime should print exactly one activated ability"
         Just ability -> do
@@ -3121,9 +3128,12 @@ switcherooBoard s registry secondController = do
       carolWraith,
       spellId,
       g4
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn g4)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 
@@ -3206,8 +3216,8 @@ spawnbrokerSpec s registry = Spec.describe s "Spawnbroker" $ do
     -- at placement rather than put on the stack to fail at CR 608.2b. Legal
     -- choices exist, so this is not CR 603.3d: the decider repeats the refused
     -- answer and Engine.placeBorne's `attempt` gives up and ceases the trigger.
-    Spec.assertEqWith s "measured against her Piker instead, the trigger never reaches the stack" (length (GameState.stack refusedPlaced)) 0
-    Spec.assertEqWith s "where measured against her Wraith it did" (length (GameState.stack measuredPlaced)) 1
+    Spec.assertEqWith s "measured against her Piker instead, the trigger never reaches the stack" (length (TurnRegisters.stack (GameState.turn refusedPlaced))) 0
+    Spec.assertEqWith s "where measured against her Wraith it did" (length (TurnRegisters.stack (GameState.turn measuredPlaced))) 1
     Spec.assertEqWith s "and bob keeps his Wraith" (Projection.controllerOf bobWraith refused) (Just S.bob)
     Spec.assertEqWith s "and alice her Piker" (Projection.controllerOf alicePiker refused) (Just S.alice)
 
@@ -3242,9 +3252,12 @@ avariceTotemBoard s registry evangelController = do
       evangelId,
       wraithId,
       g3
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn g3)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 
@@ -3315,7 +3328,7 @@ godEternalBontuSpec s registry =
             (giantId, g4) = S.addPermanent giant S.bob g3
             (peaceIds, g5) = if withPeace then let (oid, g') = S.addPermanent peace S.alice g4 in ([oid], g') else ([], g4)
             stocked = List.foldl' (\g _ -> snd (S.addLibraryCard piker S.alice g)) g5 [1 .. (6 :: Int)]
-            (withSpell, spell) = S.handOne bontu stocked {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+            (withSpell, spell) = S.handOne bontu stocked {GameState.turn = (GameState.turn stocked) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
             afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spell)
             (after, asked) = State.runState (fmap snd (Engine.runGame (answering (Set.fromList [pikerId, sentryId])) afterCast Engine.priorityLoop)) []
             offered = Set.fromList (swamps <> [pikerId, sentryId, maidenId] <> peaceIds)

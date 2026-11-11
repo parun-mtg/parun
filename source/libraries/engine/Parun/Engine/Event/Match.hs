@@ -175,6 +175,7 @@ import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
@@ -193,7 +194,7 @@ declarationsOf bearer gs =
   let declaredIt event = case event of
         GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ _ _ _ _) -> oid == bearer
         _ -> False
-   in length (Seq.filter (declaredIt . LoggedEvent.event) (GameState.events gs))
+   in length (Seq.filter (declaredIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
 
 -- CR 508.3: whether `event` fires a Parun.Types.AttackTrigger. Each arity
 -- matches its own event, the declaration's three appended by
@@ -243,7 +244,7 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
           Just count -> reachesFloor count (fmap (declaredPower gs) (Foldable.toList (attackedBy gs bearer you t payload)))
      in attackerHolds && attackedHolds && countHolds
   -- CR 508.3c / 508.3d: once per declaration, the declaring player read off the
-  -- event rather than GameState.activePlayer: under the shared team turns
+  -- event rather than TurnRegisters.activePlayer: under the shared team turns
   -- option each player on the active team is an attacking player (CR 805.10a).
   -- A count's creatures are admittedAttackers, the set eventBindings stamps.
   (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) ->
@@ -290,7 +291,7 @@ declaredPower :: GameState -> ObjectId -> Integer
 declaredPower gs oid =
   Maybe.fromMaybe 0 . Maybe.listToMaybe $
     [ stampedPower d
-    | GameEvent.AttackerDeclared d <- reverse (fmap LoggedEvent.event (Foldable.toList (GameState.events gs))),
+    | GameEvent.AttackerDeclared d <- reverse (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))),
       AttackerDeclared.attacker d == oid
     ]
 
@@ -302,7 +303,7 @@ stampedPower = Maybe.fromMaybe 0 . PC.power . ObjectSnapshot.characteristics . A
 -- turn's AttackerDeclared events for that player, cut at each
 -- GameEvent.AttackersDeclared closing one.
 declarationsBy :: PlayerId -> GameState -> [[AttackerDeclared.AttackerDeclared]]
-declarationsBy attacker gs = go [] (fmap LoggedEvent.event (Foldable.toList (GameState.events gs)))
+declarationsBy attacker gs = go [] (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
   where
     go pending events = case events of
       [] -> []
@@ -371,8 +372,8 @@ declaredTargets :: GameState -> Map.Map ObjectId AttackTarget.AttackTarget
 declaredTargets gs =
   Map.fromList
     [ (oid, target)
-    | GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ target _ _ _) <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)),
-      Set.member oid (Combat.declaredAttackers (GameState.combat gs))
+    | GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid _ target _ _ _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))),
+      Set.member oid (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))
     ]
 
 -- CR 509.3e on the effect road (BlockProducer.ByEffect): whether this arrival
@@ -480,7 +481,7 @@ crewingsOf bearer gs =
   let crewedIt event = case event of
         GameEvent.BecameCrewed ev -> Crewing.vehicle ev == bearer
         _ -> False
-   in length (Seq.filter (crewedIt . LoggedEvent.event) (GameState.events gs))
+   in length (Seq.filter (crewedIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)))
 
 -- Clarion Spirit's "your SECOND spell each turn": which of the turn's matching
 -- casts this one is, counting from one.
@@ -532,7 +533,7 @@ stepPlayers gs bearer scope own =
    in filter (Turn.scopeNames named gs scope own) (Turn.activePlayers gs)
 
 -- CR 505.1b: how many main phases have begun this turn, counting the one whose
--- beginning is being matched. GameState.events is cleared at the turn handoff
+-- beginning is being matched. TurnRegisters.events is cleared at the turn handoff
 -- (Parun.Engine.Engine.handoffTurn), so the log is already scoped to the turn the
 -- rule scopes the count to, and a phase CR 500.11 skipped records no beginning
 -- and so has not "occurred".
@@ -548,7 +549,7 @@ mainPhasesBegun :: GameState -> Natural
 mainPhasesBegun gs =
   Natural.length
     ( do
-        GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs))
+        GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
         Monad.guard (isMainPhase phase)
         pure ()
     )
@@ -1073,7 +1074,7 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- The FIRST-DRAW gate is NOT re-asked here. Rule 702.94a states it on the
   -- static half, so it decides whether the reveal happens at all
   -- (Event.offerMiracleReveal); a reveal that happened cannot have been the wrong
-  -- draw, and re-reading GameState.drawsThisTurn at the scan would ask about the
+  -- draw, and re-reading TurnRegisters.drawsThisTurn at the scan would ask about the
   -- board one CR 117.5 boundary later.
   TriggerCondition.SelfRevealedForMiracle -> case event of
     GameEvent.Revealed (Revealed.MkRevealed _ oid (RevealCause.ForMiracle _) _) -> oid == bearer
@@ -1131,7 +1132,7 @@ armMatches bindings board gs bearer you cond event = case cond of
     _ -> False
   -- CR 121.1: a card was DRAWN, by a player the relation admits, and it was that
   -- player's `nth` draw of the turn. The ordinal comes off the event, which
-  -- Event.drawCard stamped from GameState.drawsThisTurn as the draw happened;
+  -- Event.drawCard stamped from TurnRegisters.drawsThisTurn as the draw happened;
   -- CR 109.5 fixes "you" as the ability's controller (CR 603.3a), and an
   -- opponent is every other player for the reason a Discarder discard gives.
   --

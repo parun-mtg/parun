@@ -41,6 +41,7 @@ import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Emperor" $ do
@@ -77,7 +78,7 @@ spec s registry = Spec.describe s "Emperor" $ do
     let deck = Deck.fromCards (Map.singleton forest 20)
         matchup = fmap (\pid -> (pid, deck)) (S.alice NonEmpty.:| drop 1 seats)
         ((_, started), drawnFrom) = State.runState (Engine.runGame secondDrawn emperorGame (Setup.newGame S.performer matchup)) []
-    Spec.assertEqWith s "CR 809.4 erin takes the first turn, turn order to her left" (GameState.activePlayer started, GameState.turnOrder started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
+    Spec.assertEqWith s "CR 809.4 erin takes the first turn, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.turnOrder started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
     Spec.assertEqWith s "the draw was among the emperors alone" drawnFrom [[S.bob, erin]]
 
   Spec.it s "CR 809.5b a team loses the game if its emperor loses" $ do
@@ -123,13 +124,13 @@ spec s registry = Spec.describe s "Emperor" $ do
     emperorGame = Maybe.fromMaybe table (Emperor.setUp teams emperors table)
     table = Setup.emptyGame (S.alice NonEmpty.:| drop 1 seats)
     resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
-    onMainOf pid gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = pid, GameState.priority = Just pid}
+    onMainOf pid gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = pid, TurnRegisters.priority = Just pid}}
     castResolved :: PlayerId.PlayerId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
     castResolved pid spellId gs = resolveAll (S.runPure S.identityAnswer gs (S.cast pid spellId))
     -- CR 503.1: `pid`'s upkeep begins and its triggers resolve.
     upkeepOf pid gs =
       let upkeep = Phase.Beginning BeginningStep.Upkeep
-          began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+          began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = pid}})
        in resolveAll (S.runPure S.identityAnswer began Engine.settleForPriority)
 
 -- Answers every CR 809.4 draw with its second candidate, recording each

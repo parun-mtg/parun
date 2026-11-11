@@ -167,6 +167,7 @@ import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypesAre as TypesAre
 import qualified Parun.Types.View as View
 import qualified Parun.Types.ViewIs as ViewIs
@@ -291,7 +292,7 @@ finished gs = do
   pure $
     if replaying rehearsal
       then Maybe.isJust (ended rehearsal)
-      else Map.null remaining || GameState.turnNumber gs > lastTurn
+      else Map.null remaining || TurnRegisters.turnNumber (GameState.turn gs) > lastTurn
 
 -- | Run one explicit engine entry point under a timeline, for a Haskell caller
 -- whose subject is a subsystem rather than a whole game. An entry whose moment
@@ -335,8 +336,8 @@ settle rehearsal final = case (pending rehearsal, refusing rehearsal) of
   (_, Just (key, verb, _)) -> Left (Failure.MkUnrefusedMove key verb Nothing)
   _ ->
     let remaining = foldMap snd (Map.toAscList (queues rehearsal))
-        turn = GameState.turnNumber final
-        step = GameState.phase final
+        turn = TurnRegisters.turnNumber (GameState.turn final)
+        step = TurnRegisters.phase (GameState.turn final)
      in if Seq.null remaining
           then Right ()
           else
@@ -385,12 +386,15 @@ stage registry board =
               notes = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.draftNotes seat)) (NonEmpty.toList seated))
               positioned =
                 base
-                  { GameState.activePlayer = active,
-                    GameState.turnNumber = Board.turn board,
+                  { GameState.turn =
+                      (GameState.turn base)
+                        { TurnRegisters.activePlayer = active,
+                          TurnRegisters.turnNumber = Board.turn board,
+                          TurnRegisters.phase = Board.phase board,
+                          TurnRegisters.remaining = Seq.drop 1 (Seq.dropWhileL (/= Board.phase board) (Seq.fromList Turn.allPhases))
+                        },
                     GameState.turnsBegun = turnsBegunBy base active (Board.turn board),
                     GameState.manaPool = Map.fromList [(pid, Mana.Type.MkMana (fmap plainUnit (Seat.manaPool seat))) | (seat, pid) <- NonEmpty.toList seated, not (null (Seat.manaPool seat))],
-                    GameState.phase = Board.phase board,
-                    GameState.remaining = Seq.drop 1 (Seq.dropWhileL (/= Board.phase board) (Seq.fromList Turn.allPhases)),
                     GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes}) (GameState.players base),
                     GameState.monarch = monarch
                   }
@@ -462,7 +466,7 @@ plainUnit manaType =
 -- players settled already, so the turn-based action that step would have taken
 -- is taken here. The engine's own answer picks among defenders.
 designateDefenders :: Staged.Staged -> Staged.Staged
-designateDefenders board = case GameState.phase (Staged.state board) of
+designateDefenders board = case TurnRegisters.phase (GameState.turn (Staged.state board)) of
   Phase.Combat step
     | step > CombatStep.BeginningOfCombat ->
         board {Staged.state = snd (Engine.runGamePure quietAnswer (Staged.state board) Combat.designateDefenders)}
@@ -642,7 +646,7 @@ answerScheduled asked = do
   -- Hoisted above every arm: a nested game (CR 730.1) is out of scope for every
   -- prompt alike, a pending action's sub-choices included.
   if not (null (Asked.enclosing asked))
-    then failWith (Failure.MkNestedGamePrompt (GameState.turnNumber gs) (GameState.phase gs) decider kind)
+    then failWith (Failure.MkNestedGamePrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind)
     else do
       -- CR 734.1: a refused move is reversed, so the engine's next prompt is
       -- the one it answered, asked again. A prompt the move raises on its way
@@ -658,7 +662,7 @@ answerScheduled asked = do
             Nothing -> Maybe.isJust queued
       case refusal of
         Just (key, verb, answered)
-          | not (asksAgain answered kind) || decider /= Just (When.player key) || GameState.turnNumber gs /= When.turn key || GameState.phase gs /= When.phase key ->
+          | not (asksAgain answered kind) || decider /= Just (When.player key) || TurnRegisters.turnNumber (GameState.turn gs) /= When.turn key || TurnRegisters.phase (GameState.turn gs) /= When.phase key ->
               Monad.unless raised (failWith (Failure.MkUnrefusedMove key verb (Just kind)))
         _ -> State.modify' (\rehearsal -> rehearsal {refusing = Nothing})
       waiting <- State.gets pending
@@ -742,7 +746,7 @@ answerDedicated decider asked =
   let prompt = Asked.prompt asked
       gs = Asked.game asked
       kind = Prompt.kindOf prompt
-      unscheduled offers = failWith (Failure.MkUnscheduledPrompt (GameState.turnNumber gs) (GameState.phase gs) decider kind offers)
+      unscheduled offers = failWith (Failure.MkUnscheduledPrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind offers)
    in case prompt of
         Prompt.Type.ChooseAction who _ actions -> answerActionPrompt gs (Decider.unwrap who) actions prompt
         -- CR 108.1: the interpreter's question, answered from the reference.
@@ -940,8 +944,8 @@ answerDedicated decider asked =
 -- active player's for a prompt nobody decides (a shuffle, a die).
 takeAnswer :: GameState.GameState -> Maybe Label.Label -> Text.Text -> Run (Maybe (When.When, Int, Timed.Timed))
 takeAnswer gs decider kind = do
-  label <- maybe (labelOf (GameState.activePlayer gs)) pure decider
-  let key = When.MkWhen (GameState.turnNumber gs) (GameState.phase gs) label
+  label <- maybe (labelOf (TurnRegisters.activePlayer (GameState.turn gs))) pure decider
+  let key = When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) label
       names timed = case Timed.entry timed of
         Entry.Do (Move.Answer answer) -> Answer.prompt answer == kind
         Entry.Refuse (Move.Answer answer) -> Answer.prompt answer == kind
@@ -980,7 +984,7 @@ answerGeneric gs key kind index timed prompt = case Timed.entry timed of
         found <- takeAnswer gs (Just (When.player key)) kind
         case found of
           Just (answerKey, next, nextTimed) -> answerGeneric gs answerKey kind next nextTimed prompt
-          Nothing -> failWith (Failure.MkUnscheduledPrompt (GameState.turnNumber gs) (GameState.phase gs) (Just (When.player key)) kind [])
+          Nothing -> failWith (Failure.MkUnscheduledPrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (Just (When.player key)) kind [])
   entry -> failWith (Failure.MkUnexpectedPrompt key entry kind [])
   where
     decodeAnswer verb answer =
@@ -1280,7 +1284,7 @@ made gs = do
     Just (key, verb, before) | not (happened verb before gs) -> failWith (Failure.MkUnmadeMove key verb)
     _ -> pure ()
   case NonEmpty.nonEmpty (foldMap (`Ledger.discrepancies` gs) earlier) of
-    Just found -> failWith (Failure.MkUnloggedChanges (GameState.turnNumber gs) (GameState.phase gs) found)
+    Just found -> failWith (Failure.MkUnloggedChanges (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) found)
     Nothing -> pure ()
 
 -- | Whether a move taken on one state shows in another.
@@ -1290,7 +1294,7 @@ happened verb before after = case verb of
     let cast logged = case LoggedEvent.event logged of
           GameEvent.SpellCast {} -> True
           _ -> False
-     in any cast (Seq.drop (Seq.length (GameState.events before)) (GameState.events after))
+     in any cast (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn before))) (TurnRegisters.events (GameState.turn after)))
   _ -> not (untouched before after)
 
 -- | Whether a state is the one a move was taken on, but for the bookkeeping
@@ -1303,8 +1307,11 @@ untouched :: GameState.GameState -> GameState.GameState -> Bool
 untouched before after =
   let quiet gs =
         gs
-          { GameState.passed = Set.empty,
-            GameState.priority = Nothing,
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.passed = Set.empty,
+                  TurnRegisters.priority = Nothing
+                },
             GameState.lastChoice = GameState.lastChoice before,
             GameState.nextEventGroup = GameState.nextEventGroup before,
             GameState.nextTimestamp = GameState.nextTimestamp before,
@@ -1483,7 +1490,7 @@ namedCandidate choices candidate =
 -- acting player's hand and battlefield unchanged.
 reversed :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState -> Bool
 reversed actor before after =
-  GameState.stack before == GameState.stack after
+  TurnRegisters.stack (GameState.turn before) == TurnRegisters.stack (GameState.turn after)
     && all (\zone -> Game.zoneMembers zone actor before == Game.zoneMembers zone actor after) [Zone.Hand, Zone.Battlefield]
 
 answerManaSource :: GameState.GameState -> When.When -> Move.Move -> Choices.Choices -> Text.Text -> NonEmpty.NonEmpty ObjectId.ObjectId -> Run (Maybe ObjectId.ObjectId)
@@ -1586,7 +1593,7 @@ observe gs check = case check of
     pure (if actual == types then Nothing else Just (Text.pack (show (Set.toList actual))))
   Check.Attackers (AttackersAre.MkAttackersAre expected) -> do
     wanted <- fmap Map.fromList (mapM (\(attacker, target) -> (,) <$> resolveObject attacker gs <*> resolveEither target gs) (Map.toList expected))
-    let actual = Combat.Type.attackers (GameState.combat gs)
+    let actual = Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs))
         targetOf target = case target of
           AttackTarget.OfPlayer pid -> Left pid
           AttackTarget.OfPlaneswalker oid -> Right oid
@@ -1599,14 +1606,14 @@ observe gs check = case check of
   Check.Blockers (BlockersAre.MkBlockersAre ref expected) -> do
     oid <- resolveObject ref gs
     wanted <- traverse (fmap Set.fromList . mapM (`resolveObject` gs) . Set.toList) expected
-    let actual = Map.lookup oid (Combat.Type.blockers (GameState.combat gs))
+    let actual = Map.lookup oid (Combat.Type.blockers (TurnRegisters.combat (GameState.turn gs)))
     if actual == wanted
       then pure Nothing
       else case actual of
         Nothing -> pure (Just (Text.pack "unblocked"))
         Just blockers -> fmap (\named -> Just (Text.pack "blocked by [" <> Text.intercalate (Text.pack ", ") named <> Text.pack "]")) (describeAll gs (Set.toList blockers))
   Check.Defenders (DefendersAre.MkDefendersAre expected) -> do
-    actual <- mapM labelOf (Combat.Type.defenders (GameState.combat gs))
+    actual <- mapM labelOf (Combat.Type.defenders (TurnRegisters.combat (GameState.turn gs)))
     pure (if actual == expected then Nothing else Just (Text.pack (show (fmap Label.unwrap actual))))
   Check.PlayerCounters (PlayerCountersAre.MkPlayerCountersAre label kind count) -> do
     pid <- resolvePlayer label
@@ -1645,7 +1652,7 @@ observe gs check = case check of
 
 -- | The key an entry answered by `pid` would carry now. `pid` is the DECIDER.
 whenOf :: GameState.GameState -> PlayerId.PlayerId -> Run When.When
-whenOf gs pid = fmap (When.MkWhen (GameState.turnNumber gs) (GameState.phase gs)) (labelOf pid)
+whenOf gs pid = fmap (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs))) (labelOf pid)
 
 queueAt :: When.When -> Run (Seq.Seq Timed.Timed)
 queueAt key = State.gets (Map.findWithDefault Seq.empty key . queues)
@@ -1771,13 +1778,13 @@ resolveObject ref gs = case ref of
       [] -> failWith (Failure.MkUnknownObject ref False)
   Reference.OnStack position -> case position of
     0 -> failWith (Failure.MkUnknownObject ref False)
-    _ -> case List.genericDrop (position - 1) (GameState.stack gs) of
+    _ -> case List.genericDrop (position - 1) (TurnRegisters.stack (GameState.turn gs)) of
       oid : _ -> pure oid
       [] -> failWith (Failure.MkUnknownObject ref False)
   where
     onStack source sourceOf = do
       wanted <- sourceObject source
-      case [oid | oid <- GameState.stack gs, Just from <- [Game.lookupObject oid gs >>= sourceOf], from == wanted] of
+      case [oid | oid <- TurnRegisters.stack (GameState.turn gs), Just from <- [Game.lookupObject oid gs >>= sourceOf], from == wanted] of
         oid : _ -> pure oid
         [] -> failWith (Failure.MkUnknownObject ref False)
     -- The source may have left the game since (CR 113.7a), so a label is read
@@ -1793,7 +1800,7 @@ resolveObject ref gs = case ref of
 castsOf :: ObjectId.ObjectId -> GameState.GameState -> [ObjectId.ObjectId]
 castsOf card gs =
   [ ZoneChange.object moved
-  | logged <- Foldable.toList (GameState.events gs),
+  | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)),
     Just moved <- [Event.Trigger.movedOf (LoggedEvent.event logged)],
     ZoneChange.departed moved == card,
     ZoneChange.to moved == Zone.Stack
@@ -2051,8 +2058,8 @@ renderView gs viewIs =
       needPlayer = maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs a player") Seq.empty)) resolvePlayer (ViewIs.player viewIs)
       needObject = maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs an object") Seq.empty)) (`resolveObject` gs) (ViewIs.object viewIs)
    in case ViewIs.view viewIs of
-        View.Stack -> texts (describeAll gs (GameState.stack gs))
-        View.Step -> pure (ReplyType.Text (Text.pack (Codec.Phase.flatName (GameState.phase gs))))
+        View.Stack -> texts (describeAll gs (TurnRegisters.stack (GameState.turn gs)))
+        View.Step -> pure (ReplyType.Text (Text.pack (Codec.Phase.flatName (TurnRegisters.phase (GameState.turn gs)))))
         View.Offered -> do
           pid <- needPlayer
           texts (actionLines gs (ActionEngine.legalActions pid gs))
@@ -2073,8 +2080,8 @@ renderView gs viewIs =
           Just (Result.Won pid) -> fmap (\l -> ReplyType.Object [(Text.pack "won", ReplyType.Text (Label.unwrap l))]) (labelOf pid)
           Just (Result.TeamWon team) -> pure (ReplyType.Object [(Text.pack "teamWon", ReplyType.Number (toInteger (TeamId.unwrap team)))])
           Just Result.Drawn -> pure (ReplyType.Text (Text.pack "Drawn"))
-        View.ActivePlayer -> named (labelOf (GameState.activePlayer gs))
-        View.Priority -> maybe (pure ReplyType.Null) (named . labelOf) (GameState.priority gs)
+        View.ActivePlayer -> named (labelOf (TurnRegisters.activePlayer (GameState.turn gs)))
+        View.Priority -> maybe (pure ReplyType.Null) (named . labelOf) (TurnRegisters.priority (GameState.turn gs))
         View.Zone -> do
           pid <- needPlayer
           zone <- maybe (failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view needs a zone") Seq.empty)) pure (ViewIs.zone viewIs)
@@ -2142,7 +2149,7 @@ renderView gs viewIs =
                 GameEvent.Voted vote -> fmap pure (voted (Voted.ballot vote))
                 GameEvent.VotesRevealed ballots -> mapM voted (Foldable.toList ballots)
                 _ -> pure []
-          texts (concat <$> mapM shown [logged | logged <- Foldable.toList (GameState.events gs), Visibility.witnessed pid logged == Visibility.Type.Visible])
+          texts (concat <$> mapM shown [logged | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)), Visibility.witnessed pid logged == Visibility.Type.Visible])
 
 -- | A value as its codec writes it, for a View to compare.
 encoded :: Codec.Codec a -> a -> ReplyType.Reply

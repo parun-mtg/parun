@@ -67,6 +67,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- "a creature", the criterion Village Rites' additional cost and Diabolic Edict's
 -- effect both carry.
@@ -330,7 +331,7 @@ zurgoSpec s registry =
     zurgo <- S.printingOf s registry "Zurgo, Thunder's Decree"
     let (_, g0) = S.addPermanent zurgo S.alice (Setup.emptyGame S.bothPlayers)
         (token, g1) = S.addToken Engine.Keyword.warriorToken S.alice g0
-        at active phase = g1 {GameState.activePlayer = active, GameState.phase = phase}
+        at active phase = g1 {GameState.turn = (GameState.turn g1) {TurnRegisters.activePlayer = active, TurnRegisters.phase = phase}}
         endStep = Phase.Ending EndingStep.EndStep
     -- The control: the grant reaches the token where the gate holds.
     Spec.assertBool s (notElem token (offered (at S.alice endStep))) "alice's end step: the token is not offered"

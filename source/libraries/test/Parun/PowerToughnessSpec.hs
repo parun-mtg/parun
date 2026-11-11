@@ -93,6 +93,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -860,7 +861,7 @@ brightspearZealotSpec s registry =
         atPlayer p = case p of
           Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, offered) -> Set.filter (== Recipient.ToPlayer S.bob) offered) asked
           _ -> S.identityAnswer p
-        castBy pid oid gs = S.runPure atPlayer gs {GameState.priority = Just pid} (S.cast pid oid >> Stack.resolveTop)
+        castBy pid oid gs = S.runPure atPlayer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just pid}} (S.cast pid oid >> Stack.resolveTop)
         oneEach = castBy S.bob bobs (castBy S.alice first g4)
         twoOfAlices = castBy S.alice second oneEach
     Spec.assertEqWith s "alice's one cast and bob's one: still 2/4" (S.powerToughnessOf zealotId oneEach) (Just (2, 4))
@@ -1463,9 +1464,12 @@ livingLoreCombat s registry decision = do
       ready loreId =
         entered
           { GameState.objects = Map.adjust settle loreId (GameState.objects entered),
-            GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = (GameState.combat entered) {Combat.Type.defenders = [S.bob]},
-            GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+            GameState.turn =
+              (GameState.turn entered)
+                { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = (TurnRegisters.combat (GameState.turn entered)) {Combat.Type.defenders = [S.bob]},
+                  TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+                }
           }
       answer :: Prompt.Prompt r -> r
       answer p = case p of

@@ -78,6 +78,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The crew ability, taken from the PROJECTION rather than from the card's face.
@@ -98,7 +99,7 @@ board dreadnought crewers =
   let (vehicleId, gs0) = S.addPermanent dreadnought S.alice S.threePlayerGame
       add (ids, g) p = let (oid, g1) = S.addPermanent p S.alice g in (ids <> [oid], g1)
       (crewIds, gs1) = List.foldl' add ([], gs0) crewers
-   in (vehicleId, crewIds, gs1 {GameState.priority = Just S.alice})
+   in (vehicleId, crewIds, gs1 {GameState.turn = (GameState.turn gs1) {TurnRegisters.priority = Just S.alice}})
 
 -- Activate the Vehicle's crew ability and resolve it. Returns the state
 -- unchanged if the permanent offers no ability at all, so a case that expects
@@ -200,7 +201,7 @@ crewCostSpec s registry = Spec.describe s "CrewCost" $ do
     let (vehicleId, gs0) = S.addPermanent dreadnought S.alice S.threePlayerGame
         (_, gs1) = S.addPermanent blindSpot S.bob gs0
         (_, gs2) = S.addPermanent hillGiant S.carol gs1
-        gs = gs2 {GameState.priority = Just S.alice}
+        gs = gs2 {GameState.turn = (GameState.turn gs2) {TurnRegisters.priority = Just S.alice}}
     Spec.assertBool s (not (crewable vehicleId gs)) "bob's 4 and carol's 3 are not alice's to tap"
 
 -- CR 702.122a: the prompt carries each candidate's power, so an answer picking
@@ -254,7 +255,7 @@ crewReaderBoard reader vehicles crewers =
       add (ids, g) p = let (oid, g1) = S.addPermanent p S.alice g in (ids <> [oid], g1)
       (vehicleIds, gs1) = List.foldl' add ([], gs0) vehicles
       (crewIds, gs2) = List.foldl' add ([], gs1) crewers
-   in (readerId, vehicleIds, crewIds, gs2 {GameState.priority = Just S.alice})
+   in (readerId, vehicleIds, crewIds, gs2 {GameState.turn = (GameState.turn gs2) {TurnRegisters.priority = Just S.alice}})
 
 -- Crew `vehicleId`, then let CR 603.3 gather what that resolution triggered onto
 -- the stack (Engine.settleForPriority) and resolve it. Both states are returned:

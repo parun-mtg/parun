@@ -23,6 +23,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -40,6 +41,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -57,7 +59,7 @@ spec s registry = Spec.describe s "SpaceSculptor" $ do
         withBeleren = withLoyalty 3 belerenId g4
         picks = Map.fromList [(mine, Designation.GammaSector), (bobs, Designation.BetaSector), (carols, Designation.AlphaSector)]
         (asked, after) = run picks withBeleren Engine.settleForPriority
-        (askedCarolFirst, _) = run picks withBeleren {GameState.activePlayer = S.carol} Engine.settleForPriority
+        (askedCarolFirst, _) = run picks withBeleren {GameState.turn = (GameState.turn withBeleren) {TurnRegisters.activePlayer = S.carol}} Engine.settleForPriority
         (askedWithout, without) = run picks g3 Engine.settleForPriority
     Spec.assertEqWith s "each creature is in the sector its controller chose" (fmap (`sectorsOf` after) [mine, bobs, carols]) [[Designation.GammaSector], [Designation.BetaSector], [Designation.AlphaSector]]
     Spec.assertEqWith s "bob and carol choose before alice, who controls the Beleren" asked [(S.bob, bobs), (S.carol, carols), (S.alice, mine)]
@@ -166,7 +168,7 @@ belerenBoard s registry loyalty = do
   beleren <- S.printingOf s registry "Space Beleren"
   bears <- S.printingOf s registry "Grizzly Bears"
   let (belerenId, placed) = S.addPermanent beleren S.alice (S.landsInPlay bears 0)
-  pure ((withLoyalty loyalty belerenId placed) {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}, belerenId, bears)
+  pure (Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}) (withLoyalty loyalty belerenId placed), belerenId, bears)
 
 -- CR 306.5b's loyalty counters, which S.addPermanent's direct placement does
 -- not give: without them CR 704.5i buries the Beleren on the first pass.

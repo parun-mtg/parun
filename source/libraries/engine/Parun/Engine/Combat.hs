@@ -79,6 +79,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.Undoing as Undoing
 
@@ -119,7 +120,7 @@ emptyCombat =
 -- it too, guarded on the turn having been ended during a combat phase, and its
 -- Effect.EndCombatPhase arm inside CR 725.2g's guard.
 clearCombat :: GameState -> GameState
-clearCombat gs = gs {GameState.combat = emptyCombat}
+clearCombat gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = emptyCombat}}
 
 -- CR 508.6 on CR 500.1's span: "you've been attacked this step" is a question
 -- about one step, so the record answering it ends with the step. Engine.runStep
@@ -130,7 +131,7 @@ clearCombat gs = gs {GameState.combat = emptyCombat}
 -- carrying it never happened.
 clearAttackedThisStep :: GameState -> GameState
 clearAttackedThisStep gs =
-  gs {GameState.combat = (GameState.combat gs) {Combat.declaredAttackedThisStep = Set.empty}}
+  gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs)) {Combat.declaredAttackedThisStep = Set.empty}}}
 
 -- CR 508.8: if no creatures were declared as attackers or put onto the
 -- battlefield attacking, skip the declare blockers and combat damage steps.
@@ -141,8 +142,8 @@ clearAttackedThisStep gs =
 -- for a lone attacker a Ray of Command took during the step.
 skipEmptyCombat :: GameState -> GameState
 skipEmptyCombat gs =
-  if Set.null (Combat.attacked (GameState.combat gs))
-    then gs {GameState.remaining = Turn.dropSkippedCombatSteps (GameState.phase gs) (GameState.remaining gs)}
+  if Set.null (Combat.attacked (TurnRegisters.combat (GameState.turn gs)))
+    then gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Turn.dropSkippedCombatSteps (TurnRegisters.phase (GameState.turn gs)) (TurnRegisters.remaining (GameState.turn gs))}}
     else gs
 
 -- CR 506.2a: the candidates the attacking player chooses from (CR 102.1, CR
@@ -186,7 +187,7 @@ skipEmptyCombat gs =
 -- which under CR 805.6 regroups the seats by team.
 attackableOpponents :: GameState -> [PlayerId]
 attackableOpponents gs =
-  let active = GameState.activePlayer gs
+  let active = TurnRegisters.activePlayer (GameState.turn gs)
       others = drop 1 (Game.turnOrderFrom active gs)
       opponents = opponentsInRange gs
       seatedAt neighbour = filter (\pid -> Just pid == neighbour) opponents
@@ -221,7 +222,7 @@ attackableOpponents gs =
 opponentsInRange :: GameState -> [PlayerId]
 opponentsInRange gs =
   let playing = Game.stillPlaying gs
-      active = GameState.activePlayer gs
+      active = TurnRegisters.activePlayer (GameState.turn gs)
    in filter (\pid -> Game.areOpponents gs active pid && List.elem pid playing && Game.inRangeOf active pid gs) (Game.turnOrderFrom active gs)
 
 -- CR 508.1b: what the active player may announce a chosen creature is attacking,
@@ -326,7 +327,7 @@ attackTargetKind target = case target of
 -- before the theft (Parun.Types.Combat's attackedUnder).
 attackersOn :: PlayerId -> GameState -> [ObjectId]
 attackersOn pid gs =
-  let recorded = Combat.attackers (GameState.combat gs)
+  let recorded = Combat.attackers (TurnRegisters.combat (GameState.turn gs))
       mine oid = Defender.playerOfAttacker Projection.controllerWithLastKnown oid gs == Just pid
    in filter mine (Map.keys recorded)
 
@@ -1619,7 +1620,7 @@ blockCeilingGiven board pid gs =
       -- the pile was assigned to does so, read as one requirement per pair
       -- (docs/decisions.md, "Camouflage's piles are block requirements").
       piled :: Map (ObjectId, ObjectId) Natural
-      piled = case Combat.pileBlocks (GameState.combat gs) of
+      piled = case Combat.pileBlocks (TurnRegisters.combat (GameState.turn gs)) of
         Nothing -> Map.empty
         Just piles -> Map.fromList [((blocker, attacker), 1) | (blocker, assigned) <- Map.toList piles, attacker <- Set.toList assigned, able blocker attacker]
       printed = BlockRequirement.instances able candidates attackers gs
@@ -1737,7 +1738,7 @@ blockScopeGiven board pid gs =
       seats = fmap (\p -> (p, legalBlockersGiven board p gs)) side
       -- CR 509.1 / Camouflage: a creature blocks only an attacker one of its
       -- piles was assigned to (Combat.pileBlocks).
-      unpiled = case Combat.pileBlocks (GameState.combat gs) of
+      unpiled = case Combat.pileBlocks (TurnRegisters.combat (GameState.turn gs)) of
         Nothing -> Set.empty
         Just piles -> Set.fromList [(blocker, attacker) | blocker <- concatMap snd seats, attacker <- attackers, not (Set.member attacker (Map.findWithDefault Set.empty blocker piles))]
       barred = Set.union unpiled (CombatRestriction.barredBlocks (concatMap snd seats) attackers gs)
@@ -1768,7 +1769,7 @@ forcedBlockDeclaration pid gs = snd (blockCeiling pid gs)
 -- come apart, so a reader that wants blocked-ness asks isBlocked rather than
 -- testing this for emptiness.
 blockersOf :: ObjectId -> GameState -> Set ObjectId
-blockersOf oid gs = Map.findWithDefault Set.empty oid (Combat.blockers (GameState.combat gs))
+blockersOf oid gs = Map.findWithDefault Set.empty oid (Combat.blockers (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 509.1h: an attacking creature with one or more blockers declared for it
 -- becomes blocked, and remains blocked even if all of them are removed from
@@ -1780,7 +1781,7 @@ blockersOf oid gs = Map.findWithDefault Set.empty oid (Combat.blockers (GameStat
 -- is deleted from it. Testing the set for emptiness instead let a creature blocked
 -- by a regenerated Drudge Skeletons become unblocked.
 isBlocked :: ObjectId -> GameState -> Bool
-isBlocked oid gs = Map.member oid (Combat.blockers (GameState.combat gs))
+isBlocked oid gs = Map.member oid (Combat.blockers (TurnRegisters.combat (GameState.turn gs)))
 
 -- Combat.blockedBy's write, beside every write that adds a creature to an
 -- attacker's blockers (CR 509.1h). A union, so handing it the whole new
@@ -1806,16 +1807,16 @@ noteBlockedBy added c = c {Combat.blockedBy = Map.unionWith Set.union (Map.filte
 becomeBlocked :: ObjectId -> GameState -> GameState
 becomeBlocked oid gs =
   -- CR 702.22i: the whole band becomes blocked.
-  List.foldl' (flip becomeBlockedAlone) gs (oid : Set.toList (bandmatesOf oid (GameState.combat gs)))
+  List.foldl' (flip becomeBlockedAlone) gs (oid : Set.toList (bandmatesOf oid (TurnRegisters.combat (GameState.turn gs))))
 
 -- becomeBlocked for one creature, its band aside.
 becomeBlockedAlone :: ObjectId -> GameState -> GameState
 becomeBlockedAlone oid gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
    in if not (Map.member oid (Combat.attackers c)) || isBlocked oid gs
         then gs
         else
-          let blocked = gs {GameState.combat = c {Combat.blockers = Map.insert oid Set.empty (Combat.blockers c)}}
+          let blocked = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = c {Combat.blockers = Map.insert oid Set.empty (Combat.blockers c)}}}
            in -- The status is conferred either way: with no defending player
               -- there is nobody for a CR 509.3c trigger to bind, and CR 509.1h
               -- still says the creature is blocked.
@@ -1861,7 +1862,7 @@ becomeBlockedAlone oid gs =
 -- is the proof.
 switchBlockers :: ObjectId -> ObjectId -> GameState -> GameState
 switchBlockers first second gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       onFirst = blockersOf first gs
       onSecond = blockersOf second gs
       candidates = Set.toList (Set.union onFirst onSecond)
@@ -1901,7 +1902,7 @@ switchBlockers first second gs =
         || null arrivals
         then gs
         else
-          let switched = gs {GameState.combat = noteBlockedBy moved (c {Combat.blockers = moved})}
+          let switched = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = noteBlockedBy moved (c {Combat.blockers = moved})}}
               -- CR 509.3c's "only if the attacking creature was an unblocked
               -- creature at that time". A REGRESSION FENCE rather than proved
               -- behaviour: General Jarkeld targets blocked attacking creatures,
@@ -1940,7 +1941,7 @@ switchBlockers first second gs =
 -- stopped being blocked, so no GameEvent.AttackerBlocked is recorded.
 exchangeBlocks :: ObjectId -> ObjectId -> GameState -> GameState
 exchangeBlocks first second gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       attacking = Map.keys (Combat.attackers c)
       blocking blocker = Set.fromList (filter (\attacker -> Set.member blocker (blockersOf attacker gs)) attacking)
       onFirst = blocking first
@@ -1957,11 +1958,11 @@ exchangeBlocks first second gs =
       removed = Game.removeFromCombat second (Game.removeFromCombat first gs)
       pairs = fmap (\attacker -> (first, attacker)) (Set.toList onSecond) <> fmap (\attacker -> (second, attacker)) (Set.toList onFirst)
       add m (blocker, attacker) = Map.insertWith Set.union attacker (Set.singleton blocker) m
-      rc = GameState.combat removed
+      rc = TurnRegisters.combat (GameState.turn removed)
       moved = List.foldl' add (Combat.blockers rc) pairs
       controllerOf oid = Projection.controllerOf oid gs
       joined = Map.union (Map.fromList (Maybe.mapMaybe (\(b, _) -> fmap (\p -> (b, p)) (controllerOf b)) pairs)) (Combat.joinedUnder rc)
-      exchanged = removed {GameState.combat = noteBlockedBy moved (rc {Combat.blockers = moved, Combat.joinedUnder = joined})}
+      exchanged = removed {GameState.turn = (GameState.turn removed) {TurnRegisters.combat = noteBlockedBy moved (rc {Combat.blockers = moved, Combat.joinedUnder = joined})}}
       blocks h (blocker, attackers) =
         if Set.null attackers
           then h
@@ -2005,12 +2006,12 @@ recordEffectBlocks before after pairs gs =
 -- from triggering (CR 509.3g), and the event is the declaration's alone.
 removeUnblocking :: ObjectId -> GameState -> GameState
 removeUnblocking oid gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       sole attacker current = Set.member oid current && Map.lookup attacker (Combat.blockedBy c) == Just (Set.singleton oid)
       freed = Map.keys (Map.filterWithKey sole (Combat.blockers c))
       removed = Game.removeFromCombat oid gs
-      rc = GameState.combat removed
-   in removed {GameState.combat = rc {Combat.blockers = List.foldl' (flip Map.delete) (Combat.blockers rc) freed}}
+      rc = TurnRegisters.combat (GameState.turn removed)
+   in removed {GameState.turn = (GameState.turn removed) {TurnRegisters.combat = rc {Combat.blockers = List.foldl' (flip Map.delete) (Combat.blockers rc) freed}}}
 
 -- CR 509.3a's effect road for ONE creature (False Orders): it blocks an
 -- attacking creature `chooser` picks. The candidates are the attackers it could
@@ -2028,7 +2029,7 @@ removeUnblocking oid gs =
 blockAttacker :: PlayerId -> ObjectId -> Game ()
 blockAttacker chooser oid = do
   gs <- State.get
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       attacking = Map.keys (Combat.attackers c)
       targetsOf attacker = filter (\a -> not (Set.member oid (blockersOf a gs))) (attacker : Set.toList (bandmatesOf attacker c))
       board = Snapshot.whole gs
@@ -2055,14 +2056,17 @@ blockAttacker chooser oid = do
                 wasBlocking = Game.isBlocking oid gs || Set.member oid (Combat.blockingNothing c)
                 blocked =
                   gs
-                    { GameState.combat =
-                        noteBlockedBy
-                          moved
-                          c
-                            { Combat.blockers = moved,
-                              Combat.blockingNothing = Set.delete oid (Combat.blockingNothing c),
-                              Combat.joinedUnder = Map.insert oid controller (Combat.joinedUnder c)
-                            }
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.combat =
+                              noteBlockedBy
+                                moved
+                                c
+                                  { Combat.blockers = moved,
+                                    Combat.blockingNothing = Set.delete oid (Combat.blockingNothing c),
+                                    Combat.joinedUnder = Map.insert oid controller (Combat.joinedUnder c)
+                                  }
+                          }
                     }
                 declared h = if wasBlocking then h else Event.recordEvent (GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared oid (Set.fromList targets))) h
                 becameBlocked h a =
@@ -2112,7 +2116,7 @@ combatants c = Set.unions [Map.keysSet (Combat.attackers c), Combat.blockingNoth
 -- state-based action can change the board between the two.
 removeChanged :: GameState -> GameState
 removeChanged gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       inCombat = combatants c
       grants = Projection.controlGrants gs
       cands = Projection.gather gs
@@ -2147,7 +2151,7 @@ removeChanged gs =
 -- 506.4c leaves the earlier attacker attacking nothing all the same.
 noteAttackingNothing :: GameState -> GameState
 noteAttackingNothing gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       -- CR 506.4's controller clause, asked against the seat recorded as this
       -- creature joined combat rather than against Defender.defendingPlayers.
       -- The two differ at three seats and only there: with several defending
@@ -2180,7 +2184,7 @@ noteAttackingNothing gs =
         AttackTarget.OfPlaneswalker pw -> not (targetStillAttacked target gs) || seatMoved attacker pw
         AttackTarget.OfBattle battle -> not (targetStillAttacked target gs) || battleSeatMoved attacker battle || protectorMoved attacker battle
       gone = Map.keysSet (Map.filterWithKey removed (Combat.attackers c))
-   in gs {GameState.combat = c {Combat.attackingNothing = Set.union gone (Combat.attackingNothing c)}}
+   in gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = c {Combat.attackingNothing = Set.union gone (Combat.attackingNothing c)}}}
 
 -- CR 703.4h: immediately after the beginning of combat step begins, who is
 -- defending this combat phase is settled. Under CR 802.2 nothing is chosen and
@@ -2214,7 +2218,7 @@ noteAttackingNothing gs =
 designateDefenders :: Game ()
 designateDefenders = do
   gs <- State.get
-  let pid = GameState.activePlayer gs
+  let pid = TurnRegisters.activePlayer (GameState.turn gs)
   -- CR 800.4h: on a turn whose active player has left (CR 800.4j) the choice is
   -- not skipped -- the next player in turn order makes it. The CANDIDATES are
   -- untouched by that: CR 507.1 offers the attacking player's opponents whoever
@@ -2234,7 +2238,7 @@ designateDefenders = do
     -- Parun.Engine.Defender.designatedPlayers reads them.
     let barred = filter (`List.notElem` attackable) (opponentsInRange gs)
     Monad.when (GameSettings.attackOption settings == Just AttackOption.MultiplePlayers && not (GameSettings.sharedTeamTurns settings)) $
-      State.modify' (\g -> g {GameState.combat = (GameState.combat g) {Combat.barred = barred}})
+      State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.barred = barred}}})
     case NonEmpty.nonEmpty attackable of
       Nothing -> pure ()
       Just candidates -> do
@@ -2249,7 +2253,7 @@ designateDefenders = do
             -- rule asks, and a player controlling THEM answers for them.
               Maybe.maybeToList <$> Game.chooseAmong Prompt.ChooseDefender chooser (NonEmpty.toList candidates)
         State.modify' $ \g ->
-          g {GameState.combat = (GameState.combat g) {Combat.defenders = chosen}}
+          g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.defenders = chosen}}}
 
 -- CR 508.1b's announcement for ONE creature, and CR 508.4's choice for one
 -- creature put onto the battlefield attacking -- the same question, so one
@@ -2293,7 +2297,7 @@ declareAttackers perform pid = do
   Monad.unless (null (Defender.defendingPlayers gs)) $ do
     -- CR 508.1a-d: who could be declared, recorded as the declaration begins,
     -- before anything it does changes the board.
-    State.modify' (\g -> g {GameState.couldAttackThisTurn = Set.union (couldAttack pid g) (GameState.couldAttackThisTurn g)})
+    State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.couldAttackThisTurn = Set.union (couldAttack pid g) (TurnRegisters.couldAttackThisTurn (GameState.turn g))}})
     attemptAttackDeclaration perform pid Nothing False Set.empty
 
 -- CR 508.1a / 805.10b: the creatures a declaration by `pid`'s side chooses
@@ -2375,7 +2379,10 @@ couldAttack pid gs =
             after =
               gs
                 { GameState.objects = List.foldl' (flip (Map.adjust (\o -> o {Object.tapped = TapState.Tapped}))) (GameState.objects gs) tapped,
-                  GameState.combat = (GameState.combat gs) {Combat.declaredAttackers = Set.union (Map.keysSet declaration) (Combat.declaredAttackers (GameState.combat gs))}
+                  GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs)) {Combat.declaredAttackers = Set.union (Map.keysSet declaration) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))}
+                      }
                 }
             owes p = AttackCost.totalCost (Map.filterWithKey (\oid _ -> attackerOf oid == p) declaration) after
          in all (\p -> tollPayable p (owes p) after) (sideOf pid gs)
@@ -2540,58 +2547,61 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- the map would silently remove such a creature from combat.
         let attach kept banded g =
               g
-                { GameState.combat =
-                    (GameState.combat g)
-                      { Combat.attackers = Map.union kept (Combat.attackers (GameState.combat g)),
-                        -- CR 702.22c's bands, narrowed to the creatures that
-                        -- joined: one a paid toll took away never attacked.
-                        Combat.bands =
-                          filter
-                            ((>= 2) . Set.size)
-                            (fmap (Set.intersection (Map.keysSet kept)) banded)
-                            <> Combat.bands (GameState.combat g),
-                        -- CR 506.4's comparand, taken where the creature joins combat.
-                        Combat.joinedUnder = Map.union (Map.fromSet attackerOf (Map.keysSet kept)) (Combat.joinedUnder (GameState.combat g)),
-                        -- CR 802.2a's third sentence, taken where the creature
-                        -- joins combat: the seat its target names NOW is the
-                        -- seat it named before any CR 506.4 removal, since a
-                        -- control change is itself one. Defender.playerOf so
-                        -- this and the reader cannot answer differently.
-                        Combat.attackedUnder =
-                          Map.union
-                            (Map.mapMaybe (\target -> Defender.playerOf Projection.controllerWithLastKnown target g) kept)
-                            (Combat.attackedUnder (GameState.combat g)),
-                        -- CR 506.4's controller clause for a battle, taken at the
-                        -- same moment and off the battle itself: the seat above is
-                        -- its protector (CR 310.9d), which that rule names
-                        -- separately.
-                        Combat.attackedControlledBy =
-                          Map.union
-                            (Map.mapMaybe (\target -> attackedBattleController target g) kept)
-                            (Combat.attackedControlledBy (GameState.combat g)),
-                        -- CR 508.8's first clause. Never cleared, so a CR 506.4
-                        -- removal later in the step cannot un-declare these
-                        -- creatures, and never narrowed to the targets still being
-                        -- attacked (see Parun.Types.Combat's `attacked` field).
-                        Combat.attacked =
-                          Set.union (Set.fromList (Map.elems kept)) (Combat.attacked (GameState.combat g)),
-                        -- CR 508.3b / 508.4's narrower record, written HERE and
-                        -- only here: these creatures were DECLARED, which is what
-                        -- those rules distinguish from being put onto the
-                        -- battlefield attacking.
-                        Combat.declaredAttacked =
-                          Set.union (Set.fromList (Map.elems kept)) (Combat.declaredAttacked (GameState.combat g)),
-                        -- The same record split by attacking player (CR 805.10a).
-                        Combat.declaredAttackedBy =
-                          Map.unionWith
-                            Set.union
-                            (Map.fromListWith Set.union (fmap (Bifunctor.bimap attackerOf Set.singleton) (Map.toList kept)))
-                            (Combat.declaredAttackedBy (GameState.combat g)),
-                        -- CR 508.6's same record on CR 500.1's narrower span,
-                        -- written here for the reason above and emptied as the
-                        -- step ends (Parun.Engine.Engine.endStep).
-                        Combat.declaredAttackedThisStep =
-                          Set.union (Set.fromList (Map.elems kept)) (Combat.declaredAttackedThisStep (GameState.combat g))
+                { GameState.turn =
+                    (GameState.turn g)
+                      { TurnRegisters.combat =
+                          (TurnRegisters.combat (GameState.turn g))
+                            { Combat.attackers = Map.union kept (Combat.attackers (TurnRegisters.combat (GameState.turn g))),
+                              -- CR 702.22c's bands, narrowed to the creatures that
+                              -- joined: one a paid toll took away never attacked.
+                              Combat.bands =
+                                filter
+                                  ((>= 2) . Set.size)
+                                  (fmap (Set.intersection (Map.keysSet kept)) banded)
+                                  <> Combat.bands (TurnRegisters.combat (GameState.turn g)),
+                              -- CR 506.4's comparand, taken where the creature joins combat.
+                              Combat.joinedUnder = Map.union (Map.fromSet attackerOf (Map.keysSet kept)) (Combat.joinedUnder (TurnRegisters.combat (GameState.turn g))),
+                              -- CR 802.2a's third sentence, taken where the creature
+                              -- joins combat: the seat its target names NOW is the
+                              -- seat it named before any CR 506.4 removal, since a
+                              -- control change is itself one. Defender.playerOf so
+                              -- this and the reader cannot answer differently.
+                              Combat.attackedUnder =
+                                Map.union
+                                  (Map.mapMaybe (\target -> Defender.playerOf Projection.controllerWithLastKnown target g) kept)
+                                  (Combat.attackedUnder (TurnRegisters.combat (GameState.turn g))),
+                              -- CR 506.4's controller clause for a battle, taken at the
+                              -- same moment and off the battle itself: the seat above is
+                              -- its protector (CR 310.9d), which that rule names
+                              -- separately.
+                              Combat.attackedControlledBy =
+                                Map.union
+                                  (Map.mapMaybe (\target -> attackedBattleController target g) kept)
+                                  (Combat.attackedControlledBy (TurnRegisters.combat (GameState.turn g))),
+                              -- CR 508.8's first clause. Never cleared, so a CR 506.4
+                              -- removal later in the step cannot un-declare these
+                              -- creatures, and never narrowed to the targets still being
+                              -- attacked (see Parun.Types.Combat's `attacked` field).
+                              Combat.attacked =
+                                Set.union (Set.fromList (Map.elems kept)) (Combat.attacked (TurnRegisters.combat (GameState.turn g))),
+                              -- CR 508.3b / 508.4's narrower record, written HERE and
+                              -- only here: these creatures were DECLARED, which is what
+                              -- those rules distinguish from being put onto the
+                              -- battlefield attacking.
+                              Combat.declaredAttacked =
+                                Set.union (Set.fromList (Map.elems kept)) (Combat.declaredAttacked (TurnRegisters.combat (GameState.turn g))),
+                              -- The same record split by attacking player (CR 805.10a).
+                              Combat.declaredAttackedBy =
+                                Map.unionWith
+                                  Set.union
+                                  (Map.fromListWith Set.union (fmap (Bifunctor.bimap attackerOf Set.singleton) (Map.toList kept)))
+                                  (Combat.declaredAttackedBy (TurnRegisters.combat (GameState.turn g))),
+                              -- CR 508.6's same record on CR 500.1's narrower span,
+                              -- written here for the reason above and emptied as the
+                              -- step ends (Parun.Engine.Engine.endStep).
+                              Combat.declaredAttackedThisStep =
+                                Set.union (Set.fromList (Map.elems kept)) (Combat.declaredAttackedThisStep (TurnRegisters.combat (GameState.turn g)))
+                            }
                       }
                 }
         -- CR 508.1's preamble, captured here: everything from this line on is
@@ -2608,9 +2618,12 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- second clause means the record is not this declaration's alone.
         State.modify' $ \g ->
           g
-            { GameState.combat =
-                (GameState.combat g)
-                  { Combat.declaredAttackers = Set.union (Set.fromList attacking) (Combat.declaredAttackers (GameState.combat g))
+            { GameState.turn =
+                (GameState.turn g)
+                  { TurnRegisters.combat =
+                      (TurnRegisters.combat (GameState.turn g))
+                        { Combat.declaredAttackers = Set.union (Set.fromList attacking) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn g)))
+                        }
                   }
             }
         -- CR 508.1e: the bands, announced after CR 508.1b's targets and before
@@ -2770,7 +2783,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
                   gone = Set.difference (Set.fromList attacking) (Set.fromList survivors)
                   kept = Map.restrictKeys recorded (Set.fromList survivors)
               State.modify' (attach kept banded)
-              State.modify' $ \g -> g {GameState.combat = (GameState.combat g) {Combat.declaredAttackers = Set.difference (Combat.declaredAttackers (GameState.combat g)) gone}}
+              State.modify' $ \g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.declaredAttackers = Set.difference (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn g))) gone}}}
               -- CR 508.2b: the declaration is what abilities trigger on, and CR
               -- 508.3a scopes them to a creature DECLARED as an attacker -- one
               -- event per creature chosen HERE, and none for one put onto the
@@ -3018,7 +3031,7 @@ data AttackChoice
 putOntoBattlefieldAttacking :: AttackChoice -> ObjectId -> Game ()
 putOntoBattlefieldAttacking choice oid = do
   gs <- State.get
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       targets = declarableTargets gs
       -- CR 702.116a's "that player or a planeswalker they control", narrowing the
       -- CR 508.4 candidates above rather than the board: a planeswalker no
@@ -3062,37 +3075,40 @@ putOntoBattlefieldAttacking choice oid = do
           Monad.forM_ mTarget $ \target ->
             State.put
               gs
-                { GameState.combat =
-                    c
-                      { Combat.attackers = Map.insert oid target (Combat.attackers c),
-                        -- CR 506.4's comparand: this is where the creature joins
-                        -- combat.
-                        Combat.joinedUnder = Map.insert oid controller (Combat.joinedUnder c),
-                        -- CR 802.2a's third sentence, declareAttackers' write on
-                        -- the CR 508.4 road: this is where THIS creature joins
-                        -- combat, so this is the seat rule 802.2a remembers for
-                        -- it, whatever seat an earlier attacker recorded for the
-                        -- same permanent.
-                        Combat.attackedUnder =
-                          Maybe.maybe
-                            (Combat.attackedUnder c)
-                            (\seat -> Map.insert oid seat (Combat.attackedUnder c))
-                            (Defender.playerOf Projection.controllerWithLastKnown target gs),
-                        -- CR 506.4's controller clause for a battle, on the CR
-                        -- 508.4 road: THIS creature joins combat now, so the seat
-                        -- it compares against is who controls the battle now --
-                        -- whatever seat an earlier attacker recorded for it.
-                        -- Parun.BattleSpec's Ninja against Word of Seizing proves it.
-                        Combat.attackedControlledBy =
-                          Maybe.maybe
-                            (Combat.attackedControlledBy c)
-                            (\seat -> Map.insert oid seat (Combat.attackedControlledBy c))
-                            (attackedBattleController target gs),
-                        -- CR 508.8's SECOND clause, written inside the guards rather
-                        -- than in Resolve's Create arm: CR 506.3a-c and CR 508.4a
-                        -- each let the permanent enter without ever becoming an
-                        -- attacking creature.
-                        Combat.attacked = Set.insert target (Combat.attacked c)
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.combat =
+                          c
+                            { Combat.attackers = Map.insert oid target (Combat.attackers c),
+                              -- CR 506.4's comparand: this is where the creature joins
+                              -- combat.
+                              Combat.joinedUnder = Map.insert oid controller (Combat.joinedUnder c),
+                              -- CR 802.2a's third sentence, declareAttackers' write on
+                              -- the CR 508.4 road: this is where THIS creature joins
+                              -- combat, so this is the seat rule 802.2a remembers for
+                              -- it, whatever seat an earlier attacker recorded for the
+                              -- same permanent.
+                              Combat.attackedUnder =
+                                Maybe.maybe
+                                  (Combat.attackedUnder c)
+                                  (\seat -> Map.insert oid seat (Combat.attackedUnder c))
+                                  (Defender.playerOf Projection.controllerWithLastKnown target gs),
+                              -- CR 506.4's controller clause for a battle, on the CR
+                              -- 508.4 road: THIS creature joins combat now, so the seat
+                              -- it compares against is who controls the battle now --
+                              -- whatever seat an earlier attacker recorded for it.
+                              -- Parun.BattleSpec's Ninja against Word of Seizing proves it.
+                              Combat.attackedControlledBy =
+                                Maybe.maybe
+                                  (Combat.attackedControlledBy c)
+                                  (\seat -> Map.insert oid seat (Combat.attackedControlledBy c))
+                                  (attackedBattleController target gs),
+                              -- CR 508.8's SECOND clause, written inside the guards rather
+                              -- than in Resolve's Create arm: CR 506.3a-c and CR 508.4a
+                              -- each let the permanent enter without ever becoming an
+                              -- attacking creature.
+                              Combat.attacked = Set.insert target (Combat.attacked c)
+                            }
                       }
                 }
     _ -> pure ()
@@ -3172,7 +3188,7 @@ putOntoBattlefieldBlocking choice oid = do
   start <- State.get
   let blockable controller attacker =
         -- CR 509.4a's first clause
-        Map.member attacker (Combat.attackers (GameState.combat start))
+        Map.member attacker (Combat.attackers (TurnRegisters.combat (GameState.turn start)))
           -- CR 506.3e / CR 509.4a's second clause
           && Defender.playerOfAttacker Projection.controllerWithLastKnown attacker start == Just controller
   case Projection.controllerOf oid start of
@@ -3185,17 +3201,17 @@ putOntoBattlefieldBlocking choice oid = do
           mAttacker <- case choice of
             SpecifiedAttacker attacker -> pure (if blockable controller attacker then Just attacker else Nothing)
             -- Through Game.chooseAmong, announceAttackTarget's posture.
-            AnyAttacker -> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty) controller (filter (blockable controller) (Map.keys (Combat.attackers (GameState.combat start))))
+            AnyAttacker -> Game.chooseAmong (\decider who pool -> Prompt.ChoosePermanent decider who oid pool Seq.empty) controller (filter (blockable controller) (Map.keys (Combat.attackers (TurnRegisters.combat (GameState.turn start)))))
           -- CR 702.22h: blocking one member of a band blocks every member.
           Monad.forM_ mAttacker $ \attacker ->
-            Monad.forM_ (attacker : Set.toList (bandmatesOf attacker (GameState.combat start))) (enterBlocking controller oid)
+            Monad.forM_ (attacker : Set.toList (bandmatesOf attacker (TurnRegisters.combat (GameState.turn start)))) (enterBlocking controller oid)
     _ -> pure ()
 
 -- putOntoBattlefieldBlocking's write, once the attacker is settled.
 enterBlocking :: PlayerId -> ObjectId -> ObjectId -> Game ()
 enterBlocking controller oid attacker = do
   gs <- State.get
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
   -- CR 509.3c's "was an unblocked creature at that time", read BEFORE the
   -- write below, and CR 509.3e's comparand read at the same moment: the
   -- creatures blocking this attacker before this one joined them. The two
@@ -3205,19 +3221,22 @@ enterBlocking controller oid attacker = do
       before = Map.findWithDefault Set.empty attacker (Combat.blockers c)
   State.put
     gs
-      { GameState.combat =
-          -- CR 509.3d: the attacker "becomes blocked by" this creature, though
-          -- CR 509.4 says it never "blocked".
-          noteBlockedBy (Map.singleton attacker (Set.singleton oid)) $
-            c
-              { -- insertWith and not adjust: the attacker this creature is
-                -- put onto the battlefield blocking need not have been
-                -- blocked already, so the key may be absent.
-                Combat.blockers = Map.insertWith Set.union attacker (Set.singleton oid) (Combat.blockers c),
-                -- CR 506.4's comparand: this is where the creature joins
-                -- combat.
-                Combat.joinedUnder = Map.insert oid controller (Combat.joinedUnder c)
-              }
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.combat =
+                -- CR 509.3d: the attacker "becomes blocked by" this creature, though
+                -- CR 509.4 says it never "blocked".
+                noteBlockedBy (Map.singleton attacker (Set.singleton oid)) $
+                  c
+                    { -- insertWith and not adjust: the attacker this creature is
+                      -- put onto the battlefield blocking need not have been
+                      -- blocked already, so the key may be absent.
+                      Combat.blockers = Map.insertWith Set.union attacker (Set.singleton oid) (Combat.blockers c),
+                      -- CR 506.4's comparand: this is where the creature joins
+                      -- combat.
+                      Combat.joinedUnder = Map.insert oid controller (Combat.joinedUnder c)
+                    }
+            }
       }
   -- CR 509.3d's third producer, in that rule's own words: "In addition,
   -- it will trigger if a creature is put onto the battlefield blocking
@@ -3279,9 +3298,9 @@ declareBlockers perform = do
   -- The PLACEMENT is a regression fence rather than proved behaviour: moving this
   -- line inside the guard below leaves the suite green, no board in the pool
   -- reaching this step with nothing attacking.
-  State.modify' $ \g -> g {GameState.combat = (GameState.combat g) {Combat.blockersDeclared = True}}
+  State.modify' $ \g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.blockersDeclared = True}}}
   start <- State.get
-  let attacking = Map.keys (Combat.attackers (GameState.combat start))
+  let attacking = Map.keys (Combat.attackers (TurnRegisters.combat (GameState.turn start)))
   Monad.unless (null attacking) $ do
     let declarers = ListUtils.nubOrd (fmap (Game.primaryOf start) (Defender.defendingPlayers start))
     -- CR 101.4 / Camouflage: every defending player divides before any pile is
@@ -3327,7 +3346,7 @@ declareBlockers perform = do
     -- and defaulted as becomeBlocked reads it; Parun.KeywordTriggerSpec's
     -- three-seat Abyssal Nightstalker case proves the per-attacker read.
     State.modify' $ \g ->
-      let c = GameState.combat g
+      let c = TurnRegisters.combat (GameState.turn g)
           unblocked = filter (\oid -> not (Map.member oid (Combat.blockers c))) (Map.keys (Combat.attackers c))
           defendingFor oid = Defender.playerOfAttacker Projection.controllerWithLastKnown oid g Applicative.<|> Maybe.listToMaybe (Defender.defendingPlayers g)
           record h oid = case defendingFor oid of
@@ -3403,13 +3422,13 @@ dividePiles chooser p attacking = do
 -- CR 509.1 / Camouflage: Combat.pileBlocks, set before the defending players'
 -- declarations and cleared after them.
 setPileBlocks :: Maybe (Map ObjectId (Set ObjectId)) -> GameState -> GameState
-setPileBlocks piles g = g {GameState.combat = (GameState.combat g) {Combat.pileBlocks = piles}}
+setPileBlocks piles g = g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.pileBlocks = piles}}}
 
 -- CR 509.1 / Camouflage: while `pid`'s blockers come from piles, the
 -- declaration making every block the piles ask for that CR 509.1b's pairwise
 -- restrictions allow. Nothing otherwise.
 pileDeclaration :: PlayerId -> GameState -> Maybe (Map ObjectId (Set ObjectId))
-pileDeclaration pid gs = case Combat.pileBlocks (GameState.combat gs) of
+pileDeclaration pid gs = case Combat.pileBlocks (TurnRegisters.combat (GameState.turn gs)) of
   Nothing -> Nothing
   Just _ ->
     let board = Snapshot.whole gs
@@ -3423,9 +3442,12 @@ pileDeclaration pid gs = case Combat.pileBlocks (GameState.combat gs) of
 recordDeclaredBlockers :: Set ObjectId -> GameState -> GameState
 recordDeclaredBlockers oids g =
   g
-    { GameState.combat =
-        (GameState.combat g)
-          { Combat.declaredBlockers = Set.union oids (Combat.declaredBlockers (GameState.combat g))
+    { GameState.turn =
+        (GameState.turn g)
+          { TurnRegisters.combat =
+              (TurnRegisters.combat (GameState.turn g))
+                { Combat.declaredBlockers = Set.union oids (Combat.declaredBlockers (TurnRegisters.combat (GameState.turn g)))
+                }
           }
     }
 
@@ -3542,7 +3564,7 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
           else do
             -- CR 702.22h: widened to the attackers' bands after the declaration
             -- is judged, CR 509.1b-c asking only about the block declared.
-            let declaration = withBands (GameState.combat gs2) (if paid then legal else forcedBlockDeclaration pid gs2)
+            let declaration = withBands (TurnRegisters.combat (GameState.turn gs2)) (if paid then legal else forcedBlockDeclaration pid gs2)
             -- The pairs the declaration states, blocker-major, which is the order
             -- CR 509.1a writes it in and the order the events below are recorded in.
             let pairs = do
@@ -3557,11 +3579,11 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
               let live = filter (\(b, _) -> stillChosen (blockerOf b) b gs2) pairs
                   gone = Set.difference (Set.fromList (fmap fst pairs)) (Set.fromList (fmap fst live))
                   add m (b, a) = Map.insertWith Set.union a (if Set.member b gone then Set.empty else Set.singleton b) m
-                  merged = List.foldl' add (Combat.blockers (GameState.combat gs2)) pairs
+                  merged = List.foldl' add (Combat.blockers (TurnRegisters.combat (GameState.turn gs2))) pairs
                   -- CR 506.4's comparand for the blockers, alongside the attackers'.
                   -- Unioned, the attackers' entries being already in this map.
-                  joined = Map.union (Map.fromList (fmap (\(b, _) -> (b, blockerOf b)) live)) (Combat.joinedUnder (GameState.combat gs2))
-              State.modify' $ \g -> g {GameState.combat = noteBlockedBy merged ((GameState.combat g) {Combat.blockers = merged, Combat.joinedUnder = joined})}
+                  joined = Map.union (Map.fromList (fmap (\(b, _) -> (b, blockerOf b)) live)) (Combat.joinedUnder (TurnRegisters.combat (GameState.turn gs2)))
+              State.modify' $ \g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = noteBlockedBy merged ((TurnRegisters.combat (GameState.turn g)) {Combat.blockers = merged, Combat.joinedUnder = joined})}}
               -- CR 509.1a again, for the declaration that actually stands. A
               -- second write and not a duplicate of the one above: on the
               -- CR 509.1c degradation path `declaration` is
@@ -3569,7 +3591,7 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
               -- above has already unwritten `legal`. Less `gone`, which the
               -- first write recorded and which never blocked.
               State.modify' (recordDeclaredBlockers (Set.fromList (fmap fst live)))
-              State.modify' $ \g -> g {GameState.combat = (GameState.combat g) {Combat.declaredBlockers = Set.difference (Combat.declaredBlockers (GameState.combat g)) gone}}
+              State.modify' $ \g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.combat = (TurnRegisters.combat (GameState.turn g)) {Combat.declaredBlockers = Set.difference (Combat.declaredBlockers (TurnRegisters.combat (GameState.turn g))) gone}}}
               -- CR 509.1i: the declaration is a trigger event, and CR 509.2a puts what
               -- it fires onto the stack before the active player gets priority.
               -- Recorded AFTER the state is written, and over `declaration` rather
@@ -3591,7 +3613,7 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
               -- declaration. No condition reads the flag off a declared pair
               -- today, so no board observes what it holds -- it is recorded
               -- faithfully rather than clamped, since the event is the record.
-              let wasBlocked = Map.keysSet (Combat.blockers (GameState.combat gs2))
+              let wasBlocked = Map.keysSet (Combat.blockers (TurnRegisters.combat (GameState.turn gs2)))
               -- CR 509.3e's set is read off `gs2` for the flag's reason and holds
               -- what was blocking the attacker BEFORE this declaration, which is
               -- the same set for every pair the declaration names: CR 509.1's
@@ -3601,7 +3623,7 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
               -- and Aetherplasm has to be blocking already -- and read rather
               -- than written as Set.empty because the event is the record. No
               -- reader looks: both refuse BlockProducer.Declared.
-              State.modify' $ \g -> List.foldl' (\h (blocker, attacker) -> Event.recordEvent (GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.blocker = blocker, BecameBlocking.attacker = attacker, BecameBlocking.producer = BlockProducer.Declared, BecameBlocking.attackerWasBlocked = Set.member attacker wasBlocked, BecameBlocking.blockersBefore = Map.findWithDefault Set.empty attacker (Combat.blockers (GameState.combat gs2))})) h) g live
+              State.modify' $ \g -> List.foldl' (\h (blocker, attacker) -> Event.recordEvent (GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.blocker = blocker, BecameBlocking.attacker = attacker, BecameBlocking.producer = BlockProducer.Declared, BecameBlocking.attackerWasBlocked = Set.member attacker wasBlocked, BecameBlocking.blockersBefore = Map.findWithDefault Set.empty attacker (Combat.blockers (TurnRegisters.combat (GameState.turn gs2)))})) h) g live
               State.modify' $ \g -> List.foldl' (\h (blocker, attackers) -> Event.recordEvent (GameEvent.BlocksDeclared (BlocksDeclared.MkBlocksDeclared blocker attackers)) h) g (filter (\(b, named) -> not (Set.null named) && Set.notMember b gone) (Map.toList declaration))
               -- CR 509.1h: the same declaration makes each attacker it named a BLOCKED
               -- creature. One event per attacker rather than per pair, which is CR

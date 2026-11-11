@@ -210,7 +210,7 @@ nextStillPlaying gs pid =
 
 -- CR 800.4j: a turn whose player has left continues without an active player, and
 -- where they would receive priority the next player in turn order does instead.
--- GameState.activePlayer is deliberately NOT widened to a Maybe -- the turn still
+-- TurnRegisters.activePlayer is deliberately NOT widened to a Maybe -- the turn still
 -- BELONGS to that seat, CR 800.4m's durations and CR 101.4's APNAP anchor both
 -- referencing it.
 --
@@ -224,7 +224,7 @@ priorityHolder gs =
   case filter (\pid -> List.elem pid (Game.stillPlaying gs)) (Turn.activePlayers gs) of
     holder : _ -> holder
     -- No active player is still playing, so this is nextStillPlaying, eligible.
-    [] -> passPriorityFrom gs {GameState.passed = Set.empty} (GameState.activePlayer gs)
+    [] -> passPriorityFrom gs {GameState.turn = (GameState.turn gs) {TurnRegisters.passed = Set.empty}} (TurnRegisters.activePlayer (GameState.turn gs))
 
 -- CR 117.3d / 805.5: who is asked after `pid` passes or leaves, given who has
 -- passed in succession. Under the shared team turns option the team holds
@@ -240,7 +240,7 @@ passPriorityFrom gs pid =
       order = GameState.turnOrder gs
       scan = filter (\p -> List.elem p playing && GrandMelee.eligible gs p) (drop 1 (dropWhile (/= pid) order) <> order)
       teammate = Turn.sharesTurn gs pid
-   in case filter (\p -> teammate p && not (Set.member p (GameState.passed gs))) scan of
+   in case filter (\p -> teammate p && not (Set.member p (TurnRegisters.passed (GameState.turn gs)))) scan of
         p : _ -> p
         [] -> case filter (not . teammate) scan of
           p : _ -> p
@@ -525,15 +525,15 @@ discardToHandSize pid = do
 -- its draw: runStep asks this ahead of the replacement system.
 skipsDraw :: GameState -> Bool
 skipsDraw gs =
-  GameState.turnNumber gs == 1
+  TurnRegisters.turnNumber (GameState.turn gs) == 1
     && (length (GameState.turnOrder gs) <= 2 || GameSettings.twoHeadedGiant (GameState.settings gs))
     && case GameState.turnOrder gs of
-      starter : _ -> starter == GameState.activePlayer gs
+      starter : _ -> starter == TurnRegisters.activePlayer (GameState.turn gs)
       [] -> False
 
 runTurnBasedActions :: Phase.Phase -> Game ()
 runTurnBasedActions phase = do
-  active <- State.gets GameState.activePlayer
+  active <- State.gets (TurnRegisters.activePlayer . GameState.turn)
   -- CR 800.4j: a turn whose player has left the game continues to its completion
   -- without an active player, so the turn-based actions the rules assign to THE
   -- ACTIVE PLAYER -- untap (CR 703.4c), draw (CR 703.4d), choose the defending
@@ -600,7 +600,7 @@ runTurnBasedActions phase = do
       -- +1/+1 counters are on the blocker before CR 704.5g asks about lethality.
       Resolve.runPreventionRiders playSubgame
       Monad.when needSecond $
-        State.modify' (\gs -> gs {GameState.remaining = Turn.spliceSecondDamage (GameState.remaining gs)})
+        State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Turn.spliceSecondDamage (TurnRegisters.remaining (GameState.turn gs))}})
     -- CR 505.4 / 703.4f / 715.3c: a lore counter onto each Saga its controller
     -- has with chapter abilities. A turn-based action, not a trigger, which is why
     -- it lives here and not in the gatherer; the active player's, so it takes the
@@ -702,7 +702,7 @@ placePendingTriggers boards = do
   -- reads the same value either way.
   State.modify' $ \g ->
     g
-      { GameState.scannedThrough = Natural.length (GameState.events g),
+      { GameState.turn = (GameState.turn g) {TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn g))},
         -- CR 603.10's per-group samples are spent with the batch they were taken
         -- for. Cleared rather than left standing, which bounds both the map and
         -- the game states its unforced thunks retain.
@@ -794,7 +794,7 @@ reactions incoming = do
       State.modify'
         ( \g ->
             g
-              { GameState.scannedThrough = Natural.length (GameState.events g),
+              { GameState.turn = (GameState.turn g) {TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn g))},
                 GameState.boardAfterEvent = Map.empty,
                 GameState.boardBeforeEvent = Map.empty,
                 GameState.battlefieldWhenTriggered = Map.empty,
@@ -995,7 +995,7 @@ placeBorne srcId pending = do
       remembered = case Modal.Type.memory modal of
         ModeMemory.NoMemory -> Set.empty
         ModeMemory.ObjectLifetime -> Map.keysSet chosenBefore
-        ModeMemory.ThisTurn -> Map.keysSet (Map.filter (== GameState.turnNumber gs) chosenBefore)
+        ModeMemory.ThisTurn -> Map.keysSet (Map.filter (== TurnRegisters.turnNumber (GameState.turn gs)) chosenBefore)
       chosenBefore = maybe Map.empty (Map.findWithDefault Map.empty memoryKey) (Game.liveOrLastKnown Object.chosenModes LastKnown.chosenModes srcId gs)
       -- CR 612.1: a text change rewrites the ability, not which ability it is.
       memoryKey = Projection.printedTriggeredAbility srcId gs ability
@@ -1074,7 +1074,7 @@ placeBorne srcId pending = do
       -- data/scenarios' demonic-pact-counts-a-mode-chosen-for-a-countered-trigger
       -- proves.
       Monad.when (Modal.Type.memory modal /= ModeMemory.NoMemory) $
-        State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.insertWith Map.union memoryKey (Map.fromList [(mi, GameState.turnNumber g) | mi <- Foldable.toList chosenModes]) (Object.chosenModes o)}) srcId (GameState.objects g)})
+        State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.insertWith Map.union memoryKey (Map.fromList [(mi, TurnRegisters.turnNumber (GameState.turn g)) | mi <- Foldable.toList chosenModes]) (Object.chosenModes o)}) srcId (GameState.objects g)})
       -- CR 603.3d: targets for the chosen mode(s) only, chosen as the ability is
       -- placed. A mode with no target slots asks nothing.
       let slots = Target.announcedSlots controller srcId gs (Modal.modesTargetSlots chosenModes modal)
@@ -1427,9 +1427,9 @@ settlePasses passes boards = do
 -- 117.4); nobody holds it during the settle (CR 117.3a, 117.3c).
 grantAfterSettle :: PlayerId -> Game ()
 grantAfterSettle holder = do
-  State.modify' (\gs -> gs {GameState.priority = Nothing, GameState.passed = Set.empty})
+  State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Nothing, TurnRegisters.passed = Set.empty}})
   settleForPriority
-  State.modify' (\gs -> gs {GameState.priority = Just holder})
+  State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just holder}})
 
 -- Ask the priority holder for an action until every still-playing player has
 -- passed in succession (CR 117.4). A full round of passes resolves the top of the
@@ -1470,15 +1470,15 @@ priorityDecision trail = do
   case restarted of
     -- CR 728.4: a restart resolved under this loop, so the game it was
     -- running has ended (CR 728.1) and been rebuilt. Stop without granting
-    -- priority and without touching GameState.priority, which the rebuild
+    -- priority and without touching TurnRegisters.priority, which the rebuild
     -- already set to Nothing.
     RestartSignal.Restarted -> pure PriorityWindow.Closed
     RestartSignal.Playing ->
       if finished
-        then PriorityWindow.Closed <$ State.modify' (\gs -> gs {GameState.priority = Nothing})
+        then PriorityWindow.Closed <$ State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Nothing}})
         else do
           gs <- State.get
-          case GameState.priority gs of
+          case TurnRegisters.priority (GameState.turn gs) of
             Nothing -> pure PriorityWindow.Closed
             Just p ->
               if List.elem p (Game.stillPlaying gs)
@@ -1504,7 +1504,7 @@ priorityDecision trail = do
                       -- "Whether a concession restarts the pass count".
                       -- CR 117.5: the departure changed the board, so the
                       -- next player's priority waits on a settle.
-                      next <- State.gets (\g -> passPriorityFrom g {GameState.passed = Set.empty} p)
+                      next <- State.gets (\g -> passPriorityFrom g {GameState.turn = (GameState.turn g) {TurnRegisters.passed = Set.empty}} p)
                       grantAfterSettle next
                       pure (PriorityWindow.Open trail)
                     Concession.Continues -> do
@@ -1556,21 +1556,21 @@ priorityDecision trail = do
                         -- succession once every still-playing player has,
                         -- a team passing only when all its players do.
                         Action.Type.Pass -> do
-                          let passed = Set.insert p (GameState.passed gs)
+                          let passed = Set.insert p (TurnRegisters.passed (GameState.turn gs))
                               everyone = all (`Set.member` passed) (filter (GrandMelee.eligible gs) (Game.stillPlaying gs))
                           -- modify' over `State.put gs {...}`: `gs` predates
                           -- the prompt, and putting it back would discard
                           -- GameState.lastChoice (CR 104.4b), making every
                           -- loop look mandatory.
                           if everyone
-                            then case GameState.stack gs of
-                              [] -> PriorityWindow.Closed <$ State.modify' (\g -> g {GameState.priority = Nothing, GameState.passed = passed})
+                            then case TurnRegisters.stack (GameState.turn gs) of
+                              [] -> PriorityWindow.Closed <$ State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.priority = Nothing, TurnRegisters.passed = passed}})
                               _ -> do
                                 -- CR 117.3b: nobody holds priority from
                                 -- the last pass until after resolution.
-                                State.modify' (\g -> g {GameState.priority = Nothing})
+                                State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.priority = Nothing}})
                                 Stack.resolveTopWith playSubgame
-                                ended <- State.gets GameState.endTurnSignal
+                                ended <- State.gets (TurnRegisters.endTurnSignal . GameState.turn)
                                 case ended of
                                   -- CR 725.1f / CR 725.2f: an effect ended
                                   -- the turn, or the combat phase, as that
@@ -1586,13 +1586,13 @@ priorityDecision trail = do
                                   -- endStep sweeps it
                                   -- exactly as it would a step that ended by
                                   -- itself.
-                                  EndTurnSignal.Ended -> PriorityWindow.Closed <$ State.modify' (\g -> g {GameState.priority = Nothing})
+                                  EndTurnSignal.Ended -> PriorityWindow.Closed <$ State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.priority = Nothing}})
                                   EndTurnSignal.Running -> do
                                     settleForPriority
-                                    State.modify' (\g -> g {GameState.passed = Set.empty, GameState.priority = Just (priorityHolder g)})
+                                    State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.passed = Set.empty, TurnRegisters.priority = Just (priorityHolder g)}})
                                     pure (PriorityWindow.Open trail')
                             else do
-                              State.modify' (\g -> g {GameState.passed = passed, GameState.priority = Just (passPriorityFrom gs {GameState.passed = passed} p)})
+                              State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.passed = passed, TurnRegisters.priority = Just (passPriorityFrom gs {GameState.turn = (GameState.turn gs) {TurnRegisters.passed = passed}} p)}})
                               pure (PriorityWindow.Open trail')
                         Action.Type.Play oid mName -> do
                           -- CR 116.2a: the special action, made under a
@@ -1762,9 +1762,9 @@ priorityDecision trail = do
                   -- before its grant -- e.g. paying a life cost inside
                   -- settleForPriority (CR 119.4) -- before being asked
                   -- anything. Departure.depart does not touch
-                  -- GameState.priority, so the granted `Just p` would
+                  -- TurnRegisters.priority, so the granted `Just p` would
                   -- otherwise survive to the Concede prompt.
-                  State.modify' (\g -> g {GameState.priority = Just (passPriorityFrom g p)})
+                  State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.priority = Just (passPriorityFrom g p)}})
                   pure (PriorityWindow.Open trail)
 
 -- CR 104.3a / 807.5a: a Grand Melee player without priority for the stack
@@ -1807,13 +1807,13 @@ handoffTurn = takeNextTurn
 -- one function so the two callers cannot drift -- the active player, unless an
 -- extra turn is under way, when it is the seat that turn was inserted after.
 turnAnchorOf :: GameState -> PlayerId
-turnAnchorOf gs = Maybe.fromMaybe (GameState.activePlayer gs) (GameState.turnAnchor gs)
+turnAnchorOf gs = Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn gs)) (TurnRegisters.turnAnchor (GameState.turn gs))
 
 -- CR 500.7: extra turns are added directly after the specified turn, and every
 -- extra-turn effect in `data/cards/` specifies the turn it resolves in -- so
 -- popping the entry here, before the seating order is consulted, is the whole of
 -- "directly after". The rule's last sentence makes the store a stack, so this
--- takes its HEAD. The anchor does NOT move (see GameState.turnAnchor): CR 500.7
+-- takes its HEAD. The anchor does NOT move (see TurnRegisters.turnAnchor): CR 500.7
 -- adds a turn and removes none, so the turn that would have followed still
 -- follows it -- observable only when the taker is not the active player, where it
 -- stops the extra turn eating that player's ordinary one. CR 800.4k applies as to
@@ -1843,7 +1843,7 @@ takeOrdinaryTurn = do
       let pid = ExtraTurn.taker entry
           -- The entry is spent whether it begins, is skipped, or is CR
           -- 800.4k's, and the ordinary rotation resumes from the same seat.
-          popped = gs {GameState.extraTurns = rest, GameState.turnAnchor = Just (turnAnchorOf gs)}
+          popped = gs {GameState.extraTurns = rest, GameState.turn = (GameState.turn gs) {TurnRegisters.turnAnchor = Just (turnAnchorOf gs)}}
       State.put popped
       -- CR 805.4 / 805.8: under the shared team turns option the extra turn is
       -- the taker's team's, so a departed taker's teammate still playing begins
@@ -1920,87 +1920,26 @@ beginMarked marker = do
   if not begins
     then State.modify' (GrandMelee.passTurn (TurnMarker.number marker))
     else State.modify' $ \g ->
-      let swept = (dropAtTurnOfTeam pid g) {GameState.turnAnchor = Nothing}
+      let swept = Turn.withTurn (\turn -> turn {TurnRegisters.turnAnchor = Nothing}) (dropAtTurnOfTeam pid g)
        in case entry of
             Just extra -> Replacement.installTurnSkips extra (newTurn (Just (ExtraTurn.createdAt extra)) pid swept)
             Nothing -> newTurn Nothing pid swept
 
 -- CR 807.4b: work marker `n`'s turn: park the worked turn, if one runs, and
--- put `n`'s in GameState's fields, a turn not yet begun if it has none parked.
+-- make `n`'s GameState.turn, a turn not yet begun if it has none parked.
 workOn :: Natural -> GameState -> GameState
 workOn n gs
   | worked == Just n = gs
   | otherwise =
-      let parked = maybe id (\w -> Map.insert w (registersOf gs)) worked (GameState.parkedTurns gs)
-       in installRegisters (Map.findWithDefault (unbegunRegisters gs) n parked) gs {GameState.parkedTurns = Map.delete n parked}
+      let parked = maybe id (\w -> Map.insert w (GameState.turn gs)) worked (GameState.parkedTurns gs)
+       in gs {GameState.turn = Map.findWithDefault (unbegunRegisters gs) n parked, GameState.parkedTurns = Map.delete n parked}
   where
     worked = Turn.workedMarker gs
 
--- The fields of the turn GameState holds, parked.
-registersOf :: GameState -> TurnRegisters.TurnRegisters
-registersOf gs =
-  TurnRegisters.MkTurnRegisters
-    { TurnRegisters.activePlayer = GameState.activePlayer gs,
-      TurnRegisters.phase = GameState.phase gs,
-      TurnRegisters.remaining = GameState.remaining gs,
-      TurnRegisters.stack = GameState.stack gs,
-      TurnRegisters.stackedIn = GameState.stackedIn gs,
-      TurnRegisters.priority = GameState.priority gs,
-      TurnRegisters.passed = GameState.passed gs,
-      TurnRegisters.combat = GameState.combat gs,
-      TurnRegisters.events = GameState.events gs,
-      TurnRegisters.scannedThrough = GameState.scannedThrough gs,
-      TurnRegisters.damageScannedThrough = GameState.damageScannedThrough gs,
-      TurnRegisters.turnNumber = GameState.turnNumber gs,
-      TurnRegisters.turnAnchor = GameState.turnAnchor gs,
-      TurnRegisters.extraTurnUnderWay = GameState.extraTurnUnderWay gs,
-      TurnRegisters.permanentsAsTurnBegan = GameState.permanentsAsTurnBegan gs,
-      TurnRegisters.endTurnSignal = GameState.endTurnSignal gs,
-      TurnRegisters.drawsThisTurn = GameState.drawsThisTurn gs,
-      TurnRegisters.couldAttackThisTurn = GameState.couldAttackThisTurn gs,
-      TurnRegisters.activatedThisTurn = GameState.activatedThisTurn gs,
-      TurnRegisters.activationsThisTurn = GameState.activationsThisTurn gs,
-      TurnRegisters.castPermissionsUsedThisTurn = GameState.castPermissionsUsedThisTurn gs,
-      TurnRegisters.rollModifiersUsedThisTurn = GameState.rollModifiersUsedThisTurn gs,
-      TurnRegisters.instructionsTakenThisTurn = GameState.instructionsTakenThisTurn gs,
-      TurnRegisters.turnResume = GameState.turnResume gs
-    }
-
--- registersOf's inverse: these registers in GameState's fields. Positional,
--- so a field TurnRegisters gains is a build error here.
-installRegisters :: TurnRegisters.TurnRegisters -> GameState -> GameState
-installRegisters (TurnRegisters.MkTurnRegisters activePlayer' phase' remaining' stack' stackedIn' priority' passed' combat' events' scannedThrough' damageScannedThrough' turnNumber' turnAnchor' extraTurnUnderWay' permanentsAsTurnBegan' endTurnSignal' drawsThisTurn' couldAttackThisTurn' activatedThisTurn' activationsThisTurn' castPermissionsUsedThisTurn' rollModifiersUsedThisTurn' instructionsTakenThisTurn' turnResume') gs =
-  gs
-    { GameState.activePlayer = activePlayer',
-      GameState.phase = phase',
-      GameState.remaining = remaining',
-      GameState.stack = stack',
-      GameState.stackedIn = stackedIn',
-      GameState.priority = priority',
-      GameState.passed = passed',
-      GameState.combat = combat',
-      GameState.events = events',
-      GameState.scannedThrough = scannedThrough',
-      GameState.damageScannedThrough = damageScannedThrough',
-      GameState.turnNumber = turnNumber',
-      GameState.turnAnchor = turnAnchor',
-      GameState.extraTurnUnderWay = extraTurnUnderWay',
-      GameState.permanentsAsTurnBegan = permanentsAsTurnBegan',
-      GameState.endTurnSignal = endTurnSignal',
-      GameState.drawsThisTurn = drawsThisTurn',
-      GameState.couldAttackThisTurn = couldAttackThisTurn',
-      GameState.activatedThisTurn = activatedThisTurn',
-      GameState.activationsThisTurn = activationsThisTurn',
-      GameState.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn',
-      GameState.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn',
-      GameState.instructionsTakenThisTurn = instructionsTakenThisTurn',
-      GameState.turnResume = turnResume'
-    }
-
--- The fields of a turn not yet begun, as closeTurn leaves them, for newTurn.
+-- The registers of a turn not yet begun, as closeTurn leaves them, for newTurn.
 unbegunRegisters :: GameState -> TurnRegisters.TurnRegisters
 unbegunRegisters gs =
-  (registersOf (closeTurn gs))
+  (GameState.turn (closeTurn gs))
     { TurnRegisters.stack = [],
       TurnRegisters.priority = Nothing,
       TurnRegisters.passed = Set.empty,
@@ -2041,7 +1980,7 @@ runMarkedUnit = do
 chooseStack :: Natural -> [Natural] -> Game Natural
 chooseStack n order = do
   gs <- State.get
-  case (GameState.turnResume gs, GameState.priority gs) of
+  case (TurnRegisters.turnResume (GameState.turn gs), TurnRegisters.priority (GameState.turn gs)) of
     (TurnResume.InWindow, Just p) | List.elem p (Game.stillPlaying gs) -> do
       let holding m = case Map.lookup m (GameState.parkedTurns gs) of
             Just r -> TurnRegisters.turnResume r == TurnResume.InWindow && TurnRegisters.priority r == Just p
@@ -2057,7 +1996,7 @@ chooseStack n order = do
 -- The worked turn's next unit, or with `alone` the rest of its step.
 runUnit :: Bool -> Game ()
 runUnit alone = do
-  resume <- State.gets GameState.turnResume
+  resume <- State.gets (TurnRegisters.turnResume . GameState.turn)
   case resume of
     TurnResume.AtStepStart
       | alone -> enterStep >>= Foldable.traverse_ runStepThatBegan
@@ -2086,9 +2025,9 @@ runUnit alone = do
             _ -> pure ()
     TurnResume.AtStepEnd -> finishStep
   where
-    resumeAt resume = State.modify' (\g -> g {GameState.turnResume = resume})
+    resumeAt resume = State.modify' (\g -> g {GameState.turn = (GameState.turn g) {TurnRegisters.turnResume = resume}})
     finishStep = do
-      phase <- State.gets GameState.phase
+      phase <- State.gets (TurnRegisters.phase . GameState.turn)
       resumeAt TurnResume.AtStepStart
       endStep phase
 
@@ -2132,7 +2071,7 @@ walkToNextTurn seatsLeft anchor seat = do
             if begins
               then -- CR 500.7 / 103.1: this turn IS the ordinary rotation, so
               -- there is nothing left to remember.
-                State.modify' (\g -> beginTurnOf next (dropAtTurnOfTeam next g) {GameState.turnAnchor = Nothing})
+                State.modify' (beginTurnOf next . Turn.withTurn (\turn -> turn {TurnRegisters.turnAnchor = Nothing}) . dropAtTurnOfTeam next)
               else walkToNextTurn (length (GameState.turnOrder gs)) next next
           else do
             -- CR 702.26n beside CR 800.4m: a row keyed to a seat this
@@ -2167,8 +2106,8 @@ beginTurnOf = beginTurn Nothing
 beginTurn :: Maybe Timestamp.Timestamp -> PlayerId -> GameState -> GameState
 beginTurn extra pid = newTurn extra pid . closeTurn
 
--- CR 500.7 / 608.2i: the turn GameState's fields hold is over. Its log and
--- tallies join the game-long records, and the fields are left as a turn that
+-- CR 500.7 / 608.2i: the turn GameState.turn holds is over. Its log and
+-- tallies join the game-long records, and its registers are left as a turn that
 -- has not begun holds them, for newTurn. Grand Melee closes a turn as it ends
 -- (takeMarkedTurn), so its "last turn" is the one that ended most recently
 -- (docs/decisions.md, "What "this turn" and "last turn" read in Grand
@@ -2178,46 +2117,55 @@ closeTurn gs =
   let -- CR 601.2i / 608.2i: how many spells each player cast during the turn that
       -- is ending, taken here because the log it is folded from is cleared by the
       -- record update below. `gs` still holds the OUTGOING active player.
-      casts = Game.castsPerPlayer (GameState.events gs)
+      casts = Game.castsPerPlayer (TurnRegisters.events (GameState.turn gs))
       outgoing = Turn.activePlayers gs
    in gs
-        { -- The outgoing turn's; runStep files the next one's.
-          GameState.permanentsAsTurnBegan = Nothing,
-          -- CR 608.2i is why a log exists at all. It does not say how far back;
-          -- the ONE-turn scope is this engine's choice, and a "this game"
-          -- question about casts or damage reads castsBeforeThisTurn or
-          -- damageBeforeThisTurn below instead.
-          -- Cleared here and never at cleanup -- cleanup is still part of
-          -- this turn, and CR 514.1's discard is itself an event of it.
-          GameState.events = Seq.empty,
-          -- Its watermarks, which no stack object outlives a turn to read.
-          GameState.stackedIn = Map.empty,
-          -- CR 121.1's per-turn draw tally, cleared for EVERY player: a player
-          -- draws on turns that are not theirs, so "each turn" is the whole map.
-          GameState.drawsThisTurn = Map.empty,
-          -- CR 508.1: who could have attacked is asked of THIS turn's
-          -- declare attackers steps.
-          GameState.couldAttackThisTurn = Set.empty,
-          -- CR 602.5b's "Activate only once each turn", cleared for every
-          -- object rather than the active player's: the rider is about the
-          -- object, and a permanent whose controller is not the active player
-          -- gets its activation back here just the same.
-          GameState.activatedThisTurn = Map.empty,
-          -- CR 602.2's activation history, which "the first activated ability
-          -- you activate each turn" reads: a turn's, for every player.
-          GameState.activationsThisTurn = Seq.empty,
-          -- CR 601.3's "Once each turn, you may cast ..." (Johann, Apprentice
-          -- Sorcerer), cleared for every object beside the activation-side
-          -- rider above and for its reason: the budget is the permission's
-          -- rather than a player's, so a permanent whose controller is not the
-          -- active player gets its use back here just the same.
-          GameState.castPermissionsUsedThisTurn = Map.empty,
-          -- Night Shift of the Living Dead's "Do this only once each turn", the
-          -- budget on a CR 706.2 modifier, cleared for every object for its reason.
-          GameState.rollModifiersUsedThisTurn = Map.empty,
-          -- CR 603.2h's "that turn": a taken instruction frees its ability at
-          -- the next turn, for every object.
-          GameState.instructionsTakenThisTurn = Seq.empty,
+        { GameState.turn =
+            (GameState.turn gs) -- The outgoing turn's; runStep files the next one's.
+              { TurnRegisters.permanentsAsTurnBegan = Nothing,
+                -- CR 608.2i is why a log exists at all. It does not say how far back;
+                -- the ONE-turn scope is this engine's choice, and a "this game"
+                -- question about casts or damage reads castsBeforeThisTurn or
+                -- damageBeforeThisTurn below instead.
+                -- Cleared here and never at cleanup -- cleanup is still part of
+                -- this turn, and CR 514.1's discard is itself an event of it.
+                TurnRegisters.events = Seq.empty,
+                -- Its watermarks, which no stack object outlives a turn to read.
+                TurnRegisters.stackedIn = Map.empty,
+                -- CR 121.1's per-turn draw tally, cleared for EVERY player: a player
+                -- draws on turns that are not theirs, so "each turn" is the whole map.
+                TurnRegisters.drawsThisTurn = Map.empty,
+                -- CR 508.1: who could have attacked is asked of THIS turn's
+                -- declare attackers steps.
+                TurnRegisters.couldAttackThisTurn = Set.empty,
+                -- CR 602.5b's "Activate only once each turn", cleared for every
+                -- object rather than the active player's: the rider is about the
+                -- object, and a permanent whose controller is not the active player
+                -- gets its activation back here just the same.
+                TurnRegisters.activatedThisTurn = Map.empty,
+                -- CR 602.2's activation history, which "the first activated ability
+                -- you activate each turn" reads: a turn's, for every player.
+                TurnRegisters.activationsThisTurn = Seq.empty,
+                -- CR 601.3's "Once each turn, you may cast ..." (Johann, Apprentice
+                -- Sorcerer), cleared for every object beside the activation-side
+                -- rider above and for its reason: the budget is the permission's
+                -- rather than a player's, so a permanent whose controller is not the
+                -- active player gets its use back here just the same.
+                TurnRegisters.castPermissionsUsedThisTurn = Map.empty,
+                -- Night Shift of the Living Dead's "Do this only once each turn", the
+                -- budget on a CR 706.2 modifier, cleared for every object for its reason.
+                TurnRegisters.rollModifiersUsedThisTurn = Map.empty,
+                -- CR 603.2h's "that turn": a taken instruction frees its ability at
+                -- the next turn, for every object.
+                TurnRegisters.instructionsTakenThisTurn = Seq.empty,
+                TurnRegisters.scannedThrough = 0,
+                TurnRegisters.damageScannedThrough = 0
+                -- GameState.lastKnown is deliberately NOT cleared alongside them: CR
+                -- 608.2h's last known information is the substitute identity of an
+                -- object that no longer exists rather than history, and a delayed
+                -- ability's source (CR 603.7d) outlives the turn it was armed in.
+                -- Setup clears it where a NEW game begins.
+              },
           -- CR 502.2 / 732.2: the count the NEXT turn's untap step asks about
           -- "the previous turn's active player".
           --
@@ -2229,7 +2177,7 @@ closeTurn gs =
           -- CR 608.2i: the outgoing log, kept before it is cleared above, for
           -- the per-seat view and for every "last turn" tally a CARD asks
           -- (Quantity's SpellsCast and LifeChanged at WhichTurn.LastTurn).
-          GameState.eventsLastTurn = GameState.events gs,
+          GameState.eventsLastTurn = TurnRegisters.events (GameState.turn gs),
           -- CR 601.2i: the outgoing turn's casts join the game-long record
           -- before the log holding them is cleared above.
           GameState.castsBeforeThisTurn = GameState.castsBeforeThisTurn gs <> Game.castsInLog gs,
@@ -2239,21 +2187,14 @@ closeTurn gs =
           -- CR 508.1a: the outgoing turn becomes each of its takers' own last
           -- turn, REPLACING the row, an attackless turn included (CR 805.4).
           GameState.attacksInOwnLastTurn = List.foldl' (\rows p -> Map.insert p (Game.attacksInLog gs) rows) (GameState.attacksInOwnLastTurn gs) outgoing,
-          GameState.scannedThrough = 0,
           -- Cleared with the log it describes: the settle Engine.advance runs
           -- immediately before this leaves nothing unscanned.
           GameState.boardAfterEvent = Map.empty,
           GameState.boardBeforeEvent = Map.empty,
-          GameState.battlefieldWhenTriggered = Map.empty,
-          GameState.damageScannedThrough = 0
-          -- GameState.lastKnown is deliberately NOT cleared alongside them: CR
-          -- 608.2h's last known information is the substitute identity of an
-          -- object that no longer exists rather than history, and a delayed
-          -- ability's source (CR 603.7d) outlives the turn it was armed in.
-          -- Setup clears it where a NEW game begins.
+          GameState.battlefieldWhenTriggered = Map.empty
         }
 
--- The turn `pid` takes begins in GameState's fields, which closeTurn has left
+-- The turn `pid` takes begins in GameState.turn, which closeTurn has left
 -- as a turn that has not begun holds them.
 newTurn :: Maybe Timestamp.Timestamp -> PlayerId -> GameState -> GameState
 newTurn extra pid gs =
@@ -2282,21 +2223,24 @@ newTurn extra pid gs =
       Event.settleOnsets
         extra
         gs
-          { GameState.activePlayer = pid,
-            -- CR 807.4b: in Grand Melee, numbered past every running turn and
-            -- past the count of turns begun, so no two turns share a number.
-            GameState.turnNumber = 1 + List.foldl' max (GameState.turnNumber gs) (begunSoFar <> fmap TurnRegisters.turnNumber parked),
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.activePlayer = pid,
+                  -- CR 807.4b: in Grand Melee, numbered past every running turn and
+                  -- past the count of turns begun, so no two turns share a number.
+                  TurnRegisters.turnNumber = 1 + List.foldl' max (TurnRegisters.turnNumber (GameState.turn gs)) (begunSoFar <> fmap TurnRegisters.turnNumber parked),
+                  -- CR 500.7: which extra turn this is, for a duration naming it
+                  -- (Expiry.DuringExtraTurn); Nothing on an ordinary turn.
+                  TurnRegisters.extraTurnUnderWay = extra,
+                  TurnRegisters.phase = Turn.firstPhase,
+                  TurnRegisters.remaining = Turn.laterPhases,
+                  TurnRegisters.turnResume = TurnResume.AtStepStart
+                },
             -- CR 500.7: the turn is one of each taker's turns of the game.
             GameState.turnsBegun = Turn.countTurnBegun takers (GameState.turnsBegun gs),
-            -- CR 500.7: which extra turn this is, for a duration naming it
-            -- (Expiry.DuringExtraTurn); Nothing on an ordinary turn.
-            GameState.extraTurnUnderWay = extra,
             -- CR 801.2c: who is in range is fixed as each turn begins, so the
             -- seats emptied during the outgoing turn close up here.
             GameState.departedThisTurn = Set.empty,
-            GameState.phase = Turn.firstPhase,
-            GameState.remaining = Turn.laterPhases,
-            GameState.turnResume = TurnResume.AtStepStart,
             -- CR 724.1/724.1b: the new active player's pending control becomes
             -- this turn's control, and REPLACING the whole map every turn is
             -- what ends a prior control at the next turn's start -- unless CR
@@ -2324,8 +2268,8 @@ newTurn extra pid gs =
 advance :: Game ()
 advance = do
   gs <- State.get
-  case Seq.viewl (GameState.remaining gs) of
-    p Seq.:< rest -> State.put gs {GameState.phase = p, GameState.remaining = rest}
+  case Seq.viewl (TurnRegisters.remaining (GameState.turn gs)) of
+    p Seq.:< rest -> State.put gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = p, TurnRegisters.remaining = rest}}
     -- CR 117.5: the turn is over. Settle once more so every event the terminal
     -- step's turn-based actions emitted is scanned BEFORE handoffTurn clears the
     -- log -- an unscanned event discarded at handoff is a lost trigger -- and so
@@ -2355,7 +2299,7 @@ enterStep :: Game (Maybe Phase.Phase)
 enterStep = do
   -- The turn's first untap step is the one reached before fileTurnBegan files
   -- the turn below.
-  opening <- State.gets (\gs -> GameState.phase gs == Phase.Beginning BeginningStep.Untap && Maybe.isNothing (GameState.permanentsAsTurnBegan gs))
+  opening <- State.gets (\gs -> TurnRegisters.phase (GameState.turn gs) == Phase.Beginning BeginningStep.Untap && Maybe.isNothing (TurnRegisters.permanentsAsTurnBegan (GameState.turn gs)))
   Monad.when opening openTurn
   -- CR 500.12: nothing happens between turns, so the board this turn's first
   -- step opens on is the board as the turn began, whatever skips that step (CR
@@ -2371,16 +2315,16 @@ enterStep = do
   -- too, so this step's own settle and priority round happen normally, which is
   -- where CR 725.1f and CR 725.2f put the abilities that triggered during the
   -- process.
-  State.modify' (\gs -> gs {GameState.endTurnSignal = EndTurnSignal.Running})
-  phase <- State.gets GameState.phase
-  active <- State.gets GameState.activePlayer
+  State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.endTurnSignal = EndTurnSignal.Running}})
+  phase <- State.gets (TurnRegisters.phase . GameState.turn)
+  active <- State.gets (TurnRegisters.activePlayer . GameState.turn)
   -- CR 614.1b makes "skip" a replacement effect, and CR 500.11 makes skipping a
   -- step proceeding past it as though it didn't exist. So the question is asked
   -- HERE, of the replacement system, and a `False` answer means the whole of
   -- `runStepThatBegan` never runs -- CR 500.6's triggers never triggering is what
   -- distinguishes that from a step that happened and did nothing (Eon Hub). CR
   -- 614.10 pins the question to this line: `advance` has written the step into
-  -- GameState.phase but records no event and grants no priority, so the step is
+  -- TurnRegisters.phase but records no event and grants no priority, so the step is
   -- scheduled, not started.
   --
   -- TWO questions, in CR 500.1's own order: `Turn.phaseBeginningAt` answers Just
@@ -2405,14 +2349,14 @@ enterStep = do
         then Nothing <$ skipStep phase
         else pure (Just phase)
 
--- GameState.permanentsAsTurnBegan, once a turn, after Expiry.dropAtTurnOf: an
+-- TurnRegisters.permanentsAsTurnBegan, once a turn, after Expiry.dropAtTurnOf: an
 -- "until your next turn" effect is already gone (Crystalline Resonance's and
 -- Tezzeret, Cruel Machinist's rulings, "immediately before your next turn
 -- begins"). The record is left unforced.
 fileTurnBegan :: GameState -> GameState
-fileTurnBegan gs = case GameState.permanentsAsTurnBegan gs of
+fileTurnBegan gs = case TurnRegisters.permanentsAsTurnBegan (GameState.turn gs) of
   Just _ -> gs
-  Nothing -> gs {GameState.permanentsAsTurnBegan = Just (Map.fromList (Maybe.mapMaybe (\oid -> fmap ((,) oid) (Event.lastKnownRecord gs oid)) (Set.toAscList (GameState.battlefield gs))))}
+  Nothing -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.permanentsAsTurnBegan = Just (Map.fromList (Maybe.mapMaybe (\oid -> fmap ((,) oid) (Event.lastKnownRecord gs oid)) (Set.toAscList (GameState.battlefield gs))))}}
 
 -- CR 500.11: proceed past a SKIPPED PHASE as though it didn't exist -- so the
 -- rest of its steps leave the schedule and `advance` picks up whatever CR 500.1's
@@ -2422,7 +2366,7 @@ fileTurnBegan gs = case GameState.permanentsAsTurnBegan gs of
 -- is announced -- CR 614.6 makes a replaced event one that never happens, and CR
 -- 500.6's triggers hang off the CR 603.2b step records this path never reaches.
 --
--- GameState.combat is left ALONE and does not go stale for it: every writer that
+-- TurnRegisters.combat is left ALONE and does not go stale for it: every writer that
 -- ADDS to that record runs inside a combat step, so a phase whose steps never
 -- begin writes nothing. (Combat.clearAttackedThisStep does run outside one, at
 -- every step's end, but a clearer cannot strand anything.) The phase that BEGAN
@@ -2433,7 +2377,7 @@ fileTurnBegan gs = case GameState.permanentsAsTurnBegan gs of
 -- the last of ends all the same.
 skipWholePhase :: Phase.Phase -> Game ()
 skipWholePhase phase = do
-  State.modify' (\gs -> gs {GameState.remaining = Turn.dropRestOfPhase phase (GameState.remaining gs)})
+  State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Turn.dropRestOfPhase phase (TurnRegisters.remaining (GameState.turn gs))}})
   Monad.when (Turn.wholePhaseOf phase == Just PhaseSelector.EndingPhase) cleanupSecondAction
   advance
 
@@ -2488,7 +2432,7 @@ cleanupSecondAction = do
 -- The phase ends; the step does not happen. Without this the phase-grain work
 -- was reachable only from inside the very step a skip removes, so an "until end
 -- of combat" animation never wore off, an UntilEndOfCombat mana retention stood
--- until CR 514.2's cleanup backstop, and GameState.combat was never emptied.
+-- until CR 514.2's cleanup backstop, and TurnRegisters.combat was never emptied.
 --
 -- The pool goes with it, `endPhase` carrying CR 500.5's "Then any unspent mana
 -- ... empties": that clause attaches to a step OR PHASE ending, and a phase is
@@ -2581,7 +2525,7 @@ startStep phase = do
   -- One beginning, naming the active player, however many share the turn: CR
   -- 805.4d's once-per-player fan-out is the trigger scan's
   -- (Parun.Engine.Event.Trigger.stepTriggerPlayers).
-  State.modify' (\gs -> Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase (GameState.activePlayer gs))) gs)
+  State.modify' (\gs -> Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase (TurnRegisters.activePlayer (GameState.turn gs)))) gs)
   -- CR 614.10b: an action a skip put after it is the first thing that happens
   -- during the next step, phase or turn to actually occur, which begins here
   -- (Time Vault's ruling: "before anything else happens in the next turn").
@@ -2696,7 +2640,7 @@ cleanupException = do
     -- Scheduled HERE, before the priority round, exactly as CR 510.4's second
     -- combat damage step is -- indistinguishable either way, CR 500.8's phase
     -- splice landing behind this step regardless.
-    State.modify' (\gs -> gs {GameState.remaining = Turn.spliceExtraCleanup (GameState.remaining gs)})
+    State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Turn.spliceExtraCleanup (TurnRegisters.remaining (GameState.turn gs))}})
   pure fired
 
 -- Ordinarily terminates because libraries are finite, each turn draws at most one
@@ -2748,7 +2692,7 @@ playSubgame = do
   -- CR 730.2: randomly determine which player goes first. The engine asks; the
   -- interpreter rolls. Only the players still in the main game are in the subgame
   -- (CR 730.4). Not asked when the answer is forced.
-  starter <- Maybe.fromMaybe (GameState.activePlayer parent) <$> Game.drawAmong Prompt.RandomFirstPlayer (Game.stillPlayingInOrder parent)
+  starter <- Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn parent)) <$> Game.drawAmong Prompt.RandomFirstPlayer (Game.stillPlayingInOrder parent)
   -- CR 100.6a: the one match-scoped tally, raised BEFORE the subgame is built
   -- so the subgame it counts is inside its own answer (Shahrazad and Sindbad's
   -- "if there haven't been any subgames this match" is false inside the subgame

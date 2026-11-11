@@ -360,7 +360,7 @@ data Object = MkObject
     playPermission :: Maybe ExilePlayPermission.ExilePlayPermission,
     -- | CR 702.170a: this exiled card is a PLOTTED card, stamped with the turn on
     -- which it became one. The TURN NUMBER and not a Bool because CR 702.170d
-    -- scopes the permission by it, and GameState.turnNumber counts extra turns
+    -- scopes the permission by it, and TurnRegisters.turnNumber counts extra turns
     -- too (CR 500.7), so a strict comparison is that clause exactly.
     --
     -- Beside playPermission above rather than inside it: CR 716.3d's
@@ -933,7 +933,7 @@ data Object = MkObject
     -- 612.1, Parun.Engine.Projection.printedActivatedAbility).
     activatedOnce :: Map.Map (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) Natural.Natural,
     -- | The modes each of this object's triggered abilities has chosen, each
-    -- with the turn (GameState.turnNumber) it was last chosen, for a
+    -- with the turn (TurnRegisters.turnNumber) it was last chosen, for a
     -- remembering ModeMemory (CR 700.2b), keyed by the ability
     -- by value as activatedOnce is, as printed before any text change (CR
     -- 612.1, Parun.Engine.Projection.printedTriggeredAbility). Written as the

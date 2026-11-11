@@ -80,6 +80,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
@@ -220,9 +221,12 @@ blueBoard island n hand =
       addOne (ids, g) p = let (oid, g1) = S.addHandCard p S.alice g in (ids <> [oid], g1)
       (held, gs) = List.foldl' addOne ([], base) hand
    in ( gs
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         held
       )
@@ -286,9 +290,12 @@ stepSkipSpec s registry = Spec.describe s "Skip" $ do
         let place g p = snd (S.addPermanent p S.alice g)
             placed = List.foldl' place (Setup.emptyGame S.bothPlayers) printings
          in placed
-              { GameState.phase = untap,
-                GameState.activePlayer = S.alice,
-                GameState.remaining = Seq.fromList [upkeep, drawStep]
+              { GameState.turn =
+                  (GameState.turn placed)
+                    { TurnRegisters.phase = untap,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.remaining = Seq.fromList [upkeep, drawStep]
+                    }
               }
       -- The untap step, then whatever the schedule says comes next.
       twoSteps = do
@@ -307,12 +314,12 @@ stepSkipSpec s registry = Spec.describe s "Skip" $ do
         after = runTwo armed
     Spec.assertBool s (began untap after) "the untap step still began"
     Spec.assertBool s (not (began upkeep after)) "the upkeep step never began"
-    Spec.assertEqWith s "so nothing ever reached the stack" (GameState.stack after) []
+    Spec.assertEqWith s "so nothing ever reached the stack" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "and alice took no damage" (S.lifeOf S.alice after) (Just 20)
     -- CR 500.11: "to skip a step, phase, or turn is to proceed past it as
     -- though it didn't exist" -- past it, not past the rest of the turn.
-    Spec.assertEqWith s "the turn proceeded to the draw step" (GameState.phase after) drawStep
-    Spec.assertEqWith s "having consumed exactly that one step" (GameState.remaining after) Seq.empty
+    Spec.assertEqWith s "the turn proceeded to the draw step" (TurnRegisters.phase (GameState.turn after)) drawStep
+    Spec.assertEqWith s "having consumed exactly that one step" (TurnRegisters.remaining (GameState.turn after)) Seq.empty
 
 -- Aim every target slot at one player. The player-side twin of `aimObject`
 -- above; Fatigue's slot is Pool.Players, so a recipient tagged for any other
@@ -353,10 +360,13 @@ fatigueSpec s registry = Spec.describe s "Fatigue" $ do
       -- turn's draw step -- exactly the "next" one Fatigue named.
       atDraw gs =
         gs
-          { GameState.phase = drawStep,
-            GameState.activePlayer = S.alice,
-            GameState.remaining = Seq.singleton Phase.PrecombatMain,
-            GameState.turnNumber = 2
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = drawStep,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.remaining = Seq.singleton Phase.PrecombatMain,
+                  TurnRegisters.turnNumber = 2
+                }
           }
       -- One draw step. Applied repeatedly, each call is alice's NEXT draw step:
       -- the store under test is not turn-scoped (Expiry.Never, and no sweep ends
@@ -400,7 +410,7 @@ runUntil done answer gs0 =
 -- Run whole steps until the turn hands off, leaving the board at the first step
 -- of the next turn.
 nextTurn :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
-nextTurn answer gs = runUntil ((/= GameState.turnNumber gs) . GameState.turnNumber) answer gs
+nextTurn answer gs = runUntil ((/= TurnRegisters.turnNumber (GameState.turn gs)) . (TurnRegisters.turnNumber . GameState.turn)) answer gs
 
 -- Cast whatever is offered, and otherwise pass. Read by the CR 614.1d case
 -- below, where the one castable card in the game is the {B} creature whose
@@ -435,9 +445,12 @@ seaGateBoard seaGate warrior life =
   let (_, withGate) = S.addHandCard seaGate S.alice (Setup.emptyGame S.bothPlayers)
       (_, filled) = S.addHandCard warrior S.alice withGate
    in filled
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice,
+        { GameState.turn =
+            (GameState.turn filled)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              },
           GameState.players = Map.adjust (\p -> p {Player.life = life}) S.alice (GameState.players filled)
         }
 
@@ -477,9 +490,12 @@ clachanBoard clachan creature =
       (creatureId, filled) = S.addHandCard creature S.alice withLand
    in ( creatureId,
         filled
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn filled)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -756,7 +772,7 @@ auriokReplicaSpec s registry = Spec.describe s "Auriok Replica (CR 609.7a)" $ do
         -- hand: casting is a zone change, so CR 400.7 already made the card and
         -- the spell two objects and `cardId` names neither candidate.
         afterCast = S.runPure S.identityAnswer g3 (S.cast S.alice cardId)
-        spellId = case GameState.stack afterCast of
+        spellId = case TurnRegisters.stack (GameState.turn afterCast) of
           oid : _ -> oid
           [] -> cardId
         shieldAgainst src =
@@ -893,7 +909,7 @@ auriokReplicaSpec s registry = Spec.describe s "Auriok Replica (CR 609.7a)" $ do
         -- The id the entry still names, read off the stack while the -2 is on it
         -- rather than guessed.
         onStack = S.runPure (payingGate fodder) board (Activate.activateAbility S.alice gristId minusTwo)
-        abilityId = case GameState.stack onStack of
+        abilityId = case TurnRegisters.stack (GameState.turn onStack) of
           oid : _ -> oid
           [] -> gristId
         rest =
@@ -1051,9 +1067,12 @@ partingWardSpec s registry = Spec.describe s "Synthetic Parting Ward (CR 609.7a)
         (wardId, g5) = S.addHandCard ward S.alice g4
         ready =
           g5
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         -- The Ward resolved: bob's creature is destroyed and the shield is
         -- waiting, holding whatever its installation captured.
@@ -1138,9 +1157,12 @@ healingGraceReferentSpec s registry = Spec.describe s "Healing Grace and Auriok 
         (graceId, g5) = S.addHandCard healingGrace S.alice g4
         ready =
           g5
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         -- The Fire-Eater's ability goes on the stack FIRST, so the reference is
         -- still standing when Healing Grace bakes it; Healing Grace resolves next
@@ -1224,9 +1246,12 @@ galvanicBlastReferentSpec s registry = Spec.describe s "Galvanic Blast (CR 609.7
         (blastId, g6) = S.addHandCard blast S.alice g5
         ready =
           g6
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g6)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         -- The Blast resolved: its metalcraft row is waiting, holding whatever its
         -- installation captured, and CR 704.5g has taken the 2/1 it killed.
@@ -1306,9 +1331,12 @@ communalBulwarkReferentSpec s registry = Spec.describe s "Synthetic Communal Bul
         (graceId, g5) = S.addHandCard healingGrace S.alice g4
         ready =
           g5
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         -- The Bulwark resolved onto the Fire-Eater, so its row's captured map
         -- holds that one slot.
@@ -1332,7 +1360,7 @@ communalBulwarkReferentSpec s registry = Spec.describe s "Synthetic Communal Bul
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "alice was OFFERED the captured source and answered it" (chosenSourcesIn (answersFor (aimAndChoose victim fireEater) armed rest)) [fireEater]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject fireEater armed)) "setup: the cost really did remove the Fire-Eater, so the id names nothing"
-    Spec.assertEqWith s "setup: the Bulwark left exactly one floating row, and the stack is empty" (length (GameState.replacements armed), GameState.stack armed) (1, [])
+    Spec.assertEqWith s "setup: the Bulwark left exactly one floating row, and the stack is empty" (length (GameState.replacements armed), TurnRegisters.stack (GameState.turn armed)) (1, [])
     Spec.assertEqWith s "setup: that row captured the one slot its recipient names, holding the Fire-Eater" (foldMap (foldMap Set.toList . ActiveReplacement.slots) (GameState.replacements armed)) [fireEater]
     Spec.assertBool s (plainsId /= fireEater && plainsId /= victim) "setup: the id the twin names is a Plains and neither creature"
 
@@ -1381,9 +1409,12 @@ comeBackWrongSpec s registry = Spec.describe s "Come Back Wrong and Auriok Repli
         (comeBackId, g5) = S.addHandCard comeBack S.alice g4
         ready =
           g5
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         -- The lands were placed last, so `ready`'s highest battlefield id is a
         -- Plains. Read BEFORE the cast, since the returned permanent enters last
@@ -1403,7 +1434,7 @@ comeBackWrongSpec s registry = Spec.describe s "Come Back Wrong and Auriok Repli
     Spec.assertEqWith s "alice was OFFERED the departed source and answered it" (chosenSourcesIn (answersFor (chooseDamageSourceOf departed) armed rest)) [departed]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject departed armed)) "setup: CR 400.7 really did retire the battlefield id, so it names nothing"
     Spec.assertEqWith s "setup: the resolution armed exactly one delayed trigger" (Seq.length (GameState.delayedTriggers armed)) 1
-    Spec.assertEqWith s "setup: no row is waiting and the stack is empty, so only that entry can name the id" (length (GameState.replacements armed), GameState.stack armed) (0, [])
+    Spec.assertEqWith s "setup: no row is waiting and the stack is empty, so only that entry can name the id" (length (GameState.replacements armed), TurnRegisters.stack (GameState.turn armed)) (0, [])
     Spec.assertBool s (plainsId /= departed) "setup: the id the twin names is a Plains and not the departed creature"
 
 -- CR 615.5's ADDITIONAL EFFECT, whose producer is Test of Faith ({1}{W} Instant:
@@ -1478,18 +1509,21 @@ attackNoBlock p = case p of
 bobAttacks :: GameState.GameState -> GameState.GameState
 bobAttacks gs =
   gs
-    { GameState.activePlayer = S.bob,
-      GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      -- CR 703.4h has already happened on this board, so the defending player is
-      -- stated rather than derived (S.combatBoardOf's posture).
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]},
-      GameState.remaining =
-        Seq.fromList
-          [ Phase.Combat CombatStep.DeclareBlockers,
-            Phase.Combat CombatStep.CombatDamage,
-            Phase.Combat CombatStep.EndOfCombat,
-            Phase.PostcombatMain
-          ]
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.bob,
+            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            -- CR 703.4h has already happened on this board, so the defending player is
+            -- stated rather than derived (S.combatBoardOf's posture).
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]},
+            TurnRegisters.remaining =
+              Seq.fromList
+                [ Phase.Combat CombatStep.DeclareBlockers,
+                  Phase.Combat CombatStep.CombatDamage,
+                  Phase.Combat CombatStep.EndOfCombat,
+                  Phase.PostcombatMain
+                ]
+          }
     }
 
 -- Aim every target slot at one creature by FILTERING the offered set rather than
@@ -1536,7 +1570,7 @@ decoratedGriffinSpec s registry = Spec.describe s "Decorated Griffin (CR 510.2)"
 -- CR 307.1: hand a player their own precombat main phase, so a sorcery they hold
 -- is castable. `bobAttacks` above for the combat half.
 inMainPhase :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
-inMainPhase pid gs = gs {GameState.activePlayer = pid, GameState.phase = Phase.PrecombatMain}
+inMainPhase pid gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = pid, TurnRegisters.phase = Phase.PrecombatMain}}
 
 -- Put one player at an exact life total, so a board can be built where the very
 -- next event would carry them past Worship's floor.
@@ -1616,7 +1650,7 @@ whippoorwillSpec s registry = Spec.describe s "Whippoorwill (CR 615.12)" $ do
     -- a mutation aimed at the condition.
     Spec.assertEqWith s "setup: the activation armed exactly one delayed ability" (Seq.length (GameState.delayedTriggers aimed)) 1
     Spec.assertEqWith s "setup: both creatures really died" (Game.lookupObject named killed, Game.lookupObject bystander killed) (Nothing, Nothing)
-    Spec.assertEqWith s "setup: exactly one trigger reached the stack" (length (GameState.stack killed)) 1
+    Spec.assertEqWith s "setup: exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn killed))) 1
   -- CR 700.4 read literally, which is the whole of why this condition is not
   -- earthbend's Leaves to a graveyard or exile: the same creature removed to exile from
   -- the battlefield fires nothing. Two boards differing in exactly one thing --
@@ -1629,8 +1663,8 @@ whippoorwillSpec s registry = Spec.describe s "Whippoorwill (CR 615.12)" $ do
     let (aimed, named, _) = deathBoard plains forest pikerPrinting whippoorwill
         banished = settle (S.runPure S.identityAnswer aimed (Event.changeZone (pure ()) named Zone.Exile))
         died = settle (S.markDamage named 1 aimed)
-    Spec.assertEqWith s "CR 700.4 an exile is not a death, so no trigger reached the stack" (length (GameState.stack banished)) 0
-    Spec.assertEqWith s "control: the same creature dying instead puts one there" (length (GameState.stack died)) 1
+    Spec.assertEqWith s "CR 700.4 an exile is not a death, so no trigger reached the stack" (length (TurnRegisters.stack (GameState.turn banished))) 0
+    Spec.assertEqWith s "control: the same creature dying instead puts one there" (length (TurnRegisters.stack (GameState.turn died))) 1
     -- The precondition, after the two above: the creature really did leave the
     -- battlefield for exile rather than staying put.
     Spec.assertEqWith s "setup: the creature left the battlefield for exile" (Maybe.isNothing (Game.lookupObject named banished), pikersIn Zone.Exile banished) (True, 1)
@@ -1650,7 +1684,7 @@ whippoorwillSpec s registry = Spec.describe s "Whippoorwill (CR 615.12)" $ do
         after = resolveTop (settle (S.markDamage named 1 bobsTurn))
     Spec.assertEqWith s "CR 514.2 the card stays in the graveyard, the entry having expired" (pikersIn Zone.Graveyard after, pikersIn Zone.Exile after) (1, 0)
     -- The preconditions, after it: the turn handed off and the store really emptied.
-    Spec.assertEqWith s "setup: the turn really did hand off" (GameState.turnNumber bobsTurn /= GameState.turnNumber aimed) True
+    Spec.assertEqWith s "setup: the turn really did hand off" (TurnRegisters.turnNumber (GameState.turn bobsTurn) /= TurnRegisters.turnNumber (GameState.turn aimed)) True
     Spec.assertEqWith s "setup: no delayed entry survived the cleanup" (Seq.length (GameState.delayedTriggers bobsTurn)) 0
 
 -- Run a turn without a fight: nobody attacks and nobody blocks, so the only

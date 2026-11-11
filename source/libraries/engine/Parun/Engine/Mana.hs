@@ -137,6 +137,7 @@ import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
@@ -341,7 +342,7 @@ producedVisiting bound visited oid gs poolBoard production = case production of
 
 -- CR 106.12a: the types of mana a permanent's latest tap for mana produced.
 latestTapProduced :: ObjectId -> GameState -> Set.Set ManaType
-latestTapProduced oid = Foldable.foldl' newest Set.empty . GameState.events
+latestTapProduced oid = Foldable.foldl' newest Set.empty . (TurnRegisters.events . GameState.turn)
   where
     newest older logged = case LoggedEvent.event logged of
       GameEvent.TappedForMana tapped | TappedForMana.permanent tapped == oid -> TappedForMana.mana tapped
@@ -856,7 +857,7 @@ triggeredYields watch pid chosen oid option share gs =
       resolved = GameEvent.ManaAbilityResolved (ManaAbilityResolved.MkManaAbilityResolved {ManaAbilityResolved.permanent = oid, ManaAbilityResolved.amount = Natural.length made})
       events = tapped <> added <> [resolved]
       board = List.foldl' (flip (Event.recordEventOver (watchSample watch))) gs events
-      recorded = Foldable.toList (Seq.drop (Seq.length (GameState.events board) - length events) (GameState.events board))
+      recorded = Foldable.toList (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn board)) - length events) (TurnRegisters.events (GameState.turn board)))
       (occurrences, pend) = Trigger.delayedMatches recorded board
       -- CR 603.7's store, under applyManaTriggers' gate. A one-shot entry fires
       -- once, on the occurrence delayedPending takes when nothing is asked.

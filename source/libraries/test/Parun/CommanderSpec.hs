@@ -100,6 +100,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -137,6 +138,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 
@@ -153,11 +155,15 @@ commanderBoard mountain shimatsu lands =
       -- precondition of the whole file rather than anything rule 903 says: rule
       -- 903.8 changes the ZONE a commander may be cast from, never the timing.
       board =
-        (S.landsInPlay mountain lands)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (S.landsInPlay mountain lands)
    in S.runPure S.identityAnswer board (Setup.createDeck S.alice deck)
 
 -- What is in the command zone, in id order -- one object on most boards here,
@@ -571,11 +577,16 @@ partnerBoard :: Maybe Format.Format -> Printing.Printing -> Printing.Printing ->
 partnerBoard format mountain plains lands commanders =
   let deck = Deck.MkDeck {Deck.cards = Map.empty, Deck.commander = Map.fromListWith (+) [(printing, 1) | printing <- commanders], Deck.vanguard = Nothing, Deck.dungeons = Set.empty, Deck.sideboard = Map.empty, Deck.conspiracies = Map.empty, Deck.sideDecks = Map.empty, Deck.stickerSheets = Seq.empty, Deck.draftNotes = Map.empty}
       board =
-        (S.landsFor plains S.alice lands (S.landsInPlay mountain lands))
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (S.landsFor plains S.alice lands (S.landsInPlay mountain lands))
+
       settings = (GameState.settings board) {GameSettings.format = format}
    in S.runPure S.identityAnswer board {GameState.settings = settings} (Setup.createDeck S.alice deck)
 
@@ -958,11 +969,16 @@ doctorsCompanionSpec s registry = Spec.describe s "Doctor's companion" $ do
     rose <- S.printingOf s registry "Rose Noble"
     rograkh <- S.printingOf s registry "Rograkh, Son of Rohgahh"
     let base =
-          (S.landsInPlay island 4)
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
-            }
+          Turn.withTurn
+            ( \turn ->
+                turn
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.landsInPlay island 4)
+
         cast spell =
           let (_, withRose) = S.addPermanent rose S.alice base
               (_, stocked) = S.addLibraryCard island S.alice withRose
@@ -1200,7 +1216,7 @@ ninjutsuAttack s registry = do
 declaredAttack :: GameState.GameState -> GameState.GameState
 declaredAttack gs =
   let attacked = S.runPure S.aggressiveAnswer gs (Combat.declareAttackers S.manaPerformer S.alice)
-   in (S.runPure S.aggressiveAnswer attacked {GameState.phase = Phase.Combat CombatStep.DeclareBlockers} (Combat.declareBlockers S.manaPerformer)) {GameState.priority = Just S.alice}
+   in Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.runPure S.aggressiveAnswer attacked {GameState.turn = (GameState.turn attacked) {TurnRegisters.phase = Phase.Combat CombatStep.DeclareBlockers}} (Combat.declareBlockers S.manaPerformer))
 
 -- ninjutsuAttack with `printing` in alice's hand, then moved to `zone` when that
 -- is not the hand. The same road for both cards, so the pair below differs in the
@@ -1226,7 +1242,7 @@ ninjutsuIn oid gs = case Activatable.abilitiesFor oid gs of
     let activated = S.runPure S.aggressiveAnswer gs (Activate.activateAbility S.alice oid ability)
         resolved = S.runPure S.aggressiveAnswer activated Stack.resolveTop
         arrived = Set.toList (Set.difference (GameState.battlefield resolved) (GameState.battlefield activated))
-        describe new = (new, (fmap S.nameOf (Game.cardOf new resolved), Map.lookup new (Combat.Type.attackers (GameState.combat resolved)), fmap Object.tapped (Game.lookupObject new resolved)))
+        describe new = (new, (fmap S.nameOf (Game.cardOf new resolved), Map.lookup new (Combat.Type.attackers (TurnRegisters.combat (GameState.turn resolved))), fmap Object.tapped (Game.lookupObject new resolved)))
      in Just (resolved, fmap describe arrived)
   _ -> Nothing
 
@@ -1259,7 +1275,7 @@ ninjutsuSpec s registry = Spec.describe s "Commander ninjutsu" $ do
         Spec.assertBool s (not (any (isActivationOf arrivedId) (Action.legalActions S.alice resolved))) "CR 113.6b on the battlefield Yuriko offers no commander ninjutsu"
         Spec.assertEqWith s "and is no longer in the command zone" (commandZoneNames resolved) []
         Spec.assertEqWith s "one Piker went home to alice's hand" (handNames S.alice resolved) [S.nameOf (Printing.card piker)]
-        let damaged = S.runCombat S.aggressiveAnswer resolved {GameState.phase = Phase.Combat CombatStep.CombatDamage, GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.CombatDamage)}
+        let damaged = S.runCombat S.aggressiveAnswer resolved {GameState.turn = (GameState.turn resolved) {TurnRegisters.phase = Phase.Combat CombatStep.CombatDamage, TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.CombatDamage)}}
         Spec.assertEqWith s "Yuriko's trigger: bob lost her 1 and the other Piker's 2 combat damage plus Shimatsu's mana value 4" (liftA2 (-) (S.lifeOf S.bob resolved) (S.lifeOf S.bob damaged)) (Just 7)
         Spec.assertEqWith s "and Shimatsu went to alice's hand beside the Piker" (List.sort (handNames S.alice damaged)) (List.sort [S.nameOf (Printing.card piker), S.nameOf (Printing.card shimatsu)])
       _ -> Spec.assertFailure s "expected Yuriko alone in the command zone, offering one ability"
@@ -1641,9 +1657,9 @@ departureSpec s registry = Spec.describe s "Departure" $ do
         lands = S.landsFor island S.carol 2 (S.landsFor swamp S.alice 5 buried)
         (riseId, g1) = S.addHandCard rise S.alice lands
         (rippleId, g2) = S.addHandCard ripple S.carol g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        board = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
         castAt pid spell gs = case jedits gs of
-          [oid] -> S.runPure (aimingAt oid) gs {GameState.priority = Just pid} (S.cast pid spell >> Stack.resolveTop >> pure ())
+          [oid] -> S.runPure (aimingAt oid) gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just pid}} (S.cast pid spell >> Stack.resolveTop >> pure ())
           _ -> gs
         risen = castAt S.alice riseId board
         rippled = castAt S.carol rippleId risen

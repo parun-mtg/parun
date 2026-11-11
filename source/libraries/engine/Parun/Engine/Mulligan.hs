@@ -37,6 +37,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealWindow as RevealWindow
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 103.5: the starting hand size. Deliberately NOT shared with CR 402.2's
@@ -87,10 +88,10 @@ openingHands perform seated = do
   openingHandActions perform owners
   -- CR 103.8: the starting player takes their first turn only after all of this,
   -- so none of the draws above -- CR 103.5's opening hands, and every mulligan's
-  -- redraw -- was made during a turn. GameState.drawsThisTurn counts CR 121.1's
+  -- redraw -- was made during a turn. TurnRegisters.drawsThisTurn counts CR 121.1's
   -- draws PER TURN, and the handoff that would otherwise clear it does not run
   -- before turn one.
-  State.modify' (\gs -> gs {GameState.drawsThisTurn = Map.empty})
+  State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.drawsThisTurn = Map.empty}})
 
 -- CR 103.5b / CR 103.6: every action the cards in this player's hand grant from
 -- the window `field` names, keyed by the granting card AND which of that card's

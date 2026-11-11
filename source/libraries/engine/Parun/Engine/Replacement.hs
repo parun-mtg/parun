@@ -180,6 +180,7 @@ import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntapR as UntapR
@@ -1039,7 +1040,7 @@ matchesPrinted viewOf gs event candidate =
         -- every untap.
         (ReplacementEffect.UntapR untapR, ProposedEvent.WouldUntap oid) ->
           src == oid
-            && maybe True (\phase -> phase == GameState.phase gs && maybe False (Turn.isActive gs) (Projection.controllerOf oid gs)) (UntapR.during untapR)
+            && maybe True (\phase -> phase == TurnRegisters.phase (GameState.turn gs) && maybe False (Turn.isActive gs) (Projection.controllerOf oid gs)) (UntapR.during untapR)
         -- CR 614.1a / 120.4c: whose life total the row watches (CR 109.5's
         -- "your") and what caused the loss. Whether the loss would actually
         -- carry the player past the total the rewrite leaves them at is a third

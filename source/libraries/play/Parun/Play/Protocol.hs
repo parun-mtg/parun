@@ -128,6 +128,7 @@ import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Text.Read as Read
 
@@ -720,11 +721,11 @@ triggerEntry gs entry = fields (("source", source) : [("text", R.Text text) | te
 -- for a payment that is not a cast's: CR 601.2a put the spell on top of the
 -- stack, and CR 601.2i has not yet logged it cast.
 substitutingKeywords :: GameState.GameState -> PlayerId.PlayerId -> ManaCost.ManaCost -> [Keyword.Type.Keyword]
-substitutingKeywords gs payer cost = case GameState.stack gs of
+substitutingKeywords gs payer cost = case TurnRegisters.stack (GameState.turn gs) of
   top : _
     | Game.isSpell top gs,
       Projection.View.controllerOf top gs == Just payer,
-      not (any (castAs top . LoggedEvent.event) (GameState.events gs)) ->
+      not (any (castAs top . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))) ->
         ListUtils.nubOrd
           [ k
           | k <- Map.keys (Cost.spellKeywords payer top gs),

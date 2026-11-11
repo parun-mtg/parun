@@ -45,6 +45,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The dungeon cards a player owns in the command zone, by name (CR 309.3). What
@@ -94,7 +95,7 @@ resolveAll :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameSta
 resolveAll answer gs0 =
   let go n gs
         | n <= 0 = gs
-        | null (GameState.stack gs) = gs
+        | null (TurnRegisters.stack (GameState.turn gs)) = gs
         | otherwise = go (n - 1) (S.runPure answer gs (Stack.resolveTop >> Engine.settleForPriority))
    in go (20 :: Int) (S.runPure answer gs0 Engine.settleForPriority)
 
@@ -134,8 +135,11 @@ combatBoard undercity mine theirs hers =
   let (base, ours, yours, theirsToo) = S.threePlayerCombat mine theirs hers
       staged =
         base
-          { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = (GameState.combat base) {Combat.Type.defenders = [S.bob]}
+          { GameState.turn =
+              (GameState.turn base)
+                { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = (TurnRegisters.combat (GameState.turn base)) {Combat.Type.defenders = [S.bob]}
+                }
           }
    in (ours, yours, theirsToo, owningUndercity undercity [S.alice, S.bob, S.carol] staged)
 
@@ -180,7 +184,7 @@ spec s registry = Spec.describe s "Initiative" $ do
     Spec.assertEqWith s "CR 309.4a with her marker on the topmost room" (markerOf S.alice after) (Just RoomIndex.topmost)
     Spec.assertEqWith s "CR 727.1 exactly one take was recorded, naming her" (takings after) [S.alice]
     Spec.assertEqWith s "and neither opponent ventured" (dungeonNamesOf S.bob after, dungeonNamesOf S.carol after) ([], [])
-    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (GameState.stack after) []
+    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
 
   -- CR 727.2, first ability: "at the beginning of the upkeep of the player who
   -- has the initiative, that player ventures into Undercity."
@@ -236,7 +240,7 @@ spec s registry = Spec.describe s "Initiative" $ do
     Spec.assertEqWith s "CR 727.2 one take was recorded since the damage, naming bob" (takings after) [S.bob]
     Spec.assertEqWith s "alice's own marker did not move" (markerOf S.alice after) (Just RoomIndex.topmost)
     Spec.assertEqWith s "and carol, whose Piker dealt nothing, ventured into no dungeon" (dungeonNamesOf S.carol after) []
-    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (GameState.stack after) []
+    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
 
   -- CR 727.2's "one or more creatures a player controls": TWO of bob's creatures
   -- connecting in one combat damage step is ONE trigger, so bob takes the
@@ -288,7 +292,7 @@ spec s registry = Spec.describe s "Initiative" $ do
         dying = held {GameState.players = Map.adjust (\p -> p {Player.life = -1}) S.bob (GameState.players held)}
         after = resolveAll answering (S.withEvents [combatDamageTo S.bob carols] dying)
     Spec.assertEqWith s "bob held the initiative going in" (GameState.initiative held) (Just S.bob)
-    Spec.assertEqWith s "alice is the active player, and carol's Piker dealt the damage" (GameState.activePlayer held, Projection.controllerOf carols held) (S.alice, Just S.carol)
+    Spec.assertEqWith s "alice is the active player, and carol's Piker dealt the damage" (TurnRegisters.activePlayer (GameState.turn held), Projection.controllerOf carols held) (S.alice, Just S.carol)
     -- The rule: CR 727.4's hand-off is the only take.
     Spec.assertEqWith s "CR 727.4 alice, the active player, has the initiative" (GameState.initiative after) (Just S.alice)
     Spec.assertEqWith s "CR 800.4d exactly one take was recorded, the hand-off's, naming her" (takings after) [S.alice]
@@ -297,7 +301,7 @@ spec s registry = Spec.describe s "Initiative" $ do
     Spec.assertEqWith s "CR 727.2/701.49d and, having taken it, she entered Undercity" (dungeonNamesOf S.alice after) ["\"Undercity\""]
     Spec.assertEqWith s "carol, whose Piker dealt the damage, ventured into nothing" (dungeonNamesOf S.carol after) []
     Spec.assertEqWith s "CR 704.5a bob lost the game" (Game.stillPlaying after) [S.alice, S.carol]
-    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (GameState.stack after) []
+    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
 
   -- CR 603.10, first sentence: the trigger condition is checked against the
   -- objects that exist IMMEDIATELY AFTER the damage, and the CR 704.5g
@@ -332,7 +336,7 @@ spec s registry = Spec.describe s "Initiative" $ do
     Spec.assertEqWith s "CR 701.49d and, having taken it, she entered Undercity" (dungeonNamesOf S.alice after) ["\"Undercity\""]
     Spec.assertEqWith s "CR 727.2 exactly one take was recorded, naming her" (takings after) [S.alice]
     Spec.assertEqWith s "and carol, who never joined the combat, ventured into nothing" (dungeonNamesOf S.carol after) []
-    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (GameState.stack after) []
+    Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
 
   -- CR 727.2's grouping is by CONTROLLER, so two players' creatures connecting in
   -- ONE damage step are TWO triggers, both controlled by the holder (CR 727.2's
@@ -426,7 +430,7 @@ spec s registry = Spec.describe s "Initiative" $ do
         held = S.withInitiative S.bob base
         gone = S.departs Departure.Type.Conceded S.bob held
         settled = resolveAll answering gone
-    Spec.assertEqWith s "alice is the active player on this board" (GameState.activePlayer held) S.alice
+    Spec.assertEqWith s "alice is the active player on this board" (TurnRegisters.activePlayer (GameState.turn held)) S.alice
     -- CR 727.2's third ability fires off the reassignment's own take, which is
     -- what makes the hand-off a TAKE rather than a field write: alice ventures.
     Spec.assertEqWith s "CR 701.49d so alice, having taken it, entered Undercity" (dungeonNamesOf S.alice settled) ["\"Undercity\""]

@@ -76,6 +76,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -353,7 +354,7 @@ gameStateRoundTripSpec s registry corpus = do
                 }
          in roundTrips "a spent per-game rider" gs {GameState.triggeredThisGame = Seq.singleton spent}
 
-  -- GameState.instructionsTakenThisTurn: CR 603.2h's spent "Do this only once
+  -- TurnRegisters.instructionsTakenThisTurn: CR 603.2h's spent "Do this only once
   -- each turn", carrying a record for the reason the case above does.
   Spec.it s "a taken once-each-turn instruction round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -368,7 +369,7 @@ gameStateRoundTripSpec s registry corpus = do
                   AbilityTriggered.controller = S.alice,
                   AbilityTriggered.ability = ability
                 }
-         in roundTrips "a taken instruction" gs {GameState.instructionsTakenThisTurn = Seq.singleton taken}
+         in roundTrips "a taken instruction" gs {GameState.turn = (GameState.turn gs) {TurnRegisters.instructionsTakenThisTurn = Seq.singleton taken}}
 
   -- GameState.castsBeforeThisTurn, CR 601.2i's casts of earlier turns, the
   -- other record the handoff keeps. Built through a real cast and handoff, so
@@ -427,11 +428,11 @@ gameStateRoundTripSpec s registry corpus = do
     let board = S.oneMountainState mountain Phase.PrecombatMain
     roundTrips "a held board" board {GameState.heldBoards = [board]}
 
-  -- GameState.permanentsAsTurnBegan, CR 500.12's record.
+  -- TurnRegisters.permanentsAsTurnBegan, CR 500.12's record.
   Spec.it s "the permanents as the turn began round trip" $ do
     mountain <- S.printingOf s registry "Mountain"
     let board = S.oneMountainState mountain Phase.PrecombatMain
-    roundTrips "the permanents as the turn began" board {GameState.permanentsAsTurnBegan = Just (Map.mapMaybeWithKey (\oid _ -> Event.lastKnownRecord board oid) (GameState.objects board))}
+    roundTrips "the permanents as the turn began" board {GameState.turn = (GameState.turn board) {TurnRegisters.permanentsAsTurnBegan = Just (Map.mapMaybeWithKey (\oid _ -> Event.lastKnownRecord board oid) (GameState.objects board))}}
 
   Spec.it s "a non-empty stack round trips" $ do
     mountain <- S.printingOf s registry "Mountain"

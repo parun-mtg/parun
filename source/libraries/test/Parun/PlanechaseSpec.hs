@@ -34,6 +34,7 @@ import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -79,6 +80,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -149,7 +151,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     recall <- S.printingOf s registry "Ancestral Recall"
     board <- seatedPlanarBoard s registry S.alice [(S.alice, ["Fields of Summer"]), (S.bob, []), (S.carol, []), (S.dave, [])]
     let (recallId, held) = S.addHandCard recall S.carol (S.landsFor island S.carol 1 board)
-        ranged = S.withRange 1 ((inMain S.alice held) {GameState.priority = Just S.carol})
+        ranged = S.withRange 1 (Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.carol}) (inMain S.alice held))
         carolGains p = case p of
           Prompt.ChooseOptional _ pid _ _ _ _ -> if pid == S.carol then OptionalDecision.Exercises else OptionalDecision.Declines
           _ -> S.identityAnswer p
@@ -338,7 +340,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
         rolledOnce = S.runPure (rolling 1) main (Planechase.roll S.manaPerformer S.alice)
         (_, withForest) = S.addPermanent forest S.alice rolledOnce
     Spec.assertBool s (elem Action.Type.RollPlanarDie (Action.legalActions S.alice main)) "CR 116.2i the active player may roll"
-    Spec.assertBool s (notElem Action.Type.RollPlanarDie (Action.legalActions S.bob (main {GameState.priority = Just S.bob}))) "and a player whose turn it isn't may not"
+    Spec.assertBool s (notElem Action.Type.RollPlanarDie (Action.legalActions S.bob (main {GameState.turn = (GameState.turn main) {TurnRegisters.priority = Just S.bob}}))) "and a player whose turn it isn't may not"
     Spec.assertBool s (elem (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.alice)) (S.eventsOf rolledOnce)) "CR 901.9d the roll is a die roll"
     Spec.assertBool s (notElem Action.Type.RollPlanarDie (Action.legalActions S.alice rolledOnce)) "CR 901.9 with no mana the second roll is not offered"
     Spec.assertBool s (elem Action.Type.RollPlanarDie (Action.legalActions S.alice withForest)) "and with a Forest to pay {1} it is"
@@ -391,7 +393,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
         walker oid = case fmap Object.source (Game.lookupObject oid placed) of
           Just (Source.OfInherentTrigger inherent) -> Just (InherentTriggerSource.controller inherent)
           _ -> Nothing
-    Spec.assertEqWith s "one sourceless planeswalking ability, bob's" (fmap walker (GameState.stack placed)) [Just S.bob]
+    Spec.assertEqWith s "one sourceless planeswalking ability, bob's" (fmap walker (TurnRegisters.stack (GameState.turn placed))) [Just S.bob]
 
   -- CR 901.10 / 311.5 / 800.4p: bob, the active player, concedes in his main
   -- phase while his Academy is the face-up plane. It leaves the game with him,
@@ -476,7 +478,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     board <- planarBoard s registry ["Academy at Tolaria West", "Mutual Epiphany", "Tazeem"]
     let pending = S.runPure (rolling 6) (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
     Spec.assertEqWith s "CR 704.6f Mutual Epiphany is still face up" (faceUpNames pending) [cardName "Mutual Epiphany"]
-    Spec.assertEqWith s "with its ability on the stack and nobody's hand drawn" (length (GameState.stack pending), S.handSize S.alice pending, S.handSize S.bob pending) (1, 0, 0)
+    Spec.assertEqWith s "with its ability on the stack and nobody's hand drawn" (length (TurnRegisters.stack (GameState.turn pending)), S.handSize S.alice pending, S.handSize S.bob pending) (1, 0, 0)
 
   -- CR 901.5: the starting player puts a phenomenon on the bottom while
   -- finding the starting plane, and no ability of it triggers. A regression
@@ -505,7 +507,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
   Spec.it s "CR 901.10b a phenomenon's ability stays on the stack when its owner leaves" $ do
     board <- seatedPlanarBoard s registry S.alice [(S.alice, ["Academy at Tolaria West", "Mutual Epiphany"]), (S.bob, ["Tazeem"]), (S.carol, [])]
     let pending = S.runPure (rolling 6) (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
-        controllers = fmap (`Projection.controllerOf` pending) (GameState.stack pending)
+        controllers = fmap (`Projection.controllerOf` pending) (TurnRegisters.stack (GameState.turn pending))
         gone = S.runPure (conceding S.alice) pending Engine.priorityLoop
     Spec.assertEqWith s "CR 901.10b bob and carol each drew four" (S.handSize S.bob gone, S.handSize S.carol gone) (4, 4)
     Spec.assertBool s (notElem S.alice (Game.stillPlaying gone)) "alice has left the game"
@@ -520,13 +522,13 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     favor <- S.printingOf s registry "Return the Favor"
     mountain <- S.printingOf s registry "Mountain"
     let pending = S.runPure (rolling 6) (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
-        (favorId, withFavor) = S.addHandCard favor S.bob ((S.landsFor mountain S.bob 3 pending) {GameState.priority = Just S.bob})
+        (favorId, withFavor) = S.addHandCard favor S.bob (Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.bob}) (S.landsFor mountain S.bob 3 pending))
         copying :: Prompt.Prompt r -> r
         copying p = case p of
           Prompt.ChooseModes {} -> Seq.singleton (ModeIndex.MkModeIndex 0)
           _ -> S.identityAnswer p
         copied = S.runPure copying withFavor (S.cast S.bob favorId >> Stack.resolveTop)
-    Spec.assertEqWith s "CR 707.10 the copy is bob's, above alice's original" (fmap (`Projection.controllerOf` copied) (GameState.stack copied)) [Just S.bob, Just S.alice]
+    Spec.assertEqWith s "CR 707.10 the copy is bob's, above alice's original" (fmap (`Projection.controllerOf` copied) (TurnRegisters.stack (GameState.turn copied))) [Just S.bob, Just S.alice]
 
   -- CR 311.7: Path of the Enigma ("Target player draws four cards. Will of the
   -- Planeswalkers -- ... If planeswalk gets more votes, planeswalk. If chaos
@@ -689,7 +691,7 @@ caldaiaBoard s registry creature others = do
   let (creatureId, gs1) = S.addHandCard card S.alice (S.landsFor mountain S.alice 6 board)
       (_, gs2) = S.addHandCard mountain S.alice gs1
       gs3 = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) gs2 permanents
-  pure (creatureId, (inMain S.alice gs3) {GameState.remaining = S.phasesAfter Phase.PrecombatMain})
+  pure (creatureId, Turn.withTurn (\turn -> turn {TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain}) (inMain S.alice gs3))
 
 -- CR 601.2b answered with `wanted`'s mana, and every attack with everything.
 paying :: [ManaSymbol.ManaSymbol] -> Prompt.Prompt r -> r
@@ -819,13 +821,13 @@ conceding who p = case p of
 
 -- `pid`'s precombat main phase with priority and an empty stack.
 inMain :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
-inMain pid gs = gs {GameState.activePlayer = pid, GameState.phase = Phase.PrecombatMain, GameState.priority = Just pid}
+inMain pid gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = pid, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just pid}}
 
 -- `pid`'s end step begins and every trigger resolves.
 endStep :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 endStep pid gs =
   let step = Phase.Ending EndingStep.EndStep
-      begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan step pid)) (gs {GameState.activePlayer = pid, GameState.phase = step, GameState.priority = Just pid})
+      begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan step pid)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = pid, TurnRegisters.phase = step, TurnRegisters.priority = Just pid}})
    in S.runPure S.identityAnswer begun Engine.priorityLoop
 
 -- Answer the planar die with this number and everything else by identity.
@@ -854,7 +856,7 @@ raidersSpec s registry = Spec.describe s "Raiders' Allegiance" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     board <- seatedPlanarBoard s registry S.alice [(S.alice, ["Raiders' Allegiance"]), (S.bob, []), (S.carol, []), (S.dave, [])]
     let (pikerId, stocked) = S.addPermanent piker S.alice board
-        begin phase gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice)) (gs {GameState.activePlayer = S.alice, GameState.phase = phase, GameState.priority = Just S.alice})
+        begin phase gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = phase, TurnRegisters.priority = Just S.alice}})
         hit target = DamageEvent.MkDamageEvent pikerId (Recipient.ToPlayer target) 1 False False False 0 Nothing Nothing mempty False mempty
         damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain stocked) (Damage.applyDamage (pure ()) [hit S.bob DamageKind.Combat, hit S.carol DamageKind.Combat, hit S.dave DamageKind.Noncombat])
         raided = S.runPure S.identityAnswer (begin Phase.PostcombatMain damaged) Engine.priorityLoop
@@ -870,7 +872,7 @@ raidersSpec s registry = Spec.describe s "Raiders' Allegiance" $ do
     let (alicePiker, withAlice) = S.addPermanent piker S.alice board
         (davePiker, stocked) = S.addPermanent piker S.dave withAlice
         ranged = S.withRange 1 stocked
-        begin phase gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice)) (gs {GameState.activePlayer = S.alice, GameState.phase = phase, GameState.priority = Just S.alice})
+        begin phase gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = phase, TurnRegisters.priority = Just S.alice}})
         hit source target = DamageEvent.MkDamageEvent source (Recipient.ToPlayer target) 1 False False False 0 Nothing Nothing mempty False mempty DamageKind.Combat
         damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain ranged) (Damage.applyDamage (pure ()) [hit alicePiker S.bob, hit davePiker S.carol])
         raided = S.runPure S.identityAnswer (begin Phase.PostcombatMain damaged) Engine.priorityLoop
@@ -1159,6 +1161,9 @@ zoneNames zone pid gs = List.sort (fmap (\oid -> fmap Face.name (Game.faceOf oid
 declaringAt :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 declaringAt defending gs =
   gs
-    { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [defending]}
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defending]}
+          }
     }

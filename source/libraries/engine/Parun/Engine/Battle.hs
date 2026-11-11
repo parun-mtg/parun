@@ -89,6 +89,7 @@ import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -136,7 +137,7 @@ lastKnownProtectorOf oid gs = LastKnown.protector =<< Game.lastKnownOf oid gs
 -- which imports THIS module for CR 310.5's attackable battles.
 isBeingAttacked :: ObjectId.ObjectId -> GameState -> Bool
 isBeingAttacked oid gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       names target = target == AttackTarget.OfBattle oid || target == AttackTarget.OfPlaneswalker oid
    in List.any names (Map.elems (Map.withoutKeys (Combat.attackers c) (Combat.attackingNothing c)))
 

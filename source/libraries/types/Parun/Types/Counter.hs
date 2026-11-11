@@ -26,7 +26,7 @@ import qualified Parun.Types.SlotName as SlotName
 -- the count unnarrowed, its ref being ObjectRef.EachOnStack. A card that
 -- counters both and counts only one kind would need the narrowing here.
 --
--- THE RESOLUTION'S OWN count, not a look-back at GameState.events: "this way"
+-- THE RESOLUTION'S OWN count, not a look-back at TurnRegisters.events: "this way"
 -- is CR 608.2's one resolution, so a countering by anything else is not in it.
 -- The events that resolution recorded -- GameEvent.SpellCountered and
 -- GameEvent.AbilityCountered -- are a different question.

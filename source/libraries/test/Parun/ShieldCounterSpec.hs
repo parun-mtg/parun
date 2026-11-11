@@ -19,6 +19,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import Parun.PreventionSpec (answersFor, castAndResolve, countersOn, newestNamed, raceAnswer, settleDamage, theAbility, wasAskedToOrderDamage)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -40,6 +41,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 122.1c: the replacement and the prevention effect one or more shield counters
@@ -369,9 +371,12 @@ globeChain s registry swap entering = do
       (creatureId, g3) = S.addHandCard creature S.alice g2
       ready =
         g3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       hacked = case swap of
         Nothing -> ready
@@ -429,7 +434,7 @@ jackalBoard jackal piker mammoth =
       (jackalId, g1) = S.addPermanent jackal S.alice base
       (victim, g2) = S.addPermanent piker S.bob g1
       (bystander, g3) = S.addPermanent mammoth S.bob g2
-      control = (S.addRegenShield bystander (S.addRegenShield victim g3)) {GameState.priority = Just S.alice}
+      control = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.addRegenShield bystander (S.addRegenShield victim g3))
       activated = S.runPure (aimingAtObject victim) control (Activate.activateAbility S.alice jackalId (theAbility jackal) >> Stack.resolveTop)
    in (control, victim, bystander, activated)
 

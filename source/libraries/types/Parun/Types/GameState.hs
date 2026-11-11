@@ -6,7 +6,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
-import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
@@ -22,15 +21,12 @@ import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CastFromZone as CastFromZone
-import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
-import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.EntryOrigin as EntryOrigin
@@ -39,22 +35,18 @@ import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameSettings as GameSettings
-import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaType as ManaType
-import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OutsideObject as OutsideObject
-import qualified Parun.Types.PastActivation as PastActivation
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
-import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerControl as PlayerControl
@@ -74,7 +66,6 @@ import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
-import qualified Parun.Types.TurnResume as TurnResume
 import qualified Parun.Types.Undoing as Undoing
 
 data GameState = MkGameState
@@ -107,13 +98,6 @@ data GameState = MkGameState
     -- a kind nobody holds, so a board that never had one compares equal to one
     -- that has emptied it.
     sideDecks :: Map.Map SideDeck.SideDeck (Map.Map PlayerId.PlayerId (Seq.Seq ObjectId.ObjectId)),
-    -- | CR 405.1 / 807.5: the stack, top first; in Grand Melee the stack of the
-    -- turn these fields hold, every stack being Parun.Engine.Game.allStacks.
-    stack :: [ObjectId.ObjectId],
-    -- | CR 610.3a / 610.3b: the first event group whose events happened after
-    -- each object was put on the stack, or for a triggered ability after it
-    -- triggered. Written by Parun.Engine.Game.putOnStack, cleared with `events`.
-    stackedIn :: Map.Map ObjectId.ObjectId EventGroup.EventGroup,
     players :: Map.Map PlayerId.PlayerId Player.Player,
     -- | CR 730.4: the cards outside this game that sit in a game on hold; empty
     -- for a game nobody is nested inside.
@@ -127,18 +111,6 @@ data GameState = MkGameState
     departedCards :: Map.Map ObjectId.ObjectId Object.Object,
     -- | CR 106.4. Absent from the map means an empty pool.
     manaPool :: Map.Map PlayerId.PlayerId Mana.Mana,
-    -- | CR 508/509. Lives for one combat phase; cleared at CR 511.
-    combat :: Combat.Combat,
-    -- | CR 608.2i: what happened this turn, in order, each entry stamped with
-    -- its EventGroup (CR 608.2f's single event). Cleared at turn handoff
-    -- (Engine.handoffTurn), never by a reader. A new reader of it as history
-    -- owes its construct's arm in Parun.Engine.Interchangeable.Mentions a
-    -- Parun.Types.HistoryRead (CR 733.3).
-    --
-    -- Not implemented: in Grand Melee this is the worked turn's log, which a
-    -- static ability's "this turn" reads whichever turn's question is being
-    -- asked (#6538).
-    events :: Seq.Seq LoggedEvent.LoggedEvent,
     -- | The group Event.recordEvent stamps on the next event; advanced per
     -- record except inside an Event.simultaneously bracket. Not reset at turn
     -- handoff.
@@ -186,8 +158,6 @@ data GameState = MkGameState
     -- files an ability as it ceases, the same reading for "copy that ability".
     -- Grows for the whole game, as `lastKnown` does.
     stackArchive :: Map.Map ObjectId.ObjectId Object.Object,
-    -- | CR 117.5: how far the trigger scan has consumed the event log.
-    scannedThrough :: Natural.Natural,
     -- | CR 603.10: the battlefield as it stood immediately after each unscanned
     -- event, keyed by group, one lazy entry per group; read by
     -- Event.eventTriggers, cleared as the scan consumes the log.
@@ -223,10 +193,6 @@ data GameState = MkGameState
     -- next settle opens with (Parun.Engine.Engine.performSettle). Each entry's
     -- own copy of this field is empty.
     heldBoards :: [GameState],
-    -- | How far the state-based action check has consumed the event log --
-    -- CR 704.5h's and CR 903.9a's "since the last time state-based actions were
-    -- checked".
-    damageScannedThrough :: Natural.Natural,
     -- | CR 603.7: delayed triggered abilities awaiting their event, in creation
     -- order; not cleared at turn handoff.
     delayedTriggers :: Seq.Seq DelayedTrigger.DelayedTrigger,
@@ -351,38 +317,16 @@ data GameState = MkGameState
     -- game and is never shortened -- CR 800.4a and 800.4m need a departed
     -- player's seat; who is still in is Game.stillPlaying.
     turnOrder :: [PlayerId.PlayerId],
-    activePlayer :: PlayerId.PlayerId,
-    phase :: Phase.Phase,
-    -- | CR 500: the steps still scheduled this turn, in order, `phase` being the
-    -- one in progress; CR 508.8 drops steps and CR 510.4, 500.8 and 500.9
-    -- splice them in. Refilled from `Turn.allPhases` at handoff.
-    remaining :: Seq.Seq Phase.Phase,
-    priority :: Maybe PlayerId.PlayerId,
-    -- | CR 117.4 / 805.5b: the players who have passed in succession since the
-    -- last action, the stack's resolution or the step's first grant.
-    passed :: Set.Set PlayerId.PlayerId,
-    turnNumber :: Natural.Natural,
     -- | CR 500.7 / 805.4: how many turns each player has begun this game, extra
     -- turns included; under the shared team turns option a team's turn is each
     -- member's. Kept across turns; a restart (CR 728.1) and a subgame (CR
     -- 730.2) begin it again. Turn.turnsBegun reads it.
     turnsBegun :: Map.Map PlayerId.PlayerId Natural.Natural,
-    -- | CR 500.12 / 502.1: every permanent as this turn began, phased-out ones
-    -- being none (CR 702.26b); Nothing until Parun.Engine.Engine.runStep files
-    -- it at the turn's first step, Engine.beginTurn having cleared the last
-    -- turn's. An unforced thunk over that board, whose own copy of this field is
-    -- Nothing, so only a reader projects it, Reversal.withoutAnnouncement's
-    -- comparison among them.
-    permanentsAsTurnBegan :: Maybe (Map.Map ObjectId.ObjectId LastKnown.LastKnown),
     result :: Maybe Result.Result,
     -- | CR 728.4: raised while a restart has replaced this game underneath the
     -- frames still running it; Engine.runStep lowers it as turn 1's untap step
     -- begins.
     restartSignal :: RestartSignal.RestartSignal,
-    -- | CR 725.1: raised while an effect that ends the turn unwinds through the
-    -- frames running the ended step; Engine.runStep lowers it as CR 725.1d's
-    -- cleanup step begins.
-    endTurnSignal :: EndTurnSignal.EndTurnSignal,
     nextObjectId :: ObjectId.ObjectId,
     -- | Every printing this game knows, by the id the objects carry; two ids
     -- naming one card is benign (CR 109.3). Append-only and never collected.
@@ -440,11 +384,6 @@ data GameState = MkGameState
     -- 400.7i), naming who played it. Never cleared: a delayed trigger may ask on
     -- a later turn (CR 603.7), and CR 400.7 never reuses an id.
     cardsPlayed :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
-    -- | CR 121.1: the cards each player has drawn this turn, in order, each as the
-    -- incarnation that reached the hand; its length is the ordinal stamped onto
-    -- GameEvent.Drew. Cleared for every player at turn handoff, and after CR
-    -- 103.5's opening hands.
-    drawsThisTurn :: Map.Map PlayerId.PlayerId (Seq.Seq ObjectId.ObjectId),
     -- | CR 121.8: Nothing unless a spell is being cast or an ability activated
     -- (Parun.Engine.Event.announcing); then the cards drawn since it began, each
     -- kept face down in its hand with no characteristics, keyed to the ordinal
@@ -475,53 +414,6 @@ data GameState = MkGameState
     -- whose seats still count toward range of influence until the next turn
     -- begins; cleared at turn handoff.
     departedThisTurn :: Set.Set PlayerId.PlayerId,
-    -- | CR 508.1a-d: the creatures that could have been declared as attackers
-    -- in a declare attackers step this turn, written as each such step's
-    -- declaration begins (Parun.Engine.Combat.declareAttackers) and cleared at
-    -- turn handoff. Filter.CouldAttackThisTurn reads it.
-    couldAttackThisTurn :: Set.Set ObjectId.ObjectId,
-    -- | CR 602.5b: which abilities of which objects have been activated this
-    -- turn, read by ActivationRestriction.TimesEachTurn alone; cleared at turn
-    -- handoff, which is the whole of "each turn". Keyed by the SOURCE object and
-    -- then by the ability, since a permanent may print the rider on one of two
-    -- abilities (Locust Swarm). The ability BY VALUE and counted, for CR
-    -- 602.5c's identically worded twins, and as printed (CR 612.1), as
-    -- Object.activatedOnce is.
-    activatedThisTurn :: Map.Map ObjectId.ObjectId (Map.Map (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) Natural.Natural),
-    -- | CR 602.2: every activated ability begun this turn, oldest first, as
-    -- an activation's Parun.Types.CostModifier.onlyFirst, Quantity.TimesThisTurn and
-    -- Quantity.ActivationsThisTurn ask after it; cleared at turn handoff. Written by
-    -- Parun.Engine.ActivationRestriction.logActivation. A
-    -- new reader owes its construct's arm in Parun.Engine.Interchangeable.Mentions
-    -- HistoryRead.Activations.
-    activationsThisTurn :: Seq.Seq PastActivation.PastActivation,
-    -- | CR 601.3: which once-each-turn permissions have been used this turn, by
-    -- a cast or (a Play-verb one) a land play, read only for a budgeted
-    -- PermissionLimit; cleared at turn handoff, which is the whole of "each
-    -- turn". Keyed by the object granting the
-    -- permission and then by the permission itself, so two copies of one
-    -- enchantment grant two budgets and one permanent printing two permissions
-    -- spends them separately -- the grain activatedThisTurn above uses for CR
-    -- 602.5b's activation-side twin, and for that rule's reason: the budget is
-    -- the ability's and survives a change of control.
-    --
-    -- The permission BY VALUE, so a CR 612.1 word swap that changed this
-    -- permission's own filter mid-turn would leave a spent budget unfound --
-    -- the caveat activatedThisTurn's key carries too. No text change reaches
-    -- one: Parun.Engine.Projection.Rewrite swaps subtype words, and no budgeted
-    -- permission in data/cards/ names a subtype.
-    castPermissionsUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set CastFromZone.CastFromZone),
-    -- | CR 706.2: which budgeted die-roll modifiers have been taken this turn,
-    -- read by a Parun.Types.ModifiedRoll whose limit is
-    -- PermissionLimit.OnceEachTurn (Night Shift of the Living Dead); cleared at
-    -- turn handoff. Keyed as castPermissionsUsedThisTurn above and for its reason.
-    rollModifiersUsedThisTurn :: Map.Map ObjectId.ObjectId (Set.Set ModifiedRoll.ModifiedRoll),
-    -- | CR 603.2h: each resolution this turn of a triggered ability whose
-    -- "Do this only once each turn" instruction was taken
-    -- (Parun.Types.SpentOn's TakingInstruction), as the record CR 603.3b's log
-    -- carries; cleared at turn handoff. A sequence for triggeredThisGame's
-    -- reason: Parun.Engine.Event.withinTriggerLimit counts it.
-    instructionsTakenThisTurn :: Seq.Seq AbilityTriggered.AbilityTriggered,
     -- | The printed rider "This ability triggers only once"
     -- (Parun.Types.TriggerLimit's OncePerGame), spent here: every triggering of an
     -- ability carrying that rider, as the same record CR 603.3b's log carries.
@@ -636,13 +528,12 @@ data GameState = MkGameState
     -- | CR 807.4: a Grand Melee game's turn markers in number order, written
     -- by Parun.Engine.GrandMelee; empty in every other game.
     turnMarkers :: [TurnMarker.TurnMarker],
-    -- | CR 807.4b / 807.5: every running Grand Melee turn but the one these
-    -- fields hold, by its marker's number (Parun.Engine.Engine.runStep's
-    -- scheduler); empty in every other game.
+    -- | CR 500 / 807.4b: the turn in progress, the worked one in Grand Melee.
+    turn :: TurnRegisters.TurnRegisters,
+    -- | CR 807.4b / 807.5: every running Grand Melee turn but `turn`, by its
+    -- marker's number (Parun.Engine.Engine.runStep's scheduler); empty in every
+    -- other game.
     parkedTurns :: Map.Map Natural.Natural TurnRegisters.TurnRegisters,
-    -- | CR 807.4b: where the turn these fields hold picks up when the
-    -- scheduler next works it; AtStepStart outside Grand Melee.
-    turnResume :: TurnResume.TurnResume,
     -- | CR 100.6a / 730.1a: how many subgames have begun this match, counting
     -- one in progress. The only match-scoped field: CR 730.1b keeps a subgame's
     -- effects out of the main game, but a match is a series of games, so this
@@ -658,12 +549,6 @@ data GameState = MkGameState
     -- subgame's or a restarted game's turn numbers, which begin again at 1,
     -- are not taken for this game's. Parun.Engine.PlayerView shows it.
     gameNumber :: Natural.Natural,
-    -- | CR 500.7 / 103.1: while an extra turn is under way, the seat the
-    -- ordinary turn order resumes from; Nothing on an ordinary turn.
-    turnAnchor :: Maybe PlayerId.PlayerId,
-    -- | CR 500.7: the ExtraTurn.createdAt of the extra turn under way; Nothing
-    -- on an ordinary turn.
-    extraTurnUnderWay :: Maybe Timestamp.Timestamp,
     -- | CR 706.2 / 705.1: what the die whose modification step is open, or the
     -- coin just flipped, came up, while Parun.Engine.Resolve.Effect offers to
     -- throw it again; Nothing otherwise.

@@ -73,6 +73,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -126,6 +127,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Transformed as Transformed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -273,7 +275,7 @@ spec s registry = Spec.describe s "Mutate" $ do
               Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just giantId) . Recipient.objectOf) . snd) sets
               _ -> S.identityAnswer p
             reflected = S.runPure atGiant reflecting (S.cast S.alice reflectionId >> Monad.replicateM_ 3 (Engine.settleForPriority >> Stack.resolveTop) >> Engine.settleForPriority)
-            armed = reflected {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.bob}
+            armed = reflected {GameState.turn = (GameState.turn reflected) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.bob}}
             -- The Shrieker's "may" declined, so the pile stays face down and
             -- the reveal is the whole of what it shows.
             atPile :: Prompt.Prompt r -> r
@@ -322,7 +324,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         humanPile hostBoard = snd (S.addPermanent nexus S.alice (merging MutateSide.Over host hostBoard spellId))
         misted hostBoard =
           let (moonmistId, staged) = S.addHandCard moonmist S.alice (S.landsFor forest S.alice 2 (humanPile hostBoard))
-           in S.runPure S.identityAnswer staged {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice} (S.cast S.alice moonmistId *> Stack.resolveTop)
+           in S.runPure S.identityAnswer staged {GameState.turn = (GameState.turn staged) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}} (S.cast S.alice moonmistId *> Stack.resolveTop)
         transformed gs = [Transformed.object t | GameEvent.Transformed t <- S.eventsOf gs]
     Spec.assertEqWith s "CR 712.12a the pile over the face-down Thallid did not transform" (transformed (misted manifested)) []
     Spec.assertEqWith s "CR 701.27a over the face-up Thallid, it did" (transformed (misted board)) [host]
@@ -342,7 +344,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         manifested = withHost {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.Manifested}) host (GameState.objects withHost)}
         (board, spellId) = S.handOne graftling manifested
         merged = merging MutateSide.Over host board spellId
-        offered gs = length (Activatable.abilitiesFor host (S.landsFor forest S.alice 4 gs) {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice})
+        offered gs = length (Activatable.abilitiesFor host (Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}) (S.landsFor forest S.alice 4 gs)))
         reading gs = (Projection.namesOf host gs, S.powerToughnessOf host gs, Projection.hasKeyword Keyword.Trample host gs)
     case transformedBy forest host merged of
       Nothing -> Spec.assertFailure s "expected the pile to offer the Graftling's activated ability"
@@ -561,7 +563,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         (board, second) = S.handOne cubwarden withFirst
         merged = merging MutateSide.Under host (merging MutateSide.Under host board first) second
         turnedUp = S.runPure S.identityAnswer merged (Event.performTurnFaceUp Nothing Nothing host)
-        armed = (S.landsFor forest S.alice 4 turnedUp) {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        armed = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}) (S.landsFor forest S.alice 4 turnedUp)
         reading gs = (Projection.namesOf host gs, S.powerToughnessOf host gs)
     case Activatable.abilitiesFor host armed of
       [ability] -> do
@@ -649,7 +651,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         (board, spellId) = S.handOne graftling (S.landsFor forest S.alice 1 woven)
         merged = merging MutateSide.Over host board spellId
         step g = S.runPure S.identityAnswer g Engine.runStep
-        cleanedUp gs = step (step (step gs {GameState.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]}))
+        cleanedUp gs = step (step (step gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]}}))
         reading gs = (Projection.namesOf host gs, S.powerToughnessOf host gs, Projection.hasKeyword Keyword.Trample host gs, Projection.hasKeyword Keyword.Flying host gs)
     case transformedBy forest host merged of
       Nothing -> Spec.assertFailure s "expected the merged permanent to offer exactly one activated ability"
@@ -684,7 +686,7 @@ spec s registry = Spec.describe s "Mutate" $ do
         woven = S.runPure (mutatingAt MutateSide.Over giant) staged (S.cast S.alice weaveId >> Stack.resolveTop >> Engine.settleForPriority)
         (board, spellId) = S.handOne cubwarden woven
         step g = S.runPure S.identityAnswer g Engine.runStep
-        ending gs = step (step gs {GameState.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]})
+        ending gs = step (step gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]}})
         cleanedUp = step . ending
         over = merging MutateSide.Over host board spellId
         under = merging MutateSide.Under host board spellId
@@ -705,7 +707,7 @@ spec s registry = Spec.describe s "Mutate" $ do
     -- target before the merge, both spells resolved, and cleanup ran.
     Spec.assertEqWith s "setup: under Mirrorweave the Falcon Abomination was the Hill Giant" (Projection.namesOf host board, S.powerToughnessOf host board) (named "Hill Giant", Just (3, 3))
     Spec.assertEqWith s "setup: both merges happened" (componentNames host over, componentNames host under) ([CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Falcon Abomination")], [CardName.MkCardName (Text.pack "Falcon Abomination"), CardName.MkCardName (Text.pack "Cubwarden")])
-    Spec.assertEqWith s "setup: the cleanup step ran" (GameState.phase (ending over)) (Phase.Ending EndingStep.Cleanup)
+    Spec.assertEqWith s "setup: the cleanup step ran" (TurnRegisters.phase (GameState.turn (ending over))) (Phase.Ending EndingStep.Cleanup)
   -- CR 702.140e over a Room on top: Opalescence makes the Room with its red
   -- door open a 2/2 non-Human creature, and Cubwarden mutates under it. The
   -- merged permanent shows the Room (CR 731.2a), whose characteristics are
@@ -896,7 +898,7 @@ spec s registry = Spec.describe s "Mutate" $ do
       (List.sort [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Falcon Abomination")])
     -- The proxies, after the behaviours: the copy really was made, and the board
     -- really did start with one card representing the creature.
-    Spec.assertEqWith s "and nothing is left on the stack" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "and nothing is left on the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "setup: the creature was one card before either merge" (componentNames host board) []
     Spec.assertEqWith s "setup: and Double Major left the stack for alice's graveyard" (filter (== CardName.MkCardName (Text.pack "Double Major")) (graveyardNames after)) [CardName.MkCardName (Text.pack "Double Major")]
   -- CR 731.2d: "if a merged permanent contains a token, the resulting permanent
@@ -983,7 +985,7 @@ spec s registry = Spec.describe s "Mutate" $ do
       [ (Text.pack "OfToken", CardName.MkCardName (Text.pack "Cubwarden")),
         (Text.pack "OfCard", CardName.MkCardName (Text.pack "Falcon Abomination"))
       ]
-    Spec.assertEqWith s "and the original Cubwarden still waits on the stack" (length (GameState.stack after)) 1
+    Spec.assertEqWith s "and the original Cubwarden still waits on the stack" (length (TurnRegisters.stack (GameState.turn after))) 1
     Spec.assertEqWith s "setup: the original went over the copy" (fmap fst (componentKinds host covered)) (fmap Text.pack ["OfCard", "OfToken", "OfCard"])
     Spec.assertBool s (not (isForest (catId after) after)) "setup: Ashaya passes a Cat token by"
   -- CR 731.2h: "if a merged permanent contains a flip card, that component's
@@ -1544,10 +1546,13 @@ spec s registry = Spec.describe s "Mutate" $ do
 intoCombat :: GameState.GameState -> GameState.GameState
 intoCombat gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-      GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
+            TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+          }
     }
 
 -- Cubwarden merged under Blightreaper Thallid, then four Forests for its
@@ -1558,7 +1563,7 @@ transformedMerge :: Printing.Printing -> Printing.Printing -> Printing.Printing 
 transformedMerge plains forest thallid cubwarden =
   let (host, board, spellId) = mutateBoard plains thallid cubwarden
       merged = merging MutateSide.Under host board spellId
-      armed = (S.landsFor forest S.alice 4 merged) {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+      armed = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}) (S.landsFor forest S.alice 4 merged)
    in case Activatable.abilitiesFor host armed of
         [ability] ->
           let activated = S.runPure S.identityAnswer armed (Activate.activateAbility S.alice host ability)
@@ -1571,7 +1576,7 @@ transformedMerge plains forest thallid cubwarden =
 -- activated ability at that {2}{G}.
 transformedBy :: Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> Maybe GameState.GameState
 transformedBy forest host gs =
-  let armed = (S.landsFor forest S.alice 3 gs) {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+  let armed = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}) (S.landsFor forest S.alice 3 gs)
       graftTransform = ManaCost.MkManaCost [ManaSymbol.Generic 2, ManaSymbol.OfType (ManaType.Colored Color.Green)]
    in case filter ((== Just graftTransform) . Cost.Type.mana . ActivatedAbility.cost) (Activatable.abilitiesFor host armed) of
         [ability] ->
@@ -1664,9 +1669,12 @@ exiledNamed name gs = List.find (\o -> Projection.hasName name o gs) (Set.toList
 inAliceMainPhase :: GameState.GameState -> GameState.GameState
 inAliceMainPhase gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = S.alice,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- CR 614.12a's as-enters copy choice answered with `victim`, PINNED to that id
@@ -1854,11 +1862,15 @@ townshipOn battlements garrison mountain =
   let (bId, g1) = S.addPermanent battlements S.alice (Setup.emptyGame S.bothPlayers)
       (_, g2) = S.addPermanent garrison S.alice g1
       board =
-        (S.landsFor mountain S.alice 5 g2)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (S.landsFor mountain S.alice 5 g2)
    in case Projection.abilitiesOf bId board of
         [_, _, melding] ->
           let after = S.runPure (sparing bId) board (do Activate.activateAbility S.alice bId melding; Stack.resolveTop)

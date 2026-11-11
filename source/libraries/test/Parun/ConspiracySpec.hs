@@ -72,6 +72,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RestartSignal as RestartSignal
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
 
@@ -150,9 +151,12 @@ upkeep active turn gs =
   S.runPure
     S.identityAnswer
     ( gs
-        { GameState.activePlayer = active,
-          GameState.phase = Phase.Beginning BeginningStep.Upkeep,
-          GameState.turnNumber = turn,
+        { GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.activePlayer = active,
+                TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                TurnRegisters.turnNumber = turn
+              },
           GameState.restartSignal = RestartSignal.Playing
         }
     )
@@ -224,7 +228,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       Spec.assertEqWith s "bob, now the starting player, does not" (begunWith S.bob with) False
       Spec.assertEqWith s "without Power Play, alice starts and has none" (begunWith S.alice control) False
       Spec.assertEqWith s "and bob has his" (begunWith S.bob control) True
-      Spec.assertEqWith s "bob takes the first turn" (GameState.activePlayer with) S.bob
+      Spec.assertEqWith s "bob takes the first turn" (TurnRegisters.activePlayer (GameState.turn with)) S.bob
       Spec.assertEqWith s "the turn order begins with him" (GameState.turnOrder with) [S.bob, S.alice]
       -- CR 500.7: Serra Avenger's count of turns of the game.
       Spec.assertEqWith s "and the first turn is his first turn of the game, not alice's" (GameState.turnsBegun with) (Map.singleton S.bob 1)
@@ -246,7 +250,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
           (toBob, bobAsked) = started 0 matchup
       Spec.assertEqWith s "landing on carol, she starts and bob goes last" (GameState.turnOrder toCarol) [S.carol, S.alice, S.bob]
       Spec.assertEqWith s "landing on bob, he starts and alice goes last" (GameState.turnOrder toBob) [S.bob, S.carol, S.alice]
-      Spec.assertEqWith s "carol takes the first turn" (GameState.activePlayer toCarol) S.carol
+      Spec.assertEqWith s "carol takes the first turn" (TurnRegisters.activePlayer (GameState.turn toCarol)) S.carol
       Spec.assertEqWith s "one draw, over bob and carol alone" (draws carolAsked) [[S.bob, S.carol]]
       Spec.assertEqWith s "the same draw in the other log" (draws bobAsked) [[S.bob, S.carol]]
 
@@ -294,10 +298,13 @@ spec s registry = Spec.describe s "Conspiracy" $ do
           board = arriving runeclaw S.alice (arriving grizzly S.alice setUp)
           main =
             board
-              { GameState.activePlayer = S.alice,
-                GameState.phase = Phase.PrecombatMain,
-                GameState.priority = Just S.alice,
-                GameState.passed = Set.empty,
+              { GameState.turn =
+                  (GameState.turn board)
+                    { TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice,
+                      TurnRegisters.passed = Set.empty
+                    },
                 GameState.restartSignal = RestartSignal.Playing
               }
           flipped = withFlip main
@@ -370,10 +377,13 @@ spec s registry = Spec.describe s "Conspiracy" $ do
           board = arriving grizzly S.alice (snd (S.addPermanent humility S.bob setUp))
           main =
             board
-              { GameState.activePlayer = S.alice,
-                GameState.phase = Phase.PrecombatMain,
-                GameState.priority = Just S.alice,
-                GameState.passed = Set.empty,
+              { GameState.turn =
+                  (GameState.turn board)
+                    { TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice,
+                      TurnRegisters.passed = Set.empty
+                    },
                 GameState.restartSignal = RestartSignal.Playing
               }
       Spec.assertEqWith s "CR 613.7j the 1/1 Grizzly Bears attack the turn they arrive" (S.lifeOf S.bob (attackingWithAll (withFlip main))) (Just 19)
@@ -430,8 +440,11 @@ attackingWithAll gs =
   S.runCombat
     S.aggressiveAnswer
     gs
-      { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-        GameState.priority = Nothing,
-        GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-        GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+              TurnRegisters.priority = Nothing,
+              TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
+              TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+            }
       }

@@ -20,6 +20,7 @@ import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -38,6 +39,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- Agent's Toolkit {1}{G}{U} Artifact - Clue (New Capenna Commander; name, cost,
 -- type line and oracle text checked against Scryfall 2026-08-25):
@@ -168,7 +170,7 @@ namedAnyNumberSpec s registry = Spec.describe s "CR 122.5 moving any number of c
         let begun =
               Event.recordEvent
                 (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-                (ready {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+                (ready {GameState.turn = (GameState.turn ready) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
             run = Engine.runGame (bandarAnswer takerId wanted) begun (Engine.settleForPriority >> Engine.priorityLoop)
             ((_, after), asked) = State.runState run 0
          in (bandarId, takerId, asked, after)
@@ -295,7 +297,7 @@ absentKindSpec s registry = Spec.describe s "CR 122.5 moving a counter of each k
               S.addCounter CounterKind.Finality 2 giverId
                 . S.addCounter CounterKind.Shield 4 giverId
                 . S.addCounter CounterKind.PlusOnePlusOne 3 giverId
-            ready = (onGoldberry goldberryId (stocked g3)) {GameState.priority = Just S.alice}
+            ready = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (onGoldberry goldberryId (stocked g3))
         pure (goldberryId, giverId, ready)
       -- The FIRST of the card's two printed activated abilities, activated once
       -- and resolved. Both are named rather than one taken off the front, so this
@@ -463,7 +465,7 @@ groupSourceSpec s registry = Spec.describe s "CR 122.5 moving counters off a gro
     Spec.assertEqWith s "bob's Wall bears three" (pairOn bobWall before) (3, 0)
     Spec.assertEqWith s "bob's Piker bears two, beside five shield counters" (pairOn bobPiker before) (2, 5)
     Spec.assertEqWith s "and the Cannibal bears only the one it entered with" (pairOn cannibalId before) (1, 0)
-    Spec.assertBool s (not (null (GameState.stack staged))) "the Cannibal's enters trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn staged)))) "the Cannibal's enters trigger really was on the stack"
     let (asked, after) = gathered staged
     -- THE GAMEPLAY-LEVEL ASSERTIONS, ahead of every proxy: the whole board's
     -- +1/+1 counters gathered onto one permanent, and each giver emptied.
@@ -719,7 +721,7 @@ atLeastOneSpec s registry = Spec.describe s "CR 122.5 moving one or more counter
             -- Stocked so the printed draw has a card to take and CR 104.3c cannot
             -- end the game before an assertion runs.
             stockedLibrary = List.foldl' (\gs _ -> snd (S.addLibraryCard piker S.alice gs)) g3 [1 :: Int .. 3]
-            ready = (counters goldberryId stockedLibrary) {GameState.priority = Just S.alice}
+            ready = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (counters goldberryId stockedLibrary)
         pure (goldberryId, takerId, ready)
       -- The SECOND printed activated ability, activated once and resolved. Both
       -- are named, which is itself an assertion: parun's Goldberry used to carry
@@ -817,7 +819,7 @@ groupDestinationSpec s registry = Spec.describe s "CR 122.5 moving counters onto
         let begun =
               Event.recordEvent
                 (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-                (ready {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+                (ready {GameState.turn = (GameState.turn ready) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
             run = Engine.runGame (forgottenAnswer wanted) begun (Engine.settleForPriority >> Engine.priorityLoop)
             ((_, after), asked) = State.runState run (0, Set.empty)
          in (ancientId, aliceWall, alicePiker, bobWall, asked, after)
@@ -938,13 +940,13 @@ settledBatchSpec s registry = Spec.describe s "CR 122.5 moving a settled batch, 
             (alicePiker, g3) = if others > (1 :: Int) then S.addPermanent piker S.alice g2 else (aliceWall, g2)
             (bobWall, g4) = S.addPermanent wall S.bob g3
             stocked = S.addCounter CounterKind.Shield 2 selfId (S.addCounter CounterKind.PlusOnePlusOne 5 selfId g4)
-        pure (selfId, aliceWall, alicePiker, bobWall, stocked {GameState.priority = Just S.alice})
+        pure (selfId, aliceWall, alicePiker, bobWall, stocked {GameState.turn = (GameState.turn stocked) {TurnRegisters.priority = Just S.alice}})
       -- alice's upkeep begins and the printed trigger resolves.
       upkeep wanted ready =
         let begun =
               Event.recordEvent
                 (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) S.alice))
-                (ready {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.activePlayer = S.alice})
+                (ready {GameState.turn = (GameState.turn ready) {TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep, TurnRegisters.activePlayer = S.alice}})
          in State.runState (snd <$> Engine.runGame (redistributorAnswer wanted) begun (Engine.settleForPriority >> Engine.priorityLoop)) []
       -- One printed activated ability, by position, activated and resolved.
       activate index wanted selfId ready = case drop index (Activatable.abilitiesFor selfId ready) of
@@ -1053,7 +1055,7 @@ scattererSpec s registry = Spec.describe s "CR 122.5 moving counters of a kind t
             (aliceWall, g2) = S.addPermanent wall S.alice g1
             (alicePiker, g3) = S.addPermanent piker S.alice g2
             (bobWall, g4) = S.addPermanent wall S.bob g3
-        pure (selfId, aliceWall, alicePiker, bobWall, (stock selfId g4) {GameState.priority = Just S.alice})
+        pure (selfId, aliceWall, alicePiker, bobWall, Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (stock selfId g4))
       bothKinds selfId = S.addCounter CounterKind.Shield 1 selfId . S.addCounter CounterKind.PlusOnePlusOne 3 selfId
       -- One printed activated ability, by position, activated and resolved.
       activate index wanted selfId ready = case drop index (Activatable.abilitiesFor selfId ready) of

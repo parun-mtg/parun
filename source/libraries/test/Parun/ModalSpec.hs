@@ -64,6 +64,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -155,7 +156,7 @@ fizzleSpec s registry = Spec.describe s "Fizzle" $ do
         after = snd (Engine.runGamePure answer gone Stack.resolveTop)
     Spec.assertEqWith s "Chaos Charm in alice's graveyard, unresolved" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
     Spec.assertEqWith s "no damage was dealt" (S.damageEventsOf after) []
-    Spec.assertEqWith s "stack empty" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "stack empty" (length (TurnRegisters.stack (GameState.turn after))) 0
 
 -- M4h task 1: Aether Channeler's "another nonland permanent" slot as data --
 -- Pool.Permanents narrowed by Not (HasCardType Land), with the printed
@@ -259,7 +260,7 @@ activationModalSpec s registry = Spec.describe s "M4h activation modal (CR 602.2
             resolved = snd (Engine.runGamePure answer gone Stack.resolveTop)
          in do
               Spec.assertEqWith s "no damage was dealt" (S.damageEventsOf resolved) []
-              Spec.assertEqWith s "stack empty" (length (GameState.stack resolved)) 0
+              Spec.assertEqWith s "stack empty" (length (TurnRegisters.stack (GameState.turn resolved))) 0
       _ -> Spec.assertFailure s "the fixture must have exactly one activated ability"
 
 -- M4h task 5: CR 700.2b/603.3d -- the TRIGGER-placement path (Engine.placeOne)
@@ -304,7 +305,7 @@ triggerModalSpec s registry = Spec.describe s "M4h trigger modal (CR 700.2b/603.
         answer = chooseModeAt (ModeIndex.MkModeIndex 1) (Recipient.ToObject victimId)
         placed = snd (Engine.runGamePure answer gs2 (Engine.placePendingTriggers []))
         resolved = snd (Engine.runGamePure answer placed Stack.resolveTop)
-        boundSlots = case GameState.stack placed of
+        boundSlots = case TurnRegisters.stack (GameState.turn placed) of
           abilId : _ -> case Game.lookupObject abilId placed of
             Just obj -> Just (Map.keysSet (Binding.targetsOf (Object.bindings obj)))
             Nothing -> Nothing
@@ -383,7 +384,7 @@ triggerModalSpec s registry = Spec.describe s "M4h trigger modal (CR 700.2b/603.
                   _ -> False
                 Nothing -> False
             )
-            (GameState.stack placed)
+            (TurnRegisters.stack (GameState.turn placed))
     Spec.assertBool s (not stackHasTrigger) "the trigger was removed from the stack, not left lingering"
     Spec.assertEqWith s "Synthetic Modal Trigger still on the battlefield (nothing bounced or exiled)" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Synthetic Modal Trigger") S.alice placed) 1
     Spec.assertEqWith s "alice's hand is still empty (nothing bounced)" (length (Game.zoneMembers Zone.Hand S.alice placed)) 0
@@ -426,7 +427,7 @@ triggerAnswerSpec s registry = Spec.describe s "Judging a trigger's mode announc
     let (crusherId, gs1) = S.entersWithTrigger crusher S.alice (Setup.emptyGame S.bothPlayers)
         (_, gs) = S.addLibraryCard piker S.alice gs1
         ((_, placed), asks) = State.runState (Engine.runGame (answeringModes (\n -> [100 + n, 101 + n])) gs (Engine.placePendingTriggers [])) 0
-    Spec.assertEqWith s "the ability is removed from the stack rather than placed with unprinted modes" (length (GameState.stack placed)) 0
+    Spec.assertEqWith s "the ability is removed from the stack rather than placed with unprinted modes" (length (TurnRegisters.stack (GameState.turn placed))) 0
     Spec.assertEqWith s "so alice drew nothing" (length (Game.zoneMembers Zone.Hand S.alice placed)) 0
     Spec.assertEqWith s "and Craftwork Crusher took no damage" (S.damageOf crusherId placed) (Just 0)
     Spec.assertEqWith s "and alice was asked exactly twice: both answers narrow to nothing" asks 2
@@ -559,7 +560,7 @@ chooseTwoSpec s registry = Spec.describe s "ChooseTwo (CR 700.2)" $ do
         after = snd (Engine.runGamePure answer gone Stack.resolveTop)
     Spec.assertEqWith s "alice's hand is empty: no card was drawn" (length (Game.zoneMembers Zone.Hand S.alice after)) 0
     Spec.assertEqWith s "Cryptic Command is in alice's graveyard, unresolved" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "stack empty" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "stack empty" (length (TurnRegisters.stack (GameState.turn after))) 0
 
 -- Ojutai's Command's four modes, in printed order (CR 700.2 /
 -- data/cards/ojutais-command.json), under "Choose two --":
@@ -667,7 +668,7 @@ forcedTwoSpec s registry = Spec.describe s "ForcedTwo (CR 700.2a)" $ do
           _ -> S.identityAnswer p
         cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
         after = snd (Engine.runGamePure answer cast Stack.resolveTop)
-    Spec.assertBool s (notElem castPiker (GameState.stack after)) "bob's creature spell was countered"
+    Spec.assertBool s (notElem castPiker (TurnRegisters.stack (GameState.turn after))) "bob's creature spell was countered"
     Spec.assertEqWith s "the graveyard Piker is on the battlefield under alice" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Goblin Piker") S.alice after) 1
     Spec.assertEqWith s "alice is still at 20: mode 1 was not chosen" (S.lifeOf S.alice after) (Just 20)
 
@@ -703,7 +704,7 @@ repeatedModeSpec s registry = Spec.describe s "RepeatedModes (CR 700.2d)" $ do
         cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
         after = snd (Engine.runGamePure answer cast Stack.resolveTop)
     Spec.assertEqWith s "the cast was rewound: Cryptic Command is still in alice's hand" (S.handSize S.alice after) 1
-    Spec.assertBool s (null (GameState.stack after)) "nothing reached the stack"
+    Spec.assertBool s (null (TurnRegisters.stack (GameState.turn after))) "nothing reached the stack"
     Spec.assertEqWith s "no card was drawn: alice's library is untouched" (length (Game.zoneMembers Zone.Library S.alice after)) 1
     Spec.assertEqWith s "and her graveyard is empty" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
 
@@ -835,7 +836,7 @@ chooseOneOrBothSpec s registry = Spec.describe s "ChooseOneOrBoth (CR 700.2)" $ 
         cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
         after = snd (Engine.runGamePure answer cast Stack.resolveTop)
     Spec.assertEqWith s "the cast was rewound: Vandalize is still in alice's hand" (S.handSize S.alice after) 1
-    Spec.assertBool s (null (GameState.stack after)) "nothing reached the stack"
+    Spec.assertBool s (null (TurnRegisters.stack (GameState.turn after))) "nothing reached the stack"
     Spec.assertEqWith s "bob's Bonesplitter is untouched" (bonesplitterCount after) 1
     Spec.assertEqWith s "and so is his Forest" (forestCount after) 1
 

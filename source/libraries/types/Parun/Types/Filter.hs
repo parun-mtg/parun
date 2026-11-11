@@ -342,7 +342,7 @@ data Filter keyword
   | -- | CR 508.1a-d: the candidate could have been declared as an attacker in
     -- one of this turn's declare attackers steps -- Season of the Witch's
     -- "creatures that couldn't attack", negated. Read off
-    -- GameState.couldAttackThisTurn.
+    -- TurnRegisters.couldAttackThisTurn.
     CouldAttackThisTurn
   | -- | The candidate is a card that left a library this way earlier this turn
     -- (CR 121.1, 701.17a). Matches the incarnation that left (CR 400.7), so a card

@@ -3,10 +3,12 @@ module Parun.DecideSpec where
 import qualified Data.Map.Strict as Map
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Applicative m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Engine.Decide" $ do
@@ -15,7 +17,7 @@ spec s = Spec.describe s "Parun.Engine.Decide" $ do
     Spec.assertEq s (Decide.deciderFor S.alice gs) $ Decider.MkDecider S.alice
 
   Spec.describe s "CR 724.3: an active controlled player's decisions route to the controller" $ do
-    let gs = (Setup.emptyGame S.bothPlayers) {GameState.activePlayer = S.bob, GameState.control = S.turnControl S.alice S.bob}
+    let gs = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.bob}) (Setup.emptyGame S.bothPlayers) {GameState.control = S.turnControl S.alice S.bob}
 
     Spec.it s "bob's decisions route to alice" $ do
       Spec.assertEq s (Decide.deciderFor S.bob gs) $ Decider.MkDecider S.alice
@@ -29,11 +31,12 @@ spec s = Spec.describe s "Parun.Engine.Decide" $ do
   -- rule fixes who the active player is, not who may be controlled.
   Spec.describe s "CR 724.2: a controlled player who is not the active player" $ do
     let gs =
-          (Setup.emptyGame S.bothPlayers)
-            { GameState.activePlayer = S.alice,
-              GameState.control = Map.singleton S.bob (pure (S.resolutionControl S.alice)),
-              GameState.pendingControl = Map.empty
-            }
+          Turn.withTurn
+            (\turn -> turn {TurnRegisters.activePlayer = S.alice})
+            (Setup.emptyGame S.bothPlayers)
+              { GameState.control = Map.singleton S.bob (pure (S.resolutionControl S.alice)),
+                GameState.pendingControl = Map.empty
+              }
 
     Spec.it s "bob's decisions route to alice" $ do
       Spec.assertEq s (Decide.deciderFor S.bob gs) $ Decider.MkDecider S.alice
@@ -45,5 +48,5 @@ spec s = Spec.describe s "Parun.Engine.Decide" $ do
   -- The lookup names ONE seat: a row for alice says nothing about bob, which is
   -- what a single Maybe keyed to the active player could not express.
   Spec.it s "a seat with no control row decides for themselves" $ do
-    let gs = (Setup.emptyGame S.bothPlayers) {GameState.activePlayer = S.alice, GameState.control = S.turnControl S.carol S.alice, GameState.pendingControl = Map.empty}
+    let gs = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.alice}) (Setup.emptyGame S.bothPlayers) {GameState.control = S.turnControl S.carol S.alice, GameState.pendingControl = Map.empty}
     Spec.assertEq s (Decide.deciderFor S.bob gs) $ Decider.MkDecider S.bob

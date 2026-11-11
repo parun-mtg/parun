@@ -67,6 +67,7 @@ import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
@@ -152,7 +153,7 @@ visitBoard piker attraction =
   let (mine, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
       (theirs, g2) = S.addPermanent piker S.bob g1
       (attractionId, g3) = S.addPermanent attraction S.alice g2
-   in (g3 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}, mine, theirs, attractionId)
+   in (g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}, mine, theirs, attractionId)
 
 -- Run `game` answering each die from `rolls` in turn, every target slot with
 -- `target` alone, and everything else as S.identityAnswer does. Answers the
@@ -185,7 +186,7 @@ visitSpec s registry = Spec.describe s "Roll to visit" $ do
     cars <- S.printingOf s registry "Bumper Cars"
     let (gs, mine, _, _) = visitBoard piker (carsA cars)
         -- bob's turn: alice's Attraction is not his.
-        bobs = gs {GameState.activePlayer = S.bob, GameState.priority = Just S.bob}
+        bobs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.bob, TurnRegisters.priority = Just S.bob}}
     Spec.assertEqWith s "alice rolls one d6 on her turn" (snd (visitWith [3] mine gs)) [6]
     Spec.assertEqWith s "bob rolls nothing on his" (snd (visitWith [3] mine bobs)) []
   -- #4118: a deck list names a printing by set code and collector number, and
@@ -199,7 +200,7 @@ visitSpec s registry = Spec.describe s "Roll to visit" $ do
         let (gs, mine, _, firstId) = visitBoard piker first
             (_, both) = S.addPermanent second S.alice gs
             rolled = fst (rolling [2] mine both (Engine.runTurnBasedActions Phase.PrecombatMain >> Engine.settleForPriority))
-            visited = Maybe.mapMaybe (`Game.abilitySourceOf` rolled) (GameState.stack rolled)
+            visited = Maybe.mapMaybe (`Game.abilitySourceOf` rolled) (TurnRegisters.stack (GameState.turn rolled))
         -- THE GAMEPLAY ASSERTION: 202a lights 2 and 202f does not.
         Spec.assertEqWith s "a 2 visits the first alone" visited [firstId]
         Spec.assertEqWith s "lit as printed" (fmap Printing.lights brought) [Set.fromList [2, 3, 6], Set.fromList [4, 5, 6]]

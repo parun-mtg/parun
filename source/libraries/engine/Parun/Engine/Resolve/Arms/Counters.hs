@@ -136,6 +136,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -1743,13 +1744,13 @@ phaseOut resolving source controller legal ref =
     Phasing.phaseOutSet controller (Set.fromList (objectRefObjects legal resolving controller source gs ref)) gs
 
 -- CR 500.8: add the phases, directly after the phase this is resolving in.
--- Turn.splicePhases is handed GameState.phase because that is NOT the head of
+-- Turn.splicePhases is handed TurnRegisters.phase because that is NOT the head of
 -- `remaining` when the resolving phase still has steps to come; CR 511.3 bounds
 -- the phase, and Turn.thisPhase is where that lives.
 addPhases :: [ExtraPhase.ExtraPhase] -> Game ()
 addPhases extras =
   State.modify' $ \gs ->
-    gs {GameState.remaining = Turn.splicePhases (GameState.phase gs) extras (GameState.remaining gs)}
+    gs {GameState.turn = (GameState.turn gs) {TurnRegisters.remaining = Turn.splicePhases (TurnRegisters.phase (GameState.turn gs)) extras (TurnRegisters.remaining (GameState.turn gs))}}
 
 -- CR 725.1: end the turn (Time Stop). Rule 725.1's six steps, in its own order,
 -- and deliberately NOT the CR 608 process the fold around this is running.
@@ -1757,7 +1758,7 @@ endTurn :: (Game Result -> PendingReplacementEffect.PendingReplacementEffect -> 
 endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
   -- CR 725.1a: an ability that triggered before this process began but is not
   -- yet on the stack ceases to exist. There is no pending queue to flush -- a
-  -- pending trigger is DERIVED from GameState.events behind the CR 117.5
+  -- pending trigger is DERIVED from TurnRegisters.events behind the CR 117.5
   -- watermark -- so this is a watermark bump, which is also what makes rule
   -- 725.1f's exception fall out: everything recorded after this line is an
   -- ability that triggered DURING the process, and stays unscanned until the
@@ -1766,14 +1767,14 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
   -- exist").
   State.modify' $ \gs ->
     gs
-      { GameState.scannedThrough = Natural.length (GameState.events gs),
+      { GameState.turn = (GameState.turn gs) {TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn gs))},
         GameState.boardAfterEvent = Map.empty,
         GameState.boardBeforeEvent = Map.empty,
         GameState.battlefieldWhenTriggered = Map.empty,
         GameState.heldBoards = []
       }
   -- CR 725.1b: exile every object on the stack, INCLUDING the one that is
-  -- resolving -- which is still on GameState.stack, Stack.resolveTopWith
+  -- resolving -- which is still on TurnRegisters.stack, Stack.resolveTopWith
   -- leaving it there until CR 608.2n moves it. A real zone change, so an
   -- ability that triggers off one is CR 725.1f's.
   --
@@ -1794,7 +1795,7 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
   -- In Grand Melee, the stack and turn of Time Stop's own marker
   -- (docs/decisions.md, "Which stack and turn a resolving Grand Melee object
   -- names").
-  onStack <- State.gets GameState.stack
+  onStack <- State.gets (TurnRegisters.stack . GameState.turn)
   Foldable.traverse_ Common.exileOrCease onStack
   -- CR 725.1c: check state-based actions, granting no priority and putting no
   -- triggered ability on the stack -- so Parun.Engine.Sba's own pass and not
@@ -1827,7 +1828,7 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
   -- cleanup step in the ending phase, so ending the turn during the end step
   -- leaves that phase still under way.
   State.modify' $ \gs ->
-    let phase = GameState.phase gs
+    let phase = TurnRegisters.phase (GameState.turn gs)
         cleared = case phase of
           Phase.Combat _ -> Combat.clearCombat gs
           _ -> gs
@@ -1840,14 +1841,14 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
           Phase.Ending _ -> cleared
           _ -> maybe cleared (\ending -> Mana.endRetentionAtEndOf ending (Expiry.dropAtEndOf ending cleared)) (Turn.wholePhaseOf phase)
         jumped = case phase of
-          Phase.Ending EndingStep.Cleanup -> Turn.spliceExtraCleanup (GameState.remaining gs)
-          _ -> Turn.jumpToCleanup (GameState.remaining gs)
-     in expired {GameState.remaining = jumped}
+          Phase.Ending EndingStep.Cleanup -> Turn.spliceExtraCleanup (TurnRegisters.remaining (GameState.turn gs))
+          _ -> Turn.jumpToCleanup (TurnRegisters.remaining (GameState.turn gs))
+     in expired {GameState.turn = (GameState.turn expired) {TurnRegisters.remaining = jumped}}
   -- CR 725.1f: no player gets priority during this process. Engine.priorityLoop
   -- reads this and returns without settling and without granting another round,
   -- so the exiles above stay unscanned until the cleanup step's own CR 514.3a
   -- settle puts them on the stack. Engine.runStep lowers it there.
-  State.modify' (\gs -> gs {GameState.endTurnSignal = EndTurnSignal.Ended})
+  State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.endTurnSignal = EndTurnSignal.Ended}})
 
 -- CR 725.2: end the combat phase (Mandate of Peace). Rule 725.2's seven steps,
 -- in its own order, and deliberately NOT the CR 608 process around it. The arm
@@ -1855,7 +1856,7 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
 -- and differ on what 725.2d leaves at the head of the schedule.
 endCombatPhase :: (Game Result -> PendingReplacementEffect.PendingReplacementEffect -> Game ()) -> (Game Result -> Game ()) -> Game Result -> Game ()
 endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
-  phase <- State.gets GameState.phase
+  phase <- State.gets (TurnRegisters.phase . GameState.turn)
   case phase of
     -- CR 725.2g: attempted at a time that is not a combat phase, nothing
     -- happens -- not even the exile of the stack, since rule 725.2's steps are
@@ -1873,7 +1874,7 @@ endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
       -- nothing is pending here.
       State.modify' $ \gs ->
         gs
-          { GameState.scannedThrough = Natural.length (GameState.events gs),
+          { GameState.turn = (GameState.turn gs) {TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn gs))},
             GameState.boardAfterEvent = Map.empty,
             GameState.boardBeforeEvent = Map.empty,
             GameState.battlefieldWhenTriggered = Map.empty,
@@ -1882,7 +1883,7 @@ endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
       -- CR 725.2b: exile every object on the stack, the resolving one included.
       -- Shared with the arm above down to the CR 400.7 detail that leaves
       -- finishSpell a no-op afterwards.
-      onStack <- State.gets GameState.stack
+      onStack <- State.gets (TurnRegisters.stack . GameState.turn)
       Foldable.traverse_ Common.exileOrCease onStack
       -- CR 725.2c: check state-based actions, granting no priority and putting
       -- no triggered ability on the stack. To a fixpoint on CR 704.3's
@@ -1905,7 +1906,7 @@ endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
       -- positional.
       State.modify' $ \gs ->
         let cleared = Combat.clearCombat gs
-            skipped = cleared {GameState.remaining = Turn.dropRestOfPhase phase (GameState.remaining gs)}
+            skipped = cleared {GameState.turn = (GameState.turn cleared) {TurnRegisters.remaining = Turn.dropRestOfPhase phase (TurnRegisters.remaining (GameState.turn gs))}}
          in -- Both sweeps, the CR 725.1d arm's reason above: an "until end of
             -- combat" mana retention rides the UNIT and carries no Expiry, so
             -- the phase ending here has to end it too. The mana goes with this
@@ -1918,7 +1919,7 @@ endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
       -- at. CR 725.1d leaves the cleanup step at the head of the schedule and
       -- CR 725.2d the following phase, so "the abilities that triggered during
       -- this process are put onto the stack there" is one mechanism, not two.
-      State.modify' (\gs -> gs {GameState.endTurnSignal = EndTurnSignal.Ended})
+      State.modify' (\gs -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.endTurnSignal = EndTurnSignal.Ended}})
     _ -> pure ()
 
 -- Exactly one new controller or nothing: a slot CR 608.2b emptied names

@@ -40,6 +40,7 @@ import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Sticker as Sticker
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.MeldSpec as MeldSpec
@@ -109,11 +110,12 @@ import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Alice active with priority in her precombat main phase.
 mainPhaseForAlice :: GameState.GameState -> GameState.GameState
-mainPhaseForAlice gs = gs {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+mainPhaseForAlice gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}}
 
 -- `card` in alice's graveyard on her main phase, beside `lands` copies of `land`,
 -- carrying Eldrazi Guacamole Tightrope's permission sticker.
@@ -307,7 +309,7 @@ castPin pin x ref gs0 =
 drain :: Game.Type.Game ()
 drain = do
   Engine.settleForPriority
-  stack <- State.gets GameState.stack
+  stack <- State.gets (TurnRegisters.stack . GameState.turn)
   Monad.unless (null stack) (Stack.resolveTop >> drain)
 
 -- A Pyrodancer enters under alice with its enters event, and everything it
@@ -420,7 +422,7 @@ arrivals before after = [oid | oid <- Set.toList (GameState.battlefield after), 
 
 -- The characteristics each GameEvent.SpellCast in the log recorded.
 castSnapshots :: GameState.GameState -> [PC.ProjectedCharacteristics]
-castSnapshots gs = [SpellWasCast.characteristics w | GameEvent.SpellCast w <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs))]
+castSnapshots gs = [SpellWasCast.characteristics w | GameEvent.SpellCast w <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))]
 
 -- alice's Wicker Picker beside `lands` Forests, her sheets and `tickets`
 -- tickets, in her main phase, with `card` in her hand.
@@ -445,7 +447,7 @@ chitteringHost :: Printing.Printing -> Printing.Printing -> GameState.GameState 
 chitteringHost rats scavengers base =
   let (_, g1) = S.addPermanent rats S.alice base
       (_, g2) = S.addPermanent scavengers S.alice g1
-      atCombat = g2 {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+      atCombat = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
       after = S.runPure S.identityAnswer atCombat (Engine.runStep >> Engine.priorityLoop)
       hostName = CardName.MkCardName (Text.pack "Chittering Host")
    in (List.find (\oid -> fmap S.nameOf (Game.cardOf oid after) == Just hostName) (Game.zoneMembers Zone.Battlefield S.alice after), after)
@@ -566,7 +568,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         placed = foldMap (Foldable.toList . Object.stickers) (Game.lookupObject pikerId stickered)
         (boltId, g2) = S.addHandCard bolt S.bob stickered
         (unsummonId, g3) = S.addHandCard unsummon S.bob g2
-        bobsWindow = g3 {GameState.priority = Just S.bob}
+        bobsWindow = g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.priority = Just S.bob}}
         killed = S.settleSba (S.runPure (namingTarget pikerId) bobsWindow (S.cast S.bob boltId >> Stack.resolveTop))
         bounced = S.runPure (namingTarget pikerId) bobsWindow (S.cast S.bob unsummonId >> Stack.resolveTop)
     case (stickersIn Zone.Graveyard killed, placed) of
@@ -664,10 +666,10 @@ spec s registry = Spec.describe s "Sticker" $ do
         ptKind = Set.singleton StickerKind.PowerToughness
     case Set.toList (GameState.command board) of
       [commander] -> do
-        let stickered = (Sticker.put S.alice commander nightTwoThree Nothing board) {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        let stickered = Turn.withTurn (\turn -> turn {TurnRegisters.activePlayer = S.alice, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}) (Sticker.put S.alice commander nightTwoThree Nothing board)
             after = S.runPure S.identityAnswer stickered (S.cast S.alice shahrazadId >> Stack.resolveTopWith Engine.playSubgame)
         Spec.assertEqWith s "CR 123.8 the stickered commander is a 2/3 in the command zone" (pt commander stickered) (Just 2, Just 3)
-        Spec.assertEqWith s "Shahrazad resolved: bob lost the subgame and half his life" (GameState.stack after, S.lifeOf S.bob after) ([], Just 10)
+        Spec.assertEqWith s "Shahrazad resolved: bob lost the subgame and half his life" (TurnRegisters.stack (GameState.turn after), S.lifeOf S.bob after) ([], Just 10)
         Spec.assertEqWith s "CR 730.5c the commander is back in the command zone" (Set.toList (GameState.command after)) [commander]
         Spec.assertEqWith s "a 0/0, with no sticker" (pt commander after, stickerKindsOn commander after) ((Just 0, Just 0), [])
         Spec.assertEqWith s "CR 123.3 and its sticker is free to use" (List.elem nightTwoThree (Sticker.available S.alice ptKind after)) True
@@ -702,7 +704,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (pikerId, unstickered) = S.addPermanent piker S.alice g1
         stickered = stickerOn pikerId unstickered
         (unsummonId, g2) = S.addHandCard unsummon S.bob stickered
-        bounced = S.runPure (namingTarget pikerId) (g2 {GameState.priority = Just S.bob}) (S.cast S.bob unsummonId >> Stack.resolveTop)
+        bounced = S.runPure (namingTarget pikerId) (g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob unsummonId >> Stack.resolveTop)
         flies = Projection.hasKeyword Keyword.Flying croakidId
     Spec.assertEqWith s "CR 123.4 flying with no sticker, with one, and after the bounce" (flies unstickered, flies stickered, flies bounced) (False, True, False)
   -- Review Focus 5. The Clone copies the stickered Piker; then the Piker
@@ -720,7 +722,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (_, staged) = S.spellOnStack clone S.alice (stickerOn pikerId g2)
         cloned = S.settleSba (S.runPure (copying pikerId) staged Stack.resolveTop)
         (unsummonId, g3) = S.addHandCard unsummon S.bob cloned
-        bounced = S.runPure (namingTarget pikerId) (g3 {GameState.priority = Just S.bob}) (S.cast S.bob unsummonId >> Stack.resolveTop)
+        bounced = S.runPure (namingTarget pikerId) (g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob unsummonId >> Stack.resolveTop)
     Spec.assertEqWith s "CR 123.1 with the stickered Piker gone, its Clone does not keep Croakid flying" (Projection.hasKeyword Keyword.Flying croakidId bounced) False
     Spec.assertEqWith s "the Clone is on the battlefield beside Croakid" (length (filter (\oid -> Set.notMember oid (GameState.battlefield base)) (Game.zoneMembers Zone.Battlefield S.alice bounced))) 2
   -- The spec's retention bullet as the whole card: Pyrodancer stickers itself
@@ -733,7 +735,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     let base = withSheets (take 1 sheets) (S.landsFor mountain S.bob 1 (Setup.gameWith GameSettings.plain S.bothPlayers))
         (pyro, stickered, _) = pyrodancerEnters pyrodancer Nothing base
         (boltId, g1) = S.addHandCard bolt S.bob stickered
-        killed = S.settleSba (S.runPure (namingTarget pyro) (g1 {GameState.priority = Just S.bob}) (S.cast S.bob boltId >> Stack.resolveTop))
+        killed = S.settleSba (S.runPure (namingTarget pyro) (g1 {GameState.turn = (GameState.turn g1) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob boltId >> Stack.resolveTop))
     Spec.assertEqWith s "CR 123.9 Pyrodancer's art sticker is on it" (fmap (fmap (StickerRef.kind . StickerPlacement.sticker) . Foldable.toList . Object.stickers) (Game.lookupObject pyro stickered)) (Just [StickerKind.Art])
     Spec.assertEqWith s "CR 123.5 and on the card in the graveyard" (fmap (Seq.length . fst) (stickersIn Zone.Graveyard killed)) [1]
   -- Review Focus 4. Two copies of one sheet: six art stickers, all distinct.
@@ -749,7 +751,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (_, g2, first) = pyrodancerEnters pyrodancer (Just pikerId) g1
         (_, g3, second) = pyrodancerEnters pyrodancer (Just pikerId) g2
         (unsummonId, g4) = S.addHandCard unsummon S.bob g3
-        bounced = S.runPure (namingTarget pikerId) (g4 {GameState.priority = Just S.bob}) (S.cast S.bob unsummonId >> Stack.resolveTop)
+        bounced = S.runPure (namingTarget pikerId) (g4 {GameState.turn = (GameState.turn g4) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob unsummonId >> Stack.resolveTop)
         (_, _, third) = pyrodancerEnters pyrodancer Nothing bounced
         offered o = concat (take 1 (stickers o))
     Spec.assertEqWith s "CR 123.3 the used sticker is not offered again" (offered second) (drop 1 (offered first))
@@ -847,7 +849,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         resolved = S.runPure S.identityAnswer casting Stack.resolveTop
         shown g = concatMap (\oid -> nameTexts oid g)
     Spec.assertEqWith s "CR 123.6c in exile it is Fae of Otter Wishes" (nameTexts faeId stickered) [Text.pack "Fae of Otter Wishes"]
-    Spec.assertEqWith s "CR 123.6c on the stack it is Granted Otter" (shown casting (GameState.stack casting)) [Text.pack "Granted Otter"]
+    Spec.assertEqWith s "CR 123.6c on the stack it is Granted Otter" (shown casting (TurnRegisters.stack (GameState.turn casting))) [Text.pack "Granted Otter"]
     Spec.assertEqWith s "CR 123.6c/716.3d exiled again it is Fae of Otter Wishes" (shown resolved (Game.zoneMembers Zone.Exile S.alice resolved)) [Text.pack "Fae of Otter Wishes"]
   -- Review Focus 2.
   Spec.it s "CR 123.1/707.2 a Clone of Grizzly Otter Bears is named Grizzly Bears" $ do
@@ -947,7 +949,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         hidden = g1 {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.TurnedFaceDown}) trackerId (GameState.objects g1)}
         (_, named, asked) = entersNaming baaallerina (placingAt (Just trackerId) night 0) hidden
         (breakId, g2) = S.addHandCard breakOpen S.bob named
-        revealed = S.runPure (namingTarget trackerId) (g2 {GameState.priority = Just S.bob}) (S.cast S.bob breakId >> Stack.resolveTop)
+        revealed = S.runPure (namingTarget trackerId) (g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob breakId >> Stack.resolveTop)
     Spec.assertEqWith s "CR 123.6b the face-down Tracker is named Night" (nameTexts trackerId named) [Text.pack "Night"]
     Spec.assertEqWith s "CR 123.6c face up it is Night Ainok Tracker" (nameTexts trackerId revealed) [Text.pack "Night Ainok Tracker"]
     Spec.assertEqWith s "CR 123.6b a nameless object has one position, so nobody was asked" asked []
@@ -1110,7 +1112,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (auraId, g2) = S.addPermanent protection S.alice named
         enchanted = S.attach auraId trackerId g2
         (breakId, g3) = S.addHandCard breakOpen S.bob enchanted
-        revealed = S.runPure (namingTarget trackerId) (g3 {GameState.priority = Just S.bob}) (S.cast S.bob breakId >> Stack.resolveTop)
+        revealed = S.runPure (namingTarget trackerId) (g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob breakId >> Stack.resolveTop)
     Spec.assertEqWith s "CR 613.7k face up, the restamped sticker follows the Aura: Night Legitimate Businessperson" (nameTexts trackerId revealed) [Text.pack "Night Legitimate Businessperson"]
     Spec.assertEqWith s "CR 613.7 face down, the later Aura hides the word" (nameTexts trackerId enchanted) [Text.pack "Legitimate Businessperson"]
   Spec.it s "CR 123.6e Otter has two unique vowels: _____ Bird Gets the Worm gains alice 2 life" $ do
@@ -1172,7 +1174,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         triggered add =
           let (bearsId, g1) = add bears S.alice base
               settled = S.runPure S.identityAnswer (Sticker.put S.alice bearsId otter Nothing g1) Engine.settleForPriority
-           in length (GameState.stack settled)
+           in length (TurnRegisters.stack (GameState.turn settled))
     Spec.assertEqWith s "CR 109.2 nothing triggers for the card in the graveyard" (triggered S.addGraveyardCard) 0
     Spec.assertEqWith s "and the Pie triggers for the permanent" (triggered S.addPermanent) 1
   Spec.it s "A Good Day to Pie stays in the graveyard for a name sticker on an enchantment" $ do
@@ -1481,7 +1483,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     let base = withSheets sheets (S.landsFor swamp S.bob 4 (Setup.gameWith GameSettings.plain S.bothPlayers))
         (pinId, g1) = S.addPermanent pin S.alice base
         (spearId, g2) = S.addPermanent spear S.bob (Sticker.put S.alice pinId jugglerIndestructible Nothing g1)
-        bobsTurn = g2 {GameState.activePlayer = S.bob, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+        bobsTurn = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.activePlayer = S.bob, TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.bob}}
         stripped = case Activatable.abilitiesFor spearId bobsTurn of
           lose : _ -> S.runPure S.identityAnswer bobsTurn (Activate.activateAbility S.bob spearId lose >> Stack.resolveTop)
           [] -> bobsTurn
@@ -1533,7 +1535,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (ambassadorId, entered) = S.entersWithTrigger ambassador S.alice g2
         placed = snd (fst (State.runState (Engine.runGame (placingRef 0 (Just bearsId) otterFiveOne) entered drain) (MkOffers [] [] 0)))
         stickered = Sticker.put S.alice bearsId nightMenace Nothing (Sticker.put S.alice splitterId minotaurOneFour Nothing placed)
-        atCombat = (S.withEvents [GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Combat CombatStep.BeginningOfCombat) S.alice)] stickered) {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat}
+        atCombat = Turn.withTurn (\turn -> turn {TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat}) (S.withEvents [GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Combat CombatStep.BeginningOfCombat) S.alice)] stickered)
         combat = snd (fst (State.runState (Engine.runGame (placing Nothing) atCombat drain) (MkOffers [] [] 0)))
     Spec.assertEqWith s "CR 123.8a Ambassador is a 6/5" (Projection.powerOf ambassadorId combat, Projection.toughnessOf ambassadorId combat) (Just 6, Just 5)
     Spec.assertEqWith s "CR 123.3c alice paid two of its three tickets" (S.playerCounterOf PlayerCounterKind.Ticket S.alice combat) 1
@@ -1548,7 +1550,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         triggered add =
           let (bearsId, g1) = add bears S.alice base
               settled = S.runPure S.identityAnswer (Sticker.put S.alice bearsId nightMenace Nothing g1) Engine.settleForPriority
-           in length (GameState.stack settled)
+           in length (TurnRegisters.stack (GameState.turn settled))
     Spec.assertEqWith s "CR 109.2 nothing triggers for the card in the graveyard" (triggered S.addGraveyardCard) 0
     Spec.assertEqWith s "and Tusk triggers for the permanent" (triggered S.addPermanent) 1
   -- The battlefield half of CR 123.8 / 208.3: crewed, Consulate Dreadnought is
@@ -1621,7 +1623,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     let art = aliceSticker 1 StickerKind.Art 0
         (card, board) = pickerBoard sheets picker forest 3 0 bears
         (cast, _, _) = castKicking stickerKick (Just art) card board
-        spellKinds = concatMap (\spell -> stickerKindsOn spell cast) (GameState.stack cast)
+        spellKinds = concatMap (\spell -> stickerKindsOn spell cast) (TurnRegisters.stack (GameState.turn cast))
     Spec.assertEqWith s "CR 702.33h alice got one ticket and the Bears spell has the art sticker" (S.playerCounterOf PlayerCounterKind.Ticket S.alice cast, spellKinds) (1, [StickerKind.Art])
   -- Wicker Picker's ruling: two of them grant two sticker kicker {1}, each paid
   -- separately. Five Forests pay the Bears and three kicks alike, so the third
@@ -1702,7 +1704,7 @@ spec s registry = Spec.describe s "Sticker" $ do
     case exiled of
       [bearsCard] -> do
         let (cast, resolved, asked) = castKicking stickerKick (Just (aliceSticker 1 StickerKind.Art 0)) bearsCard board
-            onSpell = concatMap (\spell -> stickerKindsOn spell cast) (GameState.stack cast)
+            onSpell = concatMap (\spell -> stickerKindsOn spell cast) (TurnRegisters.stack (GameState.turn cast))
         Spec.assertEqWith s "CR 123.3b alice got the ticket, was not asked, and the Bears has no sticker" (S.playerCounterOf PlayerCounterKind.Ticket S.alice cast, asked > 0, onSpell) (1, False, [])
         Spec.assertEqWith s "the Bears entered under alice" (fmap (\oid -> Projection.controllerOf oid resolved) (arrivals board resolved)) [Just S.alice]
         Spec.assertBool s (bobsBears /= bearsCard) "the exiled card is a new object"
@@ -1724,7 +1726,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         (ratsId, g1) = S.addPermanent rats S.alice base
         (scavId, g2) = S.addPermanent scavengers S.alice g1
         stickered = stickeredBoth g2
-        atCombat = stickered {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        atCombat = stickered {GameState.turn = (GameState.turn stickered) {TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
         melded_ = S.runPure S.identityAnswer atCombat (Engine.runStep >> Engine.priorityLoop)
         hostName = CardName.MkCardName (Text.pack "Chittering Host")
         hosts = filter (\oid -> fmap S.nameOf (Game.cardOf oid melded_) == Just hostName) (Game.zoneMembers Zone.Battlefield S.alice melded_)
@@ -1837,7 +1839,7 @@ spec s registry = Spec.describe s "Sticker" $ do
       (Just hostId, melded_) -> do
         let stickered = Sticker.put S.alice hostId (aliceSticker 1 StickerKind.Art 0) Nothing melded_
             (unsummonId, g1) = S.addHandCard unsummon S.bob stickered
-            ((_, g), askedKeeper) = State.runState (Engine.runGame (keeping Nothing (namingTarget hostId)) (g1 {GameState.priority = Just S.bob}) (S.cast S.bob unsummonId >> Stack.resolveTop)) 0
+            ((_, g), askedKeeper) = State.runState (Engine.runGame (keeping Nothing (namingTarget hostId)) (g1 {GameState.turn = (GameState.turn g1) {TurnRegisters.priority = Just S.bob}}) (S.cast S.bob unsummonId >> Stack.resolveTop)) 0
             hand = Game.zoneMembers Zone.Hand S.alice g
         Spec.assertEqWith s "CR 123.5 not asked, and no card in hand has a sticker" (askedKeeper > 0, concatMap (\c -> stickerKindsOn c g) hand) (False, [])
         Spec.assertEqWith s "both cards are in alice's hand" (length hand) 2

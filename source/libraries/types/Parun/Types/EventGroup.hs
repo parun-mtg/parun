@@ -3,7 +3,7 @@ module Parun.Types.EventGroup where
 import qualified Numeric.Natural as Natural
 
 -- | CR 704.3 / CR 608.2f: which recorded events were ONE event. Every entry in
--- GameState.events carries one, and two entries are simultaneous exactly when
+-- TurnRegisters.events carries one, and two entries are simultaneous exactly when
 -- their groups are equal.
 --
 -- The rules distinguish "several events in a row" from "one event affecting

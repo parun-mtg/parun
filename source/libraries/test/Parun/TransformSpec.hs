@@ -136,6 +136,7 @@ import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 701.27h's fixture, which is not the Gargoyle's: Tovolar, Dire Overlord //
@@ -221,7 +222,7 @@ aangBoard aang piker moonmist forest =
   let (aangId, g0) = S.addPermanent aang S.alice (S.landsInPlay forest 2)
       (pikerId, g1) = S.addPermanent piker S.alice g0
       (moonmistId, g2) = S.addHandCard moonmist S.alice g1
-   in (aangId, pikerId, moonmistId, g2 {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice})
+   in (aangId, pikerId, moonmistId, g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}})
 
 -- The Piker takes lethal damage and CR 704.5g destroys it, Aang's
 -- leaves-the-battlefield trigger reaches the stack and resolves, and CR 603.7a
@@ -236,7 +237,7 @@ armAangsDelayedAbility pikerId board =
 atNextUpkeep :: GameState.GameState -> GameState.GameState
 atNextUpkeep gs =
   let upkeep = Phase.Beginning BeginningStep.Upkeep
-      began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.phase = upkeep})
+      began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep}})
    in S.runPure S.identityAnswer began (Engine.placePendingTriggers [] *> Stack.resolveTop)
 
 -- "Transform all creatures", the shape CR 701.27a takes when a spell rather than
@@ -286,7 +287,7 @@ masterOfElementsCloneSpec s registry = Spec.describe s "Aang, Master of Elements
           _ -> S.identityAnswer p
         cloned = S.runPure yes staged Stack.resolveTop
         upkeep = Phase.Beginning BeginningStep.Upkeep
-        began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (cloned {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+        began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (cloned {GameState.turn = (GameState.turn cloned) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice}})
         after = S.runPure yes began (Engine.placePendingTriggers [] *> Stack.resolveTop *> Stack.resolveTop)
     Spec.assertEqWith s "CR 608.2d bob's Clone could not transform, so bob gained no life and only lost alice's 4" (S.lifeOf S.bob after) (Just 16)
     Spec.assertEqWith s "and alice took no damage from bob's Clone, only gaining her own 4" (S.lifeOf S.alice after) (Just 24)
@@ -323,7 +324,7 @@ spec s registry = Spec.describe s "Transform" $ do
         (_, g2) = S.addPermanent nexus S.alice g1
         manifested = g2 {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.Manifested}) faceDownId (GameState.objects g2)}
         (moonmistId, staged) = S.addHandCard moonmist S.alice manifested
-        misted = S.runPure S.identityAnswer staged {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice} (S.cast S.alice moonmistId *> Stack.resolveTop)
+        misted = S.runPure S.identityAnswer staged {GameState.turn = (GameState.turn staged) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just S.alice}} (S.cast S.alice moonmistId *> Stack.resolveTop)
         turnedUp = S.runPure S.identityAnswer misted (Event.performTurnFaceUp Nothing Nothing faceDownId)
         blightreaper = CardName.MkCardName (Text.pack "Blightreaper Thallid")
         blightsower = CardName.MkCardName (Text.pack "Blightsower Thallid")
@@ -393,7 +394,7 @@ spec s registry = Spec.describe s "Transform" $ do
     gargoyle <- S.printingOf s registry "Thraben Gargoyle"
     island <- S.printingOf s registry "Island"
     let (oid, g0) = S.addPermanent gargoyle S.alice (S.landsInPlay island 6)
-        gs = g0 {GameState.priority = Just S.alice}
+        gs = g0 {GameState.turn = (GameState.turn g0) {TurnRegisters.priority = Just S.alice}}
     case Activatable.abilitiesFor oid gs of
       [ability] -> do
         let activated = snd (Engine.runGamePure S.identityAnswer gs (Activate.activateAbility S.alice oid ability))
@@ -428,7 +429,7 @@ spec s registry = Spec.describe s "Transform" $ do
     gargoyle <- S.printingOf s registry "Thraben Gargoyle"
     island <- S.printingOf s registry "Island"
     let (oid, g0) = S.addPermanent gargoyle S.alice (S.landsInPlay island 12)
-        gs = g0 {GameState.priority = Just S.alice}
+        gs = g0 {GameState.turn = (GameState.turn g0) {TurnRegisters.priority = Just S.alice}}
         activate g = case Activatable.abilitiesFor oid g of
           [ability] -> Right (snd (Engine.runGamePure S.identityAnswer g (Activate.activateAbility S.alice oid ability)))
           abilities -> Left (length abilities)
@@ -437,11 +438,11 @@ spec s registry = Spec.describe s "Transform" $ do
       Right activated -> do
         let once = snd (Engine.runGamePure S.identityAnswer activated Stack.resolveTop)
             twice = snd (Engine.runGamePure S.identityAnswer once Stack.resolveTop)
-        Spec.assertEqWith s "both abilities are on the stack" (length (GameState.stack activated)) 2
+        Spec.assertEqWith s "both abilities are on the stack" (length (TurnRegisters.stack (GameState.turn activated))) 2
         Spec.assertEqWith s "twelve Islands paid for two activations" (S.tappedCount S.alice activated) 12
         Spec.assertEqWith s "the first to resolve turns it over" (faceReadings oid once) backFace
         Spec.assertEqWith s "and the second is ignored, so it stays turned over" (faceReadings oid twice) backFace
-        Spec.assertEqWith s "with nothing left on the stack" (length (GameState.stack twice)) 0
+        Spec.assertEqWith s "with nothing left on the stack" (length (TurnRegisters.stack (GameState.turn twice))) 0
   -- The other half of CR 701.27g, and the reason it cannot be written as a
   -- once-per-anything: the gate is only for "an activated or triggered ability of
   -- a permanent ... [that] tries to transform IT". A SPELL is not one, so Moonmist
@@ -456,7 +457,7 @@ spec s registry = Spec.describe s "Transform" $ do
     gargoyle <- S.printingOf s registry "Thraben Gargoyle"
     island <- S.printingOf s registry "Island"
     let (oid, g0) = S.addPermanent gargoyle S.alice (S.landsInPlay island 6)
-        gs = g0 {GameState.priority = Just S.alice}
+        gs = g0 {GameState.turn = (GameState.turn g0) {TurnRegisters.priority = Just S.alice}}
     case Activatable.abilitiesFor oid gs of
       [ability] -> do
         let activated = snd (Engine.runGamePure S.identityAnswer gs (Activate.activateAbility S.alice oid ability))
@@ -497,7 +498,7 @@ spec s registry = Spec.describe s "Transform" $ do
       "CR 701.27g: Aang turned over since the delayed ability was created, so the instruction is ignored and the back face stays up"
       (aangReadings aangId fired)
       aangBackUp
-    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (GameState.delayedTriggers fired), length (GameState.stack fired)) (0, 0)
+    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (GameState.delayedTriggers fired), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
   -- The pair to the case above, differing in exactly one thing: no Moonmist, so
   -- nothing turns Aang over between the delayed ability's creation and its
   -- resolution. CR 701.27g then has nothing to ignore and the delayed ability
@@ -520,7 +521,7 @@ spec s registry = Spec.describe s "Transform" $ do
       "CR 701.27g: the delayed ability turns Aang over, so the 4/4 back face is up"
       (aangReadings aangId fired)
       aangBackUp
-    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (GameState.delayedTriggers fired), length (GameState.stack fired)) (0, 0)
+    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (GameState.delayedTriggers fired), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
   -- CR 712.6d: "While a nonmodal double-faced permanent has its back face up, it
   -- has only the characteristics of its back face. However, its mana value is
   -- calculated using the mana cost of its front face." CR 202.3a exempts that
@@ -615,9 +616,12 @@ mothName = CardName.MkCardName (Text.pack "Imperial Moth")
 precombatMainOf :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 precombatMainOf pid gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = pid,
-      GameState.priority = Just pid
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = pid,
+            TurnRegisters.priority = Just pid
+          }
     }
 
 -- CR 712.11a: "If a spell or ability puts a double-faced card onto the
@@ -707,10 +711,13 @@ settleDaytime gs = S.runPure S.identityAnswer gs Engine.settleForPriority
 aliceUpkeep :: GameState.GameState -> GameState.GameState
 aliceUpkeep gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Beginning BeginningStep.Upkeep,
-      GameState.priority = Just S.alice,
-      GameState.remaining = Seq.drop 1 (GameState.remaining gs)
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+            TurnRegisters.priority = Just S.alice,
+            TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn gs))
+          }
     }
 
 -- CR 502.2's day/night check, run as the untap step's turn-based actions with
@@ -838,7 +845,7 @@ howlerName = CardName.MkCardName (Text.pack "Wildsong Howler")
 thallidBoard :: Printing.Printing -> Printing.Printing -> Int -> (ObjectId.ObjectId, GameState.GameState)
 thallidBoard thallid forest n =
   let (oid, g0) = S.addPermanent thallid S.alice (S.landsInPlay forest n)
-   in (oid, g0 {GameState.priority = Just S.alice, GameState.phase = Phase.PrecombatMain})
+   in (oid, g0 {GameState.turn = (GameState.turn g0) {TurnRegisters.priority = Just S.alice, TurnRegisters.phase = Phase.PrecombatMain}})
 
 -- Activate the Thallid's one ability, or say how many it offered instead.
 activateThallid :: ObjectId.ObjectId -> GameState.GameState -> Either Int GameState.GameState
@@ -861,7 +868,7 @@ resolveTop gs = S.runPure S.identityAnswer gs Stack.resolveTop
 -- exists to separate. One pass per object already there, since nothing these
 -- boards resolve puts anything back.
 resolveStack :: GameState.GameState -> GameState.GameState
-resolveStack gs = foldr (\_ g -> resolveTop g) gs (GameState.stack gs)
+resolveStack gs = foldr (\_ g -> resolveTop g) gs (TurnRegisters.stack (GameState.turn gs))
 
 -- Wildsong Howler's payload prints a "may" -- "You may reveal a creature card
 -- from among them" -- so its fixture has to take it. A FIXED decision rather than
@@ -886,7 +893,7 @@ gatherTakingTheMay :: GameState.GameState -> GameState.GameState
 gatherTakingTheMay gs = S.runPure takesTheMay gs Engine.settleForPriority
 
 resolveStackTakingTheMay :: GameState.GameState -> GameState.GameState
-resolveStackTakingTheMay gs = foldr (\_ g -> S.runPure takesTheMay g Stack.resolveTop) gs (GameState.stack gs)
+resolveStackTakingTheMay gs = foldr (\_ g -> S.runPure takesTheMay g Stack.resolveTop) gs (TurnRegisters.stack (GameState.turn gs))
 
 -- alice's library, stocked from the TOP DOWN: S.addLibraryCard puts its card on
 -- top, so the deepest is stocked first (Parun.LibraryOrderSpec's wildsBoard).
@@ -962,8 +969,8 @@ transformTriggerSpec s registry = Spec.describe s "TransformsInto" $ do
             settled = gather twice
             after = resolveStack settled
         Spec.assertEqWith s "one turn, so one Saproling" (S.countOnBattlefieldByName saprolingToken S.alice after) 1
-        Spec.assertEqWith s "the settle placed one trigger, not two" (length (GameState.stack settled)) 1
-        Spec.assertEqWith s "both abilities were on the stack" (length (GameState.stack activated)) 2
+        Spec.assertEqWith s "the settle placed one trigger, not two" (length (TurnRegisters.stack (GameState.turn settled))) 1
+        Spec.assertEqWith s "both abilities were on the stack" (length (TurnRegisters.stack (GameState.turn activated))) 2
         Spec.assertEqWith s "and the permanent is still on its back face" (faceNameOf oid twice) (Just thallidBack)
   -- CR 608.2f: one instruction turns both Thallids over at once, so there are
   -- two events in one group and two triggers -- one each, not one each per
@@ -982,7 +989,7 @@ transformTriggerSpec s registry = Spec.describe s "TransformsInto" $ do
         settled = gather turned
         after = resolveStack settled
     Spec.assertEqWith s "one Saproling apiece, not one per event apiece" (S.countOnBattlefieldByName saprolingToken S.alice after) 2
-    Spec.assertEqWith s "the settle placed two triggers" (length (GameState.stack settled)) 2
+    Spec.assertEqWith s "the settle placed two triggers" (length (TurnRegisters.stack (GameState.turn settled))) 2
     Spec.assertEqWith s "and both really turned over" (fmap (\oid -> faceNameOf oid turned) [first, second]) [Just thallidBack, Just thallidBack]
   -- CR 701.27f's "with a specified characteristic", asked of the match alone,
   -- because no BOARD can ask it: Parun.Engine.Card gives a transforming permanent
@@ -1168,7 +1175,7 @@ bystanderTransformSpec s registry = Spec.describe s "TransformsIntoWatched" $ do
     Spec.assertEqWith s "no Wolf" (S.countOnBattlefieldByName wolfToken S.alice after) 0
     Spec.assertEqWith s "Ratchet was a creature before the turn and is not one after" (fmap (Set.member CardType.Creature . Projection.cardTypesOf ratchetId) [bobsTurn, turned]) [True, False]
     Spec.assertEqWith s "it really did turn over" (faceNameOf ratchetId turned) (Just ratchetBack)
-    Spec.assertEqWith s "and it really is bob's turn" (GameState.activePlayer turned) S.bob
+    Spec.assertEqWith s "and it really is bob's turn" (TurnRegisters.activePlayer (GameState.turn turned)) S.bob
   -- The only board that can tell the SAMPLE from a live read, and the one
   -- Parun.Types.Transformed's own argument names: a permanent that turns twice
   -- before the CR 117.5 scan. Two turns is one resolution's two clauses -- CR
@@ -1204,7 +1211,7 @@ bystanderTransformSpec s registry = Spec.describe s "TransformsIntoWatched" $ do
         (_, withInitiate) = S.addPermanent initiate S.alice withAudit
         (demonId, board) = S.addPermanent demon S.alice withInitiate
         turned = sweep board
-        transforms = filter (\logged -> case LoggedEvent.event logged of GameEvent.Transformed _ -> True; _ -> False) (Foldable.toList (GameState.events turned))
+        transforms = filter (\logged -> case LoggedEvent.event logged of GameEvent.Transformed _ -> True; _ -> False) (Foldable.toList (TurnRegisters.events (GameState.turn turned)))
         audits = filter (\p -> PendingTrigger.source p == TriggerSource.OfObject auditId) (Trigger.eventTriggers transforms turned)
     Spec.assertEqWith s "without the Demon the Audit's trigger does not fire" (fmap (\p -> Trigger.firesWithout (Set.singleton demonId) p turned) audits) [False]
     Spec.assertEqWith s "with it, it does" (fmap (\p -> Trigger.firesWithout Set.empty p turned) audits) [True]
@@ -1246,7 +1253,7 @@ equippedTransformSpec s registry = Spec.describe s "EquippedCreatureTransforms" 
     -- above so none of them can absorb a mutation aimed at it.
     Spec.assertEqWith s "the Equipment was attached when Ratchet turned and unattached by the scan" (fmap (hostOf heirloomId) [turned, settled]) [Just (Recipient.ToCreature ratchetId), Nothing]
     Spec.assertEqWith s "Ratchet was a creature before the turn and is not one after" (fmap (Set.member CardType.Creature . Projection.cardTypesOf ratchetId) [bobsTurn, turned]) [True, False]
-    Spec.assertEqWith s "and it really is bob's turn, so living metal is off" (GameState.activePlayer turned) S.bob
+    Spec.assertEqWith s "and it really is bob's turn, so living metal is off" (TurnRegisters.activePlayer (GameState.turn turned)) S.bob
   Spec.it s "CR 603.10 an Equipment attached to nothing reads no transform of its own" $ do
     heirloom <- S.printingOf s registry "Neglected Heirloom"
     ratchet <- S.printingOf s registry "Ratchet, Field Medic"
@@ -1406,7 +1413,7 @@ convertSpec s registry = Spec.describe s "Convert" $ do
     -- permanent over.
     Spec.assertEqWith s "still the back face while the trigger is on the stack" (ratchetReadings ratchetId settled) ratchetBackReadings
     Spec.assertEqWith s "the Golem died" (Maybe.isNothing (Game.lookupObject golemId settled)) True
-    Spec.assertEqWith s "and exactly one trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "and exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
   -- CR 701.27b, which CR 701.28b restates for convert: turning over is its own
   -- game action, so it records CR 701.27a's event rather than a second one of its
   -- own -- the same GameEvent.Transformed a transform writes, which is what makes
@@ -1452,7 +1459,7 @@ convertSpec s registry = Spec.describe s "Convert" $ do
       (Projection.cardTypesOf ratchetId bobsTurn)
       (Set.singleton CardType.Artifact)
     Spec.assertEqWith s "it is a Vehicle on both, the types being ADDED" (Projection.subtypesOf ratchetId bobsTurn) (Set.singleton Subtype.Vehicle)
-    Spec.assertEqWith s "bob's turn began" (GameState.activePlayer bobsTurn) S.bob
+    Spec.assertEqWith s "bob's turn began" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
     Spec.assertEqWith s "and nothing turned the permanent over" (faceNameOf ratchetId bobsTurn) (Just ratchetBack)
   -- The control the case above cannot supply on its own: the FRONT face is a
   -- printed artifact creature, so it stays one on bob's turn. Without this leg
@@ -1509,7 +1516,7 @@ disturbSpec s registry = Spec.describe s "Disturb" $ do
         -- S.handOne bakes in for a hand and what a graveyard board has to say
         -- for itself; without it CR 117.1a's sorcery window is shut and every
         -- reading below is about the phase rather than about rule 702.146a.
-        onTurn gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        onTurn gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
         lands = S.landsInPlay island 2
         (buried, graveyardBoard) = fmap onTurn (S.addGraveyardCard angler S.alice lands)
         (held, handBoard) = fmap onTurn (S.addHandCard angler S.alice lands)
@@ -1541,7 +1548,7 @@ disturbSpec s registry = Spec.describe s "Disturb" $ do
     angler <- S.printingOf s registry "Baithook Angler"
     island <- S.printingOf s registry "Island"
     jailer <- S.printingOf s registry "Yixlid Jailer"
-    let onTurn gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+    let onTurn gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
         (buried, without) = fmap onTurn (S.addGraveyardCard angler S.alice (S.landsInPlay island 2))
         underJailer = snd (S.addPermanent jailer S.bob without)
         offeredNames gs =
@@ -1564,7 +1571,7 @@ disturbSpec s registry = Spec.describe s "Disturb" $ do
     gargoyle <- S.printingOf s registry "Thraben Gargoyle"
     island <- S.printingOf s registry "Island"
     vigil <- S.printingOf s registry "Synthetic Restless Vigil"
-    let onTurn gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+    let onTurn gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
         (buried, without) = fmap onTurn (S.addGraveyardCard gargoyle S.alice (S.landsInPlay island 2))
         granted = snd (S.addPermanent vigil S.alice without)
         antagonizer = CardName.MkCardName (Text.pack "Stonewing Antagonizer")

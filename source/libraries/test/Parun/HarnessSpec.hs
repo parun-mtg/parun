@@ -29,6 +29,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Harness" $ do
@@ -45,7 +46,7 @@ spec s registry = Spec.describe s "Harness" $ do
       [_, harness] -> do
         let (stoneId, gs1) = S.addPermanent stone S.alice (S.landsInPlay plains 6)
             (giantId, gs2) = S.addPermanent hillGiant S.alice gs1
-            ready = gs2 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+            ready = gs2 {GameState.turn = (GameState.turn gs2) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
             harnessed = S.settleSba (S.runPure S.identityAnswer ready (do Activate.activateAbility S.alice stoneId harness; Stack.resolveTop))
             giantName = CardName.MkCardName (Text.pack "Hill Giant")
             unharnessedAfter = throughEndStep giantId ready
@@ -65,7 +66,7 @@ throughEndStep target gs =
     stepped =
       Event.recordEvent
         (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) S.alice))
-        (gs {GameState.phase = Phase.Ending EndingStep.EndStep, GameState.priority = Just S.alice})
+        (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.Ending EndingStep.EndStep, TurnRegisters.priority = Just S.alice}})
 
 aimedAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 aimedAt oid p = case p of

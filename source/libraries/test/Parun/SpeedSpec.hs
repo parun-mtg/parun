@@ -66,6 +66,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- This player's speed, as Player.speed holds it -- Nothing for a player who has
@@ -158,7 +159,7 @@ surveyorBoard surveyor swamp filler n =
   let base = S.landsInPlay swamp 3
       (gyId, withCard) = S.addGraveyardCard surveyor S.alice base
       stocked = foldr (\_ g -> snd (S.addLibraryCard filler S.alice g)) withCard [1 .. (3 :: Int)]
-   in (gyId, atSpeed n S.alice (stocked {GameState.priority = Just S.alice}))
+   in (gyId, atSpeed n S.alice (stocked {GameState.turn = (GameState.turn stocked) {TurnRegisters.priority = Just S.alice}}))
 
 -- Is this action an activation of that object's ability? Pinned to the OBJECT,
 -- since the cases below are about which zone an ability is offered from.
@@ -276,7 +277,7 @@ maxSpeedZoneSpec s registry = Spec.describe s "MaxSpeedZone" $ do
     surveyor <- S.printingOf s registry "Loxodon Surveyor"
     swamp <- S.printingOf s registry "Swamp"
     let (bfId, board) = S.addPermanent surveyor S.alice (S.landsInPlay swamp 3)
-        gs = atSpeed 4 S.alice (board {GameState.priority = Just S.alice})
+        gs = atSpeed 4 S.alice (board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.alice}})
     Spec.assertEqWith s "the projection does hand it out" (length (Projection.abilitiesOf bfId gs)) 1
     Spec.assertBool s (not (any (isActivateOf bfId) (Action.legalActions S.alice gs))) "but no activation is offered"
 
@@ -513,7 +514,7 @@ increaseSpec s registry = Spec.describe s "Increase" $ do
             ]
             (atSpeed 1 S.alice (Setup.emptyGame S.bothPlayers))
         after = resolveTrigger S.identityAnswer logged
-    Spec.assertEqWith s "alice is the active player" (GameState.activePlayer logged) S.alice
+    Spec.assertEqWith s "alice is the active player" (TurnRegisters.activePlayer (GameState.turn logged)) S.alice
     Spec.assertEqWith s "CR 702.179d alice's speed rose once" (speedOf S.alice after) (Just (Just 2))
     Spec.assertEqWith s "one sourceless trigger was spent" (inherentTriggersSpent after) [S.alice]
     Spec.assertEqWith s "the gather fired once per group, not once per loss" (fmap PendingTrigger.controller (Trigger.inherentTriggers (fmap (\(pid, ability) -> (TriggerSource.Sourceless, pid, ability)) (Speed.abilities logged)) (Event.unscannedGrouped logged) logged)) [S.alice, S.alice]
@@ -544,7 +545,7 @@ increaseSpec s registry = Spec.describe s "Increase" $ do
         withBobsLands = foldr (\_ g -> snd (S.addPermanent swamp S.bob g)) gs0 [1 .. (2 :: Int)]
         (bobSpell, withBobsSpell) = S.addHandCard signInBlood S.bob withBobsLands
         started = S.settleSba withBobsSpell
-        bobsTurn = started {GameState.activePlayer = S.bob, GameState.priority = Just S.bob}
+        bobsTurn = started {GameState.turn = (GameState.turn started) {TurnRegisters.activePlayer = S.bob, TurnRegisters.priority = Just S.bob}}
         after = castResolveSettle atBob S.bob bobSpell bobsTurn
     Spec.assertEqWith s "bob lost two life on his own turn" (S.lifeOf S.bob after) (fmap (subtract 2) (S.lifeOf S.bob bobsTurn))
     Spec.assertEqWith s "and alice's speed did not move" (speedOf S.alice after) (Just (Just 1))

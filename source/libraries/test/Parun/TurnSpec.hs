@@ -73,6 +73,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 turnSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -115,33 +116,39 @@ turnDataSpec s = Spec.describe s "TurnData" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         gs =
           gs0
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.remaining = Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain]
+            { GameState.turn =
+                (GameState.turn gs0)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.fromList [Phase.Combat CombatStep.BeginningOfCombat, Phase.PostcombatMain]
+                  }
             }
         after = snd (Engine.runGamePure S.aggressiveAnswer gs Engine.advance)
      in do
-          Spec.assertEqWith s "phase" (GameState.phase after) (Phase.Combat CombatStep.BeginningOfCombat)
-          Spec.assertEqWith s "remaining" (GameState.remaining after) (Seq.fromList [Phase.PostcombatMain])
+          Spec.assertEqWith s "phase" (TurnRegisters.phase (GameState.turn after)) (Phase.Combat CombatStep.BeginningOfCombat)
+          Spec.assertEqWith s "remaining" (TurnRegisters.remaining (GameState.turn after)) (Seq.fromList [Phase.PostcombatMain])
   Spec.it s "advance on an empty schedule hands off the turn" $
     let gs0 = Setup.emptyGame S.bothPlayers
         gs =
           gs0
-            { GameState.phase = Phase.Ending EndingStep.Cleanup,
-              GameState.remaining = Seq.empty,
-              GameState.activePlayer = S.alice,
-              GameState.turnNumber = 1
+            { GameState.turn =
+                (GameState.turn gs0)
+                  { TurnRegisters.phase = Phase.Ending EndingStep.Cleanup,
+                    TurnRegisters.remaining = Seq.empty,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.turnNumber = 1
+                  }
             }
         after = snd (Engine.runGamePure S.aggressiveAnswer gs Engine.advance)
      in do
-          Spec.assertEqWith s "new active player" (GameState.activePlayer after) S.bob
-          Spec.assertEqWith s "phase reset" (GameState.phase after) Turn.firstPhase
-          Spec.assertEqWith s "schedule refilled" (GameState.remaining after) Turn.laterPhases
-          Spec.assertEqWith s "turn incremented" (GameState.turnNumber after) 2
+          Spec.assertEqWith s "new active player" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
+          Spec.assertEqWith s "phase reset" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
+          Spec.assertEqWith s "schedule refilled" (TurnRegisters.remaining (GameState.turn after)) Turn.laterPhases
+          Spec.assertEqWith s "turn incremented" (TurnRegisters.turnNumber (GameState.turn after)) 2
   Spec.it s "a fresh game starts at untap with the rest of the turn scheduled" $
     let gs = Setup.emptyGame S.bothPlayers
      in do
-          Spec.assertEqWith s "phase" (GameState.phase gs) Turn.firstPhase
-          Spec.assertEqWith s "remaining" (GameState.remaining gs) Turn.laterPhases
+          Spec.assertEqWith s "phase" (TurnRegisters.phase (GameState.turn gs)) Turn.firstPhase
+          Spec.assertEqWith s "remaining" (TurnRegisters.remaining (GameState.turn gs)) Turn.laterPhases
   -- CR 500.1: only the FIRST step of a phase that has steps opens that
   -- phase, and both main phases open none -- CR 505.2 makes each of them a
   -- single schedule entry, which PhaseSelector.Step already names.
@@ -374,7 +381,7 @@ skipSpec s registry = Spec.describe s "Skip" $ do
     let (base, ours, _) = S.combatBoardOf [piker] []
         joined = S.runPure S.identityAnswer base (Foldable.traverse_ (Combat.putOntoBattlefieldAttacking Combat.Any) ours)
         after = Combat.skipEmptyCombat joined
-        remaining = foldr (:) [] (GameState.remaining after)
+        remaining = foldr (:) [] (TurnRegisters.remaining (GameState.turn after))
     Spec.assertEqWith s "no declaration was made" (S.attackerDeclarationsOf after) []
     Spec.assertBool s (elem (Phase.Combat CombatStep.DeclareBlockers) remaining) "blockers step kept"
     Spec.assertBool s (elem (Phase.Combat CombatStep.CombatDamage) remaining) "damage step kept"
@@ -399,12 +406,16 @@ assaultBoard mountain assault mine piker =
       (ours, gs2) = S.addPermanent mine S.alice gs1
       (theirs, gs3) = S.addPermanent piker S.bob gs2
       gs =
-        (S.tapObject theirs (S.tapObject ours gs3))
-          { GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.remaining = afterPrecombatMain
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = afterPrecombatMain
+                }
+          )
+          (S.tapObject theirs (S.tapObject ours gs3))
    in (gs, enchantment, ours, theirs)
 
 -- The card's one printed activated ability.
@@ -429,13 +440,13 @@ activateAssault ability enchantment gs =
 -- board the turn left. Bounded so a bug cannot loop forever.
 runTurn :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> (GameState.GameState, [Phase])
 runTurn answer gs0 =
-  let turn = GameState.turnNumber gs0
+  let turn = TurnRegisters.turnNumber (GameState.turn gs0)
       go n g =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || GameState.turnNumber g /= turn
+        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || TurnRegisters.turnNumber (GameState.turn g) /= turn
           then (g, [])
           else
             let (final, later) = go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
-             in (final, GameState.phase g : later)
+             in (final, TurnRegisters.phase (GameState.turn g) : later)
    in go 32 gs0
 
 -- alice in her precombat main phase with priority, six untapped Mountains
@@ -450,10 +461,13 @@ throttleBoard mountain throttle piker =
   let (attacker, gs1) = S.addPermanent piker S.alice (S.landsInPlay mountain 6)
       (gs2, spell) = S.handOne throttle gs1
    in ( gs2
-          { GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.remaining = afterPrecombatMain
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = afterPrecombatMain
+                }
           },
         spell,
         attacker
@@ -556,7 +570,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
           ]
         Spec.assertEqWith s "bob took 2 in each of the two combats" (S.lifeOf S.bob played) (Just 16)
   Spec.it s "CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it" $ do
-    -- The falsifier for splicing at the head of GameState.remaining.
+    -- The falsifier for splicing at the head of TurnRegisters.remaining.
     -- Aurelia's trigger resolves in the declare attackers step, where this
     -- combat phase's own declare blockers, combat damage and end of combat
     -- steps are all still in `remaining` -- so the head is INSIDE the phase
@@ -567,11 +581,11 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
         after = snd (Engine.runGamePure (S.attackTo S.bob) gs Engine.runStep)
     -- Under a head-cons the added phase's beginning of combat step would be
     -- popped here instead.
-    Spec.assertEqWith s "this combat phase's own next step ran next" (GameState.phase after) (Phase.Combat CombatStep.DeclareBlockers)
+    Spec.assertEqWith s "this combat phase's own next step ran next" (TurnRegisters.phase (GameState.turn after)) (Phase.Combat CombatStep.DeclareBlockers)
     Spec.assertEqWith
       s
       "the rest of this phase still comes before the added one"
-      (GameState.remaining after)
+      (TurnRegisters.remaining (GameState.turn after))
       ( Seq.fromList [Phase.Combat CombatStep.CombatDamage, Phase.Combat CombatStep.EndOfCombat]
           <> Turn.expandExtraPhase ExtraPhase.ExtraCombat
           <> Seq.fromList [Phase.PostcombatMain, Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
@@ -655,11 +669,15 @@ warpBoard island warp piker n =
   let addOne (ids, g) _ = let (oid, g1) = S.addHandCard warp S.alice g in (ids <> [oid], g1)
       (held, withHand) = List.foldl' addOne ([], S.landsInPlay island (5 * n)) [1 .. n]
       stock g pid = List.foldl' (\g1 _ -> snd (S.addLibraryCard piker pid g1)) g [1 .. (10 :: Int)]
-   in ( (stock (stock withHand S.alice) S.bob)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          },
+   in ( Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (stock (stock withHand S.alice) S.bob),
         held
       )
 
@@ -677,7 +695,7 @@ turnTakers n gs =
     then []
     else
       let next = fst (runTurn S.identityAnswer gs)
-       in GameState.activePlayer next : turnTakers (n - 1) next
+       in TurnRegisters.activePlayer (GameState.turn next) : turnTakers (n - 1) next
 
 -- CR 500.7's extra turns, end to end, through the card that creates one for
 -- ANOTHER player: Time Warp ({3}{U}{U} Sorcery, "Target player takes an extra
@@ -705,8 +723,8 @@ extraTurnSpec s registry = Spec.describe s "ExtraTurn" $ do
         -- it immediately, and it is a TURN, not a continuation of this
         -- one, so the turn number moves.
         let (next, _) = runTurn S.identityAnswer resolved
-        Spec.assertEqWith s "alice takes it rather than bob" (GameState.activePlayer next) S.alice
-        Spec.assertEqWith s "and it is a turn of its own" (GameState.turnNumber next) 2
+        Spec.assertEqWith s "alice takes it rather than bob" (TurnRegisters.activePlayer (GameState.turn next)) S.alice
+        Spec.assertEqWith s "and it is a turn of its own" (TurnRegisters.turnNumber (GameState.turn next)) 2
         Spec.assertEqWith s "the pending stack is spent" (takersOf next) []
         -- CR 500.7 ADDS a turn; it does not reorder the rest. Once the
         -- extra turn is taken the seating order picks up where it was.
@@ -714,7 +732,7 @@ extraTurnSpec s registry = Spec.describe s "ExtraTurn" $ do
       _ -> Spec.assertFailure s "warpBoard should deal exactly one Time Warp"
   -- THE ANCHOR CASE. CR 500.7 adds a turn "directly after the specified
   -- turn" and takes none away, so bob's OWN turn still follows alice's.
-  -- Fails against a handoff anchored on GameState.activePlayer, which
+  -- Fails against a handoff anchored on TurnRegisters.activePlayer, which
   -- would walk from bob after the extra turn and hand back to alice --
   -- silently eating the ordinary turn the rules never touched.
   Spec.it s "CR 500.7 an opponent's extra turn does not consume their ordinary one" $ do
@@ -767,7 +785,7 @@ extraTurnSpec s registry = Spec.describe s "ExtraTurn" $ do
     island <- S.printingOf s registry "Island"
     hour <- S.printingOf s registry "Synthetic Common Hour"
     let (held, staged) = S.addHandCard hour S.bob (S.landsFor island S.bob 5 (Setup.emptyGame S.bothPlayers))
-        gs = staged {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.bob, GameState.priority = Just S.bob}
+        gs = staged {GameState.turn = (GameState.turn staged) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.bob, TurnRegisters.priority = Just S.bob}}
         after = S.runPure S.identityAnswer gs (S.cast S.bob held >> Stack.resolveTop)
     Spec.assertEqWith s "added in APNAP order, so taken in reverse" (takersOf after) [S.alice, S.bob]
 
@@ -793,11 +811,15 @@ savorBoard island savor warp piker =
       (savorId, withSavor) = S.addHandCard savor S.alice withPiker
       (warpId, withWarp) = S.addHandCard warp S.alice withSavor
       stock g pid = List.foldl' (\g1 _ -> snd (S.addLibraryCard piker pid g1)) g [1 .. (10 :: Int)]
-   in ( (stock (stock (S.tapObject bystander withWarp) S.alice) S.bob)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          },
+   in ( Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (stock (stock (S.tapObject bystander withWarp) S.alice) S.bob),
         savorId,
         warpId,
         bystander
@@ -864,9 +886,9 @@ turnScopedSkipSpec s registry = Spec.describe s "TurnScopedSkip" $ do
       [ (S.alice, Set.empty),
         (S.alice, Set.singleton (PhaseSelector.Step (Phase.Beginning BeginningStep.Untap)))
       ]
-    Spec.assertEqWith s "so Time Warp's is turn 2, and alice's" (GameState.turnNumber atWarpTurn, GameState.activePlayer atWarpTurn) (2, S.alice)
+    Spec.assertEqWith s "so Time Warp's is turn 2, and alice's" (TurnRegisters.turnNumber (GameState.turn atWarpTurn), TurnRegisters.activePlayer (GameState.turn atWarpTurn)) (2, S.alice)
     Spec.assertEqWith s "and it DID untap" (tapStateOf piker (runTurns 1 atWarpTurn)) untapped
-    Spec.assertEqWith s "Savor's is turn 3, and alice's" (GameState.turnNumber atSavorTurn, GameState.activePlayer atSavorTurn) (3, S.alice)
+    Spec.assertEqWith s "Savor's is turn 3, and alice's" (TurnRegisters.turnNumber (GameState.turn atSavorTurn), TurnRegisters.activePlayer (GameState.turn atSavorTurn)) (3, S.alice)
     Spec.assertEqWith s "but Savor's own turn did NOT untap" (tapStateOf piker afterSavorTurn) tapped
 
 -- alice in her precombat main phase holding Final Fortune and Time Warp, with
@@ -877,12 +899,16 @@ fortuneBoard island mountain fortune warp piker =
   let (fortuneId, withFortune) = S.addHandCard fortune S.alice (S.landsFor mountain S.alice 2 (S.landsInPlay island 5))
       (warpId, withWarp) = S.addHandCard warp S.alice withFortune
       stock g pid = List.foldl' (\g1 _ -> snd (S.addLibraryCard piker pid g1)) g [1 .. (10 :: Int)]
-   in ( (stock (stock withWarp S.alice) S.bob)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice,
-            GameState.remaining = S.phasesAfter Phase.PrecombatMain
-          },
+   in ( Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
+                }
+          )
+          (stock (stock withWarp S.alice) S.bob),
         fortuneId,
         warpId
       )
@@ -906,9 +932,9 @@ thatTurnSpec s registry = Spec.describe s "ThatExtraTurn" $ do
         atExtra = runTurns 1 resolved
         afterExtra = runTurns 1 atExtra
     Spec.assertBool s (S.alice `elem` Game.stillPlaying atExtra) "alice survives the turn she cast it in"
-    Spec.assertEqWith s "the extra turn is turn 2, and alice's" (GameState.turnNumber atExtra, GameState.activePlayer atExtra) (2, S.alice)
+    Spec.assertEqWith s "the extra turn is turn 2, and alice's" (TurnRegisters.turnNumber (GameState.turn atExtra), TurnRegisters.activePlayer (GameState.turn atExtra)) (2, S.alice)
     Spec.assertEqWith s "alice lost during it" (Game.stillPlaying afterExtra) [S.bob]
-    Spec.assertEqWith s "at its end step" (GameState.phase afterExtra) (Phase.Ending EndingStep.EndStep)
+    Spec.assertEqWith s "at its end step" (TurnRegisters.phase (GameState.turn afterExtra)) (Phase.Ending EndingStep.EndStep)
   -- THE PROVING CASE. Final Fortune creates extra turn A; Time Warp, cast
   -- after it in the same turn, creates extra turn B, which CR 500.7 takes
   -- first. "That turn" is A: a "your next turn" reading would settle on B
@@ -919,9 +945,9 @@ thatTurnSpec s registry = Spec.describe s "ThatExtraTurn" $ do
         atWarpTurn = runTurns 1 resolved
         atFortuneTurn = runTurns 1 atWarpTurn
         afterFortuneTurn = runTurns 1 atFortuneTurn
-    Spec.assertEqWith s "Time Warp's turn is turn 2, and alice's" (GameState.turnNumber atWarpTurn, GameState.activePlayer atWarpTurn) (2, S.alice)
+    Spec.assertEqWith s "Time Warp's turn is turn 2, and alice's" (TurnRegisters.turnNumber (GameState.turn atWarpTurn), TurnRegisters.activePlayer (GameState.turn atWarpTurn)) (2, S.alice)
     Spec.assertBool s (S.alice `elem` Game.stillPlaying atFortuneTurn) "alice survives Time Warp's turn, end step and all"
-    Spec.assertEqWith s "Final Fortune's is turn 3, and alice's" (GameState.turnNumber atFortuneTurn, GameState.activePlayer atFortuneTurn) (3, S.alice)
+    Spec.assertEqWith s "Final Fortune's is turn 3, and alice's" (TurnRegisters.turnNumber (GameState.turn atFortuneTurn), TurnRegisters.activePlayer (GameState.turn atFortuneTurn)) (3, S.alice)
     Spec.assertEqWith s "and alice loses at its end step" (Game.stillPlaying afterFortuneTurn) [S.bob]
 
 -- CR 611.2a / 500.7 / 615.12: a continuous effect lasting "during that turn",
@@ -954,12 +980,17 @@ gambitSpec s registry = Spec.describe s "AlchemistsGambit" $ do
             (warpId, g4) = S.addHandCard warp S.alice g3
             stock g pid = List.foldl' (\g5 _ -> snd (S.addLibraryCard piker pid g5)) g [1 .. (10 :: Int)]
             gs =
-              (stock (stock g4 S.alice) S.bob)
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice,
-                  GameState.remaining = S.phasesAfter Phase.PrecombatMain
-                }
+              Turn.withTurn
+                ( \turn ->
+                    turn
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice,
+                        TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
+                      }
+                )
+                (stock (stock g4 S.alice) S.bob)
+
             -- A fresh untapped Plains pays for the shield on whatever turn this
             -- is asked, so the answer never rests on whose lands untapped.
             struck g =
@@ -986,7 +1017,7 @@ gambitSpec s registry = Spec.describe s "AlchemistsGambit" $ do
     -- Hygiene rather than behaviour: `begun` alone decides whether the row
     -- applies, so only the store shows that its turn's cleanup dropped it.
     Spec.assertEqWith s "the row is dropped at the cleanup of the Gambit's turn, not before" (length (GameState.playerEffects atGambitTurn), GameState.playerEffects atBobsTurn) (1, [])
-    Spec.assertEqWith s "Time Warp's turn is turn 2 and the Gambit's turn 3, both alice's" (fmap (\g -> (GameState.turnNumber g, GameState.activePlayer g)) [atWarpTurn, atGambitTurn, atBobsTurn]) [(2, S.alice), (3, S.alice), (4, S.bob)]
+    Spec.assertEqWith s "Time Warp's turn is turn 2 and the Gambit's turn 3, both alice's" (fmap (\g -> (TurnRegisters.turnNumber (GameState.turn g), TurnRegisters.activePlayer (GameState.turn g))) [atWarpTurn, atGambitTurn, atBobsTurn]) [(2, S.alice), (3, S.alice), (4, S.bob)]
     Spec.assertBool s (S.alice `elem` Game.stillPlaying atBobsTurn) "CR 702.148a cleaved, the loss clause is gone and alice survives"
     Spec.assertEqWith s "the Gambit exiled itself" (length (Game.zoneMembers Zone.Exile S.alice resolved), length (Game.zoneMembers Zone.Graveyard S.alice resolved)) (1, 1)
   -- The printed cost keeps the bracketed clause: the extra turn is still the
@@ -997,7 +1028,7 @@ gambitSpec s registry = Spec.describe s "AlchemistsGambit" $ do
         atExtra = runTurns 1 resolved
         afterExtra = runTurns 1 atExtra
     Spec.assertEqWith s "the extra turn's 3 cannot be prevented" (struck atExtra) (Just 3)
-    Spec.assertEqWith s "alice loses at its end step" (GameState.phase afterExtra, Game.stillPlaying afterExtra) (Phase.Ending EndingStep.EndStep, [S.bob])
+    Spec.assertEqWith s "alice loses at its end step" (TurnRegisters.phase (GameState.turn afterExtra), Game.stillPlaying afterExtra) (Phase.Ending EndingStep.EndStep, [S.bob])
 
 -- Alchemist's Gambit's printed {1}{R}{R} and its cleave {4}{U}{U}{R}.
 gambitCost, gambitCleave :: [ManaSymbol.ManaSymbol]
@@ -1084,17 +1115,22 @@ timeStopBoard island mountain gnarlbark timeStop divination burst brothers =
       (bolt, gs5) = S.addHandCard burst S.bob gs4
       stock g pid = List.foldl' (\g1 _ -> snd (S.addLibraryCard mountain pid g1)) g [1 .. (10 :: Int)]
       staged =
-        (stock (stock gs5 S.alice) S.bob)
-          { GameState.activePlayer = S.alice,
-            GameState.priority = Just S.bob,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.remaining = afterPrecombatMain
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.bob,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = afterPrecombatMain
+                }
+          )
+          (stock (stock gs5 S.alice) S.bob)
+
       cast = snd (Engine.runGamePure (aimPlayer S.alice) staged (S.cast S.bob bolt))
       activated = case assaultAbility brothers of
         Nothing -> error "Parun.TurnSpec: Brothers of Fire should have an activated ability"
         Just ability -> snd (Engine.runGamePure (aimPlayer S.alice) cast (Activate.activateAbility S.bob shaman ability))
-   in (activated {GameState.priority = Just S.alice, GameState.passed = Set.empty}, tree, divine)
+   in (activated {GameState.turn = (GameState.turn activated) {TurnRegisters.priority = Just S.alice, TurnRegisters.passed = Set.empty}}, tree, divine)
 
 -- CR 725.1, end to end, through the pool's simplest producer: Time Stop
 -- ({4}{U}{U} Instant, "End the turn.").
@@ -1135,13 +1171,16 @@ endTurnSpec s registry = Spec.describe s "EndTheTurn" $ do
         (_, gs2) = S.addHandCard ultima S.alice gs1
         staged =
           gs2
-            { GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.remaining = afterPrecombatMain
+            { GameState.turn =
+                (GameState.turn gs2)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = afterPrecombatMain
+                  }
             }
         after = fst (runTurn castingFirst staged)
-    Spec.assertEqWith s "the turn ended" (GameState.turnNumber after) (GameState.turnNumber staged + 1)
+    Spec.assertEqWith s "the turn ended" (TurnRegisters.turnNumber (GameState.turn after)) (TurnRegisters.turnNumber (GameState.turn staged) + 1)
     Spec.assertEqWith s "Doomed Traveler died" (namesIn Zone.Graveyard S.alice after) [Just (S.printingName traveler)]
     Spec.assertEqWith s "alice controls no Spirit token" (namesIn Zone.Battlefield S.alice after) (replicate 5 (Just (S.printingName plains)))
 
@@ -1262,7 +1301,7 @@ endCombatPhaseSpec s registry = Spec.describe s "EndTheCombatPhase" $ do
     timeStop <- S.printingOf s registry "Time Stop"
     let (stop, staged) = withTimeStop island timeStop gs
         after = S.runToStep (Phase.Ending EndingStep.Cleanup) (castingMandate stop) staged
-    Spec.assertEqWith s "the turn jumped to the cleanup step" (GameState.phase after) (Phase.Ending EndingStep.Cleanup)
+    Spec.assertEqWith s "the turn jumped to the cleanup step" (TurnRegisters.phase (GameState.turn after)) (Phase.Ending EndingStep.Cleanup)
     Spec.assertBool s (not (Projection.isCreatureOf jade after)) "and Jade Statue is no longer a creature"
     Spec.assertEqWith s "with no power or toughness" (S.powerToughnessOf jade after) Nothing
   -- CR 725.2f: no player gets priority during the process. The seats that were
@@ -1285,11 +1324,11 @@ endCombatPhaseSpec s registry = Spec.describe s "EndTheCombatPhase" $ do
   -- card's own rider correctly refuses the cast.
   Spec.it s "CR 725.2g ending the combat phase outside one does nothing" $ do
     ((gs, _, _, _, _, _), _, _) <- board
-    let staged = gs {GameState.phase = Phase.PrecombatMain, GameState.remaining = afterPrecombatMain}
+    let staged = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.remaining = afterPrecombatMain}}
         source = ObjectId.MkObjectId 0
         after = S.runPure S.identityAnswer staged (Resolve.applyEffect source source S.alice Map.empty Map.empty Effect.EndCombatPhase)
-    Spec.assertEqWith s "the stack is untouched" (GameState.stack after) (GameState.stack staged)
-    Spec.assertEqWith s "the schedule is untouched" (GameState.remaining after) afterPrecombatMain
+    Spec.assertEqWith s "the stack is untouched" (TurnRegisters.stack (GameState.turn after)) (TurnRegisters.stack (GameState.turn staged))
+    Spec.assertEqWith s "the schedule is untouched" (TurnRegisters.remaining (GameState.turn after)) afterPrecombatMain
     Spec.assertEqWith s "and nobody lost life" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 20, Just 20)
 
 -- alice, active and at her DECLARE BLOCKERS step with a Goblin Piker already
@@ -1381,8 +1420,8 @@ skippedEndOfCombatSpec s registry = Spec.describe s "SkippedEndOfCombat" $ do
     (gs, jade, _, _, _) <- board
     let after = atPostcombatMain S.aggressiveAnswer gs
     Spec.assertEqWith s "the end of combat step began once" (began after) 1
-    Spec.assertEqWith s "and the postcombat main phase followed it" (GameState.phase after) Phase.PostcombatMain
-    Spec.assertEqWith s "nothing is attacking" (Map.keys (Combat.Type.attackers (GameState.combat after))) []
+    Spec.assertEqWith s "and the postcombat main phase followed it" (TurnRegisters.phase (GameState.turn after)) Phase.PostcombatMain
+    Spec.assertEqWith s "nothing is attacking" (Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after)))) []
     Spec.assertBool s (not (Turn.afterBlockersDeclared after)) "CR 506.8b and the game is no longer past the point blockers were declared"
     Spec.assertBool s (not (Projection.isCreatureOf jade after)) "and the animation expired with the phase"
   -- The skip itself, in its own case so no sweep assertion below can absorb a
@@ -1393,8 +1432,8 @@ skippedEndOfCombatSpec s registry = Spec.describe s "SkippedEndOfCombat" $ do
     let after = atPostcombatMain S.aggressiveAnswer (cast spell gs)
     Spec.assertBool s (S.castable S.alice spell gs) "CR 117.1a the instant is castable in the declare blockers step"
     Spec.assertEqWith s "the end of combat step never began" (began after) 0
-    Spec.assertEqWith s "CR 511.3 the combat phase is over regardless" (GameState.phase after) Phase.PostcombatMain
-    Spec.assertEqWith s "having consumed exactly the steps of this turn" (GameState.remaining after) (Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup])
+    Spec.assertEqWith s "CR 511.3 the combat phase is over regardless" (TurnRegisters.phase (GameState.turn after)) Phase.PostcombatMain
+    Spec.assertEqWith s "having consumed exactly the steps of this turn" (TurnRegisters.remaining (GameState.turn after)) (Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup])
   -- CR 511.3's removal from combat, in its own case; see #2010. The identity of the
   -- attacker and of the blocker, not merely the emptiness of the two maps: a
   -- partial sweep that dropped one of them passes an emptiness test on the other.
@@ -1403,10 +1442,10 @@ skippedEndOfCombatSpec s registry = Spec.describe s "SkippedEndOfCombat" $ do
     let staged = cast spell gs
         damage = S.runToStep (Phase.Combat CombatStep.CombatDamage) S.aggressiveAnswer staged
         after = atPostcombatMain S.aggressiveAnswer staged
-    Spec.assertEqWith s "the fixture really did attack and block" (Map.keys (Combat.Type.attackers (GameState.combat damage)), Map.lookup attacker (Combat.Type.blockers (GameState.combat damage))) ([attacker], Just (Set.singleton blocker))
+    Spec.assertEqWith s "the fixture really did attack and block" (Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn damage))), Map.lookup attacker (Combat.Type.blockers (TurnRegisters.combat (GameState.turn damage)))) ([attacker], Just (Set.singleton blocker))
     Spec.assertBool s (Turn.afterBlockersDeclared damage) "CR 506.8b and the game is past the point blockers were declared"
-    Spec.assertEqWith s "no creature is attacking in the postcombat main phase" (Map.keys (Combat.Type.attackers (GameState.combat after))) []
-    Spec.assertEqWith s "and none is blocking" (Map.keys (Combat.Type.blockers (GameState.combat after))) []
+    Spec.assertEqWith s "no creature is attacking in the postcombat main phase" (Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after)))) []
+    Spec.assertEqWith s "and none is blocking" (Map.keys (Combat.Type.blockers (TurnRegisters.combat (GameState.turn after)))) []
     Spec.assertBool s (not (Turn.afterBlockersDeclared after)) "CR 506.8b so a card castable only after blockers are declared is out of its window again"
     Spec.assertBool s (S.onBattlefield attacker after && S.onBattlefield blocker after) "and both creatures are still on the battlefield, so nothing was emptied by CR 506.4"
   -- CR 500.5 / CR 500.5a's expiry, in its own case; see #2126. The animation is

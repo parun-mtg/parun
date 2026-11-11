@@ -31,6 +31,7 @@ import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Superlative as Superlative
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | What a position asking "which players?" can read, so that 'named' answers
 -- every PlayerRef the same way wherever it is asked. The two askers differ only
@@ -265,7 +266,7 @@ namedUncut given gs ref =
           attacked <- case slotPlayers given slot of
             Just [pid] -> Just pid
             _ -> Nothing
-          let sentAt = Map.keys (Map.filter (== AttackTarget.OfPlayer attacked) (Combat.attackers (GameState.combat gs)))
+          let sentAt = Map.keys (Map.filter (== AttackTarget.OfPlayer attacked) (Combat.attackers (TurnRegisters.combat (GameState.turn gs))))
               attackers = Maybe.mapMaybe (controllerOf given) sentAt
           fmap (filter (`elem` attackers)) (related' relation)
         -- The table's leaders on a measure, compared among the 'roster' alone:

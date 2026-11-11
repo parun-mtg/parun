@@ -47,6 +47,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The permanents an activation action names, of either shape: CR 602.2's
@@ -214,9 +215,12 @@ namingTarget oid p = case p of
 mainPhaseForAlice :: GameState.GameState -> GameState.GameState
 mainPhaseForAlice gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.PrecombatMain,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- CR 400.7 / 611.2c: the permanent that comes back from a bounce is a NEW

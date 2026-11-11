@@ -178,6 +178,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The battlefield objects whose PRINTED card has this name (a printed card is
@@ -273,10 +274,13 @@ aimByFiltering oid p = case p of
 intoCombat :: GameState.GameState -> GameState.GameState
 intoCombat gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-      GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
+            TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+          }
     }
 
 -- The tokens on the battlefield (CR 111.6), newest first.
@@ -313,10 +317,13 @@ resolveAndSettle answer gs =
 readiedForAlice :: GameState.GameState -> GameState.GameState
 readiedForAlice gs =
   gs
-    { GameState.priority = Just S.alice,
-      GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = S.alice,
-      GameState.remaining = S.phasesAfter Phase.PrecombatMain
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.priority = Just S.alice,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
+          }
     }
 
 -- `aimByFiltering`, plus CR 603.5's "you may" taken. Vesuvan Doppelganger's
@@ -336,7 +343,7 @@ upkeepForAlice answer gs =
       began =
         Event.recordEvent
           (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice, GameState.remaining = S.phasesAfter upkeep})
+          (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = upkeep, TurnRegisters.activePlayer = S.alice, TurnRegisters.remaining = S.phasesAfter upkeep}})
    in resolveAll answer (settle answer began)
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -526,13 +533,13 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
                 else (Nothing, attached)
             (spellId, staged) = S.spellOnStack copyEnchantment S.alice board
             once = resolveAndSettle (copyNamed betrayalId) staged
-            drained = if null (GameState.stack once) then once else resolveAndSettle (copyNamed betrayalId) once
+            drained = if null (TurnRegisters.stack (GameState.turn once)) then once else resolveAndSettle (copyNamed betrayalId) once
         pure (bobPikerId, spellId, staged, drained)
   Spec.it s "CR 303.4g Copy Enchantment copying Betrayal with nothing to enchant goes to the graveyard without entering" $ do
     (_, spellId, staged, after) <- betrayalBoard False
     Spec.assertEqWith s "the Leech never saw an enchantment enter: bob keeps his life" (S.lifeOf S.bob after) (S.lifeOf S.bob staged)
     Spec.assertEqWith s "Copy Enchantment is in alice's graveyard" (fmap (\oid -> fmap Face.name (Game.faceOf oid after)) (Game.zoneMembers Zone.Graveyard S.alice after)) [Just (CardName.MkCardName (Text.pack "Copy Enchantment"))]
-    Spec.assertEqWith s "and the spell is gone from the stack" (List.elem spellId (GameState.stack after)) False
+    Spec.assertEqWith s "and the spell is gone from the stack" (List.elem spellId (TurnRegisters.stack (GameState.turn after))) False
   Spec.it s "CR 303.4f Copy Enchantment copying Betrayal over a creature of bob's enters on it and the Leech drains" $ do
     (bobPikerId, _, staged, after) <- betrayalBoard True
     Spec.assertEqWith s "the Leech saw an enchantment enter: bob loses 1" (S.lifeOf S.bob after) (fmap (subtract 1) (S.lifeOf S.bob staged))
@@ -767,7 +774,7 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
             -- resolve runs it.
             onStack = settle (copyNamed pikerId) staged
             swept = resolveAndSettle (copyNamed pikerId) onStack
-        Spec.assertBool s (not (null (GameState.stack onStack))) "the Bane's trigger really was on the stack"
+        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the Bane's trigger really was on the stack"
         -- CR 707.2 ran: the exception modified the copy, it did not replace it.
         Spec.assertEqWith s "the Metamorph is the Piker by name (CR 707.2)" (Projection.namesOf metamorphId entered) . Set.singleton . CardName.MkCardName $ Text.pack "Goblin Piker"
         Spec.assertEqWith s "and has the Piker's 2/1" (S.powerToughnessOf metamorphId entered) $ Just (2, 1)
@@ -959,7 +966,7 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         shrunk = S.withEffect radstagId (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Type.Literal (-5)) (Quantity.Type.Literal (-5)))) onStack
         dead = settle declineCopy shrunk
         after = resolveAll declineCopy dead
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the Radstag's trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the Radstag's trigger really was on the stack"
     Spec.assertEqWith s "and the Radstag is gone before it resolves" (Set.member radstagId (GameState.battlefield dead)) False
     case tokensOnBattlefield after of
       [tokenId] -> do
@@ -1106,7 +1113,7 @@ promisesCarol p = case p of
 
 -- The stack's top object, which after a cast is the spell just cast.
 topOfStack :: GameState.GameState -> Maybe ObjectId
-topOfStack = Maybe.listToMaybe . GameState.stack
+topOfStack = Maybe.listToMaybe . (TurnRegisters.stack . GameState.turn)
 
 -- Resolve one object and settle: CR 704 runs between resolutions, which is
 -- where CR 704.5e removes a resolved copy.
@@ -1218,7 +1225,7 @@ copySpellSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         Spec.assertEqWith s "alice controls the copy, so alice gains the 6" (S.lifeOf S.alice after) (Just 26)
         Spec.assertEqWith s "bob gains only his own 6" (S.lifeOf S.bob after) (Just 26)
         Spec.assertEqWith s "carol gains nothing" (S.lifeOf S.carol after) (Just 20)
-        Spec.assertEqWith s "and the stack is empty" (length (GameState.stack after)) 0
+        Spec.assertEqWith s "and the stack is empty" (length (TurnRegisters.stack (GameState.turn after))) 0
   -- Twincast's copy is built from bob's spell's object and is owned by alice,
   -- its copier (CR 707.10). A copy is no card, so it carries no identity, and
   -- the ownership report cannot mistake it for a card bob began the game with
@@ -1237,7 +1244,7 @@ copySpellSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
       Just faithSpell -> do
         let cast = snd (Engine.runGamePure (pinTarget (Recipient.ToObject faithSpell)) castFaith (S.cast S.alice twincastId))
             copied = resolveOne S.identityAnswer cast
-        Spec.assertEqWith s "CR 707.10 the copy and bob's spell are on the stack" (length (GameState.stack copied)) 2
+        Spec.assertEqWith s "CR 707.10 the copy and bob's spell are on the stack" (length (TurnRegisters.stack (GameState.turn copied))) 2
         Spec.assertEqWith s "CR 108.3 and no card's owner has changed" (Ante.ownershipChanges copied) Seq.empty
   -- CR 707.9's exception riding CR 707.10's opcode, on Double Major {G}{U}
   -- Instant, "Copy target creature spell you control, except it isn't legendary
@@ -1275,7 +1282,7 @@ copySpellSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
             Spec.assertBool s (not (Set.member Supertype.Legendary (Projection.supertypesOf tokenId after))) "CR 707.9b the token copy lost the supertype the exception named"
             Spec.assertEqWith s "CR 707.2 and kept the copied name, which is what CR 704.5j reads" (Projection.namesOf tokenId after) (Set.singleton (cardNamed "Rograkh, Son of Rohgahh"))
           other -> Spec.assertFailure s ("expected exactly one token copy, got " <> show (length other))
-        Spec.assertEqWith s "and the stack is empty" (GameState.stack after) []
+        Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
 
 -- Resolve until the stack is empty. The two readings of a copy's targets put
 -- DIFFERENT numbers of objects on the stack -- one ward trigger more under the
@@ -1284,7 +1291,7 @@ copySpellSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
 drainStack :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
 drainStack answer =
   let go fuel gs
-        | fuel <= 0 || null (GameState.stack gs) = gs
+        | fuel <= 0 || null (TurnRegisters.stack (GameState.turn gs)) = gs
         | otherwise = go (fuel - 1) (resolveOne answer gs)
    in go (10 :: Int)
 
@@ -1300,7 +1307,7 @@ stirCopyBoard swamp island stir twincast cards =
       (twincastId, withBoth) = handAppend twincast S.alice withStir
       add (acc, g) c = let (oid, g2) = S.addGraveyardCard c S.alice g in (acc <> [oid], g2)
       (ids, board) = List.foldl' add ([], withBoth) cards
-   in (stirId, twincastId, ids, board {GameState.phase = Phase.PrecombatMain})
+   in (stirId, twincastId, ids, board {GameState.turn = (GameState.turn board) {TurnRegisters.phase = Phase.PrecombatMain}})
 
 -- Announce this X, and answer every target prompt by FILTERING the offered set
 -- down to one recipient -- pinTarget's posture, with CR 601.2b's announcement in
@@ -1378,7 +1385,7 @@ stirCopySpec s registry =
                   Spec.assertEqWith s "nor did the mana value 4 one move" (S.countOnBattlefieldByName (cardNamed "Russet Wolves") S.alice after) 0
                   Spec.assertEqWith s "the copy kept the Piker, which the original had also named, so it came back once" (S.countOnBattlefieldByName (cardNamed "Goblin Piker") S.alice after) 1
                   Spec.assertEqWith s "and no other graveyard card came back" (S.countOnBattlefieldByName (cardNamed "Cabal Evangel") S.alice after) 0
-                  Spec.assertEqWith s "and everything resolved" (length (GameState.stack after)) 0
+                  Spec.assertEqWith s "and everything resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
             _ -> Spec.assertFailure s "fixture should stock alice's graveyard with four cards"
 
 -- alice's Unstable Shapeshifter becomes a copy of `original`, and the original
@@ -1678,7 +1685,7 @@ rollickersOn printing gs =
 copyPermanentSpell :: (forall r. Prompt.Prompt r -> r) -> ObjectId -> ObjectId -> GameState.GameState -> Maybe GameState.GameState
 copyPermanentSpell casting engineId spellId board =
   let cast = S.runPure casting board (S.cast S.alice spellId)
-      ready = cast {GameState.priority = Just S.alice}
+      ready = cast {GameState.turn = (GameState.turn cast) {TurnRegisters.priority = Just S.alice}}
    in do
         spell <- topOfStack cast
         ability <- List.find ((== Just (ManaCost.MkManaCost [ManaSymbol.Generic 4])) . Cost.Type.mana . ActivatedAbility.cost) (Projection.abilitiesOf engineId ready)
@@ -1705,7 +1712,7 @@ permanentCopySpec s registry =
           case copyPermanentSpell (bestowingRollicker host) engineId spellId board of
             Nothing -> Spec.assertFailure s "the Rollicker never reached the stack, or the Engine offered no {4} ability"
             Just copied -> do
-              let bolted = S.runPure (pinTarget (Recipient.ToCreature host)) copied {GameState.priority = Just S.alice} (S.cast S.alice boltId)
+              let bolted = S.runPure (pinTarget (Recipient.ToCreature host)) copied {GameState.turn = (GameState.turn copied) {TurnRegisters.priority = Just S.alice}} (S.cast S.alice boltId)
                   -- The Bolt, then the copy, then the Rollicker itself.
                   hostDead = resolveOne S.identityAnswer bolted
                   afterCopy = resolveOne S.identityAnswer hostDead
@@ -1791,12 +1798,12 @@ copyAbilityOnStackSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         (ashlingId, board) = S.addPermanent ashling S.alice withEngine
     case (Maybe.listToMaybe (Projection.abilitiesOf ashlingId board), engineAbilityCopyingAbilities engineId board) of
       (Just pump, Just copier) -> do
-        let once = resolveOne S.identityAnswer (S.runPure S.identityAnswer board {GameState.priority = Just S.alice} (Activate.activateAbility S.alice ashlingId pump))
-            twice = S.runPure S.identityAnswer once {GameState.priority = Just S.alice} (Activate.activateAbility S.alice ashlingId pump)
+        let once = resolveOne S.identityAnswer (S.runPure S.identityAnswer board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice ashlingId pump))
+            twice = S.runPure S.identityAnswer once {GameState.turn = (GameState.turn once) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice ashlingId pump)
         case topOfStack twice of
           Nothing -> Spec.assertFailure s "Ashling's second activation should be on the stack"
           Just abilId -> do
-            let staged = S.runPure (pinTarget (Recipient.ToObject abilId)) twice {GameState.priority = Just S.alice} (Activate.activateAbility S.alice engineId copier)
+            let staged = S.runPure (pinTarget (Recipient.ToObject abilId)) twice {GameState.turn = (GameState.turn twice) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice engineId copier)
                 -- The Engine's ability, then the copy it minted, then Ashling's
                 -- own second activation.
                 afterEngine = resolveOne S.identityAnswer staged
@@ -1832,18 +1839,18 @@ copyAbilityOnStackSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         (stifleId, board) = S.addHandCard stifle S.bob withAshling
     case (Maybe.listToMaybe (Projection.abilitiesOf ashlingId board), engineAbilityCopyingAbilities engineId board) of
       (Just pump, Just copier) -> do
-        let activate gs = S.runPure S.identityAnswer gs {GameState.priority = Just S.alice} (Activate.activateAbility S.alice ashlingId pump)
+        let activate gs = S.runPure S.identityAnswer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice ashlingId pump)
             twice = List.foldl' (\gs _ -> resolveOne S.identityAnswer (activate gs)) board [1 .. (2 :: Int)]
             thrice = activate twice
         case topOfStack thrice of
           Nothing -> Spec.assertFailure s "Ashling's third activation should be on the stack"
           Just abilId -> do
-            let staged = S.runPure (pinTarget (Recipient.ToObject abilId)) thrice {GameState.priority = Just S.alice} (Activate.activateAbility S.alice engineId copier)
+            let staged = S.runPure (pinTarget (Recipient.ToObject abilId)) thrice {GameState.turn = (GameState.turn thrice) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice engineId copier)
                 -- The Engine's ability resolves, leaving the copy above the
                 -- original; bob's Stifle then goes on top of both and counters
                 -- the original out from under the copy.
                 afterEngine = resolveOne S.identityAnswer staged
-                cast = S.runPure (pinTarget (Recipient.ToObject abilId)) afterEngine {GameState.priority = Just S.bob} (S.cast S.bob stifleId)
+                cast = S.runPure (pinTarget (Recipient.ToObject abilId)) afterEngine {GameState.turn = (GameState.turn afterEngine) {TurnRegisters.priority = Just S.bob}} (S.cast S.bob stifleId)
                 stifled = resolveOne S.identityAnswer cast
                 afterCopy = resolveOne S.identityAnswer stifled
             Spec.assertEqWith s "CR 707.10b the copy was still the third resolution, so the 3 counters came off and each player took 3" (S.lifeOf S.bob afterCopy) (Just 17)
@@ -1851,8 +1858,8 @@ copyAbilityOnStackSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
             -- Supporting, and after the reads above: the original really was
             -- countered before the copy resolved, so the read could not have
             -- found it.
-            Spec.assertBool s (notElem abilId (GameState.stack stifled)) "setup: the Stifle countered the original while the copy was still on the stack"
-            Spec.assertBool s (elem abilId (GameState.stack afterEngine)) "setup: and the original was under the copy before the Stifle resolved"
+            Spec.assertBool s (notElem abilId (TurnRegisters.stack (GameState.turn stifled))) "setup: the Stifle countered the original while the copy was still on the stack"
+            Spec.assertBool s (elem abilId (TurnRegisters.stack (GameState.turn afterEngine))) "setup: and the original was under the copy before the Stifle resolved"
       _ -> Spec.assertFailure s "Ashling the Pilgrim should declare one activated ability, and Lithoform Engine a {2} one"
   -- The Stifle case again on a TRIGGERED ability: Rumor Gatherer's "if this is
   -- the second time this ability has resolved this turn, draw a card instead"
@@ -1875,21 +1882,21 @@ copyAbilityOnStackSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         (firstPiker, g1) = S.addHandCard piker S.alice stocked
         (secondPiker, g2) = S.addHandCard piker S.alice g1
         (stifleId, board) = S.addHandCard stifle S.bob g2
-        enter oid gs = S.runPure S.identityAnswer gs {GameState.priority = Just S.alice} (Event.changeZone (pure ()) oid Zone.Battlefield >> Engine.settleForPriority)
+        enter oid gs = S.runPure S.identityAnswer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.priority = Just S.alice}} (Event.changeZone (pure ()) oid Zone.Battlefield >> Engine.settleForPriority)
         once = resolveOne S.identityAnswer (enter firstPiker board)
         triggered = enter secondPiker once
     case (topOfStack triggered, engineAbilityCopyingAbilities engineId triggered) of
       (Just abilId, Just copier) -> do
-        let staged = S.runPure (pinTarget (Recipient.ToObject abilId)) triggered {GameState.priority = Just S.alice} (Activate.activateAbility S.alice engineId copier)
+        let staged = S.runPure (pinTarget (Recipient.ToObject abilId)) triggered {GameState.turn = (GameState.turn triggered) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice engineId copier)
             afterEngine = resolveOne S.identityAnswer staged
-            cast = S.runPure (pinTarget (Recipient.ToObject abilId)) afterEngine {GameState.priority = Just S.bob} (S.cast S.bob stifleId)
+            cast = S.runPure (pinTarget (Recipient.ToObject abilId)) afterEngine {GameState.turn = (GameState.turn afterEngine) {TurnRegisters.priority = Just S.bob}} (S.cast S.bob stifleId)
             stifled = resolveOne S.identityAnswer cast
             afterCopy = resolveOne S.identityAnswer stifled
         Spec.assertEqWith s "CR 707.10b the copy was the second resolution, so alice drew a card" (handSize S.alice afterCopy) 1
         -- Supporting, and after the read above: the original really was
         -- countered before the copy resolved.
-        Spec.assertBool s (notElem abilId (GameState.stack stifled)) "setup: the Stifle countered the original while the copy was still on the stack"
-        Spec.assertBool s (elem abilId (GameState.stack afterEngine)) "setup: and the original was under the copy before the Stifle resolved"
+        Spec.assertBool s (notElem abilId (TurnRegisters.stack (GameState.turn stifled))) "setup: the Stifle countered the original while the copy was still on the stack"
+        Spec.assertBool s (elem abilId (TurnRegisters.stack (GameState.turn afterEngine))) "setup: and the original was under the copy before the Stifle resolved"
         Spec.assertEqWith s "setup: both Pikers left alice's hand before the copy resolved" (handSize S.alice stifled) 0
       _ -> Spec.assertFailure s "Rumor Gatherer's trigger should be on the stack, and Lithoform Engine should declare a {2} ability"
   -- CR 602.2b's trigger rather than Lithoform Engine's targeted copy: Kurkesh,
@@ -1913,18 +1920,18 @@ copyAbilityOnStackSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
           _ -> pinTarget (Recipient.ToPlayer S.bob) p
     case Projection.abilitiesOf rodId board of
       [ping] -> do
-        let activated = S.runPure (pinTarget (Recipient.ToPlayer S.bob)) board {GameState.priority = Just S.alice} (Activate.activateAbility S.alice rodId ping >> Engine.settleForPriority)
-        case GameState.stack activated of
+        let activated = S.runPure (pinTarget (Recipient.ToPlayer S.bob)) board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.alice}} (Activate.activateAbility S.alice rodId ping >> Engine.settleForPriority)
+        case TurnRegisters.stack (GameState.turn activated) of
           [_, abilId] -> do
             let afterKurkesh = resolveOne pays activated
-                cast = S.runPure (pinTarget (Recipient.ToObject abilId)) afterKurkesh {GameState.priority = Just S.bob} (S.cast S.bob stifleId)
+                cast = S.runPure (pinTarget (Recipient.ToObject abilId)) afterKurkesh {GameState.turn = (GameState.turn afterKurkesh) {TurnRegisters.priority = Just S.bob}} (S.cast S.bob stifleId)
                 stifled = resolveOne S.identityAnswer cast
                 afterCopy = resolveOne S.identityAnswer stifled
             Spec.assertEqWith s "CR 707.10 the copy dealt bob 1 and the countered original nothing" (S.lifeOf S.bob afterCopy) (Just 19)
-            Spec.assertEqWith s "and the stack is empty" (GameState.stack afterCopy) []
+            Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn afterCopy)) []
             -- Supporting, and after the reads above.
-            Spec.assertBool s (notElem abilId (GameState.stack stifled)) "setup: the Stifle countered the original while the copy was still on the stack"
-            Spec.assertEqWith s "setup: the copy sat above the original before the Stifle" (length (GameState.stack afterKurkesh)) 2
+            Spec.assertBool s (notElem abilId (TurnRegisters.stack (GameState.turn stifled))) "setup: the Stifle countered the original while the copy was still on the stack"
+            Spec.assertEqWith s "setup: the copy sat above the original before the Stifle" (length (TurnRegisters.stack (GameState.turn afterKurkesh))) 2
           stack -> Spec.assertFailure s ("Kurkesh's trigger should sit above the Rod's ability, not " <> show stack)
       _ -> Spec.assertFailure s "Rod of Ruin should declare one activated ability"
 
@@ -1967,9 +1974,9 @@ zadaSpec s registry =
           island <- S.printingOf s registry "Island"
           cancel <- S.printingOf s registry "Cancel"
           let (cancelId, board) = S.addHandCard cancel S.carol (S.landsFor island S.carol 3 base)
-              placed = snd (Engine.runGamePure (atZada zadaId) (snd (Engine.runGamePure (atZada zadaId) board {GameState.priority = Just S.alice} (S.cast S.alice growthId))) Engine.settleForPriority)
-              growthSpell = last (GameState.stack placed)
-              cancelled = snd (Engine.runGamePure (atZada growthSpell) placed {GameState.priority = Just S.carol} (S.cast S.carol cancelId))
+              placed = snd (Engine.runGamePure (atZada zadaId) (snd (Engine.runGamePure (atZada zadaId) board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.alice}} (S.cast S.alice growthId))) Engine.settleForPriority)
+              growthSpell = last (TurnRegisters.stack (GameState.turn placed))
+              cancelled = snd (Engine.runGamePure (atZada growthSpell) placed {GameState.turn = (GameState.turn placed) {TurnRegisters.priority = Just S.carol}} (S.cast S.carol cancelId))
               after = drainStack (atZada zadaId) cancelled
           Spec.assertEqWith s "CR 608.2h a copy of the countered Growth pumped the Piker" (S.powerToughnessOf pikerId after) (Just (5, 4))
           Spec.assertEqWith s "CR 701.6a the countered Growth itself pumped nothing, and Zada stays 3/3" (S.powerToughnessOf zadaId after) (Just (3, 3))
@@ -1994,7 +2001,7 @@ ivySpec s registry =
       -- What each object on the stack targets, top first, read live off its
       -- bindings the way Parun.Engine.Resolve.Common.targetsOnStack does, less CR
       -- 201.5's reserved self slot, the sibling helper's reason.
-      stackTargets gs = fmap (\oid -> Set.toList (Foldable.fold (Map.elems (Map.delete Binding.triggerSource (Binding.targetsOf (maybe Map.empty Object.bindings (Game.lookupObject oid gs))))))) (GameState.stack gs)
+      stackTargets gs = fmap (\oid -> Set.toList (Foldable.fold (Map.elems (Map.delete Binding.triggerSource (Binding.targetsOf (maybe Map.empty Object.bindings (Game.lookupObject oid gs))))))) (TurnRegisters.stack (GameState.turn gs))
    in Spec.describe s "Parun.Engine.Copy" $ do
         -- CR 608.2h over a spell that has left the stack: carol Cancels the
         -- Growth while Ivy's trigger waits, and the trigger still copies it, as
@@ -2013,12 +2020,12 @@ ivySpec s registry =
                 Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, offered) -> Set.filter (maybe False (`elem` victims) . Recipient.objectOf) offered) asked
                 Prompt.ChooseOptional {} -> OptionalDecision.Exercises
                 _ -> S.identityAnswer p
-              cast = snd (Engine.runGamePure (aimed [spiderId]) board {GameState.priority = Just S.bob} (S.cast S.bob growthId))
+              cast = snd (Engine.runGamePure (aimed [spiderId]) board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.bob}} (S.cast S.bob growthId))
               triggered = snd (Engine.runGamePure (aimed [spiderId]) cast Engine.settleForPriority)
-              growthSpell = last (GameState.stack triggered)
+              growthSpell = last (TurnRegisters.stack (GameState.turn triggered))
               answer :: Prompt.Prompt r -> r
               answer = aimed [spiderId, growthSpell]
-              cancelled = snd (Engine.runGamePure answer triggered {GameState.priority = Just S.carol} (S.cast S.carol cancelId))
+              cancelled = snd (Engine.runGamePure answer triggered {GameState.turn = (GameState.turn triggered) {TurnRegisters.priority = Just S.carol}} (S.cast S.carol cancelId))
               -- The Cancel, then Ivy's trigger: the moment the copy either
               -- exists or does not, with the Growth already in bob's graveyard.
               afterTrigger = resolveOne answer (resolveOne answer cancelled)
@@ -2074,7 +2081,7 @@ leylineOfResonanceSpec s registry =
       -- and that trigger alone resolves -- the moment the copy either exists or
       -- does not. CR 707.10c's prompt then aims the copy at `newTarget`.
       afterTrigger victim newTarget edictId board =
-        let cast = snd (Engine.runGamePure (aimAt victim) board {GameState.priority = Just S.alice} (S.cast S.alice edictId))
+        let cast = snd (Engine.runGamePure (aimAt victim) board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.alice}} (S.cast S.alice edictId))
          in resolveOne (aimAt newTarget) (snd (Engine.runGamePure S.identityAnswer cast Engine.settleForPriority))
    in Spec.describe s "Parun.Engine.Copy" . Spec.it s "CR 115.1 the trigger reads the one target's own description, not the pool its slot named" $ do
         (spiderId, berserkersId, pikerId, edictId, board) <- boardOf
@@ -2168,9 +2175,12 @@ graveyardCopyBoard card land lands twins =
    in ( gyId,
         twinIds,
         withCard
-          { GameState.priority = Just S.alice,
-            GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PostcombatMain
+          { GameState.turn =
+              (GameState.turn withCard)
+                { TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PostcombatMain
+                }
           }
       )
 
@@ -2231,7 +2241,7 @@ graveyardTokenCopySpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
     -- CR 602.5d: the same board a step later, so only the timing differs.
     Spec.assertBool
       s
-      (not (any (isActivationOf gyId) (Action.legalActions S.alice (board {GameState.phase = Phase.Ending EndingStep.EndStep}))))
+      (not (any (isActivationOf gyId) (Action.legalActions S.alice (board {GameState.turn = (GameState.turn board) {TurnRegisters.phase = Phase.Ending EndingStep.EndStep}}))))
       "CR 602.5d but not in the end step"
     case (tokensOnBattlefield embalmed, twinIds) of
       ([tokenId], [twinId]) -> do
@@ -2375,7 +2385,7 @@ flamerushRiderSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
     Spec.assertEqWith
       s
       "CR 110.5b / CR 508.4 one Piker token, tapped and attacking bob"
-      (fmap (\oid -> (PC.names (Projection.project oid atBlockers), fmap Object.tapped (Game.lookupObject oid atBlockers), Map.lookup oid (Combat.Type.attackers (GameState.combat atBlockers)))) tokens)
+      (fmap (\oid -> (PC.names (Projection.project oid atBlockers), fmap Object.tapped (Game.lookupObject oid atBlockers), Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers))))) tokens)
       [(Set.singleton (CardName.MkCardName (Text.pack "Goblin Piker")), Just TapState.Tapped, Just (AttackTarget.OfPlayer S.bob))]
     Spec.assertEqWith s "CR 510.1b bob takes 3 from the Rider, 2 from the Piker and 2 from its copy" (S.lifeOf S.bob after) (Just 13)
     Spec.assertEqWith s "CR 603.7c the token named by the trigger is exiled at end of combat" (S.tokensOf after) []
@@ -2397,7 +2407,7 @@ garthSpec s registry = Spec.describe s "GarthOneEye" $ do
     let reference = [lotus]
         (garthId, board) = garthBoard garth (Setup.emptyGame S.bothPlayers)
         cast = activateGarth (naming reference lotusName OptionalDecision.Exercises) garthId board
-        spell = List.find (\oid -> Maybe.isJust (Game.lookupObject oid cast)) (GameState.stack cast)
+        spell = List.find (\oid -> Maybe.isJust (Game.lookupObject oid cast)) (TurnRegisters.stack (GameState.turn cast))
         resolved = S.settleSba (S.runPure (naming reference lotusName OptionalDecision.Exercises) cast Stack.resolveTop)
         lotuses = filter (\oid -> PC.names (Projection.project oid resolved) == Set.singleton lotusName) (Set.toList (GameState.battlefield resolved))
     Spec.assertEqWith
@@ -2432,7 +2442,7 @@ garthSpec s registry = Spec.describe s "GarthOneEye" $ do
         copies gs = filter (\o -> case Object.source o of Source.OfCardCopy _ -> True; _ -> False) (Map.elems (GameState.objects gs))
     Spec.assertEqWith s "declined: no copy of a card exists anywhere" (length (copies declined), GameState.outsideCopies declined) (0, Set.empty)
     Spec.assertEqWith s "declined: the name is still spent" (Map.lookup garthId (GameState.namedCopyChoices declined)) (Just (Set.singleton lotusName))
-    Spec.assertEqWith s "unknown: nothing was cast" (length (GameState.stack unknown), length (copies unknown)) (0, 0)
+    Spec.assertEqWith s "unknown: nothing was cast" (length (TurnRegisters.stack (GameState.turn unknown)), length (copies unknown)) (0, 0)
 
 lotusName :: CardName.CardName
 lotusName = CardName.MkCardName (Text.pack "Black Lotus")
@@ -2443,9 +2453,12 @@ garthBoard garth gs =
   let (garthId, withGarth) = S.addPermanent garth S.alice gs
    in ( garthId,
         withGarth
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withGarth)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -2465,7 +2478,7 @@ naming reference name decision p = case p of
   _ -> S.identityAnswer p
 
 lotusesOnStack :: GameState.GameState -> Int
-lotusesOnStack gs = length (filter (\oid -> PC.names (Projection.project oid gs) == Set.singleton lotusName) (GameState.stack gs))
+lotusesOnStack gs = length (filter (\oid -> PC.names (Projection.project oid gs) == Set.singleton lotusName) (TurnRegisters.stack (GameState.turn gs)))
 
 lotusesOnBattlefield :: GameState.GameState -> [ObjectId.ObjectId]
 lotusesOnBattlefield gs = filter (\oid -> PC.names (Projection.project oid gs) == Set.singleton lotusName) (Set.toList (GameState.battlefield gs))
@@ -2536,7 +2549,7 @@ magarBoardAt s registry targetName = do
       (divinationId, gs1) = S.addGraveyardCard divination S.alice gs0
       (_, gs2) = S.addGraveyardCard bolt S.alice gs1
       stocked = List.foldl' (\g _ -> snd (S.addLibraryCard island S.alice g)) gs2 [1 :: Int .. 3]
-      funded = stocked {GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana [floating Color.Black, floating Color.Red, floating Color.Red]), GameState.priority = Just S.alice}
+      funded = stocked {GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana [floating Color.Black, floating Color.Red, floating Color.Red]), GameState.turn = (GameState.turn stocked) {TurnRegisters.priority = Just S.alice}}
   case mine of
     [magarId] -> case Activatable.abilitiesFor magarId funded of
       [ability] -> do

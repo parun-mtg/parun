@@ -79,6 +79,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 aviatorName, jumpName, cloneName, twincastName :: CardName.CardName
@@ -247,13 +248,13 @@ spec s registry = Spec.describe s "Preparation" $ do
       [copyId] -> do
         Spec.assertBool s (not (prepared copyId withTwincast)) "the copy in exile is not yet a prepared spell"
         let cast = S.runPure (jumpAt pikerId) withTwincast (Cast.castSpell S.manaPerformer S.alice copyId jumpName Facing.FaceUp)
-        case GameState.stack cast of
+        case TurnRegisters.stack (GameState.turn cast) of
           [jumpId] -> do
             Spec.assertBool s (prepared jumpId cast) "CR 723.3d: the cast Jump is a prepared spell"
             let aimed = [Recipient.ToObject jumpId, Recipient.ToCreature pikerId]
                 twincastCast = S.runPure (aimedAmong aimed) cast (Cast.castSpell S.manaPerformer S.alice twincastId twincastName Facing.FaceUp)
                 copied = S.runPure (aimedAmong aimed) twincastCast Stack.resolveTop
-            case GameState.stack copied of
+            case TurnRegisters.stack (GameState.turn copied) of
               [twinId, original] | original == jumpId -> do
                 Spec.assertBool s (twinId /= jumpId) "Twincast put a new object on the stack"
                 Spec.assertBool s (prepared twinId copied) "CR 723.3d: the copy is a prepared spell too"

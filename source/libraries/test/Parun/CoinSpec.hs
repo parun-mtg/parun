@@ -97,6 +97,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Coin" $ do
@@ -225,8 +226,8 @@ afterOdds face (boltId, oddsId, board) =
         Prompt.ChooseTargets {} -> pinTarget (Recipient.ToPlayer S.bob) p
         _ -> S.identityAnswer p
       cast1 = S.runPure (pinTarget (Recipient.ToPlayer S.bob)) board (Cast.castSpell S.manaPerformer S.alice boltId boltName Facing.FaceUp)
-      drain n g = if n <= (0 :: Int) || null (GameState.stack g) then g else drain (n - 1) (S.runPure answer g Stack.resolveTop)
-   in case GameState.stack cast1 of
+      drain n g = if n <= (0 :: Int) || null (TurnRegisters.stack (GameState.turn g)) then g else drain (n - 1) (S.runPure answer g Stack.resolveTop)
+   in case TurnRegisters.stack (GameState.turn cast1) of
         [] -> cast1
         boltSpell : _ ->
           let cast2 = S.runPure (pinTarget (Recipient.ToObject boltSpell)) cast1 (Cast.castSpell S.manaPerformer S.alice oddsId oddsName Facing.FaceUp)
@@ -245,13 +246,13 @@ oddsCalls face (boltId, oddsId, board) =
         _ -> pure (S.identityAnswer p)
       drain :: Int -> GameState.GameState -> State.State Int GameState.GameState
       drain n g =
-        if n <= 0 || null (GameState.stack g)
+        if n <= 0 || null (TurnRegisters.stack (GameState.turn g))
           then pure g
           else do
             (_, next) <- Engine.runGame counting g Stack.resolveTop
             drain (n - 1) next
       cast1 = S.runPure (pinTarget (Recipient.ToPlayer S.bob)) board (Cast.castSpell S.manaPerformer S.alice boltId boltName Facing.FaceUp)
-   in case GameState.stack cast1 of
+   in case TurnRegisters.stack (GameState.turn cast1) of
         [] -> 0
         boltSpell : _ ->
           let cast2 = S.runPure (pinTarget (Recipient.ToObject boltSpell)) cast1 (Cast.castSpell S.manaPerformer S.alice oddsId oddsName Facing.FaceUp)
@@ -390,7 +391,7 @@ chaosSpec s registry = Spec.describe s "Game of Chaos's life changes (CR 608.2c)
               GameEvent.LifeGained _ -> Just (LoggedEvent.group logged)
               GameEvent.LifeLost _ -> Just (LoggedEvent.group logged)
               _ -> Nothing
-        pure (Maybe.mapMaybe lifeChange (Foldable.toList (GameState.events after)))
+        pure (Maybe.mapMaybe lifeChange (Foldable.toList (TurnRegisters.events (GameState.turn after))))
       twoEvents face = do
         groups <- groupsAfter face
         Spec.assertEqWith s "one life change each, in groups of their own" (length groups, Set.size (Set.fromList groups)) (2, 2)

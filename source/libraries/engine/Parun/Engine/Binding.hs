@@ -1283,7 +1283,7 @@ attackingCreatures = SlotName.MkSlotName (Text.pack "thoseAttackingCreatures")
 -- Not the ACTIVE player under another name, though CR 506.2 makes them the same
 -- seat on every board parun can build today: CR 508.1's declaration is what this
 -- reads, and Parun.Engine.Event stamps it from the event rather than from
--- GameState.activePlayer.
+-- TurnRegisters.activePlayer.
 --
 -- Not a target (nothing was chosen), so the same CR 608.2b posture and the same
 -- "no card's targetSlots may name it" sweep as `attackingCreature`.

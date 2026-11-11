@@ -158,6 +158,7 @@ import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
@@ -210,6 +211,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -764,7 +766,7 @@ asEntersSpec s registry = Spec.describe s "As-enters inside a resolution (CR 614
     let (wardenId, g1) = S.addPermanent warden S.bob (S.landsInPlay island 1)
         (tokenId, board) = S.addToken (Printing.card warden) S.bob g1
         (after, _) = entering ixidron board
-    Spec.assertEqWith s "CR 603.10 only the face-up token Warden saw Ixidron enter" (length (GameState.stack after)) 1
+    Spec.assertEqWith s "CR 603.10 only the face-up token Warden saw Ixidron enter" (length (TurnRegisters.stack (GameState.turn after))) 1
     Spec.assertEqWith s "CR 708.2a the sweep turned the card Warden face down and not the token" (faceDownIds after) (Set.singleton wardenId)
     Spec.assertBool s (tokenId `Set.member` GameState.battlefield after) "the token Warden is still on the battlefield"
 
@@ -782,7 +784,7 @@ asEntersSpec s registry = Spec.describe s "As-enters inside a resolution (CR 614
     warden <- S.printingOf s registry "Soul Warden"
     giant <- S.printingOf s registry "Hill Giant"
     let (held, spell) = S.handOne exhume (S.landsInPlay swamp 2)
-        (_, g1) = S.addGraveyardCard ixidron S.alice held {GameState.phase = Phase.PrecombatMain}
+        (_, g1) = S.addGraveyardCard ixidron S.alice held {GameState.turn = (GameState.turn held) {TurnRegisters.phase = Phase.PrecombatMain}}
         (_, g2) = S.addGraveyardCard warden S.bob g1
         (giantId, gs) = S.addPermanent giant S.bob g2
         after = S.runPure S.identityAnswer gs (S.cast S.alice spell >> Stack.resolveTop >> Engine.settleForPriority)
@@ -791,7 +793,7 @@ asEntersSpec s registry = Spec.describe s "As-enters inside a resolution (CR 614
     Spec.assertEqWith s "CR 614.12 the sweep turned over the Giant and not the Warden entering beside Ixidron" (faceDownIds after) (Set.singleton giantId)
     Spec.assertEqWith s "both creature cards entered" (Set.size (named "Ixidron") + Set.size (named "Soul Warden")) 2
     Spec.assertEqWith s "Ixidron is a 1/1, counting the Giant alone" (fmap (`S.powerToughnessOf` after) (Set.toList (named "Ixidron"))) [Just (1, 1)]
-    Spec.assertEqWith s "CR 603.6a the face-up Warden saw Ixidron enter" (length (GameState.stack after)) 1
+    Spec.assertEqWith s "CR 603.6a the face-up Warden saw Ixidron enter" (length (TurnRegisters.stack (GameState.turn after))) 1
 
 -- alice attacks with one Goblin Piker into bob's suspect, a second Piker beside it
 -- and `lands`. Returns the board with attackers declared, the suspect, the Piker
@@ -1217,7 +1219,7 @@ gargoyleBoard island cyber gargoyle piker witness =
       (dfc, gs1) = S.addPermanent gargoyle S.alice gs0
       (bystander, gs2) = S.addPermanent piker S.alice gs1
       (_, gs3) = S.addPermanent witness S.alice gs2
-   in (stockLibrary piker gs3 {GameState.priority = Just S.alice}, spell, dfc, bystander)
+   in (stockLibrary piker gs3 {GameState.turn = (GameState.turn gs3) {TurnRegisters.priority = Just S.alice}}, spell, dfc, bystander)
 
 -- Three cards in alice's library, so a draw is a count that moves.
 stockLibrary :: Printing.Printing -> GameState.GameState -> GameState.GameState
@@ -2787,7 +2789,7 @@ disguiseSpec s registry =
           case board of
             Nothing -> Spec.assertFailure s "the morph cast did not reach the battlefield"
             Just (permanent, onStack) -> do
-              Spec.assertEqWith s "only the Growth is on the stack" (length (GameState.stack onStack)) 1
+              Spec.assertEqWith s "only the Growth is on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
               let after = S.runPure S.identityAnswer onStack (Stack.resolveTop >> Engine.settleForPriority)
               Spec.assertEqWith s "CR 702.37c the Growth resolved with nothing to counter it" (S.powerToughnessOf permanent after) (Just (5, 5))
               Spec.assertEqWith s "and bob spent only the Growth's Forest" (S.tappedCount S.bob after) 1
@@ -2867,9 +2869,12 @@ wardedBoard s registry name facing = do
       (growthId, withGrowth) = S.addHandCard growth S.bob withCard
       ready =
         withGrowth
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withGrowth)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       (down, entered) = castAndResolve subject facing ready card
   pure (fmap (\permanent -> (permanent, S.runPure S.identityAnswer (S.runPure S.identityAnswer down (S.cast S.bob growthId)) Engine.settleForPriority)) entered)
@@ -3014,7 +3019,7 @@ unmaskBoard s registry = do
       (shriekerId, g4) = S.addPermanent shrieker S.alice g3
       (pikerId, g5) = S.addPermanent piker S.bob g4
       (g6, entered) = enterFaceDown forest S.bob g5
-      board = stockLibrary piker g6 {GameState.priority = Just S.alice}
+      board = stockLibrary piker g6 {GameState.turn = (GameState.turn g6) {TurnRegisters.priority = Just S.alice}}
   case entered of
     Just manifest -> pure (board, murderId, judgmentId, manifest, pikerId, witnessId, shriekerId)
     Nothing -> Spec.assertFailure s "the manifest did not reach the battlefield"
@@ -3029,7 +3034,7 @@ departureBoard s registry faceDown = do
   let (_, g1) = S.addPermanent witness S.alice S.threePlayerGame
       (g2, entered) = if faceDown then enterFaceDown forest S.bob g1 else faceUp (S.addPermanent forest S.bob g1)
       faceUp (oid, g) = (g, Just oid)
-      board = stockLibrary forest g2 {GameState.priority = Just S.alice}
+      board = stockLibrary forest g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.priority = Just S.alice}}
   case entered of
     Just _ -> pure board
     Nothing -> Spec.assertFailure s "bob's Forest did not reach the battlefield"
@@ -3041,9 +3046,9 @@ spellBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Facing.Facing
 spellBoard s registry facing = do
   mountain <- S.printingOf s registry "Mountain"
   ainok <- S.printingOf s registry "Ainok Tracker"
-  let (board, card) = S.handOne ainok (S.landsFor mountain S.alice 8 S.threePlayerGame {GameState.priority = Just S.alice})
+  let (board, card) = S.handOne ainok (S.landsFor mountain S.alice 8 (Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) S.threePlayerGame))
       cast = S.runPure S.identityAnswer board (Cast.castSpell S.manaPerformer S.alice card (S.printingName ainok) facing)
-  case GameState.stack cast of
+  case TurnRegisters.stack (GameState.turn cast) of
     [spell] -> pure (cast, spell)
     _ -> Spec.assertFailure s "Ainok Tracker did not reach the stack"
 

@@ -250,7 +250,7 @@ keptFaceDown oid gs =
 -- priority window, every activation (CR 602.2a moves no card) and the payment
 -- itself, which runs after the move.
 --
--- NOT put on GameState.stack: no mana ability prints a rider reading the stack
+-- NOT put on TurnRegisters.stack: no mana ability prints a rider reading the stack
 -- beyond CR 307.5's, which ActivationRestriction.needsEmptyStack owns.
 withoutBeingCast :: GameState -> GameState
 withoutBeingCast gs =
@@ -780,7 +780,7 @@ setGraveyardOrder pid order gs =
 -- cr-509-1g-a-blocker-stays-blocking-once-its-attacker-is-removed is the proof.
 removeFromCombat :: ObjectId -> GameState -> GameState
 removeFromCombat oid gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       blockers = fmap (Set.delete oid) (Map.delete oid (Combat.blockers c))
       stillBlocking = Set.unions (Map.elems blockers)
       orphaned = Set.difference (Map.findWithDefault Set.empty oid (Combat.blockers c)) stillBlocking
@@ -811,7 +811,7 @@ removeFromCombat oid gs =
             -- Combat.attackers, which this call has just emptied of the entry.
             Combat.attackedControlledBy = Map.delete oid (Combat.attackedControlledBy c)
           }
-   in gs {GameState.combat = c1}
+   in gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = c1}}
 
 -- CR 506.4's attacker half for an object that CEASES: a permanent that leaves
 -- the battlefield, whose id Parun.Engine.Event.changeZoneAttaching deletes from
@@ -835,8 +835,8 @@ removeFromCombat oid gs =
 -- is a different question and survives -- the declaration happened.
 ceaseAttacking :: ObjectId -> GameState -> GameState
 ceaseAttacking oid gs =
-  let c = recordDefending oid (GameState.combat gs)
-   in gs {GameState.combat = c {Combat.attackers = Map.delete oid (Combat.attackers c)}}
+  let c = recordDefending oid (TurnRegisters.combat (GameState.turn gs))
+   in gs {GameState.turn = (GameState.turn gs) {TurnRegisters.combat = c {Combat.attackers = Map.delete oid (Combat.attackers c)}}}
 
 -- CR 508.5's second sentence, written as an attacker leaves combat: the player
 -- it was attacking, or the one CR 802.2a seated for its planeswalker or battle
@@ -858,7 +858,7 @@ recordDefending oid c =
 -- Filter.attacking and the CR 608.2h record Parun.Types.LastKnown.attacking keeps
 -- must not answer it differently.
 isAttacking :: ObjectId -> GameState -> Bool
-isAttacking oid gs = Map.member oid (Combat.attackers (GameState.combat gs))
+isAttacking oid gs = Map.member oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 508.1b: what this creature is attacking. Nothing for a creature CR 506.4c
 -- has left attacking nothing, whose Combat.attackers entry stands but which "is
@@ -866,7 +866,7 @@ isAttacking oid gs = Map.member oid (Combat.attackers (GameState.combat gs))
 -- is the record of that.
 attackTargetOf :: ObjectId -> GameState -> Maybe AttackTarget.AttackTarget
 attackTargetOf oid gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
    in if Set.member oid (Combat.attackingNothing c) then Nothing else Map.lookup oid (Combat.attackers c)
 
 -- attackTargetOf through CR 608.2h: for an object that has left, what it was
@@ -947,7 +947,7 @@ overLastKnownChoices field f lk = case field of
 -- differently -- sourceIsToken's posture one field over.
 isBlocking :: ObjectId -> GameState -> Bool
 isBlocking oid gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
    in Set.member oid (Combat.blockingNothing c) || any (Set.member oid) (Map.elems (Combat.blockers c))
 
 -- CR 303.4b: WHICH object this one is attached to -- what an Aura "enchants".
@@ -1070,7 +1070,10 @@ removeFromZones oid gs =
           GameState.command = Set.delete oid (GameState.command gs),
           GameState.ante = Set.delete oid (GameState.ante gs),
           GameState.sideDecks = fmap (fromPile Zone.Command) (GameState.sideDecks gs),
-          GameState.stack = filter (/= oid) (GameState.stack gs),
+          GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.stack = filter (/= oid) (TurnRegisters.stack (GameState.turn gs))
+              },
           -- CR 807.5: and off whichever stack holds it.
           GameState.parkedTurns = fmap (\r -> r {TurnRegisters.stack = filter (/= oid) (TurnRegisters.stack r)}) (GameState.parkedTurns gs)
         }
@@ -1141,22 +1144,25 @@ insertIntoZone zone position pid oid gs = case zone of
   Zone.Ante -> gs {GameState.ante = Set.insert oid (GameState.ante gs)}
   Zone.Stack -> putOnStack (GameState.nextEventGroup gs) oid gs
 
--- | CR 405.1 / 807.5: every stack's objects, top first -- GameState.stack,
+-- | CR 405.1 / 807.5: every stack's objects, top first -- TurnRegisters.stack,
 -- then each parked Grand Melee turn's by marker number -- which a read about
 -- an object on "the stack" with no stack of its own ranges over.
 allStacks :: GameState -> [ObjectId]
-allStacks gs = GameState.stack gs <> foldMap TurnRegisters.stack (GameState.parkedTurns gs)
+allStacks gs = TurnRegisters.stack (GameState.turn gs) <> foldMap TurnRegisters.stack (GameState.parkedTurns gs)
 
 -- CR 405.2: put an object on top of the stack, noting `since`, the first event
--- group that counts as after it (GameState.stackedIn): CR 610.3a's "after that
+-- group that counts as after it (TurnRegisters.stackedIn): CR 610.3a's "after that
 -- spell or ability was put onto the stack", the group current as it arrives,
 -- or CR 610.3b's "after that ability triggered", the one after its trigger
 -- event's (Engine.placeOne). Every arrival goes through here.
 putOnStack :: EventGroup.EventGroup -> ObjectId -> GameState -> GameState
 putOnStack since oid gs =
   gs
-    { GameState.stack = oid : GameState.stack gs,
-      GameState.stackedIn = Map.insert oid since (GameState.stackedIn gs)
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.stack = oid : TurnRegisters.stack (GameState.turn gs),
+            TurnRegisters.stackedIn = Map.insert oid since (TurnRegisters.stackedIn (GameState.turn gs))
+          }
     }
 
 -- Move a card already in a library to this many cards down from its top, 0
@@ -3098,7 +3104,7 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 -- (#4014).
 apnapOrder :: GameState -> [PlayerId]
 apnapOrder gs =
-  let rotated = turnOrderFrom (GameState.activePlayer gs) gs
+  let rotated = turnOrderFrom (TurnRegisters.activePlayer (GameState.turn gs)) gs
    in List.sortOn (\pid -> List.findIndex (Turn.sharesTurn gs pid) rotated) rotated
 
 -- CR 805.2: the primary player of this player's team -- the still-playing
@@ -3138,12 +3144,12 @@ primaryOf gs pid =
 --
 -- The walk anchors on the ACTIVE seat and excludes it, unlike
 -- Engine.nextStillPlaying's CR 800.4a walk, which anchors on the departing
--- seat. CR 800.4j keeps GameState.activePlayer naming a departed seat, so "there
+-- seat. CR 800.4j keeps TurnRegisters.activePlayer naming a departed seat, so "there
 -- is no active player" is that seat failing `eligible`.
 heirOnDeparture :: (PlayerId -> Bool) -> Game (Maybe PlayerId)
 heirOnDeparture eligible = do
   gs <- State.get
-  let active = GameState.activePlayer gs
+  let active = TurnRegisters.activePlayer (GameState.turn gs)
       live = filter eligible (Turn.activePlayers gs)
       walk = case List.break (== active) (GameState.turnOrder gs) of
         (before, _ : after) -> after <> before
@@ -3304,7 +3310,7 @@ castOf event = case event of
 -- (Event.Match.castOrdinal) read it.
 castsBefore :: ObjectId -> GameState -> Maybe [SpellWasCast.SpellWasCast]
 castsBefore spell gs =
-  case break ((== spell) . SpellWasCast.spell) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (GameState.events gs))) of
+  case break ((== spell) . SpellWasCast.spell) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))) of
     (_, []) -> Nothing
     (before, _) -> Just before
 
@@ -3321,18 +3327,18 @@ castsPerPlayer events =
     (+)
     (fmap (\cast -> (SpellWasCast.player cast, 1)) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList events)))
 
--- CR 608.2i: the log of the turn a tally names. GameState.events is the turn in
+-- CR 608.2i: the log of the turn a tally names. TurnRegisters.events is the turn in
 -- progress, Engine.beginTurn clearing it at the handoff; GameState.eventsLastTurn
 -- is the one before, whoever's it was, and empty on the game's first turn.
 turnLog :: WhichTurn.WhichTurn -> GameState -> Seq.Seq LoggedEvent.LoggedEvent
 turnLog which gs = case which of
-  WhichTurn.ThisTurn -> GameState.events gs
+  WhichTurn.ThisTurn -> TurnRegisters.events (GameState.turn gs)
   WhichTurn.LastTurn -> GameState.eventsLastTurn gs
 
 -- CR 601.2i: this turn's casts, in the order they became cast, off the log
 -- Engine.handoffTurn clears.
 castsInLog :: GameState -> Seq.Seq SpellWasCast.SpellWasCast
-castsInLog gs = Seq.fromList (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
+castsInLog gs = Seq.fromList (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 120.1: every damage event in the turn's log, oldest first, behind
 -- damageRecipient's CR 120.8 fence -- castsInLog's shape, for
@@ -3342,7 +3348,7 @@ damageInLog gs =
   let dealt event = case event of
         GameEvent.DamageDealt ev | Maybe.isJust (damageRecipient event) -> Just ev
         _ -> Nothing
-   in Seq.fromList (Maybe.mapMaybe (dealt . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
+   in Seq.fromList (Maybe.mapMaybe (dealt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 608.2n: the ABILITY an event describes RESOLVING, if it describes one, as
 -- the Source its object on the stack carried -- the source object and the
@@ -3543,7 +3549,7 @@ enteredThisTurn oid gs = fmap MovedBetween.to (arrivalThisTurn oid gs) == Just Z
 -- entered this turn: an entry mints none (Parun.Engine.Event.sampleControl).
 controlChangesThisTurn :: ObjectId -> GameState -> [ControlChanged.ControlChanged]
 controlChangesThisTurn oid gs =
-  [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs)), ControlChanged.object change == oid]
+  [change | GameEvent.ControlChanged change <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))), ControlChanged.object change == oid]
 
 -- CR 400.7 / 608.2i: the zone change this turn that made this object the object
 -- it is now, keyed on the ARRIVAL's id. Every arrival counts: a move's leading
@@ -3555,7 +3561,7 @@ arrivalThisTurn oid gs =
   let arrival event = case event of
         GameEvent.CardArrived change -> Just change
         _ -> movedChange event
-      mine = filter ((== oid) . ZoneChange.object) (Maybe.mapMaybe (arrival . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
+      mine = filter ((== oid) . ZoneChange.object) (Maybe.mapMaybe (arrival . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
    in fmap (\change -> MovedBetween.MkMovedBetween {MovedBetween.from = ZoneChange.from change, MovedBetween.to = ZoneChange.to change}) (Maybe.listToMaybe (reverse mine))
 
 -- The same entry, kept WHOLE: CR 400.7's `from` is what a reader asking where the
@@ -3572,7 +3578,7 @@ enteredBattlefieldChange event = do
 entryGroup :: ObjectId -> GameState -> Maybe EventGroup.EventGroup
 entryGroup oid gs =
   let entered logged = maybe False ((== oid) . ZoneChange.object) (enteredBattlefieldChange (LoggedEvent.event logged))
-   in fmap (LoggedEvent.group . Seq.index (GameState.events gs)) (Seq.findIndexR entered (GameState.events gs))
+   in fmap (LoggedEvent.group . Seq.index (TurnRegisters.events (GameState.turn gs))) (Seq.findIndexR entered (TurnRegisters.events (GameState.turn gs)))
 
 -- CR 700.4's "is put into a graveyard from the battlefield", the reader
 -- `enteredBattlefieldChange` above is the other direction of: rule 702.69a's
@@ -3595,7 +3601,7 @@ diedChange event = do
 -- merged or melded permanent came apart, all of which the effect finds (CR
 -- 731.3c, 713.8c). None once every trail reaches an id that is gone with no
 -- successor: the card left the game. The log is this turn's
--- (GameState.events), which is enough, since the stack empties before any turn
+-- (TurnRegisters.events), which is enough, since the stack empties before any turn
 -- ends.
 currentIncarnations :: ObjectId -> GameState -> [ObjectId]
 currentIncarnations oid gs
@@ -3610,7 +3616,7 @@ arrivalsOf oid gs =
   let arrivedFrom event = case event of
         GameEvent.Moved m | ZoneChange.departed (Moved.change m) == oid -> Foldable.toList (Moved.arrivals m)
         _ -> []
-   in concatMap (arrivedFrom . LoggedEvent.event) (GameState.events gs)
+   in concatMap (arrivedFrom . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
 
 -- CR 400.7's zone change itself, whatever its ends -- the exhaustive case the two
 -- readers above share, so a new GameEvent constructor is classified once rather
@@ -3826,7 +3832,7 @@ damagedObject event = damageRecipient event >>= Recipient.objectOf
 -- wasDealtDamage's shape below over the discard log, and the reader is
 -- Parun.Engine.Cost.candidateCostsGiven's mayhem offer, and
 -- Parun.Engine.PlayerEffect.mayPlayByMayhem's CR 702.187c play. The turn scope is
--- GameState.events itself, which Parun.Engine.Engine.beginTurnOf clears at the
+-- TurnRegisters.events itself, which Parun.Engine.Engine.beginTurnOf clears at the
 -- handoff.
 --
 -- The id compared is the one the CR 400.7 funnel minted, which is what
@@ -3842,12 +3848,12 @@ discardedThisTurnBy pid oid gs =
   let discardedIt event = case event of
         GameEvent.Discarded discarded -> Discarded.player discarded == pid && Discarded.card discarded == oid
         _ -> False
-   in any (discardedIt . LoggedEvent.event) (GameState.events gs)
+   in any (discardedIt . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
 
 -- CR 702.117a / 608.2i: has this player or one of their teammates cast a spell
 -- this turn? discardedThisTurnBy's shape above over the cast log, and the reader
 -- is Parun.Engine.Cost.candidateCostsGiven's surge offer. The turn scope is
--- GameState.events itself, that function's reason.
+-- TurnRegisters.events itself, that function's reason.
 --
 -- Rule 702.117a's "another" needs no exclusion here: CR 601.2i files the cast
 -- event at the END of casting, and this is asked at CR 601.2b, so the spell
@@ -3860,7 +3866,7 @@ yourTeamCastASpellThisTurn pid gs =
   let castByYours event = case castOf event of
         Just cast -> not (areOpponents gs pid (SpellWasCast.player cast))
         Nothing -> False
-   in any (castByYours . LoggedEvent.event) (GameState.events gs)
+   in any (castByYours . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
 
 -- CR 702.137a / 608.2i: did an opponent of this player lose life this turn?
 -- yourTeamCastASpellThisTurn's shape over the life-loss log, and the reader is
@@ -3875,7 +3881,7 @@ yourTeamCastASpellThisTurn pid gs =
 -- here.
 opponentLostLifeThisTurn :: PlayerId -> GameState -> Bool
 opponentLostLifeThisTurn pid gs =
-  lifeChangedAmong LifeDirection.Lost (GameState.events gs) (areOpponents gs pid) > 0
+  lifeChangedAmong LifeDirection.Lost (TurnRegisters.events (GameState.turn gs)) (areOpponents gs pid) > 0
 
 -- CR 702.76a / 608.2i: was a player dealt combat damage this turn by a source
 -- that was then under this player's control and had any of these creature types?
@@ -3903,7 +3909,7 @@ prowlDamageThisTurn pid types gs =
             && DamageEvent.dealtByController ev == Just pid
             && not (Set.disjoint types (DamageEvent.dealtByCreatureTypes ev))
         _ -> False
-   in any prowled (GameState.events gs)
+   in any prowled (TurnRegisters.events (GameState.turn gs))
 
 -- CR 702.173a / 608.2i: prowlDamageThisTurn's twin, whose clause asks for an
 -- Assassin or a commander rather than for the spell's own creature types. The
@@ -3927,7 +3933,7 @@ freerunningDamageThisTurn pid gs =
             && DamageEvent.dealtByController ev == Just pid
             && (Set.member Subtype.Assassin (DamageEvent.dealtByCreatureTypes ev) || DamageEvent.dealtByCommander ev)
         _ -> False
-   in any freeran (GameState.events gs)
+   in any freeran (TurnRegisters.events (GameState.turn gs))
 
 -- CR 120.1 / 608.2i: was this PLAYER dealt damage during the turn named? The
 -- log fold damagedPlayer exists for, written once here because two callers ask
@@ -3972,7 +3978,7 @@ damageDealtToPlayerThisTurn kind by gs pid =
             Just (recipient, amount) | Recipient.playerOf recipient == Just pid && eventCounts kind by (LoggedEvent.event logged) -> Just amount
             _ -> Nothing
         )
-        (Foldable.toList (GameState.events gs))
+        (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
     )
 
 -- CR 120.1 / 608.2i: how much damage was dealt to, or by, this OBJECT this
@@ -3997,7 +4003,7 @@ damageDealtThisTurn direction gs oid =
             (Just (recipient, amount), GameEvent.DamageDealt ev) | endOf recipient ev == Just oid -> Just amount
             _ -> Nothing
         )
-        (Foldable.toList (GameState.events gs))
+        (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
     )
   where
     endOf recipient ev = case direction of
@@ -4123,10 +4129,10 @@ actionsDoneThisTurn acts gs pid =
   let actionOf event = case event of
         GameEvent.PlayerActed acted | PlayerActed.player acted == pid -> Just (PlayerActed.action acted)
         _ -> Nothing
-   in Set.size (Set.intersection acts (Set.fromList (Maybe.mapMaybe (actionOf . LoggedEvent.event) (Foldable.toList (GameState.events gs)))))
+   in Set.size (Set.intersection acts (Set.fromList (Maybe.mapMaybe (actionOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
 
 -- CR 508.1a / 608.2i: how many creatures this player declared as attackers this
--- turn. lifeChangedIn's footing -- a fold over GameState.events, whose
+-- turn. lifeChangedIn's footing -- a fold over TurnRegisters.events, whose
 -- extent Parun.Engine.Engine.beginTurnOf's clearing makes "this turn".
 --
 -- The ATTACKING PLAYER is read off the event rather than resolved through CR
@@ -4137,12 +4143,12 @@ actionsDoneThisTurn acts gs pid =
 -- Parun.Engine.Combat.declareAttackers appending the event -- the same scope
 -- Parun.Engine.Count.declaredThisTurn reads.
 attackersDeclaredThisTurn :: GameState -> PlayerId -> Natural
-attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
+attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 508.1a: this turn's attacker declarations, in order, off the log
 -- Engine.beginTurn snapshots into GameState.attacksInOwnLastTurn as it clears it.
 attacksInLog :: GameState -> Seq.Seq AttackerDeclared.AttackerDeclared
-attacksInLog gs = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (Foldable.toList (GameState.events gs)))
+attacksInLog gs = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
   where
     attackOf event = case event of
       GameEvent.AttackerDeclared x -> Just x
@@ -4166,7 +4172,7 @@ attackersInTheirLastTurn gs victim =
 -- CR 509.1h / 608.2i: did this OBJECT become a blocked creature this turn?
 -- attackersDeclaredThisTurn's footing over the other combat log, and its extent
 -- is the turn for the same reason: Parun.Engine.Engine.beginTurnOf clears
--- GameState.events at the handoff and nothing else does.
+-- TurnRegisters.events at the handoff and nothing else does.
 --
 -- The LOG and not Combat.blockers, which rule 509.1h's last sentence is why: a
 -- creature remains blocked after every blocker leaves combat, and the combat
@@ -4181,11 +4187,11 @@ attackersInTheirLastTurn gs victim =
 -- reassignment under CR 509.3b -- Parun.Engine.Combat's declareBlockers,
 -- becomeBlocked, putOntoBattlefieldBlocking, switchBlockers and blockAttacker.
 wasBlockedThisTurn :: GameState -> ObjectId -> Bool
-wasBlockedThisTurn gs oid = any ((== Just oid) . blockedAttacker . LoggedEvent.event) (GameState.events gs)
+wasBlockedThisTurn gs oid = any ((== Just oid) . blockedAttacker . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
 
 -- CR 701.26a: how many times this object became tapped this turn, off the log.
 timesTappedThisTurn :: GameState -> ObjectId -> Integer
-timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tappedOf . LoggedEvent.event) (GameState.events gs)))
+timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tappedOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))))
 
 -- The permanent an event records becoming tapped (CR 701.26a).
 tappedOf :: GameEvent -> Maybe ObjectId

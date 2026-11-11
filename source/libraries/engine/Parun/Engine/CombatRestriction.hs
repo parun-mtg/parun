@@ -88,6 +88,7 @@ import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 508.1c: which of `candidates` an effect in force right now says CAN'T
 -- ATTACK AT ALL. Pacifism's first half, Blind-Spot Giant's when its gate is shut,
@@ -399,7 +400,7 @@ attacked target = case target of
 -- was already rewritten and asked in `lifted`.
 attackLimit :: GameState -> AttackLimits
 attackLimit gs =
-  let rows = filter (reachesDeclarer (Just (GameState.activePlayer gs)) gs) (gathered gs)
+  let rows = filter (reachesDeclarer (Just (TurnRegisters.activePlayer (GameState.turn gs))) gs) (gathered gs)
       tighter acc n = Just (maybe n (min n) acc)
       unscoped (_, _, restriction) = case attackingMoreThan restriction of
         Just (n, Nothing) -> Just n

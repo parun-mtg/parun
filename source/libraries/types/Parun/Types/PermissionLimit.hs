@@ -12,7 +12,7 @@ module Parun.Types.PermissionLimit where
 --
 -- Also the budget on a CR 706.2 die-roll modifier (Parun.Types.ModifiedRoll's
 -- `limit`, Night Shift of the Living Dead's "Do this only once each turn"),
--- spent in Parun.Types.GameState.rollModifiersUsedThisTurn.
+-- spent in Parun.Types.TurnRegisters.rollModifiersUsedThisTurn.
 --
 -- The CASTING-side twin of Parun.Types.ActivationRestriction's TimesEachTurn,
 -- and deliberately a separate type rather than that one reused: CR 602.5b's
@@ -29,7 +29,7 @@ data PermissionLimit
     Unlimited
   | -- | "Once each turn": one use per turn, reset at the turn handoff
     -- (Parun.Engine.Engine.beginTurnOf), which is the whole of "each turn". The
-    -- memory is Parun.Types.GameState.castPermissionsUsedThisTurn, keyed by the
+    -- memory is Parun.Types.TurnRegisters.castPermissionsUsedThisTurn, keyed by the
     -- object granting the permission for CR 602.5b's reason its activation-side
     -- twin is: the budget is the ability's and survives a change of control.
     OnceEachTurn

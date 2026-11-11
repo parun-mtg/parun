@@ -53,6 +53,7 @@ import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -106,6 +107,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Answers every CR 601.2c target offer with the named object when it is offered
@@ -169,7 +171,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
         case ability of
           Nothing -> Spec.assertFailure s "Bonesplitter should offer rule 702.6a's minted equip ability"
           Just equipAbility -> do
-            let ready = resolved {GameState.priority = Just S.alice}
+            let ready = resolved {GameState.turn = (GameState.turn resolved) {TurnRegisters.priority = Just S.alice}}
                 activated = snd (Engine.runGamePure S.identityAnswer ready (Activate.activateAbility S.alice equip equipAbility))
                 after = snd (Engine.runGamePure S.identityAnswer activated Stack.resolveTop)
             Spec.assertEqWith s "unequipped the Piker is 2/1" (Projection.powerOf creature resolved) (Just 2)
@@ -195,7 +197,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
     let (goblin, base1) = S.addPermanent piker S.alice (S.landsInPlay mountain 3)
         (human, base2) = S.addPermanent evangel S.alice base1
         (bladeId, base3) = S.addPermanent blade S.alice base2
-        board = base3 {GameState.priority = Just S.alice}
+        board = base3 {GameState.turn = (GameState.turn base3) {TurnRegisters.priority = Just S.alice}}
         abilityCosting n =
           List.find
             ((==) (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) . Cost.Type.mana . ActivatedAbility.cost)
@@ -238,7 +240,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
     battery <- S.printingOf s registry "Rabbit Battery"
     let (creature, g1) = S.addPermanent piker S.alice (S.landsInPlay mountain 1)
         (batteryId, g2) = S.addPermanent battery S.alice g1
-        board = g2 {GameState.priority = Just S.alice}
+        board = g2 {GameState.turn = (GameState.turn g2) {TurnRegisters.priority = Just S.alice}}
         minted = case Projection.abilitiesOf batteryId board of
           ab : _ -> Just ab
           [] -> Nothing
@@ -266,7 +268,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
         (batteryId, loose) = S.addPermanent battery S.alice g1
         attached = S.attach batteryId creature loose
         offered g = case Projection.abilitiesOf batteryId g of
-          _ : off : _ -> Activatable.activatable S.alice batteryId off g {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+          _ : off : _ -> Activatable.activatable S.alice batteryId off g {GameState.turn = (GameState.turn g) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
           _ -> False
     Spec.assertBool s (offered attached) "attached to the Piker, it can be unattached"
     Spec.assertBool s (not (offered loose)) "loose, it cannot"
@@ -296,7 +298,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
     Spec.assertEqWith s "on the Bonesplitter, it comes off the Piker" (hostOf (enchanting equip)) (Just Nothing)
     Spec.assertEqWith s "on the Piker, its Bonesplitter stays on" (hostOf (enchanting creature)) (Just (Just (Recipient.ToCreature creature)))
     Spec.assertEqWith s "each enchanted permanent is tapped" (fmap Object.tapped (Game.lookupObject equip (enchanting equip)), fmap Object.tapped (Game.lookupObject creature (enchanting creature))) (Just TapState.Tapped, Just TapState.Tapped)
-    Spec.assertBool s (not (any (null . GameState.stack . triggeredOn) [equip, creature])) "the enters trigger really was on the stack both times"
+    Spec.assertBool s (not (any (null . (TurnRegisters.stack . GameState.turn) . triggeredOn) [equip, creature])) "the enters trigger really was on the stack both times"
   -- CR 608.2h / 113.7a: Bewitching Leechcraft ({1}{U} Aura, "When this Aura
   -- enters, tap enchanted creature.", Scryfall 2026-10-13) destroyed in response
   -- to its own enters trigger. The trigger still taps the creature the Aura
@@ -324,7 +326,7 @@ equipmentSpec s registry = Spec.describe s "Equipment" $ do
     Spec.assertEqWith s "while the trigger waits, the enchanted Piker is not alike with the bystander" (alike enchanted bystander, alike bystander enchanted) (False, False)
     Spec.assertEqWith s "control leg: two Pikers the Aura never touched are alike" (alike bystander untouched) True
     Spec.assertEqWith s "CR 608.2h the departed Aura's view names the host it had" (fmap (fmap Filter.attachedTo . Projection.viewWithLastKnownAnywhere destroyed) auras) [Just (Just enchanted)]
-    Spec.assertEqWith s "setup: one Aura, gone, its trigger waiting, the Piker untapped" (length auras, any (`Set.member` GameState.battlefield destroyed) auras, length (GameState.stack destroyed), tappedOf enchanted destroyed) (1, False, 1, Just TapState.Untapped)
+    Spec.assertEqWith s "setup: one Aura, gone, its trigger waiting, the Piker untapped" (length auras, any (`Set.member` GameState.battlefield destroyed) auras, length (TurnRegisters.stack (GameState.turn destroyed)), tappedOf enchanted destroyed) (1, False, 1, Just TapState.Untapped)
   -- CR 301.5c's RESTRICTION, the arm the case above is the exception to. One
   -- board, one move, and the only difference is a Humility on the battlefield:
   -- CR 613.1f strips the Battery's reconfigure (it is a creature while
@@ -399,7 +401,7 @@ fortifyBoard s registry = do
     ( arborId,
       towerId,
       garrisonId,
-      g3 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+      g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
     )
 
 -- CR 702.16a's "protection from artifacts", the quality Tower of the Magistrate
@@ -532,7 +534,7 @@ unattachableSpec s registry = Spec.describe s "Unattachable" $ do
         animated = snd (Engine.runGamePure S.identityAnswer triggered Stack.resolveTop)
         after = snd (Engine.runGamePure S.identityAnswer animated Engine.settleForPriority)
     Spec.assertEqWith s "equipped, the Piker was 4/1" (Projection.powerOf creature attached) (Just 4)
-    Spec.assertBool s (not (null (GameState.stack triggered))) "the enters-the-battlefield trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn triggered)))) "the enters-the-battlefield trigger really was on the stack"
     Spec.assertEqWith s "the Equipment is now a 5/5 creature" (Projection.powerOf equip after) (Just 5)
     Spec.assertBool s (Set.member equip (GameState.battlefield after)) "it stays on the battlefield"
     Spec.assertEqWith s "and is unattached" (fmap Object.attachedTo (Game.lookupObject equip after)) (Just Nothing)
@@ -589,7 +591,7 @@ unattachableSpec s registry = Spec.describe s "Unattachable" $ do
     case ability of
       Nothing -> Spec.assertFailure s "Liquimetal Coating should print one activated ability"
       Just coat -> do
-        let ready = g3 {GameState.priority = Just S.alice}
+        let ready = g3 {GameState.turn = (GameState.turn g3) {TurnRegisters.priority = Just S.alice}}
             activated = snd (Engine.runGamePure (aimAt aura) ready (Activate.activateAbility S.alice coatingId coat))
             coated = snd (Engine.runGamePure (aimAt aura) activated Stack.resolveTop)
             (withSpell, spellId) = S.handOne animator coated
@@ -1403,7 +1405,7 @@ miracleWorkerSpec s registry = Spec.describe s "MiracleWorker" $ do
         (onMine, g3) = S.addPermanent unholyStrength S.alice g2
         (onTheirs, g4) = S.addPermanent unholyStrength S.alice g3
         (workerId, g5) = S.addPermanent worker S.alice g4
-        board = (S.attach onTheirs theirs (S.attach onMine mine g5)) {GameState.priority = Just S.alice}
+        board = Turn.withTurn (\turn -> turn {TurnRegisters.priority = Just S.alice}) (S.attach onTheirs theirs (S.attach onMine mine g5))
     case Face.activatedAbilities (S.combinedFace worker) of
       [] -> Spec.assertFailure s "Miracle Worker should print one activated ability"
       ability : _ -> do
@@ -1552,7 +1554,7 @@ auraSpec s registry = Spec.describe s "Aura" $ do
         withForest = usurped withLand
         withoutForest = usurped withCreature
         confiscated = let (c, g) = S.addPermanent confiscate S.bob withForest in S.attach c land g
-        onTurnOf pid gs = S.runPure S.identityAnswer gs {GameState.activePlayer = pid} (Engine.settleAll pid)
+        onTurnOf pid gs = S.runPure S.identityAnswer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = pid}} (Engine.settleAll pid)
     Spec.assertBool s (Combat.canAttack S.alice creature (onTurnOf S.alice withForest)) "alice, who controls a Forest, may attack with bob's Piker"
     Spec.assertBool s (Combat.canAttack S.bob creature (onTurnOf S.bob withoutForest)) "with no Forest of alice's, bob keeps his Piker"
     Spec.assertBool s (Combat.canAttack S.bob creature (onTurnOf S.bob confiscated)) "once bob confiscates alice's Forest, bob has his Piker back"
@@ -1628,7 +1630,7 @@ attachRestrictionSpec s registry = Spec.describe s "AttachRestriction" $ do
         (pikerId, base1) = S.addPermanent piker S.alice base0
         (brawlerId, base2) = S.addPermanent brawler S.alice base1
         (splitterId, base3) = S.addPermanent bonesplitter S.alice base2
-        ready = base3 {GameState.priority = Just S.alice}
+        ready = base3 {GameState.turn = (GameState.turn base3) {TurnRegisters.priority = Just S.alice}}
         -- From the PROJECTION, not the face: Bonesplitter declares CR 702.6a's
         -- keyword and prints no activated ability of its own.
         equip = case Projection.abilitiesOf splitterId ready of
@@ -1770,7 +1772,7 @@ attachRestrictionSpec s registry = Spec.describe s "AttachRestriction" $ do
     Spec.assertBool s (Set.member Color.Black (Projection.colorsOf auraId wearing)) "before: Unholy Strength is a black Aura"
     Spec.assertBool s (Set.member Color.Black (Projection.colorsOf equipId wearing)) "and Groom's Finery is a black Equipment"
     Spec.assertEqWith s "before: the Shapeshifter wears both, so a 0/1 is a 4/2" (S.powerToughnessOf shifter wearing) (Just (4, 2))
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the Shapeshifter's copy trigger really was on the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the Shapeshifter's copy trigger really was on the stack"
     -- The two gameplay-level assertions, ahead of every proxy: rule 702.16c's
     -- outcome and rule 702.16d's, which is the whole reason the two rules are
     -- separate sentences.
@@ -2096,7 +2098,7 @@ bestowSpec s registry = Spec.describe s "Bestow" $ do
 -- The spell CR 601.2a put on the stack -- the incarnation every assertion above
 -- reads, since CR 400.7 makes it a different object from the card in the hand.
 topOfStack :: GameState.GameState -> Maybe ObjectId.ObjectId
-topOfStack gs = case GameState.stack gs of
+topOfStack gs = case TurnRegisters.stack (GameState.turn gs) of
   oid : _ -> Just oid
   [] -> Nothing
 
@@ -2183,7 +2185,7 @@ licidSpec s registry = Spec.describe s "Licid" $ do
     licid <- S.printingOf s registry "Gliding Licid"
     let base = S.landsInPlay island 3
         (lic, placed) = S.addPermanent licid S.alice base
-        ready = placed {GameState.priority = Just S.alice}
+        ready = placed {GameState.turn = (GameState.turn placed) {TurnRegisters.priority = Just S.alice}}
         withRemoval name = S.withEffectAt lic (Timestamp.MkTimestamp 500) (Modification.LoseNamedAbility (AbilityName.MkAbilityName (Text.pack name))) ready
         matching = withRemoval "animate"
         mismatched = withRemoval "no ability has this name"
@@ -2207,7 +2209,7 @@ licidSpec s registry = Spec.describe s "Licid" $ do
     case licidBoard island piker licid of
       Nothing -> Spec.assertFailure s "Gliding Licid should print one activated ability"
       Just (lic, host, after) -> do
-        let ready = after {GameState.priority = Just S.alice}
+        let ready = after {GameState.turn = (GameState.turn after) {TurnRegisters.priority = Just S.alice}}
             paid = S.settleSba (S.runPure S.identityAnswer ready (mapM_ (EndEffect.endEffect S.manaPerformer S.alice . snd) (EndEffect.endable S.alice ready)))
         -- The OFFER, which no printed permission grants: it rides the stored
         -- effect, so it exists only because the ability resolved.
@@ -2219,7 +2221,7 @@ licidSpec s registry = Spec.describe s "Licid" $ do
         -- difference between the two reads is the seat rather than the mana.
         -- data/scenarios/aura's Confiscate case is what parts "activator" from
         -- "current controller".
-        Spec.assertBool s (not (offersEnding lic (Action.legalActions S.bob (ready {GameState.priority = Just S.bob})))) "and bob, who did not activate the ability, is not"
+        Spec.assertBool s (not (offersEnding lic (Action.legalActions S.bob (ready {GameState.turn = (GameState.turn ready) {TurnRegisters.priority = Just S.bob}})))) "and bob, who did not activate the ability, is not"
         -- FIRST after the payment, and the gameplay-level read: the creature the
         -- Licid was enchanting has lost the keyword, which is the whole of what
         -- the effect was doing to the board.
@@ -2232,7 +2234,7 @@ licidSpec s registry = Spec.describe s "Licid" $ do
         Spec.assertBool s (Set.member lic (GameState.battlefield paid)) "and still on the battlefield rather than in the graveyard"
         Spec.assertEqWith s "with the ability the removal took back again" (length (Projection.abilitiesOf lic paid)) 1
         -- And the offer is gone with the effect: paying twice is not on the menu.
-        Spec.assertBool s (not (offersEnding lic (Action.legalActions S.alice (paid {GameState.priority = Just S.alice})))) "and the offer is gone with the effect it ended"
+        Spec.assertBool s (not (offersEnding lic (Action.legalActions S.alice (paid {GameState.turn = (GameState.turn paid) {TurnRegisters.priority = Just S.alice}})))) "and the offer is gone with the effect it ended"
 
 -- The board licidSpec's cases share: alice's Gliding Licid animates itself onto
 -- her own Goblin Piker off three Islands -- one for the activation, one for the
@@ -2259,7 +2261,7 @@ licidBoard island piker licid =
   let base0 = S.landsFor island S.bob 3 (S.landsInPlay island 3)
       (host, base1) = S.addPermanent piker S.alice base0
       (lic, base2) = S.addPermanent licid S.alice base1
-      ready = base2 {GameState.priority = Just S.alice}
+      ready = base2 {GameState.turn = (GameState.turn base2) {TurnRegisters.priority = Just S.alice}}
    in case Face.activatedAbilities (S.combinedFace licid) of
         [] -> Nothing
         ability : _ ->
@@ -2311,7 +2313,7 @@ aspectChain s registry hack = do
       (auraId, g2) = S.addHandCard aspect S.alice g1
       (hackId, g3) = S.addHandCard magicalHack S.alice g2
       onStack = S.runPure (targetingOnly creature) g3 (S.cast S.alice auraId)
-      hacked = case (hack, GameState.stack onStack) of
+      hacked = case (hack, TurnRegisters.stack (GameState.turn onStack)) of
         (True, spellId : _) -> S.runPure (hackAt spellId Subtype.Forest Subtype.Island) onStack (S.cast S.alice hackId >> Stack.resolveTop)
         _ -> onStack
       after = S.runPure S.identityAnswer hacked Stack.resolveTop
@@ -2528,7 +2530,7 @@ auraTokenSpec s registry =
   let combatStep = Phase.Combat CombatStep.BeginningOfCombat
       -- CR 603.2b's record this trigger matches, written by hand rather than by
       -- walking a whole turn, historySpec's shape one phase over.
-      beginCombat gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan combatStep S.alice)) (gs {GameState.phase = combatStep, GameState.activePlayer = S.alice})
+      beginCombat gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan combatStep S.alice)) (gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = combatStep, TurnRegisters.activePlayer = S.alice}})
       -- CR 603.3b / 601.2c: the trigger goes on the stack here, which is where the
       -- announcement is made -- so the answerer that differs between the two cases
       -- is this one's.
@@ -2717,7 +2719,7 @@ groupAttachSpec s registry =
               after = S.runPure answer (settle answer entered) Stack.resolveTop
           Spec.assertEqWith s "both Auras stay on the Brigade" (hostOf strength after, hostOf pacified after) (Just victim, Just victim)
           Spec.assertEqWith s "the Apostle took nothing" (S.powerToughnessOf warded after) (Just (2, 1))
-          Spec.assertEqWith s "and the trigger did resolve" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "and the trigger did resolve" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- Heavenly Blademaster {5}{W} 3/6: "When this creature enters, you may
         -- attach any number of Auras and Equipment you control to it. Other
         -- creatures you control get +1/+1 for each Aura and Equipment attached to
@@ -2849,7 +2851,7 @@ groupAttachCardsSpec s registry =
               (attached, _, struck) = run [split, left]
               (_, unarmed, unstruck) = run []
           Spec.assertEqWith s "bob's Giant took 3 + 2 + 2 from alice's" (S.damageOf victim struck) (Just 7)
-          Spec.assertEqWith s "with no Equipment targeted, nothing attaches and no reflexive is created" (length (GameState.stack unarmed), S.damageOf victim unstruck) (0, Just 0)
+          Spec.assertEqWith s "with no Equipment targeted, nothing attaches and no reflexive is created" (length (TurnRegisters.stack (GameState.turn unarmed)), S.damageOf victim unstruck) (0, Just 0)
           Spec.assertEqWith s "both Equipment are on alice's Giant" (hostOf split attached, hostOf left attached) (Just hitter, Just hitter)
           Spec.assertEqWith s "and it is 3/3 + 2/+0 + 2/+1" (S.powerToughnessOf hitter attached) (Just (7, 4))
         -- Super-Soldier Serum {1}{W} Aura: "Enchanted creature gets +2/+2, has
@@ -2876,7 +2878,7 @@ groupAttachCardsSpec s registry =
               after = S.runPure S.identityAnswer (blocks soldier) Stack.resolveTop
               bystander = blocks other
           Spec.assertEqWith s "both of alice's Equipment are on the enchanted Giant" (hostOf split after, hostOf left after) (Just soldier, Just soldier)
-          Spec.assertEqWith s "the Piker blocking triggers nothing" (length (GameState.stack bystander), hostOf split bystander) (0, Just other)
+          Spec.assertEqWith s "the Piker blocking triggers nothing" (length (TurnRegisters.stack (GameState.turn bystander)), hostOf split bystander) (0, Just other)
           Spec.assertEqWith s "bob's Batterfist was never offered" (hostOf bobsGear after) Nothing
           Spec.assertEqWith s "the Giant is 3/3 + 2/+2 + 2/+0 + 2/+1" (S.powerToughnessOf soldier after) (Just (9, 6))
           Spec.assertBool s (Projection.hasKeyword Keyword.FirstStrike soldier board && Projection.hasKeyword Keyword.Vigilance soldier board) "the Serum grants first strike and vigilance"
@@ -3022,7 +3024,7 @@ auraSwapSpec s registry =
           case Projection.abilitiesOf wingsId gs of
             [ability] -> do
               let activated = S.runPure concealing gs (Activate.activateAbility S.alice wingsId ability)
-                  phased = S.runPure concealing activated {GameState.priority = Just S.alice} (S.cast S.alice concealmentId >> Stack.resolveTop)
+                  phased = S.runPure concealing activated {GameState.turn = (GameState.turn activated) {TurnRegisters.priority = Just S.alice}} (S.cast S.alice concealmentId >> Stack.resolveTop)
                   ((_, after), responses) = Replay.record (answer pacifismId wolvesId) phased Stack.resolveTop
               Spec.assertEqWith s "Pacifism and Wild Growth are both still in alice's hand" (List.sort (handNames S.alice after)) (sorted ["Pacifism", "Wild Growth"])
               Spec.assertEqWith s "the Wings, phased out, still enchant the Piker" (hostOf wingsId after) (Just pikerId)
@@ -3089,7 +3091,7 @@ textChangedSwap s registry (firstName, secondName) (from, to) = do
         Prompt.ChooseTargets _ _ _ offers -> S.preferring ((== Just wingsId) . Recipient.objectOf) offers
         Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
         _ -> S.identityAnswer p
-      evolved = S.runPure evolving g8 {GameState.priority = Just S.alice} (S.cast S.alice evolutionId >> Stack.resolveTop >> Engine.settleForPriority)
+      evolved = S.runPure evolving g8 {GameState.turn = (GameState.turn g8) {TurnRegisters.priority = Just S.alice}} (S.cast S.alice evolutionId >> Stack.resolveTop >> Engine.settleForPriority)
       -- Records each hand offer and takes its least id, the first named card
       -- whenever the offer assertions hold; bob is the CR 303.4f answer, never
       -- the first offered.
@@ -3126,4 +3128,4 @@ auraSwapBoard s registry owner = do
       controlled = if owner == S.alice then g3 else S.giveControl wingsId S.alice g3
       (pacifismId, g4) = S.addHandCard pacifism S.alice (S.attach wingsId pikerId controlled)
       (growthId, g5) = S.addHandCard growth S.alice g4
-  pure (pikerId, wolvesId, wingsId, pacifismId, growthId, g5 {GameState.priority = Just S.alice})
+  pure (pikerId, wolvesId, wingsId, pacifismId, growthId, g5 {GameState.turn = (GameState.turn g5) {TurnRegisters.priority = Just S.alice}})

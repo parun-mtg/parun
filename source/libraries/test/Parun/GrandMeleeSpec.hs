@@ -73,7 +73,7 @@ spec s registry = Spec.describe s "GrandMelee" $ do
   Spec.it s "CR 807.4d eight players take turns 0, 4, 1, 5, ..." $ do
     forest <- S.printingOf s registry "Forest"
     Spec.assertEqWith s "CR 807.4d the order" (fmap fst (turnsAfter 9 (melee forest 8))) (seats [4, 1, 5, 2, 6, 3, 7, 4, 0])
-    Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap (GameState.turnNumber . snd) (turnStates 9 (melee forest 8))) [2 .. 10]
+    Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap ((TurnRegisters.turnNumber . GameState.turn) . snd) (turnStates 9 (melee forest 8))) [2 .. 10]
 
   -- CR 807.4d over a departed seat: seat 2 concedes during seat 0's turn, so
   -- seat 1, given seat 0's marker, has seats 3, 4 and 5 as its three to the
@@ -82,7 +82,7 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     forest <- S.printingOf s registry "Forest"
     let conceded = S.departs Departure.Type.Conceded (seat 2) (melee forest 9)
     Spec.assertEqWith s "CR 807.4d seat 1 waits for seat 5" (fmap fst (turnsAfter 5 conceded)) (seats [4, 5, 1, 6, 3])
-    Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap (GameState.turnNumber . snd) (turnStates 5 conceded)) [2 .. 6]
+    Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap ((TurnRegisters.turnNumber . GameState.turn) . snd) (turnStates 5 conceded)) [2 .. 6]
 
   -- CR 807.4c / 807.4e / 807.4h: seat 4 concedes before its turn begins, at
   -- seven players, so its marker goes to seat 5 at once and seat 0's, the
@@ -214,16 +214,16 @@ spec s registry = Spec.describe s "GrandMelee" $ do
         cast = S.runPure S.identityAnswer withStop (S.cast (seat 0) stopId)
         resolved = snd (Engine.runGamePure S.identityAnswer cast Engine.priorityLoop)
         parked = Map.lookup 2 (GameState.parkedTurns resolved)
-    Spec.assertEqWith s "CR 725.1 seat 0's turn ends" (GameState.endTurnSignal resolved) EndTurnSignal.Ended
-    Spec.assertEqWith s "Shock is on seat 4's stack" (length (GameState.stack onFour)) 1
-    Spec.assertEqWith s "CR 807.5 Shock stays on seat 4's stack" (fmap TurnRegisters.stack parked) (Just (GameState.stack onFour))
+    Spec.assertEqWith s "CR 725.1 seat 0's turn ends" (TurnRegisters.endTurnSignal (GameState.turn resolved)) EndTurnSignal.Ended
+    Spec.assertEqWith s "Shock is on seat 4's stack" (length (TurnRegisters.stack (GameState.turn onFour))) 1
+    Spec.assertEqWith s "CR 807.5 Shock stays on seat 4's stack" (fmap TurnRegisters.stack parked) (Just (TurnRegisters.stack (GameState.turn onFour)))
     Spec.assertEqWith s "CR 807.5 seat 4's turn runs on" (fmap TurnRegisters.endTurnSignal parked) (Just EndTurnSignal.Running)
     -- CR 807.4b: seat 4's own Time Stop ends turn 2 before seat 0's turn 1,
     -- and the turns that begin next are numbered past both.
     let (fourStop, withFourStop) = S.addHandCard timeStop (seat 4) (S.landsFor island (seat 4) 6 (Engine.workOn 2 main))
         fourCast = S.runPure S.identityAnswer withFourStop (S.cast (seat 4) fourStop)
         fourResolved = snd (Engine.runGamePure S.identityAnswer fourCast Engine.priorityLoop)
-    Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap (\((p, _), st) -> (p, GameState.turnNumber st)) (turnStates 2 fourResolved)) [(seat 1, 3), (seat 5, 4)]
+    Spec.assertEqWith s "CR 807.4b each turn its own number" (fmap (\((p, _), st) -> (p, TurnRegisters.turnNumber (GameState.turn st))) (turnStates 2 fourResolved)) [(seat 1, 3), (seat 5, 4)]
 
   -- CR 807.5b: a spell targets objects on its own stack only. Seat 2's Shock
   -- is on seat 0's marker's stack and seat 4's on seat 4's, so seat 3 has
@@ -245,9 +245,9 @@ spec s registry = Spec.describe s "GrandMelee" $ do
         ((_, countered), offered) = State.runState (Engine.runGame recordTargets staged (S.cast (seat 3) counterId)) []
         counterspells = filter (Set.member (CardName.MkCardName (Text.pack "Counterspell")) . (`Projection.namesOf` countered)) (Game.allStacks countered)
         aimed = foldMap (Foldable.fold . (`Resolve.targetsOnStack` countered)) counterspells
-    Spec.assertEqWith s "a Shock is on each stack" (fmap length [GameState.stack zeroCast, GameState.stack fourCast, Game.allStacks staged]) [1, 1, 2]
+    Spec.assertEqWith s "a Shock is on each stack" (fmap length [TurnRegisters.stack (GameState.turn zeroCast), TurnRegisters.stack (GameState.turn fourCast), Game.allStacks staged]) [1, 1, 2]
     Spec.assertEqWith s "CR 807.5b nobody was asked for a target" offered []
-    Spec.assertEqWith s "CR 807.5b the Counterspell aims at seat 4's Shock" aimed (Set.fromList (fmap Recipient.ToObject (GameState.stack fourCast)))
+    Spec.assertEqWith s "CR 807.5b the Counterspell aims at seat 4's Shock" aimed (Set.fromList (fmap Recipient.ToObject (TurnRegisters.stack (GameState.turn fourCast))))
 
   -- CR 807.5b: with Shocks on both markers' stacks as above, seat 3 holds
   -- priority in both windows. Reached on seat 0's, it is asked which stack it
@@ -267,12 +267,15 @@ spec s registry = Spec.describe s "GrandMelee" $ do
         holds r = r {TurnRegisters.priority = Just (seat 3), TurnRegisters.turnResume = TurnResume.InWindow}
         staged =
           withCounter
-            { GameState.priority = Just (seat 3),
-              GameState.turnResume = TurnResume.InWindow,
+            { GameState.turn =
+                (GameState.turn withCounter)
+                  { TurnRegisters.priority = Just (seat 3),
+                    TurnRegisters.turnResume = TurnResume.InWindow
+                  },
               GameState.parkedTurns = Map.adjust holds 1 (GameState.parkedTurns withCounter)
             }
         ((_, acted), asked) = State.runState (Engine.runGame chooseLast staged Engine.runStep) []
-        stacks gs = Map.insert (Maybe.fromMaybe 0 (Turn.workedMarker gs)) (length (GameState.stack gs)) (fmap (length . TurnRegisters.stack) (GameState.parkedTurns gs))
+        stacks gs = Map.insert (Maybe.fromMaybe 0 (Turn.workedMarker gs)) (length (TurnRegisters.stack (GameState.turn gs))) (fmap (length . TurnRegisters.stack) (GameState.parkedTurns gs))
     Spec.assertEqWith s "seat 4's turn is worked" (Turn.workedMarker staged) (Just 2)
     Spec.assertEqWith s "CR 807.5b seat 3 is asked" asked [(seat 3, [1, 2])]
     Spec.assertEqWith s "CR 807.5b Counterspell is on seat 4's stack" (stacks acted) (Map.fromList [(1, 1), (2, 2)])
@@ -287,7 +290,7 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     let main = untilPhase Phase.PrecombatMain (melee forest 8)
         (fours, withFours) = S.addPermanent gideon (seat 4) main
         (twos, staged) = S.addPermanent gideon (seat 2) withFours
-    Spec.assertEqWith s "seat 0's turn is worked" (GameState.activePlayer staged) (seat 0)
+    Spec.assertEqWith s "seat 0's turn is worked" (TurnRegisters.activePlayer (GameState.turn staged)) (seat 0)
     Spec.assertEqWith s "CR 807.4 seat 4's Gideon" (Projection.powerOf fours staged) (Just 4)
     Spec.assertEqWith s "CR 102.1 seat 2's Gideon" (Projection.powerOf twos staged) Nothing
 
@@ -301,7 +304,7 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     let main = S.landsFor swamp (seat 3) 2 (untilPhase Phase.PrecombatMain (melee forest 8))
         (fours, withFours) = S.addPermanent mob (seat 4) main
         (twos, staged) = S.addPermanent mob (seat 2) withFours
-    Spec.assertEqWith s "seat 0's turn is worked" (GameState.activePlayer staged) (seat 0)
+    Spec.assertEqWith s "seat 0's turn is worked" (TurnRegisters.activePlayer (GameState.turn staged)) (seat 0)
     Spec.assertEqWith s "CR 807.4 seat 4's and seat 2's Angry Mobs" (fmap (\o -> (Projection.powerOf o staged, Projection.toughnessOf o staged)) [fours, twos]) [(Just 4, Just 4), (Just 2, Just 2)]
   where
     seat = PlayerId.MkPlayerId
@@ -309,14 +312,14 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     seats = fmap seat
     seated n = Setup.emptyGame (seat 0 NonEmpty.:| fmap seat [1 .. n - 1])
     holders gs = fmap (PlayerId.unwrap . TurnMarker.holder) (GameState.turnMarkers gs)
-    onMain gs = gs {GameState.phase = Phase.PrecombatMain, GameState.priority = Just (seat 0)}
+    onMain gs = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.priority = Just (seat 0)}}
 
 -- The seat of `n` whose turn begins `turns` turns in casts Capture of
 -- Jingzhou, then Meditate, in that turn's first main phase.
 captureAndMeditate :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Natural -> Int -> GameState.GameState
 captureAndMeditate forest island capture meditate n turns =
   let begun = Maybe.fromMaybe (melee forest n) (Maybe.listToMaybe (reverse (fmap snd (turnStates turns (melee forest n)))))
-      caster = GameState.activePlayer begun
+      caster = TurnRegisters.activePlayer (GameState.turn begun)
       (captureId, withCapture) = S.addHandCard capture caster (S.landsFor island caster 8 begun)
       (meditateId, staged) = S.addHandCard meditate caster withCapture
       resolve gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)
@@ -332,12 +335,12 @@ melee forest n =
    in Foldable.foldl' stock start pids
 
 -- Run scheduler units until this phase is the one to run next in the turn
--- GameState's fields hold.
+-- GameState.turn holds.
 untilPhase :: Phase.Phase -> GameState.GameState -> GameState.GameState
 untilPhase phase gs0 =
-  let pid = GameState.activePlayer gs0
+  let pid = TurnRegisters.activePlayer (GameState.turn gs0)
       go budget gs =
-        if budget <= (0 :: Int) || (GameState.phase gs == phase && GameState.activePlayer gs == pid)
+        if budget <= (0 :: Int) || (TurnRegisters.phase (GameState.turn gs) == phase && TurnRegisters.activePlayer (GameState.turn gs) == pid)
           then gs
           else go (budget - 1) (S.runPure S.identityAnswer gs Engine.runStep)
    in go 400 gs0
@@ -345,7 +348,7 @@ untilPhase phase gs0 =
 -- Every running turn's number and marker, the worked one's first.
 runningTurns :: GameState.GameState -> [(Natural, Natural)]
 runningTurns gs =
-  [(GameState.turnNumber gs, w) | w <- Maybe.maybeToList (Turn.workedMarker gs)] <> [(TurnRegisters.turnNumber r, n) | (n, r) <- Map.toList (GameState.parkedTurns gs)]
+  [(TurnRegisters.turnNumber (GameState.turn gs), w) | w <- Maybe.maybeToList (Turn.workedMarker gs)] <> [(TurnRegisters.turnNumber r, n) | (n, r) <- Map.toList (GameState.parkedTurns gs)]
 
 -- The next `n` turns to begin, in the order CR 807.4b numbers them, each with
 -- the state as it begins, its turn worked. Bounded at 400 units a turn.
@@ -358,7 +361,7 @@ turnStates n gs0 =
             let next = S.runPure S.identityAnswer gs Engine.runStep
                 begun = List.sortOn fst (filter ((> highest gs) . fst) (runningTurns next))
                 states = [Engine.workOn marker next | (_, marker) <- begun]
-                entries = [((GameState.activePlayer st, Maybe.isJust (GameState.extraTurnUnderWay st)), st) | st <- states]
+                entries = [((TurnRegisters.activePlayer (GameState.turn st), Maybe.isJust (TurnRegisters.extraTurnUnderWay (GameState.turn st))), st) | st <- states]
              in if null begun
                   then go k (budget - 1) next
                   else take k entries <> go (k - length entries) 400 next

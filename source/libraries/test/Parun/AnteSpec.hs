@@ -48,6 +48,7 @@ import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 anteGame :: GameSettings.GameSettings
@@ -321,9 +322,12 @@ spec s registry = Spec.describe s "Ante" $ do
         before =
           g3
             { GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives}) (GameState.players g3),
-              GameState.activePlayer = S.alice,
-              GameState.phase = Phase.PrecombatMain,
-              GameState.priority = Just S.alice
+              GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         run = do
           S.cast S.alice rebirthId

@@ -62,6 +62,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -90,6 +91,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -113,7 +115,7 @@ spec s registry = Spec.describe s "Class" $ do
 -- Bolt ({R}). No lands and no mana: Cost.total answers about a cost rather than
 -- about paying it, so affordability cannot enter any assertion here.
 --
--- The two boards below differ in EXACTLY one thing, GameState.activePlayer, and
+-- The two boards below differ in EXACTLY one thing, TurnRegisters.activePlayer, and
 -- the Class is never levelled -- CR 717.3's section is not a level bar's, so a
 -- level would be a second moving part with nothing to prove.
 taxBoard :: Printing.Printing -> Printing.Printing -> PlayerId.PlayerId -> (ObjectId.ObjectId, GameState.GameState)
@@ -122,9 +124,12 @@ taxBoard paladinClass lightningBolt active =
       (bolt, withBolt) = S.addHandCard lightningBolt S.bob withClass
    in ( bolt,
         withBolt
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = active,
-            GameState.priority = Just active
+          { GameState.turn =
+              (GameState.turn withBolt)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = active,
+                  TurnRegisters.priority = Just active
+                }
           }
       )
 
@@ -168,7 +173,7 @@ topSectionSpec s registry = Spec.describe s "Top text box section" $ do
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (_, withClass) = S.addPermanent paladinClass S.alice (Setup.emptyGame S.bothPlayers)
         (alicesBolt, gs) = S.addHandCard lightningBolt S.alice withClass
-        alicesTurn = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        alicesTurn = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.phase = Phase.PrecombatMain, TurnRegisters.activePlayer = S.alice, TurnRegisters.priority = Just S.alice}}
     Spec.assertEqWith
       s
       "alice's own {R} Bolt stays {R}"
@@ -194,9 +199,12 @@ board paladinClass plains piker =
    in ( classId,
         pikerId,
         withPiker
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withPiker)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -324,7 +332,7 @@ levelThreeSpec s registry =
               Spec.assertBool s (not (any (\oid -> Projection.hasKeyword Keyword.DoubleStrike oid after) others)) "and none of them gained double strike"
               -- The preconditions the readings above rest on.
               Spec.assertEqWith s "CR 717.2b the Class really is level 3" (levelOf classId after) (Just (ClassLevel.MkClassLevel 3))
-              Spec.assertEqWith s "CR 508.1b all four Pikers really were declared attacking bob" (Combat.Type.attackers (GameState.combat after)) (Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer S.bob)) (target : others)))
+              Spec.assertEqWith s "CR 508.1b all four Pikers really were declared attacking bob" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) (Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer S.bob)) (target : others)))
             _ -> Spec.assertFailure s "fixture should give alice four Pikers and a Class"
         -- The same board with the level as the only difference. CR 717.2a gates
         -- the section on "level N or greater", so at level 2 there is no trigger
@@ -339,7 +347,7 @@ levelThreeSpec s registry =
               Spec.assertEqWith s "the would-be target is 3/2 -- the level-2 section and nothing more" (S.powerToughnessOf target after) (Just (3, 2))
               Spec.assertBool s (not (Projection.hasKeyword Keyword.DoubleStrike target after)) "and it gained no double strike"
               Spec.assertEqWith s "CR 717.2b the Class really is level 2" (levelOf classId after) (Just (ClassLevel.MkClassLevel 2))
-              Spec.assertEqWith s "CR 508.1b and all four Pikers really did attack" (Combat.Type.attackers (GameState.combat after)) (Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer S.bob)) (target : others)))
+              Spec.assertEqWith s "CR 508.1b and all four Pikers really did attack" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) (Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer S.bob)) (target : others)))
             _ -> Spec.assertFailure s "fixture should give alice four Pikers and a Class"
 
 -- CR 717.2a's activated half: "[Cost]: This Class's level becomes N. Activate only
@@ -374,7 +382,7 @@ ladderSpec s registry = Spec.describe s "Level bar activation" $ do
     plains <- S.printingOf s registry "Plains"
     piker <- S.printingOf s registry "Goblin Piker"
     let (classId, _, gs) = board paladinClass plains piker
-        bobsTurn = gs {GameState.activePlayer = S.bob}
+        bobsTurn = gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = S.bob}}
     Spec.assertEqWith s "offered on alice's own main phase" (barsOffered classId gs) 1
     Spec.assertEqWith s "not offered on bob's turn" (barsOffered classId bobsTurn) 0
 
@@ -598,9 +606,12 @@ talentBoard talent island bolt raiseDead =
           theirClassId
           2
           withTheirClass
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn withTheirClass)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
       )
 
@@ -709,11 +720,15 @@ sorcererBoard sorcererClass shivan piker =
       withPikers = iterate (snd . S.addPermanent piker S.alice) withShivan !! 4
    in ( classId,
         shivanId,
-        (atLevel classId 2 withPikers)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Turn.withTurn
+          ( \turn ->
+              turn
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (atLevel classId 2 withPikers)
       )
 
 -- The payment's one colour choice, pinned: the red mana comes from Shivan Dragon

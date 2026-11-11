@@ -14,7 +14,7 @@
 -- Parun.Engine.Condition and Parun.Engine.Projection, neither of which reaches back
 -- here, and CR 602.5b's two counted riders, which read what this source has
 -- already activated -- for the whole game, off the object, and for this turn,
--- off GameState.activatedThisTurn.
+-- off TurnRegisters.activatedThisTurn.
 --
 -- The only module that may CASE on Parun.Types.ActivationRestriction, exactly as
 -- Parun.Engine.CombatRestriction is of the type it names. Casing on the arms is a
@@ -50,6 +50,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PastActivation as PastActivation
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.RiderClause as RiderClause
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 602.5: does every clause of this ability's printed "activate only ..."
 -- rider permit activating it right now?
@@ -105,7 +106,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- gates one step ahead of that move ask about it, and Grinning Ignus is the
   -- printing that lands on it.
   ActivationRestriction.SorcerySpeed -> Turn.sorcerySpeedWindow pid gs
-  -- CR 500.1's phases and steps: Turn.inWindow asks whether GameState.phase
+  -- CR 500.1's phases and steps: Turn.inWindow asks whether TurnRegisters.phase
   -- falls inside the window the rider names. CONTAINMENT rather than equality,
   -- because a rider may name a phase that has steps -- Jade Statue's "only
   -- during combat" is live in all five of CR 506.1's combat steps, while
@@ -142,7 +143,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- CR 506.8c through CR 506.8g, the same extension to abilities that governs
   -- AfterBlockersDeclared above. Turn.duringCombatBefore says why it reads the
   -- phase rather than the combat record. Save Point.
-  ActivationRestriction.DuringCombatBefore target -> Turn.duringCombatBefore target (GameState.phase gs)
+  ActivationRestriction.DuringCombatBefore target -> Turn.duringCombatBefore target (TurnRegisters.phase (GameState.turn gs))
   -- CR 506.8a, 506.8d and 506.8e through CR 506.8g; Turn.beforeStep says why it
   -- reads the turn's log. Capricious Sorcerer and Mana Cache.
   ActivationRestriction.BeforeStep target -> Turn.beforeStep target gs
@@ -189,7 +190,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
       Just object -> unspent limit srcId this (Object.activatedOnce object) gs
   -- CR 602.5b's own example, the same question asked of THIS TURN: has this
   -- ability of this object been activated fewer than `limit` times since the
-  -- turn began? The record is GameState.activatedThisTurn, which
+  -- turn began? The record is TurnRegisters.activatedThisTurn, which
   -- Engine.beginTurnOf clears -- so the reset is the turn handoff itself and
   -- nothing on the object survives it.
   --
@@ -200,7 +201,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- somewhere it offers abilities from.
   ActivationRestriction.TimesEachTurn limit -> case ability of
     Nothing -> False
-    Just this -> unspent limit srcId this (Map.findWithDefault Map.empty srcId (GameState.activatedThisTurn gs)) gs
+    Just this -> unspent limit srcId this (Map.findWithDefault Map.empty srcId (TurnRegisters.activatedThisTurn (GameState.turn gs))) gs
   -- Goblin Bookie's "any time it makes sense": while a die is being rolled or a
   -- coin has just been flipped, and not with nothing to reroll (docs/decisions.md, "Whether Goblin Bookie can be
   -- activated with nothing to reroll").
@@ -306,7 +307,7 @@ unspent limit srcId this spent gs = case Map.findWithDefault 0 (Projection.print
 -- The per-GAME store is on the source object, which CR 602.5b names ("continues
 -- to apply to that object") and CR 400.7 then forgets for free; Map.adjust is a
 -- no-op when the cost sacrificed it, and that is right. The per-TURN store is
--- GameState.activatedThisTurn, cleared at the handoff (Engine.beginTurnOf), and
+-- TurnRegisters.activatedThisTurn, cleared at the handoff (Engine.beginTurnOf), and
 -- an entry for a source the cost sacrificed is kept rather than dropped: object
 -- ids are not reused, so it can name nothing else before the turn ends.
 recordActivation :: ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> GameState
@@ -321,7 +322,7 @@ recordActivation srcId ability gs =
       perGame g =
         g {GameState.objects = Map.adjust (\o -> o {Object.activatedOnce = Map.insertWith (+) key 1 (Object.activatedOnce o)}) srcId (GameState.objects g)}
       perTurn g =
-        g {GameState.activatedThisTurn = Map.insertWith (Map.unionWith (+)) srcId (Map.singleton key 1) (GameState.activatedThisTurn g)}
+        g {GameState.turn = (GameState.turn g) {TurnRegisters.activatedThisTurn = Map.insertWith (Map.unionWith (+)) srcId (Map.singleton key 1) (TurnRegisters.activatedThisTurn (GameState.turn g))}}
    in (if any perTurnLimited (Keyword.restrictionsOf ability) then perTurn else id)
         ((if any perGameLimited (Keyword.restrictionsOf ability) then perGame else id) gs)
 
@@ -349,7 +350,7 @@ logActivation asOf pid srcId ability kind targets gs =
           }
    in case Projection.objectSnapshot srcId asOf of
         Nothing -> gs
-        Just source -> gs {GameState.activationsThisTurn = GameState.activationsThisTurn gs Seq.|> logged source}
+        Just source -> gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activationsThisTurn = TurnRegisters.activationsThisTurn (GameState.turn gs) Seq.|> logged source}}
 
 -- CR 307.5's empty-stack conjunct asked ABOUT THE RIDER rather than about the
 -- board: does this clause need an empty stack to be met?
@@ -357,7 +358,7 @@ logActivation asOf pid srcId ability kind targets gs =
 -- What wants it is a gate asked one step AHEAD of a payment. CR 601.2a puts the
 -- spell on the stack and CR 602.2a the ability, both BEFORE CR 601.2f-h totals
 -- and pays the cost, so no such payment ever has an empty stack -- and a gate
--- reading GameState.stack would read the stack of the wrong moment and count a
+-- reading TurnRegisters.stack would read the stack of the wrong moment and count a
 -- source the payment cannot use (#2005). Parun.Engine.Cost.stackedManaActivations
 -- is the one caller; `restrictionMet` above is what asks the board at the payment
 -- itself, and the two agree because the move between them is exactly the fact
