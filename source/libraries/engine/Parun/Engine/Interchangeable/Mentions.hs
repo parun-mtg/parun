@@ -21,9 +21,10 @@
 -- AlternativeCost, GrantedAbility, Modal with its Mode, Clause and
 -- ModeSelection, Face and Card, and the stored rows: ActiveReplacement,
 -- DelayedTrigger, ActiveLaterPayment, Prevention, PreventionRider, the
--- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry, and
--- ObjectRef with ChosenPermanents) is matched there instead, its leaf types
--- discarded there.
+-- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry,
+-- ObjectRef with ChosenPermanents, and the combat rules: CombatRestriction,
+-- AttackCost, BlockCost and PerCreature) is matched there instead, its leaf
+-- types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -55,16 +56,13 @@ import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
-import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
-import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.Binding as Binding
@@ -74,9 +72,6 @@ import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CandidateId as CandidateId
-import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
-import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
-import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastingPermission as CastingPermission
@@ -134,7 +129,6 @@ import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
-import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaProduction as ManaProduction
@@ -153,7 +147,6 @@ import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
-import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PermanentCandidate as PermanentCandidate
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
@@ -390,14 +383,6 @@ affectedPlayersNames _asking onPlayer x = case x of
   AffectedPlayers.Scoped _playerScope -> mempty
   AffectedPlayers.Named player -> onPlayer player
 
-affectedUnlessNames :: (Monoid r) => Asking r -> AffectedUnless.AffectedUnless -> r
-affectedUnlessNames asking x = case x of
-  AffectedUnless.MkAffectedUnless affected unless _name amount -> affectedNames asking affected <> foldMap (conditionNames asking) unless <> foldMap (quantityNames asking) amount
-
-aloneUnlessNames :: (Monoid r) => Asking r -> AloneUnless.AloneUnless -> r
-aloneUnlessNames asking x = case x of
-  AloneUnless.MkAloneUnless affected alongside _others unless _name -> affectedNames asking affected <> foldMap (filterNames asking) alongside <> foldMap (conditionNames asking) unless
-
 aimedAtNames :: (Monoid r) => Asking r -> AimedAt.AimedAt -> r
 aimedAtNames asking x = case x of
   AimedAt.MkAimedAt defenders _kinds -> aimedPlayersNames asking defenders
@@ -426,12 +411,7 @@ attachRestrictionNames asking x = case x of
   AttachRestriction.MkAttachRestriction affected attachers -> affectedNames asking affected <> filterNames asking attachers
 
 attackCostNames :: (Monoid r) => Asking r -> AttackCost.AttackCost -> r
-attackCostNames asking x = case x of
-  AttackCost.MkAttackCost subject perAttacker _scope while -> affectedNames asking subject <> perCreatureNames asking perAttacker <> foldMap (conditionNames asking) while
-
-attackLimitUnlessNames :: (Monoid r) => Asking r -> AttackLimitUnless.AttackLimitUnless -> r
-attackLimitUnlessNames asking x = case x of
-  AttackLimitUnless.MkAttackLimitUnless _limit _defenders unless -> foldMap (conditionNames asking) unless
+attackCostNames asking = Const.getConst . Children.attackCostChildren (combatVisitors asking)
 
 rulePermissionNames :: (Monoid r) => Asking r -> RulePermission.RulePermission -> r
 rulePermissionNames asking x = case x of
@@ -450,8 +430,7 @@ bindingNames asking x = case x of
   Binding.MkBinding targets _amount _modes copy objects _sticker _votes division -> foldMap (foldMap (recipientNames asking)) targets <> foldMap (projectedCharacteristicsNames asking) copy <> names asking (\oid -> any (elem oid) objects) <> foldMap (foldMap (recipientNames asking) . Map.keys) division
 
 blockCostNames :: (Monoid r) => Asking r -> BlockCost.BlockCost -> r
-blockCostNames asking x = case x of
-  BlockCost.MkBlockCost subject perBlocker attackers while -> affectedNames asking subject <> perCreatureNames asking perBlocker <> foldMap (filterNames asking) attackers <> foldMap (conditionNames asking) while
+blockCostNames asking = Const.getConst . Children.blockCostChildren (combatVisitors asking)
 
 blockPermissionNames :: (Monoid r) => Asking r -> BlockPermission.BlockPermission -> r
 blockPermissionNames asking x = case x of
@@ -469,18 +448,6 @@ candidateIdNames :: (Monoid r) => Asking r -> CandidateId.CandidateId -> r
 candidateIdNames asking x = case x of
   CandidateId.OfPermanent permanentCandidate -> permanentCandidateNames asking permanentCandidate
   CandidateId.OfFloating floatingCandidate -> floatingCandidateNames asking floatingCandidate
-
-cantAttackPlayerNames :: (Monoid r) => Asking r -> CantAttackPlayer.CantAttackPlayer -> r
-cantAttackPlayerNames asking x = case x of
-  CantAttackPlayer.MkCantAttackPlayer affected _defenders _kinds unless _name -> affectedNames asking affected <> foldMap (conditionNames asking) unless
-
-cantBeBlockedByNames :: (Monoid r) => Asking r -> CantBeBlockedBy.CantBeBlockedBy -> r
-cantBeBlockedByNames asking x = case x of
-  CantBeBlockedBy.MkCantBeBlockedBy affected blockers unless _name -> affectedNames asking affected <> filterNames asking blockers <> foldMap (conditionNames asking) unless
-
-cantBlockCreaturesNames :: (Monoid r) => Asking r -> CantBlockCreatures.CantBlockCreatures -> r
-cantBlockCreaturesNames asking x = case x of
-  CantBlockCreatures.MkCantBlockCreatures affected attackers unless _name -> affectedNames asking affected <> filterNames asking attackers <> foldMap (conditionNames asking) unless
 
 -- A printed card, every face of it, and the cards its faces create.
 cardNames :: (Monoid r) => Asking r -> Card.Card -> r
@@ -543,16 +510,19 @@ objectRefVisitors asking =
     }
 
 combatRestrictionNames :: (Monoid r) => Asking r -> CombatRestriction.CombatRestriction -> r
-combatRestrictionNames asking x = case x of
-  CombatRestriction.CantAttack affectedUnless -> affectedUnlessNames asking affectedUnless
-  CombatRestriction.CantBlock affectedUnless -> affectedUnlessNames asking affectedUnless
-  CombatRestriction.CantBeBlockedBy cantBeBlockedBy -> cantBeBlockedByNames asking cantBeBlockedBy
-  CombatRestriction.CantBlockCreatures cantBlockCreatures -> cantBlockCreaturesNames asking cantBlockCreatures
-  CombatRestriction.CantAttackPlayer cantAttackPlayer -> cantAttackPlayerNames asking cantAttackPlayer
-  CombatRestriction.CantAttackAlone aloneUnless -> aloneUnlessNames asking aloneUnless
-  CombatRestriction.CantBlockAlone aloneUnless -> aloneUnlessNames asking aloneUnless
-  CombatRestriction.CantAttackMoreThan attackLimitUnless -> attackLimitUnlessNames asking attackLimitUnless
-  CombatRestriction.CantBlockMoreThan limitUnless -> limitUnlessNames asking limitUnless
+combatRestrictionNames asking = Const.getConst . Children.combatRestrictionChildren (combatVisitors asking)
+
+-- Parun.Engine.Children's traversal at Const. No combat rule reads the history
+-- itself; those reads sit in its Conditions and Quantities.
+combatVisitors :: (Monoid r) => Asking r -> Children.CombatChildren (Const.Const r)
+combatVisitors asking =
+  Children.MkCombatChildren
+    { Children.combatAffected = Const.Const . affectedNames asking,
+      Children.combatFilter = Const.Const . filterNames asking,
+      Children.combatCondition = Const.Const . conditionNames asking,
+      Children.combatQuantity = Const.Const . quantityNames asking,
+      Children.combatCost = Const.Const . costNames asking (keywordNames asking)
+    }
 
 -- Parun.Engine.Children's traversal at Const. No condition reads the history
 -- itself; those reads sit in its Quantities.
@@ -935,10 +905,6 @@ libraryPlacementNames asking x = case x of
   LibraryPlacement.Beneath quantity -> quantityNames asking quantity
   LibraryPlacement.BeneathOrBottom quantity -> quantityNames asking quantity
 
-limitUnlessNames :: (Monoid r) => Asking r -> LimitUnless.LimitUnless -> r
-limitUnlessNames asking x = case x of
-  LimitUnless.MkLimitUnless _limit _comparison attackers unless -> foldMap (affectedNames asking) attackers <> foldMap (conditionNames asking) unless
-
 manaAdditionNames :: (Monoid r) => Asking r -> ManaAddition.ManaAddition -> r
 manaAdditionNames asking x = case x of
   ManaAddition.MkManaAddition player production count _retention restriction rider whenSpent -> playerRefNames asking player <> manaProductionNames asking production <> quantityNames asking count <> foldMap (manaRestrictionNames asking) restriction <> foldMap (manaRiderNames asking) rider <> foldMap (whenSpentNames asking) whenSpent
@@ -1078,11 +1044,6 @@ pendingDamageEffectNames asking = Const.getConst . Children.pendingReplacementEf
 
 pendingEntryEffectNames :: (Monoid r) => Asking r -> PendingEntryEffect.PendingEntryEffect -> r
 pendingEntryEffectNames asking = Const.getConst . Children.pendingEntryEffectChildren (storedVisitors asking)
-
-perCreatureNames :: (Monoid r) => Asking r -> PerCreature.PerCreature -> r
-perCreatureNames asking x = case x of
-  PerCreature.Fixed cost -> costNames asking (keywordNames asking) cost
-  PerCreature.Counted quantity -> quantityNames asking quantity
 
 permanentCandidateNames :: (Monoid r) => Asking r -> PermanentCandidate.PermanentCandidate -> r
 permanentCandidateNames asking x = case x of

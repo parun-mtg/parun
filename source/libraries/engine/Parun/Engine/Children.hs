@@ -18,12 +18,14 @@ import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
+import qualified Parun.Types.AffectedUnless as AffectedUnless
 import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AimedAt as AimedAt
+import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.AlternativeActivationCost as AlternativeActivationCost
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.Amass as Amass
@@ -45,6 +47,7 @@ import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
+import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
@@ -67,6 +70,9 @@ import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CandidateId as CandidateId
+import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
+import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
+import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CastFrom as CastFrom
@@ -264,6 +270,7 @@ import qualified Parun.Types.LifeLossR as LifeLossR
 import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LifeTrigger as LifeTrigger
+import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.LoyaltyClause as LoyaltyClause
@@ -309,6 +316,7 @@ import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
+import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
@@ -3176,3 +3184,70 @@ chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser 
     <*> refPlayer c chooser
     <*> howManyChildren (refQuantity c) count
     <*> pure zone
+
+-- | One visitor per kind of child a combat rule holds: a restriction on
+-- declaring attackers or blockers (CR 508.1c, 509.1b) and a cost to attack or
+-- block (CR 508.1h, 509.1d).
+data CombatChildren f = MkCombatChildren
+  { -- | The creatures a rule applies to.
+    combatAffected :: Affected.Affected -> f Affected.Affected,
+    -- | A Filter a field holds: the creatures on the other side, the company.
+    combatFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | The gate a rule applies under, whole.
+    combatCondition :: Condition.Condition -> f Condition.Condition,
+    -- | A Quantity a field holds: a counted share, a block amount.
+    combatQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A taxed creature's fixed share, whole.
+    combatCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword)
+  }
+
+-- | Every child of a combat rule left as it is: the base a walk overrides.
+combatLeaves :: (Applicative f) => CombatChildren f
+combatLeaves =
+  MkCombatChildren
+    { combatAffected = pure,
+      combatFilter = pure,
+      combatCondition = pure,
+      combatQuantity = pure,
+      combatCost = pure
+    }
+
+-- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
+-- comparison, company count and defenders are left as they are.
+combatRestrictionChildren :: (Applicative f) => CombatChildren f -> CombatRestriction.CombatRestriction -> f CombatRestriction.CombatRestriction
+combatRestrictionChildren c restriction = case restriction of
+  CombatRestriction.CantAttack x -> CombatRestriction.CantAttack <$> affectedUnlessChildren x
+  CombatRestriction.CantBlock x -> CombatRestriction.CantBlock <$> affectedUnlessChildren x
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers unless name) ->
+    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> combatAffected c affected <*> combatFilter c blockers <*> traverse (combatCondition c) unless <*> pure name)
+  CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures affected attackers unless name) ->
+    fmap CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures <$> combatAffected c affected <*> combatFilter c attackers <*> traverse (combatCondition c) unless <*> pure name)
+  CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer affected defenders kinds unless name) ->
+    fmap CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer <$> combatAffected c affected <*> pure defenders <*> pure kinds <*> traverse (combatCondition c) unless <*> pure name)
+  CombatRestriction.CantAttackAlone x -> CombatRestriction.CantAttackAlone <$> aloneUnlessChildren x
+  CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless limit defenders unless) ->
+    fmap CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless limit defenders <$> traverse (combatCondition c) unless)
+  CombatRestriction.CantBlockAlone x -> CombatRestriction.CantBlockAlone <$> aloneUnlessChildren x
+  CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless limit comparison attackers unless) ->
+    fmap CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless limit comparison <$> traverse (combatAffected c) attackers <*> traverse (combatCondition c) unless)
+  where
+    affectedUnlessChildren (AffectedUnless.MkAffectedUnless affected unless name amount) =
+      AffectedUnless.MkAffectedUnless <$> combatAffected c affected <*> traverse (combatCondition c) unless <*> pure name <*> traverse (combatQuantity c) amount
+    aloneUnlessChildren (AloneUnless.MkAloneUnless affected alongside others unless name) =
+      AloneUnless.MkAloneUnless <$> combatAffected c affected <*> traverse (combatFilter c) alongside <*> pure others <*> traverse (combatCondition c) unless <*> pure name
+
+-- | A cost to attack's children (CR 508.1h). Its scope is left as it is.
+attackCostChildren :: (Applicative f) => CombatChildren f -> AttackCost.AttackCost -> f AttackCost.AttackCost
+attackCostChildren c (AttackCost.MkAttackCost subject perAttacker scope while) =
+  AttackCost.MkAttackCost <$> combatAffected c subject <*> perCreatureChildren c perAttacker <*> pure scope <*> traverse (combatCondition c) while
+
+-- | A cost to block's children (CR 509.1d).
+blockCostChildren :: (Applicative f) => CombatChildren f -> BlockCost.BlockCost -> f BlockCost.BlockCost
+blockCostChildren c (BlockCost.MkBlockCost subject perBlocker attackers while) =
+  BlockCost.MkBlockCost <$> combatAffected c subject <*> perCreatureChildren c perBlocker <*> traverse (combatFilter c) attackers <*> traverse (combatCondition c) while
+
+-- | One taxed creature's share of a cost to attack or block (CR 508.1h, 509.1d).
+perCreatureChildren :: (Applicative f) => CombatChildren f -> PerCreature.PerCreature -> f PerCreature.PerCreature
+perCreatureChildren c share = case share of
+  PerCreature.Fixed cost -> PerCreature.Fixed <$> combatCost c cost
+  PerCreature.Counted quantity -> PerCreature.Counted <$> combatQuantity c quantity
