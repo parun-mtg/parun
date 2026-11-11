@@ -64,6 +64,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
@@ -802,8 +803,8 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
   -- The trigger can only be read from CR 608.2h last known information: the
   -- Thragtusk is not merely off the battlefield at the CR 117.5 scan, it is not
   -- in the game, so neither the live board nor the per-group sample the scan
-  -- otherwise reads (GameState.battlefieldWhenTriggered) has anything to find.
-  -- What fires is the ability GameState.lastKnown says it had.
+  -- otherwise reads (Snapshots.battlefieldWhenTriggered) has anything to find.
+  -- What fires is the ability Snapshots.lastKnown says it had.
   Spec.it s "CR 603.6c a phased-in permanent leaving the game with its owner triggers its leaves-the-battlefield ability" $ do
     thragtusk <- S.printingOf s registry "Thragtusk"
     let (tusk, g1) = S.addPermanent thragtusk S.bob S.threePlayerGame
@@ -858,22 +859,22 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     let (tusk, g1) = S.addPermanent thragtusk S.bob S.threePlayerGame
         board = S.giveControl tusk S.carol (S.addCounter CounterKind.PlusOnePlusOne 1 tusk g1)
         gone = S.runPure S.identityAnswer board (Departure.leaveGame Departure.Type.Conceded S.bob)
-    Spec.assertEqWith s "nothing is filed while it is still in the game" (Map.lookup tusk (GameState.lastKnown board)) Nothing
+    Spec.assertEqWith s "nothing is filed while it is still in the game" (Map.lookup tusk (Snapshots.lastKnown (GameState.snapshots board))) Nothing
     Spec.assertEqWith s "it was a 6/4 as it left" (Projection.powerOf tusk board) (Just 6)
     Spec.assertEqWith
       s
       "and the record says 6, not the printed 5"
-      (fmap (PC.power . LastKnown.characteristics) (Map.lookup tusk (GameState.lastKnown gone)))
+      (fmap (PC.power . LastKnown.characteristics) (Map.lookup tusk (Snapshots.lastKnown (GameState.snapshots gone))))
       (Just (Just 6))
     Spec.assertEqWith
       s
       "with carol as its controller, not bob its owner"
-      (fmap LastKnown.controller (Map.lookup tusk (GameState.lastKnown gone)))
+      (fmap LastKnown.controller (Map.lookup tusk (Snapshots.lastKnown (GameState.snapshots gone))))
       (Just S.carol)
     Spec.assertEqWith
       s
       "and its counters, which CR 122.2 makes this the last moment to record"
-      (fmap LastKnown.counters (Map.lookup tusk (GameState.lastKnown gone)))
+      (fmap LastKnown.counters (Map.lookup tusk (Snapshots.lastKnown (GameState.snapshots gone))))
       (Just (Map.singleton CounterKind.PlusOnePlusOne 1))
 
   -- The control for the case above, differing from it in exactly one line: carol

@@ -84,6 +84,7 @@ import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.AppliedReduction as AppliedReduction
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -4663,8 +4664,8 @@ criteriaOf component = case component of
 -- (#4860).
 --
 -- The special actions and CR 118.12's payment announce nothing that writes:
--- their two states differ only in GameState.lastChoice and, at
--- Parun.Engine.Companion.take, in GameState.nextObjectId, both of which ride at
+-- their two states differ only in Bookkeeping.lastChoice and, at
+-- Parun.Engine.Companion.take, in Bookkeeping.nextObjectId, both of which ride at
 -- `closed`'s value by rule, so the composed state IS `closed` there.
 --
 -- CostSpec's "Reversal" group proves it at CR 118.12's payment,
@@ -4692,9 +4693,9 @@ criteriaOf component = case component of
 -- that cancellation leaves -- the announcement undone and nothing of the cost
 -- paid -- rather than against the half-paid state the refusal left, which is
 -- what Parun.Engine.Game.ask hands the answerer. It also keeps CR 104.4b's
--- stamp: `Game.choose` writes GameState.lastChoice, and each state an answer
+-- stamp: `Game.choose` writes Bookkeeping.lastChoice, and each state an answer
 -- leaves is put with the live stamp rather than the one it was composed with,
--- and with the live GameState.nextTimestamp the stamp was drawn from.
+-- and with the live Bookkeeping.nextTimestamp the stamp was drawn from.
 --
 -- Every restore goes through `keepingLibraryActions` rather than a bare
 -- State.put, CR 734.1's last sentence's reason: a shuffle, a reveal or a look
@@ -4745,7 +4746,7 @@ reverseIllegal windows before =
           -- The state the answers given so far leave, everything not yet
           -- answered still standing, put with the live CR 104.4b stamp so that
           -- no answer's is discarded. The stamp was drawn from the live
-          -- GameState.nextTimestamp, so that supply comes across with it: a
+          -- Bookkeeping.nextTimestamp, so that supply comes across with it: a
           -- state that goes back past the announcement would otherwise hold a
           -- stamp ahead of its own supply, which
           -- Parun.Engine.Departure.checkMandatoryLoop's gap underflows on. The
@@ -4758,8 +4759,11 @@ reverseIllegal windows before =
                       State.modify'
                         ( \live ->
                             composedState
-                              { GameState.lastChoice = GameState.lastChoice live,
-                                GameState.nextTimestamp = max (GameState.nextTimestamp composedState) (GameState.nextTimestamp live)
+                              { GameState.bookkeeping =
+                                  (GameState.bookkeeping composedState)
+                                    { Bookkeeping.lastChoice = Bookkeeping.lastChoice (GameState.bookkeeping live),
+                                      Bookkeeping.nextTimestamp = max (Bookkeeping.nextTimestamp (GameState.bookkeeping composedState)) (Bookkeeping.nextTimestamp (GameState.bookkeeping live))
+                                    }
                               }
                         )
                   )
@@ -4927,7 +4931,7 @@ keepingLibraryActions since snapshot =
               (GameState.turn snapshot)
                 { TurnRegisters.events = TurnRegisters.events (GameState.turn snapshot) <> kept
                 },
-            GameState.nextEventGroup = GameState.nextEventGroup since
+            GameState.bookkeeping = (GameState.bookkeeping snapshot) {Bookkeeping.nextEventGroup = Bookkeeping.nextEventGroup (GameState.bookkeeping since)}
           }
    in Foldable.foldl' (\g logged -> maybe g (`Event.expose` g) (shownCard logged)) restored kept
 

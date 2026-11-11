@@ -16,7 +16,7 @@ import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 -- The id alone is enough once the source is gone: CR 400.7 mints a fresh id on
 -- every zone change, so this one then names nothing, which is exactly the
 -- trigger for CR 608.2h's last known information, filed under the same id in
--- GameState.lastKnown. Nothing about the source is copied in here; a snapshot
+-- Snapshots.lastKnown. Nothing about the source is copied in here; a snapshot
 -- would have to be kept in step with a source that can still change while the
 -- ability waits on the stack.
 --

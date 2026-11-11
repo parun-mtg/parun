@@ -29,6 +29,7 @@ import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.Card (Card)
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
@@ -59,6 +60,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -254,7 +256,7 @@ toBottom oid = do
         (Game.overSideDecks SideDeck.Planar (Map.insertWith (flip (Seq.><)) holder (Seq.singleton fresh)) g)
           { GameState.command = Set.delete oid (GameState.command g),
             GameState.objects = Map.insert fresh (Object.newIncarnation obj) (Map.delete oid (GameState.objects g)),
-            GameState.lastKnown = maybe id (Map.insert oid) (Event.lastKnownRecord g oid) (GameState.lastKnown g)
+            GameState.snapshots = (GameState.snapshots g) {Snapshots.lastKnown = maybe id (Map.insert oid) (Event.lastKnownRecord g oid) (Snapshots.lastKnown (GameState.snapshots g))}
           }
 
 -- | CR 901.9: how many times this player has rolled the planar die this turn.
@@ -284,7 +286,7 @@ canRoll :: PlayerId -> GameState -> Bool
 canRoll pid gs =
   isPlanechase gs
     && Turn.sorcerySpeedWindow pid gs
-    && Cost.canPay PaymentSubject.ForNeither pid (GameState.nextObjectId gs) (rollCost pid gs) gs
+    && Cost.canPay PaymentSubject.ForNeither pid (Bookkeeping.nextObjectId (GameState.bookkeeping gs)) (rollCost pid gs) gs
 
 -- | CR 901.3a: a six-sided die with one Planeswalker face, one chaos face and
 -- four blank ones. Which number stands for which face is parun's; anything the

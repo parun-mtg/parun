@@ -34,6 +34,7 @@ import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerBlocked as AttackerBlocked
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
@@ -104,6 +105,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -265,13 +267,13 @@ objectCount gs = Map.size (GameState.objects gs)
 
 freshObjectId :: GameState -> (ObjectId, GameState)
 freshObjectId gs =
-  let ObjectId.MkObjectId n = GameState.nextObjectId gs
-   in (ObjectId.MkObjectId n, gs {GameState.nextObjectId = ObjectId.MkObjectId (n + 1)})
+  let ObjectId.MkObjectId n = Bookkeeping.nextObjectId (GameState.bookkeeping gs)
+   in (ObjectId.MkObjectId n, gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.nextObjectId = ObjectId.MkObjectId (n + 1)}})
 
 freshTimestamp :: GameState -> (Timestamp.Timestamp, GameState)
 freshTimestamp gs =
-  let Timestamp.MkTimestamp n = GameState.nextTimestamp gs
-   in (Timestamp.MkTimestamp n, gs {GameState.nextTimestamp = Timestamp.MkTimestamp (n + 1)})
+  let Timestamp.MkTimestamp n = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)
+   in (Timestamp.MkTimestamp n, gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.nextTimestamp = Timestamp.MkTimestamp (n + 1)}})
 
 -- CR 613.7k: each sticker on the object takes a new timestamp immediately
 -- after the object's own, keeping their relative order. Called right after the
@@ -338,8 +340,8 @@ tokenOfLot owner printing lot ts =
 
 freshPrintingId :: GameState -> (PrintingId.PrintingId, GameState)
 freshPrintingId gs =
-  let PrintingId.MkPrintingId n = GameState.nextPrintingId gs
-   in (PrintingId.MkPrintingId n, gs {GameState.nextPrintingId = PrintingId.MkPrintingId (n + 1)})
+  let PrintingId.MkPrintingId n = Bookkeeping.nextPrintingId (GameState.bookkeeping gs)
+   in (PrintingId.MkPrintingId n, gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.nextPrintingId = PrintingId.MkPrintingId (n + 1)}})
 
 -- Put a printing in the table and answer with the id that names it. The ONLY
 -- way to obtain a PrintingId, which is what makes a dangling one
@@ -355,23 +357,26 @@ freshPrintingId gs =
 -- Parun.Engine.Commander.isCommander holds without it. It is here so that a
 -- later minting site cannot quietly break that.
 --
--- The cost is a deep Ord Card per intern, through GameState.printingIds. It is
+-- The cost is a deep Ord Card per intern, through Bookkeeping.printingIds. It is
 -- paid once per distinct printing per game -- at setup, and per token-creation
 -- or emblem event -- and never on a read.
 intern :: Printing.Printing -> GameState -> (PrintingId.PrintingId, GameState)
-intern printing gs = case Map.lookup printing (GameState.printingIds gs) of
+intern printing gs = case Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs)) of
   Just pid -> (pid, gs)
   Nothing ->
     let (pid, gs1) = freshPrintingId gs
      in ( pid,
           gs1
-            { GameState.printings = Map.insert pid printing (GameState.printings gs1),
-              GameState.printingIds = Map.insert printing pid (GameState.printingIds gs1)
+            { GameState.bookkeeping =
+                (GameState.bookkeeping gs1)
+                  { Bookkeeping.printings = Map.insert pid printing (Bookkeeping.printings (GameState.bookkeeping gs1)),
+                    Bookkeeping.printingIds = Map.insert printing pid (Bookkeeping.printingIds (GameState.bookkeeping gs1))
+                  }
             }
         )
 
 printingOf :: PrintingId.PrintingId -> GameState -> Maybe Printing.Printing
-printingOf pid gs = Map.lookup pid (GameState.printings gs)
+printingOf pid gs = Map.lookup pid (Bookkeeping.printings (GameState.bookkeeping gs))
 
 -- The PRINTING behind an object, which is `cardOf` one unwrap earlier.
 --
@@ -427,9 +432,50 @@ overSideDecks kind f gs =
   let rewritten = f (sideDecksOf kind gs)
    in gs {GameState.sideDecks = if Map.null rewritten then Map.delete kind (GameState.sideDecks gs) else Map.insert kind rewritten (GameState.sideDecks gs)}
 
+-- The supplies and caches of a game nothing has happened in yet.
+blankBookkeeping :: Bookkeeping.Bookkeeping
+blankBookkeeping =
+  Bookkeeping.MkBookkeeping
+    { Bookkeeping.nextObjectId = ObjectId.MkObjectId 0,
+      Bookkeeping.nextPrintingId = PrintingId.MkPrintingId 0,
+      Bookkeeping.nextTimestamp = Timestamp.MkTimestamp 0,
+      Bookkeeping.nextEventGroup = EventGroup.first,
+      Bookkeeping.eventGroupDepth = 0,
+      Bookkeeping.printings = Map.empty,
+      Bookkeeping.printingIds = Map.empty,
+      Bookkeeping.lookedUp = Set.empty,
+      Bookkeeping.referenceNames = Map.empty,
+      Bookkeeping.lastChoice = Timestamp.MkTimestamp 0,
+      Bookkeeping.repeatPicks = Nothing,
+      Bookkeeping.undone = Map.empty,
+      Bookkeeping.fellShort = 0
+    }
+
+-- The snapshots of a game nothing has happened in yet.
+blankSnapshots :: Snapshots.Snapshots GameState
+blankSnapshots =
+  Snapshots.MkSnapshots
+    { Snapshots.lastKnown = Map.empty,
+      Snapshots.stackArchive = Map.empty,
+      Snapshots.battlefieldWhenTriggered = Map.empty,
+      Snapshots.boardAfterEvent = Map.empty,
+      Snapshots.boardBeforeEvent = Map.empty,
+      Snapshots.controlSample = Map.empty,
+      Snapshots.boardAtControlSample = Nothing,
+      Snapshots.heldBoards = []
+    }
+
 -- | Rewrite the turn being worked (GameState.turn).
 overTurn :: (TurnRegisters.TurnRegisters -> TurnRegisters.TurnRegisters) -> GameState -> GameState
 overTurn f gs = gs {GameState.turn = f (GameState.turn gs)}
+
+-- | Rewrite the bookkeeping (GameState.bookkeeping).
+overBookkeeping :: (Bookkeeping.Bookkeeping -> Bookkeeping.Bookkeeping) -> GameState -> GameState
+overBookkeeping f gs = gs {GameState.bookkeeping = f (GameState.bookkeeping gs)}
+
+-- | Rewrite the snapshots (GameState.snapshots).
+overSnapshots :: (Snapshots.Snapshots GameState -> Snapshots.Snapshots GameState) -> GameState -> GameState
+overSnapshots f gs = gs {GameState.snapshots = f (GameState.snapshots gs)}
 
 -- | CR 103.3a: shuffle this player's supplementary deck of this kind. A player
 -- with none is not asked: there is nothing to shuffle.
@@ -503,7 +549,7 @@ permute xs order =
         else xs
 
 -- Ask a player something they could have answered more than one way, and record
--- that they were asked (GameState.lastChoice). CR 104.4b's second sentence --
+-- that they were asked (Bookkeeping.lastChoice). CR 104.4b's second sentence --
 -- "loops that contain an optional action don't result in a draw" -- is why this
 -- is a funnel rather than a note at each prompt site: being asked this is the
 -- engine's whole definition of an optional action, and a new prompt site that
@@ -531,19 +577,19 @@ permute xs order =
 -- so only the branch that genuinely asks reaches this.
 choose :: Prompt.Prompt a -> Game a
 choose p = do
-  State.modify' (\gs -> gs {GameState.lastChoice = GameState.nextTimestamp gs})
+  State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.lastChoice = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)}})
   ask p
 
 -- | CR 734.1: notes why `pid`'s cast, activation or combat declaration was
 -- reversed, once the reversal has put back the state the action began in
--- (GameState.undone).
+-- (Bookkeeping.undone).
 noteUndoing :: PlayerId -> Undoing.Undoing -> Game ()
-noteUndoing pid why = State.modify' (\gs -> gs {GameState.undone = Map.insert pid why (GameState.undone gs)})
+noteUndoing pid why = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.undone = Map.insert pid why (Bookkeeping.undone (GameState.bookkeeping gs))}})
 
 -- | CR 734.1: `noteUndoing`'s note is news only until `pid` answers the next
 -- choice it explains.
 clearUndoing :: PlayerId -> Game ()
-clearUndoing pid = State.modify' (\gs -> gs {GameState.undone = Map.delete pid (GameState.undone gs)})
+clearUndoing pid = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.undone = Map.delete pid (Bookkeeping.undone (GameState.bookkeeping gs))}})
 
 -- | @chooser@ picks one of @candidates@ through the prompt @question@ builds,
 -- THE ask-and-check of every choice of one player or object from a list the
@@ -605,10 +651,10 @@ among put question candidates = case candidates of
 -- event names the controllers of the objects it acts on too
 -- (Parun.Engine.Event.involveActedOn).
 involve :: PlayerId -> GameState -> GameState
-involve pid gs = gs {GameState.loopInvolvement = Map.insert pid (GameState.nextTimestamp gs) (GameState.loopInvolvement gs)}
+involve pid gs = gs {GameState.loopInvolvement = Map.insert pid (Bookkeeping.nextTimestamp (GameState.bookkeeping gs)) (GameState.loopInvolvement gs)}
 
 -- CR 108.1: a name a player just chose (CR 201.4), looked up in the Oracle card
--- reference and the card it names remembered in GameState.lookedUp, then handed
+-- reference and the card it names remembered in Bookkeeping.lookedUp, then handed
 -- back. Every Prompt.ChooseCardName answer goes through here but one from
 -- Parun.Engine.Resolve.Common.chooseNameAmong's list: a face of a card the game
 -- already holds, or one CR 707.13 looks up itself.
@@ -632,7 +678,7 @@ lookUpCard name = do
       | Maybe.isJust (Card.faceNamed name card) -> do
           gs <- State.get
           let (pid, gs1) = intern (Printing.ofCard card) gs
-          State.put gs1 {GameState.lookedUp = Set.insert pid (GameState.lookedUp gs1)}
+          State.put gs1 {GameState.bookkeeping = (GameState.bookkeeping gs1) {Bookkeeping.lookedUp = Set.insert pid (Bookkeeping.lookedUp (GameState.bookkeeping gs1))}}
           pure (Just pid)
     _ -> pure Nothing
 
@@ -911,7 +957,7 @@ currentChoice field oid gs = Map.lookup (acquisitionOf oid gs) . objectChoices f
 recordChoice :: Chosen.Chosen a -> Acquisition.Acquisition -> (Maybe a -> Maybe a) -> ObjectId -> GameState -> GameState
 recordChoice field acquisition change oid gs = case lookupObject oid gs of
   Just _ -> gs {GameState.objects = Map.adjust (overObjectChoices field (Map.alter change acquisition)) oid (GameState.objects gs)}
-  Nothing -> gs {GameState.lastKnown = Map.adjust (overLastKnownChoices field (Map.alter change acquisition)) oid (GameState.lastKnown gs)}
+  Nothing -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.lastKnown = Map.adjust (overLastKnownChoices field (Map.alter change acquisition)) oid (Snapshots.lastKnown (GameState.snapshots gs))}}
 
 -- | The Object field `field` names.
 objectChoices :: Chosen.Chosen a -> Object -> Map.Map Acquisition.Acquisition a
@@ -1157,7 +1203,7 @@ insertIntoZone zone position pid oid gs = case zone of
   Zone.Exile -> gs {GameState.exile = Set.insert oid (GameState.exile gs)}
   Zone.Command -> gs {GameState.command = Set.insert oid (GameState.command gs)}
   Zone.Ante -> gs {GameState.ante = Set.insert oid (GameState.ante gs)}
-  Zone.Stack -> putOnStack (GameState.nextEventGroup gs) oid gs
+  Zone.Stack -> putOnStack (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) oid gs
 
 -- | CR 405.1 / 807.5: every stack's objects, top first -- TurnRegisters.stack,
 -- then each parked Grand Melee turn's by marker number -- which a read about
@@ -1200,7 +1246,7 @@ sinkInLibrary depth pid oid gs = gs {GameState.library = Map.adjust (Seq.insertA
 -- 800.4a's third clause (Parun.Engine.Departure) and CR 901.10a
 -- (Parun.Engine.Planechase).
 --
--- An ability is filed in GameState.stackArchive as it ceases, CR 608.2h's last
+-- An ability is filed in Snapshots.stackArchive as it ceases, CR 608.2h's last
 -- known information for an effect that names it afterwards: Rings of
 -- Brighthearth's ruling has its trigger copy an ability countered while the
 -- trigger waited. data/scenarios/event-trigger's "CR 608.2h Rings of
@@ -1208,7 +1254,7 @@ sinkInLibrary depth pid oid gs = gs {GameState.library = Map.adjust (Seq.insertA
 cease :: ObjectId -> GameState -> GameState
 cease oid gs =
   let archived = case lookupObject oid gs of
-        Just obj | isAbility oid gs -> gs {GameState.stackArchive = Map.insertWith (\_ old -> old) oid obj (GameState.stackArchive gs)}
+        Just obj | isAbility oid gs -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.stackArchive = Map.insertWith (\_ old -> old) oid obj (Snapshots.stackArchive (GameState.snapshots gs))}}
         _ -> gs
    in deleteObject oid archived
 
@@ -1879,7 +1925,7 @@ meldComponentsOf source = case source of
 -- CR 108.1's Oracle card reference, as far as this game knows it: every face of
 -- every card an object is or is represented by (CR 108.2, 713.8, 731.2), every
 -- card a player holds outside the game (CR 400.11a), and every card
--- Prompt.LookUpCard answered with (GameState.lookedUp). Keyed by name, each
+-- Prompt.LookUpCard answered with (Bookkeeping.lookedUp). Keyed by name, each
 -- paired with the view it is judged by (Card.referenceViews).
 --
 -- A token, an emblem and a copy are no card (CR 108.2), so their printings are
@@ -1907,7 +1953,7 @@ referenceFaces gs =
         Set.unions
           [ Set.fromList (foldMap (Foldable.toList . ofSource . Object.source) (Map.elems (GameState.objects gs))),
             foldMap (Map.keysSet . Player.outsideTheGame) (GameState.players gs),
-            GameState.lookedUp gs
+            Bookkeeping.lookedUp (GameState.bookkeeping gs)
           ]
    in Map.fromList (foldMap (\pid -> foldMap Card.referenceViews (cardOfPrinting pid gs)) (Set.toList pids))
 
@@ -2078,7 +2124,7 @@ ownerWithLastKnown = liveOrLastKnown Object.owner LastKnown.owner
 liveOrLastKnown :: (Object -> a) -> (LastKnown.LastKnown -> a) -> ObjectId -> GameState -> Maybe a
 liveOrLastKnown live remembered oid gs = case lookupObject oid gs of
   Just obj -> Just (live obj)
-  Nothing -> fmap remembered (Map.lookup oid (GameState.lastKnown gs))
+  Nothing -> fmap remembered (Map.lookup oid (Snapshots.lastKnown (GameState.snapshots gs)))
 
 -- CR 608.2h: this object's last known information, and only when the id names
 -- nothing, so a caller falls through to its live reader (liveOrLastKnown).

@@ -53,6 +53,7 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
@@ -811,6 +812,6 @@ blinking asked = case Asked.prompt asked of
       _ -> False
 
 -- Why alice's last action was undone, as her view of the game says
--- (GameState.undone).
+-- (Bookkeeping.undone).
 undoneFor :: GameState.GameState -> Maybe Undoing.Undoing
-undoneFor = Map.lookup S.alice . GameState.undone
+undoneFor = Map.lookup S.alice . (Bookkeeping.undone . GameState.bookkeeping)

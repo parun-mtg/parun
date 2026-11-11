@@ -44,6 +44,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.Combat as Combat
@@ -82,6 +83,7 @@ import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.ShownComponent as ShownComponent
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StoredEffects as StoredEffects
 import Parun.Types.StoredKind (StoredKind)
@@ -191,7 +193,7 @@ objects pcs gs a b =
       -- its move, and any slot naming that earlier id, which no search for the
       -- two ids below would find.
       before = Count.departedAs gs
-      beforeRecord oid = before oid >>= \gone -> Map.lookup gone (GameState.lastKnown gs)
+      beforeRecord oid = before oid >>= \gone -> Map.lookup gone (Snapshots.lastKnown (GameState.snapshots gs))
       beforeNamed oid = maybe False (\gone -> namedByAnother gone gs) (before oid)
       sameBefore = beforeRecord a == beforeRecord b && not (beforeNamed a) && not (beforeNamed b)
       sameView = lookBack (viewOf a) == lookBack (viewOf b) && dealtAmounts a == dealtAmounts b && actedOnBy a gs == actedOnBy b gs && sameBefore
@@ -205,9 +207,9 @@ objects pcs gs a b =
       -- permanent a play made; its one reader (Quantity.PlayedBy) asks only
       -- WHO played the object, so it is compared rather than searched too.
       sameSamples =
-        sameSample (GameState.controlSample gs)
+        sameSample (Snapshots.controlSample (GameState.snapshots gs))
           && sameSample (GameState.cardsPlayed gs)
-          && all (\m -> sameSample m && all namesOne m) (Map.elems (GameState.battlefieldWhenTriggered gs))
+          && all (\m -> sameSample m && all namesOne m) (Map.elems (Snapshots.battlefieldWhenTriggered (GameState.snapshots gs)))
    in a == b
         || ( quiet gs
                && Map.lookup a pcs == Map.lookup b pcs
@@ -276,11 +278,11 @@ representatives pcs gs candidates =
 --     counters (landsPlayed, departedThisTurn, turnsBegun,
 --     spellsCastLastTurn, resolvedNames) are keyed by or valued
 --     at a PLAYER and name no object.
---   * GameState.lastKnown is about objects that have LEFT, bar the host each
+--   * Snapshots.lastKnown is about objects that have LEFT, bar the host each
 --     record names, which namedByAnother searches; and so is
 --     GameState.castsBeforeThisTurn: its spells were cast on an earlier turn,
 --     and CR 500.2 ends no step while the stack holds one.
---     GameState.stackArchive is keyed by stack objects that have left too, and
+--     Snapshots.stackArchive is keyed by stack objects that have left too, and
 --     its bindings are read only on behalf of a stack object or a delayed
 --     trigger (CR 608.2h), which namedByAnother and namedByStored already
 --     cover. GameState.departedCards holds cards that have left the game (CR
@@ -298,8 +300,8 @@ representatives pcs gs candidates =
 --     activations of TurnRegisters.activatedThisTurn and Object.activatedOnce.
 --     TurnRegisters.couldAttackThisTurn and GameState.damageBeforeThisTurn are
 --     read through the same two views, and the latter through actedOnBy too.
---     GameState.controlSample (CR 603.2's control diff),
---     GameState.battlefieldWhenTriggered (CR 603.10's look-back) and
+--     Snapshots.controlSample (CR 603.2's control diff),
+--     Snapshots.battlefieldWhenTriggered (CR 603.10's look-back) and
 --     GameState.cardsPlayed (CR 305.1, every permanent a play made) are keyed
 --     by permanents alike, so objects COMPARES the two entries in each
 --     rather than searching for the ids, and searches only a sample's
@@ -321,7 +323,7 @@ representatives pcs gs candidates =
 --     the two games are disjoint (Setup.funnelBack takes the max), so no key of
 --     it can be a candidate.
 --   * GameState.ambientAmounts is keyed by slot and valued at a number, and
---     GameState.referenceNames is keyed by a Filter and valued at names.
+--     Bookkeeping.referenceNames is keyed by a Filter and valued at names.
 --   * The turn, phase, priority, result, daytime, signal, supply, printing,
 --     event-group, scan-cursor, subgame and die-roll fields describe the GAME
 --     rather than any object.
@@ -651,7 +653,7 @@ namedByRelation oid gs =
         || maybe False (elem oid) (GameState.announcedTops gs)
         || maybe False (elem oid) (GameState.actionTops gs)
         || maybe False (any (Set.member oid . snd)) (GameState.loopPicks gs)
-        || maybe False (\picks -> any (Set.member oid) (RepeatPicks.picked picks) || any (Set.member oid) (RepeatPicks.refused picks)) (GameState.repeatPicks gs)
+        || maybe False (\picks -> any (Set.member oid) (RepeatPicks.picked picks) || any (Set.member oid) (RepeatPicks.refused picks)) (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
         || elem oid (GameState.revealedTops gs)
         || Set.member oid (GameState.outsideCopies gs)
         || any (triggeredNames oid) (GameState.triggeredThisGame gs)
@@ -771,7 +773,7 @@ namedByAnother oid gs =
                  || any (Monoid.getAny . Mentions.playerChoiceNames (unread oid)) (foldMap Map.keys (Object.chosenPlayers obj))
              )
    in any names (Map.toList (GameState.objects gs))
-        || any ((== Just oid) . LastKnown.host) (GameState.lastKnown gs)
+        || any ((== Just oid) . LastKnown.host) (Snapshots.lastKnown (GameState.snapshots gs))
 
 -- Whether one slot's binding names this object.
 bindingNames :: ObjectId -> Binding.Binding -> Bool

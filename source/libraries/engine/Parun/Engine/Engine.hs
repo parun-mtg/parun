@@ -82,6 +82,7 @@ import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Completion as Completion
@@ -135,6 +136,7 @@ import Parun.Types.Result (Result)
 import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SkipWindow as SkipWindow
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -641,7 +643,7 @@ runTurnBasedActions phase = do
       -- it runs with no active player. Mana.endManaRetention only ENDS the
       -- retention -- the mana itself is taken by this same step's CR 500.5 sweep
       -- at its end, which makes retained mana outlive every earlier step. This is
-      -- the one reachable CR 603.3a window that GameState.battlefieldWhenTriggered
+      -- the one reachable CR 603.3a window that Snapshots.battlefieldWhenTriggered
       -- closes: the discard above has fired a rule 701.9a trigger, CR 514.3a does
       -- not place it until after this line, and an "until end of turn" control
       -- effect ending here would otherwise credit it to whoever got the permanent
@@ -682,7 +684,7 @@ advanceSagas pid = do
 -- carriers can still reach it with a departed controller -- a DELAYED ability,
 -- proved by Parun.TriggerSpec's "CR 800.4d a departed player's delayed ability
 -- triggers, is consumed, and is not put on the stack", and an OBJECT-BORNE one
--- reading CR 603.3a's controller from GameState.battlefieldWhenTriggered, proved
+-- reading CR 603.3a's controller from Snapshots.battlefieldWhenTriggered, proved
 -- by Parun.DepartureSpec's "CR 603.3a/800.4d a borrowed permanent's trigger is
 -- the departing player's, so it is never put on the stack". CR 800.4d's FIRST
 -- sentence and CR 800.4b's SECOND are enforced at the head of
@@ -713,7 +715,7 @@ placePendingTriggers boards = do
   -- the question carries is the one the batch occurred in.
   (pending, surviving) <- Event.gatherTriggers logged boards gs
   -- MODIFY rather than put the snapshot back: the gather above may have asked a
-  -- question, and Game.choose stamps GameState.lastChoice, which CR 104.4b's
+  -- question, and Game.choose stamps Bookkeeping.lastChoice, which CR 104.4b's
   -- mandatory-loop watchdog reads. Putting `gs` would drop that stamp. Nothing
   -- else can have moved -- the gather records no events -- so every field below
   -- reads the same value either way.
@@ -726,9 +728,12 @@ placePendingTriggers boards = do
         -- CR 603.10's per-group samples are spent with the batch they were taken
         -- for. Cleared rather than left standing, which bounds both the map and
         -- the game states its unforced thunks retain.
-        GameState.boardAfterEvent = Map.empty,
-        GameState.boardBeforeEvent = Map.empty,
-        GameState.battlefieldWhenTriggered = Map.empty,
+        GameState.snapshots =
+          (GameState.snapshots g)
+            { Snapshots.boardAfterEvent = Map.empty,
+              Snapshots.boardBeforeEvent = Map.empty,
+              Snapshots.battlefieldWhenTriggered = Map.empty
+            },
         GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = surviving}
       }
   -- CR 605.4a: a triggered mana ability "doesn't go on the stack ... it resolves
@@ -818,9 +823,12 @@ reactions incoming = do
                   (GameState.turn g)
                     { TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn g))
                     },
-                GameState.boardAfterEvent = Map.empty,
-                GameState.boardBeforeEvent = Map.empty,
-                GameState.battlefieldWhenTriggered = Map.empty,
+                GameState.snapshots =
+                  (GameState.snapshots g)
+                    { Snapshots.boardAfterEvent = Map.empty,
+                      Snapshots.boardBeforeEvent = Map.empty,
+                      Snapshots.battlefieldWhenTriggered = Map.empty
+                    },
                 GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = surviving}
               }
         )
@@ -921,7 +929,7 @@ placeSourceless pending = do
 -- data/scenarios/trigger/cr-610-3b-a-crowning-while-palace-jailers-exile-waits-for-the-stack-keeps-the-creature.json
 -- is the proof.
 triggeredSince :: PendingTrigger.PendingTrigger -> GameState -> EventGroup.EventGroup
-triggeredSince pending gs = maybe (GameState.nextEventGroup gs) (EventGroup.next . LoggedEvent.group) (PendingTrigger.firedBy pending)
+triggeredSince pending gs = maybe (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) (EventGroup.next . LoggedEvent.group) (PendingTrigger.firedBy pending)
 
 -- Put one object-borne triggered ability on the stack as a fresh OfTrigger
 -- object, choosing its mode(s) and their targets as it is placed (CR 603.3d).
@@ -1288,7 +1296,7 @@ entryOf pending =
 
 -- CR 612.7 / 108.1: ask the interpreter, once per filter, for the reference
 -- face names each live name grant's filter admits (Projection.referenceQueries),
--- and remember them in GameState.referenceNames for the projection, which
+-- and remember them in Bookkeeping.referenceNames for the projection, which
 -- cannot ask. Asked, not chosen: nobody decides what the reference says, so CR
 -- 104.4b's lastChoice does not move. The reference does not change during a
 -- game, so a filter is never asked about again. A grant is gathered while its
@@ -1297,10 +1305,10 @@ entryOf pending =
 learnReferenceNames :: Game ()
 learnReferenceNames = do
   gs <- State.get
-  let unasked = Set.filter (`Map.notMember` GameState.referenceNames gs) (Projection.referenceQueries gs)
+  let unasked = Set.filter (`Map.notMember` Bookkeeping.referenceNames (GameState.bookkeeping gs)) (Projection.referenceQueries gs)
   Monad.forM_ unasked $ \predicate -> do
     names <- Game.ask (Prompt.ReferenceNames predicate)
-    State.modify' (\g -> g {GameState.referenceNames = Map.insert predicate (Set.fromList names) (GameState.referenceNames g)})
+    State.modify' (\g -> g {GameState.bookkeeping = (GameState.bookkeeping g) {Bookkeeping.referenceNames = Map.insert predicate (Set.fromList names) (Bookkeeping.referenceNames (GameState.bookkeeping g))}})
 
 -- CR 117.5's settle, discarding the report; `performSettle` below is the same act.
 settleForPriority :: Game ()
@@ -1337,8 +1345,8 @@ performSettle :: Game Bool
 performSettle = do
   -- CR 725.1f / 725.2f: the boards CR 725.1c's or 725.2c's check left behind
   -- (Resolve.Common.checkWithoutPriority) open this settle's.
-  held <- State.gets GameState.heldBoards
-  State.modify' (\gs -> gs {GameState.heldBoards = []})
+  held <- State.gets (Snapshots.heldBoards . GameState.snapshots)
+  State.modify' (\gs -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.heldBoards = []}})
   acted <- settlePasses 0 held
   State.modify' (Event.closeReveal RevealWindow.UntilPriority)
   pure acted
@@ -1349,7 +1357,7 @@ performSettle = do
 -- last placed, oldest first: the boards CR 603.8 reads (Trigger.stateTriggers).
 settlePasses :: Natural -> [GameState] -> Game Bool
 settlePasses passes boards = do
-  begun <- State.gets GameState.lastChoice
+  begun <- State.gets (Bookkeeping.lastChoice . GameState.bookkeeping)
   -- CR 612.7: FIRST, so every state-based action and state trigger below reads
   -- a name grant's whole reference.
   learnReferenceNames
@@ -1621,7 +1629,7 @@ priorityDecision trail = do
                               everyone = all (`Set.member` passed) (filter (GrandMelee.eligible gs) (Game.stillPlaying gs))
                           -- modify' over `State.put gs {...}`: `gs` predates
                           -- the prompt, and putting it back would discard
-                          -- GameState.lastChoice (CR 104.4b), making every
+                          -- Bookkeeping.lastChoice (CR 104.4b), making every
                           -- loop look mandatory.
                           if everyone
                             then case TurnRegisters.stack (GameState.turn gs) of
@@ -2349,14 +2357,17 @@ closeTurn gs =
           GameState.attacksInOwnLastTurn = List.foldl' (\rows p -> Map.insert p (Game.attacksInLog gs) rows) (GameState.attacksInOwnLastTurn gs) outgoing,
           -- Cleared with the log it describes: the settle Engine.advance runs
           -- immediately before this leaves nothing unscanned.
-          GameState.boardAfterEvent = Map.empty,
-          GameState.boardBeforeEvent = Map.empty,
-          GameState.battlefieldWhenTriggered = Map.empty
-          -- GameState.lastKnown is deliberately NOT cleared alongside them: CR
+          -- Snapshots.lastKnown is deliberately NOT cleared alongside them: CR
           -- 608.2h's last known information is the substitute identity of an
           -- object that no longer exists rather than history, and a delayed
           -- ability's source (CR 603.7d) outlives the turn it was armed in.
           -- Setup clears it where a NEW game begins.
+          GameState.snapshots =
+            (GameState.snapshots gs)
+              { Snapshots.boardAfterEvent = Map.empty,
+                Snapshots.boardBeforeEvent = Map.empty,
+                Snapshots.battlefieldWhenTriggered = Map.empty
+              }
         }
 
 -- The turn `pid` takes begins in GameState.turn, which closeTurn has left

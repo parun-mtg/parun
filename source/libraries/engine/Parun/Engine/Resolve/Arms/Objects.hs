@@ -157,6 +157,7 @@ import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -645,7 +646,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
     -- than this one's.
     --
     -- CR 707.10 over an object that has LEFT the stack, second: CR 608.2h's
-    -- last known information, which GameState.stackArchive keeps and the live
+    -- last known information, which Snapshots.stackArchive keeps and the live
     -- board cannot. An effect that ARMED a copier files its own reading there
     -- (CR 702.50a's epic ability, at each of its controller's upkeeps for the
     -- rest of the game), so nothing here cases on which keyword armed it.
@@ -659,7 +660,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
     -- (Rings of Brighthearth's "that ability", likewise; Game.cease files it),
     -- and a slot an Effect.Counter bound (Psychic Rebuttal's "the spell
     -- countered this way").
-    Monad.forM_ (if Game.isSpell original gs || Game.isAbility original gs then Game.lookupObject original gs else Map.lookup original (GameState.stackArchive gs)) $ \obj ->
+    Monad.forM_ (if Game.isSpell original gs || Game.isAbility original gs then Game.lookupObject original gs else Map.lookup original (Snapshots.stackArchive (GameState.snapshots gs))) $ \obj ->
       -- CR 707.10: WHO puts the copy onto the stack,
       -- which is the copy's owner and controller and CR 707.10c's chooser --
       -- Meletis Charlatan's "the controller of target instant or sorcery spell".
@@ -744,7 +745,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
               stampCopiable = case kind of
                 StackObjectKind.Spell | Maybe.isJust (Game.lookupObject original gs) -> Binding.setOwnCopy (except (Event.copiedSnapshot original gs))
                 -- An ARCHIVED spell's exceptions are re-folded over the snapshot
-                -- GameState.stackArchive holds. A REGRESSION FENCE rather than a
+                -- Snapshots.stackArchive holds. A REGRESSION FENCE rather than a
                 -- proved line: no effect on a road to the archive carries an exception --
                 -- rule 702.50a's epic writes its own into the archived snapshot
                 -- (Keyword.withoutEpic), and a copy-this-spell keyword trigger

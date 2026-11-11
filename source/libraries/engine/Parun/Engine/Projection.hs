@@ -53,6 +53,7 @@ import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
@@ -738,12 +739,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         --
         -- The reference is the faces the game holds (Game.referenceFaces) and
         -- the names the interpreter answered the filter with
-        -- (GameState.referenceNames, which Parun.Engine.Engine's
+        -- (Bookkeeping.referenceNames, which Parun.Engine.Engine's
         -- learnReferenceNames asks for). The first is all a game whose
         -- interpreter holds no reference knows; the second is every other face.
         Modification.AddNamesMatching f ->
           let matching = Map.keysSet (Map.filter (\face -> Filter.matches context (viewOfCard face) f) (Game.referenceFaces gs))
-              referenced = Map.findWithDefault Set.empty f (GameState.referenceNames gs)
+              referenced = Map.findWithDefault Set.empty f (Bookkeeping.referenceNames (GameState.bookkeeping gs))
            in pc {PC.names = Set.unions [matching, referenced, PC.names pc]}
         -- CR 612.8: the object loses its names and has only this one.
         Modification.SetName named -> pc {PC.names = Set.singleton named}
@@ -2869,7 +2870,7 @@ mayStateZone stating obj = case Object.facing obj of
 -- Game.printingIdOfSource names the printing Game.cardOfSource reads, so a
 -- member is exactly a card whose printed faces could state the zone.
 statingPrintings :: (Face.Face Card.Type.Card -> Bool) -> GameState -> Set PrintingId.PrintingId
-statingPrintings states = Map.keysSet . Map.filter (any states . Card.Type.faces . Printing.card) . GameState.printings
+statingPrintings states = Map.keysSet . Map.filter (any states . Card.Type.faces . Printing.card) . (Bookkeeping.printings . GameState.bookkeeping)
 
 -- Does any static ability of this face state `zone`? mayStateZone's question
 -- for the static walks.

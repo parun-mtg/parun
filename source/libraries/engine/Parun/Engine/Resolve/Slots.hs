@@ -252,6 +252,7 @@ import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -3262,7 +3263,7 @@ slotGroup slot resolving gs = Seq.filter (`Map.notMember` GameState.phasedOut gs
 -- Chronomantic Escape's "exile Chronomantic Escape with three time counters on it"
 -- name the resolving spell, and CR 400.7 then deletes the id the clause after it
 -- would read its slots off -- including the slot the move itself just defined.
--- GameState.stackArchive is the reading the funnel filed as the object left the
+-- Snapshots.stackArchive is the reading the funnel filed as the object left the
 -- stack, which is that object's bindings as of the move.
 --
 -- Map.adjust over BOTH maps is the writer's side of the same fact
@@ -3272,7 +3273,7 @@ slotGroup slot resolving gs = Seq.filter (`Map.notMember` GameState.phasedOut gs
 resolvingBindings :: ObjectId -> GameState -> Map.Map SlotName Binding.Type.Binding
 resolvingBindings resolving gs = case Game.lookupObject resolving gs of
   Just obj -> Object.bindings obj
-  Nothing -> maybe Map.empty Object.bindings (Map.lookup resolving (GameState.stackArchive gs))
+  Nothing -> maybe Map.empty Object.bindings (Map.lookup resolving (Snapshots.stackArchive (GameState.snapshots gs)))
 
 -- The context every effect of a resolution evaluates its quantities and its
 -- ref-borne filters in: CR 109.5's "you" is the resolving controller, the source

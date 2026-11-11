@@ -35,6 +35,7 @@ import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.RuleFamily as RuleFamily
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
@@ -251,7 +252,7 @@ canTake pid gs = case Map.lookup pid (GameState.players gs) of
         && stillOutside pid card gs
         && Event.commanderAdmits pid card gs
         && Turn.sorcerySpeedWindow pid gs
-        && Cost.canPay PaymentSubject.ForNeither pid (GameState.nextObjectId gs) actionCost gs
+        && Cost.canPay PaymentSubject.ForNeither pid (Bookkeeping.nextObjectId (GameState.bookkeeping gs)) actionCost gs
 
 -- CR 116.2g / 702.139a: pay {3} and put the companion into this player's hand.
 --
@@ -282,7 +283,7 @@ take perform pid = do
       Nothing -> pure ()
       Just card -> do
         -- `before` is taken ahead of `freshObjectId`, which bumps
-        -- GameState.nextObjectId, so CR 734.1's reversal inside Cost.payAction
+        -- Bookkeeping.nextObjectId, so CR 734.1's reversal inside Cost.payAction
         -- puts the counter back with the rest. Nothing observes it either way:
         -- an object id is opaque and the counter only ever rises.
         noSource <- State.state Game.freshObjectId

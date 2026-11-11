@@ -70,6 +70,7 @@ import qualified Parun.Codec.Undoing as Undoing
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName.Type
 import qualified Parun.Types.GameState as GameState
@@ -77,14 +78,16 @@ import qualified Parun.Types.Printing as Printing.Type
 import qualified Parun.Types.PrintingId as PrintingId.Type
 import qualified Parun.Types.RestartSignal as RestartSignal.Type
 import qualified Parun.Types.SlotName as SlotName.Type
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- | Every field but one, in the record's own order.
 --
--- GameState.stored's fields are written FLAT, each under its own key at the
--- place it held before the grouping, rather than nested under a `stored` key:
--- the grouping is the engine's, for Parun.Engine.Stored, and the wire has no
--- reader of it.
+-- GameState.stored's, GameState.bookkeeping's and GameState.snapshots' fields
+-- are written FLAT, each under its own key at the place it held before the
+-- grouping, rather than nested under a key of the group's: the grouping is the
+-- engine's, for Parun.Engine.Stored and the CR 603.12 comparison, and the wire
+-- has no reader of it.
 --
 -- 'Fields.required' is kept for the fields no game can be missing -- `settings`,
 -- `objects`, `players`, `turnOrder`, `turn` -- and for the counters and clocks
@@ -105,7 +108,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 -- the whole record where none can. It is the caller's, because @parun:registry@
 -- sits above @parun:codec@ and a decoder cannot reach one.
 --
--- GameState.printingIds is NOT written. It is `printings` read backwards, which
+-- Bookkeeping.printingIds is NOT written. It is `printings` read backwards, which
 -- Parun.Types.GameState says at the field itself, so writing it would put the
 -- same table on the wire twice and let the two disagree -- a document whose two
 -- halves contradict each other has no meaning this decoder could pick. It is
@@ -133,20 +136,20 @@ codec resolve = Fields.object $ do
   broughtIn <- Fields.defaulted "broughtIn" Seq.empty (Common.seq ObjectId.codec) GameState.broughtIn
   departedCards <- Fields.defaulted "departedCards" Map.empty (Common.naturalMap ObjectId.codec Object.codec) GameState.departedCards
   manaPool <- Fields.defaulted "manaPool" Map.empty (Common.naturalMap PlayerId.codec Mana.codec) GameState.manaPool
-  nextEventGroup <- Fields.required "nextEventGroup" EventGroup.codec GameState.nextEventGroup
-  eventGroupDepth <- Fields.defaulted "eventGroupDepth" 0 Common.natural GameState.eventGroupDepth
+  nextEventGroup <- Fields.required "nextEventGroup" EventGroup.codec (Bookkeeping.nextEventGroup . GameState.bookkeeping)
+  eventGroupDepth <- Fields.defaulted "eventGroupDepth" 0 Common.natural (Bookkeeping.eventGroupDepth . GameState.bookkeeping)
   enteringTogether <- Fields.defaulted "enteringTogether" Nothing (Common.maybe EnteringTogether.codec) GameState.enteringTogether
   arrivals <- Fields.defaulted "arrivals" Nothing (Common.maybe (Common.seq Arrival.codec)) GameState.arrivals
   payingOnResolution <- Fields.defaulted "payingOnResolution" False Common.boolean GameState.payingOnResolution
   causing <- Fields.defaulted "causing" Nothing (Common.maybe PlayerId.codec) GameState.causing
-  lastKnown <- Fields.defaulted "lastKnown" Map.empty (Common.naturalMap ObjectId.codec LastKnown.codec) GameState.lastKnown
-  stackArchive <- Fields.defaulted "stackArchive" Map.empty (Common.naturalMap ObjectId.codec Object.codec) GameState.stackArchive
-  battlefieldWhenTriggered <- Fields.defaulted "battlefieldWhenTriggered" Map.empty (Common.naturalMap EventGroup.codec (Common.naturalMap ObjectId.codec (BattlefieldCandidate.codec ProjectedCharacteristics.codec))) GameState.battlefieldWhenTriggered
-  boardAfterEvent <- Fields.defaulted "boardAfterEvent" Map.empty (Common.naturalMap EventGroup.codec (codec resolve)) GameState.boardAfterEvent
-  boardBeforeEvent <- Fields.defaulted "boardBeforeEvent" Map.empty (Common.naturalMap EventGroup.codec (codec resolve)) GameState.boardBeforeEvent
-  controlSample <- Fields.defaulted "controlSample" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.controlSample
-  boardAtControlSample <- Fields.defaulted "boardAtControlSample" Nothing (Common.maybe (codec resolve)) GameState.boardAtControlSample
-  heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) GameState.heldBoards
+  lastKnown <- Fields.defaulted "lastKnown" Map.empty (Common.naturalMap ObjectId.codec LastKnown.codec) (Snapshots.lastKnown . GameState.snapshots)
+  stackArchive <- Fields.defaulted "stackArchive" Map.empty (Common.naturalMap ObjectId.codec Object.codec) (Snapshots.stackArchive . GameState.snapshots)
+  battlefieldWhenTriggered <- Fields.defaulted "battlefieldWhenTriggered" Map.empty (Common.naturalMap EventGroup.codec (Common.naturalMap ObjectId.codec (BattlefieldCandidate.codec ProjectedCharacteristics.codec))) (Snapshots.battlefieldWhenTriggered . GameState.snapshots)
+  boardAfterEvent <- Fields.defaulted "boardAfterEvent" Map.empty (Common.naturalMap EventGroup.codec (codec resolve)) (Snapshots.boardAfterEvent . GameState.snapshots)
+  boardBeforeEvent <- Fields.defaulted "boardBeforeEvent" Map.empty (Common.naturalMap EventGroup.codec (codec resolve)) (Snapshots.boardBeforeEvent . GameState.snapshots)
+  controlSample <- Fields.defaulted "controlSample" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) (Snapshots.controlSample . GameState.snapshots)
+  boardAtControlSample <- Fields.defaulted "boardAtControlSample" Nothing (Common.maybe (codec resolve)) (Snapshots.boardAtControlSample . GameState.snapshots)
+  heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) (Snapshots.heldBoards . GameState.snapshots)
   delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) (StoredEffects.continuousEffects . GameState.stored)
   copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) (StoredEffects.copyEffects . GameState.stored)
@@ -177,27 +180,27 @@ codec resolve = Fields.object $ do
   turnsBegun <- Fields.defaulted "turnsBegun" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.turnsBegun
   result <- Fields.defaulted "result" Nothing (Common.maybe Result.codec) GameState.result
   restartSignal <- Fields.defaulted "restartSignal" RestartSignal.Type.Playing RestartSignal.codec GameState.restartSignal
-  nextObjectId <- Fields.required "nextObjectId" ObjectId.codec GameState.nextObjectId
-  printings <- Fields.defaulted "printings" Map.empty (Common.naturalMap PrintingId.codec (Printing.reference resolve)) GameState.printings
-  lookedUp <- Fields.defaulted "lookedUp" Set.empty (Common.set PrintingId.codec) GameState.lookedUp
-  referenceNames <- Fields.defaulted "referenceNames" Map.empty (Common.keyedList (Common.keyValue (Filter.codec Keyword.codec) (Common.set CardName.codec))) GameState.referenceNames
+  nextObjectId <- Fields.required "nextObjectId" ObjectId.codec (Bookkeeping.nextObjectId . GameState.bookkeeping)
+  printings <- Fields.defaulted "printings" Map.empty (Common.naturalMap PrintingId.codec (Printing.reference resolve)) (Bookkeeping.printings . GameState.bookkeeping)
+  lookedUp <- Fields.defaulted "lookedUp" Set.empty (Common.set PrintingId.codec) (Bookkeeping.lookedUp . GameState.bookkeeping)
+  referenceNames <- Fields.defaulted "referenceNames" Map.empty (Common.keyedList (Common.keyValue (Filter.codec Keyword.codec) (Common.set CardName.codec))) (Bookkeeping.referenceNames . GameState.bookkeeping)
   outsideCopies <- Fields.defaulted "outsideCopies" Set.empty (Common.set ObjectId.codec) GameState.outsideCopies
   namedCopyChoices <- Fields.defaulted "namedCopyChoices" Map.empty (Common.naturalMap ObjectId.codec (Common.set CardName.codec)) GameState.namedCopyChoices
   notedCards <- Fields.defaulted "notedCards" Map.empty (Common.naturalMap ObjectId.codec PrintingId.codec) GameState.notedCards
   notedMana <- Fields.defaulted "notedMana" Map.empty (Common.naturalMap ObjectId.codec (Common.seq ManaType.codec)) GameState.notedMana
-  nextPrintingId <- Fields.required "nextPrintingId" PrintingId.codec GameState.nextPrintingId
-  nextTimestamp <- Fields.required "nextTimestamp" Timestamp.codec GameState.nextTimestamp
-  lastChoice <- Fields.required "lastChoice" Timestamp.codec GameState.lastChoice
+  nextPrintingId <- Fields.required "nextPrintingId" PrintingId.codec (Bookkeeping.nextPrintingId . GameState.bookkeeping)
+  nextTimestamp <- Fields.required "nextTimestamp" Timestamp.codec (Bookkeeping.nextTimestamp . GameState.bookkeeping)
+  lastChoice <- Fields.required "lastChoice" Timestamp.codec (Bookkeeping.lastChoice . GameState.bookkeeping)
   loopInvolvement <- Fields.defaulted "loopInvolvement" Map.empty (Common.naturalMap PlayerId.codec Timestamp.codec) GameState.loopInvolvement
   drewFromEmpty <- Fields.defaulted "drewFromEmpty" Set.empty (Common.set PlayerId.codec) GameState.drewFromEmpty
-  fellShort <- Fields.defaulted "fellShort" 0 Common.natural GameState.fellShort
+  fellShort <- Fields.defaulted "fellShort" 0 Common.natural (Bookkeeping.fellShort . GameState.bookkeeping)
   landsPlayed <- Fields.defaulted "landsPlayed" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.landsPlayed
   cardsPlayed <- Fields.defaulted "cardsPlayed" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.cardsPlayed
   keptFaceDown <- Fields.defaulted "keptFaceDown" Nothing (Common.maybe (Common.naturalMap ObjectId.codec Common.natural)) GameState.keptFaceDown
   announcedTops <- Fields.defaulted "announcedTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) GameState.announcedTops
   actionTops <- Fields.defaulted "actionTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) GameState.actionTops
   loopPicks <- Fields.defaulted "loopPicks" Nothing (Common.maybe (Common.seq (Common.tuple PlayerId.codec (Common.set ObjectId.codec)))) GameState.loopPicks
-  repeatPicks <- Fields.defaulted "repeatPicks" Nothing (Common.maybe RepeatPicks.codec) GameState.repeatPicks
+  repeatPicks <- Fields.defaulted "repeatPicks" Nothing (Common.maybe RepeatPicks.codec) (Bookkeeping.repeatPicks . GameState.bookkeeping)
   revealedTops <- Fields.defaulted "revealedTops" Map.empty (Common.naturalMap PlayerId.codec ObjectId.codec) GameState.revealedTops
   departedThisTurn <- Fields.defaulted "departedThisTurn" Set.empty (Common.set PlayerId.codec) GameState.departedThisTurn
   -- Common.repeats, for Parun.Codec.Object's activatedOnce reason.
@@ -229,7 +232,7 @@ codec resolve = Fields.object $ do
   gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural GameState.gameNumber
   throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) GameState.throwing
   rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean GameState.rethrowRequested
-  undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) GameState.undone
+  undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) (Bookkeeping.undone . GameState.bookkeeping)
   pure
     GameState.MkGameState
       { GameState.settings = settings,
@@ -249,20 +252,38 @@ codec resolve = Fields.object $ do
         GameState.broughtIn = broughtIn,
         GameState.departedCards = departedCards,
         GameState.manaPool = manaPool,
-        GameState.nextEventGroup = nextEventGroup,
-        GameState.eventGroupDepth = eventGroupDepth,
         GameState.enteringTogether = enteringTogether,
         GameState.arrivals = arrivals,
         GameState.payingOnResolution = payingOnResolution,
         GameState.causing = causing,
-        GameState.lastKnown = lastKnown,
-        GameState.stackArchive = stackArchive,
-        GameState.battlefieldWhenTriggered = battlefieldWhenTriggered,
-        GameState.boardAfterEvent = boardAfterEvent,
-        GameState.boardBeforeEvent = boardBeforeEvent,
-        GameState.controlSample = controlSample,
-        GameState.boardAtControlSample = boardAtControlSample,
-        GameState.heldBoards = heldBoards,
+        GameState.bookkeeping =
+          Bookkeeping.MkBookkeeping
+            { Bookkeeping.nextObjectId = nextObjectId,
+              Bookkeeping.nextPrintingId = nextPrintingId,
+              Bookkeeping.nextTimestamp = nextTimestamp,
+              Bookkeeping.nextEventGroup = nextEventGroup,
+              Bookkeeping.eventGroupDepth = eventGroupDepth,
+              Bookkeeping.printings = printings,
+              -- Derived rather than written: see the note above.
+              Bookkeeping.printingIds = invert printings,
+              Bookkeeping.lookedUp = lookedUp,
+              Bookkeeping.referenceNames = referenceNames,
+              Bookkeeping.lastChoice = lastChoice,
+              Bookkeeping.repeatPicks = repeatPicks,
+              Bookkeeping.undone = undone,
+              Bookkeeping.fellShort = fellShort
+            },
+        GameState.snapshots =
+          Snapshots.MkSnapshots
+            { Snapshots.lastKnown = lastKnown,
+              Snapshots.stackArchive = stackArchive,
+              Snapshots.battlefieldWhenTriggered = battlefieldWhenTriggered,
+              Snapshots.boardAfterEvent = boardAfterEvent,
+              Snapshots.boardBeforeEvent = boardBeforeEvent,
+              Snapshots.controlSample = controlSample,
+              Snapshots.boardAtControlSample = boardAtControlSample,
+              Snapshots.heldBoards = heldBoards
+            },
         GameState.stored =
           StoredEffects.MkStoredEffects
             { StoredEffects.continuousEffects = continuousEffects,
@@ -296,27 +317,18 @@ codec resolve = Fields.object $ do
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,
         GameState.restartSignal = restartSignal,
-        GameState.nextObjectId = nextObjectId,
-        GameState.printings = printings,
-        GameState.lookedUp = lookedUp,
-        GameState.referenceNames = referenceNames,
         GameState.outsideCopies = outsideCopies,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
         GameState.notedMana = notedMana,
-        GameState.nextPrintingId = nextPrintingId,
-        GameState.nextTimestamp = nextTimestamp,
-        GameState.lastChoice = lastChoice,
         GameState.loopInvolvement = loopInvolvement,
         GameState.drewFromEmpty = drewFromEmpty,
-        GameState.fellShort = fellShort,
         GameState.landsPlayed = landsPlayed,
         GameState.cardsPlayed = cardsPlayed,
         GameState.keptFaceDown = keptFaceDown,
         GameState.announcedTops = announcedTops,
         GameState.actionTops = actionTops,
         GameState.loopPicks = loopPicks,
-        GameState.repeatPicks = repeatPicks,
         GameState.revealedTops = revealedTops,
         GameState.departedThisTurn = departedThisTurn,
         GameState.triggeredThisGame = triggeredThisGame,
@@ -346,13 +358,10 @@ codec resolve = Fields.object $ do
         GameState.gamesThisMatch = gamesThisMatch,
         GameState.gameNumber = gameNumber,
         GameState.throwing = throwing,
-        GameState.rethrowRequested = rethrowRequested,
-        GameState.undone = undone,
-        -- Derived rather than written: see the note above.
-        GameState.printingIds = invert printings
+        GameState.rethrowRequested = rethrowRequested
       }
 
--- | `printings` read backwards, which is what GameState.printingIds holds.
+-- | `printings` read backwards, which is what Bookkeeping.printingIds holds.
 --
 -- Exact, because Parun.Engine.Game.intern is idempotent: a printing already in
 -- the table answers with the id it already has, so no two ids name one printing

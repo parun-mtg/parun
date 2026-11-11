@@ -50,6 +50,7 @@ import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.Binding as Binding
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
@@ -109,6 +110,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Status as Status
@@ -388,8 +390,8 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     Spec.assertEqWith s "the board carries a row in every carrier" (carrierRows stored) (replicate (length (carrierRows stored)) 1)
     Spec.assertEqWith s "CR 728.1 a restart clears every carrier" (carrierRows restarted) (replicate (length (carrierRows restarted)) 0)
     Spec.assertEqWith s "CR 730.1b a subgame clears every carrier" (carrierRows subgame) (replicate (length (carrierRows subgame)) 0)
-    Spec.assertBool s (GameState.nextObjectId restarted >= GameState.nextObjectId stored && GameState.nextTimestamp restarted >= GameState.nextTimestamp stored) "a restart's supplies do not move back"
-    Spec.assertEqWith s "a subgame inherits the supplies" (GameState.nextObjectId subgame, GameState.nextTimestamp subgame) (GameState.nextObjectId stored, GameState.nextTimestamp stored)
+    Spec.assertBool s (Bookkeeping.nextObjectId (GameState.bookkeeping restarted) >= Bookkeeping.nextObjectId (GameState.bookkeeping stored) && Bookkeeping.nextTimestamp (GameState.bookkeeping restarted) >= Bookkeeping.nextTimestamp (GameState.bookkeeping stored)) "a restart's supplies do not move back"
+    Spec.assertEqWith s "a subgame inherits the supplies" (Bookkeeping.nextObjectId (GameState.bookkeeping subgame), Bookkeeping.nextTimestamp (GameState.bookkeeping subgame)) (Bookkeeping.nextObjectId (GameState.bookkeeping stored), Bookkeeping.nextTimestamp (GameState.bookkeeping stored))
 
 -- One row in every stored carrier, each from `source`: the fixture the CR
 -- 728.1 / 730.1b case above clears.
@@ -831,7 +833,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "the subgame pool holds exactly the 2 library cards" (Map.size (GameState.objects sub)) 2
     Spec.assertEqWith s "every subgame object is one of the 2 library cards" (all (`elem` toLib) (Map.keys (GameState.objects sub))) True
     Spec.assertEqWith s "the subgame battlefield is empty (nothing but the library entered)" (Set.null (GameState.battlefield sub)) True
-    Spec.assertEqWith s "the subgame nextObjectId is inherited from the parent" (GameState.nextObjectId sub) (GameState.nextObjectId g2)
+    Spec.assertEqWith s "the subgame nextObjectId is inherited from the parent" (Bookkeeping.nextObjectId (GameState.bookkeeping sub)) (Bookkeeping.nextObjectId (GameState.bookkeeping g2))
     Spec.assertEqWith s "the subgame is a fresh game at turn 1" (TurnRegisters.turnNumber (GameState.turn sub)) 1
 
   Spec.it s "CR 730.5: funnelBack returns every owned subgame card to its owner's library, ids do not collide" $ do
@@ -872,8 +874,8 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "bob's library holds exactly his 2 subgame cards, returned" (libCount S.bob) 2
     Spec.assertEqWith s "the parent's non-library survivors are untouched (6 on the battlefield)" battlefieldSurvivors 6
     Spec.assertEqWith s "no object id collides (object count = survivors + returned cards)" (battlefieldSurvivors + libCount S.alice + libCount S.bob) (Map.size (GameState.objects after))
-    Spec.assertEqWith s "the subgame genuinely minted fresh ids (drawCard's changeZone, CR 400.7)" (GameState.nextObjectId finalSub > GameState.nextObjectId sub0) True
-    Spec.assertEqWith s "the id supply advanced to exactly the subgame high-water mark" (GameState.nextObjectId after) (GameState.nextObjectId finalSub)
+    Spec.assertEqWith s "the subgame genuinely minted fresh ids (drawCard's changeZone, CR 400.7)" (Bookkeeping.nextObjectId (GameState.bookkeeping finalSub) > Bookkeeping.nextObjectId (GameState.bookkeeping sub0)) True
+    Spec.assertEqWith s "the id supply advanced to exactly the subgame high-water mark" (Bookkeeping.nextObjectId (GameState.bookkeeping after)) (Bookkeeping.nextObjectId (GameState.bookkeeping finalSub))
 
   -- CR 730.5's funnel is the second place a melded permanent has to be read as
   -- CR 108.2's two cards: "each player takes all traditional cards they own that
@@ -896,7 +898,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "and no object left in either game is represented by two cards: the permanent is no card at all (CR 108.2)" (all (null . Game.componentsOf . Object.source) (Map.elems (GameState.objects after))) True
     Spec.assertEqWith s "alice's five Mountains came back beside them" (length hers) 7
     Spec.assertEqWith s "no returned object collides with either game's ids" (Map.size (GameState.objects after)) (length hers)
-    Spec.assertEqWith s "the split minted its ids above the merged supply" (GameState.nextObjectId after > GameState.nextObjectId finalSub) True
+    Spec.assertEqWith s "the split minted its ids above the merged supply" (Bookkeeping.nextObjectId (GameState.bookkeeping after) > Bookkeeping.nextObjectId (GameState.bookkeeping finalSub)) True
 
   -- The gate's whole reason to exist (Parun.Engine.Departure's continuesAfterDeparture
   -- doc comment): a two-player subgame's departure is caught by CR 104.2a
@@ -1003,7 +1005,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "CR 730.4a: and out of the main game's objects entirely" (Map.member elfId (GameState.objects after)) False
     Spec.assertEqWith s "bob's creature, which nothing took, is untouched" (Set.member bystanderId (GameState.battlefield after)) True
     Spec.assertEqWith s "CR 730.4a: a GameEvent.LeftTheGame names it in the main game's log" leftEvents [elfId]
-    Spec.assertEqWith s "CR 608.2h: its last known information is filed under the id it had" (Map.member elfId (GameState.lastKnown after)) True
+    Spec.assertEqWith s "CR 608.2h: its last known information is filed under the id it had" (Map.member elfId (Snapshots.lastKnown (GameState.snapshots after))) True
 
   -- CR 730.4a: "abilities in the main game that trigger on objects leaving a
   -- main-game zone will trigger, but they won't be put onto the stack until the
@@ -1120,7 +1122,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         left = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LoggedEvent.group logged, LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
         -- CR 603.10's "objects that exist immediately after an event", as
         -- Event.recordEvent sampled it for each of the two groups.
-        sampledAt eventGroup = Map.keysSet (Map.findWithDefault Map.empty eventGroup (GameState.battlefieldWhenTriggered after))
+        sampledAt eventGroup = Map.keysSet (Map.findWithDefault Map.empty eventGroup (Snapshots.battlefieldWhenTriggered (GameState.snapshots after)))
         groupOf oid = fmap fst (List.find (\entry -> snd entry == oid) left)
     Spec.assertEqWith s "both left, in crossing order rather than id order" (fmap snd left) [earlyCrosser, lateCrosser]
     Spec.assertEqWith s "CR 603.10a: they are two event groups, not one simultaneous batch" (Set.size (Set.fromList (fmap fst left))) 2
@@ -1151,7 +1153,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         (_, crossed1) = Event.bringInFrom OutsideDestination.Hand S.alice anthemId sub0
         (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice elfId crossed1
         after = Setup.applyCrossings crossedSub parent
-        lastPower oid = fmap (PC.power . LastKnown.characteristics) (Map.lookup oid (GameState.lastKnown after))
+        lastPower oid = fmap (PC.power . LastKnown.characteristics) (Map.lookup oid (Snapshots.lastKnown (GameState.snapshots after)))
     -- The discriminator: the anthem genuinely was pumping the elf in the main
     -- game, so 1 and 2 are two different readings of the same board.
     Spec.assertEqWith s "the anthem really was pumping the elf before either crossed" (Projection.powerOf elfId parent) (Just 2)

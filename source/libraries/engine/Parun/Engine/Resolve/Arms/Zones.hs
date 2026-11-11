@@ -58,6 +58,7 @@ import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
@@ -477,7 +478,7 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                   -- take their stamps in APNAP order, each seat choosing its own.
                   -- Not on the one-at-a-time road above, whose cards enter at
                   -- separate moments.
-                  Restamp.settle (GameState.nextTimestamp before) (concatMap Foldable.toList batch)
+                  Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (concatMap Foldable.toList batch)
                   pure batch
           -- CR 400.7j: what arrived, for a later effect of this resolution or a
           -- delayed ability it arms (CR 603.7c).
@@ -1117,7 +1118,7 @@ repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Rep
 -- CR 733.3: a run that begins in the state the previous run began in
 -- (Fragmented.digest) closes a fragmented loop, and the first player in APNAP
 -- order who picked in that run (Common.pickByChooser) may not pick the same
--- again while the state recurs (GameState.repeatPicks). A run that changes the
+-- again while the state recurs (Bookkeeping.repeatPicks). A run that changes the
 -- state lifts every refusal. Each refusal removes an option, so the runs end.
 -- docs/decisions.md, "Who a fragmented loop inside a resolution refuses".
 --
@@ -1128,7 +1129,7 @@ repeatIf :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName
 repeatIf applyLoopBody runSubgame resolving source controller legal chosen (RepeatIf.MkRepeatIf process condition ifHolds) = do
   let bound = foldMap boundSlots (process <> ifHolds)
   rescope <- State.gets (Common.rescopeRun resolving bound)
-  outer <- State.gets GameState.repeatPicks
+  outer <- State.gets (Bookkeeping.repeatPicks . GameState.bookkeeping)
   let apply = applyLoopBody runSubgame resolving source controller legal chosen bound
       run previous = do
         State.modify' rescope
@@ -1141,7 +1142,7 @@ repeatIf applyLoopBody runSubgame resolving source controller legal chosen (Repe
                       Just first -> Map.insertWith Set.union first (Map.findWithDefault Set.empty first picked) earlier
                       Nothing -> earlier
               _ -> Map.empty
-        State.put before {GameState.repeatPicks = Just (RepeatPicks.MkRepeatPicks Map.empty refused)}
+        State.put before {GameState.bookkeeping = (GameState.bookkeeping before) {Bookkeeping.repeatPicks = Just (RepeatPicks.MkRepeatPicks Map.empty refused)}}
         apply process
         gs <- State.get
         -- The ONE object a run's instruction bound sits in its binding's
@@ -1153,10 +1154,10 @@ repeatIf applyLoopBody runSubgame resolving source controller legal chosen (Repe
             viewOf oid = fmap (\view -> view {Filter.hasEntryHost = Attach.hasEntryHost oid gs}) (effectViewOf resolving source seen gs oid)
         Monad.when (Condition.holds viewOf context gs source condition) $ do
           apply ifHolds
-          lap <- State.gets GameState.repeatPicks
+          lap <- State.gets (Bookkeeping.repeatPicks . GameState.bookkeeping)
           run (fmap ((,) here) lap)
   run Nothing
-  State.modify' (\gs -> gs {GameState.repeatPicks = outer})
+  State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.repeatPicks = outer}})
 
 draw :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Draw.Draw -> Game ()
 draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) = do

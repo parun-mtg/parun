@@ -2737,6 +2737,7 @@ library types
     Parun.Types.BlockStatus
     Parun.Types.BlockTrigger
     Parun.Types.Board
+    Parun.Types.Bookkeeping
     Parun.Types.BoundMeasure
     Parun.Types.BoundReading
     Parun.Types.BuybackDecision
@@ -3454,6 +3455,7 @@ library types
     Parun.Types.SlotCount
     Parun.Types.SlotName
     Parun.Types.SlotPerPlayer
+    Parun.Types.Snapshots
     Parun.Types.Source
     Parun.Types.SourceChoices
     Parun.Types.SpecialAction

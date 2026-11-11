@@ -86,6 +86,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -841,7 +842,7 @@ lastKnownRiderSpec s registry =
               humbled = S.withHumility humility equipped
               planted =
                 humbled
-                  { GameState.lastKnown = Map.insert srcId snapshot (GameState.lastKnown humbled),
+                  { GameState.snapshots = (GameState.snapshots humbled) {Snapshots.lastKnown = Map.insert srcId snapshot (Snapshots.lastKnown (GameState.snapshots humbled))},
                     GameState.turn =
                       (GameState.turn humbled)
                         { TurnRegisters.priority = Just S.alice

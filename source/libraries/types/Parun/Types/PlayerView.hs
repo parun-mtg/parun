@@ -34,7 +34,7 @@ data PlayerView = MkPlayerView
     witnessedLastTurn :: [LoggedEvent.LoggedEvent],
     result :: Maybe Result.Result,
     -- | CR 734.1: why the seat's last cast, activation or combat declaration
-    -- was reversed, until it next chooses one (GameState.undone).
+    -- was reversed, until it next chooses one (Bookkeeping.undone).
     undone :: Maybe Undoing.Undoing
   }
   deriving (Eq, Show)

@@ -74,6 +74,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
@@ -210,6 +211,7 @@ import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -377,7 +379,7 @@ targetSlotsOf obj oid gs face =
 -- since CR 107.1c makes zero a full answer: Yotia Declares War's
 -- 2022-09-09 ruling, proved by the scenario "CR 603.12 Yotia Declares War
 -- tapping zero artifacts still arms its reflexive". And a draw or a mill that
--- found too few cards (`GameState.fellShort`) is not done: The Royal Scions'
+-- found too few cards (`Bookkeeping.fellShort`) is not done: The Royal Scions'
 -- 2019-10-04 ruling, proved by "CR 603.12 The Royal Scions drawing two of four
 -- arms no reflexive", and Wick's Patrol's for the mill, by "CR 603.12 Wick's
 -- Patrol milling two of three arms no reflexive". Both are CR 603.12's alone:
@@ -416,7 +418,7 @@ instructionDone :: Asked -> Bool
 instructionDone asked =
   admitsNone asked
     || ( happenedBetween (askedBefore asked) (askedAfter asked)
-           && GameState.fellShort (askedAfter asked) == GameState.fellShort (askedBefore asked)
+           && Bookkeeping.fellShort (GameState.bookkeeping (askedAfter asked)) == Bookkeeping.fellShort (GameState.bookkeeping (askedBefore asked))
        )
 
 -- CR 107.1c: does this instruction choose "any number", so that choosing none
@@ -458,48 +460,46 @@ choiceAhead effect = case effect of
 
 -- CR 603.12: record that an instruction did fewer than the number it named.
 fallShort :: Game ()
-fallShort = State.modify' (\gs -> gs {GameState.fellShort = GameState.fellShort gs + 1})
+fallShort = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.fellShort = Bookkeeping.fellShort (GameState.bookkeeping gs) + 1}})
 
 -- CR 603.12: did the instruction that took the game from `before` to `after`
 -- HAPPEN? Also CR 118.12's "started to pay a mandatory cost", for
--- Resolve.recordTaken's "If you do". Yes when it recorded a game event, or when anything but bookkeeping
--- changed. A field is bookkeeping, and copied across from `before` here, iff an
--- instruction that did NOT happen can still write it: the event log and its
--- CR 603.10 samples (read by the first disjunct, and the samples are
--- deliberately unforced), the allocators, interning and Oracle-reference memos
--- an instruction advances before finding nothing to do, CR 104.4b's lastChoice
--- (an offer answered with nothing), CR 733.3's repeatPicks (a pick recorded
--- before the move it names is tried), damagePreventedBy and ambientAmounts, CR 121.4's drewFromEmpty (an attempted
--- draw) and fellShort (an instruction finding too few cards, which only
--- applyClauseEffects reads), CR 607.2a's exiledWith and CR 406.4's exilePiles (applyEffectWith
--- prunes both after EVERY instruction, and a card can leave exile off that
--- road -- CR 704.5d ceasing a token -- so the prune of a stale key is no act;
--- a real exile already shows in `exile` and `objects`), CR 603.2's control
--- sample and the CR 702.30a clock it stamps (applyEffectWith retakes it after
--- EVERY instruction, its first sighting of a permanent is no act, and a change
--- it finds is an event), CR 701.24a's Object.exposed (applyEffectWith's
--- settle stamps it after every instruction), and every bound
--- AMOUNT and vote tally, since a tally binds zero for an instruction that did nothing -- a
--- slot that holds nothing else is dropped, so a FIRST zero bind is not a
--- difference either. Everything else is compared, so a new GameState field
--- counts as state by default.
+-- Resolve.recordTaken's "If you do". Yes when it recorded a game event, or when
+-- the board changed. The board is every field but GameState.bookkeeping (what
+-- an instruction may write whether or not it happened: supplies, caches,
+-- lastChoice, repeatPicks, undone, fellShort) and GameState.snapshots (the
+-- event log's CR 603.10 samples, the control sample and last known
+-- information, written as the board changes). Both are skipped whole, so a
+-- field added to either is not a difference; a field added anywhere else is.
 --
 -- CR 603.12 asks whether the trigger event occurred, CR 118.12 whether a cost
 -- was chosen or started (Resolve.recordTaken). This is the implementation's test
--- for both, not a reading. A deny-list, since an allow-list fails on every
--- state-only instruction writing a field it does not name.
+-- for both, not a reading.
 --
--- Copies proved: exiledWith by "CR 603.12 an empty mill after a token ceased in
--- exile arms no reflexive", exilePiles by "CR 603.12 an empty mill after a
--- face-down card left exile arms no reflexive", nextTimestamp by "CR 701.28f /
--- 603.12 an ignored convert arms no reflexive", nextEventGroup, controlSample and
--- Object.controlClock by Parun.ResolveSpec's "CR 118.12 Victimize with no creature
--- to sacrifice returns nothing", boardAtControlSample by Parun.AuraSpec's "CR
--- 603.12 Thorin's Equipment go to its target, which then deals damage equal to its
--- power". The rest is a regression fence: un-copying lastChoice, repeatPicks or
--- undone (a cast the instruction offered and CR 734.1 reversed) leaves the suite
--- green. The state half: the scenario "CR 603.12 a choice that records no event
--- still arms its when you do".
+-- What is left are board fields an instruction writes whether or not it did
+-- anything, each skipped here by name: CR 121.4's drewFromEmpty (an attempted
+-- draw), damagePreventedBy and ambientAmounts, CR 607.2a's exiledWith and CR
+-- 406.4's exilePiles (applyEffectWith prunes both after EVERY instruction, and
+-- a card can leave exile off that road -- CR 704.5d ceasing a token -- so the
+-- prune of a stale key is no act), CR 702.30a's Object.controlClock (stamped by
+-- the control sample applyEffectWith retakes after every instruction), CR
+-- 701.24a's Object.exposed (its settle stamps it after every instruction), and
+-- every bound AMOUNT and vote tally, since a tally binds zero for an
+-- instruction that did nothing -- a slot that holds nothing else is dropped, so
+-- a FIRST zero bind is not a difference either.
+--
+-- Proved: GameState.bookkeeping's skip by "CR 701.28f / 603.12 an ignored
+-- convert arms no reflexive" (nextTimestamp) and Parun.ResolveSpec's "CR 118.12
+-- Victimize with no creature to sacrifice returns nothing" (nextEventGroup,
+-- fellShort) and the scenario "CR 608.2c Djinn of Wishes exiles the revealed
+-- card when its controller doesn't play it" (lastChoice);
+-- GameState.snapshots' by that Victimize case (controlSample) and
+-- Parun.AuraSpec's "CR 603.12 Thorin's Equipment go to its target, which then
+-- deals damage equal to its power" (boardAtControlSample); Object.controlClock
+-- by the Victimize case. The other named skips are a regression fence: un-skipping
+-- any one leaves the suite green (gap #6970). The state half: the
+-- scenario "CR 603.12 a choice that records no event still arms its when you
+-- do".
 happenedBetween :: GameState -> GameState -> Bool
 happenedBetween before after =
   let tallyless :: Map.Map SlotName Binding.Type.Binding -> Map.Map SlotName Binding.Type.Binding
@@ -512,31 +512,14 @@ happenedBetween before after =
               (GameState.turn gs)
                 { TurnRegisters.events = Seq.empty
                 },
-            GameState.boardAfterEvent = Map.empty,
-            GameState.boardBeforeEvent = Map.empty,
-            GameState.battlefieldWhenTriggered = Map.empty,
-            GameState.nextEventGroup = GameState.nextEventGroup before,
-            GameState.eventGroupDepth = GameState.eventGroupDepth before,
-            GameState.nextTimestamp = GameState.nextTimestamp before,
-            GameState.nextObjectId = GameState.nextObjectId before,
-            GameState.nextPrintingId = GameState.nextPrintingId before,
-            GameState.printings = GameState.printings before,
-            GameState.printingIds = GameState.printingIds before,
-            GameState.lookedUp = GameState.lookedUp before,
-            GameState.referenceNames = GameState.referenceNames before,
-            GameState.lastChoice = GameState.lastChoice before,
-            GameState.repeatPicks = GameState.repeatPicks before,
-            GameState.undone = GameState.undone before,
+            GameState.bookkeeping = GameState.bookkeeping before,
+            GameState.snapshots = GameState.snapshots before,
             GameState.drewFromEmpty = GameState.drewFromEmpty before,
-            GameState.fellShort = GameState.fellShort before,
             GameState.damagePreventedBy = GameState.damagePreventedBy before,
             GameState.exiledWith = GameState.exiledWith before,
             GameState.exilePiles = GameState.exilePiles before,
             GameState.ambientAmounts = GameState.ambientAmounts before,
-            GameState.controlSample = GameState.controlSample before,
-            GameState.boardAtControlSample = GameState.boardAtControlSample before,
             GameState.objects = objectTallyless (GameState.objects gs),
-            GameState.stackArchive = objectTallyless (GameState.stackArchive gs),
             GameState.detachedBindings = Map.filter (not . Map.null) (fmap tallyless (GameState.detachedBindings gs))
           }
    in Seq.length (TurnRegisters.events (GameState.turn after)) > Seq.length (TurnRegisters.events (GameState.turn before))
@@ -678,7 +661,7 @@ chosenPermanents purpose legal resolving controller source choice = do
 -- remains. Parun.RangeOfInfluenceSpec's "CR 801.5a a chooser handed the choice
 -- names only permanents in their own range" proves the cut.
 --
--- CR 733.3 inside a RepeatIf (GameState.repeatPicks): the seat is settled first
+-- CR 733.3 inside a RepeatIf (Bookkeeping.repeatPicks): the seat is settled first
 -- here too, and offered nothing it is refused; what an asked seat picks is
 -- recorded for the arm (Zones.repeatIf).
 pickByChooser ::
@@ -698,7 +681,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
   let named = namesChooser legal resolving source controller gs chooser
       asked = askedChooser resolving source controller legal chooser
       unlimited = Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs)))
-      refusals = maybe Map.empty RepeatPicks.refused (GameState.repeatPicks gs)
+      refusals = maybe Map.empty RepeatPicks.refused (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
   (seat, picked) <-
     if unlimited && Map.null refusals
       then Game.pickCounted named asked one_ several amount count candidates
@@ -714,7 +697,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
   -- CR 733.3: a pick a seat was asked for joins its RepeatIf run's record.
   Monad.forM_ seat $ \who ->
     Monad.unless (null picked) $
-      State.modify' (\g -> g {GameState.repeatPicks = fmap (\picks -> picks {RepeatPicks.picked = Map.insertWith Set.union who (Set.fromList picked) (RepeatPicks.picked picks)}) (GameState.repeatPicks g)})
+      State.modify' (\g -> g {GameState.bookkeeping = (GameState.bookkeeping g) {Bookkeeping.repeatPicks = fmap (\picks -> picks {RepeatPicks.picked = Map.insertWith Set.union who (Set.fromList picked) (RepeatPicks.picked picks)}) (Bookkeeping.repeatPicks (GameState.bookkeeping g))}})
   pure (seat, picked)
 
 -- Whether a chooser ref names a seat to ask, askedChooser's test without its ask.
@@ -963,7 +946,7 @@ turnsOver pcs resolving frozen oid =
 -- was CREATED, which is earlier and can sit on the far side of a turn-over its
 -- placement stamp is on the near side of -- Parun.TransformSpec's Aang pair is
 -- the board that tells the two apart. Every stamp comes from
--- GameState.nextTimestamp, so one `>` decides it and equality cannot arise.
+-- Bookkeeping.nextTimestamp, so one `>` decides it and equality cannot arise.
 alreadyTurnedFor :: ObjectId -> ObjectId -> GameState -> Bool
 alreadyTurnedFor resolving victim gs =
   -- Both of the rule's narrowings at once, and a CLASSIFICATION of the
@@ -1388,7 +1371,7 @@ entryAttack legal resolving entry gs = case EntryRiders.attacking entry of
 -- in that zone rather than moved there, so nothing was exiled or discarded and
 -- no zone-change trigger has an event to watch.
 --
--- A SPELL that has left the stack is copied from GameState.stackArchive (CR
+-- A SPELL that has left the stack is copied from Snapshots.stackArchive (CR
 -- 608.2h), and its copy is created in exile: an object in no zone has no "same
 -- zone", and rule 702.192a's "create a copy of this object in exile" is the one
 -- producer whose reference outlives its spell (Keyword.paradigmCopy).
@@ -1408,9 +1391,9 @@ castableCopy caster original = do
   gs <- State.get
   let found = case Game.lookupObject original gs of
         Just obj -> Just (Just obj, Object.source obj, Object.zone obj)
-        Nothing -> case Map.lookup original (GameState.stackArchive gs) of
+        Nothing -> case Map.lookup original (Snapshots.stackArchive (GameState.snapshots gs)) of
           Just obj -> Just (Just obj, Object.source obj, Zone.Exile)
-          Nothing -> fmap (\known -> (Nothing, LastKnown.source known, LastKnown.zone known)) (Map.lookup original (GameState.lastKnown gs))
+          Nothing -> fmap (\known -> (Nothing, LastKnown.source known, LastKnown.zone known)) (Map.lookup original (Snapshots.lastKnown (GameState.snapshots gs)))
   case found of
     Nothing -> pure Nothing
     Just (mObj, source, zone) -> case Game.printingIdOfSource source of
@@ -2433,17 +2416,17 @@ recordExilePile before gs =
 -- placing no trigger. CR 603.8 has a state trigger armed on the board before
 -- a pass that performed something triggered, and 725.1f / 725.2f put it on the
 -- stack at the next settle, so that board is kept for it
--- (GameState.heldBoards). data/scenarios/turn's Synthetic Final Raising and
+-- (Snapshots.heldBoards). data/scenarios/turn's Synthetic Final Raising and
 -- Synthetic Raising Truce scenarios prove it.
 checkWithoutPriority :: (Game Result -> PendingReplacementEffect.PendingReplacementEffect -> Game ()) -> (Game Result -> Game ()) -> Game Result -> Game ()
 checkWithoutPriority runDamageRewriteEffect runReplacementEffects runSubgame = go 0
   where
     go passes = do
-      begun <- State.gets GameState.lastChoice
-      held <- State.gets GameState.heldBoards
-      board <- State.gets (\gs -> gs {GameState.heldBoards = []})
+      begun <- State.gets (Bookkeeping.lastChoice . GameState.bookkeeping)
+      held <- State.gets (Snapshots.heldBoards . GameState.snapshots)
+      board <- State.gets (\gs -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.heldBoards = []}})
       performed <- Sba.performStateBasedActions (runDamageRewriteEffect runSubgame) held
-      Monad.when performed (State.modify' (\gs -> gs {GameState.heldBoards = held <> [board]}))
+      Monad.when performed (State.modify' (\gs -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.heldBoards = held <> [board]}}))
       runReplacementEffects runSubgame
       passed <- Departure.passesSince begun passes
       Departure.checkMandatoryLoop passed
@@ -2649,7 +2632,7 @@ copyRetargets perspective original live candidates = Maybe.fromMaybe [] $ do
   pure (Maybe.mapMaybe pick candidates)
 
 -- CR 608.2h: the board with a copy's ORIGINAL as it last existed. A spell that
--- has left the stack is put back into the object map off GameState.stackArchive,
+-- has left the stack is put back into the object map off Snapshots.stackArchive,
 -- in no zone's list, so every live reader of its face, slots, targets and
 -- controller answers its last known information while nothing else on the board
 -- can see it. A live original answers the board unchanged. Parun.CopySpec's "CR
@@ -2657,7 +2640,7 @@ copyRetargets perspective original live candidates = Maybe.fromMaybe [] $ do
 -- Gleeful Spellthief) and "CR 608.2h Zada still copies a Growth countered while
 -- the trigger waited" prove the stated and the for-each roads.
 lastKnownOriginal :: ObjectId -> GameState -> GameState
-lastKnownOriginal original gs = case (Game.lookupObject original gs, Map.lookup original (GameState.stackArchive gs)) of
+lastKnownOriginal original gs = case (Game.lookupObject original gs, Map.lookup original (Snapshots.stackArchive (GameState.snapshots gs))) of
   (Nothing, Just obj) -> gs {GameState.objects = Map.insert original obj (GameState.objects gs)}
   _ -> gs
 
@@ -2706,7 +2689,7 @@ copyStatedTargets controller copier resolving source legal original newRef = do
 -- The ref's own Filter decides, read off the last known view, so a ref naming
 -- anything but the source (Swift Silence's `Not IsSource`) still names nothing.
 -- EachSpell needs no CR 112.1 narrowing of its own, nor EachAbility an arm: the
--- one id asked of GameState.stackArchive is the effect's own source, which is
+-- one id asked of Snapshots.stackArchive is the effect's own source, which is
 -- never an ability (CR 113.7), though Parun.Engine.Game.cease files abilities
 -- there too.
 copyStackSubjects :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> ObjectRef -> [ObjectId]
@@ -2714,7 +2697,7 @@ copyStackSubjects legal resolving controller source gs ref =
   let live = objectRefObjects legal resolving controller source gs ref
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       named filter_ =
-        if Map.member source (GameState.stackArchive gs) && Maybe.maybe False (\view -> Filter.matches context view filter_) (Projection.viewWithLastKnownAnywhere gs source)
+        if Map.member source (Snapshots.stackArchive (GameState.snapshots gs)) && Maybe.maybe False (\view -> Filter.matches context view filter_) (Projection.viewWithLastKnownAnywhere gs source)
           then [source]
           else []
       stated = case ref of
@@ -3974,7 +3957,7 @@ sacrificedBetween before after =
 
 -- The one writer both binders above go through: rewrite the holder's bindings
 -- wherever the holder now is. GameState.objects while it is on the stack, and
--- GameState.stackArchive once its own instruction has moved it off -- CR 201.5's
+-- Snapshots.stackArchive once its own instruction has moved it off -- CR 201.5's
 -- self-exile (Chronomantic Escape), where the move DEFINES a slot the clause
 -- after it reads and CR 400.7 has already deleted the id it would sit on.
 -- Parun.Engine.Resolve.Slots.resolvingBindings is the reading side of the same
@@ -3984,7 +3967,7 @@ overHolderBindings holder f gs =
   let put obj = obj {Object.bindings = f (Object.bindings obj)}
    in gs
         { GameState.objects = Map.adjust put holder (GameState.objects gs),
-          GameState.stackArchive = Map.adjust put holder (GameState.stackArchive gs)
+          GameState.snapshots = (GameState.snapshots gs) {Snapshots.stackArchive = Map.adjust put holder (Snapshots.stackArchive (GameState.snapshots gs))}
         }
 
 -- "Put into a graveyard this way" (CR 701.8a), asked of one CR 400.7 incarnation:

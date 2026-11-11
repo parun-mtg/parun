@@ -90,6 +90,7 @@ import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -879,7 +880,7 @@ snapshotView viewOf gs shape event = case event of
   -- main-game zone: this event answers MovedFrom the zone it records and nothing
   -- else, read off the CR 608.2h record filed under its id.
   GameEvent.LeftTheGame (LeftTheGame.MkLeftTheGame oid from) -> case shape of
-    EventShape.MovedFrom zone | zone == from -> fmap (lastKnownView viewOf oid gs) (Map.lookup oid (GameState.lastKnown gs))
+    EventShape.MovedFrom zone | zone == from -> fmap (lastKnownView viewOf oid gs) (Map.lookup oid (Snapshots.lastKnown (GameState.snapshots gs)))
     _ -> Nothing
   GameEvent.PlayerActed _ -> Nothing
   -- CR 702.26b: read by CR 903.9a alone.
@@ -936,7 +937,7 @@ snapshotView viewOf gs shape event = case event of
       if arrivalMatches arrival zc
         then case orLastKnown viewOf gs (ZoneChange.object zc) of
           Just view -> Just view
-          Nothing -> fmap (lastKnownView viewOf (ZoneChange.departed zc) gs) (Map.lookup (ZoneChange.departed zc) (GameState.lastKnown gs))
+          Nothing -> fmap (lastKnownView viewOf (ZoneChange.departed zc) gs) (Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)))
         else Nothing
     EventShape.MovedBetween {} -> Nothing
     EventShape.MovedFrom {} -> Nothing
@@ -986,7 +987,7 @@ arrivalMatches arrival zc =
 -- the token has left, the CardArrivedIn arm reads the record its departure
 -- filed, clauses and all (LastKnown.lapsedGrants).
 departedView :: ViewOf -> GameState -> ZoneChange.ZoneChange -> PC.ProjectedCharacteristics -> Filter.View
-departedView viewOf gs zc snapshot = case Map.lookup (ZoneChange.departed zc) (GameState.lastKnown gs) of
+departedView viewOf gs zc snapshot = case Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)) of
   Just lastKnown -> lastKnownView viewOf (ZoneChange.departed zc) gs lastKnown {LastKnown.characteristics = snapshot}
   Nothing -> viewOfSnapshot (deployIn gs (ZoneChange.from zc)) Nothing Nothing (Game.isToken (ZoneChange.object zc) gs) Map.empty (ZoneChange.from zc) Zone.Battlefield Set.empty snapshot
 

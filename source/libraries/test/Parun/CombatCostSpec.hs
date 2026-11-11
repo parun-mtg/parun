@@ -40,6 +40,7 @@ import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockProducer as BlockProducer
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Combat as Combat.Type
@@ -151,13 +152,13 @@ attackCostSpec s registry = Spec.describe s "AttackCosts" $ do
         answering asked = case Asked.prompt asked of
           Prompt.DeclareAttackers _ _ candidates -> do
             earlier <- State.get
-            State.put (earlier <> [Map.lookup S.alice (GameState.undone (Asked.game asked))])
+            State.put (earlier <> [Map.lookup S.alice (Bookkeeping.undone (GameState.bookkeeping (Asked.game asked)))])
             pure (if null earlier then candidates else take 1 candidates)
           p -> pure (S.aggressiveAnswer p)
         ((_, after), seen) = State.runState (Engine.runGameAsked answering gs (Combat.declareAttackers S.manaPerformer S.alice)) []
     Spec.assertEqWith s "the second ask says the toll was not paid" seen [Nothing, Just Undoing.UnpaidCost]
     Spec.assertEqWith s "the second declaration stands" (S.attackerDeclarationsOf after) (take 1 mine)
-    Spec.assertEqWith s "and the note is gone once it is made" (GameState.undone after) Map.empty
+    Spec.assertEqWith s "and the note is gone once it is made" (Bookkeeping.undone (GameState.bookkeeping after)) Map.empty
   Spec.it s "Ghostly Prison's ruling: a creature that can't attack you can still attack a planeswalker you control" $ do
     -- "Unless some effect explicitly says otherwise, a creature that can't attack
     -- you can still attack a planeswalker you control" (Ghostly Prison, 2014-02-01).
@@ -560,7 +561,7 @@ blockCostSpec s registry = Spec.describe s "BlockCosts" $ do
             answering asked = case Asked.prompt asked of
               Prompt.DeclareBlockers {} -> do
                 earlier <- State.get
-                State.put (earlier <> [Map.lookup S.bob (GameState.undone (Asked.game asked))])
+                State.put (earlier <> [Map.lookup S.bob (Bookkeeping.undone (GameState.bookkeeping (Asked.game asked)))])
                 pure $
                   if null earlier
                     then Map.fromList [(first, Set.singleton attacker), (second, Set.singleton attacker)]
@@ -570,7 +571,7 @@ blockCostSpec s registry = Spec.describe s "BlockCosts" $ do
             ((_, after), seen) = State.runState (Engine.runGameAsked answering attacked (Combat.declareBlockers S.manaPerformer)) []
         Spec.assertEqWith s "the second ask says the toll was not paid" seen [Nothing, Just Undoing.UnpaidCost]
         Spec.assertEqWith s "the second declaration stands" (blockersOf attacker after) (Set.singleton first)
-        Spec.assertEqWith s "and the note is gone once it is made" (GameState.undone after) Map.empty
+        Spec.assertEqWith s "and the note is gone once it is made" (Bookkeeping.undone (GameState.bookkeeping after)) Map.empty
       _ -> Spec.assertFailure s "fixture should have a Piker and two Warriors"
 
 -- CR 305.7 as the SIX readers in this module read it, which is one shared gate:
@@ -1960,7 +1961,7 @@ declarationRetrySpec s registry = Spec.describe s "DeclarationRetry" $ do
         ((_, after), (_, seen)) = State.runState (Engine.runGameAsked (notedAt S.alice declineThenAttackAnswer) gs (Combat.declareAttackers S.manaPerformer S.alice)) (0, [])
     Spec.assertEqWith s "the second ask says the declaration was illegal" seen [Nothing, Just Undoing.IllegalDeclaration]
     Spec.assertEqWith s "the second declaration stands" (Set.fromList (S.attackerDeclarationsOf after)) (Set.fromList mine)
-    Spec.assertEqWith s "and the note is gone once it is made" (GameState.undone after) Map.empty
+    Spec.assertEqWith s "and the note is gone once it is made" (Bookkeeping.undone (GameState.bookkeeping after)) Map.empty
   Spec.it s "CR 734.1 the block declaration asked again after CR 509.1c says why, until it is made" $ do
     screen <- S.printingOf s registry "Razorgrass Screen"
     piker <- S.printingOf s registry "Goblin Piker"
@@ -1970,7 +1971,7 @@ declarationRetrySpec s registry = Spec.describe s "DeclarationRetry" $ do
         let ((_, after), (_, seen)) = State.runState (Engine.runGameAsked (notedAt S.bob declineThenBlockAnswer) gs (Combat.declareBlockers S.manaPerformer)) (0, [])
         Spec.assertEqWith s "the second ask says the declaration was illegal" seen [Nothing, Just Undoing.IllegalDeclaration]
         Spec.assertEqWith s "the second declaration stands" (blockersOf attacker after) (Set.fromList theirs)
-        Spec.assertEqWith s "and the note is gone once it is made" (GameState.undone after) Map.empty
+        Spec.assertEqWith s "and the note is gone once it is made" (Bookkeeping.undone (GameState.bookkeeping after)) Map.empty
       _ -> Spec.assertFailure s "fixture should have one attacker"
 
 -- `answer`, recording beside its count the CR 734.1 note `pid` holds at each
@@ -1984,7 +1985,7 @@ notedAt pid answer asked = do
         Prompt.DeclareAttackers {} -> True
         Prompt.DeclareBlockers {} -> True
         _ -> False
-      noted = [Map.lookup pid (GameState.undone (Asked.game asked)) | isDeclaration]
+      noted = [Map.lookup pid (Bookkeeping.undone (GameState.bookkeeping (Asked.game asked))) | isDeclaration]
   State.put (n', seen <> noted)
   pure reply
 

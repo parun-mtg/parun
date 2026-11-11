@@ -119,6 +119,7 @@ import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
@@ -791,9 +792,9 @@ runEntryEffects runSubgame = do
   -- instructions file (Trigger.fileBoards) is dropped, the entry not yet over:
   -- its siblings are still held off the battlefield. The filing after the drain
   -- stands. data/scenarios/trigger's Battering Krasis scenario proves it.
-  filed <- State.gets GameState.boardAfterEvent
+  filed <- State.gets (Snapshots.boardAfterEvent . GameState.snapshots)
   Foldable.traverse_ (runEntryEffect runSubgame) queued
-  State.modify' (\gs -> gs {GameState.boardAfterEvent = filed})
+  State.modify' (\gs -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardAfterEvent = filed}})
 
 -- One entered permanent's as-enters effects, in printed order.
 --

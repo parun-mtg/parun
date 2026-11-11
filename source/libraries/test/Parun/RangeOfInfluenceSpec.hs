@@ -65,6 +65,7 @@ import qualified Parun.Types.Action as A
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.EndingStep as EndingStep
@@ -909,8 +910,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
     let limit = Departure.mandatoryLoopLimit
         board =
           (S.withRange 1 S.fourPlayerGame)
-            { GameState.nextTimestamp = Timestamp.MkTimestamp limit,
-              GameState.lastChoice = Timestamp.MkTimestamp 0,
+            { GameState.bookkeeping = (GameState.bookkeeping (S.withRange 1 S.fourPlayerGame)) {Bookkeeping.nextTimestamp = Timestamp.MkTimestamp limit, Bookkeeping.lastChoice = Timestamp.MkTimestamp 0},
               GameState.loopInvolvement = Map.fromList [(S.alice, Timestamp.MkTimestamp (limit - 1)), (S.carol, Timestamp.MkTimestamp (div limit 2 - 1))]
             }
         after = S.runPure S.identityAnswer board (Departure.checkMandatoryLoop 0)
@@ -933,8 +933,11 @@ spec s registry = Spec.describe s "Range of influence" $ do
                     { TurnRegisters.phase = Phase.PrecombatMain,
                       TurnRegisters.remaining = Seq.empty
                     },
-                GameState.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10),
-                GameState.lastChoice = Timestamp.MkTimestamp 0
+                GameState.bookkeeping =
+                  (GameState.bookkeeping gs4)
+                    { Bookkeeping.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10),
+                      Bookkeeping.lastChoice = Timestamp.MkTimestamp 0
+                    }
               }
        in S.tapObject forestId seeded
     erin = PlayerId.MkPlayerId 4

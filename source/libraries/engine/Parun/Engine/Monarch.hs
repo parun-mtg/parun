@@ -9,6 +9,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Effect as Effect
@@ -115,7 +116,7 @@ crown pid gs =
           mark watch = case ReturnWatch.ending watch of
             ReturnEnding.OpponentCrowned crowned
               | Game.areOpponents gs (MonarchWatch.controller crowned) pid && Maybe.isNothing (MonarchWatch.due crowned) ->
-                  watch {ReturnWatch.ending = ReturnEnding.OpponentCrowned crowned {MonarchWatch.due = Just (GameState.nextEventGroup gs)}}
+                  watch {ReturnWatch.ending = ReturnEnding.OpponentCrowned crowned {MonarchWatch.due = Just (Bookkeeping.nextEventGroup (GameState.bookkeeping gs))}}
             _ -> watch
        in Event.recordEvent
             (GameEvent.BecameMonarch pid)

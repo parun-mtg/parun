@@ -8,7 +8,7 @@ import qualified Parun.Types.Zone as Zone
 -- and `departed` is the id the object had in the zone it LEFT.
 --
 -- BOTH ids, because CR 400.7 destroys the only link between them: the departing
--- id is the key GameState.lastKnown files the object's CR 608.2h information
+-- id is the key Snapshots.lastKnown files the object's CR 608.2h information
 -- under, so without it a departure event names nothing that can answer what the
 -- permanent was or who controlled it -- which is what CR 603.10a's look-back for
 -- leaves-the-battlefield abilities needs.

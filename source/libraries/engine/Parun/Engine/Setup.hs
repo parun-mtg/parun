@@ -29,12 +29,12 @@ import qualified Parun.Engine.Seating as Seating
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
-import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -60,7 +60,6 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Teams as Teams
-import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnResume as TurnResume
 import qualified Parun.Types.Zone as Zone
@@ -231,6 +230,27 @@ gameWith settings order =
         )
    in (blankGame settings order_ (NonEmpty.head order)) {GameState.players = Map.fromList (fmap newPlayer order_)}
 
+-- CR 728.1 / 730.2: what a restarted game and a subgame carry of `from`'s
+-- bookkeeping -- the id, printing and timestamp supplies, so every object the
+-- new game mints gets an id above every old one, and the caches keyed by them.
+-- CR 104.4b: the new game is its own and starts owing nobody a choice, so
+-- lastChoice is the INHERITED supply rather than zero, which the supply is not:
+-- a copied marker would have the subgame draw itself on entry for events at
+-- another level.
+inheritedBookkeeping :: Bookkeeping.Bookkeeping -> Bookkeeping.Bookkeeping
+inheritedBookkeeping from =
+  Game.blankBookkeeping
+    { Bookkeeping.nextObjectId = Bookkeeping.nextObjectId from,
+      Bookkeeping.nextPrintingId = Bookkeeping.nextPrintingId from,
+      Bookkeeping.nextTimestamp = Bookkeeping.nextTimestamp from,
+      Bookkeeping.printings = Bookkeeping.printings from,
+      Bookkeeping.printingIds = Bookkeeping.printingIds from,
+      Bookkeeping.lookedUp = Bookkeeping.lookedUp from,
+      Bookkeeping.referenceNames = Bookkeeping.referenceNames from,
+      Bookkeeping.fellShort = Bookkeeping.fellShort from,
+      Bookkeeping.lastChoice = Bookkeeping.nextTimestamp from
+    }
+
 -- CR 728.1 / 730.2 / 800.2: a game nothing has happened in yet, with no player
 -- records. gameWith adds its players; restartGame and subgameStateFrom name
 -- what crosses into their new game, so a field neither names resets.
@@ -281,20 +301,10 @@ blankGame settings order active =
       GameState.broughtIn = Seq.empty,
       GameState.departedCards = Map.empty,
       GameState.manaPool = Map.empty,
-      GameState.nextEventGroup = EventGroup.first,
-      GameState.eventGroupDepth = 0,
       GameState.enteringTogether = Nothing,
       GameState.arrivals = Nothing,
       GameState.payingOnResolution = False,
       GameState.causing = Nothing,
-      GameState.lastKnown = Map.empty,
-      GameState.stackArchive = Map.empty,
-      GameState.boardAfterEvent = Map.empty,
-      GameState.boardBeforeEvent = Map.empty,
-      GameState.battlefieldWhenTriggered = Map.empty,
-      GameState.controlSample = Map.empty,
-      GameState.boardAtControlSample = Nothing,
-      GameState.heldBoards = [],
       GameState.stored =
         StoredEffects.MkStoredEffects
           { StoredEffects.continuousEffects = [],
@@ -314,6 +324,8 @@ blankGame settings order active =
             StoredEffects.pendingSkipEffects = Seq.empty,
             StoredEffects.pendingEntryEffects = Seq.empty
           },
+      GameState.bookkeeping = Game.blankBookkeeping,
+      GameState.snapshots = Game.blankSnapshots,
       GameState.contested = Map.empty,
       GameState.ambientAmounts = Map.empty,
       GameState.detachedBindings = Map.empty,
@@ -328,28 +340,18 @@ blankGame settings order active =
       GameState.turnsBegun = Turn.firstTurnBegun settings order active,
       GameState.result = Nothing,
       GameState.restartSignal = RestartSignal.Playing,
-      GameState.nextObjectId = ObjectId.MkObjectId 0,
-      GameState.printings = Map.empty,
-      GameState.printingIds = Map.empty,
-      GameState.lookedUp = Set.empty,
-      GameState.referenceNames = Map.empty,
       GameState.outsideCopies = Set.empty,
       GameState.namedCopyChoices = Map.empty,
       GameState.notedCards = Map.empty,
       GameState.notedMana = Map.empty,
-      GameState.nextPrintingId = PrintingId.MkPrintingId 0,
-      GameState.nextTimestamp = Timestamp.MkTimestamp 0,
-      GameState.lastChoice = Timestamp.MkTimestamp 0,
       GameState.loopInvolvement = Map.empty,
       GameState.drewFromEmpty = mempty,
-      GameState.fellShort = 0,
       GameState.landsPlayed = mempty,
       GameState.cardsPlayed = mempty,
       GameState.keptFaceDown = Nothing,
       GameState.announcedTops = Nothing,
       GameState.actionTops = Nothing,
       GameState.loopPicks = Nothing,
-      GameState.repeatPicks = Nothing,
       GameState.revealedTops = mempty,
       GameState.departedThisTurn = mempty,
       GameState.triggeredThisGame = mempty,
@@ -384,8 +386,7 @@ blankGame settings order active =
       GameState.gamesThisMatch = 1,
       GameState.gameNumber = 1,
       GameState.throwing = Nothing,
-      GameState.rethrowRequested = False,
-      GameState.undone = Map.empty
+      GameState.rethrowRequested = False
     }
 
 createCard :: PlayerId -> PrintingId.PrintingId -> Game ObjectId
@@ -681,8 +682,8 @@ startGameFromCards perform exemptions = do
   -- shape rule 903.9c's replacement also gives): the component card that is the
   -- commander goes to the command zone and its partner to the library.
   State.modify' $ \g ->
-    let (split, next) = splitComponents (GameState.nextObjectId g) (GameState.objects g)
-     in g {GameState.objects = split, GameState.nextObjectId = next}
+    let (split, next) = splitComponents (Bookkeeping.nextObjectId (GameState.bookkeeping g)) (GameState.objects g)
+     in g {GameState.objects = split, GameState.bookkeeping = (GameState.bookkeeping g) {Bookkeeping.nextObjectId = next}}
   -- CR 728.1 / 730.1a: a restart and a subgame each begin a new game of the
   -- match, numbered after every game begun so far.
   State.modify' $ \g ->
@@ -1197,18 +1198,11 @@ restartGame perform exempt starter = do
             GameState.departedCards = GameState.departedCards gs,
             -- The id, printing and timestamp supplies, so reused cards keep
             -- unique ids, and what is keyed by them.
-            GameState.nextObjectId = GameState.nextObjectId gs,
-            GameState.nextPrintingId = GameState.nextPrintingId gs,
-            GameState.nextTimestamp = GameState.nextTimestamp gs,
-            GameState.printings = GameState.printings gs,
-            GameState.printingIds = GameState.printingIds gs,
-            GameState.lookedUp = GameState.lookedUp gs,
-            GameState.referenceNames = GameState.referenceNames gs,
+            GameState.bookkeeping = inheritedBookkeeping (GameState.bookkeeping gs),
             GameState.outsideCopies = GameState.outsideCopies gs,
             GameState.namedCopyChoices = GameState.namedCopyChoices gs,
             GameState.notedCards = GameState.notedCards gs,
             GameState.loopInvolvement = GameState.loopInvolvement gs,
-            GameState.fellShort = GameState.fellShort gs,
             -- CR 100.6a / 728.1: a restart begins a new game of the SAME
             -- match, so the match's tallies carry across it, for the reason
             -- nextTimestamp is preserved: the question is not about this game.
@@ -1224,11 +1218,6 @@ restartGame perform exempt starter = do
             -- Engine.priorityLoop and Engine.runStep read this and unwind to
             -- the rebuilt turn 1 rather than granting priority.
             GameState.restartSignal = RestartSignal.Restarted,
-            -- CR 104.4b: CR 728.1 ends the game that was being played, so the
-            -- rebuilt one starts owing nobody a choice. The timestamp supply is
-            -- preserved across the restart, so this is the supply's current
-            -- value and not zero.
-            GameState.lastChoice = GameState.nextTimestamp gs,
             -- Kept for the CR 728.5 exemptions alone, and cleared for every
             -- other card: an exempted card never left exile, so what put it
             -- there is still true of it, and CR 728.4's additional instructions
@@ -1398,17 +1387,10 @@ subgameStateFrom starter parent =
           -- The id, printing and timestamp supplies, inherited so every object
           -- the subgame mints gets an id above every parent id, and what is
           -- keyed by them.
-          GameState.nextObjectId = GameState.nextObjectId parent,
-          GameState.nextPrintingId = GameState.nextPrintingId parent,
-          GameState.nextTimestamp = GameState.nextTimestamp parent,
-          GameState.printings = GameState.printings parent,
-          GameState.printingIds = GameState.printingIds parent,
-          GameState.lookedUp = GameState.lookedUp parent,
-          GameState.referenceNames = GameState.referenceNames parent,
+          GameState.bookkeeping = inheritedBookkeeping (GameState.bookkeeping parent),
           GameState.outsideCopies = GameState.outsideCopies parent,
           GameState.namedCopyChoices = GameState.namedCopyChoices parent,
           GameState.notedCards = GameState.notedCards parent,
-          GameState.fellShort = GameState.fellShort parent,
           -- CR 100.6a: the subgame is a separate GAME (CR 730.1a) but not a
           -- separate match, so it inherits the match's tallies -- the subgame
           -- count already counting itself, Engine.playSubgame having raised it
@@ -1426,12 +1408,7 @@ subgameStateFrom starter parent =
           GameState.outsideObjects = outside,
           -- CR 730.2c, above. startGameFromCards keeps them here rather than
           -- funnelling them into a library, which is CR 903.6 for the subgame.
-          GameState.command = cmdIds,
-          -- CR 104.4b: the subgame is its own game, so it starts owing nobody a
-          -- choice. Set to the INHERITED nextTimestamp rather than to zero,
-          -- which the timestamp supply is not: a copied parent marker would
-          -- have the subgame draw itself on entry for events at another level.
-          GameState.lastChoice = GameState.nextTimestamp parent
+          GameState.command = cmdIds
         }
 
 -- CR 730.4a: the cards the subgame brought in have left the main game, so the
@@ -1466,7 +1443,7 @@ subgameStateFrom starter parent =
 --
 --   * each event is recorded AFTER its own crossing's deletion and BEFORE the
 --     next one's, so Event.recordEvent's CR 603.10 sample of the battlefield
---     (GameState.battlefieldWhenTriggered) stamps that group with the board as it
+--     (Snapshots.battlefieldWhenTriggered) stamps that group with the board as it
 --     stood then -- with every later crossing still on it. Sampling after the
 --     whole batch would hide a main-game permanent that was there when the first
 --     card left, and CR 730.5's last sentence is precisely where the ability it
@@ -1588,11 +1565,11 @@ funnelBack finalSub parent =
   let -- CR 730.5 / CR 713.8, the same split startGameFromCards performs, in a
       -- PURE function: the fresh ids are threaded off the MERGED supply by hand,
       -- so a component can collide with neither game's objects, and
-      -- GameState.nextObjectId below is the advanced supply rather than that
+      -- Bookkeeping.nextObjectId below is the advanced supply rather than that
       -- merge. Only the subgame's pool is split; the parent's own battlefield is
       -- untouched by rule 730.5 (CR 730.1a), and `recovered` draws from the
       -- parent's library and command zone, where no melded permanent can sit.
-      supply = max (GameState.nextObjectId parent) (GameState.nextObjectId finalSub)
+      supply = max (Bookkeeping.nextObjectId (GameState.bookkeeping parent)) (Bookkeeping.nextObjectId (GameState.bookkeeping finalSub))
       (subObjects, nextId) = splitComponents supply (GameState.objects finalSub)
       -- A melded permanent never reaches this, for `splitComponents`' reason at
       -- startGameFromCards.
@@ -1753,7 +1730,7 @@ funnelBack finalSub parent =
       -- CR 400.11a / 730.5: a card this player brought in from their pool
       -- during the subgame (minted above the parent's id supply, so with a
       -- serial no parent card has) that survived it, whoever owns it now.
-      startedAt = ObjectId.unwrap (GameState.nextObjectId parent)
+      startedAt = ObjectId.unwrap (Bookkeeping.nextObjectId (GameState.bookkeeping parent))
       keptInSub pid =
         Map.fromListWith
           (+)
@@ -1809,27 +1786,30 @@ funnelBack finalSub parent =
           -- untouched: CR 730.2b and CR 730.2c moved only the vanguards and the
           -- commanders, so only they can come back.
           GameState.command = Set.union (Set.difference (GameState.command parent) oldCmdIds) (Map.keysSet toCommand),
-          GameState.nextObjectId = nextId,
-          -- The subgame's cards come back as library objects above, and each
-          -- names its printing by id -- so the entries those ids name have to
-          -- come back too, or the returned cards would resolve to nothing.
-          --
-          -- Union is unambiguous rather than merely convenient:
-          -- subgameStateFrom names both as crossing from `parent`, so the
-          -- subgame INHERITS the table and the counter whole. Anything the
-          -- subgame interned was minted above every id the parent held, so the
-          -- two tables never disagree about an id.
-          GameState.printings = Map.union (GameState.printings finalSub) (GameState.printings parent),
-          GameState.printingIds = Map.union (GameState.printingIds finalSub) (GameState.printingIds parent),
-          GameState.lookedUp = Set.union (GameState.lookedUp finalSub) (GameState.lookedUp parent),
-          GameState.referenceNames = Map.union (GameState.referenceNames finalSub) (GameState.referenceNames parent),
-          GameState.nextPrintingId = max (GameState.nextPrintingId parent) (GameState.nextPrintingId finalSub),
-          GameState.nextTimestamp = max (GameState.nextTimestamp parent) (GameState.nextTimestamp finalSub),
-          -- CR 104.4b: the subgame's events are not a stretch during which the
-          -- parent's players could not act -- they were playing the subgame.
-          -- Cleared to the merged supply so the main game resumes owing nobody a
-          -- choice, rather than inheriting a gap the subgame ran up.
-          GameState.lastChoice = max (GameState.nextTimestamp parent) (GameState.nextTimestamp finalSub),
+          GameState.bookkeeping =
+            (GameState.bookkeeping parent)
+              { Bookkeeping.nextObjectId = nextId,
+                -- The subgame's cards come back as library objects above, and each
+                -- names its printing by id -- so the entries those ids name have to
+                -- come back too, or the returned cards would resolve to nothing.
+                --
+                -- Union is unambiguous rather than merely convenient:
+                -- subgameStateFrom names both as crossing from `parent`, so the
+                -- subgame INHERITS the table and the counter whole. Anything the
+                -- subgame interned was minted above every id the parent held, so the
+                -- two tables never disagree about an id.
+                Bookkeeping.printings = Map.union (Bookkeeping.printings (GameState.bookkeeping finalSub)) (Bookkeeping.printings (GameState.bookkeeping parent)),
+                Bookkeeping.printingIds = Map.union (Bookkeeping.printingIds (GameState.bookkeeping finalSub)) (Bookkeeping.printingIds (GameState.bookkeeping parent)),
+                Bookkeeping.lookedUp = Set.union (Bookkeeping.lookedUp (GameState.bookkeeping finalSub)) (Bookkeeping.lookedUp (GameState.bookkeeping parent)),
+                Bookkeeping.referenceNames = Map.union (Bookkeeping.referenceNames (GameState.bookkeeping finalSub)) (Bookkeeping.referenceNames (GameState.bookkeeping parent)),
+                Bookkeeping.nextPrintingId = max (Bookkeeping.nextPrintingId (GameState.bookkeeping parent)) (Bookkeeping.nextPrintingId (GameState.bookkeeping finalSub)),
+                Bookkeeping.nextTimestamp = max (Bookkeeping.nextTimestamp (GameState.bookkeeping parent)) (Bookkeeping.nextTimestamp (GameState.bookkeeping finalSub)),
+                -- CR 104.4b: the subgame's events are not a stretch during which the
+                -- parent's players could not act -- they were playing the subgame.
+                -- Cleared to the merged supply so the main game resumes owing nobody a
+                -- choice, rather than inheriting a gap the subgame ran up.
+                Bookkeeping.lastChoice = max (Bookkeeping.nextTimestamp (GameState.bookkeeping parent)) (Bookkeeping.nextTimestamp (GameState.bookkeeping finalSub))
+              },
           -- CR 100.6a / 730.6: a subgame the subgame itself started is still a
           -- subgame of this match, so the resumed main game takes the deeper
           -- tally -- nextTimestamp's treatment, and monotone for its reason,

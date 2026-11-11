@@ -103,6 +103,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
@@ -1340,10 +1341,10 @@ becameSlotSpec s registry =
               (pikerId, placed) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
               bounced = S.runPure S.identityAnswer placed (Event.changeZone (pure ()) pikerId Zone.Hand)
               empty = Setup.emptyGame S.bothPlayers
-              pinState = withRepresentativeEntrant placed pikerId $ case Map.lookup pikerId (GameState.lastKnown bounced) of
-                Just lk -> empty {GameState.lastKnown = Map.singleton representativeDeparted lk}
+              pinState = withRepresentativeEntrant placed pikerId $ case Map.lookup pikerId (Snapshots.lastKnown (GameState.snapshots bounced)) of
+                Just lk -> empty {GameState.snapshots = (GameState.snapshots empty) {Snapshots.lastKnown = Map.singleton representativeDeparted lk}}
                 Nothing -> empty
-          Spec.assertBool s (not (Map.null (GameState.lastKnown pinState))) "the funnel filed a last-known record for the bounced Piker"
+          Spec.assertBool s (not (Map.null (Snapshots.lastKnown (GameState.snapshots pinState)))) "the funnel filed a last-known record for the bounced Piker"
           mapM_
             ( \cond ->
                 let bearerArrivals = case cond of
@@ -1372,8 +1373,8 @@ becameSlotSpec s registry =
               (pikerId, placed) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
               bounced = S.runPure S.identityAnswer placed (Event.changeZone (pure ()) pikerId Zone.Hand)
               empty = Setup.emptyGame S.bothPlayers
-              pinState = withRepresentativeEntrant placed pikerId $ case Map.lookup pikerId (GameState.lastKnown bounced) of
-                Just lk -> empty {GameState.lastKnown = Map.singleton representativeDeparted lk}
+              pinState = withRepresentativeEntrant placed pikerId $ case Map.lookup pikerId (Snapshots.lastKnown (GameState.snapshots bounced)) of
+                Just lk -> empty {GameState.snapshots = (GameState.snapshots empty) {Snapshots.lastKnown = Map.singleton representativeDeparted lk}}
                 Nothing -> empty
           mapM_
             ( \cond ->
@@ -1774,11 +1775,14 @@ counterLookBackSpec s registry =
               settled = S.runPure S.identityAnswer destroyed Engine.settleForPriority
               forgotten =
                 settled
-                  { GameState.lastKnown =
-                      Map.adjust
-                        (\lk -> lk {LastKnown.counters = Map.empty})
-                        duskmageId
-                        (GameState.lastKnown settled)
+                  { GameState.snapshots =
+                      (GameState.snapshots settled)
+                        { Snapshots.lastKnown =
+                            Map.adjust
+                              (\lk -> lk {LastKnown.counters = Map.empty})
+                              duskmageId
+                              (Snapshots.lastKnown (GameState.snapshots settled))
+                        }
                   }
               after = S.runPure S.identityAnswer forgotten Stack.resolveTop
           Spec.assertEqWith s "the trigger reached the stack on the gather read" (length (TurnRegisters.stack (GameState.turn settled))) 1
@@ -3337,7 +3341,7 @@ screamsFromWithinSpec s registry =
           Spec.assertEqWith
             s
             "so the trigger was gathered off the HOST's CR 608.2h record of what was attached to it"
-            (fmap LastKnown.attached (Map.lookup enchanted (GameState.lastKnown after)))
+            (fmap LastKnown.attached (Map.lookup enchanted (Snapshots.lastKnown (GameState.snapshots after))))
             (Just (Set.singleton aura))
         -- CR 603.10a's own case, and the leg that makes `looksBack`'s arm
         -- load-bearing: the Aura leaves the battlefield in the SAME event group
@@ -3558,8 +3562,8 @@ skullclampSpec s registry =
           -- can absorb a mutation aimed at the look-back.
           Spec.assertEqWith s "the equipped Hill Giant really died" (Game.lookupObject host after) Nothing
           Spec.assertEqWith s "CR 704.5n left the Equipment on the battlefield with its link cleared" (fmap Object.attachedTo (Game.lookupObject equipment after)) (Just Nothing)
-          Spec.assertEqWith s "so the Equipment filed no record of its own" (Map.lookup equipment (GameState.lastKnown after)) Nothing
-          Spec.assertEqWith s "the host's record is the one that names it" (fmap LastKnown.attached (Map.lookup host (GameState.lastKnown after))) (Just (Set.singleton equipment))
+          Spec.assertEqWith s "so the Equipment filed no record of its own" (Map.lookup equipment (Snapshots.lastKnown (GameState.snapshots after))) Nothing
+          Spec.assertEqWith s "the host's record is the one that names it" (fmap LastKnown.attached (Map.lookup host (Snapshots.lastKnown (GameState.snapshots after)))) (Just (Set.singleton equipment))
           Spec.assertEqWith s "alice held nothing before the trigger resolved" (S.handSize S.alice placed) 0
           Spec.assertEqWith s "and the trigger really was on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
         -- The negative, one creature over: the same board, the same removal, the
@@ -3579,7 +3583,7 @@ skullclampSpec s registry =
           let placed = S.runPure S.identityAnswer gs (Event.destroy (pure ()) Regenerability.Regenerable [equipment, host] >> Engine.settleForPriority)
               after = resolve placed
           Spec.assertEqWith s "CR 603.10a alice drew two cards" (S.handSize S.alice after) 2
-          Spec.assertEqWith s "the host's record still names the Equipment" (fmap LastKnown.attached (Map.lookup host (GameState.lastKnown after))) (Just (Set.singleton equipment))
+          Spec.assertEqWith s "the host's record still names the Equipment" (fmap LastKnown.attached (Map.lookup host (Snapshots.lastKnown (GameState.snapshots after)))) (Just (Set.singleton equipment))
           Spec.assertEqWith s "and both really left the battlefield in one batch" (fmap (`Game.lookupObject` after) [host, equipment]) [Nothing, Nothing]
         -- Skullclamp's own board, with no removal in it: CR 613.4c's layer 7c
         -- makes the equipped 2/1 Piker a 3/0 and CR 704.5f buries it, which is

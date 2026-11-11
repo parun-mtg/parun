@@ -29,6 +29,7 @@ import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Announcement as Announcement
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Completion as Completion
@@ -155,7 +156,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           )
           Zone.Stack
           ts
-      onStack = Game.putOnStack (GameState.nextEventGroup gs2) abilId gs2 {GameState.objects = Map.insert abilId obj (GameState.objects gs2)}
+      onStack = Game.putOnStack (Bookkeeping.nextEventGroup (GameState.bookkeeping gs2)) abilId gs2 {GameState.objects = Map.insert abilId obj (GameState.objects gs2)}
       decider = Decide.deciderFor pid gs
       -- CR 602.2b/700.2a, mirroring Cast.castSpell's mode block: a selection with
       -- one answer is FORCED, unprompted -- every single-mode ability is exactly
@@ -548,6 +549,6 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
                 -- mana window. A CR 733.3 refusal has noted itself there, and
                 -- the priority loop cleared any older note before this action.
                 Payment.Unpaid -> do
-                  noted <- State.gets (Map.lookup pid . GameState.undone)
+                  noted <- State.gets (Map.lookup pid . (Bookkeeping.undone . GameState.bookkeeping))
                   Monad.unless (noted == Just Undoing.RepeatedLoop) (Game.noteUndoing pid Undoing.UnpaidCost)
                   pure Nothing

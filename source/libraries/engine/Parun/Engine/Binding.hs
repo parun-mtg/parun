@@ -1176,7 +1176,7 @@ targetingObject = SlotName.MkSlotName (Text.pack "thatTargetingObject")
 -- activation fired the trigger is bound -- Kurkesh, Onakke Ancient's "copy that
 -- ability". `castSpell`'s posture: not a target. An ability countered while the
 -- trigger waits is still copied, from what Parun.Engine.Game.cease filed in
--- GameState.stackArchive (CR 608.2h).
+-- Snapshots.stackArchive (CR 608.2h).
 activatedAbility :: SlotName
 activatedAbility = SlotName.MkSlotName (Text.pack "thatAbility")
 

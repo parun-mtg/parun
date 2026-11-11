@@ -57,6 +57,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
@@ -549,7 +550,7 @@ spec s registry = Spec.describe s "Client" $ do
       [Text.pack "Undone: Cast Grizzly Bears could not be completed (its cost was not paid), so it was reversed and its payments canceled."]
 
   Spec.it s "CR 601.2e a cast whose announced modes are illegal is told undone, and why" $ do
-    let gs = (Setup.emptyGame S.bothPlayers) {GameState.undone = Map.singleton S.alice Undoing.IllegalProposal}
+    let gs = Game.Engine.overBookkeeping (\bookkeeping -> bookkeeping {Bookkeeping.undone = Map.singleton S.alice Undoing.IllegalProposal}) (Setup.emptyGame S.bothPlayers)
         view = PlayerView.viewFor S.alice gs
         mark = (PlayerView.Type.game view, PlayerView.Type.turn view, Natural.length (PlayerView.Type.witnessed view))
         tried = Hotseat.fresh {Hotseat.facing = Just S.alice, Hotseat.attempted = Map.singleton S.alice (mark, Text.pack "Cast Ebony Charm")}
@@ -564,18 +565,18 @@ spec s registry = Spec.describe s "Client" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (attacker, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
         (blocker, gs) = S.addPermanent piker S.bob g1
-        unpaid = gs {GameState.undone = Map.fromList [(S.alice, Undoing.UnpaidCost), (S.bob, Undoing.UnpaidCost)]}
+        unpaid = gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.undone = Map.fromList [(S.alice, Undoing.UnpaidCost), (S.bob, Undoing.UnpaidCost)]}}
         told seat g prompt = filter (Text.isPrefixOf (Text.pack "Undone: ")) (snd (asking Hotseat.fresh {Hotseat.facing = Just seat} [""] g prompt))
         attacking = Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [attacker]
         blocking = Prompt.DeclareBlockers (Decider.MkDecider S.bob) S.bob [blocker] [attacker]
     Spec.assertEqWith s "the attackers" (told S.alice unpaid attacking) [Text.pack "Undone: The declaration of attackers could not be completed (its cost was not paid), so it was reversed and its payments canceled."]
     Spec.assertEqWith s "the blockers" (told S.bob unpaid blocking) [Text.pack "Undone: The declaration of blockers could not be completed (its cost was not paid), so it was reversed and its payments canceled."]
     Spec.assertEqWith s "a declaration with nothing undone is told nothing" (told S.alice gs attacking) []
-    let illegal = gs {GameState.undone = Map.singleton S.alice Undoing.IllegalDeclaration}
+    let illegal = gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.undone = Map.singleton S.alice Undoing.IllegalDeclaration}}
     Spec.assertEqWith s "an illegal declaration" (told S.alice illegal attacking) [Text.pack "Undone: The declaration of attackers could not be completed (it broke a restriction or requirement on attacking or blocking), so it was reversed and its payments canceled."]
 
   Spec.it s "CR 733.3 a cast refused for repeating a loop is told undone, and why" $ do
-    let gs = (Setup.emptyGame S.bothPlayers) {GameState.undone = Map.singleton S.alice Undoing.RepeatedLoop}
+    let gs = Game.Engine.overBookkeeping (\bookkeeping -> bookkeeping {Bookkeeping.undone = Map.singleton S.alice Undoing.RepeatedLoop}) (Setup.emptyGame S.bothPlayers)
         view = PlayerView.viewFor S.alice gs
         mark = (PlayerView.Type.game view, PlayerView.Type.turn view, Natural.length (PlayerView.Type.witnessed view))
         tried = Hotseat.fresh {Hotseat.facing = Just S.alice, Hotseat.attempted = Map.singleton S.alice (mark, Text.pack "Cast Blinking Spirit")}
