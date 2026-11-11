@@ -49,6 +49,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
@@ -62,6 +63,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StateBasedAction as StateBasedAction
@@ -111,7 +113,7 @@ poisonThreshold gs pid =
   let teams = Teams.unwrap (Game.teams gs)
    in case Map.lookup pid teams of
         Just team
-          | GameSettings.twoHeadedGiant (GameState.settings gs) ->
+          | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) ->
               let members = length (filter (== team) (Map.elems teams))
                in 15 + 5 * Int.toNaturalSaturating (members - 2)
         _ -> 10
@@ -275,7 +277,7 @@ becomesUnattached pcs grants gs oid = case Game.lookupObject oid gs of
 -- answered before the control walk, so such a game never forces `grants`.
 outOfReach :: [Projection.ControlGrant] -> GameState -> ObjectId -> Recipient.Recipient -> Bool
 outOfReach grants gs oid host
-  | Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs))) = False
+  | Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs)))) = False
   | otherwise = case Projection.controllerOfGiven grants oid gs of
       Nothing -> False
       Just you -> not (Target.inRangeGiven grants you host gs)
@@ -997,7 +999,7 @@ checkOnce instead boards = do
       }
   -- CR 614.1a: what replaced a loss happens INSTEAD of it, so inside this
   -- pass's one event and before its moves, with every object the pass moves
-  -- contested (GameState.contested): Lich's Mirror's ruling has its reset and
+  -- contested (Scratch.contested): Lich's Mirror's ruling has its reset and
   -- the check compete for such an object, and its controller choose which
   -- move happens. Kept, the object stays for the moves below; taken, the
   -- moves below find it gone (CR 614.7's shape, as for any member another
@@ -1005,9 +1007,9 @@ checkOnce instead boards = do
   -- data/scenarios/game-outcome/cr-616-1-lich-s-mirror-* pair proves both.
   let moving = Set.fromList (buried <> standing <> fmap snd told <> returningCommanders)
   Foldable.for_ insteads $ \pending -> do
-    State.modify' (\g -> g {GameState.contested = Map.fromSet (const (Just (PendingReplacementEffect.source pending))) moving})
+    State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = Map.fromSet (const (Just (PendingReplacementEffect.source pending))) moving}})
     instead pending
-  State.modify' (\g -> g {GameState.contested = Map.empty})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = Map.empty}})
   -- Every put-into-graveyard this pass performs, as ONE deduplicated batch:
   -- CR 704.5f (toughness <= 0), CR 704.5i (loyalty 0), CR 704.5j (the legend
   -- rule's losers), CR 704.5k (the world rule's), CR 704.5m (an Aura attached to

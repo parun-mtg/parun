@@ -21,6 +21,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.Phase (Phase)
 import qualified Parun.Types.Phase as Phase
@@ -56,7 +57,7 @@ allPhases =
 -- | CR 805.4: do these two players take their turns together -- the same
 -- player, or teammates in a game using the shared team turns option?
 sharesTurn :: GameState -> PlayerId -> PlayerId -> Bool
-sharesTurn gs = sharesTurnUnder (GameState.settings gs)
+sharesTurn gs = sharesTurnUnder (MatchScope.settings (GameState.match gs))
 
 -- | sharesTurn, read off the game's options alone, for a state still being
 -- built.
@@ -90,7 +91,7 @@ turnScopeAdmits named gs scope@(TurnScope.PlayersTurn ref) active own = case ref
 -- (Parun.Engine.Count.scopePlayers, from the reader's source).
 scopeNames :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> TurnScope.TurnScope -> PlayerId -> PlayerId -> Bool
 scopeNames named gs (TurnScope.PlayersTurn ref) own player = case ref of
-  PlayerRef.Relative relation -> PlayerRelation.holds (GameSettings.teams (GameState.settings gs)) relation own player
+  PlayerRef.Relative relation -> PlayerRelation.holds (GameSettings.teams (MatchScope.settings (GameState.match gs))) relation own player
   _ -> maybe False (elem player) (named ref)
 
 -- | CR 109.5 / 603.3a: is the scope "your turn" as such -- the controller's own,

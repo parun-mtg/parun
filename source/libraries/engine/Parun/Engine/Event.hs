@@ -191,6 +191,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility.Type
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.HalfUnlocked as HalfUnlocked
+import qualified Parun.Types.History as History
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
@@ -213,6 +214,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
 import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Milled as Milled
@@ -284,6 +286,7 @@ import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
@@ -507,7 +510,7 @@ recordEventOver sample event gs =
 -- suite moves an otherwise uninvolved player's permanent off the battlefield.
 involveActedOn :: GameEvent -> GameState -> GameState
 involveActedOn event gs
-  | GameSettings.rangeOfInfluence (GameState.settings gs) == RangeOfInfluence.unlimited = gs
+  | GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs)) == RangeOfInfluence.unlimited = gs
   | otherwise = foldr Game.involve gs (Maybe.mapMaybe (`Projection.controllerWithLastKnown` gs) (fst (participants event)))
 
 -- CR 704.3 / CR 608.2f: run `body` as ONE event, so every event it records
@@ -560,14 +563,14 @@ simultaneously body = do
 -- posture.
 arrivingTogether :: Game a -> Game a
 arrivingTogether body = do
-  open <- State.gets (Maybe.isJust . GameState.arrivals)
+  open <- State.gets (Maybe.isJust . Scratch.arrivals . GameState.scratch)
   if open
     then body
     else do
-      State.modify' (\g -> g {GameState.arrivals = Just Seq.empty})
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.arrivals = Just Seq.empty}})
       result <- body
       arrangeArrivals
-      State.modify' (\g -> g {GameState.enteredFrom = Map.empty})
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteredFrom = Map.empty}})
       pure result
 
 -- CR 401.4: "if an effect puts two or more cards in a specific position in a
@@ -591,8 +594,8 @@ arrivingTogether body = do
 -- Shapeshifter CR 401.4 / 404.3 cases prove it.
 arrangeArrivals :: Game ()
 arrangeArrivals = do
-  pending <- State.gets (Maybe.fromMaybe Seq.empty . GameState.arrivals)
-  State.modify' (\g -> g {GameState.arrivals = Nothing})
+  pending <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.arrivals . GameState.scratch)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.arrivals = Nothing}})
   Monad.unless (Seq.null pending) $ do
     gs0 <- State.get
     let movesAt owner end = filter (\arrival -> Arrival.owner arrival == owner && Arrival.end arrival == end) (Foldable.toList pending)
@@ -634,7 +637,7 @@ arrangeArrivals = do
 -- alone, and one move is one order.
 noteArrival :: PlayerId -> ArrivalEnd.ArrivalEnd -> Seq.Seq ObjectId -> GameState -> GameState
 noteArrival owner end cards gs =
-  gs {GameState.arrivals = fmap (Seq.|> Arrival.MkArrival owner end cards) (GameState.arrivals gs)}
+  gs {GameState.scratch = (GameState.scratch gs) {Scratch.arrivals = fmap (Seq.|> Arrival.MkArrival owner end cards) (Scratch.arrivals (GameState.scratch gs))}}
 
 -- CR 404.3: drop the graveyard arrivals of `cards` from the open scope, for a
 -- move whose instruction already had the owner order them (a surveil's
@@ -643,7 +646,7 @@ arrangedAlready :: Seq.Seq ObjectId -> GameState -> GameState
 arrangedAlready cards gs =
   let named = Set.fromList (Foldable.toList cards)
       keep arrival = Arrival.end arrival /= ArrivalEnd.OntoGraveyard || not (any (`Set.member` named) (Arrival.cards arrival))
-   in gs {GameState.arrivals = fmap (Seq.filter keep) (GameState.arrivals gs)}
+   in gs {GameState.scratch = (GameState.scratch gs) {Scratch.arrivals = fmap (Seq.filter keep) (Scratch.arrivals (GameState.scratch gs))}}
 
 -- CR 613.7m over CR 608.2f's action: run `body` so that everything it puts onto
 -- the battlefield is one batch, settled by Restamp.settle once it ends rather
@@ -665,30 +668,30 @@ arrangedAlready cards gs =
 -- the order leaves the suite green.
 -- CR 614.12b / 608.2f: run a one-member-at-a-time move of `members` onto the
 -- battlefield with every member not yet moved visible to the entry choices of
--- the ones moved before it (GameState.enteringPending). `under` is the player
+-- the ones moved before it (Scratch.enteringPending). `under` is the player
 -- they enter under, Nothing for each member's owner -- changeZoneEnteringIn's
 -- reading of the same move. Saved and restored, so a move nested inside an
 -- entry leaves the outer one's members pending.
 amongPending :: Maybe PlayerId -> [ObjectId] -> Game a -> Game a
 amongPending under members body = do
-  saved <- State.gets GameState.enteringPending
+  saved <- State.gets (Scratch.enteringPending . GameState.scratch)
   gs <- State.get
   let enteringUnder member = fmap (\obj -> (member, Maybe.fromMaybe (Object.owner obj) under)) (Game.lookupObject member gs)
-  State.modify' (\g -> g {GameState.enteringPending = saved <> Map.fromList (Maybe.mapMaybe enteringUnder members)})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved <> Map.fromList (Maybe.mapMaybe enteringUnder members)}})
   result <- body
-  State.modify' (\g -> g {GameState.enteringPending = saved})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = saved}})
   pure result
 
 together :: Game a -> Game a
 together body = do
   before <- State.get
-  case GameState.enteringTogether before of
+  case Scratch.enteringTogether (GameState.scratch before) of
     Just _ -> body
     Nothing -> do
-      State.put before {GameState.enteringTogether = Just EnteringTogether.empty}
+      State.put before {GameState.scratch = (GameState.scratch before) {Scratch.enteringTogether = Just EnteringTogether.empty}}
       result <- body
-      batch <- State.gets (Maybe.fromMaybe EnteringTogether.empty . GameState.enteringTogether)
-      State.modify' (\g -> g {GameState.enteringTogether = Nothing})
+      batch <- State.gets (Maybe.fromMaybe EnteringTogether.empty . Scratch.enteringTogether . GameState.scratch)
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = Nothing}})
       Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (Foldable.toList (EnteringTogether.arrivals batch))
       Monad.mapM_ (recordMintedArrival Zone.Battlefield) (EnteringTogether.minted batch)
       pure result
@@ -1750,7 +1753,7 @@ eligible predicate source pid gs =
       admits printingId = case Game.cardOfPrinting printingId gs of
         Nothing -> False
         Just card -> let face = Game.resolveFaceFor Nothing card in not (Conspiracy.isConspiracyFace face) && not (barred card) && matchesFace face
-      barred card = Game.isNontraditional card || Ante.barred (GameState.settings gs) (Game.resolveFaceFor Nothing card)
+      barred card = Game.isNontraditional card || Ante.barred (MatchScope.settings (GameState.match gs)) (Game.resolveFaceFor Nothing card)
       -- CR 108.5 and 407.3 whatever the facing: a face-down card is still what it is.
       barredPrinting printingId = maybe False barred (Game.cardOfPrinting printingId gs)
       -- Parun.Engine.Card.faceDownFace is the same substitution
@@ -2395,7 +2398,7 @@ applyReplacements = applyReplacementsIn (pure ()) Nothing Set.empty Set.empty
 --      narrows the whole battlefield by a Filter and is the read this pool
 --      observes. CR 614.12 does not sanction any of them: a simultaneously-
 --      entering sibling's continuous effects do not already exist relative to it.
---      Excluded by GameState.enteringBeside, which runEntry writes for the span of
+--      Excluded by Scratch.enteringBeside, which runEntry writes for the span of
 --      one member's loop and Parun.Engine.Projection.View.abilitySources subtracts, so
 --      the exclusion covers every read at once rather than one call site at a
 --      time. Parun.ReplacementSpec's "a Wood Elemental reanimated beside Ashaya
@@ -2411,7 +2414,7 @@ applyReplacements = applyReplacementsIn (pure ()) Nothing Set.empty Set.empty
 --      so channel 3 does not reach them; and this is the one channel the loop's
 --      own SUBJECT is on the wrong side of as well. Excluded by
 --      Parun.Engine.Projection.boardAsEntering, which subtracts
---      GameState.enteringSubjects too -- the same board for every segment, since
+--      Scratch.enteringSubjects too -- the same board for every segment, since
 --      CR 614.12a's "before the permanent enters the battlefield" is about zone
 --      membership rather than about which segment asks. The CLAUSE half is proven
 --      in both segments, one pair per direction each: Parun.ReplacementSpec's
@@ -3435,7 +3438,7 @@ apply settle batch applied batchPrevented candidate event =
           Just controller -> do
             -- The offer narrows the WHOLE battlefield by a Filter, so it is also
             -- where CR 614.12's other half bites: a bystander is judged with the
-            -- batch's static abilities suppressed (GameState.enteringBeside),
+            -- batch's static abilities suppressed (Scratch.enteringBeside),
             -- which is channel 3 of applyReplacementsIn's note and not this
             -- exclusion.
             let entering oid2 = oid2 == oid || Set.member oid2 batch
@@ -3444,7 +3447,7 @@ apply settle batch applied batchPrevented candidate event =
                 -- arm's reading. An answer is legal when their costs stay
                 -- jointly payable, or were not payable to begin with -- then the
                 -- answer causes nothing.
-                stillEntering oid2 = entering oid2 || Map.member oid2 (GameState.enteringSubjects gs)
+                stillEntering oid2 = entering oid2 || Map.member oid2 (Scratch.enteringSubjects (GameState.scratch gs))
                 owed = fmap (fmap (filter (not . stillEntering))) (pendingSacrifices controller gs)
                 legal chosen = Replacement.jointlyPayable chosen owed || not (Replacement.jointlyPayable Set.empty owed)
                 decider = Decide.deciderFor controller gs
@@ -3516,7 +3519,7 @@ apply settle batch applied batchPrevented candidate event =
       -- starved by an earlier member's choice. So the offer is narrowed to the
       -- sets that leave every member still to come able to pay its own
       -- (Replacement.jointlyPayable) -- the members already moved have paid, and
-      -- the ones not yet moved are read off GameState.enteringPending. Where no
+      -- the ones not yet moved are read off Scratch.enteringPending. Where no
       -- set does, the rule forbids every answer; it says nothing more, and the
       -- whole offer stands. A token batch's siblings are materialized together
       -- and not read: no token-making card in data/cards/ copies a card carrying
@@ -3537,7 +3540,7 @@ apply settle batch applied batchPrevented candidate event =
           -- than guessing whose permanents "a Forest" means.
           Nothing -> pure (Just event)
           Just controller -> do
-            let entering oid2 = oid2 == oid || Set.member oid2 batch || Map.member oid2 (GameState.enteringSubjects gs)
+            let entering oid2 = oid2 == oid || Set.member oid2 batch || Map.member oid2 (Scratch.enteringSubjects (GameState.scratch gs))
                 own = filter (not . entering) (Replacement.sacrificeCandidates (Just controller) Map.empty controller (Just oid) criterion gs)
                 owed = fmap (fmap (filter (not . entering))) (pendingSacrifices controller gs)
                 sets = Replacement.subsetsOf n own
@@ -3739,7 +3742,7 @@ apply settle batch applied batchPrevented candidate event =
       -- move's `under`, so an EntryRewrite.UnderControlOf applied earlier in
       -- this same CR 616.1 loop decides whose "you control" this is.
       --
-      -- MINUS `batch` and minus GameState.enteringSubjects, which is CR 614.12a:
+      -- MINUS `batch` and minus Scratch.enteringSubjects, which is CR 614.12a:
       -- the choice is made before the permanent enters, so a creature entering
       -- beside it is no candidate. hostsFor sweeps GameState.battlefield, which
       -- already holds the materialized siblings, so the exclusion has to be
@@ -3770,7 +3773,7 @@ apply settle batch applied batchPrevented candidate event =
           -- anyway.
           Nothing -> pure (Just event)
           Just controller -> do
-            let entering oid2 = Set.member oid2 batch || Map.member oid2 (GameState.enteringSubjects gs)
+            let entering oid2 = Set.member oid2 batch || Map.member oid2 (Scratch.enteringSubjects (GameState.scratch gs))
                 hosts = filter (not . entering) (Attach.hostsFor (Projection.sourceContext gs (Just controller) oid) oid filter_ gs)
             chosen <- Attach.chooseHost controller oid hosts
             -- CR 301.5e: no candidate leaves the Equipment on the battlefield
@@ -4078,8 +4081,11 @@ apply settle batch applied batchPrevented candidate event =
         Replacement.consume (ReplacementCandidate.identity candidate)
         State.modify' $ \gs ->
           gs
-            { GameState.enteringCounters =
-                Map.adjust (Map.adjust (Map.adjust (\n -> Natural.minusSaturating n (2 * symbols)) CounterKind.Loyalty) Nothing) oid (GameState.enteringCounters gs)
+            { GameState.scratch =
+                (GameState.scratch gs)
+                  { Scratch.enteringCounters =
+                      Map.adjust (Map.adjust (Map.adjust (\n -> Natural.minusSaturating n (2 * symbols)) CounterKind.Loyalty) Nothing) oid (Scratch.enteringCounters (GameState.scratch gs))
+                  }
             }
         pure (Just event)
       -- CR 614.1d / 110.5b: "This permanent enters tapped" (Zof Bloodbog's land,
@@ -5292,7 +5298,7 @@ apply settle batch applied batchPrevented candidate event =
       gs <- State.get
       let scaled = fmap (fmap (Replacement.scale gs candidate scaling)) (Replacement.matchingEnteringCounters gs candidate pat oid)
       State.modify' $ \gs2 ->
-        gs2 {GameState.enteringCounters = Map.adjust (Map.unionWith Map.union scaled) oid (GameState.enteringCounters gs2)}
+        gs2 {GameState.scratch = (GameState.scratch gs2) {Scratch.enteringCounters = Map.adjust (Map.unionWith Map.union scaled) oid (Scratch.enteringCounters (GameState.scratch gs2))}}
       pure (Just event)
     -- Unreachable: `applies` admits CounterR only against the three counter events
     -- above.
@@ -5927,24 +5933,24 @@ runEntry settle diverting origin given oid = do
   -- put onto the battlefield entered at the same moment as this object, so it
   -- is a sibling too -- Ornate Imitations' later numbers and Mirror Match's later
   -- tokens. Parun.RestampSpec's Tayam boards prove both.
-  open <- State.gets GameState.enteringTogether
+  open <- State.gets (Scratch.enteringTogether . GameState.scratch)
   let batch = Set.delete oid (given <> foldMap (Set.fromList . Foldable.toList . EnteringTogether.arrivals) open)
   -- CR 113.6 / 614.12: for the span of this loop, the batch's OTHER members are
   -- materialized but not entered, so Parun.Engine.Projection gathers no continuous
-  -- effect from their static abilities (see GameState.enteringBeside). The
+  -- effect from their static abilities (see Scratch.enteringBeside). The
   -- subject's own are untouched, because `batch` never holds it. Saved and
   -- restored rather than cleared, since an entry rewrite can reach another entry
   -- -- the SacrificeAnyNumber arm below runs a sacrifice, and RunEffects runs a
   -- card's effects -- and the outer batch has to survive that.
-  before <- State.gets GameState.enteringBeside
+  before <- State.gets (Scratch.enteringBeside . GameState.scratch)
   -- CR 614.12's OTHER half, one field over: the subject is materialized but not
   -- on the battlefield either, so a determination about it counts neither its
   -- siblings nor itself (Projection.boardAsEntering), though it still counts
   -- in `origin`, the zone it left. INSERTED rather than written, so a nested
   -- entry leaves the outer subject uncountable too, and restored wholesale
   -- below for the reason `before` is.
-  beforeSubjects <- State.gets GameState.enteringSubjects
-  State.modify' (\gs -> gs {GameState.enteringBeside = batch, GameState.enteringSubjects = Map.insert oid origin beforeSubjects})
+  beforeSubjects <- State.gets (Scratch.enteringSubjects . GameState.scratch)
+  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = batch, Scratch.enteringSubjects = Map.insert oid origin beforeSubjects}})
   -- The entry undone before it happened: its pending counters dropped, and the
   -- "when you do" a copy entry rewrite armed (becomeCopyAs) disarmed (CR 614.6
   -- / 707.9g; the scenario hallowed-moonlight-stops-a-diverted-copy-s-when-you-do
@@ -5953,7 +5959,7 @@ runEntry settle diverting origin given oid = do
       abandon = do
         Monad.void (takeEnteringCounters oid)
         State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter (\entry -> not (DelayedTrigger.source entry == oid && isReflexive entry)) (StoredEffects.delayedTriggers (GameState.stored gs))}})
-        State.modify' (\gs -> gs {GameState.enteringBeside = before, GameState.enteringSubjects = beforeSubjects})
+        State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = before, Scratch.enteringSubjects = beforeSubjects}})
       -- CR 614.17d: which entry prohibitions apply is read off the permanent as
       -- it would exist on the battlefield, which is where it is materialized;
       -- changeZoneAttaching's gate reads the card in its previous zone instead.
@@ -5988,15 +5994,15 @@ runEntry settle diverting origin given oid = do
       hosted <- if Maybe.isJust outcome then seatEnteringAura batch oid else pure True
       flushEnteringCounters oid
       designateProtector oid
-      State.modify' (\gs -> gs {GameState.enteringBeside = before, GameState.enteringSubjects = beforeSubjects})
+      State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = before, Scratch.enteringSubjects = beforeSubjects}})
       -- CR 614.12 / 608.2f: an entered member of a simultaneous batch is still
-      -- in the zone it left for a later member's count (GameState.enteredFrom),
+      -- in the zone it left for a later member's count (Scratch.enteredFrom),
       -- kept only while an arrivingTogether scope is open, which a member of a
       -- batch is always inside.
-      scoped <- State.gets (Maybe.isJust . GameState.arrivals)
+      scoped <- State.gets (Maybe.isJust . Scratch.arrivals . GameState.scratch)
       let entered = scoped && Maybe.isJust outcome && hosted
       Foldable.for_ (if entered then origin else Nothing) $ \from ->
-        State.modify' (\gs -> gs {GameState.enteredFrom = Map.insert oid from (GameState.enteredFrom gs)})
+        State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteredFrom = Map.insert oid from (Scratch.enteredFrom (GameState.scratch gs))}})
       pure $ case outcome of
         Nothing -> Just EntryRefusal.Unpaid
         Just _ -> if hosted then Nothing else Just EntryRefusal.Unhosted
@@ -6011,7 +6017,7 @@ runEntry settle diverting origin given oid = do
 -- the loop stamped lives.
 --
 -- Answers False for CR 303.4g, nothing legal to enchant; the caller unmakes the
--- entry. MINUS `batch` and GameState.enteringSubjects for the EntersAttachedTo
+-- entry. MINUS `batch` and Scratch.enteringSubjects for the EntersAttachedTo
 -- arm's reason: a permanent entering beside this one is not on the battlefield
 -- when the choice is made. Parun.CopySpec's Curse of Death's Hold case proves
 -- the player half (CR 702.5d).
@@ -6021,7 +6027,7 @@ seatEnteringAura batch oid = do
   let unattached = Maybe.isNothing (Game.lookupObject oid gs >>= Object.attachedTo)
   case Projection.controllerOf oid gs of
     Just controller | unattached && Set.member Subtype.Aura (Projection.subtypesOf oid gs) -> do
-      let entering h = Set.member h batch || Map.member h (GameState.enteringSubjects gs)
+      let entering h = Set.member h batch || Map.member h (Scratch.enteringSubjects (GameState.scratch gs))
           hosts = filter (not . maybe False entering . Recipient.objectOf) (Attach.entryHostsFor controller oid gs)
       chosen <- Attach.chooseEntryHost controller oid hosts
       -- THE TAG the enchant slot produced, for changeZoneAttaching's reason:
@@ -6043,7 +6049,7 @@ seatEnteringAura batch oid = do
 pendingSacrifices :: PlayerId -> GameState -> [(Natural, [ObjectId])]
 pendingSacrifices chooser gs =
   [ (count, Replacement.sacrificeCandidates (Just chooser) Map.empty chooser (Just member) criterion gs)
-  | (member, controller) <- Map.toAscList (GameState.enteringPending gs),
+  | (member, controller) <- Map.toAscList (Scratch.enteringPending (GameState.scratch gs)),
     controller == chooser,
     Just obj <- [Game.lookupObject member gs],
     Object.zone obj /= Zone.Battlefield,
@@ -6093,8 +6099,8 @@ flushEnteringCounters oid = do
 -- them, since it never entered (CR 614.6).
 takeEnteringCounters :: ObjectId -> Game (Map.Map (Maybe PlayerId) (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural))
 takeEnteringCounters oid = do
-  pending <- State.gets (Map.findWithDefault Map.empty oid . GameState.enteringCounters)
-  State.modify' (\gs -> gs {GameState.enteringCounters = Map.delete oid (GameState.enteringCounters gs), GameState.copyExceptionCounters = Map.delete oid (GameState.copyExceptionCounters gs)})
+  pending <- State.gets (Map.findWithDefault Map.empty oid . Scratch.enteringCounters . GameState.scratch)
+  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringCounters = Map.delete oid (Scratch.enteringCounters (GameState.scratch gs)), Scratch.copyExceptionCounters = Map.delete oid (Scratch.copyExceptionCounters (GameState.scratch gs))}})
   pure pending
 
 -- CR 310.9a: "as a battle enters the battlefield, its controller chooses a player
@@ -6566,7 +6572,7 @@ placeEntryCounters candidate oid counters = do
 -- CR 614.1c: this permanent is going to enter with n more counters of a kind than
 -- it was a moment ago, put by `putter` -- Nothing for CR 122.6a's default, the
 -- object's controller. Written to the pending map rather than to the object; see
--- GameState.enteringCounters and flushEnteringCounters, which places them once the
+-- Scratch.enteringCounters and flushEnteringCounters, which places them once the
 -- entry's own CR 616.1 loop has finished saying how many that is.
 --
 -- The replacement for putOwnCounters at every ENTRY door. No batch of entering
@@ -6577,20 +6583,26 @@ addEnteringCounters :: Maybe PlayerId -> ObjectId -> CounterKind.CounterKind Key
 addEnteringCounters putter oid kind n =
   Monad.when (n > 0) . State.modify' $ \gs ->
     gs
-      { GameState.enteringCounters =
-          Map.insertWith (Map.unionWith (Map.unionWith (+))) oid (Map.singleton putter (Map.singleton kind n)) (GameState.enteringCounters gs)
+      { GameState.scratch =
+          (GameState.scratch gs)
+            { Scratch.enteringCounters =
+                Map.insertWith (Map.unionWith (Map.unionWith (+))) oid (Map.singleton putter (Map.singleton kind n)) (Scratch.enteringCounters (GameState.scratch gs))
+            }
       }
 
 -- CR 707.9e: addEnteringCounters for a copy effect's additional-counters
--- exception, remembering the share in GameState.copyExceptionCounters so that a
+-- exception, remembering the share in Scratch.copyExceptionCounters so that a
 -- copy effect applied to the same entry afterwards can take it back.
 addCopyExceptionCounters :: ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> Natural -> Game ()
 addCopyExceptionCounters oid kind n = do
   addEnteringCounters Nothing oid kind n
   Monad.when (n > 0) . State.modify' $ \gs ->
     gs
-      { GameState.copyExceptionCounters =
-          Map.insertWith (Map.unionWith (+)) oid (Map.singleton kind n) (GameState.copyExceptionCounters gs)
+      { GameState.scratch =
+          (GameState.scratch gs)
+            { Scratch.copyExceptionCounters =
+                Map.insertWith (Map.unionWith (+)) oid (Map.singleton kind n) (Scratch.copyExceptionCounters (GameState.scratch gs))
+            }
       }
 
 -- CR 707.9e: the earlier copy effect's exception does not happen, so its share
@@ -6599,11 +6611,14 @@ addCopyExceptionCounters oid kind n = do
 -- nothing can have rescaled the share between the two copy effects.
 takeBackCopyException :: ObjectId -> Game ()
 takeBackCopyException oid = State.modify' $ \gs ->
-  let placed = Map.findWithDefault Map.empty oid (GameState.copyExceptionCounters gs)
+  let placed = Map.findWithDefault Map.empty oid (Scratch.copyExceptionCounters (GameState.scratch gs))
       takeBack pending = Map.differenceWith (\n m -> Monad.mfilter (> 0) (Just (Natural.minusSaturating n m))) pending placed
    in gs
-        { GameState.enteringCounters = Map.adjust (Map.adjust takeBack Nothing) oid (GameState.enteringCounters gs),
-          GameState.copyExceptionCounters = Map.delete oid (GameState.copyExceptionCounters gs)
+        { GameState.scratch =
+            (GameState.scratch gs)
+              { Scratch.enteringCounters = Map.adjust (Map.adjust takeBack Nothing) oid (Scratch.enteringCounters (GameState.scratch gs)),
+                Scratch.copyExceptionCounters = Map.delete oid (Scratch.copyExceptionCounters (GameState.scratch gs))
+              }
         }
 
 -- CR 122: take counters off an object, recording a CountersRemoved event from
@@ -7217,7 +7232,7 @@ changeZoneEnteringIn :: Game () -> Maybe GameState -> Set ObjectId -> Maybe Reci
 changeZoneEnteringIn settle asOf batch seed source oid requestedDest position riders under = do
   -- CR 614.12b: this member is moving now, so it no longer owes anything to an
   -- earlier member's choice (see amongPending).
-  State.modify' (\g -> g {GameState.enteringPending = Map.delete oid (GameState.enteringPending g)})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = Map.delete oid (Scratch.enteringPending (GameState.scratch g))}})
   gs <- State.get
   let mCard = Game.cardOf oid gs
       onto = requestedDest == Zone.Battlefield
@@ -7467,7 +7482,7 @@ changeZonesTogether settle batch = simultaneously . together $ do
   let moves = filter ((`Set.notMember` kept) . fst) batch
       entering = [oid | (oid, Zone.Battlefield) <- moves]
       step (sofar, acc) (oid, dest) = do
-        State.modify' (\g -> g {GameState.enteringPending = Map.delete oid (GameState.enteringPending g)})
+        State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringPending = Map.delete oid (Scratch.enteringPending (GameState.scratch g))}})
         new <- changeZoneAttaching settle (Just before) sofar oid dest LibraryPosition.defaultValue Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
         pure (foldr Set.insert sofar new, new : acc)
   arrived <- fmap (reverse . snd) (amongPending Nothing entering (Monad.foldM step (Set.empty, []) moves))
@@ -7760,7 +7775,7 @@ forgetAllShown reordered gs = Foldable.foldl' (\g oid -> snd (forgetShown oid g)
 
 -- CR 616.1 with Lich's Mirror's ruling: objects a state-based action check
 -- moves, which the effects a replacement ran in place of a loss in that check
--- are about to move too (GameState.contested). Only one move can happen, and
+-- are about to move too (Scratch.contested). Only one move can happen, and
 -- each object's controller -- its owner off the battlefield -- chooses; the
 -- answer is the set kept for the check, whose moves here are skipped.
 -- ChooseRedirect's Exercises is the replacement's move, as for an optional
@@ -7777,7 +7792,7 @@ contestedKept :: [ObjectId] -> Game (Set ObjectId)
 contestedKept oids = do
   gs <- State.get
   let contest oid = do
-        source <- Monad.join (Map.lookup oid (GameState.contested gs))
+        source <- Monad.join (Map.lookup oid (Scratch.contested (GameState.scratch gs)))
         obj <- Game.lookupObject oid gs
         chooser <- Game.ruleChooser gs =<< (Projection.controllerOf oid gs <|> Just (Object.owner obj))
         pure (List.elemIndex chooser (Game.apnapOrder gs), (chooser, source, oid))
@@ -7786,8 +7801,8 @@ contestedKept oids = do
     now <- State.get
     answer <- Game.choose (Prompt.ChooseRedirect (Decide.deciderFor chooser now) chooser source oid)
     let record = if answer == OptionalDecision.Declines then Map.insert oid Nothing else Map.delete oid
-    State.modify' (\g -> g {GameState.contested = record (GameState.contested g)})
-  after <- State.gets GameState.contested
+    State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.contested = record (Scratch.contested (GameState.scratch g))}})
+  after <- State.gets (Scratch.contested . GameState.scratch)
   pure (Set.fromList [oid | oid <- oids, Map.lookup oid after == Just Nothing])
 
 changeZoneWithCause :: Game () -> Maybe DiscardCause.DiscardCause -> Maybe GameState -> Set ObjectId -> ObjectId -> Zone -> LibraryPosition.LibraryPosition -> Maybe Recipient.Recipient -> TapState.TapState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural -> Maybe PlayerId -> Maybe CardName.CardName -> Facing.Facing -> Bool -> CarryOver.CarryOver -> Bool -> Seq.Seq (ObjectId, Modification.Modification (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> Game (Seq.Seq ObjectId)
@@ -8839,7 +8854,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                       -- stays there.
                       Just EntryRefusal.Unpaid -> do
                         State.put unentered
-                        State.modify' (\g -> g {GameState.refusedEntries = fmap (Set.insert oid) (GameState.refusedEntries g)})
+                        State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.refusedEntries = fmap (Set.insert oid) (Scratch.refusedEntries (GameState.scratch g))}})
                         if fromZone == Zone.Graveyard then pure Seq.empty else changeZoneReturning settle oid Zone.Graveyard
                       -- CR 303.4g: an Aura with nothing to enchant "remains in its
                       -- current zone, unless that zone is the stack", which puts it
@@ -9007,7 +9022,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                   Monad.when (fromZone == Zone.Battlefield) $
                     Monad.forM_ (Object.attachedTo obj) (unattach lki oid)
                   seenArriving <- State.gets (Visibility.seenByEveryone newId)
-                  causer <- State.gets GameState.causing
+                  causer <- State.gets (Scratch.causing . GameState.scratch)
                   -- CR 608.2i: the arrival as it stands, after runEntry above.
                   arrivedAs <- State.gets (Projection.objectSnapshot newId)
                   Monad.when (fromZone == Zone.Battlefield) (State.modify' (fileBoardBefore lki))
@@ -10131,7 +10146,7 @@ createTokens settle controller card copy n tapped entering attached marks = do
   if List.notElem controller (Game.stillPlaying gs)
     then pure []
     else do
-      let original = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.count = n, TokenLot.byEffect = not (GameState.payingOnResolution gs)}
+      let original = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = copy, TokenLot.count = n, TokenLot.byEffect = not (Scratch.payingOnResolution (GameState.scratch gs))}
           -- Every token of one lot, placed onto the battlefield. Interned ONCE
           -- per lot, not once per token: a lot's tokens are copies of one set of
           -- effect-defined characteristics (CR 111.3), so they name one entry.
@@ -10271,7 +10286,7 @@ createTokens settle controller card copy n tapped entering attached marks = do
               -- nothing any more and is kept only because it costs nothing: what the
               -- rule's "characteristics of the permanent as it would exist on the
               -- battlefield" reads is the OBJECTS, and these counters are no longer on
-              -- them -- Parun.Engine.Projection cannot see GameState.enteringCounters, and
+              -- them -- Parun.Engine.Projection cannot see Scratch.enteringCounters, and
               -- the map is per-object, so no sibling's loop reads another's pending
               -- counters whenever they were written. What CR 614.12 does rest on is
               -- `placeObject` above having materialized every token first, which is what
@@ -10393,9 +10408,9 @@ settleMinted start ids = do
   -- (Bramble Elemental under a Role token). The card-trigger scenario named
   -- for CR 603.2e proves it.
   Monad.mapM_ arrivedAttached ids
-  deferred <- State.gets GameState.enteringTogether
+  deferred <- State.gets (Scratch.enteringTogether . GameState.scratch)
   case deferred of
-    Just batch -> State.modify' (\g -> g {GameState.enteringTogether = Just batch {EnteringTogether.minted = EnteringTogether.minted batch <> Seq.fromList ids}})
+    Just batch -> State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = Just batch {EnteringTogether.minted = EnteringTogether.minted batch <> Seq.fromList ids}}})
     Nothing -> Monad.mapM_ (recordMintedArrival Zone.Battlefield) ids
 
 -- Nothing departed, so `departed` is the arrival's own id and `from` is `zone`
@@ -10412,7 +10427,7 @@ recordMintedArrival zone newId = do
   -- Moved.revealed is read by no look-back here: none reaches a battlefield
   -- destination (Event.Trigger.looksBack), and every battlefield-bound redirect
   -- in data/cards/ exiles, a public zone, so the public origin answers.
-  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = GameState.causing placed, Moved.arrived = Projection.objectSnapshot newId placed})))
+  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed})))
 
 -- CR 701.42a: meld these cards -- "put them onto the battlefield with their back
 -- faces up and combined. The resulting permanent is a single object represented by
@@ -10553,7 +10568,7 @@ meld settle controller victims resultCard = do
           -- Moved.revealed is read by no look-back here: none reaches a
           -- battlefield destination (Event.Trigger.looksBack), so the origin's
           -- zone answers.
-          entry = (Moved.moved (ZoneChange.MkZoneChange (fst (NonEmpty.head melding)) newId origin Zone.Battlefield) snapshot) {Moved.otherDepartures = Seq.fromList (fmap fst (NonEmpty.tail melding)), Moved.revealed = not (Game.isHiddenZone origin), Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = GameState.causing placed, Moved.arrived = Projection.objectSnapshot newId placed}
+          entry = (Moved.moved (ZoneChange.MkZoneChange (fst (NonEmpty.head melding)) newId origin Zone.Battlefield) snapshot) {Moved.otherDepartures = Seq.fromList (fmap fst (NonEmpty.tail melding)), Moved.revealed = not (Game.isHiddenZone origin), Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed}
       State.modify' (recordEvent (GameEvent.Moved entry))
       pure (Just newId)
 
@@ -11252,9 +11267,9 @@ performDraw settle pid = do
           -- CR 121.8: drawn while a spell is being cast or an ability
           -- activated, the card is kept face down and any reveal waits for
           -- `turnUpKeptDraws`, which is handed the ordinal for the gate below.
-          kept <- State.gets GameState.keptFaceDown
+          kept <- State.gets (Scratch.keptFaceDown . GameState.scratch)
           case kept of
-            Just held -> State.modify' (\g -> g {GameState.keptFaceDown = Just (Map.insert drawn nth held)})
+            Just held -> State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.keptFaceDown = Just (Map.insert drawn nth held)}})
             -- CR 702.94a's "if it's the FIRST card you've drawn this turn",
             -- and Rowen's "the first card you draw each turn", asked off the
             -- ordinal this draw was just stamped with rather than off a second
@@ -11275,13 +11290,13 @@ performDraw settle pid = do
 -- CR 401.5: the window also holds back a new top card (Game.shownTop).
 announcing :: Game a -> Game a
 announcing body = do
-  outer <- State.gets GameState.keptFaceDown
+  outer <- State.gets (Scratch.keptFaceDown . GameState.scratch)
   case outer of
     Just _ -> body
     Nothing -> do
-      State.modify' (\g -> g {GameState.keptFaceDown = Just Map.empty, GameState.announcedTops = Just (Game.libraryTops g)})
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.keptFaceDown = Just Map.empty, Scratch.announcedTops = Just (Game.libraryTops g)}})
       result <- body
-      State.modify' (\g -> g {GameState.keptFaceDown = Nothing, GameState.announcedTops = Nothing})
+      State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.keptFaceDown = Nothing, Scratch.announcedTops = Nothing}})
       pure result
 
 -- CR 401.5's window for a special action (CR 116): run `body` as the taking of
@@ -11291,9 +11306,9 @@ announcing body = do
 -- during the action opens that window inside this one.
 takingSpecialAction :: Game a -> Game a
 takingSpecialAction body = do
-  State.modify' (\g -> g {GameState.actionTops = Just (Game.libraryTops g)})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.actionTops = Just (Game.libraryTops g)}})
   result <- body
-  State.modify' (\g -> g {GameState.actionTops = Nothing})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.actionTops = Nothing}})
   pure result
 
 -- CR 121.8: the spell became cast (CR 601.2i) or the ability activated (CR
@@ -11303,8 +11318,8 @@ takingSpecialAction body = do
 -- card" has left it, and CR 702.94a reveals from the hand.
 turnUpKeptDraws :: Game ()
 turnUpKeptDraws = do
-  kept <- State.gets GameState.keptFaceDown
-  State.modify' (\g -> g {GameState.keptFaceDown = Nothing, GameState.announcedTops = Nothing})
+  kept <- State.gets (Scratch.keptFaceDown . GameState.scratch)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.keptFaceDown = Nothing, Scratch.announcedTops = Nothing}})
   Monad.forM_ (foldMap Map.toAscList kept) $ \(drawn, nth) -> do
     gs <- State.get
     case Game.lookupObject drawn gs of
@@ -11420,10 +11435,10 @@ discard settle cause pid oid = Monad.void (discardReturning settle cause pid oid
 -- restored, so the answer reaches nothing outside the body.
 payingOnResolution :: Bool -> Game a -> Game a
 payingOnResolution paying body = do
-  saved <- State.gets GameState.payingOnResolution
-  State.modify' (\g -> g {GameState.payingOnResolution = paying})
+  saved <- State.gets (Scratch.payingOnResolution . GameState.scratch)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.payingOnResolution = paying}})
   result <- body
-  State.modify' (\g -> g {GameState.payingOnResolution = saved})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.payingOnResolution = saved}})
   pure result
 
 -- CR 609.1: run `body` as the effect of a spell or ability `controller`
@@ -11433,10 +11448,10 @@ payingOnResolution paying body = do
 -- for itself and the outer one resumes after it.
 causedBy :: Maybe PlayerId -> Game a -> Game a
 causedBy controller body = do
-  saved <- State.gets GameState.causing
-  State.modify' (\g -> g {GameState.causing = controller})
+  saved <- State.gets (Scratch.causing . GameState.scratch)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.causing = controller}})
   result <- body
-  State.modify' (\g -> g {GameState.causing = saved})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.causing = saved}})
   pure result
 
 -- Why a resolving instruction's discard happens: ByEffect (CR 609.1), unless
@@ -11444,7 +11459,7 @@ causedBy controller body = do
 -- "costs aren't effects". Parun.ZoneChangeSpec's Tweeze case proves it.
 resolvingDiscardCause :: GameState -> DiscardCause.DiscardCause
 resolvingDiscardCause gs
-  | GameState.payingOnResolution gs = DiscardCause.Ordinary
+  | Scratch.payingOnResolution (GameState.scratch gs) = DiscardCause.Ordinary
   | otherwise = DiscardCause.ByEffect
 
 -- Why `pid`'s resolving instruction puts counters: CR 609.1's effect, unless
@@ -11454,7 +11469,7 @@ resolvingDiscardCause gs
 -- Season does not double Grub's blight" proves it.
 resolvingCounterCause :: PlayerId -> GameState -> CounterCause.CounterCause
 resolvingCounterCause pid gs
-  | GameState.payingOnResolution gs = CounterCause.ByPayment pid
+  | Scratch.payingOnResolution (GameState.scratch gs) = CounterCause.ByPayment pid
   | otherwise = CounterCause.ByEffect pid
 
 -- A second door rather than a return type on `discard`, the changeZoneReturning
@@ -11505,7 +11520,7 @@ discardReturning settle cause pid oid = do
   -- the sequence never holds two here.
   Monad.forM_ moved $ \newId -> do
     applied <- madnessChoice pid newId (madnessOf newId)
-    causer <- State.gets GameState.causing
+    causer <- State.gets (Scratch.causing . GameState.scratch)
     State.modify' (recordEvent (GameEvent.Discarded (Discarded.MkDiscarded pid newId cause applied causer)))
   pure moved
 
@@ -11557,7 +11572,7 @@ shuffleLibrary = shuffleLibraryExcept Set.empty
 -- CR 701.24g case is the proof, in both orders of the moves.
 shuffleAroundArrivals :: PlayerId -> Game ()
 shuffleAroundArrivals pid = do
-  pending <- State.gets (foldMap Foldable.toList . GameState.arrivals)
+  pending <- State.gets (foldMap Foldable.toList . Scratch.arrivals . GameState.scratch)
   let placedAt position = Set.fromList [oid | arrival <- pending, Arrival.owner arrival == pid, Arrival.end arrival == ArrivalEnd.IntoLibrary position, oid <- Foldable.toList (Arrival.cards arrival)]
       tops = placedAt LibraryPosition.Top
       bottoms = placedAt LibraryPosition.Bottom
@@ -12084,7 +12099,7 @@ triggeredSources boards gs =
 -- inside that rider's window as often as its source bears it. The per-TURN
 -- window needs no stored flag -- the record is CR 603.3b's own log, and
 -- TurnRegisters.events is cleared at the turn handoff, which makes "in the log" mean
--- "this turn". The per-GAME window reads GameState.triggeredThisGame, which
+-- "this turn". The per-GAME window reads History.triggeredThisGame, which
 -- survives that handoff and which Engine.reactions writes. The log records a
 -- per-game trigger too, so each window is tallied from its own store alone and
 -- a per-game trigger is counted once. CR 702.179d's
@@ -12118,7 +12133,7 @@ withinTriggerLimit gs =
    in go
         ( tally
             ( fmap spentKey (filter perTurn (Maybe.mapMaybe (abilityTriggeredOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
-                <> fmap spentKey (Foldable.toList (GameState.triggeredThisGame gs))
+                <> fmap spentKey (Foldable.toList (History.triggeredThisGame (GameState.history gs)))
                 <> fmap spentKey (Foldable.toList (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs)))
             )
         )

@@ -52,6 +52,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.ShownCards as ShownCards
 import qualified Parun.Types.Shows as Shows
@@ -73,7 +74,7 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
     built <- S.buildBoardOrFail s registry (S.board (S.hand S.alice [S.aliased "wrath" (S.cardSetup "Thunderous Wrath")] NonEmpty.:| [S.playerSetup S.bob]) S.alice S.precombatMain)
     wrath <- maybe (Spec.assertFailure s "no wrath") pure (Map.lookup (Label.MkLabel (Text.pack "wrath")) (Staged.objects built))
     let gs = Staged.state built
-        kept = gs {GameState.keptFaceDown = Just (Map.singleton wrath 0)}
+        kept = gs {GameState.scratch = (GameState.scratch gs) {Scratch.keptFaceDown = Just (Map.singleton wrath 0)}}
     Spec.assertEqWith s "the control: unmarked, its owner sees it" (Visibility.sees S.alice wrath gs) Visibility.Type.Visible
     Spec.assertEqWith s "marked by CR 121.8, its owner does not" (Visibility.sees S.alice wrath kept) Visibility.Type.Obscured
   -- The grant is seeded directly, pinning the term apart from any card that
@@ -85,7 +86,8 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
     Spec.assertEqWith s "with the hand revealed, bob sees it" (Visibility.sees S.bob card shown) Visibility.Type.Visible
   Spec.it s "CR 121.8 a card kept face down stays hidden in a revealed hand" $ do
     (gs, card, _, _) <- shownBoard s registry
-    let kept = (showing ShownCards.Hand Audience.Everyone gs) {GameState.keptFaceDown = Just (Map.singleton card 0)}
+    let shown = showing ShownCards.Hand Audience.Everyone gs
+        kept = shown {GameState.scratch = (GameState.scratch shown) {Scratch.keptFaceDown = Just (Map.singleton card 0)}}
     Spec.assertEqWith s "bob does not see the kept card" (Visibility.sees S.bob card kept) Visibility.Type.Obscured
     Spec.assertEqWith s "alice does not see the kept card" (Visibility.sees S.alice card kept) Visibility.Type.Obscured
   Spec.it s "CR 401.5 / 400.2 a look at the top card is the owner's alone" $ do
@@ -101,11 +103,11 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
   Spec.it s "CR 401.5 a top card new since the announcement began is held back" $ do
     (gs, _, top, second) <- shownBoard s registry
     let revealed = showing ShownCards.TopOfLibrary Audience.Everyone gs
-        begunAt card = revealed {GameState.announcedTops = Just (Map.singleton S.alice card)}
+        begunAt card = revealed {GameState.scratch = (GameState.scratch revealed) {Scratch.announcedTops = Just (Map.singleton S.alice card)}}
     Spec.assertEqWith s "the control: the top card as the announcement began stays shown" (Visibility.sees S.bob top (begunAt top)) Visibility.Type.Visible
     Spec.assertEqWith s "a top card that is new is hidden" (Visibility.sees S.bob top (begunAt second)) Visibility.Type.Obscured
     Spec.assertEqWith s "from its owner too" (Visibility.sees S.alice top (begunAt second)) Visibility.Type.Obscured
-    Spec.assertEqWith s "and so is one over a library then empty" (Visibility.sees S.bob top revealed {GameState.announcedTops = Just Map.empty}) Visibility.Type.Obscured
+    Spec.assertEqWith s "and so is one over a library then empty" (Visibility.sees S.bob top revealed {GameState.scratch = (GameState.scratch revealed) {Scratch.announcedTops = Just Map.empty}}) Visibility.Type.Obscured
   -- CR 724.4: a scenario reaches this only through a control effect
   -- (Mindslaver, Construct a Cosmic Cube) and bob's next turn, so the control row is written onto the state directly and the case
   -- pins the look's audience alone.

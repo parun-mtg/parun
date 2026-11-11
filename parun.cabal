@@ -3083,6 +3083,7 @@ library types
     Parun.Types.HandWindowCap
     Parun.Types.HexproofExemption
     Parun.Types.HiddenZone
+    Parun.Types.History
     Parun.Types.HistoryRead
     Parun.Types.Holder
     Parun.Types.Hop
@@ -3185,6 +3186,7 @@ library types
     Parun.Types.ManaWindow
     Parun.Types.ManifestedDread
     Parun.Types.MatchOptions
+    Parun.Types.MatchScope
     Parun.Types.Measure
     Parun.Types.Measures
     Parun.Types.Meld
@@ -3432,6 +3434,7 @@ library types
     Parun.Types.Scenario
     Parun.Types.ScenarioFailure
     Parun.Types.Scope
+    Parun.Types.Scratch
     Parun.Types.Search
     Parun.Types.SearchDestination
     Parun.Types.SearchPlace

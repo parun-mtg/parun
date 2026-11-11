@@ -945,7 +945,7 @@ spec s registry =
       -- CR 103.5c states the union of the two causes -- "in a multiplayer game
       -- and in any Brawl game" -- so the same allowance is reached at two seats
       -- by the option alone. Every leg is the same two-seat board with the same
-      -- twenty Mountains; the only difference is GameState.settings.
+      -- twenty Mountains; the only difference is MatchScope.settings.
       mountain <- S.printingOf s registry "Mountain"
       let once = run (mulliganUpTo 1) (libraryGameWith GameSettings.plain {GameSettings.brawl = True} mountain 20)
           twice = run (mulliganUpTo 2) (libraryGameWith GameSettings.plain {GameSettings.brawl = True} mountain 20)

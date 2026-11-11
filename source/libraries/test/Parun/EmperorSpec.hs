@@ -30,6 +30,7 @@ import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
@@ -51,7 +52,7 @@ spec s registry = Spec.describe s "Emperor" $ do
     Spec.assertEqWith
       s
       "CR 809.3a"
-      (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings emperorGame)))
+      (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match emperorGame))))
       (Map.fromList [(S.alice, 1), (S.bob, 2), (S.carol, 1), (S.dave, 1), (erin, 2), (frank, 1)])
 
   -- CR 809.6a: two teams of four, each emperor in its team's second seat. The

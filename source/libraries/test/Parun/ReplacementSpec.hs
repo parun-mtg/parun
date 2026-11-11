@@ -92,6 +92,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -1299,7 +1300,7 @@ undergrowthScavengerSpec s registry =
           -- half that separates a stamped count from one re-read live.
           let (_, later) = S.addGraveyardCard piker S.bob after
           Spec.assertEqWith s "still 3/3 after a fourth creature card is buried" (Projection.powerOf scavengerId later) (Just 3)
-    -- CR 614.12 / 608.2f: GameState.enteredFrom, which lets the second
+    -- CR 614.12 / 608.2f: Scratch.enteredFrom, which lets the second
     -- Scavenger Rise of the Dark Realms returns count the first, lasts only as
     -- long as the move's arrivingTogether scope. The count itself is the
     -- scenario undergrowth-scavengers-returned-together-count-each-other.
@@ -1320,7 +1321,7 @@ undergrowthScavengerSpec s registry =
               }
           after = S.runPure S.identityAnswer ready (S.cast S.alice held >> Stack.resolveTop >> Engine.settleForPriority)
       Spec.assertEqWith s "both Scavengers entered" (onBattlefieldNamed "Undergrowth Scavenger" after) 2
-      Spec.assertEqWith s "no origin is left recorded" (GameState.enteredFrom after) Map.empty
+      Spec.assertEqWith s "no origin is left recorded" (Scratch.enteredFrom (GameState.scratch after)) Map.empty
 
 -- How many of alice's permanents carry this name.
 onBattlefieldNamed :: String -> GameState.GameState -> Int

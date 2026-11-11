@@ -28,6 +28,7 @@ import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HandActionIndex as HandActionIndex
 import Parun.Types.HandActionPerformer (HandActionPerformer)
 import qualified Parun.Types.HandWindowCap as HandWindowCap
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganDeclared as MulliganDeclared
 import qualified Parun.Types.MulliganOffer as MulliganOffer
@@ -324,7 +325,7 @@ declared pid decision offer =
 -- A Natural rather than a Bool, because the caller subtracts this.
 freeMulligans :: GameState.GameState -> Numeric.Natural.Natural
 freeMulligans gs =
-  if length (GameState.turnOrder gs) > 2 || GameSettings.brawl (GameState.settings gs)
+  if length (GameState.turnOrder gs) > 2 || GameSettings.brawl (MatchScope.settings (GameState.match gs))
     then 1
     else 0
 

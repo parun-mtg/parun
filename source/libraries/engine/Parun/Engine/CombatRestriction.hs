@@ -77,6 +77,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LimitUnless as LimitUnless
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PlayerChoice as PlayerChoice
@@ -1373,6 +1374,6 @@ bounded select defending gs =
 reachesDeclarer :: Maybe PlayerId -> GameState -> (ObjectId, a, b) -> Bool
 reachesDeclarer declarer gs (source, _, _) = case declarer of
   Just pid
-    | not (Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs)))) && not (Plane.exemptFromRange source gs) ->
+    | not (Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))))) && not (Plane.exemptFromRange source gs) ->
         all (\you -> Game.inRangeOf you pid gs) (Projection.controllerOf source gs)
   _ -> True

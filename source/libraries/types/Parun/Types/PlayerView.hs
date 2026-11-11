@@ -14,7 +14,7 @@ import qualified Parun.Types.Undoing as Undoing
 data PlayerView = MkPlayerView
   { viewer :: PlayerId.PlayerId,
     -- | CR 728.1 / 730.1a: which game of the match this is
-    -- (GameState.gameNumber), whose turns `turn` counts.
+    -- (MatchScope.gameNumber), whose turns `turn` counts.
     game :: Natural.Natural,
     turn :: Natural.Natural,
     phase :: Phase.Phase,

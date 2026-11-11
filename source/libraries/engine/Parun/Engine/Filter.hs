@@ -56,6 +56,7 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MovedBetween as MovedBetween
@@ -402,7 +403,7 @@ data View = MkView
     -- kind the card names.
     dealtDamageTo :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
     -- CR 120.1 / 400.7: the same answer for every EARLIER turn this candidate
-    -- has been this object, off GameState.damageBeforeThisTurn, which
+    -- has been this object, off History.damageBeforeThisTurn, which
     -- Lookback.AsThisObject joins to `dealtDamageTo`. Lazy for its reason.
     dealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
     -- CR 302.6: has this candidate's CONTROLLER controlled it continuously since
@@ -1799,7 +1800,7 @@ contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeas
 -- contextFor over a game: its teams (CR 102.4) and its active players (CR 102.1,
 -- 805.4a) filled from the state, the two facts about the table a match may ask.
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextIn gs p s = (contextFor (GameSettings.teams (GameState.settings gs)) p s) {activePlayers = Turn.activePlayers gs}
+contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs}
 
 -- The ONE object a slot names, for the readers that can take no more than one --
 -- Quantity.AgainstSlot's evaluation, Count's IsControllerOfBound. Nothing where

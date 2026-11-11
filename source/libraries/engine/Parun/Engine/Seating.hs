@@ -12,6 +12,7 @@ import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.PlayerId (PlayerId)
 import Parun.Types.TeamId (TeamId)
 import qualified Parun.Types.Teams as Teams
@@ -23,7 +24,7 @@ import qualified Parun.Types.Teams as Teams
 -- run; an Emperor game is then emperorFault's too.
 misseated :: GameState -> Maybe PlayerId
 misseated gs =
-  let settings = GameState.settings gs
+  let settings = MatchScope.settings (GameState.match gs)
       teams = GameSettings.teams settings
       seats = GameState.turnOrder gs
    in if GameSettings.alternatingTeams settings
@@ -54,7 +55,7 @@ openings teams seats =
 -- middle seat of an even-sized Emperor team" in docs/decisions.md.
 emperorFault :: GameState -> Maybe PlayerId
 emperorFault gs =
-  let settings = GameState.settings gs
+  let settings = MatchScope.settings (GameState.match gs)
       teams = GameSettings.teams settings
       emperors = Emperors.unwrap (GameSettings.emperors settings)
       seats = GameState.turnOrder gs

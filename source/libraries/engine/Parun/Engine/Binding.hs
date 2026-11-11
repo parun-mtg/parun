@@ -386,7 +386,7 @@ handArrival = SlotName.MkSlotName (Text.pack "handArrival")
 -- the source, and one the EVENT supplied lives where every other trigger binding
 -- does.
 --
--- Read out of Parun.Types.GameState.ambientAmounts too, and written there by
+-- Read out of Parun.Types.Scratch.ambientAmounts too, and written there by
 -- Parun.Engine.Resolve.Effect.runPreventionRider, which is CR 615.5's own channel: a
 -- rider whose shielded recipient is a player has no object at all to be bound
 -- on. Nothing writes THIS name onto a battlefield permanent any more: the

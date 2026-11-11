@@ -21,6 +21,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.TeamId as TeamId
@@ -95,7 +96,7 @@ spec s registry = Spec.describe s "Seating" $ do
   -- 4's emperor. A two-team game of two has no second opposing general for
   -- either emperor, whose range stays unlimited, so setUp refuses it.
   Spec.it s "CR 809.6a no emperor begins within another emperor's range of influence" $ do
-    let widened = fmap (\gs -> gs {GameState.settings = (GameState.settings gs) {GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.insert (seat 1) 3 (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs))))}}) (emperorGame [0, 0, 0, 1, 1, 1] [1, 4])
+    let widened = fmap (\gs -> gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.insert (seat 1) 3 (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs)))))}}}) (emperorGame [0, 0, 0, 1, 1, 1] [1, 4])
     Spec.assertEqWith s "CR 809.6a seat 4 is within seat 1's range" (fmap Seating.misseated widened) (Just (Just (seat 4)))
     Spec.assertEqWith s "CR 809.6a two teams of two are refused" (fmap Seating.misseated (emperorGame [0, 0, 1, 1] [0, 2])) Nothing
   where
@@ -116,6 +117,6 @@ spec s registry = Spec.describe s "Seating" $ do
     emperorGame ts es = Emperor.setUp (teamsOf ts) (emperorsOf es) (game (Natural.length ts) GameSettings.plain)
     -- The teams and emperors at a range of 1 apiece.
     withRanges ts es = withEmperors ts es `withRange` RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(seat i, 1) | i <- [0 .. Natural.length ts - 1]])
-    withRange gs ranges = gs {GameState.settings = (GameState.settings gs) {GameSettings.rangeOfInfluence = ranges}}
+    withRange gs ranges = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = ranges}}}
     -- The teams and emperors alone, with no range of influence.
     withEmperors ts es = game (Natural.length ts) GameSettings.plain {GameSettings.teams = teamsOf ts, GameSettings.emperors = emperorsOf es}

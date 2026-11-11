@@ -116,6 +116,7 @@ import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchPlace as SearchPlace
 import Parun.Types.SlotName (SlotName)
@@ -1200,7 +1201,7 @@ choosePlayerAtRandom resolving source controller choice = do
 -- division, and the rest of the matching permanents the other, each bound --
 -- Raging River's "left" and "right". Proved by the raging-river scenarios.
 --
--- CR 101.4b: inside a loop, the pick joins GameState.loopPicks beside its
+-- CR 101.4b: inside a loop, the pick joins Scratch.loopPicks beside its
 -- chooser -- the seat asked, or where nobody was, the one seat the chooser ref
 -- names -- so a later pick's prompt carries it. Proved by
 -- Parun.BoardEffectSpec's "CR 101.4b each player is told the earlier players'
@@ -1220,7 +1221,7 @@ choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePer
             _ -> Nothing
           record seat loop = loop Seq.|> (seat, Set.fromList picked)
       Monad.forM_ (asked <|> named) $ \seat ->
-        Monad.unless (null picked) (State.modify' (\g -> g {GameState.loopPicks = fmap (record seat) (GameState.loopPicks g)}))
+        Monad.unless (null picked) (State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.loopPicks = fmap (record seat) (Scratch.loopPicks (GameState.scratch g))}}))
       pure picked
     Just chooserRef -> do
       gs <- State.get
@@ -1258,7 +1259,7 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
     Grouping.Piles slots -> do
       gs <- State.get
       let piles = ListUtils.nubOrd [Set.fromList (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot pile)) | pile <- NonEmpty.toList slots]
-      earlier <- State.gets (Maybe.fromMaybe Seq.empty . GameState.loopPicks)
+      earlier <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.loopPicks . GameState.scratch)
       foldMap Set.toList <$> Game.chooseAmong (\decider asked offered -> Prompt.ChoosePile decider asked subject offered earlier) controller piles
   Monad.unless (null members) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList members)))
 
@@ -1416,12 +1417,12 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
 
 -- CR 706.2b's reroll or a coin's reflip, asked for by the ability Goblin
 -- Bookie activates inside throwDice's window or Parun.Engine.Resolve.Effect's
--- reflipWindow, through GameState.rethrowRequested. The die is thrown again
+-- reflipWindow, through Scratch.rethrowRequested. The die is thrown again
 -- once the ability is done, by throwSettled's `rethrow`, as the activating
 -- player's CR 706.1 roll; the coin by Parun.Engine.Event.settleCoins. No
 -- window open, nothing to throw again, and nothing happens.
 rethrow :: Game ()
-rethrow = State.modify' (\g -> if Maybe.isJust (GameState.throwing g) then g {GameState.rethrowRequested = True} else g)
+rethrow = State.modify' (\g -> if Maybe.isJust (Scratch.throwing (GameState.scratch g)) then g {GameState.scratch = (GameState.scratch g) {Scratch.rethrowRequested = True}} else g)
 
 -- CR 706.8b: the controller chooses which of the slot's stored results to
 -- reroll, rolls one die of each noted kind per result through throwDice --

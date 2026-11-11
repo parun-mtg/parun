@@ -20,6 +20,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -185,7 +186,7 @@ base pid oid gs = case Game.lookupObject oid gs of
 -- "Whether Alternating Teams teammates review hands across an emptied seat".
 reviewsHandOf :: PlayerId -> PlayerId -> GameState.GameState -> Bool
 reviewsHandOf pid owner gs =
-  let settings = GameState.settings gs
+  let settings = MatchScope.settings (GameState.match gs)
       beside = List.elem owner (Game.neighbours pid gs)
    in pid == owner || Teams.sameTeam (Game.teams gs) pid owner && (not (GameSettings.alternatingTeams settings) || beside)
 

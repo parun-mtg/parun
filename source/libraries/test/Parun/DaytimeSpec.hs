@@ -65,6 +65,7 @@ import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
@@ -133,7 +134,7 @@ upkeep gs =
 -- directly. Only the CR 502.2 cases use it, and what it stands in for is proved
 -- through the rules by the handoff case at the foot of this module.
 afterCasting :: Natural.Natural -> GameState.GameState -> GameState.GameState
-afterCasting n gs = gs {GameState.spellsCastLastTurn = n}
+afterCasting n gs = gs {GameState.history = (GameState.history gs) {History.spellsCastLastTurn = n}}
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Daytime" $ do
@@ -468,7 +469,7 @@ anyNumberBoard tovolar ranger wolf =
 afterOneCast :: GameState.GameState -> GameState.GameState
 afterOneCast gs =
   let cast = GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice S.noSource S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty)
-   in gs {GameState.eventsLastTurn = TurnRegisters.events (GameState.turn (S.withEvents [cast] gs))}
+   in gs {GameState.history = (GameState.history gs) {History.eventsLastTurn = TurnRegisters.events (GameState.turn (S.withEvents [cast] gs))}}
 
 -- Names every permanent offered. Pinned rather than left to S.identityAnswer,
 -- whose fallback happens to answer the same way: the assertion is about what the
@@ -552,6 +553,6 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
     let (gs, spellId) = S.handOne lightningBolt (S.landsInPlay mountain 1)
         cast = S.runPure S.castAnswer gs (S.cast S.alice spellId)
         handed = Engine.beginTurnOf S.bob cast
-    Spec.assertEqWith s "nothing was on the books before the turn ended" (GameState.spellsCastLastTurn gs) 0
-    Spec.assertEqWith s "one spell rode across the handoff" (GameState.spellsCastLastTurn handed) 1
+    Spec.assertEqWith s "nothing was on the books before the turn ended" (History.spellsCastLastTurn (GameState.history gs)) 0
+    Spec.assertEqWith s "one spell rode across the handoff" (History.spellsCastLastTurn (GameState.history handed)) 1
     Spec.assertEqWith s "and the log it was folded from is gone" (Seq.null (TurnRegisters.events (GameState.turn handed))) True

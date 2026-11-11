@@ -55,6 +55,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modification as Modification
@@ -72,6 +73,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Scope as Scope
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -336,7 +338,7 @@ gameStateRoundTripSpec s registry corpus = do
     let (gs, _, _) = S.combatBoard piker 2 1
     roundTrips "a declared attack" gs
 
-  -- GameState.triggeredThisGame: the spent record behind the printed rider "This
+  -- History.triggeredThisGame: the spent record behind the printed rider "This
   -- ability triggers only once" (Parun.Types.TriggerLimit's OncePerGame), and the
   -- one field the turn handoff deliberately does not clear. An EMPTY record round
   -- trips whether or not the codec names the field at all, so the case carries a
@@ -355,7 +357,7 @@ gameStateRoundTripSpec s registry corpus = do
                   AbilityTriggered.controller = S.alice,
                   AbilityTriggered.ability = ability
                 }
-         in roundTrips "a spent per-game rider" gs {GameState.triggeredThisGame = Seq.singleton spent}
+         in roundTrips "a spent per-game rider" gs {GameState.history = (GameState.history gs) {History.triggeredThisGame = Seq.singleton spent}}
 
   -- TurnRegisters.instructionsTakenThisTurn: CR 603.2h's spent "Do this only once
   -- each turn", carrying a record for the reason the case above does.
@@ -381,7 +383,7 @@ gameStateRoundTripSpec s registry corpus = do
                       }
                 }
 
-  -- GameState.castsBeforeThisTurn, CR 601.2i's casts of earlier turns, the
+  -- History.castsBeforeThisTurn, CR 601.2i's casts of earlier turns, the
   -- other record the handoff keeps. Built through a real cast and handoff, so
   -- the record is non-empty for the reason the case above gives.
   Spec.it s "a cast on an earlier turn round trips" $ do
@@ -389,17 +391,17 @@ gameStateRoundTripSpec s registry corpus = do
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (gs, spellId) = S.handOne lightningBolt (S.landsInPlay mountain 1)
         handed = Engine.beginTurnOf S.bob (S.runPure S.castAnswer gs (S.cast S.alice spellId))
-    Spec.assertEqWith s "the handoff kept alice's cast" (fmap SpellWasCast.player (Foldable.toList (GameState.castsBeforeThisTurn handed))) [S.alice]
+    Spec.assertEqWith s "the handoff kept alice's cast" (fmap SpellWasCast.player (Foldable.toList (History.castsBeforeThisTurn (GameState.history handed)))) [S.alice]
     roundTrips "a cast on an earlier turn" handed
 
-  -- GameState.damageBeforeThisTurn, CR 120.1's damage of earlier turns, kept
+  -- History.damageBeforeThisTurn, CR 120.1's damage of earlier turns, kept
   -- at the same handoff and built the same way.
   Spec.it s "damage on an earlier turn round trips" $ do
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (giant, gs) = S.addPermanent hillGiant S.alice (Setup.emptyGame S.bothPlayers)
         dealt = Event.damageEvent gs DamageKind.Combat giant (Recipient.ToPlayer S.bob) 3
         handed = Engine.beginTurnOf S.bob (S.withEvents [GameEvent.DamageDealt dealt] gs)
-    Spec.assertEqWith s "the handoff kept the Giant's 3" (fmap DamageEvent.amount (Foldable.toList (GameState.damageBeforeThisTurn handed))) [3]
+    Spec.assertEqWith s "the handoff kept the Giant's 3" (fmap DamageEvent.amount (Foldable.toList (History.damageBeforeThisTurn (GameState.history handed)))) [3]
     roundTrips "damage on an earlier turn" handed
 
   -- GameState.departedThisTurn, CR 801.2c's seats that still count until the
@@ -579,7 +581,7 @@ gameStateRoundTripSpec s registry corpus = do
     Spec.assertBool s (Map.size (Bookkeeping.printings (GameState.bookkeeping gs)) >= 2) "the fixture should hold two printings"
     roundTrips "two interned printings" gs
 
-  -- Forces GameState.enteringCounters non-empty by hand rather than through
+  -- Forces Scratch.enteringCounters non-empty by hand rather than through
   -- play, since the field is normally emptied by flushEnteringCounters before
   -- an event finishes applying and a round trip in between is not observable
   -- through play.
@@ -589,10 +591,13 @@ gameStateRoundTripSpec s registry corpus = do
     let (oid, gs0) = S.addPermanent piker S.alice (S.oneMountainState mountain Phase.PrecombatMain)
         gs =
           gs0
-            { GameState.enteringCounters =
-                Map.singleton oid (Map.fromList [(Nothing, Map.singleton CounterKind.PlusOnePlusOne 2), (Just S.bob, Map.singleton CounterKind.PlusOnePlusOne 3)]),
-              GameState.copyExceptionCounters =
-                Map.singleton oid (Map.singleton CounterKind.PlusOnePlusOne 1)
+            { GameState.scratch =
+                (GameState.scratch gs0)
+                  { Scratch.enteringCounters =
+                      Map.singleton oid (Map.fromList [(Nothing, Map.singleton CounterKind.PlusOnePlusOne 2), (Just S.bob, Map.singleton CounterKind.PlusOnePlusOne 3)]),
+                    Scratch.copyExceptionCounters =
+                      Map.singleton oid (Map.singleton CounterKind.PlusOnePlusOne 1)
+                  }
             }
     roundTrips "a pending +1/+1 counter, by putter" gs
 

@@ -86,6 +86,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
@@ -1275,7 +1276,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     wish <- S.printingOf s registry "Burning Wish"
     contract <- S.printingOf s registry "Contract from Below"
     let (gs, wishId) = wishBoard mountain wish [(contract, 1)]
-        forAnte = gs {GameState.settings = (GameState.settings gs) {GameSettings.ante = True}}
+        forAnte = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.ante = True}}}
     Spec.assertEqWith s "CR 407.3 not playing for ante, her hand gets nothing" (printingsIn Zone.Hand S.alice (resolveWish exercising wishId gs)) []
     Spec.assertEqWith s "playing for ante, the same wish brings it in" (printingsIn Zone.Hand S.alice (resolveWish exercising wishId forAnte)) [contract]
   -- CR 108.5: a nontraditional card "remains outside the game". Death Wish

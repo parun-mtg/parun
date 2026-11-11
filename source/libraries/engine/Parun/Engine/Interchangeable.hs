@@ -62,6 +62,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.History as History
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
@@ -82,6 +83,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Saddling as Saddling
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
@@ -170,7 +172,7 @@ objects pcs gs a b =
       grants = Projection.View.controlGrants gs
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs
       -- Every View field Parun.Engine.Projection.View fills from the turn's log
-      -- (CR 608.2i), GameState.damageBeforeThisTurn (CR 120.1) or
+      -- (CR 608.2i), History.damageBeforeThisTurn (CR 120.1) or
       -- TurnRegisters.couldAttackThisTurn (CR 508.1).
       -- Hand-kept: a new look-back field owes a line here.
       lookBack view =
@@ -226,7 +228,7 @@ objects pcs gs a b =
            )
 
 -- CR 608.2i from the other end: which objects the turn's log, or an earlier
--- turn's (GameState.damageBeforeThisTurn), says dealt this one damage (CR
+-- turn's (History.damageBeforeThisTurn), says dealt this one damage (CR
 -- 120.1), crewed it (CR 702.122c), convoked it or the spell it was (CR
 -- 702.51c, 400.7d), and saddled it (CR 702.171c). Each is a relation atom's
 -- answer read off ANOTHER object's view with this one as the source --
@@ -241,7 +243,7 @@ actedOnBy oid gs =
   let events = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs) <> foldMap TurnRegisters.events (GameState.parkedTurns gs)))
       damagers =
         Set.fromList [DamageEvent.source dealt | event@(GameEvent.DamageDealt dealt) <- events, (Game.damageRecipient event >>= Recipient.objectOf) == Just oid]
-          <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (GameState.damageBeforeThisTurn gs), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
+          <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (History.damageBeforeThisTurn (GameState.history gs)), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
       crewers = Set.unions [Crewing.crewedBy crewed | GameEvent.Crewed crewed <- events, Crewing.vehicle crewed == oid]
       convokers = Set.unions [Convoking.convokedBy convoked | GameEvent.Convoked convoked <- events, let spell = Convoking.spell convoked, spell == oid || elem oid (Count.becamePermanents spell events)]
       saddlers = Set.unions [Saddling.saddledBy saddled | GameEvent.Saddled saddled <- events, Saddling.mount saddled == oid]
@@ -280,7 +282,7 @@ representatives pcs gs candidates =
 --     at a PLAYER and name no object.
 --   * Snapshots.lastKnown is about objects that have LEFT, bar the host each
 --     record names, which namedByAnother searches; and so is
---     GameState.castsBeforeThisTurn: its spells were cast on an earlier turn,
+--     History.castsBeforeThisTurn: its spells were cast on an earlier turn,
 --     and CR 500.2 ends no step while the stack holds one.
 --     Snapshots.stackArchive is keyed by stack objects that have left too, and
 --     its bindings are read only on behalf of a stack object or a delayed
@@ -298,7 +300,7 @@ representatives pcs gs candidates =
 --     Its rider triggerings are read by namedByRelation too, for the granter
 --     their ability is named for (Binding.acquiredFrom), as are the counted
 --     activations of TurnRegisters.activatedThisTurn and Object.activatedOnce.
---     TurnRegisters.couldAttackThisTurn and GameState.damageBeforeThisTurn are
+--     TurnRegisters.couldAttackThisTurn and History.damageBeforeThisTurn are
 --     read through the same two views, and the latter through actedOnBy too.
 --     Snapshots.controlSample (CR 603.2's control diff),
 --     Snapshots.battlefieldWhenTriggered (CR 603.10's look-back) and
@@ -311,7 +313,7 @@ representatives pcs gs candidates =
 --     namedByRelation and actedOnBy; its stacks are a zone, as
 --     TurnRegisters.stack is. Its look-back fields are not read through the two
 --     views, which read the live turn's alone (gap #6538).
---   * GameState.eventsLastTurn is read by the per-seat view and by the "last
+--   * History.eventsLastTurn is read by the per-seat view and by the "last
 --     turn" tallies (Quantity's SpellsCast and LifeChanged), which count per
 --     PLAYER and name no object, so no choice between objects can turn on it.
 --   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
@@ -322,7 +324,7 @@ representatives pcs gs candidates =
 --     printing and a face-up/face-down status (CR 110.5); the id supplies of
 --     the two games are disjoint (Setup.funnelBack takes the max), so no key of
 --     it can be a candidate.
---   * GameState.ambientAmounts is keyed by slot and valued at a number, and
+--   * Scratch.ambientAmounts is keyed by slot and valued at a number, and
 --     Bookkeeping.referenceNames is keyed by a Filter and valued at names.
 --   * The turn, phase, priority, result, daytime, signal, supply, printing,
 --     event-group, scan-cursor, subgame and die-roll fields describe the GAME
@@ -332,9 +334,9 @@ representatives pcs gs candidates =
 -- class rather than an object (CR 611.2c): the class is a Filter, and
 -- filterNames answers for it.
 --
--- GameState.enteringCounters, GameState.copyExceptionCounters,
--- GameState.enteringTogether, GameState.arrivals, GameState.enteredFrom,
--- GameState.contested, GameState.detachedBindings and GameState.broughtIn are
+-- Scratch.enteringCounters, Scratch.copyExceptionCounters,
+-- Scratch.enteringTogether, Scratch.arrivals, Scratch.enteredFrom,
+-- Scratch.contested, GameState.detachedBindings and GameState.broughtIn are
 -- listed below because each holds ObjectIds, and NOT because any board reaches
 -- this with one of them non-empty: the first two are empty outside an entry
 -- loop, the next three outside a CR 608.2f action or an arrival, the sixth
@@ -343,23 +345,23 @@ representatives pcs gs candidates =
 -- requiring a field empty is the direction that cannot make a player's choice,
 -- so an unreachable row is the cheap side to be wrong on.
 --
--- GameState.arrivals is required to hold no arrival rather than to be closed: an
+-- Scratch.arrivals is required to hold no arrival rather than to be closed: an
 -- open scope with none names no object, and every simultaneous move opens one
 -- (Event.simultaneously), Restamp.order's batches included.
 quiet :: GameState -> Bool
 quiet gs =
   Seq.null (GameState.broughtIn gs)
-    && Set.null (GameState.enteringBeside gs)
-    && Map.null (GameState.enteringSubjects gs)
-    && Map.null (GameState.enteredFrom gs)
-    && Map.null (GameState.enteringPending gs)
-    && Maybe.isNothing (GameState.refusedEntries gs)
-    && Map.null (GameState.enteringCounters gs)
-    && Map.null (GameState.copyExceptionCounters gs)
+    && Set.null (Scratch.enteringBeside (GameState.scratch gs))
+    && Map.null (Scratch.enteringSubjects (GameState.scratch gs))
+    && Map.null (Scratch.enteredFrom (GameState.scratch gs))
+    && Map.null (Scratch.enteringPending (GameState.scratch gs))
+    && Maybe.isNothing (Scratch.refusedEntries (GameState.scratch gs))
+    && Map.null (Scratch.enteringCounters (GameState.scratch gs))
+    && Map.null (Scratch.copyExceptionCounters (GameState.scratch gs))
     && Map.null (GameState.detachedBindings gs)
-    && Maybe.isNothing (GameState.enteringTogether gs)
-    && all Seq.null (GameState.arrivals gs)
-    && Map.null (GameState.contested gs)
+    && Maybe.isNothing (Scratch.enteringTogether (GameState.scratch gs))
+    && all Seq.null (Scratch.arrivals (GameState.scratch gs))
+    && Map.null (Scratch.contested (GameState.scratch gs))
 
 -- Whether a stored row, or the combat in progress, MIGHT name this object.
 -- "Might", because a slot read with no environment to search answers True --
@@ -649,14 +651,14 @@ namedByRelation oid gs =
         || keyed (GameState.namedCopyChoices gs)
         || keyed (GameState.notedCards gs)
         || keyed (GameState.notedMana gs)
-        || maybe False keyed (GameState.keptFaceDown gs)
-        || maybe False (elem oid) (GameState.announcedTops gs)
-        || maybe False (elem oid) (GameState.actionTops gs)
-        || maybe False (any (Set.member oid . snd)) (GameState.loopPicks gs)
+        || maybe False keyed (Scratch.keptFaceDown (GameState.scratch gs))
+        || maybe False (elem oid) (Scratch.announcedTops (GameState.scratch gs))
+        || maybe False (elem oid) (Scratch.actionTops (GameState.scratch gs))
+        || maybe False (any (Set.member oid . snd)) (Scratch.loopPicks (GameState.scratch gs))
         || maybe False (\picks -> any (Set.member oid) (RepeatPicks.picked picks) || any (Set.member oid) (RepeatPicks.refused picks)) (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
         || elem oid (GameState.revealedTops gs)
         || Set.member oid (GameState.outsideCopies gs)
-        || any (triggeredNames oid) (GameState.triggeredThisGame gs)
+        || any (triggeredNames oid) (History.triggeredThisGame (GameState.history gs))
         || any (triggeredNames oid) (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs))
         || any (triggeredNames oid) [record | GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))]
         || any (any (spentActivationNames oid) . Map.keys) (Map.elems (TurnRegisters.activatedThisTurn (GameState.turn gs)))
@@ -671,7 +673,7 @@ namedByRelation oid gs =
         || any (triggeredNames oid) [record | r <- parked, GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events r))]
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked
         || any (any (activationNames oid) . TurnRegisters.activationsThisTurn) parked
-        || any (any (attackedLastTurnNames oid)) (Map.elems (GameState.attacksInOwnLastTurn gs))
+        || any (any (attackedLastTurnNames oid)) (Map.elems (History.attacksInOwnLastTurn (GameState.history gs)))
 
 -- The objects a GameState.phasedOut row names BEYOND its key: none, since CR
 -- 702.26a's stored value is the player the permanent phased out under.

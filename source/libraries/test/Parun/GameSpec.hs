@@ -73,6 +73,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
@@ -827,7 +828,7 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     -- The new game really is a new game, not the old one with a board wiped.
     Spec.assertEqWith s "CR 728.1a: bob is the starting player" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
     Spec.assertEqWith s "CR 728.1: the rebuilt game is on turn 1" (TurnRegisters.turnNumber (GameState.turn after)) 1
-    Spec.assertEqWith s "CR 728.1: the match's second game" (GameState.gameNumber after, GameState.gamesThisMatch after) (2, 2)
+    Spec.assertEqWith s "CR 728.1: the match's second game" (MatchScope.gameNumber (GameState.match after), MatchScope.gamesThisMatch (GameState.match after)) (2, 2)
     Spec.assertEqWith s "CR 728.4: settled at the first untap step" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
     Spec.assertEqWith s "CR 103.5: carol drew a fresh opening hand" (S.handSize S.carol after) 7
     Spec.assertEqWith s "the game did not end -- the new game is live" (GameState.result after) Nothing
@@ -1047,7 +1048,7 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     mountain <- S.printingOf s registry "Mountain"
     plains <- S.printingOf s registry "Plains"
     shahrazad <- S.printingOf s registry "Shahrazad"
-    let teamed gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1)])}}
+    let teamed gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1)])}}}
         after = castShahrazad (forAnte . teamed) mountain plains shahrazad 9
     Spec.assertEqWith s "CR 407.2 alice's and carol's ante cards are bob's" (List.sort (changesOf after)) [(S.alice, S.bob), (S.carol, S.bob)]
     Spec.assertEqWith s "CR 730.5 and they went to his main-game library" (fmap (\pid -> length (Game.zoneMembers Zone.Library pid after)) [S.alice, S.bob, S.carol]) [8, 8, 3]
@@ -1059,7 +1060,7 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     mountain <- S.printingOf s registry "Mountain"
     plains <- S.printingOf s registry "Plains"
     shahrazad <- S.printingOf s registry "Shahrazad"
-    let teamed gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1)])}}
+    let teamed gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1)])}}}
         after = castShahrazad teamed mountain plains shahrazad 8
     Spec.assertEqWith s "CR 104.2c bob, on the winning team, pays nothing" (S.lifeOf S.bob after) (Just 13)
     Spec.assertEqWith s "and neither does alice" (S.lifeOf S.alice after) (Just 20)
@@ -1140,7 +1141,7 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
   -- proven.
   --
   -- The intervening "if there haven't been any subgames this match" (CR 603.4)
-  -- IS transcribed, over GameState.subgamesThisMatch; the case below this one is
+  -- IS transcribed, over MatchScope.subgamesThisMatch; the case below this one is
   -- what proves it, as the same board with the tally already at 1.
   --
   -- "An opponent" is not transcribed either, and that one IS a rules equivalence:
@@ -1175,8 +1176,8 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     Spec.assertEqWith s "and carol's" (librarySize S.carol after) 8
     Spec.assertEqWith s "the trigger resolved and left the stack" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "CR 730.1a: the subgame did not decide the main game" (GameState.result after) Nothing
-    Spec.assertEqWith s "CR 100.6a: the subgame it played is on the match's books, in the resumed main game" (GameState.subgamesThisMatch after) 1
-    Spec.assertEqWith s "CR 730.1a: the main game resumes as the match's first game of two" (GameState.gameNumber after, GameState.gamesThisMatch after) (1, 2)
+    Spec.assertEqWith s "CR 100.6a: the subgame it played is on the match's books, in the resumed main game" (MatchScope.subgamesThisMatch (GameState.match after)) 1
+    Spec.assertEqWith s "CR 730.1a: the main game resumes as the match's first game of two" (MatchScope.gameNumber (GameState.match after), MatchScope.gamesThisMatch (GameState.match after)) (1, 2)
 
   -- CR 603.4 over CR 100.6a: the SAME board as the case above with exactly one
   -- thing different -- the match has already had a subgame -- so Shahrazad and
@@ -1192,12 +1193,12 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
           Response.DeterminedFirstPlayer _ -> True
           _ -> False
         rolls = length (filter isRoll (snd (Replay.record sindbadAnswer placed Engine.priorityLoop)))
-    Spec.assertEqWith s "the fixture's own tally: one subgame already played this match" (GameState.subgamesThisMatch before) 1
+    Spec.assertEqWith s "the fixture's own tally: one subgame already played this match" (MatchScope.subgamesThisMatch (GameState.match before)) 1
     -- THE proving assertion, at gameplay level: nobody paid the CR 730.1b half,
     -- because no subgame was played. bob is on 10, the combat damage alone.
     Spec.assertEqWith s "CR 603.4: no subgame, so no player halves their life" (S.lifeOf S.alice after, S.lifeOf S.bob after, S.lifeOf S.carol after) (Just 20, Just 10, Just 9)
     Spec.assertEqWith s "CR 730.2: no subgame determined a first player" rolls 0
-    Spec.assertEqWith s "CR 100.6a: the tally stands where it started" (GameState.subgamesThisMatch after) 1
+    Spec.assertEqWith s "CR 100.6a: the tally stands where it started" (MatchScope.subgamesThisMatch (GameState.match after)) 1
     Spec.assertEqWith s "and nothing was left on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
   Spec.it s "CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one" $ do
@@ -1338,8 +1339,8 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     Spec.assertEqWith s "CR 730.6: two nested subgame levels each shuffle on setup and funnel-back (measured; a flat gate yields 4)" shuffles 8
     -- CR 100.6a: a subgame started INSIDE a subgame is still a subgame of this
     -- match, so the resumed top-level game counts both (Setup.funnelBack).
-    Spec.assertEqWith s "CR 730.6/100.6a: both levels are on the match's books" (GameState.subgamesThisMatch after) 2
-    Spec.assertEqWith s "CR 730.6: the main game resumes as the match's first game of three" (GameState.gameNumber after, GameState.gamesThisMatch after) (1, 3)
+    Spec.assertEqWith s "CR 730.6/100.6a: both levels are on the match's books" (MatchScope.subgamesThisMatch (GameState.match after)) 2
+    Spec.assertEqWith s "CR 730.6: the main game resumes as the match's first game of three" (MatchScope.gameNumber (GameState.match after), MatchScope.gamesThisMatch (GameState.match after)) (1, 3)
 
   Spec.it s "a subgame replays deterministically (the reason Prompt.PlaySubgame was rejected, CR 730 / M0's determinism criterion)" $ do
     -- A Prompt would run the subgame INSIDE the answer function, below
@@ -2614,7 +2615,8 @@ sindbadCombat mountain sindbad subgamesSoFar =
       -- attacking Sindbad with it.
       stocked = addToLibraryG mountain 8 S.carol (addToLibraryG mountain 4 S.bob (addToLibraryG mountain 6 S.alice gs0))
       atLife pid n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) pid (GameState.players gs)}
-      before = (atLife S.carol 9 (atLife S.bob 13 (atLife S.alice 20 stocked))) {GameState.subgamesThisMatch = subgamesSoFar}
+      living = atLife S.carol 9 (atLife S.bob 13 (atLife S.alice 20 stocked))
+      before = living {GameState.match = (GameState.match living) {MatchScope.subgamesThisMatch = subgamesSoFar}}
       atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage) sindbadAnswer before
       fought = S.runPure sindbadAnswer atDamage (Damage.dealCombatDamage (pure ()))
       placed = S.runPure sindbadAnswer fought Engine.settleForPriority
@@ -2906,7 +2908,7 @@ changesOf :: GameState.GameState -> [(PlayerId.PlayerId, PlayerId.PlayerId)]
 changesOf gs = [(OwnershipChange.startingOwner c, OwnershipChange.owner c) | c <- Foldable.toList (Ante.ownershipChanges gs)]
 
 forAnte :: GameState.GameState -> GameState.GameState
-forAnte gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.ante = True}}
+forAnte gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.ante = True}}}
 
 -- Shahrazad's board: three seats on distinct life totals, alice holding Shahrazad and
 -- two untapped Plains to cast it with, and libraries of `aliceLibrary`, 6 and 4

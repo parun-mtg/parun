@@ -64,6 +64,7 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaOption as ManaOption
@@ -771,7 +772,10 @@ blinkCasts spirit omniscience =
       board =
         gs2
           { GameState.objects = Map.adjust (\obj -> obj {Object.sickness = Sickness.Sick}) spiritId (GameState.objects gs2),
-            GameState.resolvedNames = Map.singleton S.alice (Set.singleton (CardName.MkCardName (Text.pack "Blinking Spirit")))
+            GameState.history =
+              (GameState.history gs2)
+                { History.resolvedNames = Map.singleton S.alice (Set.singleton (CardName.MkCardName (Text.pack "Blinking Spirit")))
+                }
           }
       ((_, _), (_, _, made)) = State.runState (Engine.runGameAsked blinking (inMain board) Engine.priorityLoop) (budget, False, [])
    in made

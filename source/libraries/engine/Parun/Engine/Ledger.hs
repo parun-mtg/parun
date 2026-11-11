@@ -25,9 +25,11 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Discrepancy as Discrepancy
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Player as Player
@@ -44,14 +46,14 @@ discrepancies before after = case logBetween before after of
 
 -- | The entries logged between two states: the later log past the earlier one,
 -- across at most one turn handoff (Parun.Engine.Engine.handoffTurn moves the
--- log to GameState.eventsLastTurn). Nothing where the earlier log is not a
+-- log to History.eventsLastTurn). Nothing where the earlier log is not a
 -- prefix -- a reversal cut it (CR 734.1), or Parun.Engine.Cost rewrote it --
 -- or the two are different games (CR 728.1, 730.1a) or turns further apart.
 logBetween :: GameState.GameState -> GameState.GameState -> Maybe (Seq.Seq LoggedEvent.LoggedEvent)
 logBetween before after
-  | GameState.gameNumber before /= GameState.gameNumber after = Nothing
+  | MatchScope.gameNumber (GameState.match before) /= MatchScope.gameNumber (GameState.match after) = Nothing
   | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) = past (TurnRegisters.events (GameState.turn after))
-  | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) + 1 = fmap (<> TurnRegisters.events (GameState.turn after)) (past (GameState.eventsLastTurn after))
+  | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) + 1 = fmap (<> TurnRegisters.events (GameState.turn after)) (past (History.eventsLastTurn (GameState.history after)))
   | otherwise = Nothing
   where
     earlier = TurnRegisters.events (GameState.turn before)

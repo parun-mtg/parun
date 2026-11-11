@@ -78,6 +78,8 @@ import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.Object as Object
@@ -239,8 +241,8 @@ spec s registry = Spec.describe s "Teams" $ do
   -- the same teams without the variant, which CR 808.4 rotates.
   Spec.it s "CR 808.4 does not apply to Two-Headed Giant or Alternating Teams" $ do
     forest <- S.printingOf s registry "Forest"
-    let giant gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.twoHeadedGiant = True}}
-        alternating gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.alternatingTeams = True}}
+    let giant gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.twoHeadedGiant = True}}}
+        alternating gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.alternatingTeams = True}}}
         interleaved = S.inTeams [[S.alice, S.carol], [S.bob, S.dave]] S.fourPlayerGame
         orderOf = GameState.turnOrder . fst . startWith forest
     Spec.assertEqWith s "CR 810 the caller's order stands" (orderOf (giant (twoTeams S.fourPlayerGame))) [S.alice, S.bob, S.carol, S.dave]
@@ -251,7 +253,7 @@ spec s registry = Spec.describe s "Teams" $ do
 
 -- CR 805.1: twoTeams with the shared team turns option on.
 sharedTurns :: GameState.GameState -> GameState.GameState
-sharedTurns gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.sharedTeamTurns = True}}
+sharedTurns gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.sharedTeamTurns = True}}}
 
 -- CR 805.4's shared team turns. Every case is a PAIR of boards differing only in
 -- the option: twoTeams with it and twoTeams without, so a case cannot pass for
@@ -294,7 +296,7 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
                         }
                   }
               cast = S.runPure S.castAnswer board (S.cast S.bob held)
-           in GameState.spellsCastLastTurn (Engine.beginTurnOf S.carol cast)
+           in (History.spellsCastLastTurn . GameState.history) (Engine.beginTurnOf S.carol cast)
     Spec.assertEqWith s "bob's one spell counts for his team" (run sharedTurns) 1
     Spec.assertEqWith s "without the option only alice's none counts" (run id) 0
   -- CR 805.4d's other half: an ability that does not refer to "that player"
@@ -480,7 +482,7 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let run option =
           let teamed = sharedTurns (S.inTeams [[S.dave, S.alice], [S.bob, S.carol]] S.fourPlayerGame)
-              (mine, staged) = S.addPermanent piker S.alice teamed {GameState.settings = (GameState.settings teamed) {GameSettings.attackOption = Just option}}
+              (mine, staged) = S.addPermanent piker S.alice teamed {GameState.match = (GameState.match teamed) {MatchScope.settings = (MatchScope.settings (GameState.match teamed)) {GameSettings.attackOption = Just option}}}
               board =
                 staged
                   { GameState.turn =

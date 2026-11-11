@@ -67,6 +67,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
+import qualified Parun.Types.History as History
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LibraryPosition as LibraryPosition
@@ -77,6 +78,7 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import Parun.Types.Mana (Mana)
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Mode as Mode
@@ -102,6 +104,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
@@ -244,7 +247,7 @@ beingCast gs candidate = case lookupObject candidate gs of
 -- (Parun.Engine.Driver.seated).
 keptFaceDown :: ObjectId -> GameState -> Bool
 keptFaceDown oid gs =
-  maybe False (Map.member oid) (GameState.keptFaceDown gs)
+  maybe False (Map.member oid) (Scratch.keptFaceDown (GameState.scratch gs))
     && fmap Object.zone (lookupObject oid gs) == Just Zone.Hand
 
 -- CR 601.2a's move, as far as a board condition can see it: the state a cast
@@ -463,6 +466,44 @@ blankSnapshots =
       Snapshots.controlSample = Map.empty,
       Snapshots.boardAtControlSample = Nothing,
       Snapshots.heldBoards = []
+    }
+
+-- The resolution scratch of a game nothing is resolving in.
+blankScratch :: Scratch.Scratch
+blankScratch =
+  Scratch.MkScratch
+    { Scratch.enteringTogether = Nothing,
+      Scratch.arrivals = Nothing,
+      Scratch.payingOnResolution = False,
+      Scratch.causing = Nothing,
+      Scratch.contested = Map.empty,
+      Scratch.ambientAmounts = Map.empty,
+      Scratch.enteringBeside = Set.empty,
+      Scratch.enteringSubjects = Map.empty,
+      Scratch.enteredFrom = Map.empty,
+      Scratch.enteringPending = Map.empty,
+      Scratch.refusedEntries = Nothing,
+      Scratch.enteringCounters = Map.empty,
+      Scratch.copyExceptionCounters = Map.empty,
+      Scratch.keptFaceDown = Nothing,
+      Scratch.announcedTops = Nothing,
+      Scratch.actionTops = Nothing,
+      Scratch.loopPicks = Nothing,
+      Scratch.throwing = Nothing,
+      Scratch.rethrowRequested = False
+    }
+
+-- The history of a game nothing has happened in yet.
+blankHistory :: History.History
+blankHistory =
+  History.MkHistory
+    { History.eventsLastTurn = Seq.empty,
+      History.spellsCastLastTurn = 0,
+      History.castsBeforeThisTurn = Seq.empty,
+      History.damageBeforeThisTurn = Seq.empty,
+      History.attacksInOwnLastTurn = Map.empty,
+      History.triggeredThisGame = Seq.empty,
+      History.resolvedNames = Map.empty
     }
 
 -- | Rewrite the turn being worked (GameState.turn).
@@ -787,12 +828,12 @@ libraryTops :: GameState -> Map.Map PlayerId ObjectId
 libraryTops gs = Map.fromList [(pid, top) | pid <- Map.keys (GameState.players gs), Just top <- [topOf Zone.Library pid gs]]
 
 -- | CR 401.5: the top card of a player's library, unless it became the top while
--- a spell is being cast or an ability activated (GameState.announcedTops) or
--- while a special action is taken (GameState.actionTops), when it isn't
+-- a spell is being cast or an ability activated (Scratch.announcedTops) or
+-- while a special action is taken (Scratch.actionTops), when it isn't
 -- revealed and can't be looked at until that ends.
 shownTop :: PlayerId -> GameState -> Maybe ObjectId
 shownTop pid gs = case topOf Zone.Library pid gs of
-  Just top | any (any (\tops -> Map.lookup pid tops /= Just top)) [GameState.announcedTops gs, GameState.actionTops gs] -> Nothing
+  Just top | any (any (\tops -> Map.lookup pid tops /= Just top)) [Scratch.announcedTops (GameState.scratch gs), Scratch.actionTops (GameState.scratch gs)] -> Nothing
   top -> top
 
 -- CR 404.3: set a player's standing graveyard-order setting
@@ -3037,11 +3078,11 @@ stillPlayingInOrder gs =
    in filter (\pid -> List.elem pid playing) (GameState.turnOrder gs)
 
 -- CR 808.1: which team each player in this game is on, or CR 102.4's empty map
--- for a game not played between teams. GameState.settings is where the option
+-- for a game not played between teams. MatchScope.settings is where the option
 -- lives (CR 800.2), and this is the spelling every caller uses so that a reader
 -- asking about teams cannot reach past the settings for them.
 teams :: GameState -> Teams.Teams
-teams = GameSettings.teams . GameState.settings
+teams = GameSettings.teams . MatchScope.settings . GameState.match
 
 -- CR 102.3: are these two players opponents -- on different teams, or in a game
 -- with no teams simply not the same player?
@@ -3058,7 +3099,7 @@ areOpponents gs = Teams.areOpponents (teams gs)
 -- keeping their row equal keeps every member's Player.life the team's.
 lifeSharers :: PlayerId -> GameState -> [PlayerId]
 lifeSharers pid gs =
-  pid : [other | GameSettings.sharedTeamLife (GameState.settings gs), other <- Map.keys (GameState.players gs), Teams.sameTeam (teams gs) pid other]
+  pid : [other | GameSettings.sharedTeamLife (MatchScope.settings (GameState.match gs)), other <- Map.keys (GameState.players gs), Teams.sameTeam (teams gs) pid other]
 
 -- CR 810.10: the players whose counters of this kind are this player's -- the
 -- player, and in Two-Headed Giant every teammate (CR 102.3) for poison, which the
@@ -3068,7 +3109,7 @@ lifeSharers pid gs =
 -- Archenemy Commander, whose teams share life but not poison.
 counterSharers :: PlayerCounterKind.PlayerCounterKind -> PlayerId -> GameState -> [PlayerId]
 counterSharers kind pid gs =
-  pid : [other | kind == PlayerCounterKind.Poison, GameSettings.twoHeadedGiant (GameState.settings gs), other <- Map.keys (GameState.players gs), Teams.sameTeam (teams gs) pid other]
+  pid : [other | kind == PlayerCounterKind.Poison, GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)), other <- Map.keys (GameState.players gs), Teams.sameTeam (teams gs) pid other]
 
 -- CR 122.1 / 810.10b: remove up to this many counters of this kind from this
 -- player, floored at what they have, off the team's shared count where every
@@ -3111,7 +3152,7 @@ wasInRangeOf you candidate gs =
 -- answered by the caller.
 inRangeSeated :: Bool -> PlayerId -> PlayerId -> GameState -> Bool
 inRangeSeated seated you candidate gs =
-  candidate == you || case RangeOfInfluence.rangeOf (GameSettings.rangeOfInfluence (GameState.settings gs)) you of
+  candidate == you || case RangeOfInfluence.rangeOf (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))) you of
     Nothing -> True
     Just range ->
       let seats = seatsThisTurn gs
@@ -3389,12 +3430,12 @@ castsPerPlayer events =
     (fmap (\cast -> (SpellWasCast.player cast, 1)) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList events)))
 
 -- CR 608.2i: the log of the turn a tally names. TurnRegisters.events is the turn in
--- progress, Engine.beginTurn clearing it at the handoff; GameState.eventsLastTurn
+-- progress, Engine.beginTurn clearing it at the handoff; History.eventsLastTurn
 -- is the one before, whoever's it was, and empty on the game's first turn.
 turnLog :: WhichTurn.WhichTurn -> GameState -> Seq.Seq LoggedEvent.LoggedEvent
 turnLog which gs = case which of
   WhichTurn.ThisTurn -> TurnRegisters.events (GameState.turn gs)
-  WhichTurn.LastTurn -> GameState.eventsLastTurn gs
+  WhichTurn.LastTurn -> History.eventsLastTurn (GameState.history gs)
 
 -- CR 601.2i: this turn's casts, in the order they became cast, off the log
 -- Engine.handoffTurn clears.
@@ -3403,7 +3444,7 @@ castsInLog gs = Seq.fromList (Maybe.mapMaybe (castOf . LoggedEvent.event) (Folda
 
 -- CR 120.1: every damage event in the turn's log, oldest first, behind
 -- damageRecipient's CR 120.8 fence -- castsInLog's shape, for
--- GameState.damageBeforeThisTurn.
+-- History.damageBeforeThisTurn.
 damageInLog :: GameState -> Seq.Seq DamageEvent.DamageEvent
 damageInLog gs =
   let dealt event = case event of
@@ -4207,7 +4248,7 @@ attackersDeclaredThisTurn :: GameState -> PlayerId -> Natural
 attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 508.1a: this turn's attacker declarations, in order, off the log
--- Engine.beginTurn snapshots into GameState.attacksInOwnLastTurn as it clears it.
+-- Engine.beginTurn snapshots into History.attacksInOwnLastTurn as it clears it.
 attacksInLog :: GameState -> Seq.Seq AttackerDeclared.AttackerDeclared
 attacksInLog gs = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
   where
@@ -4219,7 +4260,7 @@ attacksInLog gs = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (F
 -- most recent turn? Giant Turtle's "if it attacked during your last turn".
 attackedInLastTurnOf :: GameState -> PlayerId -> ObjectId -> Bool
 attackedInLastTurnOf gs pid oid =
-  any ((== oid) . AttackerDeclared.attacker) (Map.findWithDefault Seq.empty pid (GameState.attacksInOwnLastTurn gs))
+  any ((== oid) . AttackerDeclared.attacker) (Map.findWithDefault Seq.empty pid (History.attacksInOwnLastTurn (GameState.history gs)))
 
 -- CR 508.1b / 800.4i: how many players attacked this player during their OWN
 -- most recent turn -- Avenge's "a player attacked you during their last turn".
@@ -4228,7 +4269,7 @@ attackedInLastTurnOf gs pid oid =
 attackersInTheirLastTurn :: GameState -> PlayerId -> Natural
 attackersInTheirLastTurn gs victim =
   let attackedVictim attacking row = AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.target row == AttackTarget.OfPlayer victim
-   in Natural.length (filter (\(attacking, rows) -> any (attackedVictim attacking) rows) (Map.toList (GameState.attacksInOwnLastTurn gs)))
+   in Natural.length (filter (\(attacking, rows) -> any (attackedVictim attacking) rows) (Map.toList (History.attacksInOwnLastTurn (GameState.history gs))))
 
 -- CR 509.1h / 608.2i: did this OBJECT become a blocked creature this turn?
 -- attackersDeclaredThisTurn's footing over the other combat log, and its extent

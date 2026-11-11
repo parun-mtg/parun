@@ -64,6 +64,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -209,7 +210,7 @@ attackableOpponents gs =
       opponents = opponentsInRange gs
       seatedAt neighbour = filter (\pid -> Just pid == neighbour) opponents
       beside = filter (\pid -> List.elem pid (Game.neighbours active gs))
-      allowed = case GameSettings.attackOption (GameState.settings gs) of
+      allowed = case GameSettings.attackOption (MatchScope.settings (GameState.match gs)) of
         Just AttackOption.Leftward -> seatedAt (Maybe.listToMaybe others)
         Just AttackOption.Rightward -> seatedAt (Maybe.listToMaybe (reverse others))
         -- CR 809.3c: either neighbour, over CR 801.2c's seats rather than the
@@ -229,7 +230,7 @@ attackableOpponents gs =
       --
       -- The opponents it cuts are still CR 802.2's defending players;
       -- designateDefenders files them as Combat.barred.
-      if GameSettings.alternatingTeams (GameState.settings gs) then beside allowed else allowed
+      if GameSettings.alternatingTeams (MatchScope.settings (GameState.match gs)) then beside allowed else allowed
 
 -- CR 801.3: the active player's opponents still playing and within their range
 -- of influence, in APNAP order -- attackableOpponents before any attack option
@@ -2275,7 +2276,7 @@ designateDefenders = do
   -- this is the only site that decides who is asked; a direct caller -- a spec,
   -- or a second combat phase spliced by an effect -- gets the same answer.
   Monad.forM_ (Game.ruleChooser gs pid) $ \chooser -> do
-    let settings = GameState.settings gs
+    let settings = MatchScope.settings (GameState.match gs)
         attackable = attackableOpponents gs
     -- CR 802.2 / 811.4: every opponent in range is a defending player (CR
     -- 801.2 keeps the rest out), the ones no creature may attack included --

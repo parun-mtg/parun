@@ -74,19 +74,23 @@ import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName.Type
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Printing as Printing.Type
 import qualified Parun.Types.PrintingId as PrintingId.Type
 import qualified Parun.Types.RestartSignal as RestartSignal.Type
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName.Type
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- | Every field but one, in the record's own order.
 --
--- GameState.stored's, GameState.bookkeeping's and GameState.snapshots' fields
--- are written FLAT, each under its own key at the place it held before the
--- grouping, rather than nested under a key of the group's: the grouping is the
--- engine's, for Parun.Engine.Stored and the CR 603.12 comparison, and the wire
+-- The fields of GameState's groups -- `match`, `stored`, `bookkeeping`,
+-- `snapshots`, `scratch` and `history` -- are written FLAT, each under its own
+-- key at the place it held before the grouping, rather than nested under a key
+-- of the group's: the grouping is the engine's, for Parun.Engine.Stored, the CR
+-- 603.12 comparison and Parun.Engine.Setup's restart and subgame, and the wire
 -- has no reader of it.
 --
 -- 'Fields.required' is kept for the fields no game can be missing -- `settings`,
@@ -119,7 +123,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 -- record a second time. That is the size argument, and it is the lesser one.
 codec :: (CardName.Type.CardName -> Maybe Card.Type.Card) -> Codec.Codec GameState.GameState
 codec resolve = Fields.object $ do
-  settings <- Fields.required "settings" GameSettings.codec GameState.settings
+  settings <- Fields.required "settings" GameSettings.codec (MatchScope.settings . GameState.match)
   objects <- Fields.required "objects" (Common.naturalMap ObjectId.codec Object.codec) GameState.objects
   library <- Fields.defaulted "library" Map.empty (Common.naturalMap PlayerId.codec (Common.seq ObjectId.codec)) GameState.library
   hand <- Fields.defaulted "hand" Map.empty (Common.naturalMap PlayerId.codec (Common.seq ObjectId.codec)) GameState.hand
@@ -138,10 +142,10 @@ codec resolve = Fields.object $ do
   manaPool <- Fields.defaulted "manaPool" Map.empty (Common.naturalMap PlayerId.codec Mana.codec) GameState.manaPool
   nextEventGroup <- Fields.required "nextEventGroup" EventGroup.codec (Bookkeeping.nextEventGroup . GameState.bookkeeping)
   eventGroupDepth <- Fields.defaulted "eventGroupDepth" 0 Common.natural (Bookkeeping.eventGroupDepth . GameState.bookkeeping)
-  enteringTogether <- Fields.defaulted "enteringTogether" Nothing (Common.maybe EnteringTogether.codec) GameState.enteringTogether
-  arrivals <- Fields.defaulted "arrivals" Nothing (Common.maybe (Common.seq Arrival.codec)) GameState.arrivals
-  payingOnResolution <- Fields.defaulted "payingOnResolution" False Common.boolean GameState.payingOnResolution
-  causing <- Fields.defaulted "causing" Nothing (Common.maybe PlayerId.codec) GameState.causing
+  enteringTogether <- Fields.defaulted "enteringTogether" Nothing (Common.maybe EnteringTogether.codec) (Scratch.enteringTogether . GameState.scratch)
+  arrivals <- Fields.defaulted "arrivals" Nothing (Common.maybe (Common.seq Arrival.codec)) (Scratch.arrivals . GameState.scratch)
+  payingOnResolution <- Fields.defaulted "payingOnResolution" False Common.boolean (Scratch.payingOnResolution . GameState.scratch)
+  causing <- Fields.defaulted "causing" Nothing (Common.maybe PlayerId.codec) (Scratch.causing . GameState.scratch)
   lastKnown <- Fields.defaulted "lastKnown" Map.empty (Common.naturalMap ObjectId.codec LastKnown.codec) (Snapshots.lastKnown . GameState.snapshots)
   stackArchive <- Fields.defaulted "stackArchive" Map.empty (Common.naturalMap ObjectId.codec Object.codec) (Snapshots.stackArchive . GameState.snapshots)
   battlefieldWhenTriggered <- Fields.defaulted "battlefieldWhenTriggered" Map.empty (Common.naturalMap EventGroup.codec (Common.naturalMap ObjectId.codec (BattlefieldCandidate.codec ProjectedCharacteristics.codec))) (Snapshots.battlefieldWhenTriggered . GameState.snapshots)
@@ -158,17 +162,17 @@ codec resolve = Fields.object $ do
   pendingPreventionRiders <- Fields.defaulted "pendingPreventionRiders" Seq.empty (Common.seq Prevention.codec) (StoredEffects.pendingPreventionRiders . GameState.stored)
   pendingReplacementEffects <- Fields.defaulted "pendingReplacementEffects" Seq.empty (Common.seq PendingReplacementEffect.codec) (StoredEffects.pendingReplacementEffects . GameState.stored)
   pendingSkipEffects <- Fields.defaulted "pendingSkipEffects" Seq.empty (Common.seq PendingSkipEffect.codec) (StoredEffects.pendingSkipEffects . GameState.stored)
-  contested <- Fields.defaulted "contested" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe ObjectId.codec)) GameState.contested
-  ambientAmounts <- Fields.defaulted "ambientAmounts" Map.empty (Common.textMap SlotName.Type.unwrap (Right . SlotName.Type.MkSlotName) Common.natural) GameState.ambientAmounts
+  contested <- Fields.defaulted "contested" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe ObjectId.codec)) (Scratch.contested . GameState.scratch)
+  ambientAmounts <- Fields.defaulted "ambientAmounts" Map.empty (Common.textMap SlotName.Type.unwrap (Right . SlotName.Type.MkSlotName) Common.natural) (Scratch.ambientAmounts . GameState.scratch)
   detachedBindings <- Fields.defaulted "detachedBindings" Map.empty (Common.naturalMap ObjectId.codec Binding.codecMap) GameState.detachedBindings
   pendingEntryEffects <- Fields.defaulted "pendingEntryEffects" Seq.empty (Common.seq PendingEntryEffect.codec) (StoredEffects.pendingEntryEffects . GameState.stored)
-  enteringBeside <- Fields.defaulted "enteringBeside" Set.empty (Common.set ObjectId.codec) GameState.enteringBeside
-  enteringSubjects <- Fields.defaulted "enteringSubjects" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe EntryOrigin.codec)) GameState.enteringSubjects
-  enteredFrom <- Fields.defaulted "enteredFrom" Map.empty (Common.naturalMap ObjectId.codec EntryOrigin.codec) GameState.enteredFrom
-  enteringPending <- Fields.defaulted "enteringPending" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.enteringPending
-  refusedEntries <- Fields.defaulted "refusedEntries" Nothing (Common.maybe (Common.set ObjectId.codec)) GameState.refusedEntries
-  enteringCounters <- Fields.defaulted "enteringCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.keyedList (Common.keyValue (Common.maybe PlayerId.codec) (Common.multiset (CounterKind.codec Keyword.codec))))) GameState.enteringCounters
-  copyExceptionCounters <- Fields.defaulted "copyExceptionCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.multiset (CounterKind.codec Keyword.codec))) GameState.copyExceptionCounters
+  enteringBeside <- Fields.defaulted "enteringBeside" Set.empty (Common.set ObjectId.codec) (Scratch.enteringBeside . GameState.scratch)
+  enteringSubjects <- Fields.defaulted "enteringSubjects" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe EntryOrigin.codec)) (Scratch.enteringSubjects . GameState.scratch)
+  enteredFrom <- Fields.defaulted "enteredFrom" Map.empty (Common.naturalMap ObjectId.codec EntryOrigin.codec) (Scratch.enteredFrom . GameState.scratch)
+  enteringPending <- Fields.defaulted "enteringPending" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) (Scratch.enteringPending . GameState.scratch)
+  refusedEntries <- Fields.defaulted "refusedEntries" Nothing (Common.maybe (Common.set ObjectId.codec)) (Scratch.refusedEntries . GameState.scratch)
+  enteringCounters <- Fields.defaulted "enteringCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.keyedList (Common.keyValue (Common.maybe PlayerId.codec) (Common.multiset (CounterKind.codec Keyword.codec))))) (Scratch.enteringCounters . GameState.scratch)
+  copyExceptionCounters <- Fields.defaulted "copyExceptionCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.multiset (CounterKind.codec Keyword.codec))) (Scratch.copyExceptionCounters . GameState.scratch)
   playerEffects <- Fields.defaulted "playerEffects" [] (Common.list ActivePlayerEffect.codec) (StoredEffects.playerEffects . GameState.stored)
   blockRequirements <- Fields.defaulted "blockRequirements" [] (Common.list ActiveBlockRequirement.codec) (StoredEffects.blockRequirements . GameState.stored)
   attackRequirements <- Fields.defaulted "attackRequirements" [] (Common.list ActiveAttackRequirement.codec) (StoredEffects.attackRequirements . GameState.stored)
@@ -196,27 +200,27 @@ codec resolve = Fields.object $ do
   fellShort <- Fields.defaulted "fellShort" 0 Common.natural (Bookkeeping.fellShort . GameState.bookkeeping)
   landsPlayed <- Fields.defaulted "landsPlayed" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.landsPlayed
   cardsPlayed <- Fields.defaulted "cardsPlayed" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.cardsPlayed
-  keptFaceDown <- Fields.defaulted "keptFaceDown" Nothing (Common.maybe (Common.naturalMap ObjectId.codec Common.natural)) GameState.keptFaceDown
-  announcedTops <- Fields.defaulted "announcedTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) GameState.announcedTops
-  actionTops <- Fields.defaulted "actionTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) GameState.actionTops
-  loopPicks <- Fields.defaulted "loopPicks" Nothing (Common.maybe (Common.seq (Common.tuple PlayerId.codec (Common.set ObjectId.codec)))) GameState.loopPicks
+  keptFaceDown <- Fields.defaulted "keptFaceDown" Nothing (Common.maybe (Common.naturalMap ObjectId.codec Common.natural)) (Scratch.keptFaceDown . GameState.scratch)
+  announcedTops <- Fields.defaulted "announcedTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) (Scratch.announcedTops . GameState.scratch)
+  actionTops <- Fields.defaulted "actionTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) (Scratch.actionTops . GameState.scratch)
+  loopPicks <- Fields.defaulted "loopPicks" Nothing (Common.maybe (Common.seq (Common.tuple PlayerId.codec (Common.set ObjectId.codec)))) (Scratch.loopPicks . GameState.scratch)
   repeatPicks <- Fields.defaulted "repeatPicks" Nothing (Common.maybe RepeatPicks.codec) (Bookkeeping.repeatPicks . GameState.bookkeeping)
   revealedTops <- Fields.defaulted "revealedTops" Map.empty (Common.naturalMap PlayerId.codec ObjectId.codec) GameState.revealedTops
   departedThisTurn <- Fields.defaulted "departedThisTurn" Set.empty (Common.set PlayerId.codec) GameState.departedThisTurn
   -- Common.repeats, for Parun.Codec.Object's activatedOnce reason.
-  triggeredThisGame <- Fields.defaulted "triggeredThisGame" Seq.empty (Common.seq AbilityTriggered.codec) GameState.triggeredThisGame
+  triggeredThisGame <- Fields.defaulted "triggeredThisGame" Seq.empty (Common.seq AbilityTriggered.codec) (History.triggeredThisGame . GameState.history)
   pendingControl <- Fields.defaulted "pendingControl" Map.empty (Common.naturalMap PlayerId.codec PlayerControl.codec) GameState.pendingControl
   control <- Fields.defaulted "control" Map.empty (Common.naturalMap PlayerId.codec (Common.nonEmpty PlayerControl.codec)) GameState.control
   monarch <- Fields.defaulted "monarch" Nothing (Common.maybe PlayerId.codec) GameState.monarch
   initiative <- Fields.defaulted "initiative" Nothing (Common.maybe PlayerId.codec) GameState.initiative
   daytime <- Fields.defaulted "daytime" Nothing (Common.maybe Daytime.codec) GameState.daytime
-  spellsCastLastTurn <- Fields.defaulted "spellsCastLastTurn" 0 Common.natural GameState.spellsCastLastTurn
-  eventsLastTurn <- Fields.defaulted "eventsLastTurn" Seq.empty (Common.seq LoggedEvent.codec) GameState.eventsLastTurn
-  castsBeforeThisTurn <- Fields.defaulted "castsBeforeThisTurn" Seq.empty (Common.seq SpellWasCast.codec) GameState.castsBeforeThisTurn
-  damageBeforeThisTurn <- Fields.defaulted "damageBeforeThisTurn" Seq.empty (Common.seq DamageEvent.codec) GameState.damageBeforeThisTurn
+  spellsCastLastTurn <- Fields.defaulted "spellsCastLastTurn" 0 Common.natural (History.spellsCastLastTurn . GameState.history)
+  eventsLastTurn <- Fields.defaulted "eventsLastTurn" Seq.empty (Common.seq LoggedEvent.codec) (History.eventsLastTurn . GameState.history)
+  castsBeforeThisTurn <- Fields.defaulted "castsBeforeThisTurn" Seq.empty (Common.seq SpellWasCast.codec) (History.castsBeforeThisTurn . GameState.history)
+  damageBeforeThisTurn <- Fields.defaulted "damageBeforeThisTurn" Seq.empty (Common.seq DamageEvent.codec) (History.damageBeforeThisTurn . GameState.history)
   damagePreventedBy <- Fields.defaulted "damagePreventedBy" Map.empty (Common.naturalMap ObjectId.codec Common.natural) GameState.damagePreventedBy
-  attacksInOwnLastTurn <- Fields.defaulted "attacksInOwnLastTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq AttackerDeclared.codec)) GameState.attacksInOwnLastTurn
-  resolvedNames <- Fields.defaulted "resolvedNames" Map.empty (Common.naturalMap PlayerId.codec (Common.set CardName.codec)) GameState.resolvedNames
+  attacksInOwnLastTurn <- Fields.defaulted "attacksInOwnLastTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq AttackerDeclared.codec)) (History.attacksInOwnLastTurn . GameState.history)
+  resolvedNames <- Fields.defaulted "resolvedNames" Map.empty (Common.naturalMap PlayerId.codec (Common.set CardName.codec)) (History.resolvedNames . GameState.history)
   movedUntil <- Fields.defaulted "movedUntil" Map.empty (Common.naturalMap ObjectId.codec ReturnWatch.codec) GameState.movedUntil
   haunting <- Fields.defaulted "haunting" Map.empty (Common.naturalMap ObjectId.codec ObjectId.codec) GameState.haunting
   encoded <- Fields.defaulted "encoded" Map.empty (Common.naturalMap ObjectId.codec ObjectId.codec) GameState.encoded
@@ -227,15 +231,21 @@ codec resolve = Fields.object $ do
   extraTurns <- Fields.defaulted "extraTurns" [] (Common.list ExtraTurn.codec) GameState.extraTurns
   turnMarkers <- Fields.defaulted "turnMarkers" [] (Common.list TurnMarker.codec) GameState.turnMarkers
   parkedTurns <- Fields.defaulted "parkedTurns" Map.empty (Common.naturalMap Common.natural TurnRegisters.codec) GameState.parkedTurns
-  subgamesThisMatch <- Fields.defaulted "subgamesThisMatch" 0 Common.natural GameState.subgamesThisMatch
-  gamesThisMatch <- Fields.defaulted "gamesThisMatch" 1 Common.natural GameState.gamesThisMatch
-  gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural GameState.gameNumber
-  throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) GameState.throwing
-  rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean GameState.rethrowRequested
+  subgamesThisMatch <- Fields.defaulted "subgamesThisMatch" 0 Common.natural (MatchScope.subgamesThisMatch . GameState.match)
+  gamesThisMatch <- Fields.defaulted "gamesThisMatch" 1 Common.natural (MatchScope.gamesThisMatch . GameState.match)
+  gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural (MatchScope.gameNumber . GameState.match)
+  throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) (Scratch.throwing . GameState.scratch)
+  rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean (Scratch.rethrowRequested . GameState.scratch)
   undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) (Bookkeeping.undone . GameState.bookkeeping)
   pure
     GameState.MkGameState
-      { GameState.settings = settings,
+      { GameState.match =
+          MatchScope.MkMatchScope
+            { MatchScope.settings = settings,
+              MatchScope.subgamesThisMatch = subgamesThisMatch,
+              MatchScope.gamesThisMatch = gamesThisMatch,
+              MatchScope.gameNumber = gameNumber
+            },
         GameState.objects = objects,
         GameState.library = library,
         GameState.hand = hand,
@@ -252,10 +262,28 @@ codec resolve = Fields.object $ do
         GameState.broughtIn = broughtIn,
         GameState.departedCards = departedCards,
         GameState.manaPool = manaPool,
-        GameState.enteringTogether = enteringTogether,
-        GameState.arrivals = arrivals,
-        GameState.payingOnResolution = payingOnResolution,
-        GameState.causing = causing,
+        GameState.scratch =
+          Scratch.MkScratch
+            { Scratch.enteringTogether = enteringTogether,
+              Scratch.arrivals = arrivals,
+              Scratch.payingOnResolution = payingOnResolution,
+              Scratch.causing = causing,
+              Scratch.contested = contested,
+              Scratch.ambientAmounts = ambientAmounts,
+              Scratch.enteringBeside = enteringBeside,
+              Scratch.enteringSubjects = enteringSubjects,
+              Scratch.enteredFrom = enteredFrom,
+              Scratch.enteringPending = enteringPending,
+              Scratch.refusedEntries = refusedEntries,
+              Scratch.enteringCounters = enteringCounters,
+              Scratch.copyExceptionCounters = copyExceptionCounters,
+              Scratch.keptFaceDown = keptFaceDown,
+              Scratch.announcedTops = announcedTops,
+              Scratch.actionTops = actionTops,
+              Scratch.loopPicks = loopPicks,
+              Scratch.throwing = throwing,
+              Scratch.rethrowRequested = rethrowRequested
+            },
         GameState.bookkeeping =
           Bookkeeping.MkBookkeeping
             { Bookkeeping.nextObjectId = nextObjectId,
@@ -303,16 +331,7 @@ codec resolve = Fields.object $ do
               StoredEffects.pendingSkipEffects = pendingSkipEffects,
               StoredEffects.pendingEntryEffects = pendingEntryEffects
             },
-        GameState.contested = contested,
-        GameState.ambientAmounts = ambientAmounts,
         GameState.detachedBindings = detachedBindings,
-        GameState.enteringBeside = enteringBeside,
-        GameState.enteringSubjects = enteringSubjects,
-        GameState.enteredFrom = enteredFrom,
-        GameState.enteringPending = enteringPending,
-        GameState.refusedEntries = refusedEntries,
-        GameState.enteringCounters = enteringCounters,
-        GameState.copyExceptionCounters = copyExceptionCounters,
         GameState.turnOrder = turnOrder,
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,
@@ -325,25 +344,24 @@ codec resolve = Fields.object $ do
         GameState.drewFromEmpty = drewFromEmpty,
         GameState.landsPlayed = landsPlayed,
         GameState.cardsPlayed = cardsPlayed,
-        GameState.keptFaceDown = keptFaceDown,
-        GameState.announcedTops = announcedTops,
-        GameState.actionTops = actionTops,
-        GameState.loopPicks = loopPicks,
         GameState.revealedTops = revealedTops,
         GameState.departedThisTurn = departedThisTurn,
-        GameState.triggeredThisGame = triggeredThisGame,
+        GameState.history =
+          History.MkHistory
+            { History.triggeredThisGame = triggeredThisGame,
+              History.spellsCastLastTurn = spellsCastLastTurn,
+              History.eventsLastTurn = eventsLastTurn,
+              History.castsBeforeThisTurn = castsBeforeThisTurn,
+              History.damageBeforeThisTurn = damageBeforeThisTurn,
+              History.attacksInOwnLastTurn = attacksInOwnLastTurn,
+              History.resolvedNames = resolvedNames
+            },
         GameState.pendingControl = pendingControl,
         GameState.control = control,
         GameState.monarch = monarch,
         GameState.initiative = initiative,
         GameState.daytime = daytime,
-        GameState.spellsCastLastTurn = spellsCastLastTurn,
-        GameState.eventsLastTurn = eventsLastTurn,
-        GameState.castsBeforeThisTurn = castsBeforeThisTurn,
-        GameState.damageBeforeThisTurn = damageBeforeThisTurn,
         GameState.damagePreventedBy = damagePreventedBy,
-        GameState.attacksInOwnLastTurn = attacksInOwnLastTurn,
-        GameState.resolvedNames = resolvedNames,
         GameState.movedUntil = movedUntil,
         GameState.haunting = haunting,
         GameState.encoded = encoded,
@@ -353,12 +371,7 @@ codec resolve = Fields.object $ do
         GameState.exilePiles = exilePiles,
         GameState.extraTurns = extraTurns,
         GameState.turnMarkers = turnMarkers,
-        GameState.parkedTurns = parkedTurns,
-        GameState.subgamesThisMatch = subgamesThisMatch,
-        GameState.gamesThisMatch = gamesThisMatch,
-        GameState.gameNumber = gameNumber,
-        GameState.throwing = throwing,
-        GameState.rethrowRequested = rethrowRequested
+        GameState.parkedTurns = parkedTurns
       }
 
 -- | `printings` read backwards, which is what Bookkeeping.printingIds holds.

@@ -73,6 +73,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LifeChange as LifeChange
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -215,7 +216,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
         board = S.attach steal creature (S.attach equipment creature (S.attach aura creature g3))
         ranged gs =
           let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(S.alice, 1), (S.bob, 1), (S.carol, 2), (S.dave, 1)])
-           in gs {GameState.settings = (GameState.settings gs) {GameSettings.rangeOfInfluence = ranges}}
+           in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = ranges}}}
         limited = S.settleSba (ranged board)
         unlimited = S.settleSba board
     Spec.assertEqWith s "CR 801.8 / 801.9 at alice's range 1 the Piker loses both bonuses" (S.powerToughnessOf creature limited) (Just (2, 1))
@@ -349,7 +350,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
             )
             (S.inTeams [[S.alice], [S.bob, S.carol, S.dave]] S.fourPlayerGame)
 
-        teamed = shared {GameState.settings = (GameState.settings shared) {GameSettings.sharedTeamTurns = True}}
+        teamed = shared {GameState.match = (GameState.match shared) {MatchScope.settings = (MatchScope.settings (GameState.match shared)) {GameSettings.sharedTeamTurns = True}}}
         stocked = snd (S.addLibraryCard island S.dave (snd (S.addLibraryCard island S.dave teamed)))
         (_, withBlossom) = S.addPermanent bitterblossom S.dave stocked
         settle gs =
@@ -372,7 +373,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
     visitor <- S.printingOf s registry "Asylum Visitor"
     island <- S.printingOf s registry "Island"
     let shared = S.inTeams [[S.alice], [S.bob, S.carol, S.dave]] S.fourPlayerGame
-        teamed = shared {GameState.settings = (GameState.settings shared) {GameSettings.sharedTeamTurns = True}}
+        teamed = shared {GameState.match = (GameState.match shared) {MatchScope.settings = (MatchScope.settings (GameState.match shared)) {GameSettings.sharedTeamTurns = True}}}
         stock pid gs = List.foldl' (\g _ -> snd (S.addLibraryCard island pid g)) gs [1 :: Int .. 4]
         -- The Visitor under `owner`, at the upkeep of the team `active` leads.
         lifeAfter owner active gs =
@@ -428,7 +429,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
     let (entrant, g0) = S.addPermanent squire S.alice S.fourPlayerGame
         (carols, g1) = S.addPermanent piker S.carol g0
         ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(S.alice, 1), (S.bob, 1), (S.carol, 2), (S.dave, 1)])
-        ranged = g1 {GameState.settings = (GameState.settings g1) {GameSettings.rangeOfInfluence = ranges}}
+        ranged = g1 {GameState.match = (GameState.match g1) {MatchScope.settings = (MatchScope.settings (GameState.match g1)) {GameSettings.rangeOfInfluence = ranges}}}
         shielded = entering entrant ranged
     Spec.assertBool s (not (Game.inRangeOf S.alice S.carol shielded)) "carol is outside alice's range"
     Spec.assertEqWith s "CR 801.13b carol's Piker deals alice nothing" (S.lifeOf S.alice (strike S.carol [carols] S.alice shielded)) (Just 20)

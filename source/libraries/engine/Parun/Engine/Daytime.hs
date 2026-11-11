@@ -42,6 +42,7 @@ import qualified Parun.Types.Daytime as Daytime
 import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -288,10 +289,10 @@ settle record = do
 --   * its second -- night, and that player cast two or more, becomes day
 --   * its third -- neither, and the check doesn't happen at all
 --
--- The count is GameState.spellsCastLastTurn, snapshotted at the handoff, because
+-- The count is History.spellsCastLastTurn, snapshotted at the handoff, because
 -- the event log this would otherwise be folded from is cleared there and this
 -- runs afterwards. That scalar and not the per-seat fold of
--- GameState.eventsLastTurn a CARD reads: rule 732.2 names exactly one player
+-- History.eventsLastTurn a CARD reads: rule 732.2 names exactly one player
 -- where a card asks about every player, and Engine.beginTurnOf folds the scalar
 -- out of the same log with the same Game.castsPerPlayer, so the two agree about
 -- the one seat this rule is about.
@@ -307,5 +308,5 @@ untapCheck record = do
   gs <- State.get
   case GameState.daytime gs of
     Nothing -> pure False
-    Just Daytime.Day -> if GameState.spellsCastLastTurn gs == 0 then becomes record Daytime.Night else pure False
-    Just Daytime.Night -> if GameState.spellsCastLastTurn gs >= 2 then becomes record Daytime.Day else pure False
+    Just Daytime.Day -> if History.spellsCastLastTurn (GameState.history gs) == 0 then becomes record Daytime.Night else pure False
+    Just Daytime.Night -> if History.spellsCastLastTurn (GameState.history gs) >= 2 then becomes record Daytime.Day else pure False

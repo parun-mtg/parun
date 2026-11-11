@@ -118,6 +118,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
+import qualified Parun.Types.Scratch as Scratch
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -748,7 +749,7 @@ runPreventionRiders runSubgame = do
 -- recipients this application covered from that source (two recipients of one
 -- source: one lot of 3, not a 2 and a 1). Two sources run twice (docs/decisions.md,
 -- "How many times a prevention's additional effect runs"). The amount is a Quantity.InSlot read of the reserved
--- Binding.eventAmount slot, published through GameState.ambientAmounts rather
+-- Binding.eventAmount slot, published through Scratch.ambientAmounts rather
 -- than bound onto an object, because the shielded recipient may be a PLAYER.
 -- Restored rather than cleared, so this cannot clobber an outer amount.
 --
@@ -758,12 +759,12 @@ runPreventionRiders runSubgame = do
 runPreventionRider :: Game Result -> Prevention.Prevention -> Game ()
 runPreventionRider runSubgame prevention = Foldable.for_ (Prevention.rider prevention) $ \rider ->
   Foldable.for_ (Map.toAscList (Prevention.amounts prevention)) $ \(damager, share) -> do
-    was <- State.gets GameState.ambientAmounts
-    State.modify' (\gs -> gs {GameState.ambientAmounts = Map.insert Binding.eventAmount (sum share) was})
+    was <- State.gets (Scratch.ambientAmounts . GameState.scratch)
+    State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.ambientAmounts = Map.insert Binding.eventAmount (sum share) was}})
     let targets = Map.insert Binding.preventedDamageSource (Set.singleton (Recipient.ToObject damager)) (PreventionRider.targets rider)
         src = PreventionRider.source rider
     Monad.void (runCarrying runSubgame src (PreventionRider.controller rider) Map.empty targets (PreventionRider.effects rider))
-    State.modify' (\gs -> gs {GameState.ambientAmounts = was})
+    State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.ambientAmounts = was}})
 
 -- CR 116.2c: what a paid Parun.Engine.LaterPayment row runs, in the environment
 -- the resolution baked, runPreventionRider's way: `source` is both resolving and
@@ -815,11 +816,11 @@ runEntryEffect runSubgame pending = do
   Foldable.for_ announced $ \n -> State.modify' (setX (Just (Binding.toAmount n)))
   -- CR 614.12: what entered in the same event is held off the battlefield while
   -- the effects run, as it was when the rewrite applied (enteredBeside).
-  outer <- State.gets GameState.enteringBeside
+  outer <- State.gets (Scratch.enteringBeside . GameState.scratch)
   beside <- State.gets (Common.enteredBeside oid)
-  State.modify' (\gs -> gs {GameState.enteringBeside = Set.union outer beside})
+  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = Set.union outer beside}})
   Monad.void (runCarrying runSubgame oid (PendingEntryEffect.controller pending) Map.empty Map.empty (PendingEntryEffect.effects pending))
-  State.modify' (\gs -> gs {GameState.enteringBeside = outer})
+  State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringBeside = outer}})
   Foldable.for_ announced $ \_ -> State.modify' (setX before)
   State.modify' (Trigger.resampleEntry oid)
 
@@ -1025,7 +1026,7 @@ throwSettled runSubgame roll perDie = do
                 requested <- duringRoll natural $ do
                   activated <- activateWhileRolling runSubgame payer oid ability
                   after <- State.get
-                  pure (activated && GameState.rethrowRequested after)
+                  pure (activated && Scratch.rethrowRequested (GameState.scratch after))
                 if requested
                   then rethrow payer
                   else offering rest thrower natural
@@ -1397,7 +1398,7 @@ reflipWindow runSubgame flipper face = do
                 requested <- Common.withThrowing landed $ do
                   activated <- activateWhileRolling runSubgame payer oid ability
                   after <- State.get
-                  pure (activated && GameState.rethrowRequested after)
+                  pure (activated && Scratch.rethrowRequested (GameState.scratch after))
                 if requested then pure True else offering rest
   offers <- State.gets (fmap (\(pid, oid, ability) -> (pid, Just oid, (oid, ability))) . windowAbilities)
   offering offers

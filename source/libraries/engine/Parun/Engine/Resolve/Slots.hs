@@ -240,6 +240,7 @@ import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
@@ -2852,9 +2853,9 @@ battlefieldMatching legal resolving controller source gs filter_ =
           filter
             (\oid -> all (\you -> Projection.objectInRangeGiven grants you oid gs) reach)
             -- CR 614.12: less a batch an entry loop or its as-enters effects hold
-            -- off the battlefield (GameState.enteringBeside) -- Ixidron's sweep
+            -- off the battlefield (Scratch.enteringBeside) -- Ixidron's sweep
             -- misses a creature entering beside it.
-            (Set.toList (Set.difference (GameState.battlefield gs) (GameState.enteringBeside gs)))
+            (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs))))
       order = Game.apnapOrder gs
       last_ = length order
       seat oid = case Projection.controllerOf oid gs of

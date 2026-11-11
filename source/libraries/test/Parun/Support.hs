@@ -108,6 +108,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaOption as ManaOption
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Moved as Moved
@@ -138,6 +139,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Scope as Scope
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
@@ -425,7 +427,7 @@ oneDefendingPlayer = attackOption Nothing
 -- are the same board twice.
 attackOption :: Maybe AttackOption.AttackOption -> GameState.GameState -> GameState.GameState
 attackOption option gs =
-  gs {GameState.settings = (GameState.settings gs) {GameSettings.attackOption = option}}
+  gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.attackOption = option}}}
 
 -- CR 808.1: the board handed in, played between the teams listed -- one TeamId
 -- per list, in the order given. The one thing that differs from the board handed
@@ -437,14 +439,14 @@ attackOption option gs =
 inTeams :: [[PlayerId.PlayerId]] -> GameState.GameState -> GameState.GameState
 inTeams teams gs =
   let entries = concat (zipWith (\i team -> fmap (\pid -> (pid, TeamId.MkTeamId i)) team) [0 ..] teams)
-   in gs {GameState.settings = (GameState.settings gs) {GameSettings.teams = Teams.MkTeams (Map.fromList entries)}}
+   in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.teams = Teams.MkTeams (Map.fromList entries)}}}
 
 -- CR 801.2a: the board handed in, every seat of it given the same range of
 -- influence and differing in nothing else, inTeams's posture.
 withRange :: Natural -> GameState.GameState -> GameState.GameState
 withRange range gs =
   let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (fmap (\pid -> (pid, range)) (GameState.turnOrder gs)))
-   in gs {GameState.settings = (GameState.settings gs) {GameSettings.rangeOfInfluence = ranges}}
+   in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = ranges}}}
 
 -- A fourth seat, alongside threePlayers, for cases where three seats cannot
 -- distinguish two candidate answers (a departure walk with only one
@@ -1519,10 +1521,6 @@ withEvents events gs =
           { Bookkeeping.nextEventGroup = EventGroup.MkEventGroup (Natural.length events),
             Bookkeeping.eventGroupDepth = 0
           },
-      GameState.enteringTogether = Nothing,
-      GameState.arrivals = Nothing,
-      GameState.payingOnResolution = False,
-      GameState.causing = Nothing,
       -- Rewriting the log rewrites the groups, so any sample Event.recordEvent
       -- took is now filed under a group number this fixture has just reused for a
       -- different event. Cleared rather than left standing, which sends
@@ -1533,6 +1531,13 @@ withEvents events gs =
           { Snapshots.boardAfterEvent = Map.empty,
             Snapshots.boardBeforeEvent = Map.empty,
             Snapshots.battlefieldWhenTriggered = Map.empty
+          },
+      GameState.scratch =
+        (GameState.scratch gs)
+          { Scratch.enteringTogether = Nothing,
+            Scratch.arrivals = Nothing,
+            Scratch.payingOnResolution = False,
+            Scratch.causing = Nothing
           }
     }
 
@@ -1743,7 +1748,7 @@ oneMountainState mountain ph =
                   TurnRegisters.priority = Just alice
                 }
           )
-          (Setup.blankGame GameSettings.plain [alice] alice)
+          (Setup.blankGame (Setup.newMatch GameSettings.plain) [alice] alice)
       )
         { GameState.objects = Map.singleton oid obj,
           GameState.hand = Map.singleton alice (Seq.singleton oid),

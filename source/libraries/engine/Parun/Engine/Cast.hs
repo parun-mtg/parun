@@ -121,6 +121,7 @@ import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.RevealCause as RevealCause
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -2894,10 +2895,10 @@ playLand settle offered pid oid mName = do
   -- Triplets); see #2169.
   -- CR 614.1a: a land an EntryRewrite.SacrificeToEnter turns into the graveyard
   -- was still played, so it spends the permission as a land that arrived does.
-  State.modify' (\g -> g {GameState.refusedEntries = Just Set.empty})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.refusedEntries = Just Set.empty}})
   moved <- Event.changeZoneShowing settle (Just pid) oid Zone.Battlefield mName entering
-  refused <- State.gets (maybe False (Set.member oid) . GameState.refusedEntries)
-  State.modify' (\g -> g {GameState.refusedEntries = Nothing})
+  refused <- State.gets (maybe False (Set.member oid) . Scratch.refusedEntries . GameState.scratch)
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.refusedEntries = Nothing}})
   Monad.unless (Seq.null moved && not refused) $ do
     State.modify' (PlayerEffect.consume spent)
     State.modify' (PlayerEffect.spendCastPermission (PlayerEffect.permissionSpent permission))

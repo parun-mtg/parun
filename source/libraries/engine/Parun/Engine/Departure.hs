@@ -49,6 +49,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Player as Player
@@ -129,7 +130,7 @@ leaveTogether asOf replacing reason named = losing asOf replacing reason named >
 -- departures, with every loss offered to the replacements that watch it first.
 -- Split out so Parun.Engine.Sba can offer a check's losses before the check
 -- moves anything, and run what replaced them while the moves are still
--- contested (GameState.contested).
+-- contested (Scratch.contested).
 losing :: Maybe GameState -> Bool -> Departure -> [PlayerId] -> Game [(Departure, PlayerId)]
 losing asOf replacing reason named = do
   before <- State.get
@@ -161,7 +162,7 @@ losing asOf replacing reason named = do
   let replaced = Set.union replacedNamed replacedFallen
       spared pid =
         Set.member pid replaced
-          || (GameSettings.twoHeadedGiant (GameState.settings before) && any (Teams.sameTeam (Game.teams before) pid) replaced)
+          || (GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match before)) && any (Teams.sameTeam (Game.teams before) pid) replaced)
       leaving = fmap (\pid -> (reason, pid)) falling <> fallen <> team
   pure (filter (\(why, pid) -> why /= Departure.Lost || not (spared pid)) leaving)
 
@@ -225,7 +226,7 @@ teamFallsWith reason leaving gs =
    in case reason of
         Departure.Drew -> []
         _
-          | GameSettings.twoHeadedGiant (GameState.settings gs) ->
+          | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) ->
               [(Departure.Lost, pid) | pid <- GameState.turnOrder gs, List.elem pid (Game.stillPlaying gs), followed pid]
           | otherwise -> []
 
@@ -839,7 +840,7 @@ checkMandatoryLoop passes = do
       recent = Timestamp.MkTimestamp (now - min now (div mandatoryLoopLimit 2))
       involved = Map.keys (Map.filter (>= recent) (GameState.loopInvolvement gs))
       drawn = Set.fromList (concatMap (\pid -> Players.table (Just pid) gs) involved)
-      ranged = GameSettings.rangeOfInfluence (GameState.settings gs) /= RangeOfInfluence.unlimited
+      ranged = GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs)) /= RangeOfInfluence.unlimited
   Monad.when (Maybe.isNothing (GameState.result gs) && (gap >= mandatoryLoopLimit || passes >= mandatoryLoopLimit)) $
     if ranged && not (Set.null drawn)
       then do

@@ -26,8 +26,10 @@ import qualified Parun.Types.Discrepancy as Discrepancy
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LifeChange as LifeChange
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PhasedOut as PhasedOut
@@ -64,7 +66,7 @@ equipped s registry = do
 sharedLife :: GameState.GameState
 sharedLife =
   let gs = S.inTeams [[S.alice, S.bob]] (Setup.emptyGame S.bothPlayers)
-   in gs {GameState.settings = (GameState.settings gs) {GameSettings.sharedTeamLife = True}}
+   in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.sharedTeamLife = True}}}
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Ledger" $ do
@@ -188,7 +190,10 @@ spec s registry = Spec.describe s "Ledger" $ do
                   { TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn tapped) + 1,
                     TurnRegisters.events = Seq.empty
                   },
-              GameState.eventsLastTurn = TurnRegisters.events (GameState.turn tapped)
+              GameState.history =
+                (GameState.history tapped)
+                  { History.eventsLastTurn = TurnRegisters.events (GameState.turn tapped)
+                  }
             }
         untapped = setTapped land TapState.Untapped handedOff
     Spec.assertEqWith s "the tap last turn is read" (Ledger.discrepancies before handedOff) []
@@ -196,5 +201,6 @@ spec s registry = Spec.describe s "Ledger" $ do
   Spec.it s "CR 728.1: states from different games are not compared" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
-        after = (setTapped land TapState.Tapped before) {GameState.gameNumber = GameState.gameNumber before + 1}
+        tapped = setTapped land TapState.Tapped before
+        after = tapped {GameState.match = (GameState.match tapped) {MatchScope.gameNumber = MatchScope.gameNumber (GameState.match before) + 1}}
     Spec.assertEqWith s "no comparison" (Ledger.discrepancies before after) []

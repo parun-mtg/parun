@@ -59,6 +59,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.History as History
 import qualified Parun.Types.IfTaken as IfTaken
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword
@@ -608,7 +609,7 @@ applyEpic oid controller = do
 
 -- CR 702.192a's "the first time a spell you control with this spell's name has
 -- resolved this game": file the resolving spell's names under its controller in
--- GameState.resolvedNames, answering whether none of them was there already.
+-- History.resolvedNames, answering whether none of them was there already.
 --
 -- Called from both of CR 608's resolving roads -- here (CR 608.2) for an instant
 -- or sorcery, and from Parun.Engine.Stack (CR 608.3) for a permanent spell -- and
@@ -620,8 +621,8 @@ noteResolved :: ObjectId -> PlayerId -> Game Bool
 noteResolved oid controller = do
   gs <- State.get
   let names = Projection.namesOf oid gs
-      earlier = Map.findWithDefault Set.empty controller (GameState.resolvedNames gs)
-  State.put gs {GameState.resolvedNames = Map.insertWith Set.union controller names (GameState.resolvedNames gs)}
+      earlier = Map.findWithDefault Set.empty controller (History.resolvedNames (GameState.history gs))
+  State.put gs {GameState.history = (GameState.history gs) {History.resolvedNames = Map.insertWith Set.union controller names (History.resolvedNames (GameState.history gs))}}
   pure (Set.disjoint names earlier)
 
 -- CR 702.192a's two SPELL abilities, performed as the last part of the spell's

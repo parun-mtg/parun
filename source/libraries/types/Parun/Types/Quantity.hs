@@ -277,7 +277,7 @@ data Quantity
     AttackersDeclaredThisCombat
   | -- | CR 508.1a: 1 if the object this quantity is evaluated against was
     -- declared as an attacker during that player's own most recent turn
-    -- (GameState.attacksInOwnLastTurn), else 0.
+    -- (History.attacksInOwnLastTurn), else 0.
     AttackedInLastTurnOf PlayerRef.PlayerRef
   | -- | CR 508.1b / 800.4i: how many players attacked that player during their
     -- own most recent turn, a departed one included until their next turn
@@ -336,7 +336,7 @@ data Quantity
   | -- | CR 100.6a \/ 730.1a: how many subgames have begun this match, counting one
     -- in progress -- Shahrazad and Sindbad's "if there haven't been any subgames
     -- this match", which is this compared to 0. Read off
-    -- GameState.subgamesThisMatch, the only match-scoped record parun keeps.
+    -- MatchScope.subgamesThisMatch.
     SubgamesThisMatch
   | -- | CR 309.7: how many dungeons that player has completed
     -- (Player.completedDungeons).

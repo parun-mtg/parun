@@ -131,6 +131,7 @@ import Parun.Types.ReplacementEffect (ReplacementEffect)
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementProvenance as ReplacementProvenance
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
@@ -1364,9 +1365,9 @@ framedBySlots gs recipients context =
           Filter.slotCardTypes = over Filter.cardTypes,
           Filter.slotMeasures = measures,
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
-          -- CR 614.12: less a batch still entering (GameState.enteringBeside),
+          -- CR 614.12: less a batch still entering (Scratch.enteringBeside),
           -- Resolve.Slots.battlefieldMatching's reading.
-          Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (GameState.enteringBeside gs))))
+          Filter.battlefieldViews = fmap (viewsOf gs) (Seq.fromList (Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs)))))
         }
 
 -- CR 903.3e: `context` with the creature types of the perspective player's
@@ -2476,7 +2477,7 @@ conditionHolds cands gs src lowest =
 -- CR 614.12: the board a determination about an entering permanent reads --
 -- this state with every materialized-but-not-entered permanent taken out of the
 -- battlefield index, both the subject of a running entry loop
--- (GameState.enteringSubjects) and its batch (GameState.enteringBeside).
+-- (Scratch.enteringSubjects) and its batch (Scratch.enteringBeside).
 --
 -- The BATTLEFIELD INDEX rather than a filtered candidate list, because the rule
 -- is about what is on the battlefield rather than about one kind of question:
@@ -2509,7 +2510,7 @@ conditionHolds cands gs src lowest =
 -- resolves a card's effects can reach another replacement, and the permanent is
 -- no more on the battlefield for that one than for its own.
 --
--- The subject, and every sibling that has already moved (GameState.enteredFrom),
+-- The subject, and every sibling that has already moved (Scratch.enteredFrom),
 -- is put back in the zone it left (Game.returnToOrigin), since the count is made
 -- before it moves: Undergrowth Scavenger's ruling, "if Undergrowth Scavenger
 -- enters the battlefield from a graveyard, it will count itself". Restored
@@ -2523,9 +2524,9 @@ conditionHolds cands gs src lowest =
 -- the ordinary board is untouched.
 boardAsEntering :: GameState -> GameState
 boardAsEntering gs =
-  let subjects = GameState.enteringSubjects gs
-      entering = Set.union (GameState.enteringBeside gs) (Map.keysSet subjects)
-      siblings = Map.restrictKeys (GameState.enteredFrom gs) (GameState.enteringBeside gs)
+  let subjects = Scratch.enteringSubjects (GameState.scratch gs)
+      entering = Set.union (Scratch.enteringBeside (GameState.scratch gs)) (Map.keysSet subjects)
+      siblings = Map.restrictKeys (Scratch.enteredFrom (GameState.scratch gs)) (Scratch.enteringBeside (GameState.scratch gs))
       origins = Map.union (Map.mapMaybe id subjects) siblings
       returned = Map.foldrWithKey Game.returnToOrigin gs origins
    in if Set.null entering

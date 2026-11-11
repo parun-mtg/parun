@@ -116,6 +116,7 @@ import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.ManaAbilityResolved as ManaAbilityResolved
 import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManifestedDread as ManifestedDread
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Mentored as Mentored
 import qualified Parun.Types.Milled as Milled
 import qualified Parun.Types.Modification as Modification
@@ -721,7 +722,7 @@ eventWithinRange :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate 
 eventWithinRange board gs perspective event = case perspective of
   Nothing -> True
   Just you
-    | Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs))) -> True
+    | Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs)))) -> True
     | otherwise ->
         let (objects, players) = participants event
             reaches pid = Game.wasInRangeOf you pid gs
