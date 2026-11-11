@@ -1,0 +1,141 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "AnyColor"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "OnlyIf",
+              "value": {
+                "type": "Compares",
+                "value": {
+                  "comparison": "AtLeast",
+                  "measured": {
+                    "type": "Count",
+                    "value": {
+                      "aggregation": {
+                        "type": "Members"
+                      },
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          },
+                          {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Instant"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Sorcery"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "scope": {
+                        "type": "InHistory",
+                        "value": {
+                          "type": "SpellCast",
+                          "value": "ThisTurn"
+                        }
+                      }
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        }
+      ],
+      "name": "Potioner's Trove",
+      "oracleText": "{T}: Add one mana of any color.\n{T}: You gain 2 life. Activate only if you've cast an instant or sorcery spell this turn.",
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

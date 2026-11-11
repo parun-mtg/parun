@@ -1,0 +1,186 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pull from the Grave",
+            "label": "pull"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "graveyard": [
+          {
+            "card": "Raging Goblin",
+            "label": "theirs"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Pull from the Grave returns up to two target creature cards from its controller's graveyard to their hand and gains them 2 life",
+  "note": "Shock (not a creature card) and bob's Raging Goblin (not in alice's graveyard) are not offered as targets.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ],
+          "object": "$pull",
+          "targets": [
+            "$bears",
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

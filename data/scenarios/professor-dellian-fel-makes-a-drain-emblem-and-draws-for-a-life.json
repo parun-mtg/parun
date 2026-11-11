@@ -1,0 +1,296 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Professor Dellian Fel",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 7
+              }
+            ],
+            "label": "fel"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          }
+        ],
+        "graveyard": [],
+        "hand": [
+          {
+            "card": "Healing Salve",
+            "label": "salve"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "graveyard": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [],
+        "graveyard": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Professor Dellian Fel: its -6 makes an emblem whose life-gain trigger has target opponent lose that much life, and its 0 draws a card and loses 1 life",
+  "note": "Three seats so the emblem's target opponent is a choice; carol loses the 3 alice gained and bob nothing. On turn 4 the 0 draws one card past the draw step's.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 3,
+          "object": "$fel"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1"
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$salve",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Loyalty"
+          },
+          "object": "$fel"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$fel"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    }
+  ]
+}

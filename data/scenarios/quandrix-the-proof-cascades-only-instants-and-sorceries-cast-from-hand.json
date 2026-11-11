@@ -1,0 +1,240 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Quandrix, the Proof",
+            "label": "quandrix"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "graveyard": [],
+        "hand": [
+          {
+            "card": "Pursue the Past",
+            "label": "pp"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "g1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "g2"
+          },
+          {
+            "card": "Island",
+            "label": "l3"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "graveyard": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Quandrix, the Proof: instant and sorcery spells its controller casts from their hand have cascade; one cast from the graveyard does not",
+  "note": "Pursue the Past cast from hand cascades into the first Raging Goblin; flashed back from the graveyard it has no cascade, and the second Goblin stays in the library.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$p1",
+            null
+          ],
+          "object": "$pp"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Raging Goblin",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m2",
+            "$p2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "Pursue the Past"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pursue the Past"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Raging Goblin",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

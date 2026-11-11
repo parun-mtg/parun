@@ -1577,6 +1577,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Booby Trap", 1), -- its trigger condition
         ("Pithing Needle", 1), -- its activation prohibition's affected set
         ("Phyrexian Revoker", 1), -- its activation prohibition's affected set
+        ("Petrified Hamlet", 2), -- its activation prohibition's and static ability's affected sets
         ("Sorcerous Spyglass", 1), -- its activation prohibition's affected set
         ("Stain the Mind", 1), -- its own search
         ("Infinite Obliteration", 1), -- its own search

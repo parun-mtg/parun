@@ -1,0 +1,154 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "activationProhibitions": [
+        {
+          "affected": {
+            "type": "MatchingAnywhere",
+            "value": {
+              "type": "HasChosenName",
+              "value": "AnyChooser"
+            }
+          },
+          "kind": "NonManaAbility"
+        }
+      ],
+      "name": "Petrified Hamlet",
+      "oracleText": "When this land enters, choose a land card name.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities.\nLands with the chosen name have \"{T}: Add {C}.\"\n{T}: Add {C}.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Land"
+                },
+                {
+                  "type": "HasChosenName",
+                  "value": "AnyChooser"
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "TapThis"
+                      }
+                    ],
+                    "mana": []
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "AddMana",
+                                "value": {
+                                  "production": {
+                                    "type": "OfType",
+                                    "value": {
+                                      "type": "Colorless"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChooseCardName",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "restriction": {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

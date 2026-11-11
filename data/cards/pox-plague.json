@@ -1,0 +1,175 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Pox Plague",
+      "oracleText": "Each player loses half their life, then discards half the cards in their hand, then sacrifices half the permanents they control of their choice. Round down each time.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "LoseLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "quantity": {
+                        "type": "Quotient",
+                        "value": {
+                          "divisor": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "quantity": {
+                            "type": "LifeTotal",
+                            "value": {
+                              "type": "Candidate"
+                            }
+                          },
+                          "rounding": "Down"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "Counted",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        },
+                        "quantity": {
+                          "type": "Quotient",
+                          "value": {
+                            "divisor": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "quantity": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": []
+                                },
+                                "scope": {
+                                  "type": "InZone",
+                                  "value": {
+                                    "player": {
+                                      "type": "Candidate"
+                                    },
+                                    "zone": "Hand"
+                                  }
+                                }
+                              }
+                            },
+                            "rounding": "Down"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "PlayerSacrifices",
+                    "value": {
+                      "filter": {
+                        "type": "And",
+                        "value": []
+                      },
+                      "players": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "quantity": {
+                        "type": "Quotient",
+                        "value": {
+                          "divisor": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "HeldByRecipient",
+                                "value": "Controller"
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          },
+                          "rounding": "Down"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
