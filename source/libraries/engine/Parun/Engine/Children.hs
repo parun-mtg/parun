@@ -357,6 +357,7 @@ import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Plus as Plus
+import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
@@ -408,7 +409,9 @@ import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
+import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
@@ -3518,3 +3521,96 @@ faceDownChildren c (FaceDownCharacteristics.MkFaceDownCharacteristics typeLine p
 characteristicPTChildren :: (Applicative f) => (Quantity.Quantity -> f Quantity.Quantity) -> CharacteristicPT.CharacteristicPT -> f CharacteristicPT.CharacteristicPT
 characteristicPTChildren visit (CharacteristicPT.MkCharacteristicPT power toughness) =
   CharacteristicPT.MkCharacteristicPT <$> visit power <*> visit toughness
+
+-- | One visitor per kind of child a target slot (CR 115.1, 601.2c), a casting
+-- permission (CR 601.3) or an activation restriction (CR 602.5) holds.
+data PermissionChildren f = MkPermissionChildren
+  { -- | A Filter a slot holds: its targets', a spell's "as cast" one.
+    permissionFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A Quantity a slot holds: a computed count (CR 601.2c), an amount, a
+    -- division (CR 601.2d).
+    permissionQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | The player who chooses a slot's targets.
+    permissionPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | Whose graveyard a slot's pool reaches, whole.
+    permissionZones :: ZoneScope.ZoneScope -> f ZoneScope.ZoneScope,
+    -- | The slot naming each player a per-player slot is announced for.
+    permissionSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | A permission's or a restriction's condition, whole.
+    permissionCondition :: Condition.Condition -> f Condition.Condition,
+    -- | A cost a graveyard cast pays on top (CR 118.8), whole.
+    permissionCost :: CostComponent.CostComponent Keyword.Keyword -> f (CostComponent.CostComponent Keyword.Keyword),
+    -- | The turns a restriction admits (CR 102.1), whole.
+    permissionTurn :: TurnScope.TurnScope -> f TurnScope.TurnScope,
+    -- | The mana a restriction lets pay for the activation (CR 602.2b), whole.
+    permissionMana :: ManaSpecification.ManaSpecification -> f ManaSpecification.ManaSpecification,
+    -- | The events the engine looks back over to judge a restriction.
+    permissionLooksBack :: HistoryRead.HistoryRead -> f ()
+  }
+
+-- | A target slot's children (CR 115.1, 601.2c). A printed count, the players
+-- a per-player slot is announced for and its "together" rider are left as
+-- they are.
+targetSlotChildren :: (Applicative f) => PermissionChildren f -> TargetSlot.TargetSlot -> f TargetSlot.TargetSlot
+targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided together asCast) =
+  TargetSlot.MkTargetSlot
+    <$> poolChildren pool
+    <*> traverse (permissionFilter c) filter_
+    <*> slotCountChildren count
+    <*> traverse (permissionQuantity c) amount
+    <*> traverse (permissionPlayer c) chooser
+    <*> traverse perPlayerChildren perPlayer
+    <*> traverse (permissionQuantity c) divided
+    <*> pure together
+    <*> traverse (permissionFilter c) asCast
+  where
+    poolChildren p = case p of
+      Pool.Creatures -> pure p
+      Pool.Players -> pure p
+      Pool.AnyTarget -> pure p
+      Pool.Permanents -> pure p
+      Pool.Spells -> pure p
+      Pool.Abilities -> pure p
+      Pool.SpellsAndPermanents -> pure p
+      Pool.SpellsAndAbilities -> pure p
+      Pool.PlayersAndPlaneswalkers -> pure p
+      Pool.PermanentsAndPlayers -> pure p
+      Pool.CardsInGraveyard zones -> Pool.CardsInGraveyard <$> permissionZones c zones
+      Pool.CardsInExile -> pure p
+      Pool.CardsInAnte -> pure p
+      Pool.CreaturesAndCardsInGraveyard zones -> Pool.CreaturesAndCardsInGraveyard <$> permissionZones c zones
+    slotCountChildren n = case n of
+      SlotCount.Printed _ -> pure n
+      SlotCount.AnnouncedX -> pure n
+      SlotCount.UpToAnnouncedX -> pure n
+      SlotCount.UpToComputed bound -> SlotCount.UpToComputed <$> permissionQuantity c bound
+    perPlayerChildren (SlotPerPlayer.MkSlotPerPlayer players thatPlayer) =
+      SlotPerPlayer.MkSlotPerPlayer players <$> permissionSlot c thatPlayer
+
+-- | A casting permission's children (CR 601.3). A keyword family and a flash
+-- cast's additional mana cost are left as they are.
+castingPermissionChildren :: (Applicative f) => PermissionChildren f -> CastingPermission.CastingPermission -> f CastingPermission.CastingPermission
+castingPermissionChildren c permission = case permission of
+  CastingPermission.CastFromLibraryWhileSearching -> pure permission
+  CastingPermission.CastFromGraveyard family additional -> CastingPermission.CastFromGraveyard family <$> traverse (permissionCost c) additional
+  CastingPermission.PlayFromGraveyard -> pure permission
+  CastingPermission.CastAsThoughItHadFlash condition additional -> CastingPermission.CastAsThoughItHadFlash <$> traverse (permissionCondition c) condition <*> pure additional
+
+-- | An activation restriction's children (CR 602.5). A phase window, a combat
+-- step and a count of activations are left as they are; "before this step"
+-- reads when steps began (CR 506.8a).
+activationRestrictionChildren :: (Applicative f) => PermissionChildren f -> ActivationRestriction.ActivationRestriction -> f ActivationRestriction.ActivationRestriction
+activationRestrictionChildren c restriction = case restriction of
+  ActivationRestriction.SorcerySpeed -> pure restriction
+  ActivationRestriction.DuringPhase (DuringPhase.MkDuringPhase window scope_) -> fmap ActivationRestriction.DuringPhase (DuringPhase.MkDuringPhase window <$> permissionTurn c scope_)
+  ActivationRestriction.DuringTurn scope_ -> ActivationRestriction.DuringTurn <$> permissionTurn c scope_
+  ActivationRestriction.AttackedThisStep -> pure restriction
+  ActivationRestriction.AfterBlockersDeclared -> pure restriction
+  ActivationRestriction.DuringCombatBefore _ -> pure restriction
+  ActivationRestriction.BeforeStep _ -> restriction <$ permissionLooksBack c HistoryRead.StepBegins
+  ActivationRestriction.OnlyIf condition -> ActivationRestriction.OnlyIf <$> permissionCondition c condition
+  ActivationRestriction.TimesEver _ -> pure restriction
+  ActivationRestriction.TimesEachTurn _ -> pure restriction
+  ActivationRestriction.DuringThrow -> pure restriction
+  ActivationRestriction.InstantSpeed -> pure restriction
+  ActivationRestriction.SpendOnly specified -> ActivationRestriction.SpendOnly <$> permissionMana c specified

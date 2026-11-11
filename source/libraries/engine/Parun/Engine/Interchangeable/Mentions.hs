@@ -28,8 +28,9 @@
 -- SpendManaAsThough, DamagePattern, the copy and entry payloads: AsCopy with
 -- its CopyClause, CopyException, WithCounters, EntryRiders with its
 -- EntryAttack, EntryBlock, EntryController and EntryHost, FaceDownState and
--- FaceDownCharacteristics, and CharacteristicPT) is matched there instead, its
--- leaf types discarded there.
+-- FaceDownCharacteristics, CharacteristicPT, and TargetSlot with its Pool,
+-- SlotCount and SlotPerPlayer, CastingPermission, and ActivationRestriction)
+-- is matched there instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -147,7 +148,6 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
-import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.PreventionRider as PreventionRider
@@ -162,9 +162,7 @@ import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
-import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
@@ -344,20 +342,7 @@ activationProhibitionNames asking x = case x of
   ActivationProhibition.MkActivationProhibition affected _kind _costs _name -> affectedNames asking affected
 
 activationRestrictionNames :: (Monoid r) => Asking r -> ActivationRestriction.ActivationRestriction -> r
-activationRestrictionNames asking x = case x of
-  ActivationRestriction.SorcerySpeed -> mempty
-  ActivationRestriction.DuringPhase duringPhase -> duringPhaseNames asking duringPhase
-  ActivationRestriction.DuringTurn turnScope -> turnScopeNames asking turnScope
-  ActivationRestriction.AttackedThisStep -> mempty
-  ActivationRestriction.AfterBlockersDeclared -> mempty
-  ActivationRestriction.DuringCombatBefore _step -> mempty
-  ActivationRestriction.BeforeStep _phase -> history asking HistoryRead.StepBegins
-  ActivationRestriction.OnlyIf condition -> conditionNames asking condition
-  ActivationRestriction.TimesEver _ -> mempty
-  ActivationRestriction.TimesEachTurn _ -> mempty
-  ActivationRestriction.DuringThrow -> mempty
-  ActivationRestriction.InstantSpeed -> mempty
-  ActivationRestriction.SpendOnly _ -> mempty
+activationRestrictionNames asking = Const.getConst . Children.activationRestrictionChildren (permissionVisitors asking)
 
 activeReplacementNames :: (Monoid r) => Asking r -> ActiveReplacement.ActiveReplacement -> r
 activeReplacementNames asking = Const.getConst . Children.activeReplacementChildren (storedVisitors asking)
@@ -450,11 +435,7 @@ spendManaAsThoughNames :: (Monoid r) => Asking r -> SpendManaAsThough.SpendManaA
 spendManaAsThoughNames asking = Const.getConst . Children.spendManaAsThoughChildren (manaVisitors asking)
 
 castingPermissionNames :: (Monoid r) => Asking r -> CastingPermission.CastingPermission -> r
-castingPermissionNames asking x = case x of
-  CastingPermission.CastFromLibraryWhileSearching -> mempty
-  CastingPermission.CastFromGraveyard _family additionalCosts -> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts
-  CastingPermission.PlayFromGraveyard -> mempty
-  CastingPermission.CastAsThoughItHadFlash condition _additionalCost -> foldMap (conditionNames asking) condition
+castingPermissionNames asking = Const.getConst . Children.castingPermissionChildren (permissionVisitors asking)
 
 counterabilityNames :: (Monoid r) => Asking r -> Counterability.Counterability -> r
 counterabilityNames asking x = case x of
@@ -1073,23 +1054,6 @@ playerRefNames asking x = case x of
 playerStaticAbilityNames :: (Monoid r) => Asking r -> PlayerStaticAbility.PlayerStaticAbility -> r
 playerStaticAbilityNames asking = Const.getConst . Children.playerStaticAbilityChildren (abilityVisitors asking (const mempty) (const mempty) (const mempty))
 
-poolNames :: (Monoid r) => Asking r -> Pool.Pool -> r
-poolNames asking x = case x of
-  Pool.Creatures -> mempty
-  Pool.Players -> mempty
-  Pool.AnyTarget -> mempty
-  Pool.Permanents -> mempty
-  Pool.Spells -> mempty
-  Pool.Abilities -> mempty
-  Pool.SpellsAndPermanents -> mempty
-  Pool.SpellsAndAbilities -> mempty
-  Pool.PlayersAndPlaneswalkers -> mempty
-  Pool.PermanentsAndPlayers -> mempty
-  Pool.CardsInGraveyard zoneScope -> zoneScopeNames asking zoneScope
-  Pool.CardsInExile -> mempty
-  Pool.CardsInAnte -> mempty
-  Pool.CreaturesAndCardsInGraveyard zoneScope -> zoneScopeNames asking zoneScope
-
 powerNames :: (Monoid r) => Asking r -> Power.Power -> r
 powerNames asking x = case x of
   Power.MkPower unwrap -> quantityNames asking unwrap
@@ -1212,17 +1176,6 @@ setBasePowerToughnessNames :: (Monoid r) => Asking r -> SetBasePowerToughness.Se
 setBasePowerToughnessNames asking x = case x of
   SetBasePowerToughness.MkSetBasePowerToughness power toughness -> foldMap (quantityNames asking) power <> foldMap (quantityNames asking) toughness
 
-slotCountNames :: (Monoid r) => Asking r -> SlotCount.SlotCount -> r
-slotCountNames asking x = case x of
-  SlotCount.Printed _targetCount -> mempty
-  SlotCount.AnnouncedX -> mempty
-  SlotCount.UpToAnnouncedX -> mempty
-  SlotCount.UpToComputed quantity -> quantityNames asking quantity
-
-slotPerPlayerNames :: Asking r -> SlotPerPlayer.SlotPerPlayer -> r
-slotPerPlayerNames asking x = case x of
-  SlotPerPlayer.MkSlotPerPlayer _players slot -> slotNames asking slot
-
 specialActionNames :: (Monoid r) => Asking r -> SpecialAction.SpecialAction -> r
 specialActionNames asking x = case x of
   SpecialAction.DiscardThisAnyTime -> mempty
@@ -1241,8 +1194,25 @@ staticAbilityNames :: (Monoid r) => Asking r -> (ability -> r) -> StaticAbility.
 staticAbilityNames asking onAbility = Const.getConst . Children.staticAbilityChildren (abilityVisitors asking (const mempty) onAbility (const mempty))
 
 targetSlotNames :: (Monoid r) => Asking r -> TargetSlot.TargetSlot -> r
-targetSlotNames asking x = case x of
-  TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided _together asCast -> poolNames asking pool <> foldMap (filterNames asking) filter_ <> foldMap (filterNames asking) asCast <> slotCountNames asking count <> foldMap (quantityNames asking) amount <> foldMap (playerRefNames asking) chooser <> foldMap (slotPerPlayerNames asking) perPlayer <> foldMap (quantityNames asking) divided
+targetSlotNames asking = Const.getConst . Children.targetSlotChildren (permissionVisitors asking)
+
+-- Parun.Engine.Children's traversal at Const. "Before this step"'s read of
+-- when steps began is permissionLooksBack; a printed colour of mana names
+-- nothing.
+permissionVisitors :: (Monoid r) => Asking r -> Children.PermissionChildren (Const.Const r)
+permissionVisitors asking =
+  Children.MkPermissionChildren
+    { Children.permissionFilter = Const.Const . filterNames asking,
+      Children.permissionQuantity = Const.Const . quantityNames asking,
+      Children.permissionPlayer = Const.Const . playerRefNames asking,
+      Children.permissionZones = Const.Const . zoneScopeNames asking,
+      Children.permissionSlot = Const.Const . slotNames asking,
+      Children.permissionCondition = Const.Const . conditionNames asking,
+      Children.permissionCost = Const.Const . costComponentNames asking (keywordNames asking),
+      Children.permissionTurn = Const.Const . turnScopeNames asking,
+      Children.permissionMana = const (Const.Const mempty),
+      Children.permissionLooksBack = Const.Const . history asking
+    }
 
 toughnessNames :: (Monoid r) => Asking r -> Toughness.Toughness -> r
 toughnessNames asking x = case x of
