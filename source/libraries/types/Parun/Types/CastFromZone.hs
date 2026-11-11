@@ -6,6 +6,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaSpending as ManaSpending
+import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -48,6 +49,10 @@ data CastFromZone = MkCastFromZone
     reduction :: Natural.Natural,
     -- | CR 118.14: how mana may be spent on a spell cast under it (Tinybones,
     -- Bauble Burglar).
-    spending :: ManaSpending.ManaSpending
+    spending :: ManaSpending.ManaSpending,
+    -- | CR 118.9: the alternative cost a cast under it may pay rather than the
+    -- card's mana cost -- Zaffai and the Tempests' "without paying its mana
+    -- cost". Nothing where it states none.
+    alternativeCost :: Maybe PermissionCost.PermissionCost
   }
   deriving (Eq, Ord, Show)

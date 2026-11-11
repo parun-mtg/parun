@@ -7,6 +7,7 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.InZone as InZone
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ManaSpending as ManaSpending
+import qualified Parun.Codec.PermissionCost as PermissionCost
 import qualified Parun.Codec.PermissionLimit as PermissionLimit
 import qualified Parun.Codec.PermissionPool as PermissionPool
 import qualified Parun.Codec.PermissionVerb as PermissionVerb
@@ -26,8 +27,8 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- The limit DEFAULTS to Unlimited, which is the permission every card that
 -- prints no budget grants (Future Sight, Garruk's Horde, Sen Triplets), and the
 -- verb to Cast, which is what a permission naming no land play grants. The pool
--- defaults to the whole zone, the additional costs to none and the spending to
--- mana as produced.
+-- defaults to the whole zone, the additional costs to none, the spending to
+-- mana as produced and the alternative cost to none.
 codec :: Codec.Codec CastFromZone.CastFromZone
 codec = Fields.object $ do
   from <- Fields.required "from" InZone.codec CastFromZone.from
@@ -38,4 +39,5 @@ codec = Fields.object $ do
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) CastFromZone.additionalCosts
   reduction <- Fields.defaulted "reduction" 0 Common.natural CastFromZone.reduction
   spending <- Fields.defaulted "spending" ManaSpending.Type.AsProduced ManaSpending.codec CastFromZone.spending
-  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending}
+  alternativeCost <- Fields.defaulted "alternativeCost" Nothing (Common.maybe PermissionCost.codec) CastFromZone.alternativeCost
+  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost}

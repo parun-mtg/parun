@@ -516,7 +516,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)) (Filter.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced))
+      (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)) (Filter.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing))
       " {\"type\":\"CastFrom\",\"value\":{\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]}}} "
   -- CR 601.3 / Garruk's Horde's "creature spells", the arm that used to be a
   -- CastFromTopOfLibrary of its own: the zone is all that told the two apart.
@@ -524,7 +524,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You)) (Filter.HasCardType CardType.Creature) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced))
+      (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You)) (Filter.HasCardType CardType.Creature) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing))
       " {\"type\":\"CastFrom\",\"value\":{\"from\":{\"zone\":\"Library\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 601.3 / Sen Triplets: the zone belongs to the player a slot names, which
   -- is the whole of what the reference buys.
@@ -532,7 +532,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent")))) (Filter.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced))
+      (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent")))) (Filter.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing))
       " {\"type\":\"CastFrom\",\"value\":{\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"}},\"matching\":{\"type\":\"And\",\"value\":[]}}} "
   -- CR 305.1 / Crucible of Worlds, whose sentence narrows no land.
   Spec.it s "PlayLandsFrom" $

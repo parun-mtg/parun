@@ -114,6 +114,7 @@ import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PerTarget as PerTarget
+import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -2594,9 +2595,10 @@ castPermissionOptions rides offered own pid zone oid gs =
 -- each group in timestamp order. Two ways are ONE where they spend the same
 -- budget, give the same rider (`rides` answers whether a source's permission
 -- gives one, Parun.Engine.Event.permissionRiders), add the same costs (CR
--- 118.8), take off the same reduction (CR 601.2f) and let mana be spent alike
--- (CR 118.14), and the first is kept: a riderless, costless unlimited permission
--- beside an open zone changes nothing.
+-- 118.8), take off the same reduction (CR 601.2f), offer the same alternative
+-- cost (CR 118.9) and let mana be spent alike (CR 118.14), and the first is
+-- kept: a riderless, costless unlimited permission beside an open zone changes
+-- nothing.
 -- So the head spends nothing wherever something admits the play for free.
 --
 -- Every budgeted permission is a way of its own, two copies of one card
@@ -2605,7 +2607,7 @@ permissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZon
 permissionOptions rides open usable =
   let rows = [(sid, grant) | (Just sid, grant) <- usable]
       (unlimited, limited) = List.partition ((== PermissionLimit.Unlimited) . CastFromZone.limit . snd) rows
-      key option = (permissionSpent option, option >>= \(sid, _) -> if rides sid then Just sid else Nothing, permissionCosts option, permissionReductions option, permissionSpending option)
+      key option = (permissionSpent option, option >>= \(sid, _) -> if rides sid then Just sid else Nothing, permissionCosts option, permissionReductions option, permissionAlternative option, permissionSpending option)
    in ListUtils.nubOrdOn key ([Nothing | open] <> fmap Just (unlimited <> limited))
 
 -- CR 118.8: the additional costs a cast made under `option` pays on top of its
@@ -2624,6 +2626,11 @@ permissionReductions option =
     let n = CastFromZone.reduction grant,
     n > 0
   ]
+
+-- CR 118.9: the alternative cost a spell cast under `option` may pay rather
+-- than its mana cost -- none for a cast made under no permission.
+permissionAlternative :: Maybe (ObjectId, CastFromZone.CastFromZone) -> Maybe PermissionCost.PermissionCost
+permissionAlternative option = CastFromZone.alternativeCost . snd =<< option
 
 -- CR 118.14: how mana may be spent on a spell cast under `option`, as produced
 -- for a cast made under no permission.

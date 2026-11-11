@@ -230,17 +230,23 @@ insteadOfManaCost mana face =
 -- (CR 202.3e); the rulings' "the only legal choice for X is 0" is CR 107.3b
 -- and falls out, neither cost having a variable.
 permissionCost :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword
-permissionCost alternative face = case alternative of
-  PermissionCost.InsteadOfManaCost mana -> insteadOfManaCost mana face
+permissionCost alternative face = paidInstead alternative face Cost.MkCost {Cost.mana = Nothing, Cost.components = Face.additionalCosts face}
+
+-- permissionCost laid over `cost`, the printed cost a candidate already priced:
+-- its mana replaced, its components kept (CR 118.9d), so a choice cost
+-- `choiceVariants` expanded survives (Parun.Types.CastFromZone.alternativeCost).
+paidInstead :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
+paidInstead alternative face cost = case alternative of
+  PermissionCost.InsteadOfManaCost mana -> cost {Cost.mana = Just mana}
   PermissionCost.WaterbendManaValue ->
     Cost.MkCost
       { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic manaValue | manaValue > 0]),
-        Cost.components = CostComponent.WaterbendInstead manaValue : Face.additionalCosts face
+        Cost.components = CostComponent.WaterbendInstead manaValue : Cost.components cost
       }
   PermissionCost.PayLifeManaValue ->
     Cost.MkCost
       { Cost.mana = Just (ManaCost.MkManaCost []),
-        Cost.components = [CostComponent.PayLife (CostAmount.Fixed manaValue) | manaValue > 0] <> Face.additionalCosts face
+        Cost.components = [CostComponent.PayLife (CostAmount.Fixed manaValue) | manaValue > 0] <> Cost.components cost
       }
   where
     manaValue = Integer.toNaturalSaturating (maybe 0 Quantity.manaCostValue (Face.manaCost face))
