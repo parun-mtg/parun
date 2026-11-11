@@ -1487,13 +1487,14 @@ grantedByAdventureRule oid gs =
 -- conjunct: does the object's stored permission name THIS player? Asked in exile and,
 -- for a cast, in a graveyard (permitsCastFromGraveyard).
 --
--- This is the conjunct the land side shares, through permitsLandPlayFromExile
--- below, which Parun.Engine.Action.playableLands asks of an exiled land (CR
--- 305.1's special action rather than a cast). None of the other disjuncts may
--- be shared: CR 702.170d ("a plotted card's owner may cast it"), CR 702.143a
--- ("they may cast that card") and CR 702.185a ("its owner may cast this card")
--- each permit a CAST and nothing else, so a land carrying any of those keywords
--- would still get no land play out of it.
+-- This is the conjunct the land side shares, through
+-- permitsLandPlayUnderPermission below, which Parun.Engine.Action.playableLands
+-- asks of a land in exile or a graveyard (CR 305.1's special action rather than
+-- a cast). None of the other disjuncts may be shared: CR 702.170d ("a plotted
+-- card's owner may cast it"), CR 702.143a ("they may cast that card") and CR
+-- 702.185a ("its owner may cast this card") each permit a CAST and nothing
+-- else, so a land carrying any of those keywords would still get no land play
+-- out of it.
 --
 -- The Adventure conjunct stays with the cast side for the same reason: CR
 -- 716.3d's "it can't be cast as an Adventure this way" is about a cast, and CR
@@ -1518,8 +1519,8 @@ permitsPlayUnderPermission pid oid gs = case Game.lookupObject oid gs >>= Object
 -- verb is Cast lets a spell be cast and never lets a land be played (Ragavan,
 -- Nimble Pilferer's "you may cast that card"). Parun.ConjureSpec's Kari Zev case
 -- proves it.
-permitsLandPlayFromExile :: PlayerId -> ObjectId -> GameState -> Bool
-permitsLandPlayFromExile pid oid gs =
+permitsLandPlayUnderPermission :: PlayerId -> ObjectId -> GameState -> Bool
+permitsLandPlayUnderPermission pid oid gs =
   permitsPlayUnderPermission pid oid gs
     && fmap ExilePlayPermission.verb (Game.lookupObject oid gs >>= Object.playPermission) == Just PermissionVerb.Play
 
@@ -2948,7 +2949,7 @@ exileLandEntry :: PlayerId -> ObjectId -> GameState -> TapState.TapState
 exileLandEntry pid oid gs = case Game.lookupObject oid gs of
   Just obj
     | Object.zone obj == Zone.Exile,
-      permitsLandPlayFromExile pid oid gs,
+      permitsLandPlayUnderPermission pid oid gs,
       Just permission <- Object.playPermission obj ->
         ExilePlayPermission.landEnters permission
   _ -> TapState.Untapped
