@@ -307,7 +307,7 @@ lowered context text
 -- | A clause's sentences and the slots they name: its instructions, "you may"
 -- and the one instruction you may follow (CR 603.5), its instructions with a
 -- cost paid on resolution (CR 118.12), or "If [condition], [instructions]."
--- (CR 608.2c). A clause gated by an "if you do" reads with its neighbour
+-- or "[Instructions] if [condition]." (CR 608.2c). A clause gated by an "if you do" reads with its neighbour
 -- ('steps'), and a "may" another player decides or one over more than one
 -- instruction is not spelled out here.
 clause :: Target.Context -> Clause.Clause Card.Card Continuous.Ability -> [(Text.Text, [SlotName.SlotName])]
@@ -324,7 +324,11 @@ clause context c
       -- Free: "also" before instructions that add to the ones before them
       -- (Dark Dabbling).
       opened <- [lowered context body, Text.pack "also " <> lowered context body]
-      [(word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms)]
+      -- Free: the condition trails the instructions instead (Old-Growth
+      -- Educator's "put two +1/+1 counters on it if you gained life this
+      -- turn"), with no ability word, which the triggered ability then heads.
+      let trailed = [(Text.dropEnd 1 body <> Text.pack " if " <> words' <> Text.pack ".", ms) | Text.null word, Text.isSuffixOf (Text.pack ".") body]
+      (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed
   | otherwise = do
       predicates <- instructions context (Foldable.toList (Clause.effects c))
       case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of

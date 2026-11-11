@@ -7735,9 +7735,14 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- and never declared, is an offender whatever the spell costs say.
         turnedUpReadsX c = any (\t -> Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (TriggeredAbility.modal t)) || modalReadsAnnouncedX (TriggeredAbility.modal t)) (turnedUpTriggers c)
         turnUpDeclaresX c = any declaresVariable (turnUpCostsOf c)
+        -- CR 601.2h's reader of a declared X: the spell's own "amount of mana
+        -- spent to cast this spell", which X's mana is part of (Molten Note).
+        -- It answers only for a spell declaring X, since the total is read
+        -- whether or not there is one.
+        spellReadsSpent c = Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
         offends f =
           let spellDeclaresX = any declaresVariable (spellCostsOf f)
-           in (readsX f /= (spellDeclaresX || turnUpDeclaresX f))
+           in ((readsX f || (spellDeclaresX && spellReadsSpent f)) /= (spellDeclaresX || turnUpDeclaresX f))
                 || (not spellDeclaresX && turnUpDeclaresX f /= turnedUpReadsX f)
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "X read iff X declared" (fmap (S.nameOf . Printing.card) offenders) []

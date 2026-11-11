@@ -213,8 +213,18 @@ triggered context creature t
       kept <- stated : [Text.pack "You " <> Prose.decapitalise stated | Text.isPrefixOf (Text.pack "Draw ") stated]
       effect <- kept : [Text.replace (Text.pack " a card") (Text.pack " an additional card") kept | Trigger.drawStep (TriggeredAbility.condition t)]
       let named' = Text.isPrefixOf (Target.self after) effect && Target.self after /= Text.pack "it"
-      [word <> Trigger.opening e <> gate <> Text.pack ", " <> (if named' then effect else Prose.decapitalise effect)]
+      -- An ability word heads an ability whose effect ends in its condition
+      -- (Old-Growth Educator's Infusion), as it heads an intervening "if".
+      heading <- if Text.null gate then trailingWord effect else [word]
+      [heading <> Trigger.opening e <> gate <> Text.pack ", " <> (if named' then effect else Prose.decapitalise effect)]
   | otherwise = []
+
+-- | The ability words that may head a triggered ability whose effect ends in
+-- "if [condition].", none among them when it does not.
+trailingWord :: Text.Text -> [Text.Text]
+trailingWord effect = case Text.breakOnEnd (Text.pack " if ") effect of
+  (before, condition) | not (Text.null before), Just c <- Text.stripSuffix (Text.pack ".") condition -> Trigger.abilityWord c
+  _ -> [Text.empty]
 
 -- | An activated ability: "[Cost]: [Effect.]" (CR 602.1a), and after it the
 -- restrictions on activating it (CR 602.5), "Activate only as a sorcery." An
