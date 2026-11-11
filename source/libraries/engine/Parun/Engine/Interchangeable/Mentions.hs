@@ -19,8 +19,10 @@
 -- Duration, and the ability records: ActivatedAbility, TriggeredAbility,
 -- StaticAbility, PlayerStaticAbility, PrintedReplacement, CostReduction,
 -- AlternativeCost, GrantedAbility, Modal with its Mode, Clause and
--- ModeSelection, and Face and Card) is matched there instead, its leaf types
--- discarded there.
+-- ModeSelection, Face and Card, and the stored rows: ActiveReplacement,
+-- DelayedTrigger, ActiveLaterPayment, Prevention, PreventionRider, the
+-- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry) is
+-- matched there instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -53,7 +55,6 @@ import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AffectedUnless as AffectedUnless
-import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AloneUnless as AloneUnless
@@ -121,7 +122,6 @@ import qualified Parun.Types.EntryController as EntryController
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRiders as EntryRiders
-import qualified Parun.Types.EventExpiry as EventExpiry
 import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
@@ -159,7 +159,6 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
-import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
@@ -195,7 +194,6 @@ import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.StaticAbility as StaticAbility
-import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
@@ -211,7 +209,6 @@ import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WhichTurn as WhichTurn
-import qualified Parun.Types.While as While
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneScope as ZoneScope
@@ -390,8 +387,7 @@ activationRestrictionNames asking x = case x of
   ActivationRestriction.SpendOnly _ -> mempty
 
 activeReplacementNames :: (Monoid r) => Asking r -> ActiveReplacement.ActiveReplacement -> r
-activeReplacementNames asking x = case x of
-  ActiveReplacement.MkActiveReplacement effect source _controller _timestamp expiry _uses _origin condition rider slots_ _choices -> replacementEffectNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effect <> names asking (== source) <> expiryNames asking expiry <> foldMap (conditionNames asking) condition <> foldMap (preventionRiderNames asking) rider <> foldMap (slotNames asking) (Map.keys slots_) <> names asking (\oid -> any (elem oid) slots_)
+activeReplacementNames asking = Const.getConst . Children.activeReplacementChildren (storedVisitors asking)
 
 affectedNames :: (Monoid r) => Asking r -> Affected.Affected -> r
 affectedNames asking x = case x of
@@ -684,12 +680,10 @@ damagePatternNames asking x = case x of
   DamagePattern.MkDamagePattern _whichKind whatSource whatRecipient _whoRecipient whichRecipient whichSource boundRecipient -> filterNames asking whatSource <> foldMap (filterNames asking) whatRecipient <> foldMap (recipientNames asking) whichRecipient <> names asking (`elem` whichSource) <> foldMap (slotNames asking) boundRecipient
 
 activeLaterPaymentNames :: (Monoid r) => Asking r -> ActiveLaterPayment.ActiveLaterPayment -> r
-activeLaterPaymentNames asking x = case x of
-  ActiveLaterPayment.MkActiveLaterPayment cost payoff _createdAt expiry -> costNames asking (keywordNames asking) cost <> preventionRiderNames asking payoff <> expiryNames asking expiry
+activeLaterPaymentNames asking = Const.getConst . Children.activeLaterPaymentChildren (storedVisitors asking)
 
 delayedTriggerNames :: (Monoid r) => Asking r -> DelayedTrigger.DelayedTrigger -> r
-delayedTriggerNames asking x = case x of
-  DelayedTrigger.MkDelayedTrigger ability source _controller bindings _window expiry _createdAt -> triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty)) ability <> names asking (== source) <> foldMap (slotNames asking) (Map.keys bindings) <> foldMap (bindingNames asking) bindings <> foldMap (expiryNames asking) expiry
+delayedTriggerNames asking = Const.getConst . Children.delayedTriggerChildren (storedVisitors asking)
 
 dungeonRoomNames :: (Monoid r) => Asking r -> (card -> r) -> DungeonRoom.DungeonRoom card -> r
 dungeonRoomNames asking onCard x = case x of
@@ -804,24 +798,25 @@ entryControllerNames asking x = case x of
   EntryController.Owner -> mempty
 
 expiryNames :: (Monoid r) => Asking r -> Expiry.Expiry -> r
-expiryNames asking x = case x of
-  Expiry.AtCleanup -> mempty
-  Expiry.Never -> mempty
-  Expiry.Perpetual -> mempty
-  Expiry.While while -> whileNames asking while
-  Expiry.AtTurnOf _playerId -> mempty
-  Expiry.AtStepOf _stepBegan -> mempty
-  Expiry.AtStepOfControllerOf stepOf -> names asking (== StepOfControllerOf.object stepOf)
-  Expiry.AtEndOfTurnOf _afterTurn -> mempty
-  Expiry.DuringTurnOf _afterTurn -> mempty
-  Expiry.DuringUntapStepOf _playerId -> mempty
-  Expiry.DuringTurnOfControllerOf afterObjectTurn -> names asking (== AfterObjectTurn.object afterObjectTurn)
-  Expiry.DuringExtraTurn _timestamp -> mempty
-  Expiry.AtEndOf _phaseSelector -> mempty
-  Expiry.AtEndOfCombatOn _afterTurn -> mempty
-  Expiry.WhenPaid paidExpiry -> paidExpiryNames asking paidExpiry
-  Expiry.WhenUsed slot -> foldMap (slotNames asking) slot
-  Expiry.OnEvent eventExpiry -> eventExpiryNames asking eventExpiry
+expiryNames asking = Const.getConst . Children.expiryChildren (storedVisitors asking)
+
+-- What a stored row's children answer: its effects and ability through their
+-- own walks, a slot through slotNames, an object id outright.
+storedVisitors :: (Monoid r) => Asking r -> Children.StoredChildren (Const.Const r)
+storedVisitors asking =
+  Children.MkStoredChildren
+    { Children.storedReplacement = Const.Const . replacementEffectNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))),
+      Children.storedTriggered = Const.Const . triggeredAbilityNames asking (const mempty) (grantedAbilityNames asking (const mempty)),
+      Children.storedEffect = Const.Const . effectNames asking (const mempty) (grantedAbilityNames asking (const mempty)),
+      Children.storedCost = Const.Const . costNames asking (keywordNames asking),
+      Children.storedCondition = Const.Const . conditionNames asking,
+      Children.storedDurationEvent = Const.Const . durationEventNames asking,
+      Children.storedBinding = Const.Const . bindingNames asking,
+      Children.storedRecipient = Const.Const . recipientNames asking,
+      Children.storedCandidate = Const.Const . candidateIdNames asking,
+      Children.storedSlot = Const.Const . slotNames asking,
+      Children.storedObject = \oid -> Const.Const (names asking (== oid))
+    }
 
 eventShapeNames :: Asking r -> EventShape.EventShape -> r
 eventShapeNames asking x = case x of
@@ -830,10 +825,6 @@ eventShapeNames asking x = case x of
   EventShape.CardArrivedIn _cardArrivedIn -> history asking HistoryRead.Moves
   EventShape.SpellCast _castWindow -> history asking HistoryRead.Casts
   EventShape.AttackerDeclared -> history asking HistoryRead.Attacks
-
-eventExpiryNames :: (Monoid r) => Asking r -> EventExpiry.EventExpiry -> r
-eventExpiryNames asking x = case x of
-  EventExpiry.MkEventExpiry _controller durationEvent -> durationEventNames asking durationEvent
 
 faceNames :: (Monoid r) => Asking r -> (card -> r) -> Face.Face card -> r
 faceNames asking onCard =
@@ -1138,21 +1129,15 @@ operandNames asking x = case x of
   -- each other's, so the answer is the same for both.
   Operand.OfEachOtherCandidate _measure -> mempty
 
-paidExpiryNames :: (Monoid r) => Asking r -> PaidExpiry.PaidExpiry -> r
-paidExpiryNames asking x = case x of
-  PaidExpiry.MkPaidExpiry _player cost resolution -> costNames asking (keywordNames asking) cost <> names asking (== resolution)
-
 payGateNames :: (Monoid r) => Asking r -> PayGate.PayGate -> r
 payGateNames asking x = case x of
   PayGate.MkPayGate payer cost basis _branch _obligation perEach chosenX _offeredAt -> playerRefNames asking payer <> costChoiceNames asking cost <> foldMap (costBasisNames asking) basis <> foldMap (quantityNames asking) perEach <> foldMap (quantityNames asking) chosenX
 
 pendingDamageEffectNames :: (Monoid r) => Asking r -> PendingReplacementEffect.PendingReplacementEffect -> r
-pendingDamageEffectNames asking x = case x of
-  PendingReplacementEffect.MkPendingReplacementEffect effects targets _controller source -> foldMap (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effects <> foldMap (slotNames asking) (Map.keys targets) <> foldMap (foldMap (recipientNames asking)) targets <> names asking (== source)
+pendingDamageEffectNames asking = Const.getConst . Children.pendingReplacementEffectChildren (storedVisitors asking)
 
 pendingEntryEffectNames :: (Monoid r) => Asking r -> PendingEntryEffect.PendingEntryEffect -> r
-pendingEntryEffectNames asking x = case x of
-  PendingEntryEffect.MkPendingEntryEffect object_ _controller effects -> names asking (== object_) <> foldMap (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effects
+pendingEntryEffectNames asking = Const.getConst . Children.pendingEntryEffectChildren (storedVisitors asking)
 
 perCreatureNames :: (Monoid r) => Asking r -> PerCreature.PerCreature -> r
 perCreatureNames asking x = case x of
@@ -1241,12 +1226,10 @@ powerNames asking x = case x of
   Power.MkPower unwrap -> quantityNames asking unwrap
 
 preventionNames :: (Monoid r) => Asking r -> Prevention.Prevention -> r
-preventionNames asking x = case x of
-  Prevention.MkPrevention by amounts rider -> candidateIdNames asking by <> names asking (`Map.member` amounts) <> foldMap (foldMap (recipientNames asking) . Map.keys) amounts <> foldMap (preventionRiderNames asking) rider
+preventionNames asking = Const.getConst . Children.preventionChildren (storedVisitors asking)
 
 preventionRiderNames :: (Monoid r) => Asking r -> PreventionRider.PreventionRider -> r
-preventionRiderNames asking x = case x of
-  PreventionRider.MkPreventionRider effects targets _controller source -> foldMap (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effects <> foldMap (slotNames asking) (Map.keys targets) <> foldMap (foldMap (recipientNames asking)) targets <> names asking (== source)
+preventionRiderNames asking = Const.getConst . Children.preventionRiderChildren (storedVisitors asking)
 
 printedReplacementNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> (effect -> r) -> PrintedReplacement.PrintedReplacement card ability effect -> r
 printedReplacementNames asking onCard onAbility onEffect = Const.getConst . Children.printedReplacementChildren (abilityVisitors asking onCard onAbility onEffect)
@@ -1468,10 +1451,6 @@ whichCountersNames :: (Monoid r) => Asking r -> (keyword -> r) -> WhichCounters.
 whichCountersNames asking onKeyword x = case x of
   WhichCounters.OfKind counterKind -> counterKindNames asking onKeyword counterKind
   WhichCounters.OfAnyKind -> mempty
-
-whileNames :: (Monoid r) => Asking r -> While.While -> r
-whileNames asking x = case x of
-  While.MkWhile _player condition -> conditionNames asking condition
 
 withCountersNames :: (Monoid r) => Asking r -> WithCounters.WithCounters -> r
 withCountersNames asking x = case x of
