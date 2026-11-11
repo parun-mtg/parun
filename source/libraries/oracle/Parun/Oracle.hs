@@ -213,7 +213,11 @@ triggered context creature t
       kept <- stated : [Text.pack "You " <> Prose.decapitalise stated | Text.isPrefixOf (Text.pack "Draw ") stated]
       effect <- kept : [Text.replace (Text.pack " a card") (Text.pack " an additional card") kept | Trigger.drawStep (TriggeredAbility.condition t)]
       let named' = Text.isPrefixOf (Target.self after) effect && Target.self after /= Text.pack "it"
-      [word <> Trigger.opening e <> gate <> Text.pack ", " <> (if named' then effect else Prose.decapitalise effect)]
+      -- Free: with no intervening "if", an ability word its effect's own
+      -- condition earns, when the effect does not open on that condition
+      -- (Poisoner's Apprentice).
+      headed <- word : [w | Text.null word, not (Text.isPrefixOf (Text.pack "If ") effect), w <- Effect.conditionWords after (TriggeredAbility.modal t)]
+      [headed <> Trigger.opening e <> gate <> Text.pack ", " <> (if named' then effect else Prose.decapitalise effect)]
   | otherwise = []
 
 -- | An activated ability: "[Cost]: [Effect.]" (CR 602.1a), and after it the

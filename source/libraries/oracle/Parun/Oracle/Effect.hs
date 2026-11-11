@@ -307,9 +307,9 @@ lowered context text
 -- | A clause's sentences and the slots they name: its instructions, "you may"
 -- and the one instruction you may follow (CR 603.5), its instructions with a
 -- cost paid on resolution (CR 118.12), or "If [condition], [instructions]."
--- (CR 608.2c). A clause gated by an "if you do" reads with its neighbour
--- ('steps'), and a "may" another player decides or one over more than one
--- instruction is not spelled out here.
+-- or "[instructions] if [condition]." (CR 608.2c). A clause gated by an "if
+-- you do" reads with its neighbour ('steps'), and a "may" another player
+-- decides or one over more than one instruction is not spelled out here.
 clause :: Target.Context -> Clause.Clause Card.Card Continuous.Ability -> [(Text.Text, [SlotName.SlotName])]
 clause context c
   | Maybe.isJust (Clause.ifTaken c) || Maybe.isJust (Clause.orElse c) = []
@@ -324,7 +324,16 @@ clause context c
       -- Free: "also" before instructions that add to the ones before them
       -- (Dark Dabbling).
       opened <- [lowered context body, Text.pack "also " <> lowered context body]
-      [(word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms)]
+      -- Free: one sentence may state its condition last, "[instructions] if
+      -- [condition]." (Poisoner's Apprentice); 'conditionWords' then moves a
+      -- trigger's ability word ahead of its event.
+      let statedLast =
+            [ word <> stated <> Text.pack " if " <> words' <> Text.pack "."
+            | not itself,
+              Just stated <- [Text.stripSuffix (Text.pack ".") body],
+              not (Text.isInfixOf (Text.pack ". ") stated)
+            ]
+      fmap (\text -> (text, ms)) ((word <> Text.pack "If " <> words' <> Text.pack ", " <> opened) : statedLast)
   | otherwise = do
       predicates <- instructions context (Foldable.toList (Clause.effects c))
       case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of
@@ -338,6 +347,21 @@ clause context c
             not (any (Maybe.isJust . modifyTarget) (Clause.effects c)) ->
               [(Prose.sentence (Text.pack "you may " <> verb p) <> trailing p, mentions p)]
         _ -> []
+
+-- | The ability words (CR 207.2c) a modal's clause conditions earn, which a
+-- triggered ability stating its condition last prints ahead of its event
+-- ("Infusion \8212 When this creature enters, ...", Poisoner's Apprentice).
+conditionWords :: Target.Context -> Modal.Modal Card.Card Continuous.Ability -> [Text.Text]
+conditionWords context m =
+  ListUtils.nubOrd
+    [ word
+    | mode' <- Foldable.toList (Modal.modes m),
+      c <- Foldable.toList (Mode.clauses mode'),
+      Just gate <- [Clause.condition c],
+      (plain, _) <- condition context gate,
+      word <- Trigger.abilityWord plain,
+      not (Text.null word)
+    ]
 
 -- | A condition a clause's instructions wait on, and whether its words name
 -- the source, which the instructions then call "it": "this spell was kicked"
