@@ -10,6 +10,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -33,11 +34,14 @@ import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachR as AttachR
+import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
+import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
+import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
@@ -51,17 +55,24 @@ import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
 import qualified Parun.Types.Blight as Blight
+import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockCount as BlockCount
+import qualified Parun.Types.BlockPermission as BlockPermission
+import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
+import qualified Parun.Types.CastingPermission as CastingPermission
+import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
+import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
 import qualified Parun.Types.ChooseInstead as ChooseInstead
@@ -73,7 +84,9 @@ import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderColors as CommanderColors
+import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.CompanionCondition as CompanionCondition
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.CompletedDungeon as CompletedDungeon
@@ -109,8 +122,10 @@ import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
+import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CounterSubject as CounterSubject
 import qualified Parun.Types.CounterTrigger as CounterTrigger
+import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CounteringTrigger as CounteringTrigger
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
@@ -118,6 +133,7 @@ import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.CreateEmblem as CreateEmblem
+import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePart as DamagePart
@@ -149,6 +165,7 @@ import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.DrawCountR as DrawCountR
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
+import qualified Parun.Types.DungeonRoom as DungeonRoom
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.DuringPhase as DuringPhase
@@ -162,6 +179,7 @@ import qualified Parun.Types.EntryFlip as EntryFlip
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryPrice as EntryPrice
 import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
@@ -180,6 +198,7 @@ import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Fight as Fight
 import qualified Parun.Types.Filter as Filter
@@ -200,6 +219,7 @@ import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.Guess as Guess
+import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HexproofExemption as HexproofExemption
 import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.HowMany as HowMany
@@ -294,6 +314,7 @@ import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
+import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
@@ -324,9 +345,11 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
+import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
@@ -339,6 +362,7 @@ import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
@@ -364,6 +388,7 @@ import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
+import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
@@ -375,6 +400,7 @@ import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntapR as UntapR
+import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.UntapRewrite as UntapRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.Vote as Vote
@@ -2680,6 +2706,203 @@ optionalityChildren :: (Applicative f) => ModalChildren card ability f -> Option
 optionalityChildren c optionality = case optionality of
   Optionality.Mandatory -> pure optionality
   Optionality.Optional who -> Optionality.Optional <$> modalPlayer c who
+
+-- | One visitor per kind of child a face holds (CR 712.6): its keywords (CR
+-- 702), its abilities (CR 113.1), its spell (CR 700.2), its costs (CR 118.8, 118.9) and
+-- the rule-affecting rows it prints. Its name and type line are leaves, since
+-- CR 612.2a changes them together.
+data FaceChildren card f = MkFaceChildren
+  { -- | A printed power (CR 208.1), whole.
+    facePower :: Power.Power -> f Power.Power,
+    -- | A printed toughness (CR 208.1), whole.
+    faceToughness :: Toughness.Toughness -> f Toughness.Toughness,
+    -- | A deck-construction rule a commander prints (CR 903.5), whole.
+    faceCommanderDeckRule :: CommanderDeckRule.CommanderDeckRule -> f CommanderDeckRule.CommanderDeckRule,
+    -- | A keyword (CR 702), whole. Keywords a visitor maps together merge, their counts summed.
+    faceKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | A colour of the color indicator (CR 204), whole.
+    faceColor :: Color.Color -> f Color.Color,
+    -- | A characteristic-defining power and toughness (CR 208.2a), whole.
+    faceCharacteristicPT :: CharacteristicPT.CharacteristicPT -> f CharacteristicPT.CharacteristicPT,
+    -- | A static ability (CR 604), whole.
+    faceStatic :: StaticAbility.StaticAbility (GrantedAbility.GrantedAbility card) -> f (StaticAbility.StaticAbility (GrantedAbility.GrantedAbility card)),
+    -- | The spell's modes (CR 700.2), whole.
+    faceModal :: Modal.Modal card (GrantedAbility.GrantedAbility card) -> f (Modal.Modal card (GrantedAbility.GrantedAbility card)),
+    -- | An activated ability (CR 602), whole.
+    faceActivated :: ActivatedAbility.ActivatedAbility card (GrantedAbility.GrantedAbility card) -> f (ActivatedAbility.ActivatedAbility card (GrantedAbility.GrantedAbility card)),
+    -- | A printed replacement (CR 614.1), whole.
+    faceReplacement :: PrintedReplacement.PrintedReplacement card (GrantedAbility.GrantedAbility card) (Effect.Effect card (GrantedAbility.GrantedAbility card)) -> f (PrintedReplacement.PrintedReplacement card (GrantedAbility.GrantedAbility card) (Effect.Effect card (GrantedAbility.GrantedAbility card))),
+    -- | A triggered ability (CR 603), printed or delayed (CR 603.7), whole.
+    faceTriggered :: TriggeredAbility.TriggeredAbility card (GrantedAbility.GrantedAbility card) -> f (TriggeredAbility.TriggeredAbility card (GrantedAbility.GrantedAbility card)),
+    -- | A dungeon's room (CR 309.4), whole.
+    faceRoom :: DungeonRoom.DungeonRoom card -> f (DungeonRoom.DungeonRoom card),
+    -- | A permission to cast (CR 601.3), whole.
+    faceCastingPermission :: CastingPermission.CastingPermission -> f CastingPermission.CastingPermission,
+    -- | A restriction on casting (CR 601.3), whole.
+    faceCastingRestriction :: CastingRestriction.CastingRestriction -> f CastingRestriction.CastingRestriction,
+    -- | An Aura's enchant slot (CR 303.4a), whole.
+    faceTargetSlot :: TargetSlot.TargetSlot -> f TargetSlot.TargetSlot,
+    -- | Whether the spell can be countered (CR 113.6g), whole.
+    faceCounterability :: Counterability.Counterability -> f Counterability.Counterability,
+    -- | An additional cost (CR 118.8), whole.
+    faceCostComponent :: CostComponent.CostComponent Keyword.Keyword -> f (CostComponent.CostComponent Keyword.Keyword),
+    -- | A choice among additional costs (CR 118.8), whole.
+    faceCostChoice :: CostChoice.CostChoice -> f CostChoice.CostChoice,
+    -- | A mode's own cost (CR 700.2h), whole.
+    faceCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | A ceiling on X (CR 107.3), whole.
+    faceQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | An alternative cost (CR 118.9), whole.
+    faceAlternativeCost :: AlternativeCost.AlternativeCost -> f AlternativeCost.AlternativeCost,
+    -- | A self cost reduction (CR 601.2f), whole.
+    faceCostReduction :: CostReduction.CostReduction -> f CostReduction.CostReduction,
+    -- | A player static ability (CR 613.10), whole.
+    facePlayerStatic :: PlayerStaticAbility.PlayerStaticAbility -> f PlayerStaticAbility.PlayerStaticAbility,
+    -- | A blocking requirement (CR 509.1c), whole.
+    faceBlockRequirement :: BlockRequirement.BlockRequirement -> f BlockRequirement.BlockRequirement,
+    -- | A blocking permission (CR 509.1b), whole.
+    faceBlockPermission :: BlockPermission.BlockPermission -> f BlockPermission.BlockPermission,
+    -- | An attacking requirement (CR 508.1d), whole.
+    faceAttackRequirement :: AttackRequirement.AttackRequirement -> f AttackRequirement.AttackRequirement,
+    -- | A combat restriction (CR 508.1c, 509.1b), whole.
+    faceCombatRestriction :: CombatRestriction.CombatRestriction -> f CombatRestriction.CombatRestriction,
+    -- | A restriction on sacrificing (CR 701.21a), whole.
+    faceSacrificeRestriction :: SacrificeRestriction.SacrificeRestriction -> f SacrificeRestriction.SacrificeRestriction,
+    -- | A restriction on untapping (CR 502.3), whole.
+    faceUntapRestriction :: UntapRestriction.UntapRestriction -> f UntapRestriction.UntapRestriction,
+    -- | A restriction on crewing (CR 702.122a), whole.
+    faceCrewRestriction :: CrewRestriction.CrewRestriction -> f CrewRestriction.CrewRestriction,
+    -- | A restriction on targeting (CR 613.11), whole.
+    faceTargetRestriction :: TargetRestriction.TargetRestriction Affected.Affected -> f (TargetRestriction.TargetRestriction Affected.Affected),
+    -- | A rule-changing permission (CR 613.11), whole.
+    faceRulePermission :: RulePermission.RulePermission -> f RulePermission.RulePermission,
+    -- | A restriction on attaching (CR 701.3a), whole.
+    faceAttachRestriction :: AttachRestriction.AttachRestriction -> f AttachRestriction.AttachRestriction,
+    -- | A restriction on entering the battlefield (CR 613.11), whole.
+    faceEntryRestriction :: EntryRestriction.EntryRestriction -> f EntryRestriction.EntryRestriction,
+    -- | A restriction on placing counters (CR 122.1), whole.
+    faceCounterRestriction :: CounterRestriction.CounterRestriction -> f CounterRestriction.CounterRestriction,
+    -- | A prohibition on activating abilities (CR 602.5), whole.
+    faceActivationProhibition :: ActivationProhibition.ActivationProhibition -> f ActivationProhibition.ActivationProhibition,
+    -- | A cost to attack (CR 508.1h), whole.
+    faceAttackCost :: AttackCost.AttackCost -> f AttackCost.AttackCost,
+    -- | A cost to block (CR 509.1d), whole.
+    faceBlockCost :: BlockCost.BlockCost -> f BlockCost.BlockCost,
+    -- | An action taken from a hand at the mulligan or the game's start (CR 103.6), whole.
+    faceHandAction :: HandAction.HandAction card -> f (HandAction.HandAction card),
+    -- | A special action (CR 116.2), whole.
+    faceSpecialAction :: SpecialAction.SpecialAction -> f SpecialAction.SpecialAction
+  }
+
+-- | Every child of a face left as it is: the base a walk overrides.
+faceLeaves :: (Applicative f) => FaceChildren card f
+faceLeaves =
+  MkFaceChildren
+    { facePower = pure,
+      faceToughness = pure,
+      faceCommanderDeckRule = pure,
+      faceKeyword = pure,
+      faceColor = pure,
+      faceCharacteristicPT = pure,
+      faceStatic = pure,
+      faceModal = pure,
+      faceActivated = pure,
+      faceReplacement = pure,
+      faceTriggered = pure,
+      faceRoom = pure,
+      faceCastingPermission = pure,
+      faceCastingRestriction = pure,
+      faceTargetSlot = pure,
+      faceCounterability = pure,
+      faceCostComponent = pure,
+      faceCostChoice = pure,
+      faceCost = pure,
+      faceQuantity = pure,
+      faceAlternativeCost = pure,
+      faceCostReduction = pure,
+      facePlayerStatic = pure,
+      faceBlockRequirement = pure,
+      faceBlockPermission = pure,
+      faceAttackRequirement = pure,
+      faceCombatRestriction = pure,
+      faceSacrificeRestriction = pure,
+      faceUntapRestriction = pure,
+      faceCrewRestriction = pure,
+      faceTargetRestriction = pure,
+      faceRulePermission = pure,
+      faceAttachRestriction = pure,
+      faceEntryRestriction = pure,
+      faceCounterRestriction = pure,
+      faceActivationProhibition = pure,
+      faceAttackCost = pure,
+      faceBlockCost = pure,
+      faceHandAction = pure,
+      faceSpecialAction = pure
+    }
+
+-- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
+faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions crewRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts mulliganActions openingHandActions specialActions) =
+  Face.MkFace name oracleText manaCost typeLine
+    <$> traverse (facePower c) power
+    <*> traverse (faceToughness c) toughness
+    <*> pure loyalty
+    <*> pure defense
+    <*> pure startingIntensity
+    <*> pure vanguard
+    <*> pure canBeYourCommander
+    <*> pure claimsStartingPlayer
+    <*> pure anteOnly
+    <*> pure circlesTwo
+    <*> pure deckLimit
+    <*> traverseSet (faceCommanderDeckRule c) commanderDeckRules
+    <*> fmap (Map.fromListWith (+)) (traverse (\(printed, count) -> (\k -> (k, count)) <$> faceKeyword c printed) (Map.toList keywords))
+    <*> traverseSet (faceColor c) colorIndicator
+    <*> traverse (faceCharacteristicPT c) characteristicPT
+    <*> pure characteristicColors
+    <*> traverse (faceStatic c) staticAbilities
+    <*> faceModal c spell
+    <*> traverse (faceActivated c) activatedAbilities
+    <*> traverse (faceReplacement c) replacementEffects
+    <*> traverse (faceTriggered c) triggeredAbilities
+    <*> traverse (faceTriggered c) delayedAbilities
+    <*> traverse (faceRoom c) rooms
+    <*> pure dungeonEntryQuality
+    <*> traverse (faceCastingPermission c) castingPermissions
+    <*> traverse (faceCastingRestriction c) castingRestrictions
+    <*> traverse (faceTargetSlot c) enchant
+    <*> faceCounterability c counterability
+    <*> traverse (faceCostComponent c) additionalCosts
+    <*> traverse (faceCostChoice c) additionalCostChoices
+    <*> traverse (faceCost c) modeCosts
+    <*> pure modeChooser
+    <*> traverse (faceQuantity c) maximumX
+    <*> pure minimumX
+    <*> traverse (faceAlternativeCost c) alternativeCosts
+    <*> traverse (faceCostReduction c) costReductions
+    <*> traverse (facePlayerStatic c) playerAbilities
+    <*> traverse (faceBlockRequirement c) blockRequirements
+    <*> traverse (faceBlockPermission c) blockPermissions
+    <*> traverse (faceAttackRequirement c) attackRequirements
+    <*> traverse (faceCombatRestriction c) combatRestrictions
+    <*> traverse (faceSacrificeRestriction c) sacrificeRestrictions
+    <*> traverse (faceUntapRestriction c) untapRestrictions
+    <*> traverse (faceCrewRestriction c) crewRestrictions
+    <*> traverse (faceTargetRestriction c) targetRestrictions
+    <*> traverse (faceRulePermission c) rulePermissions
+    <*> traverse (faceAttachRestriction c) attachRestrictions
+    <*> traverse (faceEntryRestriction c) entryRestrictions
+    <*> traverse (faceCounterRestriction c) counterRestrictions
+    <*> traverse (faceActivationProhibition c) activationProhibitions
+    <*> traverse (faceAttackCost c) attackCosts
+    <*> traverse (faceBlockCost c) blockCosts
+    <*> traverse (faceHandAction c) mulliganActions
+    <*> traverse (faceHandAction c) openingHandActions
+    <*> traverse (faceSpecialAction c) specialActions
+
+-- | A card's children: each of its faces (CR 712.6), whole.
+cardChildren :: (Applicative f) => (Face.Face Card.Card -> f (Face.Face Card.Card)) -> Card.Card -> f Card.Card
+cardChildren onFace (Card.MkCard layout faces) = Card.MkCard layout <$> traverse onFace faces
 
 -- | A set's members, each through a visitor; members the visitor maps together merge.
 traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)
