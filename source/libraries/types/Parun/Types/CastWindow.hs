@@ -10,4 +10,7 @@ data CastWindow
   | -- | CR 702.40a: this turn's casts before the object the count is evaluated
     -- against, so a spell cast in response isn't counted.
     BeforeEvaluated
+  | -- | CR 601.2i / 707.10: this turn's casts but the evaluated object's own,
+    -- so "another spell" leaves out the spell asking (Burrog Barrage).
+    OtherThanEvaluated
   deriving (Bounded, Enum, Eq, Ord, Show)

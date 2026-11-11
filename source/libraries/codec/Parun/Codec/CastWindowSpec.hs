@@ -25,5 +25,11 @@ spec s = Spec.describe s "Parun.Codec.CastWindow" $ do
       CastWindow.codec
       CastWindow.BeforeEvaluated
       " \"BeforeEvaluated\" "
+  Spec.it s "OtherThanEvaluated" $
+    Common.assertCodec
+      s
+      CastWindow.codec
+      CastWindow.OtherThanEvaluated
+      " \"OtherThanEvaluated\" "
   Spec.it s "round trips every constructor" $ Common.assertEnumCodec s CastWindow.codec
   Spec.it s "has a schema" $ Common.assertHasSchema s CastWindow.codec
