@@ -2597,7 +2597,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("a Condition's own number", holds (conditionFilters counting)),
             ("CR 611.2b's for-as-long-as clause", holds (durationFilters (Duration.ForAsLongAs counting))),
             ("a library depth", holds (objectRefFilters topDepth)),
-            ("its reveal-until mirror", holds (objectRefFilters (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Type.HasCardType CardType.Land) (Quantity.Type.ObjectCounters kind))))),
+            ("its reveal-until mirror", holds (objectRefFilters (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Type.HasCardType CardType.Land) (Quantity.Type.Literal 1) (Quantity.Type.ObjectCounters kind))))),
             -- The fourth: the gate is a clause's FIELD rather than an effect, so
             -- payGateFilters is the only traversal that reaches it (#2876).
             ("CR 118.12's gate multiplier", holds (payGateFilters gate)),

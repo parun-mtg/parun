@@ -922,7 +922,7 @@ playerRefPositions =
 objectRefPlayerRefPositions :: [(String, ObjectRef.ObjectRef, [PlayerRef.PlayerRef])]
 objectRefPlayerRefPositions =
   [ ("top-of-library", ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (plantedPlayer "tl") (Quantity.Type.Literal 1)), [plantedPlayer "tl"]),
-    ("top-of-library-until", ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (plantedPlayer "tu") (Filter.Type.And []) (Quantity.Type.Literal 1)), [plantedPlayer "tu"]),
+    ("top-of-library-until", ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (plantedPlayer "tu") (Filter.Type.And []) (Quantity.Type.Literal 1) (Quantity.Type.Literal 1)), [plantedPlayer "tu"]),
     ("top-of-graveyard", ObjectRef.TopOfGraveyard (plantedPlayer "tg"), [plantedPlayer "tg"]),
     ("chosen-card-in-hand", ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (plantedPlayer "ch") (Filter.Type.And []) HowMany.one), [plantedPlayer "ch"]),
     ("random-card-in-hand", ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (plantedPlayer "rh") (Filter.Type.And []) (Quantity.Type.Literal 1)), [plantedPlayer "rh"]),
@@ -4314,7 +4314,7 @@ objectRefFilters ref = case ref of
   -- as well as carrying the arm above's count, so both are linted: the
   -- match-defining Filter here, and whatever a Count or a CR 122.1b counter kind
   -- under the count would hold via the arm above's route.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ f _) -> unframed [f] <> refFilters ref
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ f _ _) -> unframed [f] <> refFilters ref
   -- Soldevi Digger's "the top card of your graveyard" names a POSITION with no
   -- depth and no Filter beside it, so unlike the two library arms above it holds
   -- nothing at all to lint: its PlayerRef names players.

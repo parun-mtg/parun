@@ -535,10 +535,10 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- Palm's HolderOfBound); the narrowing Filter is a read like a sweep's.
   ObjectRef.Players (PlayersWho.MkPlayersWho _ who) -> foldMap filterSlotsOf who
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count) -> quantitySlots count
-  -- The arm above's count, and no more: the SEAT is objectRefPlayerRefs' half.
-  -- What a MATCH is is a Filter, and no arm here reports the slots a Filter
-  -- reads, for the reason the header states.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ count) -> quantitySlots count
+  -- The arm above's count, and each match's weight: the SEAT is
+  -- objectRefPlayerRefs' half. What a MATCH is is a Filter, and no arm here
+  -- reports the slots a Filter reads, for the reason the header states.
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ weight count) -> quantitySlots weight <> quantitySlots count
   -- No count and no filter, so the SEAT is the whole read -- and it is
   -- objectRefPlayerRefs' half, reported by the fold this case is joined into.
   ObjectRef.TopOfGraveyard _ -> Map.empty
@@ -615,8 +615,9 @@ objectRefQuantities ref = case ref of
   -- A seat, never a count.
   ObjectRef.Players _ -> []
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count) -> [count]
-  -- The arm above's count, measured in MATCHES rather than in cards.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ count) -> [count]
+  -- The arm above's count, measured in MATCHES rather than in cards, and what
+  -- each match weighs.
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ weight count) -> [weight, count]
   -- CR 404.1's top card is ONE card, so the graveyard arm states no depth at all.
   ObjectRef.TopOfGraveyard _ -> []
   -- How many cards each chooser picks out of a graveyard or a hand -- Fall of
@@ -669,7 +670,7 @@ objectRefPlayerRefs ref = case ref of
   -- The reference IS a seat, so it is its own whole answer here.
   ObjectRef.Players (PlayersWho.MkPlayersWho player _) -> [player]
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player _) -> [player]
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player _ _) -> [player]
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player _ _ _) -> [player]
   -- Whose graveyard, the two library walks' own read over CR 400.1's other
   -- per-player zone.
   ObjectRef.TopOfGraveyard player -> [player]
@@ -3119,7 +3120,13 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- "until you reveal a nonland card" and Open the Way's "until you reveal X land
   -- cards" both say -- the walk stops having reached it, not before it.
   --
-  -- A library holding fewer matches than the count is given up whole (CR 609.3),
+  -- Each match adds its weight, read against that card's projection: 1 for a
+  -- tally of matches, the card's mana value (CR 202.3) for Improvisation
+  -- Capstone's total, where a land adds 0 and the walk goes on past it. An
+  -- unevaluable or negative weight adds nothing (CR 107.2, 107.1b). Proved by
+  -- data/scenarios/improvisation-capstone-exiles-until-total-mana-value-4.json.
+  --
+  -- A library whose matches fall short of the count is given up whole (CR 609.3),
   -- which `walkDown` does by running out of cards; the rest of the instruction is
   -- then performed on all of it (CR 101.3). An empty library names nothing, for
   -- the same reason, and so does a count of zero -- an unevaluable or negative
@@ -3130,19 +3137,20 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- Filter is matched against each card's own projection as the walk reaches it
   -- (CR 608.2c) -- the context is this resolution's, so a filter reading a slot
   -- this resolution bound sees it. Cards only, the arm above's reason.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ count) ->
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ weight count) ->
     let named = playerRefPlayers legal resolving source controller gs player
         viewOf = effectViewOf resolving source legal gs
         context = effectContext gs resolving controller source legal (slotBindings resolving gs)
         wanted = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving source count)
         viewOfCard = Projection.viewsOf gs
         matches oid = Filter.matches context (viewOfCard oid) filter_
+        weighs oid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving oid weight)
         walkDown remaining oids =
           if remaining <= (0 :: Natural)
             then []
             else case oids of
               [] -> []
-              oid : rest -> oid : walkDown (if matches oid then remaining - 1 else remaining) rest
+              oid : rest -> oid : walkDown (if matches oid then remaining - min remaining (weighs oid) else remaining) rest
         walk pid = walkDown wanted (libraryCards pid gs)
      in concatMap walk (filter (`elem` named) (Game.apnapOrder gs))
   -- CR 404.1's ordered pile, whose top is the NEWEST arrival -- the LAST member,

@@ -1406,7 +1406,7 @@ topOfLibraryNames asking x = case x of
 
 topOfLibraryUntilNames :: (Monoid r) => Asking r -> TopOfLibraryUntil.TopOfLibraryUntil -> r
 topOfLibraryUntilNames asking x = case x of
-  TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ count -> playerRefNames asking player <> filterNames asking filter_ <> quantityNames asking count
+  TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ weight count -> playerRefNames asking player <> filterNames asking filter_ <> quantityNames asking weight <> quantityNames asking count
 
 toughnessNames :: (Monoid r) => Asking r -> Toughness.Toughness -> r
 toughnessNames asking x = case x of

@@ -211,7 +211,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) (Quantity.Literal 1)))
+      (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) (Quantity.Literal 1) (Quantity.Literal 1)))
       " {\"type\":\"TopOfLibraryUntil\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"count\":{\"type\":\"Literal\",\"value\":1}}} "
   -- The graveyard twin, and the pair that keeps the two ends apart on the wire:
   -- this one is a bare PlayerRef where TopOfLibrary above is a record, so a card
@@ -469,7 +469,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
                 Codec.encode ObjectRef.codec (ObjectRef.EachOnStack (Filter.Not Filter.IsSource)),
                 Codec.encode ObjectRef.codec (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.You, PlayersWho.who = Nothing}),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3))),
-                Codec.encode ObjectRef.codec (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) (Quantity.Literal 1))),
+                Codec.encode ObjectRef.codec (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) (Quantity.Literal 1) (Quantity.Literal 1))),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfGraveyard (PlayerRef.Relative PlayerRelation.You)),
                 Codec.encode ObjectRef.codec (ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard Chooser.TheController (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)) (Filter.HasCardType CardType.Creature) HowMany.one)),
                 Codec.encode ObjectRef.codec (ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (PlayerRef.Relative PlayerRelation.You) (Filter.HasCardType CardType.Creature) HowMany.one)),

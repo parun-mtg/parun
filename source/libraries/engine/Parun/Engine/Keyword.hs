@@ -7880,7 +7880,7 @@ cascade =
       exile =
         Effect.MoveToZone
           ( MoveToZone.MkMoveToZone
-              (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) match (Quantity.Literal 1)))
+              (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) match (Quantity.Literal 1) (Quantity.Literal 1)))
               Zone.Exile
               plain
               (Just cascadeExiled)
