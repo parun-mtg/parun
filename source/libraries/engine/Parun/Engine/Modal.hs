@@ -416,6 +416,7 @@ leastOf selection = case selection of
   ModeSelection.ChooseExactly n -> n
   ModeSelection.ChooseExactlyWithRepeats n -> n
   ModeSelection.ChooseBetween cb -> ChooseBetween.least cb
+  ModeSelection.ChooseBetweenWithRepeats cb -> ChooseBetween.least cb
   ModeSelection.ChooseInstead ci -> min (leastOf (ChooseInstead.ordinary ci)) (leastOf (ChooseInstead.instead ci))
   ModeSelection.ChooseUpTo _ -> 0
 
@@ -428,22 +429,21 @@ mostOf selection = case selection of
   ModeSelection.ChooseExactly n -> Just n
   ModeSelection.ChooseExactlyWithRepeats n -> Just n
   ModeSelection.ChooseBetween cb -> Just (ChooseBetween.most cb)
+  ModeSelection.ChooseBetweenWithRepeats cb -> Just (ChooseBetween.most cb)
   ModeSelection.ChooseInstead ci -> max <$> mostOf (ChooseInstead.ordinary ci) <*> mostOf (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo _ -> Nothing
 
 -- CR 700.2d: does this instruction print "You may choose the same mode more than
 -- once"? False is that rule's default -- "that player normally can't choose the
 -- same mode more than once" -- and is what all but a handful of cards in the pool
--- answer, Mystic Confluence and Fiery Confluence being PRINTINGS of the exception.
---
--- True implies leastOf == mostOf: Parun.Types.ModeSelection has no constructor
--- pairing the exception with a range (Moment of Reckoning does) (gap #6252), which
--- is why the repeating arms below read one bound and mean "the count".
+-- answer, Mystic Confluence, Fiery Confluence and Moment of Reckoning being
+-- PRINTINGS of the exception.
 allowsRepeatsIn :: ModeSelection.ModeSelection -> Bool
 allowsRepeatsIn selection = case selection of
   ModeSelection.ChooseExactly _ -> False
   ModeSelection.ChooseExactlyWithRepeats _ -> True
   ModeSelection.ChooseBetween {} -> False
+  ModeSelection.ChooseBetweenWithRepeats {} -> True
   ModeSelection.ChooseInstead ci -> allowsRepeatsIn (ChooseInstead.ordinary ci) || allowsRepeatsIn (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo _ -> False
 
@@ -485,10 +485,12 @@ allowsRepeats = allowsRepeatsIn . Modal.selection
 -- inventing a selection, which is where CR 601.2e/603.3c take over.
 --
 -- Under the exception it is narrower, because a single legal mode now satisfies
--- any count: one legal mode leaves only "that mode, n times", and no legal mode
--- at all leaves nothing (rejected by the caller as above). Two legal modes and a
--- count of three is a real choice even though there are fewer modes than the
--- count, which is exactly the case the default has no analogue of.
+-- any count: one legal mode leaves only "that mode, n times" when the
+-- instruction fixes n, and no legal mode at all leaves nothing (rejected by the
+-- caller as above when the floor is positive). Two legal modes and a count of
+-- three is a real choice even though there are fewer modes than the count, which
+-- is exactly the case the default has no analogue of; so is one legal mode under
+-- a range, which may be taken any number of times within it.
 --
 -- A RANGE takes the default's arm, measured against its FLOOR, and that is the
 -- whole of it: "Choose one or both" with one legal mode leaves only that mode (CR
@@ -508,7 +510,7 @@ forcedSelection legal selection
   | mostOf selection == Just 0 = Just Seq.empty
   | allowsRepeatsIn selection = case Set.toAscList legal of
       [] -> Just Seq.empty
-      [only] -> Just (Seq.replicate (Natural.toIntSaturating (Maybe.fromMaybe 0 (mostOf selection))) only)
+      [only] | Just most <- mostOf selection, leastOf selection == most -> Just (Seq.replicate (Natural.toIntSaturating most) only)
       _ -> Nothing
   | Natural.length legal <= leastOf selection = Just (Seq.fromList (Set.toAscList legal))
   | otherwise = Nothing
@@ -520,12 +522,13 @@ forcedSelection legal selection
 -- three times, and does not otherwise.
 --
 -- A range asks it of its FLOOR: "Choose one or both" needs one legal mode, not
--- two, since choosing one is an answer the instruction allows.
+-- two, since choosing one is an answer the instruction allows; a floor of zero
+-- needs none.
 selectionPossible :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Bool
 selectionPossible legal selection
   | ModeSelection.ChooseInstead ci <- selection = selectionPossible legal (ChooseInstead.ordinary ci) || selectionPossible legal (ChooseInstead.instead ci)
   | mostOf selection == Just 0 = True
-  | allowsRepeatsIn selection = not (Set.null legal)
+  | allowsRepeatsIn selection = leastOf selection == 0 || not (Set.null legal)
   | otherwise = Natural.length legal >= leastOf selection
 
 -- CR 601.2b/700.2: does this answer really satisfy the printed instruction? The

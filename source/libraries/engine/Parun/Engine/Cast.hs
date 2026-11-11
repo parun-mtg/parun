@@ -374,8 +374,8 @@ flashOn oid face gs =
 -- all (Modal.selectionPossible) -- ordinarily at least as many fillable modes as
 -- the selection demands, under a range as many as its floor demands, and under CR
 -- 700.2d's exception a single fillable mode, which may then be chosen as many
--- times as the count asks. For a non-modal card (one mode, count 1) this is
--- identical to "every slot fillable".
+-- times as the count asks, or none under a floor of zero. For a non-modal card
+-- (one mode, count 1) this is identical to "every slot fillable".
 --
 -- CR 109.5 / 601.2a: the perspective a "target creature an opponent controls"
 -- slot is measured against is the player CASTING the spell. Taken as a parameter

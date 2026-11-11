@@ -21,6 +21,8 @@ codec =
       -- instruction encodes exactly as it always did.
       Arm.payload "ChooseExactlyWithRepeats" Common.natural ModeSelection.ChooseExactlyWithRepeats (\x -> case x of ModeSelection.ChooseExactlyWithRepeats y -> Just y; _ -> Nothing),
       Arm.payload "ChooseBetween" ChooseBetween.codec ModeSelection.ChooseBetween (\x -> case x of ModeSelection.ChooseBetween y -> Just y; _ -> Nothing),
+      -- CR 700.2d over a range, separate for ChooseExactlyWithRepeats' reason.
+      Arm.payload "ChooseBetweenWithRepeats" ChooseBetween.codec ModeSelection.ChooseBetweenWithRepeats (\x -> case x of ModeSelection.ChooseBetweenWithRepeats y -> Just y; _ -> Nothing),
       -- Recurses on 'codec' itself, Parun.Codec.Condition's reason.
       Arm.payload "ChooseInstead" (ChooseInstead.codec codec) ModeSelection.ChooseInstead (\x -> case x of ModeSelection.ChooseInstead y -> Just y; _ -> Nothing),
       Arm.payload "ChooseUpTo" Quantity.codec ModeSelection.ChooseUpTo (\x -> case x of ModeSelection.ChooseUpTo y -> Just y; _ -> Nothing)
@@ -31,5 +33,6 @@ tagOf x = case x of
   ModeSelection.ChooseExactly {} -> "ChooseExactly"
   ModeSelection.ChooseExactlyWithRepeats {} -> "ChooseExactlyWithRepeats"
   ModeSelection.ChooseBetween {} -> "ChooseBetween"
+  ModeSelection.ChooseBetweenWithRepeats {} -> "ChooseBetweenWithRepeats"
   ModeSelection.ChooseInstead {} -> "ChooseInstead"
   ModeSelection.ChooseUpTo {} -> "ChooseUpTo"

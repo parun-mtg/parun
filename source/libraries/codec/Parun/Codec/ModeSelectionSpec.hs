@@ -43,6 +43,14 @@ spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
       (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2))
       " {\"type\":\"ChooseBetween\",\"value\":{\"least\":1,\"most\":2}} "
 
+  -- CR 700.2d's exception over a range (data/cards/moment-of-reckoning.json).
+  Spec.it s "ChooseBetweenWithRepeats" $
+    Common.assertCodec
+      s
+      ModeSelection.codec
+      (ModeSelection.ChooseBetweenWithRepeats (ChooseBetween.MkChooseBetween 0 4))
+      " {\"type\":\"ChooseBetweenWithRepeats\",\"value\":{\"least\":0,\"most\":4}} "
+
   -- Widow's Bite (data/cards/widows-bite.json), nesting the tag's own codec.
   Spec.it s "ChooseInstead" $
     Common.assertCodec

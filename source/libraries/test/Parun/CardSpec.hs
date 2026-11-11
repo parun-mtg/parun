@@ -2313,6 +2313,7 @@ selectionReadsX selection = case selection of
   ModeSelection.ChooseExactly _ -> False
   ModeSelection.ChooseExactlyWithRepeats _ -> False
   ModeSelection.ChooseBetween _ -> False
+  ModeSelection.ChooseBetweenWithRepeats _ -> False
   ModeSelection.ChooseInstead ci -> selectionReadsX (ChooseInstead.ordinary ci) || selectionReadsX (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo quantity -> Set.member Binding.variableX (QuantitySlot.slots quantity)
 

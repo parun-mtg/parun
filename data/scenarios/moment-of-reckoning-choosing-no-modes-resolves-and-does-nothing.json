@@ -1,0 +1,125 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-5",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "dead-bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Moment of Reckoning",
+            "label": "moment"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Moment of Reckoning choosing no modes resolves and does nothing",
+  "final": [
+    {
+      "Count": {
+        "card": "Moment of Reckoning",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$swamp-5",
+        "tapped": true
+      }
+    }
+  ],
+  "note": "\"Choose up to four\" admits zero modes. With both modes legal, alice chooses none: the spell has no targets, so CR 608.2b cannot remove it, and it resolves to the graveyard leaving bob's Piker and her graveyard's Grizzly Bears where they were.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            "$swamp-1",
+            "$swamp-2",
+            "$swamp-3",
+            "$swamp-4",
+            "$swamp-5"
+          ],
+          "modes": [],
+          "object": "$moment"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-5",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Moment of Reckoning",
+            "label": "moment"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Moment of Reckoning with no legal mode is cast choosing none",
+  "final": [
+    {
+      "Count": {
+        "card": "Moment of Reckoning",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$swamp-5",
+        "tapped": true
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Bob has no nonland permanent and alice's graveyard is empty, so neither mode is legal (CR 700.2a). \"Choose up to four\" still admits zero modes, so the spell is castable, the empty selection is the only answer and goes unasked, and it resolves to the graveyard.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            "$swamp-1",
+            "$swamp-2",
+            "$swamp-3",
+            "$swamp-4",
+            "$swamp-5"
+          ],
+          "object": "$moment"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
