@@ -13,9 +13,12 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
+import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
+import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
+import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
@@ -54,6 +57,7 @@ import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
+import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockCount as BlockCount
@@ -61,6 +65,7 @@ import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CastFrom as CastFrom
@@ -147,6 +152,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
@@ -183,6 +189,7 @@ import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Equip as Equip
+import qualified Parun.Types.EventExpiry as EventExpiry
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
@@ -197,6 +204,7 @@ import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
+import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
@@ -287,7 +295,10 @@ import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
+import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.PayGate as PayGate
+import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
+import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
@@ -317,6 +328,8 @@ import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
+import qualified Parun.Types.Prevention as Prevention
+import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.Protection as Protection
@@ -371,6 +384,7 @@ import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
+import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.Suspend as Suspend
@@ -410,6 +424,7 @@ import qualified Parun.Types.VotePlayers as VotePlayers
 import qualified Parun.Types.VotesReceived as VotesReceived
 import qualified Parun.Types.Ward as Ward
 import qualified Parun.Types.WhichCounters as WhichCounters
+import qualified Parun.Types.While as While
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
@@ -2904,6 +2919,151 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
 -- | A card's children: each of its faces (CR 712.6), whole.
 cardChildren :: (Applicative f) => (Face.Face Card.Card -> f (Face.Face Card.Card)) -> Card.Card -> f Card.Card
 cardChildren onFace (Card.MkCard layout faces) = Card.MkCard layout <$> traverse onFace faces
+
+-- | One visitor per kind of child a stored row holds: a replacement or
+-- prevention effect in force (CR 614.1a, 615.1a), a delayed triggered ability
+-- (CR 603.7a), a later payment's offer (CR 116.2c), a pending effect, and the
+-- expiry each carries (CR 611.2a).
+data StoredChildren f = MkStoredChildren
+  { -- | A replacement or prevention effect in force (CR 614.1a, 615.1a), whole.
+    storedReplacement :: ReplacementEffect.ReplacementEffect Card.Card (GrantedAbility.GrantedAbility Card.Card) (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)) -> f (ReplacementEffect.ReplacementEffect Card.Card (GrantedAbility.GrantedAbility Card.Card) (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card))),
+    -- | A delayed triggered ability (CR 603.7a), whole.
+    storedTriggered :: TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> f (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)),
+    -- | An effect a rider or a pending row runs (CR 608.2c), whole.
+    storedEffect :: Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card) -> f (Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)),
+    -- | The price a later payment asks (CR 116.2c), whole.
+    storedCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | A "for as long as" condition (CR 611.2b) or a replacement's gate, whole.
+    storedCondition :: Condition.Condition -> f Condition.Condition,
+    -- | The event that ends an expiry (CR 611.2a), whole.
+    storedDurationEvent :: DurationEvent.DurationEvent -> f DurationEvent.DurationEvent,
+    -- | A delayed trigger's slot binding (CR 603.7c), whole.
+    storedBinding :: Binding.Binding -> f Binding.Binding,
+    -- | A chosen target or a shield's recipient (CR 601.2c), whole.
+    storedRecipient :: Recipient.Recipient -> f Recipient.Recipient,
+    -- | The shield a prevention row was spent from (CR 615.1a), whole.
+    storedCandidate :: CandidateId.CandidateId -> f CandidateId.CandidateId,
+    -- | A slot name: a row's environment, or the effect an expiry lasts until used.
+    storedSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | An object id held outright: a source, a bound object (CR 400.7).
+    storedObject :: ObjectId.ObjectId -> f ObjectId.ObjectId
+  }
+
+-- | Every child of a stored row left as it is: the base a walk overrides.
+storedLeaves :: (Applicative f) => StoredChildren f
+storedLeaves =
+  MkStoredChildren
+    { storedReplacement = pure,
+      storedTriggered = pure,
+      storedEffect = pure,
+      storedCost = pure,
+      storedCondition = pure,
+      storedDurationEvent = pure,
+      storedBinding = pure,
+      storedRecipient = pure,
+      storedCandidate = pure,
+      storedSlot = pure,
+      storedObject = pure
+    }
+
+-- | A replacement or prevention effect in force's children (CR 614.1a, 615.1a).
+activeReplacementChildren :: (Applicative f) => StoredChildren f -> ActiveReplacement.ActiveReplacement -> f ActiveReplacement.ActiveReplacement
+activeReplacementChildren c (ActiveReplacement.MkActiveReplacement effect source controller timestamp expiry uses origin condition rider slots choices) =
+  ActiveReplacement.MkActiveReplacement
+    <$> storedReplacement c effect
+    <*> storedObject c source
+    <*> pure controller
+    <*> pure timestamp
+    <*> expiryChildren c expiry
+    <*> pure uses
+    <*> pure origin
+    <*> traverse (storedCondition c) condition
+    <*> traverse (preventionRiderChildren c) rider
+    <*> traverseSlots c (traverseSet (storedObject c)) slots
+    <*> pure choices
+
+-- | A delayed triggered ability's children (CR 603.7a).
+delayedTriggerChildren :: (Applicative f) => StoredChildren f -> DelayedTrigger.DelayedTrigger -> f DelayedTrigger.DelayedTrigger
+delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings window expiry createdAt) =
+  DelayedTrigger.MkDelayedTrigger
+    <$> storedTriggered c ability
+    <*> storedObject c source
+    <*> pure controller
+    <*> traverseSlots c (storedBinding c) bindings
+    <*> pure window
+    <*> traverse (expiryChildren c) expiry
+    <*> pure createdAt
+
+-- | A later payment's children (CR 116.2c): its price, its payoff and its expiry.
+activeLaterPaymentChildren :: (Applicative f) => StoredChildren f -> ActiveLaterPayment.ActiveLaterPayment -> f ActiveLaterPayment.ActiveLaterPayment
+activeLaterPaymentChildren c (ActiveLaterPayment.MkActiveLaterPayment cost payoff createdAt expiry) =
+  ActiveLaterPayment.MkActiveLaterPayment
+    <$> storedCost c cost
+    <*> preventionRiderChildren c payoff
+    <*> pure createdAt
+    <*> expiryChildren c expiry
+
+-- | A prevention row's children (CR 615.1a): its shield, the damage it stopped
+-- per source and recipient, and its rider. Sources or recipients the visitors
+-- map together merge, their amounts summed.
+preventionChildren :: (Applicative f) => StoredChildren f -> Prevention.Prevention -> f Prevention.Prevention
+preventionChildren c (Prevention.MkPrevention by amounts rider) =
+  Prevention.MkPrevention
+    <$> storedCandidate c by
+    <*> fmap (Map.fromListWith (Map.unionWith (+))) (traverse (\(source, stopped) -> (,) <$> storedObject c source <*> fmap (Map.fromListWith (+)) (traverse (\(recipient, amount) -> (\r -> (r, amount)) <$> storedRecipient c recipient) (Map.toList stopped))) (Map.toList amounts))
+    <*> traverse (preventionRiderChildren c) rider
+
+-- | A prevention rider's children: what it runs, in its environment (CR 608.2c).
+preventionRiderChildren :: (Applicative f) => StoredChildren f -> PreventionRider.PreventionRider -> f PreventionRider.PreventionRider
+preventionRiderChildren c (PreventionRider.MkPreventionRider effects targets controller source) =
+  PreventionRider.MkPreventionRider
+    <$> traverse (storedEffect c) effects
+    <*> traverseSlots c (traverseSet (storedRecipient c)) targets
+    <*> pure controller
+    <*> storedObject c source
+
+-- | A pending entry effect's children: the entering object and what it runs.
+pendingEntryEffectChildren :: (Applicative f) => StoredChildren f -> PendingEntryEffect.PendingEntryEffect -> f PendingEntryEffect.PendingEntryEffect
+pendingEntryEffectChildren c (PendingEntryEffect.MkPendingEntryEffect entering controller effects) =
+  PendingEntryEffect.MkPendingEntryEffect
+    <$> storedObject c entering
+    <*> pure controller
+    <*> traverse (storedEffect c) effects
+
+-- | A pending replacement effect's children: what it runs, in its environment (CR 608.2c).
+pendingReplacementEffectChildren :: (Applicative f) => StoredChildren f -> PendingReplacementEffect.PendingReplacementEffect -> f PendingReplacementEffect.PendingReplacementEffect
+pendingReplacementEffectChildren c (PendingReplacementEffect.MkPendingReplacementEffect effects targets controller source) =
+  PendingReplacementEffect.MkPendingReplacementEffect
+    <$> traverse (storedEffect c) effects
+    <*> traverseSlots c (traverseSet (storedRecipient c)) targets
+    <*> pure controller
+    <*> storedObject c source
+
+-- | An expiry's children (CR 611.2a), its payload matched positionally.
+expiryChildren :: (Applicative f) => StoredChildren f -> Expiry.Expiry -> f Expiry.Expiry
+expiryChildren c expiry = case expiry of
+  Expiry.AtCleanup -> pure expiry
+  Expiry.Never -> pure expiry
+  Expiry.Perpetual -> pure expiry
+  Expiry.While (While.MkWhile you condition) -> fmap Expiry.While (While.MkWhile you <$> storedCondition c condition)
+  Expiry.AtTurnOf _whose -> pure expiry
+  Expiry.AtStepOf _stepBegan -> pure expiry
+  Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf phase whose) -> fmap Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf phase <$> storedObject c whose)
+  Expiry.AtEndOfTurnOf _afterTurn -> pure expiry
+  Expiry.DuringTurnOf _afterTurn -> pure expiry
+  Expiry.DuringUntapStepOf _whose -> pure expiry
+  Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn whose turn) -> fmap Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn <$> storedObject c whose <*> pure turn)
+  Expiry.DuringExtraTurn _timestamp -> pure expiry
+  Expiry.AtEndOf _phaseSelector -> pure expiry
+  Expiry.AtEndOfCombatOn _afterTurn -> pure expiry
+  Expiry.WhenPaid (PaidExpiry.MkPaidExpiry payer cost resolution) -> fmap Expiry.WhenPaid (PaidExpiry.MkPaidExpiry payer <$> storedCost c cost <*> storedObject c resolution)
+  Expiry.WhenUsed used -> Expiry.WhenUsed <$> traverse (storedSlot c) used
+  Expiry.OnEvent (EventExpiry.MkEventExpiry controller event) -> fmap Expiry.OnEvent (EventExpiry.MkEventExpiry controller <$> storedDurationEvent c event)
+
+-- A slot-keyed environment's keys through storedSlot and each value through
+-- the given visitor.
+traverseSlots :: (Applicative f) => StoredChildren f -> (a -> f a) -> Map.Map SlotName.SlotName a -> f (Map.Map SlotName.SlotName a)
+traverseSlots c onValue = fmap Map.fromList . traverse (\(name, value) -> (,) <$> storedSlot c name <*> onValue value) . Map.toList
 
 -- | A set's members, each through a visitor; members the visitor maps together merge.
 traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)
