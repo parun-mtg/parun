@@ -34,9 +34,10 @@
 -- EntryAttack, EntryBlock, EntryController and EntryHost, FaceDownState and
 -- FaceDownCharacteristics, CharacteristicPT, and TargetSlot with its Pool,
 -- SlotCount and SlotPerPlayer, CastingPermission, ActivationRestriction, and
--- PayGate with its CostChoice, MovedKinds, RemovalCount, and LibraryPlacement
--- with its ArrangedArrival) is matched there instead, its leaf types discarded
--- there.
+-- PayGate with its CostChoice, MovedKinds, RemovalCount, LibraryPlacement
+-- with its ArrangedArrival, and Modification with its CardAbilities,
+-- FullText, SetBasePowerToughness and ModifyPowerToughness) is matched there
+-- instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -84,7 +85,6 @@ import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.Card as Card
-import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
@@ -121,7 +121,6 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
-import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HistoryRead as HistoryRead
@@ -138,7 +137,6 @@ import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Modification as Modification
-import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MovedKinds as MovedKinds
 import Parun.Types.ObjectId (ObjectId)
@@ -166,7 +164,6 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.Scope as Scope
-import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpellTally as SpellTally
@@ -779,10 +776,6 @@ floatingCandidateNames :: Asking r -> FloatingCandidate.FloatingCandidate -> r
 floatingCandidateNames asking x = case x of
   FloatingCandidate.MkFloatingCandidate source _timestamp -> names asking (== source)
 
-fullTextNames :: (Monoid r) => Asking r -> (ability -> r) -> FullText.FullText ability -> r
-fullTextNames asking onAbility x = case x of
-  FullText.MkFullText graveyard alsoHas -> playerRefNames asking graveyard <> foldMap onAbility alsoHas
-
 -- A granted ability's slots are its OWN: each read resolves against the
 -- bindings of the stack object it becomes or of the object it is granted to,
 -- which Parun.Engine.Interchangeable.namedByAnother searches and whole-object
@@ -893,54 +886,27 @@ modalNames asking onCard onAbility =
           Children.modalTargetSlot = Const.Const . targetSlotNames asking
         }
 
+-- Parun.Engine.Children's traversal at Const. A lost ability's name names the
+-- objects that acquired it; a subtype or colour names none.
 modificationNames :: (Monoid r) => Asking r -> (ability -> r) -> Modification.Modification ability -> r
-modificationNames asking onAbility x = case x of
-  Modification.GainKeyword keyword -> keywordNames asking keyword
-  Modification.GainKeywordAtManaCost _costKeyword -> mempty
-  Modification.GainEnchant targetSlot -> targetSlotNames asking targetSlot
-  Modification.LoseEnchant targetSlot -> targetSlotNames asking targetSlot
-  Modification.GainCastingPermission castingPermission -> castingPermissionNames asking castingPermission
-  Modification.GainAbility ability -> onAbility ability
-  Modification.GainAbilitiesOfSource keyword -> foldMap (keywordNames asking) keyword
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards items) -> filterNames asking cards <> foldMap (activationRestrictionNames asking) items
-  Modification.GainAbilitiesOfStickers -> mempty
-  Modification.LoseAllAbilities -> mempty
-  Modification.LoseNamedAbility abilityName -> names asking (`Binding.Engine.isAcquiredFrom` abilityName)
-  Modification.LoseKeyword keyword -> keywordNames asking keyword
-  Modification.LoseKeywordFamily _keywordFamily -> mempty
-  Modification.SetBasePowerToughness setBasePowerToughness -> setBasePowerToughnessNames asking setBasePowerToughness
-  Modification.ModifyPowerToughness modifyPowerToughness -> modifyPowerToughnessNames asking modifyPowerToughness
-  Modification.LandSubtype _changeMode _subtype -> mempty
-  Modification.ChosenSubtype {} -> mempty
-  Modification.CreatureSubtype _changeMode _subtype -> mempty
-  Modification.AddEveryCreatureSubtype -> mempty
-  Modification.LoseEverySubtype _ -> mempty
-  Modification.SetCreatureSubtypesOfLastCardExiledWith filter_ -> filterNames asking filter_
-  Modification.AddSubtype _subtype -> mempty
-  Modification.RemoveSubtype _subtype -> mempty
-  Modification.CardType {} -> mempty
-  Modification.LoseCardType _cardType -> mempty
-  Modification.AddSupertype _supertype -> mempty
-  Modification.RemoveSupertype _supertype -> mempty
-  Modification.ChangeWord _changeSubtypeWord -> mempty
-  Modification.ExchangeTextBoxes -> mempty
-  Modification.AddNamesMatching filter_ -> filterNames asking filter_
-  Modification.SetName _cardName -> mempty
-  Modification.InsertNameWords _nameInsertion -> mempty
-  Modification.HasFullText fullText -> fullTextNames asking onAbility fullText
-  Modification.SetController _playerId -> mempty
-  Modification.SetControllerToSource -> mempty
-  Modification.Colors _colorMode _colors -> mempty
-  Modification.ChosenColor _ -> mempty
-  Modification.SwitchPowerToughness -> mempty
-  Modification.AssignCombatDamage _ -> mempty
-  Modification.MayAssignCombatDamage _option -> mempty
-  Modification.GrantsStationToughness -> mempty
-  Modification.Intensify quantity -> quantityNames asking quantity
-
-modifyPowerToughnessNames :: (Monoid r) => Asking r -> ModifyPowerToughness.ModifyPowerToughness -> r
-modifyPowerToughnessNames asking x = case x of
-  ModifyPowerToughness.MkModifyPowerToughness power toughness -> quantityNames asking power <> quantityNames asking toughness
+modificationNames asking onAbility =
+  Const.getConst
+    . Children.modificationChildren
+      Children.MkModificationChildren
+        { Children.modificationKeyword = Const.Const . keywordNames asking,
+          Children.modificationStampedKeyword = Const.Const . keywordNames asking,
+          Children.modificationTargetSlot = Const.Const . targetSlotNames asking,
+          Children.modificationCastingPermission = Const.Const . castingPermissionNames asking,
+          Children.modificationAbility = Const.Const . onAbility,
+          Children.modificationFilter = Const.Const . filterNames asking,
+          Children.modificationRestriction = Const.Const . activationRestrictionNames asking,
+          Children.modificationAbilityName = \name -> Const.Const (names asking (`Binding.Engine.isAcquiredFrom` name)),
+          Children.modificationQuantity = Const.Const . quantityNames asking,
+          Children.modificationPlayer = Const.Const . playerRefNames asking,
+          Children.modificationLandSubtype = pure,
+          Children.modificationCreatureSubtype = pure,
+          Children.modificationColors = pure
+        }
 
 moveDurationNames :: (Monoid r) => Asking r -> MoveDuration.MoveDuration -> r
 moveDurationNames asking x = case x of
@@ -1157,10 +1123,6 @@ scopeNames asking x = case x of
   Scope.OverBound _ slotName -> slotNames asking slotName
   Scope.InPosition _position inZone -> inZoneNames asking inZone
   Scope.AsTurnBegan -> mempty
-
-setBasePowerToughnessNames :: (Monoid r) => Asking r -> SetBasePowerToughness.SetBasePowerToughness -> r
-setBasePowerToughnessNames asking x = case x of
-  SetBasePowerToughness.MkSetBasePowerToughness power toughness -> foldMap (quantityNames asking) power <> foldMap (quantityNames asking) toughness
 
 specialActionNames :: (Monoid r) => Asking r -> SpecialAction.SpecialAction -> r
 specialActionNames asking x = case x of
