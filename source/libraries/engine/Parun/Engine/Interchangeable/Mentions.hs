@@ -22,8 +22,12 @@
 -- ModeSelection, Face and Card, and the stored rows: ActiveReplacement,
 -- DelayedTrigger, ActiveLaterPayment, Prevention, PreventionRider, the
 -- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry,
--- ObjectRef with ChosenPermanents, the combat rules: CombatRestriction,
--- AttackCost, BlockCost and PerCreature, the mana payloads: ManaAddition with
+-- ObjectRef with ChosenPermanents, the rule-affecting rows: RuleAbilities
+-- with its ActivationProhibition, AttachRestriction, RulePermission,
+-- AttackRequirement, BlockPermission, BlockRequirement, CounterRestriction,
+-- CrewRestriction, EntryRestriction, SacrificeRestriction, TargetRestriction
+-- and UntapRestriction, the combat rules CombatRestriction, AttackCost,
+-- BlockCost and PerCreature, Affected, the mana payloads: ManaAddition with
 -- its ManaProduction, ManaCount, ManaRestriction, ManaRider and WhenSpent, and
 -- SpendManaAsThough, DamagePattern, the copy and entry payloads: AsCopy with
 -- its CopyClause, CopyException, WithCounters, EntryRiders with its
@@ -339,8 +343,7 @@ activatedAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r)
 activatedAbilityNames asking onCard onAbility = Const.getConst . Children.activatedAbilityChildren (abilityVisitors asking onCard onAbility (const mempty))
 
 activationProhibitionNames :: (Monoid r) => Asking r -> ActivationProhibition.ActivationProhibition -> r
-activationProhibitionNames asking x = case x of
-  ActivationProhibition.MkActivationProhibition affected _kind _costs _name -> affectedNames asking affected
+activationProhibitionNames asking = Const.getConst . Children.activationProhibitionChildren (ruleVisitors asking)
 
 activationRestrictionNames :: (Monoid r) => Asking r -> ActivationRestriction.ActivationRestriction -> r
 activationRestrictionNames asking = Const.getConst . Children.activationRestrictionChildren (permissionVisitors asking)
@@ -349,14 +352,14 @@ activeReplacementNames :: (Monoid r) => Asking r -> ActiveReplacement.ActiveRepl
 activeReplacementNames asking = Const.getConst . Children.activeReplacementChildren (storedVisitors asking)
 
 affectedNames :: (Monoid r) => Asking r -> Affected.Affected -> r
-affectedNames asking x = case x of
-  Affected.TheseObjects objectId -> names asking (`elem` objectId)
-  Affected.Matching filter_ -> filterNames asking filter_
-  Affected.MatchingAnywhere filter_ -> filterNames asking filter_
-  Affected.MatchingOffBattlefield filter_ -> filterNames asking filter_
-  Affected.Attached -> mempty
-  Affected.AttachedPlayerControls filter_ -> filterNames asking filter_
-  Affected.PlayedThisWay duration -> durationNames asking duration
+affectedNames asking =
+  Const.getConst
+    . Children.affectedChildren
+      Children.MkAffectedChildren
+        { Children.affectedObjects = \objects -> Const.Const (names asking (`elem` objects)),
+          Children.affectedFilter = Const.Const . filterNames asking,
+          Children.affectedDuration = Const.Const . durationNames asking
+        }
 
 affectedPlayersNames :: (Monoid r) => Asking r -> (player -> r) -> AffectedPlayers.AffectedPlayers player -> r
 affectedPlayersNames _asking onPlayer x = case x of
@@ -386,19 +389,16 @@ asCopyNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> AsCo
 asCopyNames asking onAbility onEffect = Const.getConst . Children.asCopyChildren (copyVisitors asking onAbility onEffect)
 
 attachRestrictionNames :: (Monoid r) => Asking r -> AttachRestriction.AttachRestriction -> r
-attachRestrictionNames asking x = case x of
-  AttachRestriction.MkAttachRestriction affected attachers -> affectedNames asking affected <> filterNames asking attachers
+attachRestrictionNames asking = Const.getConst . Children.attachRestrictionChildren (ruleVisitors asking)
 
 attackCostNames :: (Monoid r) => Asking r -> AttackCost.AttackCost -> r
-attackCostNames asking = Const.getConst . Children.attackCostChildren (combatVisitors asking)
+attackCostNames asking = Const.getConst . Children.attackCostChildren (ruleVisitors asking)
 
 rulePermissionNames :: (Monoid r) => Asking r -> RulePermission.RulePermission -> r
-rulePermissionNames asking x = case x of
-  RulePermission.MkRulePermission affected while _waives -> affectedNames asking affected <> foldMap (conditionNames asking) while
+rulePermissionNames asking = Const.getConst . Children.rulePermissionChildren (ruleVisitors asking)
 
 attackRequirementNames :: (Monoid r) => Asking r -> AttackRequirement.AttackRequirement -> r
-attackRequirementNames asking x = case x of
-  AttackRequirement.MkAttackRequirement subject _object_ while _arity -> affectedNames asking subject <> foldMap (conditionNames asking) while
+attackRequirementNames asking = Const.getConst . Children.attackRequirementChildren (ruleVisitors asking)
 
 attackingPlayersNames :: Asking r -> AttackingPlayers.AttackingPlayers -> r
 attackingPlayersNames asking x = case x of
@@ -409,15 +409,13 @@ bindingNames asking x = case x of
   Binding.MkBinding targets _amount _modes copy objects _sticker _votes division -> foldMap (foldMap (recipientNames asking)) targets <> foldMap (projectedCharacteristicsNames asking) copy <> names asking (\oid -> any (elem oid) objects) <> foldMap (foldMap (recipientNames asking) . Map.keys) division
 
 blockCostNames :: (Monoid r) => Asking r -> BlockCost.BlockCost -> r
-blockCostNames asking = Const.getConst . Children.blockCostChildren (combatVisitors asking)
+blockCostNames asking = Const.getConst . Children.blockCostChildren (ruleVisitors asking)
 
 blockPermissionNames :: (Monoid r) => Asking r -> BlockPermission.BlockPermission -> r
-blockPermissionNames asking x = case x of
-  BlockPermission.MkBlockPermission affected additional while -> affectedNames asking affected <> foldMap (quantityNames asking) additional <> foldMap (conditionNames asking) while
+blockPermissionNames asking = Const.getConst . Children.blockPermissionChildren (ruleVisitors asking)
 
 blockRequirementNames :: (Monoid r) => Asking r -> BlockRequirement.BlockRequirement -> r
-blockRequirementNames asking x = case x of
-  BlockRequirement.MkBlockRequirement subject attacker while _arity -> foldMap (affectedNames asking) subject <> foldMap (affectedNames asking) attacker <> foldMap (conditionNames asking) while
+blockRequirementNames asking = Const.getConst . Children.blockRequirementChildren (ruleVisitors asking)
 
 boundMeasureNames :: Asking r -> BoundMeasure.BoundMeasure -> r
 boundMeasureNames asking x = case x of
@@ -483,18 +481,19 @@ objectRefVisitors asking =
     }
 
 combatRestrictionNames :: (Monoid r) => Asking r -> CombatRestriction.CombatRestriction -> r
-combatRestrictionNames asking = Const.getConst . Children.combatRestrictionChildren (combatVisitors asking)
+combatRestrictionNames asking = Const.getConst . Children.combatRestrictionChildren (ruleVisitors asking)
 
--- Parun.Engine.Children's traversal at Const. No combat rule reads the history
--- itself; those reads sit in its Conditions and Quantities.
-combatVisitors :: (Monoid r) => Asking r -> Children.CombatChildren (Const.Const r)
-combatVisitors asking =
-  Children.MkCombatChildren
-    { Children.combatAffected = Const.Const . affectedNames asking,
-      Children.combatFilter = Const.Const . filterNames asking,
-      Children.combatCondition = Const.Const . conditionNames asking,
-      Children.combatQuantity = Const.Const . quantityNames asking,
-      Children.combatCost = Const.Const . costNames asking (keywordNames asking)
+-- Parun.Engine.Children's traversal at Const. No rule-affecting row reads the
+-- history itself; those reads sit in its Conditions and Quantities.
+ruleVisitors :: (Monoid r) => Asking r -> Children.RuleChildren (Const.Const r)
+ruleVisitors asking =
+  Children.MkRuleChildren
+    { Children.ruleAffected = Const.Const . affectedNames asking,
+      Children.ruleFilter = Const.Const . filterNames asking,
+      Children.ruleCondition = Const.Const . conditionNames asking,
+      Children.ruleQuantity = Const.Const . quantityNames asking,
+      Children.ruleCost = Const.Const . costNames asking (keywordNames asking),
+      Children.ruleCounterKind = Const.Const . counterKindNames asking (keywordNames asking)
     }
 
 -- Parun.Engine.Children's traversal at Const. No condition reads the history
@@ -592,8 +591,7 @@ counterKindNames _asking onKeyword x = case x of
   CounterKind.Named _counterName -> mempty
 
 counterRestrictionNames :: (Monoid r) => Asking r -> CounterRestriction.CounterRestriction -> r
-counterRestrictionNames asking x = case x of
-  CounterRestriction.MkCounterRestriction affected kind -> affectedNames asking affected <> foldMap (counterKindNames asking (keywordNames asking)) kind
+counterRestrictionNames asking = Const.getConst . Children.counterRestrictionChildren (ruleVisitors asking)
 
 commanderDeckRuleNames :: (Monoid r) => Asking r -> CommanderDeckRule.CommanderDeckRule -> r
 commanderDeckRuleNames asking x = case x of
@@ -602,12 +600,10 @@ commanderDeckRuleNames asking x = case x of
   CommanderDeckRule.ChosenExtraColor matching -> filterNames asking matching
 
 crewRestrictionNames :: (Monoid r) => Asking r -> CrewRestriction.CrewRestriction -> r
-crewRestrictionNames asking x = case x of
-  CrewRestriction.MkCrewRestriction affected -> affectedNames asking affected
+crewRestrictionNames asking = Const.getConst . Children.crewRestrictionChildren (ruleVisitors asking)
 
-targetRestrictionNames :: (Monoid r) => Asking r -> (affected -> r) -> TargetRestriction.TargetRestriction affected -> r
-targetRestrictionNames asking onAffected x = case x of
-  TargetRestriction.MkTargetRestriction affected _kind aimers -> onAffected affected <> filterNames asking aimers
+targetRestrictionNames :: (Monoid r) => Asking r -> TargetRestriction.TargetRestriction Affected.Affected -> r
+targetRestrictionNames asking = Const.getConst . Children.targetRestrictionChildren (ruleVisitors asking)
 
 -- Parun.Engine.Children's traversal at Const.
 damagePatternNames :: (Monoid r) => Asking r -> DamagePattern.DamagePattern -> r
@@ -695,8 +691,7 @@ effectNames asking onCard onAbility =
         }
 
 entryRestrictionNames :: (Monoid r) => Asking r -> EntryRestriction.EntryRestriction -> r
-entryRestrictionNames asking x = case x of
-  EntryRestriction.MkEntryRestriction affected _origins -> affectedNames asking affected
+entryRestrictionNames asking = Const.getConst . Children.entryRestrictionChildren (ruleVisitors asking)
 
 entryRidersNames :: (Monoid r) => Asking r -> (ability -> r) -> EntryRiders.EntryRiders Quantity.Quantity ability -> r
 entryRidersNames asking onAbility = Const.getConst . Children.entryRidersChildren (copyVisitors asking onAbility (const mempty))
@@ -765,7 +760,7 @@ faceNames asking onCard =
           Children.faceSacrificeRestriction = Const.Const . sacrificeRestrictionNames asking,
           Children.faceUntapRestriction = Const.Const . untapRestrictionNames asking,
           Children.faceCrewRestriction = Const.Const . crewRestrictionNames asking,
-          Children.faceTargetRestriction = Const.Const . targetRestrictionNames asking (affectedNames asking),
+          Children.faceTargetRestriction = Const.Const . targetRestrictionNames asking,
           Children.faceRulePermission = Const.Const . rulePermissionNames asking,
           Children.faceAttachRestriction = Const.Const . attachRestrictionNames asking,
           Children.faceEntryRestriction = Const.Const . entryRestrictionNames asking,
@@ -1149,12 +1144,10 @@ replacementEffectNames asking onCard onAbility onEffect =
         }
 
 ruleAbilitiesNames :: (Monoid r) => Asking r -> RuleAbilities.RuleAbilities -> r
-ruleAbilitiesNames asking x = case x of
-  RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions crewRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions -> foldMap (activationProhibitionNames asking) activationProhibitions <> foldMap (attachRestrictionNames asking) attachRestrictions <> foldMap (attackCostNames asking) attackCosts <> foldMap (rulePermissionNames asking) rulePermissions <> foldMap (attackRequirementNames asking) attackRequirements <> foldMap (blockCostNames asking) blockCosts <> foldMap (blockPermissionNames asking) blockPermissions <> foldMap (blockRequirementNames asking) blockRequirements <> foldMap (combatRestrictionNames asking) combatRestrictions <> foldMap (counterRestrictionNames asking) counterRestrictions <> foldMap (crewRestrictionNames asking) crewRestrictions <> foldMap (entryRestrictionNames asking) entryRestrictions <> foldMap (sacrificeRestrictionNames asking) sacrificeRestrictions <> foldMap (targetRestrictionNames asking (affectedNames asking)) targetRestrictions <> foldMap (untapRestrictionNames asking) untapRestrictions
+ruleAbilitiesNames asking = Const.getConst . Children.ruleAbilitiesChildren (ruleVisitors asking)
 
 sacrificeRestrictionNames :: (Monoid r) => Asking r -> SacrificeRestriction.SacrificeRestriction -> r
-sacrificeRestrictionNames asking x = case x of
-  SacrificeRestriction.MkSacrificeRestriction affected -> affectedNames asking affected
+sacrificeRestrictionNames asking = Const.getConst . Children.sacrificeRestrictionChildren (ruleVisitors asking)
 
 scopeNames :: (Monoid r) => Asking r -> Scope.Scope -> r
 scopeNames asking x = case x of
@@ -1256,8 +1249,7 @@ triggeredAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r)
 triggeredAbilityNames asking onCard onAbility = Const.getConst . Children.triggeredAbilityChildren (abilityVisitors asking onCard onAbility (const mempty))
 
 untapRestrictionNames :: (Monoid r) => Asking r -> UntapRestriction.UntapRestriction -> r
-untapRestrictionNames asking x = case x of
-  UntapRestriction.MkUntapRestriction affected _hold while -> affectedNames asking affected <> foldMap (conditionNames asking) while
+untapRestrictionNames asking = Const.getConst . Children.untapRestrictionChildren (ruleVisitors asking)
 
 whichCountersNames :: (Monoid r) => Asking r -> (keyword -> r) -> WhichCounters.WhichCounters keyword -> r
 whichCountersNames asking onKeyword x = case x of

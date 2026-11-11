@@ -15,18 +15,13 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.TextWord as TextWord.Engine
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
-import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.AsCopy as AsCopy
-import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.BlockCost as BlockCost
-import qualified Parun.Types.BlockPermission as BlockPermission
-import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
@@ -37,13 +32,10 @@ import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyException as CopyException
-import qualified Parun.Types.CounterRestriction as CounterRestriction
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
@@ -69,19 +61,15 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RemovalCount as RemovalCount
 import Parun.Types.ReplacementEffect (ReplacementEffect)
 import qualified Parun.Types.RuleAbilities as RuleAbilities
-import qualified Parun.Types.RulePermission as RulePermission
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype.Type
-import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TypeLine as TypeLine
-import qualified Parun.Types.UntapRestriction as UntapRestriction
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.WordFamily as WordFamily
 
@@ -239,19 +227,18 @@ rewriteModification pairs m =
 
 -- rewriteModification's sibling for the other half of a static ability. Under CR
 -- 612.1 an ability's affected clause is rules text like any other, so a hacked
--- Kormus Bell animates Islands. Exhaustive over Affected: a new arm carrying a
--- Filter must break this build rather than silently keep the old word.
+-- Kormus Bell animates Islands. Parun.Engine.Children's traversal at Identity:
+-- a frozen id set names no word (CR 611.2c), and a permission's duration is
+-- left alone.
 rewriteAffected :: [(TextWord.TextWord, TextWord.TextWord)] -> Affected.Affected -> Affected.Affected
-rewriteAffected pairs a = case a of
-  Affected.Matching f -> Affected.Matching (Filter.rewrite pairs f)
-  Affected.MatchingAnywhere f -> Affected.MatchingAnywhere (Filter.rewrite pairs f)
-  Affected.MatchingOffBattlefield f -> Affected.MatchingOffBattlefield (Filter.rewrite pairs f)
-  Affected.AttachedPlayerControls f -> Affected.AttachedPlayerControls (Filter.rewrite pairs f)
-  -- A frozen id set names no word (CR 611.2c), and an attachment or a rider
-  -- names none.
-  Affected.TheseObjects _ -> a
-  Affected.Attached -> a
-  Affected.PlayedThisWay _ -> a
+rewriteAffected pairs =
+  Identity.runIdentity
+    . Children.affectedChildren
+      Children.MkAffectedChildren
+        { Children.affectedObjects = pure,
+          Children.affectedFilter = Identity.Identity . Filter.rewrite pairs,
+          Children.affectedDuration = pure
+        }
 
 -- CR 612.1's word swap over a PlayerEffect, rewriteModification's sibling
 -- for the CR 613.10/613.11 axis. An Artificial Evolution resolved at an
@@ -561,27 +548,7 @@ rewritePlayerStaticAbility pairs = Identity.runIdentity . Children.playerStaticA
 -- gatherer module rewrites (Parun.Engine.CombatRestriction and its siblings), so
 -- the layer fold and the gatherers agree on where a word is.
 rewriteRuleAbilities :: [(TextWord.TextWord, TextWord.TextWord)] -> RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities
-rewriteRuleAbilities pairs abilities =
-  let affected = rewriteAffected pairs
-      condition :: Maybe Condition.Type.Condition -> Maybe Condition.Type.Condition
-      condition = fmap (rewriteCondition pairs)
-   in RuleAbilities.MkRuleAbilities
-        { RuleAbilities.activationProhibitions = fmap (\x -> x {ActivationProhibition.affected = affected (ActivationProhibition.affected x)}) (RuleAbilities.activationProhibitions abilities),
-          RuleAbilities.attachRestrictions = fmap (\x -> x {AttachRestriction.affected = affected (AttachRestriction.affected x), AttachRestriction.attachers = Filter.rewrite pairs (AttachRestriction.attachers x)}) (RuleAbilities.attachRestrictions abilities),
-          RuleAbilities.attackCosts = fmap (rewriteAttackCost pairs) (RuleAbilities.attackCosts abilities),
-          RuleAbilities.rulePermissions = fmap (\x -> x {RulePermission.affected = affected (RulePermission.affected x), RulePermission.while = condition (RulePermission.while x)}) (RuleAbilities.rulePermissions abilities),
-          RuleAbilities.attackRequirements = fmap (\x -> x {AttackRequirement.subject = affected (AttackRequirement.subject x), AttackRequirement.while = condition (AttackRequirement.while x)}) (RuleAbilities.attackRequirements abilities),
-          RuleAbilities.blockCosts = fmap (rewriteBlockCost pairs) (RuleAbilities.blockCosts abilities),
-          RuleAbilities.blockPermissions = fmap (\x -> x {BlockPermission.affected = affected (BlockPermission.affected x), BlockPermission.additional = fmap (rewriteQuantity pairs) (BlockPermission.additional x), BlockPermission.while = condition (BlockPermission.while x)}) (RuleAbilities.blockPermissions abilities),
-          RuleAbilities.blockRequirements = fmap (\x -> x {BlockRequirement.subject = fmap affected (BlockRequirement.subject x), BlockRequirement.attacker = fmap affected (BlockRequirement.attacker x), BlockRequirement.while = condition (BlockRequirement.while x)}) (RuleAbilities.blockRequirements abilities),
-          RuleAbilities.combatRestrictions = fmap (rewriteCombatRestriction pairs) (RuleAbilities.combatRestrictions abilities),
-          RuleAbilities.counterRestrictions = fmap (\x -> x {CounterRestriction.affected = affected (CounterRestriction.affected x)}) (RuleAbilities.counterRestrictions abilities),
-          RuleAbilities.crewRestrictions = fmap (\x -> x {CrewRestriction.affected = affected (CrewRestriction.affected x)}) (RuleAbilities.crewRestrictions abilities),
-          RuleAbilities.entryRestrictions = fmap (\x -> x {EntryRestriction.affected = affected (EntryRestriction.affected x)}) (RuleAbilities.entryRestrictions abilities),
-          RuleAbilities.sacrificeRestrictions = fmap (\x -> x {SacrificeRestriction.affected = affected (SacrificeRestriction.affected x)}) (RuleAbilities.sacrificeRestrictions abilities),
-          RuleAbilities.targetRestrictions = fmap (\x -> x {TargetRestriction.affected = affected (TargetRestriction.affected x), TargetRestriction.aimers = Filter.rewrite pairs (TargetRestriction.aimers x)}) (RuleAbilities.targetRestrictions abilities),
-          RuleAbilities.untapRestrictions = fmap (\x -> x {UntapRestriction.affected = affected (UntapRestriction.affected x), UntapRestriction.while = condition (UntapRestriction.while x)}) (RuleAbilities.untapRestrictions abilities)
-        }
+rewriteRuleAbilities pairs = Identity.runIdentity . Children.ruleAbilitiesChildren (ruleRewrites pairs)
 
 -- CR 612.1 through a combat rule: Parun.Engine.Children's traversal at
 -- Identity, every Affected, Filter, Condition, Quantity and Cost rewritten.
@@ -593,22 +560,24 @@ rewriteRuleAbilities pairs abilities =
 -- share's Cost). The other children are regression fences: no test observes
 -- their rewrite.
 rewriteAttackCost :: [(TextWord.TextWord, TextWord.TextWord)] -> AttackCost.AttackCost -> AttackCost.AttackCost
-rewriteAttackCost pairs = Identity.runIdentity . Children.attackCostChildren (combatRewrites pairs)
+rewriteAttackCost pairs = Identity.runIdentity . Children.attackCostChildren (ruleRewrites pairs)
 
 rewriteBlockCost :: [(TextWord.TextWord, TextWord.TextWord)] -> BlockCost.BlockCost -> BlockCost.BlockCost
-rewriteBlockCost pairs = Identity.runIdentity . Children.blockCostChildren (combatRewrites pairs)
+rewriteBlockCost pairs = Identity.runIdentity . Children.blockCostChildren (ruleRewrites pairs)
 
 rewriteCombatRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> CombatRestriction.CombatRestriction -> CombatRestriction.CombatRestriction
-rewriteCombatRestriction pairs = Identity.runIdentity . Children.combatRestrictionChildren (combatRewrites pairs)
+rewriteCombatRestriction pairs = Identity.runIdentity . Children.combatRestrictionChildren (ruleRewrites pairs)
 
-combatRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.CombatChildren Identity.Identity
-combatRewrites pairs =
-  Children.MkCombatChildren
-    { Children.combatAffected = Identity.Identity . rewriteAffected pairs,
-      Children.combatFilter = Identity.Identity . Filter.rewrite pairs,
-      Children.combatCondition = Identity.Identity . rewriteCondition pairs,
-      Children.combatQuantity = Identity.Identity . rewriteQuantity pairs,
-      Children.combatCost = Identity.Identity . Filter.rewriteCost pairs
+ruleRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.RuleChildren Identity.Identity
+ruleRewrites pairs =
+  Children.MkRuleChildren
+    { Children.ruleAffected = Identity.Identity . rewriteAffected pairs,
+      Children.ruleFilter = Identity.Identity . Filter.rewrite pairs,
+      Children.ruleCondition = Identity.Identity . rewriteCondition pairs,
+      Children.ruleQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.ruleCost = Identity.Identity . Filter.rewriteCost pairs,
+      -- A counter restriction's kind is left as it is.
+      Children.ruleCounterKind = pure
     }
 
 -- CR 612.2a's name half, gated on both words being creature types -- CR 612.2
