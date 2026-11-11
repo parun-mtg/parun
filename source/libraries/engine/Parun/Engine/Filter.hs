@@ -2437,9 +2437,10 @@ matches context view predicate = case predicate of
   -- CR 122.6 / 122.6a: the same look-back over the counter placements, the
   -- putter answered against the perspective as IsAttackingPlayer's seat is. The
   -- field holds the candidate's own id's placements, so CR 400.7's new object
-  -- starts with none. Vacuously False for a match no perspective frames.
+  -- starts with none; a kind of Nothing admits any. Vacuously False for a
+  -- match no perspective frames.
   Filter.CountersPutThisTurn relation kind -> case perspective context of
-    Just you -> any (\(putter, placed) -> placed == kind && PlayerRelation.holds (teams context) relation you putter) (countersPutThisTurn view)
+    Just you -> any (\(putter, placed) -> all (== placed) kind && PlayerRelation.holds (teams context) relation you putter) (countersPutThisTurn view)
     Nothing -> False
   -- CR 702.122c: the same look-back asked of a RELATION rather than of one
   -- subject -- the candidate's own field says which Vehicles it crewed, and the

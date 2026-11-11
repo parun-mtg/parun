@@ -1,0 +1,128 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Fractalize",
+      "oracleText": "Until end of turn, target creature becomes a green and blue Fractal with base power and toughness each equal to X plus 1. (It loses all other colors and creature types.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "Colors",
+                        "value": {
+                          "colors": [
+                            "Blue",
+                            "Green"
+                          ],
+                          "mode": "Replace"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "CreatureSubtype",
+                        "value": {
+                          "mode": "Replace",
+                          "subtype": "Fractal"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "SetBasePowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "InSlot",
+                                "value": "X"
+                              },
+                              "right": {
+                                "type": "Literal",
+                                "value": 1
+                              }
+                            }
+                          },
+                          "toughness": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "InSlot",
+                                "value": "X"
+                              },
+                              "right": {
+                                "type": "Literal",
+                                "value": 1
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
