@@ -479,27 +479,36 @@ fallShort = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkee
 -- for both, not a reading.
 --
 -- What is left are board fields an instruction writes whether or not it did
--- anything, each skipped here by name: CR 121.4's drewFromEmpty (an attempted
--- draw), damagePreventedBy and ambientAmounts, CR 607.2a's exiledWith and CR
--- 406.4's exilePiles (applyEffectWith prunes both after EVERY instruction, and
--- a card can leave exile off that road -- CR 704.5d ceasing a token -- so the
--- prune of a stale key is no act), CR 702.30a's Object.controlClock (stamped by
--- the control sample applyEffectWith retakes after every instruction), CR
--- 701.24a's Object.exposed (its settle stamps it after every instruction), and
--- every bound AMOUNT and vote tally, since a tally binds zero for an
--- instruction that did nothing -- a slot that holds nothing else is dropped, so
--- a FIRST zero bind is not a difference either.
+-- anything, each skipped here by name, with the case proving it. CR 121.4's
+-- drewFromEmpty, an attempted draw: the scenario "CR 121.4 Trade Route Envoy
+-- drawing from an empty library puts on its counter". CR 607.2a's exiledWith
+-- and CR 406.4's exilePiles, which applyEffectWith prunes after EVERY
+-- instruction while a card can leave exile off that road, so the prune of a
+-- stale key is no act: the scenarios "CR 118.12 Victimize after a token ceased
+-- in exile returns nothing" (CR 704.5d; exiledWith) and "CR 118.12 Victimize
+-- after a face-down card left exile returns nothing" (a land played from
+-- exile; exilePiles). CR 702.30a's Object.controlClock, stamped by the control
+-- sample applyEffectWith retakes after every instruction: Parun.ResolveSpec's
+-- "CR 118.12 Victimize with no creature to sacrifice returns nothing". Every
+-- bound AMOUNT, since a tally binds zero for an instruction that did nothing,
+-- and a slot holding nothing else is dropped, so a FIRST zero bind is no
+-- difference either: the scenario "CR 603.12 Synthetic Hollow Tithe taking no
+-- life arms no reflexive". Vote tallies and detachedBindings' are erased alike,
+-- a regression fence (gap #6974).
+--
+-- Compared, as no instruction changes them without an act: damagePreventedBy
+-- (Damage.tallyPrevention runs only beside a DamagePrevented event),
+-- Scratch.ambientAmounts (runPreventionRider restores it before returning) and
+-- CR 701.24a's Object.exposed (a settle exposes the top cards a seat sees, and
+-- the one before the instruction exposed every card seen then).
 --
 -- Proved: GameState.bookkeeping's skip by "CR 701.28f / 603.12 an ignored
--- convert arms no reflexive" (nextTimestamp) and Parun.ResolveSpec's "CR 118.12
--- Victimize with no creature to sacrifice returns nothing" (nextEventGroup,
--- fellShort) and the scenario "CR 608.2c Djinn of Wishes exiles the revealed
--- card when its controller doesn't play it" (lastChoice);
--- GameState.snapshots' by that Victimize case (controlSample) and
+-- convert arms no reflexive" (nextTimestamp), Parun.ResolveSpec's Victimize
+-- case (nextEventGroup, fellShort) and the scenario "CR 608.2c Djinn of Wishes
+-- exiles the revealed card when its controller doesn't play it" (lastChoice);
+-- GameState.snapshots' by the ResolveSpec case (controlSample) and
 -- Parun.AuraSpec's "CR 603.12 Thorin's Equipment go to its target, which then
--- deals damage equal to its power" (boardAtControlSample); Object.controlClock
--- by the Victimize case. The other named skips are a regression fence: un-skipping
--- any one leaves the suite green (gap #6970). The state half: the
+-- deals damage equal to its power" (boardAtControlSample). The state half: the
 -- scenario "CR 603.12 a choice that records no event still arms its when you
 -- do".
 happenedBetween :: GameState -> GameState -> Bool
@@ -507,7 +516,7 @@ happenedBetween before after =
   let tallyless :: Map.Map SlotName Binding.Type.Binding -> Map.Map SlotName Binding.Type.Binding
       tallyless = Map.filter (/= Binding.Type.empty) . Map.map (\binding -> binding {Binding.Type.amount = Nothing, Binding.Type.votes = Nothing})
       objectTallyless :: Map.Map ObjectId Object.Object -> Map.Map ObjectId Object.Object
-      objectTallyless = Map.map (\obj -> obj {Object.bindings = tallyless (Object.bindings obj), Object.controlClock = Map.empty, Object.exposed = False})
+      objectTallyless = Map.map (\obj -> obj {Object.bindings = tallyless (Object.bindings obj), Object.controlClock = Map.empty})
       comparable gs =
         gs
           { GameState.turn =
@@ -517,15 +526,10 @@ happenedBetween before after =
             GameState.bookkeeping = GameState.bookkeeping before,
             GameState.snapshots = GameState.snapshots before,
             GameState.drewFromEmpty = GameState.drewFromEmpty before,
-            GameState.damagePreventedBy = GameState.damagePreventedBy before,
             GameState.exiledWith = GameState.exiledWith before,
             GameState.exilePiles = GameState.exilePiles before,
             GameState.objects = objectTallyless (GameState.objects gs),
-            GameState.detachedBindings = Map.filter (not . Map.null) (fmap tallyless (GameState.detachedBindings gs)),
-            GameState.scratch =
-              (GameState.scratch gs)
-                { Scratch.ambientAmounts = Scratch.ambientAmounts (GameState.scratch before)
-                }
+            GameState.detachedBindings = Map.filter (not . Map.null) (fmap tallyless (GameState.detachedBindings gs))
           }
    in Seq.length (TurnRegisters.events (GameState.turn after)) > Seq.length (TurnRegisters.events (GameState.turn before))
         || comparable before /= comparable after
