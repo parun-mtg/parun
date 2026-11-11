@@ -594,6 +594,11 @@ rewriteRuleAbilities pairs abilities =
 -- Identity, every Affected, Filter, Condition, Quantity and Cost rewritten.
 -- Parun.Engine.AttackCost.costsOn and Parun.Engine.BlockCost.costsOn apply the
 -- costs to the source's own; Parun.Engine.CombatRestriction the restrictions.
+--
+-- Proved by the scenario
+-- cr-612-1-a-hacked-leviathan-can-t-attack-by-sacrificing-islands (a fixed
+-- share's Cost). The other children are regression fences: no test observes
+-- their rewrite.
 rewriteAttackCost :: [(TextWord.TextWord, TextWord.TextWord)] -> AttackCost.AttackCost -> AttackCost.AttackCost
 rewriteAttackCost pairs = Identity.runIdentity . Children.attackCostChildren (combatRewrites pairs)
 

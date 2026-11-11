@@ -3201,17 +3201,6 @@ data CombatChildren f = MkCombatChildren
     combatCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword)
   }
 
--- | Every child of a combat rule left as it is: the base a walk overrides.
-combatLeaves :: (Applicative f) => CombatChildren f
-combatLeaves =
-  MkCombatChildren
-    { combatAffected = pure,
-      combatFilter = pure,
-      combatCondition = pure,
-      combatQuantity = pure,
-      combatCost = pure
-    }
-
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
 -- comparison, company count and defenders are left as they are.
 combatRestrictionChildren :: (Applicative f) => CombatChildren f -> CombatRestriction.CombatRestriction -> f CombatRestriction.CombatRestriction
