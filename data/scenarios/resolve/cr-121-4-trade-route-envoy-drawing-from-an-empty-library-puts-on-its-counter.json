@@ -1,0 +1,34 @@
+{
+  "description": "CR 121.4 Trade Route Envoy drawing from an empty library puts on its counter",
+  "note": "Trade Route Envoy: \"When this creature enters, draw a card if you control a creature with a counter on it. If you don't draw a card this way, put a +1/+1 counter on this creature.\" Alice controls a Grizzly Bears with a counter, so the draw is attempted, but her library is empty: CR 121.4 records the attempt, and no card is drawn, so the counter goes on. Platinum Angel keeps her in the game past CR 704.5b.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Forest", "label": "forest-2" },
+          { "card": "Forest", "label": "forest-3" },
+          { "card": "Forest", "label": "forest-4" },
+          { "card": "Platinum Angel", "label": "angel" },
+          { "card": "Grizzly Bears", "label": "bears", "counters": [{ "key": { "type": "PlusOnePlusOne" }, "value": 1 }] }
+        ],
+        "hand": [{ "card": "Trade Route Envoy", "label": "envoy" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Forest" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$envoy", "mana": ["$forest", "$forest-2", "$forest-3", "$forest-4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Trade Route Envoy", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Result", "is": null } } }
+  ]
+}

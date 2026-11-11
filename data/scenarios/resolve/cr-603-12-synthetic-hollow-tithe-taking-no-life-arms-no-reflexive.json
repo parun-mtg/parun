@@ -1,0 +1,33 @@
+{
+  "description": "CR 603.12 Synthetic Hollow Tithe taking no life arms no reflexive",
+  "note": "Synthetic Hollow Tithe: \"When this creature enters, each opponent loses life equal to the number of cards in your hand. When they do, you gain life equal to the life lost this way and draw a card.\" Alice's hand is empty once it is cast, so bob loses no life and the reflexive must not arm, though the loss binds its tally of zero. Its draw is what would show it: her library keeps its Swamp.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Swamp", "label": "swamp" },
+          { "card": "Swamp", "label": "swamp-2" }
+        ],
+        "hand": [{ "card": "Synthetic Hollow Tithe", "label": "tithe" }],
+        "library": [{ "card": "Swamp" }]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$tithe", "mana": ["$swamp", "$swamp-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Synthetic Hollow Tithe", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Library", "card": "Swamp", "count": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 0 } } }
+  ]
+}

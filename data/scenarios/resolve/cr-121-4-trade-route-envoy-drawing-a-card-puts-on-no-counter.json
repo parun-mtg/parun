@@ -1,0 +1,34 @@
+{
+  "description": "CR 121.4 Trade Route Envoy drawing a card puts on no counter",
+  "note": "The control for the empty-library scenario: the same board with a Forest in alice's library, so the draw happens and the counter does not go on.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Forest", "label": "forest" },
+          { "card": "Forest", "label": "forest-2" },
+          { "card": "Forest", "label": "forest-3" },
+          { "card": "Forest", "label": "forest-4" },
+          { "card": "Platinum Angel", "label": "angel" },
+          { "card": "Grizzly Bears", "label": "bears", "counters": [{ "key": { "type": "PlusOnePlusOne" }, "value": 1 }] }
+        ],
+        "hand": [{ "card": "Trade Route Envoy", "label": "envoy" }],
+        "library": [{ "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Forest" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$envoy", "mana": ["$forest", "$forest-2", "$forest-3", "$forest-4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Trade Route Envoy", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } }
+  ]
+}

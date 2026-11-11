@@ -1,0 +1,41 @@
+{
+  "description": "CR 118.12 Victimize after a token ceased in exile returns nothing",
+  "note": "Victimize: \"Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped.\" First Flicker of Fate exiles alice's only creature, a Goblin Piker token, which CR 111.8 keeps from returning and CR 704.5d then ends, a road out of exile that no instruction takes. Victimize is paid from floating mana, so no mana ability runs between that and its sacrifice, which finds no creature: the cards stay in the graveyard. A filing for the ended token that outlived it, pruned during the sacrifice, would read as the sacrifice happening.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BBBB",
+        "battlefield": [
+          { "card": "Plains", "label": "plains" },
+          { "card": "Plains", "label": "plains-2" },
+          { "card": "Goblin Piker", "label": "piker", "token": true }
+        ],
+        "hand": [
+          { "card": "Flicker of Fate", "label": "flicker" },
+          { "card": "Victimize", "label": "victimize" }
+        ],
+        "graveyard": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Hill Giant", "label": "giant" }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$flicker", "mana": ["$plains", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Goblin Piker", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Goblin Piker", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$victimize", "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 0 } } }
+  ]
+}

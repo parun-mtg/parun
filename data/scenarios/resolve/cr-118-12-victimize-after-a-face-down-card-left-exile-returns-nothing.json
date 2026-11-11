@@ -1,0 +1,46 @@
+{
+  "description": "CR 118.12 Victimize after a face-down card left exile returns nothing",
+  "note": "Victimize: \"Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped.\" First Extract Power exiles alice's Forest face down, which CR 406.4 files in a pile, and she plays it from exile as a land, a move no instruction makes. Victimize is paid from floating mana, so no mana ability runs between that and its sacrifice, which finds no creature: the cards stay in the graveyard. A pile or link for the departed Forest that outlived it, pruned during the sacrifice, would read as the sacrifice happening.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BBBBBBBB",
+        "battlefield": [
+          { "card": "Island", "label": "island" },
+          { "card": "Island", "label": "island-2" },
+          { "card": "Island", "label": "island-3" },
+          { "card": "Island", "label": "island-4" },
+          { "card": "Island", "label": "island-5" },
+          { "card": "Island", "label": "island-6" }
+        ],
+        "hand": [
+          { "card": "Extract Power", "label": "extract" },
+          { "card": "Victimize", "label": "victimize" }
+        ],
+        "graveyard": [
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Hill Giant", "label": "giant" }
+        ],
+        "library": [{ "card": "Forest" }]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$extract", "mana": ["$island", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "Forest" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$victimize", "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 0 } } }
+  ]
+}
