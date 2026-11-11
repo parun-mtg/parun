@@ -694,6 +694,17 @@ spec s registry = Spec.describe s "Scenario" $ do
       Left failure -> Spec.assertFailure s (S.renderFailure failure)
       Right _ -> Spec.assertFailure s "the short assignment passed, dealing nothing"
 
+  -- A yield matching none offered names every one offered, whole units and
+  -- all: a unit's production tags are what a script most easily leaves out.
+  Spec.it s "a mana yield the source does not offer fails, naming the yields it does" $ do
+    result <- runJson s registry (highlandLakeFor "Green")
+    case result of
+      Left (ScenarioFailure.MkUnexpectedActionChoice _ _ kind offers) -> do
+        Spec.assertEqWith s "the prompt" kind (Text.pack "ChooseManaYield")
+        Spec.assertEqWith s "the yields offered" offers (fmap (\colour -> Text.pack ("[" <> manaUnit colour <> "]")) ["Blue", "Red"])
+      Left failure -> Spec.assertFailure s (S.renderFailure failure)
+      Right _ -> Spec.assertFailure s "the unoffered yield was accepted"
+
   -- The two ways a check can fail are never spelled alike: one that ran and
   -- read false, and one whose moment never came and so asserted nothing.
   Spec.it s "a check that reads false fails as a false check, naming what it saw" $ do
@@ -942,6 +953,18 @@ leakUnpaid =
     <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Cast\":{\"object\":\"$leak\",\"mana\":[\"$i1\",\"$i2\"]}}},"
     <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":\"Pass\"},"
     <> "{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"bob\",\"do\":{\"ChooseToPay\":{\"decision\":\"Pays\",\"mana\":[null]}}}]}"
+
+-- alice taps her Highland Lake for one `colour` mana.
+highlandLakeFor :: String -> String
+highlandLakeFor colour =
+  "{\"description\":\"x\",\"board\":{\"seats\":[{\"name\":\"alice\",\"battlefield\":[{\"card\":\"Highland Lake\",\"label\":\"lake\",\"ready\":true}]},{\"name\":\"bob\"}],\"active\":\"alice\",\"step\":\"PrecombatMain\"},"
+    <> "\"timeline\":[{\"turn\":1,\"step\":\"PrecombatMain\",\"player\":\"alice\",\"do\":{\"Take\":{\"action\":\"ActivateManaAbility $lake\",\"yields\":[["
+    <> manaUnit colour
+    <> "]]}}}]}"
+
+-- One untagged, unrestricted mana of `colour`, as Parun.Codec.ManaUnit writes it.
+manaUnit :: String -> String
+manaUnit colour = "{\"manaType\":{\"type\":\"Colored\",\"value\":\"" <> colour <> "\"},\"tags\":[],\"retention\":\"Ordinary\",\"restriction\":null,\"rider\":null,\"sourceChoices\":null}"
 
 -- alice's Colossal Dreadmaw (6/6 trample), blocked by bob's War Mammoth (3/3),
 -- assigns 2 to the Mammoth and 4 to bob.

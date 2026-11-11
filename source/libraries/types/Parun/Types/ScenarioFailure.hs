@@ -67,7 +67,8 @@ data ScenarioFailure
   | MkUnexpectedPrompt When.When Entry.Entry Text.Text [Text.Text]
   | MkActionNotOffered When.When Move.Move [Text.Text]
   | MkAmbiguousAction When.When Move.Move [Text.Text]
-  | MkUnexpectedActionChoice When.When Move.Move Text.Text
+  | -- | A move's choices answer none of a prompt's options, listed where known.
+    MkUnexpectedActionChoice When.When Move.Move Text.Text [Text.Text]
   | -- | An Answer outside what its prompt offered, not flagged unoffered.
     MkUnofferedAnswer When.When Move.Move Text.Text
   | -- | An Answer flagged unoffered that its prompt did offer.
