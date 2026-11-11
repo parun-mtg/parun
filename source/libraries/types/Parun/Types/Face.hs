@@ -35,6 +35,7 @@ import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
@@ -337,6 +338,10 @@ data Face card = MkFace
     -- playerAbilities below instead; Parun.Types.Counterability argues why the two
     -- carriers cannot be merged.
     counterability :: Counterability.Counterability,
+    -- | CR 113.6g: a can't-be-copied ability functions on the stack (Choreographed
+    -- Sparks). Read off the card by Resolve.Arms.Objects.copyStackObject less a
+    -- layer-6 wipe reaching the spell, as counterability above is.
+    copyability :: Copyability.Copyability,
     -- | CR 118.8: this face's printed additional costs, paid at the same time as
     -- the spell's mana cost (Village Rites). Read off the card, or the copy
     -- stamp's values where it carries one (Game.castingFaceOf), less a layer-6

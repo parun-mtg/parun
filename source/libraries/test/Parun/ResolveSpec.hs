@@ -66,6 +66,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Count as Count.Type
@@ -2389,7 +2390,8 @@ subgameSpellOn borrowed name effects gs0 =
             Face.alternativeCosts = [],
             Face.costReductions = [],
             Face.enchant = [],
-            Face.counterability = Counterability.Counterable
+            Face.counterability = Counterability.Counterable,
+            Face.copyability = Copyability.Copyable
           }
       spellObj =
         (Object.new S.alice (Source.OfToken spellPrintingId) Zone.Stack ts)

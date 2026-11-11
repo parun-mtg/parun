@@ -15,6 +15,7 @@ import qualified Parun.Oracle.Prose as Prose
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Keyword as Keyword
@@ -126,6 +127,7 @@ bare n t c i l p x k =
       Face.castingRestrictions = [],
       Face.enchant = [],
       Face.counterability = Counterability.Counterable,
+      Face.copyability = Copyability.Copyable,
       Face.additionalCosts = [],
       Face.additionalCostChoices = [],
       Face.modeCosts = Map.empty,

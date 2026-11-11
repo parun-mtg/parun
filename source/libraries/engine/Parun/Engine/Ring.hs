@@ -51,6 +51,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DamageKind as DamageKind
@@ -195,6 +196,7 @@ theRingEmblem temptations =
               Face.castingRestrictions = [],
               Face.enchant = [],
               Face.counterability = Counterability.Counterable,
+              Face.copyability = Copyability.Copyable,
               Face.additionalCosts = [],
               Face.additionalCostChoices = [],
               Face.modeCosts = Map.empty,

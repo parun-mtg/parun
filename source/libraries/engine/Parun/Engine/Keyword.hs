@@ -77,6 +77,7 @@ import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
+import qualified Parun.Types.Copyability as Copyability
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
@@ -6761,6 +6762,7 @@ spiritToken =
               Face.castingRestrictions = [],
               Face.enchant = [],
               Face.counterability = Counterability.Counterable,
+              Face.copyability = Copyability.Copyable,
               Face.additionalCosts = [],
               Face.additionalCostChoices = [],
               Face.modeCosts = Map.empty,
@@ -6999,6 +7001,7 @@ servoToken =
               Face.castingRestrictions = [],
               Face.enchant = [],
               Face.counterability = Counterability.Counterable,
+              Face.copyability = Copyability.Copyable,
               Face.additionalCosts = [],
               Face.additionalCostChoices = [],
               Face.modeCosts = Map.empty,
@@ -7194,6 +7197,7 @@ tokenCard name typeLine colors stats abilities =
               Face.castingRestrictions = [],
               Face.enchant = [],
               Face.counterability = Counterability.Counterable,
+              Face.copyability = Copyability.Copyable,
               Face.additionalCosts = [],
               Face.additionalCostChoices = [],
               Face.modeCosts = Map.empty,

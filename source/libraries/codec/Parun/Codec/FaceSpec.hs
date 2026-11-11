@@ -39,6 +39,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyRecipient as CopyRecipient
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
@@ -202,7 +203,8 @@ baseFace =
       Face.openingHandActions = [],
       Face.specialActions = [],
       Face.enchant = [],
-      Face.counterability = Counterability.Counterable
+      Face.counterability = Counterability.Counterable,
+      Face.copyability = Copyability.Copyable
     }
 
 -- | Every field at the default an omitted key means, which is what the minimal
@@ -242,6 +244,7 @@ minimalFace =
       Face.castingRestrictions = [],
       Face.enchant = [],
       Face.counterability = Counterability.Counterable,
+      Face.copyability = Copyability.Copyable,
       Face.additionalCosts = [],
       Face.additionalCostChoices = [],
       Face.modeCosts = Map.empty,
@@ -330,6 +333,7 @@ populatedFace =
       Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing (Cost.MkCost (Just (ManaCost.MkManaCost [])) [])],
       Face.costReductions = [CostReduction.MkCostReduction (ManaCost.MkManaCost [ManaSymbol.Generic 3]) (Quantity.Literal 1) Nothing Nothing CostDirection.Less],
       Face.counterability = Counterability.CantBeCountered Nothing,
+      Face.copyability = Copyability.Copyable,
       Face.mulliganActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]],
       Face.openingHandActions = [HandAction.MkHandAction Nothing [Effect.ExileHandThenDraw]],
       Face.specialActions = [SpecialAction.DiscardThisAnyTime],

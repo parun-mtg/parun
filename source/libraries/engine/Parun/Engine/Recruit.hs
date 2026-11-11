@@ -35,6 +35,7 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
@@ -105,6 +106,7 @@ soldierToken =
               Face.castingRestrictions = [],
               Face.enchant = [],
               Face.counterability = Counterability.Counterable,
+              Face.copyability = Copyability.Copyable,
               Face.additionalCosts = [],
               Face.additionalCostChoices = [],
               Face.modeCosts = Map.empty,

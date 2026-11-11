@@ -54,6 +54,7 @@ import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face
@@ -1483,7 +1484,7 @@ stampedSnapshotOf oid gs = do
 -- about its own casting where a layer-6 wipe reaches the spell (`spell`,
 -- Parun.Engine.Cost.asSpellProjected): its additional and alternative costs (CR
 -- 118.8, 118.9), its casting restrictions and X ceiling (CR 113.6e) and its
--- "can't be countered" (CR 113.6g). A perpetual wipe reaches the spell, one
+-- "can't be countered" and "can't be copied" (CR 113.6g). A perpetual wipe reaches the spell, one
 -- confined to graveyards does not. Parun.CostSpec's "CR 118.8 a Demon of
 -- Catastrophes that perpetually lost all abilities is cast without a
 -- sacrifice" and "CR 113.6d under Yixlid Jailer a Fireblast cast from the
@@ -1498,7 +1499,8 @@ wipedFace spell face
           Face.alternativeCosts = [],
           Face.castingRestrictions = [],
           Face.maximumX = [],
-          Face.counterability = Counterability.Counterable
+          Face.counterability = Counterability.Counterable,
+          Face.copyability = Copyability.Copyable
         }
   | otherwise = face
 

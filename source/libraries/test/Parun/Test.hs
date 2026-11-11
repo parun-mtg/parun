@@ -230,6 +230,7 @@ import qualified Parun.Codec.CopyOriginalSpec
 import qualified Parun.Codec.CopyRecipientSpec
 import qualified Parun.Codec.CopyStackObjectSpec
 import qualified Parun.Codec.CopyTargetsSpec
+import qualified Parun.Codec.CopyabilitySpec
 import qualified Parun.Codec.CostAmountSpec
 import qualified Parun.Codec.CostBasisSpec
 import qualified Parun.Codec.CostChangeSpec
@@ -1270,6 +1271,7 @@ spec s registry corpus = do
   Parun.Codec.AttachRSpec.spec s
   Parun.Codec.CopyStackObjectSpec.spec s
   Parun.Codec.CopyTargetsSpec.spec s
+  Parun.Codec.CopyabilitySpec.spec s
   Parun.Codec.CostAmountSpec.spec s
   Parun.Codec.CostBasisSpec.spec s
   Parun.Codec.CostChangeSpec.spec s

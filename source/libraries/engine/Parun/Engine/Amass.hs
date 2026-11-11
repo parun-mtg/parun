@@ -36,6 +36,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -130,6 +131,7 @@ armyToken subtype =
               Face.castingRestrictions = [],
               Face.enchant = [],
               Face.counterability = Counterability.Counterable,
+              Face.copyability = Copyability.Copyable,
               Face.additionalCosts = [],
               Face.additionalCostChoices = [],
               Face.modeCosts = Map.empty,
