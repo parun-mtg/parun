@@ -77,31 +77,31 @@
               }
             }
           },
-          "intervening": {
-            "type": "Compares",
-            "value": {
-              "comparison": "AtLeast",
-              "measured": {
-                "type": "LifeChanged",
-                "value": {
-                  "direction": "Gained",
-                  "player": {
-                    "type": "Relative",
-                    "value": "You"
-                  }
-                }
-              },
-              "threshold": {
-                "type": "Literal",
-                "value": 1
-              }
-            }
-          },
           "modal": {
             "modes": [
               {
                 "clauses": [
                   {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "LifeChanged",
+                          "value": {
+                            "direction": "Gained",
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
                     "effects": [
                       {
                         "type": "CopyStackObject",

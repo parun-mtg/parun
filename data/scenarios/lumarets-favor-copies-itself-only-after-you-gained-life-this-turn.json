@@ -97,7 +97,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.4, 707.10, 707.10c, 611.2a: Lumaret's Favor gives +2/+4 and, cast after alice gained life this turn, copies itself with a new target; cast before, it does not",
+  "description": "CR 603.4, 707.10, 707.10c, 611.2a: Lumaret's Favor's Infusion trigger always triggers and checks on resolution; cast before alice gained life it makes no copy, and with life gained in response to the trigger it copies itself with a new target",
   "timeline": [
     {
       "do": {
@@ -110,6 +110,39 @@
           "object": "$f1",
           "targets": [
             "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of Lumaret's Favor",
+            "Lumaret's Favor#2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "Lumaret's Favor#2"
           ]
         }
       },
@@ -151,8 +184,25 @@
       "do": {
         "Cast": {
           "mana": [
-            "$w1",
+            "$g3",
+            "$g4",
             null
+          ],
+          "object": "$f2",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$w1"
           ],
           "modes": [
             0
@@ -178,23 +228,6 @@
         "Life": {
           "life": 23,
           "player": "alice"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Cast": {
-          "mana": [
-            "$g3",
-            "$g4"
-          ],
-          "object": "$f2",
-          "targets": [
-            "$bears"
-          ]
         }
       },
       "player": "alice",
