@@ -2044,6 +2044,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Consumed by Greed", 1),
             ("Crackling Doom", 1),
             ("Drop of Honey", 1),
+            ("End of the Hunt", 1),
             ("Extract a Confession", 1),
             ("Fall of the Impostor", 1),
             ("Flare of Malice", 1),
