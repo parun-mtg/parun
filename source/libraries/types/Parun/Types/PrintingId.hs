@@ -2,7 +2,7 @@ module Parun.Types.PrintingId where
 
 import qualified Numeric.Natural as Natural
 
--- | Which printing, within one game -- an index into GameState.printings.
+-- | Which printing, within one game -- an index into Bookkeeping.printings.
 --
 -- Minted only by Parun.Engine.Game.intern, so an id naming nothing is
 -- unconstructible. That is why the table is game-local rather than a reference

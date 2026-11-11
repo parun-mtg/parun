@@ -131,6 +131,7 @@ import qualified Parun.Types.RemovePlayerCounters as RemovePlayerCounters
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -198,7 +199,7 @@ counter settle resolving source controller legal (Counter.MkCounter ref mSlot mS
   -- The same slot's OBJECTS are the countered stack ids, merged onto
   -- `resolving` beside the count, for Psychic Rebuttal's "copy the spell
   -- countered this way": CR 608.2h's last known information, which
-  -- GameState.stackArchive keeps for CR 707.10 to copy. Unbound when nothing
+  -- Snapshots.stackArchive keeps for CR 707.10 to copy. Unbound when nothing
   -- was countered, so a spell that can't be countered gives no copy (the
   -- card's ruling). data/scenarios/psychic-rebuttal-* prove both.
   Monad.forM_ mSlot $ \slot -> do
@@ -1777,10 +1778,13 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
           (GameState.turn gs)
             { TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn gs))
             },
-        GameState.boardAfterEvent = Map.empty,
-        GameState.boardBeforeEvent = Map.empty,
-        GameState.battlefieldWhenTriggered = Map.empty,
-        GameState.heldBoards = []
+        GameState.snapshots =
+          (GameState.snapshots gs)
+            { Snapshots.boardAfterEvent = Map.empty,
+              Snapshots.boardBeforeEvent = Map.empty,
+              Snapshots.battlefieldWhenTriggered = Map.empty,
+              Snapshots.heldBoards = []
+            }
       }
   -- CR 725.1b: exile every object on the stack, INCLUDING the one that is
   -- resolving -- which is still on TurnRegisters.stack, Stack.resolveTopWith
@@ -1900,10 +1904,13 @@ endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
               (GameState.turn gs)
                 { TurnRegisters.scannedThrough = Natural.length (TurnRegisters.events (GameState.turn gs))
                 },
-            GameState.boardAfterEvent = Map.empty,
-            GameState.boardBeforeEvent = Map.empty,
-            GameState.battlefieldWhenTriggered = Map.empty,
-            GameState.heldBoards = []
+            GameState.snapshots =
+              (GameState.snapshots gs)
+                { Snapshots.boardAfterEvent = Map.empty,
+                  Snapshots.boardBeforeEvent = Map.empty,
+                  Snapshots.battlefieldWhenTriggered = Map.empty,
+                  Snapshots.heldBoards = []
+                }
           }
       -- CR 725.2b: exile every object on the stack, the resolving one included.
       -- Shared with the arm above down to the CR 400.7 detail that leaves

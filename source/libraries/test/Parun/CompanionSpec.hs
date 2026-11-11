@@ -50,6 +50,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -146,7 +147,7 @@ startingDeck s registry = Spec.describe s "CR 103.2a the starting deck" $ do
     mountain <- S.printingOf s registry "Mountain"
     let gs = setup S.identityAnswer aliceDeck aliceDeck
         recorded = startingDeckOf S.alice gs
-        idOf printing = Map.lookup printing (GameState.printingIds gs)
+        idOf printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs))
     Spec.assertEqWith s "CR 103.2a: the twenty Mountains are in it" (idOf mountain >>= \i -> Map.lookup i recorded) (Just 20)
     Spec.assertEqWith s "CR 103.2a: and the sideboard's Zirda is not" (idOf zirda >>= \i -> Map.lookup i recorded) Nothing
     Spec.assertEqWith s "CR 400.11a: Zirda is outside the game instead" (fmap (\i -> Map.findWithDefault 0 i (maybe Map.empty Player.outsideTheGame (Map.lookup S.alice (GameState.players gs)))) (idOf zirda)) (Just 1)
@@ -161,7 +162,7 @@ startingDeck s registry = Spec.describe s "CR 103.2a the starting deck" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
     let commanderDeck = aliceDeck {Deck.commander = Map.singleton birds 1}
         gs = setup S.identityAnswer commanderDeck aliceDeck
-        idOf printing = Map.lookup printing (GameState.printingIds gs)
+        idOf printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs))
         recorded = startingDeckOf S.alice gs
     Spec.assertEqWith s "CR 702.139b: the fifth Birds is the commander" (idOf birds >>= \i -> Map.lookup i recorded) (Just 5)
     Spec.assertEqWith s "CR 903.6: and bob, who designated none, has four" (idOf birds >>= \i -> Map.lookup i (startingDeckOf S.bob gs)) (Just 4)
@@ -176,7 +177,7 @@ revealing s registry = Spec.describe s "CR 103.2b the reveal" $ do
   Spec.it s "CR 702.139a is offered to the deck that fulfills the condition and to no other" $ do
     (zirda, aliceDeck, bobDeck) <- decks s registry
     let gs = setup revealingAnswer aliceDeck bobDeck
-        idOf printing = Map.lookup printing (GameState.printingIds gs)
+        idOf printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs))
     Spec.assertEqWith s "CR 702.139a: alice's every permanent card has an activated ability" (companionOf S.alice gs) (fmap OutsideCard.InPool (idOf zirda))
     Spec.assertEqWith s "CR 702.139a: bob's Doomed Traveler has none, so he may not reveal" (companionOf S.bob gs) Nothing
     Spec.assertEqWith s "CR 103.2b: the revealed card stays outside the game" (fmap (\i -> Map.findWithDefault 0 i (maybe Map.empty Player.outsideTheGame (Map.lookup S.alice (GameState.players gs)))) (idOf zirda)) (Just 1)
@@ -193,7 +194,7 @@ revealing s registry = Spec.describe s "CR 103.2b the reveal" $ do
     dreadnought <- S.printingOf s registry "Consulate Dreadnought"
     let vehicles = aliceDeck {Deck.cards = Map.insert dreadnought 4 (Deck.cards aliceDeck)}
         gs = setup revealingAnswer vehicles bobDeck
-        idOf printing = Map.lookup printing (GameState.printingIds gs)
+        idOf printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs))
     Spec.assertEqWith s "CR 702.139a: alice's four Dreadnoughts have crew, so she reveals Zirda" (companionOf S.alice gs) (fmap OutsideCard.InPool (idOf zirda))
     Spec.assertEqWith s "CR 702.139a: bob's Travelers in their place have nothing" (companionOf S.bob gs) Nothing
 
@@ -221,7 +222,7 @@ deckSize s registry = Spec.describe s "CR 702.139a a deck-size condition" $ do
     yorion <- S.printingOf s registry "Yorion, Sky Nomad"
     mountain <- S.printingOf s registry "Mountain"
     let gs = setupWith (under RuleFamily.Constructed) revealingAnswer (mountains yorion mountain 80) (mountains yorion mountain 79)
-    Spec.assertEqWith s "CR 702.139a: alice's eighty cards are twenty over sixty" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup yorion (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 702.139a: alice's eighty cards are twenty over sixty" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup yorion (Bookkeeping.printingIds (GameState.bookkeeping gs))))
     Spec.assertEqWith s "CR 702.139a: bob's seventy-nine are one short" (companionOf S.bob gs) Nothing
 
   -- CR 100.2b: the same sixty cards meet a limited minimum of forty.
@@ -264,7 +265,7 @@ differentNames s registry = Spec.describe s "CR 702.139a a distinct-names condit
     bolt <- S.printingOf s registry "Lightning Bolt"
     let shared = [(mountain, 20), (birds, 1)]
         gs = setup revealingAnswer (deckOf lutri ((bolt, 1) : shared)) (deckOf lutri ((bolt, 2) : shared))
-    Spec.assertEqWith s "CR 702.139a: alice's nonland cards each have their own name, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup lutri (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 702.139a: alice's nonland cards each have their own name, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup lutri (Bookkeeping.printingIds (GameState.bookkeeping gs))))
     Spec.assertEqWith s "CR 201.2b: bob's two Lightning Bolts share a name" (companionOf S.bob gs) Nothing
 
 -- Umori, the Collector's "each nonland card in your starting deck shares a card
@@ -280,7 +281,7 @@ sharedCardType s registry = Spec.describe s "CR 702.139a a shared-card-type cond
     stone <- S.printingOf s registry "Mind Stone"
     let shared = [(mountain, 20), (birds, 2), (ornithopter, 2)]
         gs = setup revealingAnswer (deckOf umori shared) (deckOf umori ((stone, 1) : shared))
-    Spec.assertEqWith s "CR 702.139a: alice's nonland cards are all creatures, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup umori (GameState.printingIds gs)))
+    Spec.assertEqWith s "CR 702.139a: alice's nonland cards are all creatures, the twenty Mountains aside" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup umori (Bookkeeping.printingIds (GameState.bookkeeping gs))))
     Spec.assertEqWith s "CR 205.2a: bob's Mind Stone is no creature, and his Birds no artifact" (companionOf S.bob gs) Nothing
 
 -- Jegantha, the Wellspring's "no card in your starting deck has more than one of
@@ -297,7 +298,7 @@ repeatedSymbols s registry = Spec.describe s "CR 702.139a a repeated-symbol cond
         added <- S.printingOf s registry extra
         let shared = [(mountain, 20), (birds, 2), (bolt, 2)]
             gs = setup revealingAnswer (deckOf jegantha shared) (deckOf jegantha ((added, 1) : shared))
-        Spec.assertEqWith s "CR 702.139a: no card of alice's repeats a symbol" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup jegantha (GameState.printingIds gs)))
+        Spec.assertEqWith s "CR 702.139a: no card of alice's repeats a symbol" (companionOf S.alice gs) (fmap OutsideCard.InPool (Map.lookup jegantha (Bookkeeping.printingIds (GameState.bookkeeping gs))))
         pure (companionOf S.bob gs)
   Spec.it s "CR 107.4 Ball Lightning's {R}{R}{R} keeps Jegantha back" $ do
     bob <- against "Ball Lightning"
@@ -339,7 +340,7 @@ newGames s registry = Spec.describe s "CR 728.1 / 730.2 a new game" $ do
         restart gs = S.runPure revealingAnswer gs (Setup.restartGame S.performer Set.empty S.alice)
         changed = restart (snd (S.addPermanent traveler S.alice revealed))
         unchanged = restart revealed
-        idOf gs printing = Map.lookup printing (GameState.printingIds gs)
+        idOf gs printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs))
     Spec.assertEqWith s "CR 103.2b: the new deck holds the Traveler, so Zirda is not her companion" (companionOf S.alice changed) Nothing
     Spec.assertEqWith s "CR 103.2b: and without it she reveals Zirda again" (companionOf S.alice unchanged) (fmap OutsideCard.InPool (idOf unchanged zirda))
     Spec.assertEqWith s "CR 103.2a: the Traveler is in the new starting deck" (idOf changed traveler >>= \i -> Map.lookup i (startingDeckOf S.alice changed)) (Just 1)
@@ -352,7 +353,7 @@ newGames s registry = Spec.describe s "CR 728.1 / 730.2 a new game" $ do
     shimatsu <- S.printingOf s registry "Shimatsu the Bloodcloaked"
     let built = setup S.identityAnswer (aliceDeck {Deck.commander = Map.singleton shimatsu 1}) aliceDeck
         restarted = S.runPure S.identityAnswer built (Setup.restartGame S.performer Set.empty S.alice)
-        idOf printing = Map.lookup printing (GameState.printingIds restarted)
+        idOf printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping restarted))
     Spec.assertEqWith s "CR 702.139b: Shimatsu is in the new starting deck" (idOf shimatsu >>= \i -> Map.lookup i (startingDeckOf S.alice restarted)) (Just 1)
     Spec.assertEqWith s "CR 903.6: having begun the new game in the command zone" (length (Game.zoneMembers Zone.Command S.alice restarted)) 1
 
@@ -362,7 +363,7 @@ newGames s registry = Spec.describe s "CR 728.1 / 730.2 a new game" $ do
     (zirda, aliceDeck, _) <- decks s registry
     let declined = setup S.identityAnswer aliceDeck aliceDeck
         restarted = S.runPure revealingAnswer declined (Setup.restartGame S.performer Set.empty S.alice)
-    Spec.assertEqWith s "CR 103.2b: she reveals Zirda in the new game" (companionOf S.alice restarted) (fmap OutsideCard.InPool (Map.lookup zirda (GameState.printingIds restarted)))
+    Spec.assertEqWith s "CR 103.2b: she reveals Zirda in the new game" (companionOf S.alice restarted) (fmap OutsideCard.InPool (Map.lookup zirda (Bookkeeping.printingIds (GameState.bookkeeping restarted))))
     Spec.assertEqWith s "having revealed nothing in the first" (companionOf S.alice declined) Nothing
 
   -- CR 730.2: the subgame's deck is the main-game LIBRARY and nothing else, so a
@@ -375,7 +376,7 @@ newGames s registry = Spec.describe s "CR 728.1 / 730.2 a new game" $ do
         subOf parent = S.runPure revealingAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards S.performer Set.empty)
         inLibrary = parentOf S.addLibraryCard
         inHand = parentOf S.addHandCard
-        idOf gs printing = Map.lookup printing (GameState.printingIds gs)
+        idOf gs printing = Map.lookup printing (Bookkeeping.printingIds (GameState.bookkeeping gs))
         hidden = subOf inLibrary
     Spec.assertEqWith s "CR 103.2b: a Traveler in her main-game library bars Zirda in the subgame" (companionOf S.alice hidden) Nothing
     Spec.assertEqWith s "CR 730.2: one in her main-game hand does not" (companionOf S.alice (subOf inHand)) (fmap OutsideCard.InPool (idOf inHand zirda))

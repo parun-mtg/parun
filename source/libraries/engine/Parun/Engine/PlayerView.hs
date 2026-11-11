@@ -15,6 +15,7 @@ import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
@@ -51,7 +52,7 @@ viewFor pid gs =
       PlayerView.witnessed = witnessedIn (TurnRegisters.events (GameState.turn gs)),
       PlayerView.witnessedLastTurn = witnessedIn (GameState.eventsLastTurn gs),
       PlayerView.result = GameState.result gs,
-      PlayerView.undone = Map.lookup pid (GameState.undone gs)
+      PlayerView.undone = Map.lookup pid (Bookkeeping.undone (GameState.bookkeeping gs))
     }
   where
     witnessedIn :: Seq.Seq LoggedEvent.LoggedEvent -> [LoggedEvent.LoggedEvent]

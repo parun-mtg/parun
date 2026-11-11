@@ -8256,7 +8256,7 @@ withoutEpic pc = pc {PC.keywords = Map.delete Keyword.Epic (PC.keywords pc)}
 -- arming.
 --
 -- The id it names has ceased before this ability ever triggers (CR 400.7), which
--- is why Parun.Engine.Resolve.applyEpic files the object in GameState.stackArchive
+-- is why Parun.Engine.Resolve.applyEpic files the object in Snapshots.stackArchive
 -- for Effect.CopyStackObject to find. CR 603.7c bars a delayed ability from
 -- AFFECTING an object that has left the zone it was expected in; rule 702.50a
 -- COPIES the spell instead, and CR 707.10 copies it as CR 608.2h last knew it --
@@ -8308,7 +8308,7 @@ hasParadigm = Set.member Keyword.Paradigm
 -- The slot rule 702.192a's "this object" is bound into as the spell resolves,
 -- epicSlot's reading: the id has ceased before the ability first triggers (CR
 -- 400.7), and Parun.Engine.Resolve.Common's castableCopy finds it in
--- GameState.stackArchive, where the zone-change funnel filed it as it left the
+-- Snapshots.stackArchive, where the zone-change funnel filed it as it left the
 -- stack. So the copy is still made once the card has left exile (rulings,
 -- 2026-03-20).
 paradigmSlot :: SlotName.SlotName

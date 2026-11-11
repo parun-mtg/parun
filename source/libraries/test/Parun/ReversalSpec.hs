@@ -13,6 +13,7 @@ import Parun.ManaSourceSpec (plainOf)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Mana as Mana.Type
@@ -55,13 +56,16 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
     (began, closed) <- transition s registry
     let expected =
           began
-            { GameState.nextEventGroup = GameState.nextEventGroup closed,
-              GameState.nextObjectId = GameState.nextObjectId closed,
-              GameState.printings = GameState.printings closed,
-              GameState.printingIds = GameState.printingIds closed,
-              GameState.nextPrintingId = GameState.nextPrintingId closed,
-              GameState.nextTimestamp = GameState.nextTimestamp closed,
-              GameState.lastChoice = GameState.lastChoice closed,
+            { GameState.bookkeeping =
+                (GameState.bookkeeping began)
+                  { Bookkeeping.nextEventGroup = Bookkeeping.nextEventGroup (GameState.bookkeeping closed),
+                    Bookkeeping.nextObjectId = Bookkeeping.nextObjectId (GameState.bookkeeping closed),
+                    Bookkeeping.printings = Bookkeeping.printings (GameState.bookkeeping closed),
+                    Bookkeeping.printingIds = Bookkeeping.printingIds (GameState.bookkeeping closed),
+                    Bookkeeping.nextPrintingId = Bookkeeping.nextPrintingId (GameState.bookkeeping closed),
+                    Bookkeeping.nextTimestamp = Bookkeeping.nextTimestamp (GameState.bookkeeping closed),
+                    Bookkeeping.lastChoice = Bookkeeping.lastChoice (GameState.bookkeeping closed)
+                  },
               GameState.loopInvolvement = GameState.loopInvolvement closed
             }
     Spec.assertBool s (Reversal.withoutAnnouncement began closed closed == Just expected) "every field the cast wrote is back at where the action began, the monotone counters apart"

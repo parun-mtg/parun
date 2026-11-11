@@ -63,6 +63,7 @@ import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.Card (Card)
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
@@ -142,6 +143,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -552,7 +554,7 @@ standingOf gs =
 -- against. `recordEvent` files one sample per group; the live board answers for a
 -- group no sample names, `eventTriggers`' fallback and its reason.
 battlefieldAt :: EventGroup.EventGroup -> GameState -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics)
-battlefieldAt group gs = Map.findWithDefault (battlefieldCandidates gs) group (GameState.battlefieldWhenTriggered gs)
+battlefieldAt group gs = Map.findWithDefault (battlefieldCandidates gs) group (Snapshots.battlefieldWhenTriggered (GameState.snapshots gs))
 
 -- CR 113.7a: the delayed abilities `oid`'s rules text declared as an ability of
 -- it triggered, which the pending trigger freezes (PendingTrigger.delayed). Read
@@ -577,10 +579,10 @@ delayedAsTriggered board oid gs = maybe (Projection.delayedSnapshotOf oid gs) (P
 resampleEntry :: ObjectId -> GameState -> GameState
 resampleEntry oid gs = case Game.entryGroup oid gs of
   Nothing -> gs
-  Just group -> gs {GameState.battlefieldWhenTriggered = Map.adjust (const (battlefieldCandidates gs)) group (GameState.battlefieldWhenTriggered gs)}
+  Just group -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.battlefieldWhenTriggered = Map.adjust (const (battlefieldCandidates gs)) group (Snapshots.battlefieldWhenTriggered (GameState.snapshots gs))}}
 
 -- CR 603.4: file `gs` as the board after every unscanned event that has none
--- yet (GameState.boardAfterEvent). Called where an event is over with whatever
+-- yet (Snapshots.boardAfterEvent). Called where an event is over with whatever
 -- else its instruction or action does: as each instruction of a resolution
 -- finishes (CR 608.2c, Resolve.applyEffectWith), as each part of a cost is paid
 -- (CR 601.2h, Cost.payInOrder) and before each state-based action check
@@ -593,12 +595,12 @@ resampleEntry oid gs = case Game.entryGroup oid gs of
 -- multi-instruction CR 608.2f group.
 fileBoards :: GameState -> GameState
 fileBoards gs =
-  let filed = GameState.boardAfterEvent gs
-      open group = GameState.eventGroupDepth gs > 0 && group == GameState.nextEventGroup gs
+  let filed = Snapshots.boardAfterEvent (GameState.snapshots gs)
+      open group = Bookkeeping.eventGroupDepth (GameState.bookkeeping gs) > 0 && group == Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
       unfiled = Seq.takeWhileR (\logged -> Map.notMember (LoggedEvent.group logged) filed) (Seq.drop (Natural.toIntSaturating (TurnRegisters.scannedThrough (GameState.turn gs))) (TurnRegisters.events (GameState.turn gs)))
       groups = filter (not . open) (fmap LoggedEvent.group (Foldable.toList unfiled))
-      board = gs {GameState.boardAfterEvent = Map.empty, GameState.boardBeforeEvent = Map.empty, GameState.boardAtControlSample = Nothing}
-   in if null groups then gs else gs {GameState.boardAfterEvent = List.foldl' (\m group -> Map.insert group board m) filed groups}
+      board = gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing}}
+   in if null groups then gs else gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardAfterEvent = List.foldl' (\m group -> Map.insert group board m) filed groups}}
 
 -- The zone change an event describes, if it is one.
 movedOf :: GameEvent -> Maybe ZoneChange
@@ -1368,7 +1370,7 @@ counterOccurrences matches cond event = case cond of
 --
 -- "Currently" is the word CR 603.10's first sentence corrects, and the battlefield
 -- reading here is per EVENT GROUP for that reason: each group's permanents, their
--- abilities and their controllers are the ones GameState.battlefieldWhenTriggered
+-- abilities and their controllers are the ones Snapshots.battlefieldWhenTriggered
 -- sampled as the group was recorded, never the board the scan finds. The sample is
 -- one projectAll per group rather than per (event, permanent) pair --
 -- Projection.project reruns the whole-board `gather` fold on every call, which made
@@ -1501,7 +1503,7 @@ eventTriggersGiven scope standing events gs =
       -- characteristics carry (PC.delayedAbilities).
       -- CR 603.10d: the permanent this event took out of a player's control,
       -- offered under that player for its look-back abilities as they stood on
-      -- the board before the change (GameState.boardBeforeEvent), or on the board
+      -- the board before the change (Snapshots.boardBeforeEvent), or on the board
       -- after it for a change none is filed for. Wins the union below over
       -- `onBattlefield`'s offer of the same id under its new controller: only
       -- look-back conditions match GameEvent.ControlChanged, so that offer could
@@ -1513,7 +1515,7 @@ eventTriggersGiven scope standing events gs =
       -- after it holds, offered under its controller on the board before, the
       -- one Parun.Engine.Phasing.phaseOutSet always files.
       lookedBackAt onBattlefield logged =
-        let filed oid = case Map.lookup (LoggedEvent.group logged) (GameState.boardBeforeEvent gs) of
+        let filed oid = case Map.lookup (LoggedEvent.group logged) (Snapshots.boardBeforeEvent (GameState.snapshots gs)) of
               Just board | Set.member oid (GameState.battlefield board) -> Just board
               _ -> Nothing
             lookingBack = filter (looksBack . fst)
@@ -1528,7 +1530,7 @@ eventTriggersGiven scope standing events gs =
       leftBattlefield event = case event of
         GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)
           | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc /= Zone.Battlefield ->
-              case Map.lookup (ZoneChange.departed zc) (GameState.lastKnown gs) of
+              case Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)) of
                 Nothing -> Map.empty
                 Just lk ->
                   Map.singleton
@@ -1545,7 +1547,7 @@ eventTriggersGiven scope standing events gs =
         -- leaving any main-game zone, and a card in a graveyard has no
         -- battlefield abilities to offer.
         GameEvent.LeftTheGame (LeftTheGame.MkLeftTheGame oid from)
-          | from == Zone.Battlefield -> case Map.lookup oid (GameState.lastKnown gs) of
+          | from == Zone.Battlefield -> case Map.lookup oid (Snapshots.lastKnown (GameState.snapshots gs)) of
               Nothing -> Map.empty
               Just lk -> Map.singleton oid (LastKnown.controller lk, battlefieldAbilitiesOf (LastKnown.characteristics lk))
           | otherwise -> Map.empty
@@ -2011,7 +2013,7 @@ eventTriggersGiven scope standing events gs =
       leftGraveyard event = case movedOf event of
         Just zc
           | ZoneChange.from zc == Zone.Graveyard && Game.leftOrigin zc ->
-              case Map.lookup (ZoneChange.departed zc) (GameState.lastKnown gs) of
+              case Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)) of
                 Nothing -> Map.empty
                 Just lk ->
                   case Maybe.mapMaybe (functionsIn (PC.subtypes (LastKnown.characteristics lk)) (PC.delayedAbilities (LastKnown.characteristics lk)) Zone.Graveyard) (PC.triggeredAbilities (LastKnown.characteristics lk)) of
@@ -2291,7 +2293,7 @@ eventTriggersGiven scope standing events gs =
             -- that stays and changes hands. data/scenarios's "Funeral March stays
             -- while its stealer leaves" and "Angelic Sleuth stolen by a conceding
             -- player" scenarios prove it.
-            controllerFor cond = case Map.lookup (LoggedEvent.group logged) (GameState.boardBeforeEvent gs) of
+            controllerFor cond = case Map.lookup (LoggedEvent.group logged) (Snapshots.boardBeforeEvent (GameState.snapshots gs)) of
               Just before
                 | looksBack cond,
                   Map.member oid board,
@@ -2458,7 +2460,7 @@ oncePerBatch joinOn entries =
 -- zones for bearers has nowhere to find them; each module names who holds which
 -- (Monarch.abilities, Initiative.abilities, Speed.abilities, Rad.abilities,
 -- Planechase.abilities), and that player is the "you" the matcher reads. With no
--- bearer, the matcher is handed an id naming no object (GameState.nextObjectId),
+-- bearer, the matcher is handed an id naming no object (Bookkeeping.nextObjectId),
 -- so a self-scoped condition could never match; none of these is one. A room
 -- ability (Dungeon.abilities) does have a source, the dungeon card, which that
 -- scan never offers: it is minted rather than printed, so there is nothing on a
@@ -2480,7 +2482,7 @@ inherentTriggers held events gs =
         let board = battlefieldAt (LoggedEvent.group (NonEmpty.head block)) gs
             bearer = case source of
               TriggerSource.OfObject oid -> oid
-              TriggerSource.Sourceless -> GameState.nextObjectId gs
+              TriggerSource.Sourceless -> Bookkeeping.nextObjectId (GameState.bookkeeping gs)
             cond = TriggeredAbility.condition ability
             -- CR 801.11, as eventTriggers asks it: a sourceless ability sees
             -- through its holder's range. The planar arm is a regression
@@ -3335,7 +3337,7 @@ stateTriggersOn gs
 -- ability, CR 603.8 holding it back until it has left the stack. The live
 -- reading comes first and keeps its order. data/scenarios/trigger's City in a
 -- Bottle scenario proves it, and data/scenarios/turn's Synthetic Final
--- Raising one the boards CR 725.1c's check hands on (GameState.heldBoards).
+-- Raising one the boards CR 725.1c's check hands on (Snapshots.heldBoards).
 stateTriggers :: [GameState] -> GameState -> [PendingTrigger]
 stateTriggers boards live = List.foldl' widen (armedOn live) (reverse boards)
   where
@@ -3728,7 +3730,7 @@ interveningHolds live pending =
       -- way the subject has no characteristics, and the clause reads a player.
       oid = case PendingTrigger.source pending of
         TriggerSource.OfObject bearer -> bearer
-        TriggerSource.Sourceless -> GameState.nextObjectId gs
+        TriggerSource.Sourceless -> Bookkeeping.nextObjectId (GameState.bookkeeping gs)
       -- CR 113.7a: the source slot Engine.placeBorne stamps, framed here too, so
       -- Hawkeye, Avenging Archer's "if Hawkeye dealt damage to it" reads a
       -- source that died beside the creature off its last known information at
@@ -3848,9 +3850,12 @@ firesWithout gone pending gs =
               { GameState.battlefield = Set.difference (GameState.battlefield gs) gone,
                 GameState.command = Set.difference (GameState.command gs) gone,
                 GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = filter (\e -> Set.notMember (ContinuousEffect.source e) gone) (StoredEffects.continuousEffects (GameState.stored gs))},
-                GameState.boardAfterEvent = Map.empty,
-                GameState.boardBeforeEvent = Map.empty,
-                GameState.battlefieldWhenTriggered = Map.empty
+                GameState.snapshots =
+                  (GameState.snapshots gs)
+                    { Snapshots.boardAfterEvent = Map.empty,
+                      Snapshots.boardBeforeEvent = Map.empty,
+                      Snapshots.battlefieldWhenTriggered = Map.empty
+                    }
               }
           same p =
             PendingTrigger.source p == PendingTrigger.source pending
@@ -3859,7 +3864,7 @@ firesWithout gone pending gs =
               && interveningHolds without p
        in case resnapshot gs without (LoggedEvent.event logged) of
             Nothing -> False
-            Just event' -> any same (eventTriggers [LoggedEvent.MkLoggedEvent (GameState.nextEventGroup gs) event'] without)
+            Just event' -> any same (eventTriggers [LoggedEvent.MkLoggedEvent (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) event'] without)
     _ -> False
 
 -- An event as it would have been recorded on the board `without`: each

@@ -80,6 +80,7 @@ import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.BlockersAre as BlockersAre
 import qualified Parun.Types.Board as Board
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
@@ -153,6 +154,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Start as Start
@@ -1302,7 +1304,7 @@ happened verb before after = case verb of
 -- 117.3c), CR 104.4b's last optional action, the counters that allocate
 -- event groups, timestamps and object ids, which a reversal need not rewind,
 -- the board the last control sample read, retaken at every check, and CR
--- 734.1's note of why a reversal happened (GameState.undone).
+-- 734.1's note of why a reversal happened (Bookkeeping.undone).
 untouched :: GameState.GameState -> GameState.GameState -> Bool
 untouched before after =
   let quiet gs =
@@ -1312,12 +1314,15 @@ untouched before after =
                 { TurnRegisters.passed = Set.empty,
                   TurnRegisters.priority = Nothing
                 },
-            GameState.lastChoice = GameState.lastChoice before,
-            GameState.nextEventGroup = GameState.nextEventGroup before,
-            GameState.nextTimestamp = GameState.nextTimestamp before,
-            GameState.nextObjectId = GameState.nextObjectId before,
-            GameState.boardAtControlSample = GameState.boardAtControlSample before,
-            GameState.undone = GameState.undone before
+            GameState.bookkeeping =
+              (GameState.bookkeeping gs)
+                { Bookkeeping.lastChoice = Bookkeeping.lastChoice (GameState.bookkeeping before),
+                  Bookkeeping.nextEventGroup = Bookkeeping.nextEventGroup (GameState.bookkeeping before),
+                  Bookkeeping.nextTimestamp = Bookkeeping.nextTimestamp (GameState.bookkeeping before),
+                  Bookkeeping.nextObjectId = Bookkeeping.nextObjectId (GameState.bookkeeping before),
+                  Bookkeeping.undone = Bookkeeping.undone (GameState.bookkeeping before)
+                },
+            GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardAtControlSample = Snapshots.boardAtControlSample (GameState.snapshots before)}
           }
    in quiet before == quiet after
 

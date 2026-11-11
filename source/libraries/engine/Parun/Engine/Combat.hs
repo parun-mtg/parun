@@ -2580,7 +2580,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         again = not (Set.member proposal rejected)
     -- CombatEffectSpec's "CR 508.1d an illegal declaration is rewound and asked
     -- again, not replaced by the ceiling's" is the proof.
-    -- The chooser asked again is told why (GameState.undone).
+    -- The chooser asked again is told why (Bookkeeping.undone).
     if not allowed && again
       then Game.noteUndoing chooser Undoing.IllegalDeclaration >> attemptAttackDeclaration perform pid (Just chooser) False (Set.insert proposal rejected)
       else do
@@ -2831,7 +2831,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             -- declaration owes no toll, the ceiling ranging over free
             -- announcements only, so `forced` cannot come back here.
             --
-            -- The chooser asked again is told why (GameState.undone).
+            -- The chooser asked again is told why (Bookkeeping.undone).
             Monad.unless forced $ do
               Monad.when again (Game.noteUndoing chooser Undoing.UnpaidCost)
               attemptAttackDeclaration perform pid (Just chooser) (not again) (if again then Set.insert proposal rejected else rejected)
@@ -3585,7 +3585,7 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
         again = not (Set.member chosen rejected)
     -- CombatEffectSpec's "CR 509.1c an illegal declaration is rewound and asked
     -- again, not replaced by the ceiling's" is the proof.
-    -- The chooser asked again is told why (GameState.undone).
+    -- The chooser asked again is told why (Bookkeeping.undone).
     if not allowed && again
       then Game.noteUndoing chooser Undoing.IllegalDeclaration >> attemptBlockDeclaration perform pid (Just chooser) attacking (Set.insert chosen rejected)
       else do
@@ -3642,7 +3642,7 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
         gs2 <- State.get
         if not paid && again
           then do
-            -- The chooser asked again is told why (GameState.undone).
+            -- The chooser asked again is told why (Bookkeeping.undone).
             Game.noteUndoing chooser Undoing.UnpaidCost
             attemptBlockDeclaration perform pid (Just chooser) attacking (Set.insert chosen rejected)
           else do

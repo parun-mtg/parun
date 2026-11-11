@@ -14,7 +14,7 @@ import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 -- and a copy of a spell are different things under CR 108, CR 701.42a, CR 111,
 -- CR 114 and CR 707.10, and the engine cases on which of them it has.
 data Source
-  = -- | CR 108: a card, named by its entry in GameState.printings.
+  = -- | CR 108: a card, named by its entry in Bookkeeping.printings.
     OfCard PrintingId.PrintingId
   | -- | CR 701.42a: a melded permanent -- "a single object represented by two
     -- cards", which Parun.Types.MeldSource carries and documents. CR 713.5c gives

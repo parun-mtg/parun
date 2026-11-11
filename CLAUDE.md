@@ -310,19 +310,19 @@ to agents as written. What it doesn't say:
 
     A NEW `GameState` FIELD resets across a restart and a subgame
     (`Parun.Engine.Setup`'s `blankGame`) unless `restartGame` or
-    `subgameStateFrom` names it as kept.
+    `subgameStateFrom` names it as kept, or, for a `Bookkeeping` field,
+    `inheritedBookkeeping`.
 
     A RECORD UPDATE keeps the old value of a field you added, so a descent
     that rebuilds a record drops it: grep `{ SomeRecord.field = ` and say in
     the PR which you checked. The recurring site is
     `Parun.Engine.Projection.Rewrite`'s walks over payload types (CR 612.1);
     its `rewriteEffect` is forced by `Parun.Engine.Children`'s positional
-    match. The one
-    update that keeps fields ON PURPOSE is
-    `Parun.Engine.Resolve.Common.happenedBetween` (CR 603.12): any write an
-    instruction makes whether or not it happened --- a prune, a cache, a
-    stamp, a zero tally, in a new field or an existing one --- owes a
-    copy-across there, or an ignored instruction arms its "when you do".
+    match. A write an instruction makes whether or not it happened --- a
+    prune, a cache, a stamp, a zero tally --- goes in `GameState.bookkeeping`
+    or `GameState.snapshots`, which
+    `Parun.Engine.Resolve.Common.happenedBetween` (CR 603.12) skips whole;
+    anywhere else it arms an ignored instruction's "when you do".
 
     A NEW READ OF A PERMANENT'S CARD goes through the projection
     (`Parun.Engine.Projection.View`) or the copiable record it stamps

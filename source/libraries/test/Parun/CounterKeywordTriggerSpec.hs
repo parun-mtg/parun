@@ -78,6 +78,7 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -811,8 +812,11 @@ modularSpec s registry =
           let (settled, _) = murderIt exercising gs
               forgotten =
                 settled
-                  { GameState.lastKnown =
-                      Map.adjust (\lk -> lk {LastKnown.counters = Map.empty}) hybridId (GameState.lastKnown settled)
+                  { GameState.snapshots =
+                      (GameState.snapshots settled)
+                        { Snapshots.lastKnown =
+                            Map.adjust (\lk -> lk {LastKnown.counters = Map.empty}) hybridId (Snapshots.lastKnown (GameState.snapshots settled))
+                        }
                   }
               after = S.runPure exercising forgotten Stack.resolveTop
           Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1

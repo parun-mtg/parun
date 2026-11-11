@@ -73,6 +73,7 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndingStep as EndingStep
@@ -273,7 +274,7 @@ spec s registry = Spec.describe s "Face-down exile" $ do
         _ -> Spec.assertFailure s "the two castings should make two piles"
     -- CR 104.4b, Parun.InvestigateSpec's random reveal one rule over: being asked
     -- for randomness is not being offered a CHOICE, so CR 406.4's draw goes
-    -- through Game.ask and leaves GameState.lastChoice alone. Otherwise a loop
+    -- through Game.ask and leaves Bookkeeping.lastChoice alone. Otherwise a loop
     -- of mandatory actions containing such a draw would look interruptible and
     -- Parun.Engine.Departure.checkMandatoryLoop could never call it a draw.
     --
@@ -284,12 +285,12 @@ spec s registry = Spec.describe s "Face-down exile" $ do
       exiled <- castBliss s registry
       case pilesIn exiled of
         [pile] -> do
-          let board = exiled {GameState.lastChoice = Timestamp.MkTimestamp 0}
+          let board = exiled {GameState.bookkeeping = (GameState.bookkeeping exiled) {Bookkeeping.lastChoice = Timestamp.MkTimestamp 0}}
               (drawn, after) = S.runPureWith throughPile board (fst <$> Target.drawFromPiles (Just S.alice) (Set.singleton (firstDraw pile)))
           case membersOfPile board pile of
             [_, second] -> Spec.assertEqWith s "the draw was honoured, naming the last card of the pile" (Set.toList drawn) [Recipient.ToObject second]
             _ -> Spec.assertFailure s "the casting should hide two cards in one pile"
-          Spec.assertEqWith s "and nobody was recorded as having been offered a choice" (GameState.lastChoice after) (Timestamp.MkTimestamp 0)
+          Spec.assertEqWith s "and nobody was recorded as having been offered a choice" (Bookkeeping.lastChoice (GameState.bookkeeping after)) (Timestamp.MkTimestamp 0)
         _ -> Spec.assertFailure s "one casting should make one pile"
     -- CR 406.4 under CR 115.3: a slot wanting TWO exiled cards may name the one
     -- pile twice, each naming a draw, and the second draw is over what the first

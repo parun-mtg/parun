@@ -70,7 +70,7 @@ data DelayedTrigger = MkDelayedTrigger
     -- later, and CR 701.27g/701.28f measure a delayed ability's own transform or
     -- convert from this one.
     --
-    -- A Timestamp from the same GameState.nextTimestamp counter every other
+    -- A Timestamp from the same Bookkeeping.nextTimestamp counter every other
     -- moment in the game comes from, so it compares against Object.turnedOverAt
     -- and Object.timestamp without a second clock.
     createdAt :: Timestamp.Timestamp

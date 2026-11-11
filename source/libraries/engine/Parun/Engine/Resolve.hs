@@ -90,6 +90,7 @@ import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -583,7 +584,7 @@ applyEpic oid controller = do
               }
        in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored g1)}}
     -- Rule 702.50a's SECOND ability. The spell is still on the stack here, so the
-    -- object is filed in GameState.stackArchive for Effect.CopyStackObject to
+    -- object is filed in Snapshots.stackArchive for Effect.CopyStackObject to
     -- find once CR 400.7 has deleted this id -- carrying rule 702.50a's "except
     -- for its epic ability" in its copiable snapshot, so the copy is a spell
     -- without epic and arms no second copier. The object's own bindings ride
@@ -603,7 +604,7 @@ applyEpic oid controller = do
               (Map.singleton Keyword.Engine.epicSlot (Binding.toObject oid))
               (Just TurnWindow.AnyTurn)
               (Just Expiry.Type.Never)
-              g {GameState.stackArchive = Map.insert oid archived (GameState.stackArchive g)}
+              g {GameState.snapshots = (GameState.snapshots g) {Snapshots.stackArchive = Map.insert oid archived (Snapshots.stackArchive (GameState.snapshots g))}}
 
 -- CR 702.192a's "the first time a spell you control with this spell's name has
 -- resolved this game": file the resolving spell's names under its controller in
@@ -634,7 +635,7 @@ noteResolved oid controller = do
 --
 -- The keyword is read off the PROJECTION, applyEpic's reading. The ability is
 -- armed with Expiry.Never for "for the rest of the game", epic's reason, and
--- binds this id for Keyword.paradigmCopy to find in GameState.stackArchive.
+-- binds this id for Keyword.paradigmCopy to find in Snapshots.stackArchive.
 -- Parun.CastSpec's "Paradigm" group proves both abilities.
 applyParadigm :: Game () -> ObjectId -> PlayerId -> Bool -> Game Bool
 applyParadigm settle oid controller firstOfName = do
@@ -1590,13 +1591,13 @@ liveBindings obj oid gs = case Game.lookupObject oid gs of
   Just live -> Object.bindings live
   Nothing -> Map.union (Map.findWithDefault Map.empty oid (GameState.detachedBindings gs)) departed
   where
-    -- GameState.stackArchive ahead of the pre-fold snapshot, and only for the
+    -- Snapshots.stackArchive ahead of the pre-fold snapshot, and only for the
     -- object's OWN departure: a spell that moved ITSELF (CR 201.5, Chronomantic
     -- Escape) went through the CR 400.7 funnel, which filed its bindings as of the
     -- move, while `obj` is the reading resolution BEGAN with and cannot hold a
     -- slot a clause defined since. Parun.Engine.Resolve.Slots.resolvingBindings is
     -- the same preference for the readers that take no snapshot.
-    departed = maybe (Object.bindings obj) Object.bindings (Map.lookup oid (GameState.stackArchive gs))
+    departed = maybe (Object.bindings obj) Object.bindings (Map.lookup oid (Snapshots.stackArchive (GameState.snapshots gs)))
 
 -- bindPlayerSlot's plural: bind SEVERAL players a resolution named into `slot` on
 -- `holder` -- CR 118.12a's per-player gate, CR 603.5's printed "may", and CR

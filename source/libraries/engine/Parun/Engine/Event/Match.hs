@@ -156,6 +156,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
@@ -824,7 +825,7 @@ dealtToRelated board gs related orTheirPlaneswalkers target
 -- battlefield as its destination (grep, 2026-10-28).
 --
 -- Asked of the game filed immediately after the entry
--- (GameState.boardAfterEvent), so a silencer that entered beside the entrant,
+-- (Snapshots.boardAfterEvent), so a silencer that entered beside the entrant,
 -- or is the entrant, counts. The live game answers for an entry none is filed
 -- for. That the filed board is read rather than the live one is a regression
 -- fence: the suite stays green under the live read, since no scenario has a
@@ -847,8 +848,8 @@ additionalEntryTriggers gs you zc
 -- CR 603.2d: how many additional times `bearer`'s triggered ability triggers on
 -- the event of `group`, for a bearer that was a permanent then (CR 110.1): a card
 -- in a graveyard or an emblem has no such abilities. Read off the board the
--- ability itself reads: CR 603.10's after the event (GameState.boardAfterEvent),
--- or for `looksBack` the board before it (GameState.boardBeforeEvent; CR
+-- ability itself reads: CR 603.10's after the event (Snapshots.boardAfterEvent),
+-- or for `looksBack` the board before it (Snapshots.boardBeforeEvent; CR
 -- 603.10a, 603.10b, 603.10c, 603.10d, 603.10f; CR 603.2d's count is taken in that
 -- look-back: Teysa Karlov's and Drivnod's rulings count a doubler that left in the
 -- event, whether the ability's permanent stays or leaves). A look-back ability's event with
@@ -857,7 +858,7 @@ additionalEntryTriggers gs you zc
 additionalTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> Natural
 additionalTriggers gs you bearer group looksBack =
   let after = gameAfter group gs
-      before = if looksBack then Maybe.maybeToList (Map.lookup group (GameState.boardBeforeEvent gs)) else []
+      before = if looksBack then Maybe.maybeToList (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) else []
    in case filter (Set.member bearer . GameState.battlefield) (before <> [after]) of
         board : _ -> PlayerEffect.additionalTriggers you bearer board
         [] -> 0
@@ -868,10 +869,10 @@ atEntry :: GameState -> ObjectId -> GameState
 atEntry gs entrant = maybe gs (`gameAfter` gs) (Game.entryGroup entrant gs)
 
 -- The game Event.Trigger.fileBoards filed immediately after the events of
--- `group` (GameState.boardAfterEvent), or `live` for a group none is filed for
+-- `group` (Snapshots.boardAfterEvent), or `live` for a group none is filed for
 -- yet.
 gameAfter :: EventGroup.EventGroup -> GameState -> GameState
-gameAfter group live = Map.findWithDefault live group (GameState.boardAfterEvent live)
+gameAfter group live = Map.findWithDefault live group (Snapshots.boardAfterEvent (GameState.snapshots live))
 
 -- CR 603.2: can any trigger condition read this event? The one exhaustive answer
 -- about events in trigger matching: a new GameEvent constructor stops the build

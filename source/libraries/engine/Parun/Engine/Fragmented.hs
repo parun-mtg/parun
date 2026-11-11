@@ -35,6 +35,7 @@ import Parun.Types.Action (Action)
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveCopy as ActiveCopy
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Completion as Completion
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
@@ -42,7 +43,6 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.EntryLink as EntryLink
-import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExileLink as ExileLink
 import Parun.Types.GameEvent (GameEvent)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -68,7 +68,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Printing as Printing
-import qualified Parun.Types.PrintingId as PrintingId
+import qualified Parun.Types.Snapshots as Snapshots
 import Parun.Types.StateDigest (StateDigest)
 import qualified Parun.Types.StateDigest as StateDigest
 import qualified Parun.Types.StickerPlacement as StickerPlacement
@@ -93,14 +93,15 @@ import qualified Text.Read as Read
 -- lap's did -- an under-detection. docs/decisions.md, "When a re-created
 -- object is the same game state".
 --
--- Dropped as bookkeeping no card reads: the id, timestamp, printing and event
--- group supplies; CR 104.4b's `lastChoice` and `loopInvolvement`; CR 733.3's
--- own `repeatPicks`, which a RepeatIf's runs compare digests to fill; CR
--- 734.1's `undone`, which only a client reads; the grow-only printing
--- interning; and the scan state keyed off the log
--- (`scannedThrough`, `damageScannedThrough`, `battlefieldWhenTriggered`,
--- `controlSample`, `stackedIn`). `lastKnown` and `stackArchive` are keyed by
--- ids that have left (CR 400.7), so only the entries of the ids the rest of
+-- Dropped as bookkeeping no card reads: GameState.bookkeeping whole -- the id,
+-- timestamp, printing and event group supplies, the grow-only printing
+-- interning and Oracle caches, CR 104.4b's `lastChoice`, CR 733.3's own
+-- `repeatPicks`, which a RepeatIf's runs compare digests to fill, CR 734.1's
+-- `undone`, which only a client reads, and CR 603.12's `fellShort`; CR 104.4b's
+-- `loopInvolvement`; and the scan state keyed off the log (`scannedThrough`,
+-- `damageScannedThrough`, `stackedIn`) with GameState.snapshots whole. Its
+-- `lastKnown` and `stackArchive` are keyed by ids that have left (CR 400.7), so
+-- only the entries of the ids the rest of
 -- the state holds are compared.
 --
 -- Dropped as history a card CAN read: `events` and `activationsThisTurn`.
@@ -129,25 +130,9 @@ digest gs =
             GameState.counteredWith = Map.filter (not . Set.null) (fmap (Set.map (\link -> link {CounterLink.acquisition = reacquire (CounterLink.acquisition link)}) . Set.filter (readsOwnCounterLinks gs . CounterLink.source)) (GameState.counteredWith gs)),
             -- Only a countdown shield's key is read, and its row, compared here, shrinks as it grows.
             GameState.damagePreventedBy = Map.empty,
-            GameState.nextObjectId = ObjectId.MkObjectId 0,
-            GameState.nextTimestamp = Timestamp.MkTimestamp 0,
-            GameState.nextPrintingId = PrintingId.MkPrintingId 0,
-            GameState.nextEventGroup = EventGroup.MkEventGroup 0,
-            GameState.eventGroupDepth = 0,
-            GameState.lastChoice = Timestamp.MkTimestamp 0,
             GameState.loopInvolvement = Map.empty,
-            GameState.repeatPicks = Nothing,
-            GameState.undone = Map.empty,
-            GameState.printings = Map.empty,
-            GameState.printingIds = Map.empty,
-            GameState.boardAfterEvent = Map.empty,
-            GameState.boardBeforeEvent = Map.empty,
-            GameState.battlefieldWhenTriggered = Map.empty,
-            GameState.controlSample = Map.empty,
-            GameState.boardAtControlSample = Nothing,
-            GameState.heldBoards = [],
-            GameState.lastKnown = Map.empty,
-            GameState.stackArchive = Map.empty,
+            GameState.bookkeeping = Game.blankBookkeeping,
+            GameState.snapshots = Game.blankSnapshots,
             GameState.cardsPlayed = Map.empty,
             -- Canonical rather than dropped, so CR 733.3's own example recurs,
             -- and a loop that moves a counter back.
@@ -165,7 +150,7 @@ digest gs =
       -- (`readers`), so a renamed id is the same object only where the
       -- history answers for it as for the one it renames.
       told oid = (Game.arrivalsOf oid gs, Maybe.isJust (Game.entryGroup oid gs), Maybe.isJust (MoveDuration.departedIn oid gs), Count.revealedInPlace gs oid, Count.revealedArriving gs oid)
-      departed = show (Map.restrictKeys (GameState.lastKnown gs) held, Map.restrictKeys (GameState.stackArchive gs) held, Map.restrictKeys (GameState.cardsPlayed gs) held, fmap told (Set.toAscList held))
+      departed = show (Map.restrictKeys (Snapshots.lastKnown (GameState.snapshots gs)) held, Map.restrictKeys (Snapshots.stackArchive (GameState.snapshots gs)) held, Map.restrictKeys (GameState.cardsPlayed gs) held, fmap told (Set.toAscList held))
       rendered = shown <> departed
       ids = ranked objectIdTag rendered
    in StateDigest.MkStateDigest
@@ -241,7 +226,7 @@ choiceKey here = renumber (StateDigest.objectRanks here) Map.empty . show
 -- counters of its kind, which leaves it inert. The rest stamped after every
 -- other stamp CR 613.7 orders them against (`layeredStamps`) are then
 -- restamped in order from just above the latest of those, since only their
--- order is ever read (`digest` drops GameState.nextTimestamp).
+-- order is ever read (`digest` drops Bookkeeping.nextTimestamp).
 --
 -- Parun.FragmentedSpec's Mist Dragon cases prove both halves for the rows, its
 -- Arcanum Wings case the floor, and its Grim Poppet case both for the
@@ -374,7 +359,7 @@ lapIsRead there gs =
        in if prefix == before then Just rest else Nothing
 
 -- | Every reader of the history in the game, as what it reads. Every
--- printing, in every zone and outside the game, through GameState.printings,
+-- printing, in every zone and outside the game, through Bookkeeping.printings,
 -- which interns them all, as Parun.Engine.Interchangeable.Mentions classifies
 -- it; a token or copy spec nests inside its creator's face.
 --
@@ -397,7 +382,7 @@ readers gs =
   -- Parun.Engine.Daytime's untap-step check of the casts (CR 732.2a), once it
   -- is day or night.
   Set.fromList ([HistoryRead.PlanarRolls | Planechase.isPlanechase gs] <> [HistoryRead.Triggers | any (Maybe.isJust . Player.speed) (GameState.players gs)] <> [HistoryRead.Casts | Maybe.isJust (GameState.daytime gs)])
-    <> foldMap (Mentions.cardNames historyReads . Printing.card) (GameState.printings gs)
+    <> foldMap (Mentions.cardNames historyReads . Printing.card) (Bookkeeping.printings (GameState.bookkeeping gs))
 
 -- The history question, asked of every leaf.
 historyReads :: Mentions.Asking (Set.Set HistoryRead.HistoryRead)

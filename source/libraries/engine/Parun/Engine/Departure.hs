@@ -37,6 +37,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Decider as Decider
 import Parun.Types.Departure (Departure)
 import qualified Parun.Types.Departure as Departure
@@ -802,7 +803,7 @@ leaveGameTogether replacing reason pids = do
 -- A HEURISTIC, and deliberately a crude one: detecting such a loop in general is
 -- the halting problem, so the question this answers is "has this gone on longer
 -- than any real game would?". The MARGIN is what makes it safe.
--- GameState.nextTimestamp advances on the events CR 104.4b names (CR 613.7a,
+-- Bookkeeping.nextTimestamp advances on the events CR 104.4b names (CR 613.7a,
 -- 613.7c, 613.7d), and the slowest real ending -- decking out from a 60-card
 -- library -- spends on the order of fifty of them, twenty times under the limit,
 -- where a two-card recursion loop arrives in a few hundred.
@@ -827,14 +828,14 @@ mandatoryLoopLimit = 1000
 -- moves no card -- never widens the gap, but it does repeat the pass. Parun.GameSpec's
 -- "a borrowed Lich's Mirror moving nothing is a draw" proves the wiring.
 --
--- The subtractions cannot underflow: GameState.lastChoice only ever takes a past
--- GameState.nextTimestamp, that supply only counts up, and `recent` is floored at
+-- The subtractions cannot underflow: Bookkeeping.lastChoice only ever takes a past
+-- Bookkeeping.nextTimestamp, that supply only counts up, and `recent` is floored at
 -- zero.
 checkMandatoryLoop :: Natural -> Game ()
 checkMandatoryLoop passes = do
   gs <- State.get
-  let now = Timestamp.unwrap (GameState.nextTimestamp gs)
-      gap = now - Timestamp.unwrap (GameState.lastChoice gs)
+  let now = Timestamp.unwrap (Bookkeeping.nextTimestamp (GameState.bookkeeping gs))
+      gap = now - Timestamp.unwrap (Bookkeeping.lastChoice (GameState.bookkeeping gs))
       recent = Timestamp.MkTimestamp (now - min now (div mandatoryLoopLimit 2))
       involved = Map.keys (Map.filter (>= recent) (GameState.loopInvolvement gs))
       drawn = Set.fromList (concatMap (\pid -> Players.table (Just pid) gs) involved)
@@ -843,13 +844,13 @@ checkMandatoryLoop passes = do
     if ranged && not (Set.null drawn)
       then do
         leaveGameTogether True Departure.Drew (filter (`Set.member` drawn) (Game.apnapOrder gs))
-        State.modify' (\g -> g {GameState.lastChoice = GameState.nextTimestamp g})
+        State.modify' (\g -> g {GameState.bookkeeping = (GameState.bookkeeping g) {Bookkeeping.lastChoice = Bookkeeping.nextTimestamp (GameState.bookkeeping g)}})
       else settle (Just Result.Drawn)
 
 -- The `passes` checkMandatoryLoop counts, one pass on: none if a player was asked
--- something during it (GameState.lastChoice moved off `before`, its value as the
+-- something during it (Bookkeeping.lastChoice moved off `before`, its value as the
 -- pass began), one more otherwise.
 passesSince :: Timestamp.Timestamp -> Natural -> Game Natural
 passesSince before passes = do
-  now <- State.gets GameState.lastChoice
+  now <- State.gets (Bookkeeping.lastChoice . GameState.bookkeeping)
   pure (if now == before then passes + 1 else 0)

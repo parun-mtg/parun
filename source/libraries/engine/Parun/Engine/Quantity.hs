@@ -87,6 +87,7 @@ import qualified Parun.Types.Quotient as Quotient
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.SlotArity as SlotArity
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -944,7 +945,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- The LIVE object first, which is the ordinary read: rule 608.2n ceases the
         -- ability at the END of its resolution, so it is still on the stack while its own
-        -- clauses run. GameState.stackArchive behind it is a REGRESSION FENCE rather than
+        -- clauses run. Snapshots.stackArchive behind it is a REGRESSION FENCE rather than
         -- a proved line: the object asked is the one resolving, still live, and an
         -- ability Game.cease filed there would answer under its own Source, the same
         -- key.
@@ -970,7 +971,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- dragon-whelp scenarios are what prove it.
         Quantity.TimesThisTurn act -> do
           oid <- mOid
-          obj <- Game.lookupObject oid gs <|> Map.lookup oid (GameState.stackArchive gs)
+          obj <- Game.lookupObject oid gs <|> Map.lookup oid (Snapshots.stackArchive (GameState.snapshots gs))
           pure . toInteger $ case act of
             AbilityAct.Resolved ->
               length (filter (== Object.source obj) (Maybe.mapMaybe (Game.abilityResolved . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))

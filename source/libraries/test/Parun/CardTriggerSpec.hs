@@ -1464,7 +1464,7 @@ monarchTriggerSpec s registry =
 -- which is the observation point Event.sampleControl exists to provide: control is
 -- derived (CR 613.1b layer 2), so the CR 514.2 sweep that ends the spell's
 -- until-end-of-turn control effect announces nothing, and the diff against
--- GameState.controlSample is what mints the GameEvent.ControlChanged the condition
+-- Snapshots.controlSample is what mints the GameEvent.ControlChanged the condition
 -- matches. CR 514.3a is what then gives the trigger its round: a triggered ability
 -- waiting during the cleanup step gets put on the stack and the active player gets
 -- priority.

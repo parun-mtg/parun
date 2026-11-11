@@ -102,6 +102,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -469,12 +470,12 @@ lastKnownSpec s registry = Spec.describe s "LastKnownInformation" $ do
     ghituFireEater <- S.printingOf s registry "Ghitu Fire-Eater"
     let (srcId, g0) = S.addPermanent ghituFireEater S.alice (Setup.emptyGame S.bothPlayers)
         pumped = S.withEffect srcId (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Type.Literal 3) (Quantity.Type.Literal 3))) g0
-    Spec.assertEqWith s "nothing filed before it moves" (Map.lookup srcId (GameState.lastKnown pumped)) Nothing
+    Spec.assertEqWith s "nothing filed before it moves" (Map.lookup srcId (Snapshots.lastKnown (GameState.snapshots pumped))) Nothing
     let moved = S.runPure S.identityAnswer pumped (Event.changeZone (pure ()) srcId Zone.Graveyard)
     Spec.assertEqWith
       s
       "the snapshot is the projected power it had, not the printed one"
-      (fmap (PC.power . LastKnown.characteristics) (Map.lookup srcId (GameState.lastKnown moved)))
+      (fmap (PC.power . LastKnown.characteristics) (Map.lookup srcId (Snapshots.lastKnown (GameState.snapshots moved))))
       (Just (Just 5))
     -- CR 613.1b / 603.3a: the record keeps who controlled it as it left, not
     -- only what it looked like -- the half Event.eventTriggers needs to hand
@@ -482,7 +483,7 @@ lastKnownSpec s registry = Spec.describe s "LastKnownInformation" $ do
     Spec.assertEqWith
       s
       "and who controlled it as it left"
-      (fmap LastKnown.controller (Map.lookup srcId (GameState.lastKnown moved)))
+      (fmap LastKnown.controller (Map.lookup srcId (Snapshots.lastKnown (GameState.snapshots moved))))
       (Just S.alice)
 
   Spec.it s "CR 608.2h the fallback is only a fallback: a source still there reads LIVE" $ do

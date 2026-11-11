@@ -94,6 +94,7 @@ import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.BecameTarget as BecameTarget
 import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.Binding as Binding.Type
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import Parun.Types.CandidateId (CandidateId)
 import Parun.Types.Card (Card)
@@ -288,6 +289,7 @@ import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpentOn as SpentOn
@@ -336,7 +338,7 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- which is also what lets it be where CR 603.10's "immediately after an event" is
 -- sampled: the caller has already applied the event to the board by the time it
 -- gets here, so the pre-append state IS the board the rule asks about, and
--- GameState.battlefieldWhenTriggered files it under this event's group.
+-- Snapshots.battlefieldWhenTriggered files it under this event's group.
 --
 -- Sampled at EVERY record, not only at the one that opens a batch, and the
 -- overwrite within a group is deliberate rather than waste: a group is CR 608.2f's
@@ -363,13 +365,13 @@ recordEvent event gs = recordEventOver (battlefieldCandidates gs) event gs
 -- in the suite moves with one batch board, so a later filing would read the same.
 fileBoardBefore :: GameState -> GameState -> GameState
 fileBoardBefore before gs =
-  let board = before {GameState.boardAfterEvent = Map.empty, GameState.boardBeforeEvent = Map.empty, GameState.boardAtControlSample = Nothing}
-   in gs {GameState.boardBeforeEvent = Map.insertWith (\_ filed -> filed) (GameState.nextEventGroup gs) board (GameState.boardBeforeEvent gs)}
+  let board = before {GameState.snapshots = (GameState.snapshots before) {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing}}
+   in gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardBeforeEvent = Map.insertWith (\_ filed -> filed) (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) board (Snapshots.boardBeforeEvent (GameState.snapshots gs))}}
 
 -- The OBSERVATION POINT for a control change (CR 613.1b puts control in layer 2,
 -- so the projection re-reads it live and nothing announces the answer changing).
 -- Diffs the live controller of every battlefield permanent against
--- GameState.controlSample, records a GameEvent.ControlChanged for each
+-- Snapshots.controlSample, records a GameEvent.ControlChanged for each
 -- difference, stores the new snapshot, and reports whether it recorded anything.
 --
 -- MINTING AN EVENT is what makes this different from the three other samplers
@@ -410,23 +412,23 @@ sampleControl = do
           pure (oid, pid)
       changes = do
         (oid, after) <- Map.toList sampled
-        Just before <- [Map.lookup oid (GameState.controlSample gs)]
+        Just before <- [Map.lookup oid (Snapshots.controlSample (GameState.snapshots gs))]
         Monad.guard (before /= after)
         pure (GameEvent.ControlChanged (ControlChanged.MkControlChanged oid before after))
       arrivals = do
         (oid, after) <- Map.toList sampled
-        Monad.guard (Map.lookup oid (GameState.controlSample gs) /= Just after)
+        Monad.guard (Map.lookup oid (Snapshots.controlSample (GameState.snapshots gs)) /= Just after)
         pure (oid, after)
       gain (oid, who) objs = case Map.lookup oid objs of
         Just obj -> Map.insert oid obj {Object.controlClock = Map.insert who ControlClock.Gained (Object.controlClock obj)} objs
         Nothing -> objs
-      board = gs {GameState.boardAfterEvent = Map.empty, GameState.boardBeforeEvent = Map.empty, GameState.boardAtControlSample = Nothing}
-  State.put gs {GameState.controlSample = sampled, GameState.objects = foldr gain (GameState.objects gs) arrivals, GameState.boardAtControlSample = Just board}
+      board = gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing}}
+  State.put gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.controlSample = sampled, Snapshots.boardAtControlSample = Just board}, GameState.objects = foldr gain (GameState.objects gs) arrivals}
   -- CR 603.2's simultaneity: two permanents whose control reverted in the same CR
   -- 514.2 sweep changed hands at the same moment, so the batch is one event group.
   -- CR 603.10d: the batch looks back to the board the previous sample read.
   Monad.unless (null changes) . simultaneously $
-    State.modify' (\g -> List.foldl' (flip recordEvent) (maybe g (`fileBoardBefore` g) (GameState.boardAtControlSample gs)) changes)
+    State.modify' (\g -> List.foldl' (flip recordEvent) (maybe g (`fileBoardBefore` g) (Snapshots.boardAtControlSample (GameState.snapshots gs))) changes)
   pure (not (null changes))
 
 -- The GameEvent for a gain or loss recorded next, stamped with whether the log
@@ -470,7 +472,7 @@ restampLifeChanges logged =
 -- on one unchanged board (Mana.triggeredYields').
 recordEventOver :: Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameEvent -> GameState -> GameState
 recordEventOver sample event gs =
-  let group = GameState.nextEventGroup gs
+  let group = Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
    in ( Game.overTurn
           ( \registers ->
               registers
@@ -479,12 +481,18 @@ recordEventOver sample event gs =
           )
           (involveActedOn event (exposeShown event gs))
       )
-        { GameState.nextEventGroup =
-            if GameState.eventGroupDepth gs == 0
-              then EventGroup.next group
-              else group,
-          GameState.battlefieldWhenTriggered =
-            Map.insert group sample (GameState.battlefieldWhenTriggered gs)
+        { GameState.bookkeeping =
+            (GameState.bookkeeping gs)
+              { Bookkeeping.nextEventGroup =
+                  if Bookkeeping.eventGroupDepth (GameState.bookkeeping gs) == 0
+                    then EventGroup.next group
+                    else group
+              },
+          GameState.snapshots =
+            (GameState.snapshots gs)
+              { Snapshots.battlefieldWhenTriggered =
+                  Map.insert group sample (Snapshots.battlefieldWhenTriggered (GameState.snapshots gs))
+              }
         }
 
 -- CR 801.16: every object an event acts on is involved in whatever the game is
@@ -681,7 +689,7 @@ together body = do
       result <- body
       batch <- State.gets (Maybe.fromMaybe EnteringTogether.empty . GameState.enteringTogether)
       State.modify' (\g -> g {GameState.enteringTogether = Nothing})
-      Restamp.settle (GameState.nextTimestamp before) (Foldable.toList (EnteringTogether.arrivals batch))
+      Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (Foldable.toList (EnteringTogether.arrivals batch))
       Monad.mapM_ (recordMintedArrival Zone.Battlefield) (EnteringTogether.minted batch)
       pure result
 
@@ -755,18 +763,21 @@ transformedAt oid gs =
     characteristics = Projection.project oid gs
 
 openEventGroup :: GameState -> GameState
-openEventGroup gs = gs {GameState.eventGroupDepth = GameState.eventGroupDepth gs + 1}
+openEventGroup gs = gs {GameState.bookkeeping = (GameState.bookkeeping gs) {Bookkeeping.eventGroupDepth = Bookkeeping.eventGroupDepth (GameState.bookkeeping gs) + 1}}
 
 closeEventGroup :: GameState -> GameState
 closeEventGroup gs =
-  let depth = GameState.eventGroupDepth gs
+  let depth = Bookkeeping.eventGroupDepth (GameState.bookkeeping gs)
       left = if depth == 0 then 0 else depth - 1
    in gs
-        { GameState.eventGroupDepth = left,
-          GameState.nextEventGroup =
-            if left == 0
-              then EventGroup.next (GameState.nextEventGroup gs)
-              else GameState.nextEventGroup gs
+        { GameState.bookkeeping =
+            (GameState.bookkeeping gs)
+              { Bookkeeping.eventGroupDepth = left,
+                Bookkeeping.nextEventGroup =
+                  if left == 0
+                    then EventGroup.next (Bookkeeping.nextEventGroup (GameState.bookkeeping gs))
+                    else Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
+              }
         }
 
 -- CR 119.4: a player may pay an amount of life greater than 0 only if their life
@@ -1594,7 +1605,7 @@ conjureOntoBattlefield settle controller card copied count tapped = do
       refusals <- traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid) ids
       let entered = [oid | (oid, Nothing) <- refusals]
       Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
-      settleMinted (GameState.nextTimestamp gs) entered
+      settleMinted (Bookkeeping.nextTimestamp (GameState.bookkeeping gs)) entered
       pure (Seq.fromList entered)
 
 -- CR 114.2: a player gets an emblem with the given abilities, put into the
@@ -7461,7 +7472,7 @@ changeZonesTogether settle batch = simultaneously . together $ do
         pure (foldr Set.insert sofar new, new : acc)
   arrived <- fmap (reverse . snd) (amongPending Nothing entering (Monad.foldM step (Set.empty, []) moves))
   -- CR 613.7m: noted here, ordered as `together` ends.
-  Restamp.settle (GameState.nextTimestamp before) (concatMap Foldable.toList arrived)
+  Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (concatMap Foldable.toList arrived)
   pure arrived
 
 -- changeZoneReturning's body, returning the destination incarnations' ids: one
@@ -7809,7 +7820,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
     -- -- they rewrite the destination -- and none of the three things that loop
     -- does write on this path touches them: CR 701.20's reveal appends to the
     -- event log, Replacement.consume marks a candidate spent, and CR 616.1's
-    -- Replacement.choose writes GameState.lastChoice when two rows differ enough
+    -- Replacement.choose writes Bookkeeping.lastChoice when two rows differ enough
     -- to be worth a prompt (Rest in Peace beside Leyline of the Void, or either
     -- beside Nexus of Fate).
     Just obj | Game.tokenHasLeftTheBattlefield obj -> pure Seq.empty
@@ -8496,42 +8507,45 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                         -- permanent has left and its effect has not yet been handed
                         -- over.
                         GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = handover <> StoredEffects.continuousEffects (GameState.stored g1)},
-                        -- CR 608.2h: the object ceases here, so this is the last
-                        -- moment its information is known. Filed under the id it had
-                        -- while it existed -- the id an ability on the stack still
-                        -- carries as its source (CR 113.7) -- and as the same
-                        -- record `snapshot` the Moved event below records is read
-                        -- from, so the two readings of "what was it" cannot drift
-                        -- apart.
-                        --
-                        -- Read off `lki`, the pre-batch board, and not the live
-                        -- `gs`: in a simultaneous batch an Equipment with a lower id
-                        -- moves before its host, and the live board has already
-                        -- forgotten it. Parun.LeavesTriggerSpec's "the Equipment dying
-                        -- in the same batch, ahead of its host" is the proof.
-                        GameState.lastKnown = Map.insert oid known (GameState.lastKnown g1),
-                        -- CR 608.2h's record for a STACK object, filed in the same
-                        -- write and from the same board as `lastKnown` above, which
-                        -- cannot keep it: rule 707.10 copies the DECISIONS, and CR
-                        -- 109.3 makes none of them a characteristic, so what an
-                        -- Effect.CopyStackObject needs afterwards is the whole
-                        -- object. CR 702.40a's storm over a Grapeshot countered
-                        -- while its trigger waited is the board.
-                        --
-                        -- The copiable snapshot is stamped on the way in for the
-                        -- reason `lastKnown` takes one: CR 613.1a's layer is read
-                        -- off `obj`, which is about to cease, and CR 707.2 asks the
-                        -- copy for those values rather than for a fresh reading of a
-                        -- card.
-                        --
-                        -- insertWith keeping the OLDER entry, because an arming
-                        -- effect files its own reading first and rule 702.50a's
-                        -- epic ("copy this spell except for its epic ability") is
-                        -- not this unmodified object.
-                        GameState.stackArchive =
-                          if fromZone == Zone.Stack
-                            then Map.insertWith (\_ old -> old) oid (obj {Object.bindings = Binding.setCopy (copiedSnapshot oid gs) (Object.bindings obj)}) (GameState.stackArchive g1)
-                            else GameState.stackArchive g1
+                        GameState.snapshots =
+                          (GameState.snapshots g1)
+                            { -- CR 608.2h: the object ceases here, so this is the last
+                              -- moment its information is known. Filed under the id it had
+                              -- while it existed -- the id an ability on the stack still
+                              -- carries as its source (CR 113.7) -- and as the same
+                              -- record `snapshot` the Moved event below records is read
+                              -- from, so the two readings of "what was it" cannot drift
+                              -- apart.
+                              --
+                              -- Read off `lki`, the pre-batch board, and not the live
+                              -- `gs`: in a simultaneous batch an Equipment with a lower id
+                              -- moves before its host, and the live board has already
+                              -- forgotten it. Parun.LeavesTriggerSpec's "the Equipment dying
+                              -- in the same batch, ahead of its host" is the proof.
+                              Snapshots.lastKnown = Map.insert oid known (Snapshots.lastKnown (GameState.snapshots g1)),
+                              -- CR 608.2h's record for a STACK object, filed in the same
+                              -- write and from the same board as `lastKnown` above, which
+                              -- cannot keep it: rule 707.10 copies the DECISIONS, and CR
+                              -- 109.3 makes none of them a characteristic, so what an
+                              -- Effect.CopyStackObject needs afterwards is the whole
+                              -- object. CR 702.40a's storm over a Grapeshot countered
+                              -- while its trigger waited is the board.
+                              --
+                              -- The copiable snapshot is stamped on the way in for the
+                              -- reason `lastKnown` takes one: CR 613.1a's layer is read
+                              -- off `obj`, which is about to cease, and CR 707.2 asks the
+                              -- copy for those values rather than for a fresh reading of a
+                              -- card.
+                              --
+                              -- insertWith keeping the OLDER entry, because an arming
+                              -- effect files its own reading first and rule 702.50a's
+                              -- epic ("copy this spell except for its epic ability") is
+                              -- not this unmodified object.
+                              Snapshots.stackArchive =
+                                if fromZone == Zone.Stack
+                                  then Map.insertWith (\_ old -> old) oid (obj {Object.bindings = Binding.setCopy (copiedSnapshot oid gs) (Object.bindings obj)}) (Snapshots.stackArchive (GameState.snapshots g1))
+                                  else Snapshots.stackArchive (GameState.snapshots g1)
+                            }
                       }
               -- CR 702.158b: a space sculptor leaving can end every sector at
               -- this moment, before anything the same resolution does next --
@@ -8649,7 +8663,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                     let ask offered = Prompt.ChooseStickerKeeper (Decide.deciderFor (Object.owner obj) asked) (Object.owner obj) (fmap (printingOfKeeper . List.genericIndex keepers) offered)
                     picked <- Game.among Game.choose ask (zipWith const [0 ..] keepers)
                     pure (fmap (List.genericIndex keepers) picked)
-              start <- State.gets GameState.nextTimestamp
+              start <- State.gets (Bookkeeping.nextTimestamp . GameState.bookkeeping)
               newId <- placeObject pid (asComponent (keeper == Just (Left 0)) dest leading) dest position
               -- CR 613.7k.
               State.modify' (Game.restampStickers newId)
@@ -10267,7 +10281,7 @@ createTokens settle controller card copy n tapped entering attached marks = do
               refusals <- traverse (\oid -> (,) oid <$> runEntry settle (Just Zone.Battlefield) Nothing (siblingsOf oid) oid) kept
               let entered = [oid | (oid, Nothing) <- refusals]
               Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
-              settleMinted (GameState.nextTimestamp unminted) entered
+              settleMinted (Bookkeeping.nextTimestamp (GameState.bookkeeping unminted)) entered
               pure entered
 
 -- CR 614.1a / 614.12: offer an object's arrival on the battlefield from `from`
@@ -10323,7 +10337,7 @@ unenter :: GameState -> ObjectId -> ObjectId -> GameState -> GameState
 unenter unentered oid newId gs =
   let restore field = Map.alter (const (Map.lookup oid (field unentered))) oid
       unanchor eff
-        | ContinuousEffect.timestamp eff < GameState.nextTimestamp unentered = Just (reanchor newId (Set.singleton oid) eff)
+        | ContinuousEffect.timestamp eff < Bookkeeping.nextTimestamp (GameState.bookkeeping unentered) = Just (reanchor newId (Set.singleton oid) eff)
         | Affected.TheseObjects oids <- ContinuousEffect.affected eff,
           Set.member newId oids =
             let rest = Set.delete newId oids
@@ -10341,8 +10355,11 @@ unenter unentered oid newId gs =
               { TurnRegisters.stack = stacked,
                 TurnRegisters.stackedIn = restore (TurnRegisters.stackedIn . GameState.turn) (TurnRegisters.stackedIn (GameState.turn placed))
               },
-          GameState.lastKnown = restore GameState.lastKnown (GameState.lastKnown placed),
-          GameState.stackArchive = restore GameState.stackArchive (GameState.stackArchive placed),
+          GameState.snapshots =
+            (GameState.snapshots placed)
+              { Snapshots.lastKnown = restore (Snapshots.lastKnown . GameState.snapshots) (Snapshots.lastKnown (GameState.snapshots placed)),
+                Snapshots.stackArchive = restore (Snapshots.stackArchive . GameState.snapshots) (Snapshots.stackArchive (GameState.snapshots placed))
+              },
           GameState.stored = (GameState.stored placed) {StoredEffects.continuousEffects = Maybe.mapMaybe unanchor (StoredEffects.continuousEffects (GameState.stored placed)), StoredEffects.replacements = fmap (rewatch newId oid . reenter newId oid) (StoredEffects.replacements (GameState.stored placed))},
           GameState.exiledWith = fmap (relink newId oid) (GameState.exiledWith placed)
         }
@@ -10908,7 +10925,7 @@ forgetObject gs oid = case lastKnownRecord gs oid of
   Nothing -> gs
   Just known ->
     let cleared = Game.deleteObject oid gs
-     in cleared {GameState.lastKnown = Map.insert oid known (GameState.lastKnown cleared)}
+     in cleared {GameState.snapshots = (GameState.snapshots cleared) {Snapshots.lastKnown = Map.insert oid known (Snapshots.lastKnown (GameState.snapshots cleared))}}
 
 -- | CR 608.2h: what an object was, read off one board -- the record filed as it
 -- ceases, under the id it had while it existed. Nothing for an id that board
@@ -11027,7 +11044,7 @@ leaveTheGame asOf g oid = case lastKnownRecord asOf oid of
         g1 = Game.ceaseAttacking oid (Game.deleteObject oid g)
         combat = TurnRegisters.combat (GameState.turn g1)
      in g1
-          { GameState.lastKnown = Map.insert oid known (GameState.lastKnown g1),
+          { GameState.snapshots = (GameState.snapshots g1) {Snapshots.lastKnown = Map.insert oid known (Snapshots.lastKnown (GameState.snapshots g1))},
             GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = handover <> StoredEffects.continuousEffects (GameState.stored g1)},
             GameState.turn =
               (GameState.turn g1)
@@ -11568,7 +11585,7 @@ shuffleLibraryExcept leftOut pid = do
             [] -> ([], oid)
       shuffled = snd (List.mapAccumL refill mixed whole)
   -- modify' rather than putting `gs` back: it was read before the prompt, and a
-  -- prompt may write state -- Game.choose writes GameState.lastChoice. This one
+  -- prompt may write state -- Game.choose writes Bookkeeping.lastChoice. This one
   -- does not (Prompt.Shuffle is bare, being randomness rather than a choice),
   -- so this is defending the invariant rather than fixing a live bug.
   State.modify' (\g -> g {GameState.library = Map.insert pid (Seq.fromList shuffled) (GameState.library g)})

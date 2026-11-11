@@ -8,8 +8,8 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.Arrival as Arrival
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
-import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLink as CounterLink
@@ -18,13 +18,10 @@ import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryLink as EntryLink
 import qualified Parun.Types.EntryOrigin as EntryOrigin
-import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExtraTurn as ExtraTurn
-import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaType as ManaType
@@ -35,22 +32,19 @@ import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerControl as PlayerControl
 import qualified Parun.Types.PlayerId as PlayerId
-import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
-import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
-import qualified Parun.Types.RepeatPicks as RepeatPicks
 import qualified Parun.Types.RestartSignal as RestartSignal
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
-import qualified Parun.Types.Undoing as Undoing
 
 data GameState = MkGameState
   { -- | CR 800.2: the options this game was started with; never written after
@@ -98,13 +92,6 @@ data GameState = MkGameState
     departedCards :: Map.Map ObjectId.ObjectId Object.Object,
     -- | CR 106.4. Absent from the map means an empty pool.
     manaPool :: Map.Map PlayerId.PlayerId Mana.Mana,
-    -- | The group Event.recordEvent stamps on the next event; advanced per
-    -- record except inside an Event.simultaneously bracket. Not reset at turn
-    -- handoff.
-    nextEventGroup :: EventGroup.EventGroup,
-    -- | How deep the Event.simultaneously brackets are nested; the outermost
-    -- bracket's group wins.
-    eventGroupDepth :: Natural.Natural,
     -- | CR 613.7m: the arrivals of the CR 608.2f action under way, ordered when
     -- it ends (Event.together). Nothing outside one.
     enteringTogether :: Maybe EnteringTogether.EnteringTogether,
@@ -121,68 +108,15 @@ data GameState = MkGameState
     -- cause. Nothing outside one, and inside a cost's payment outside a
     -- resolution (Parun.Engine.Cost.payComponent).
     causing :: Maybe PlayerId.PlayerId,
-    -- | CR 608.2h / 113.7a: last known information, keyed by the id an object
-    -- had before it left a zone (CR 400.7). Grows for the whole game.
-    lastKnown :: Map.Map ObjectId.ObjectId LastKnown.LastKnown,
-    -- | CR 608.2h for a STACK object, keyed by the id it had before it left the
-    -- stack (CR 400.7): the whole object, so an effect armed while it was still
-    -- there can put a copy of it onto the stack afterwards (CR 707.10), or cast
-    -- one from exile (rule 702.192a's paradigm).
-    --
-    -- The whole object and not a LastKnown record, because CR 707.10 copies the
-    -- DECISIONS -- the modes, the targets, the value of X, the announced costs --
-    -- and CR 109.3 makes none of them a characteristic, so `lastKnown` has
-    -- nowhere to keep them.
-    --
-    -- THREE writers, and the ARMING one wins: an effect that arms a copier files
-    -- the object as that effect copies it -- rule 702.50a's epic files the spell
-    -- without its own ability ("copy this spell except for its epic ability")
-    -- rather than making Effect.CopyStackObject case on which keyword armed it
-    -- (Parun.Engine.Resolve.applyEpic) -- and the zone-change funnel files
-    -- whatever is left unfiled as the object leaves the stack
-    -- (Parun.Engine.Event.changeZoneAttaching), which is CR 608.2h for a trigger
-    -- whose spell was countered out from under it -- and Parun.Engine.Game.cease
-    -- files an ability as it ceases, the same reading for "copy that ability".
-    -- Grows for the whole game, as `lastKnown` does.
-    stackArchive :: Map.Map ObjectId.ObjectId Object.Object,
-    -- | CR 603.10: the battlefield as it stood immediately after each unscanned
-    -- event, keyed by group, one lazy entry per group; read by
-    -- Event.eventTriggers, cleared as the scan consumes the log.
-    battlefieldWhenTriggered :: Map.Map EventGroup.EventGroup (Map.Map ObjectId.ObjectId (BattlefieldCandidate.BattlefieldCandidate ProjectedCharacteristics.ProjectedCharacteristics)),
-    -- | CR 603.4: the whole game as it stood immediately after each unscanned
-    -- event, keyed by group, which an intervening "if" is checked against; each
-    -- entry's own copy of this field is empty. Written by
-    -- Parun.Engine.Event.Trigger.fileBoards, cleared with `battlefieldWhenTriggered`.
-    boardAfterEvent :: Map.Map EventGroup.EventGroup GameState,
-    -- | CR 603.10a / 603.10b / 603.10c / 603.10d / 603.10f: the whole game
-    -- immediately before each unscanned event that took a permanent off the
-    -- battlefield, phased one out, unattached one, changed a permanent's
-    -- controller or saw a player leave, keyed by group, the board a look-back
-    -- ability reads; each entry's own copy of this field, of `boardAfterEvent`
-    -- and of `boardAtControlSample` is empty. Written by
-    -- Parun.Engine.Event.fileBoardBefore, for Parun.Engine.Event.sampleControl,
-    -- Parun.Engine.Event.unattach, Parun.Engine.Phasing.phaseOutSet and
-    -- Parun.Engine.Departure.leaveAll too, cleared with
-    -- `battlefieldWhenTriggered`.
-    boardBeforeEvent :: Map.Map EventGroup.EventGroup GameState,
-    -- | Who controlled each permanent the last time
-    -- Parun.Engine.Event.sampleControl looked; diffing it against the live
-    -- projection is what yields GameEvent.ControlChanged (CR 603.2). Rebuilt
-    -- at every sample, so a first sighting is not a change.
-    controlSample :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
-    -- | The whole game as `controlSample` was taken from it, the board a
-    -- control change the next sample finds is filed as having followed
-    -- (`boardBeforeEvent`). Its own copy of this field and of the filed boards is
-    -- empty.
-    boardAtControlSample :: Maybe GameState,
-    -- | CR 603.8 across CR 725.1c's or 725.2c's check: the board before each
-    -- pass of it that performed a state-based action, oldest first, which the
-    -- next settle opens with (Parun.Engine.Engine.performSettle). Each entry's
-    -- own copy of this field is empty.
-    heldBoards :: [GameState],
     -- | CR 611.2 / 603.7 / 614: every row a resolution stored, kind by kind
     -- (Parun.Engine.Stored walks them).
     stored :: StoredEffects.StoredEffects,
+    -- | CR 603.12: what an instruction may write whether or not it happened
+    -- (Parun.Types.Bookkeeping).
+    bookkeeping :: Bookkeeping.Bookkeeping,
+    -- | CR 603.10 / 608.2h: the game as it stood at earlier moments
+    -- (Parun.Types.Snapshots).
+    snapshots :: Snapshots.Snapshots GameState,
     -- | CR 616.1 and Lich's Mirror's ruling: the objects a state-based action
     -- check moves, keyed to the source of the replacement whose effects run in
     -- place of a loss in that check, or to Nothing once kept for the check. A
@@ -250,19 +184,6 @@ data GameState = MkGameState
     -- frames still running it; Engine.runStep lowers it as turn 1's untap step
     -- begins.
     restartSignal :: RestartSignal.RestartSignal,
-    nextObjectId :: ObjectId.ObjectId,
-    -- | Every printing this game knows, by the id the objects carry; two ids
-    -- naming one card is benign (CR 109.3). Append-only and never collected.
-    printings :: Map.Map PrintingId.PrintingId Printing.Printing,
-    -- | `printings` read backwards, so Parun.Engine.Game.intern answers with the
-    -- id a printing already has.
-    printingIds :: Map.Map Printing.Printing PrintingId.PrintingId,
-    -- | CR 108.1: the printings the Oracle card reference answered a chosen
-    -- name with (Prompt.LookUpCard), part of the names CR 612.7 enumerates.
-    lookedUp :: Set.Set PrintingId.PrintingId,
-    -- | CR 612.7 / 108.1: the face names the Oracle card reference answered each
-    -- name grant's filter with (Prompt.ReferenceNames), asked once per filter.
-    referenceNames :: Map.Map (Filter.Filter Keyword.Keyword) (Set.Set CardName.CardName),
     -- | CR 400.11 / 707.13: objects in `objects` that are outside the game, in no
     -- zone's membership. Parun.Engine.Game.zoneOf answers Nothing for them.
     outsideCopies :: Set.Set ObjectId.ObjectId,
@@ -277,15 +198,6 @@ data GameState = MkGameState
     -- (Effect.NoteManaSpent), the last note replacing the one before. Keyed by
     -- id, so CR 400.7's new object knows none (Ice Cauldron).
     notedMana :: Map.Map ObjectId.ObjectId (Seq.Seq ManaType.ManaType),
-    nextPrintingId :: PrintingId.PrintingId,
-    -- | CR 613.7: the monotonic source of timestamps for objects and stored
-    -- continuous effects. See Timestamp.
-    nextTimestamp :: Timestamp.Timestamp,
-    -- | CR 104.4b: the timestamp as of the last optional action offered to a
-    -- player, advanced by Parun.Engine.Game.choose (conceding excepted, CR
-    -- 104.3a) and by CR 801.16's draw of a loop's players; its gap from
-    -- nextTimestamp is Parun.Engine.Departure.checkMandatoryLoop's heuristic.
-    lastChoice :: Timestamp.Timestamp,
     -- | CR 801.16: for each player, nextTimestamp as a triggered ability of
     -- theirs, or one an effect of theirs made trigger, was last put on the
     -- stack, or, under limited range, an event last acted on an object of
@@ -294,10 +206,6 @@ data GameState = MkGameState
     -- players.
     loopInvolvement :: Map.Map PlayerId.PlayerId Timestamp.Timestamp,
     drewFromEmpty :: Set.Set PlayerId.PlayerId,
-    -- | CR 603.12: how many draw or mill instructions have done fewer than the
-    -- number they named. It only rises, so one instruction's shortfall is a
-    -- difference across it (Parun.Engine.Resolve.Common.applyClauseEffects).
-    fellShort :: Natural.Natural,
     -- | CR 305.2a: how many lands each player has played this turn, a count
     -- because CR 305.2 lets an effect raise the allowance; cleared per player
     -- at their untap step.
@@ -327,9 +235,6 @@ data GameState = MkGameState
     -- picked them, which a later pick's prompt carries
     -- (Parun.Engine.Resolve.Arms.Zones.forEach).
     loopPicks :: Maybe (Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId)),
-    -- | CR 733.3: Nothing outside a Parun.Types.RepeatIf; inside one, its run's
-    -- picks and refusals (Parun.Engine.Resolve.Arms.Zones.repeatIf).
-    repeatPicks :: Maybe RepeatPicks.RepeatPicks,
     -- | CR 401.6: each library's top card as the last settle found it revealed
     -- to every player by a player effect (Event.settleRevealedTops).
     revealedTops :: Map.Map PlayerId.PlayerId ObjectId.ObjectId,
@@ -476,11 +381,6 @@ data GameState = MkGameState
     throwing :: Maybe ThrowResult.ThrowResult,
     -- | CR 706.2b: whether an ability activated inside that window asked for
     -- the die to be rerolled or the coin reflipped (Goblin Bookie).
-    rethrowRequested :: Bool,
-    -- | CR 734.1: why each player's cast, activation or combat declaration
-    -- was last reversed, since that player last chose an action at priority
-    -- (Parun.Engine.Engine.priorityLoop) or made a declaration
-    -- (Parun.Engine.Combat). Parun.Engine.PlayerView shows a seat its own.
-    undone :: Map.Map PlayerId.PlayerId Undoing.Undoing
+    rethrowRequested :: Bool
   }
   deriving (Eq, Ord, Show)

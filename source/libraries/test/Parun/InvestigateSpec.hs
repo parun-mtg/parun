@@ -31,6 +31,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
@@ -739,7 +740,7 @@ randomRevealSpec s registry =
             _ -> Spec.assertFailure s "fixture should give alice one attacker and bob none"
         -- CR 104.4b, GameSpec's lastChoiceSpec one effect over: being asked for
         -- randomness is not being offered a CHOICE, so the ask must go through
-        -- Game.ask and leave GameState.lastChoice alone -- otherwise a loop
+        -- Game.ask and leave Bookkeeping.lastChoice alone -- otherwise a loop
         -- containing a random reveal would look interruptible and
         -- Departure.checkMandatoryLoop could never call it a draw. Driven through
         -- Resolve.applyEffect rather than combat because declaring attackers is
@@ -749,11 +750,11 @@ randomRevealSpec s registry =
           wraith <- S.printingOf s registry "Bog Wraith"
           maiden <- S.printingOf s registry "Bird Maiden"
           let base = List.foldl' (\g p -> snd (S.addHandCard p S.bob g)) (Setup.emptyGame S.bothPlayers) [piker, wraith, maiden]
-              gs = base {GameState.lastChoice = Timestamp.MkTimestamp 0}
+              gs = base {GameState.bookkeeping = (GameState.bookkeeping base) {Bookkeeping.lastChoice = Timestamp.MkTimestamp 0}}
               effect = Effect.Reveal (Reveal.MkReveal (ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.Opponent) (Filter.Type.And []) (Quantity.Type.Literal 1))) Nothing)
               after = S.runPure (rolling 1) gs (Resolve.applyEffect S.noSource S.noSource S.alice Map.empty Map.empty effect)
           Spec.assertEqWith s "the roll was honoured here too" (revealed after) [(S.bob, ["Bog Wraith"])]
-          Spec.assertEqWith s "and nobody was recorded as having been offered a choice" (GameState.lastChoice after) (Timestamp.MkTimestamp 0)
+          Spec.assertEqWith s "and nobody was recorded as having been offered a choice" (Bookkeeping.lastChoice (GameState.bookkeeping after)) (Timestamp.MkTimestamp 0)
         -- Fall (the right half of Rise // Fall, {B}{R} Sorcery) is the card:
         -- "Target player reveals two cards at random from their hand, then
         -- discards each nonland card revealed this way."

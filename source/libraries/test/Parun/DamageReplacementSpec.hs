@@ -1552,7 +1552,7 @@ luminesceSpec s registry = Spec.describe s "Luminesce (CR 615.1, CR 609.7b)" $ d
   -- case would pass whatever the shield did. Parun.ActivateSpec's "CR 113.7a whole
   -- card" case pins the amount at 2 with the source already gone, which is what
   -- keeps 20 and 18 apart below. That trap is not hypothetical: emptying
-  -- GameState.lastKnown outright is NOT a usable mutation here, because the same
+  -- Snapshots.lastKnown outright is NOT a usable mutation here, because the same
   -- store feeds Quantity.Measure Power, the amount collapses to nothing, and the red board
   -- below lands on 20 under both readings. Only the green board catches it.
   --

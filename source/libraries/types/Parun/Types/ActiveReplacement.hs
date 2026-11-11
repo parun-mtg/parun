@@ -41,7 +41,7 @@ import qualified Parun.Types.Uses as Uses
 -- already grouped by chooser (Parun.Engine.Replacement.orderBatch).
 --
 -- `timestamp` doubles as this instance's CR 614.5 identity:
--- GameState.nextTimestamp is monotone, so no two floating replacements share one.
+-- Bookkeeping.nextTimestamp is monotone, so no two floating replacements share one.
 -- That identity is also what CR 615.13's preventions are GROUPED by
 -- (Parun.Engine.Replacement.groupPreventions), so a shield spent across two
 -- simultaneous events fires a "when damage is prevented" ability once -- and it

@@ -65,6 +65,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Board as Board
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -140,6 +141,7 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Staged as Staged
@@ -1498,7 +1500,7 @@ attackerSnapshot oid pid power =
 -- goes through the funnels that stamp it (Event.simultaneously), since a fixture
 -- asserting it directly would be asserting the answer.
 --
--- GameState.nextEventGroup is advanced PAST them for the same reason: a test that
+-- Bookkeeping.nextEventGroup is advanced PAST them for the same reason: a test that
 -- goes on to run a real funnel is continuing the sequence, so what that funnel
 -- records must land in a LATER group. Leaving the counter where it was would put
 -- the fixture's last event and the funnel's first in one group and claim they
@@ -1512,8 +1514,11 @@ withEvents events gs =
             TurnRegisters.scannedThrough = 0,
             TurnRegisters.damageScannedThrough = 0
           },
-      GameState.nextEventGroup = EventGroup.MkEventGroup (Natural.length events),
-      GameState.eventGroupDepth = 0,
+      GameState.bookkeeping =
+        (GameState.bookkeeping gs)
+          { Bookkeeping.nextEventGroup = EventGroup.MkEventGroup (Natural.length events),
+            Bookkeeping.eventGroupDepth = 0
+          },
       GameState.enteringTogether = Nothing,
       GameState.arrivals = Nothing,
       GameState.payingOnResolution = False,
@@ -1523,9 +1528,12 @@ withEvents events gs =
       -- different event. Cleared rather than left standing, which sends
       -- Event.eventTriggers to its live reading -- the only honest one for an event
       -- no funnel recorded.
-      GameState.boardAfterEvent = Map.empty,
-      GameState.boardBeforeEvent = Map.empty,
-      GameState.battlefieldWhenTriggered = Map.empty
+      GameState.snapshots =
+        (GameState.snapshots gs)
+          { Snapshots.boardAfterEvent = Map.empty,
+            Snapshots.boardBeforeEvent = Map.empty,
+            Snapshots.battlefieldWhenTriggered = Map.empty
+          }
     }
 
 -- | withEvents with each inner list ONE group: what a funnel bracketed by
@@ -1541,7 +1549,7 @@ withGroupedEvents groups gs =
             (GameState.turn logged)
               { TurnRegisters.events = Seq.fromList (zipWith (\group entry -> entry {LoggedEvent.group = group}) numbered (Foldable.toList (TurnRegisters.events (GameState.turn logged))))
               },
-          GameState.nextEventGroup = EventGroup.MkEventGroup (Natural.length groups)
+          GameState.bookkeeping = (GameState.bookkeeping logged) {Bookkeeping.nextEventGroup = EventGroup.MkEventGroup (Natural.length groups)}
         }
 
 -- Set the monarch directly, for tests that need the designation without
@@ -1739,11 +1747,14 @@ oneMountainState mountain ph =
       )
         { GameState.objects = Map.singleton oid obj,
           GameState.hand = Map.singleton alice (Seq.singleton oid),
-          GameState.nextObjectId = ObjectId.MkObjectId 1,
-          GameState.printings = Map.singleton printingId mountain,
-          GameState.printingIds = Map.singleton mountain printingId,
-          GameState.nextPrintingId = PrintingId.MkPrintingId 1,
-          GameState.nextTimestamp = Timestamp.MkTimestamp 1
+          GameState.bookkeeping =
+            Game.blankBookkeeping
+              { Bookkeeping.nextObjectId = ObjectId.MkObjectId 1,
+                Bookkeeping.printings = Map.singleton printingId mountain,
+                Bookkeeping.printingIds = Map.singleton mountain printingId,
+                Bookkeeping.nextPrintingId = PrintingId.MkPrintingId 1,
+                Bookkeeping.nextTimestamp = Timestamp.MkTimestamp 1
+              }
         }
 
 drawStep :: Game.Type.Game ()

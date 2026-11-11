@@ -36,6 +36,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName.Type
 import qualified Parun.Types.Compares as Compares
@@ -72,6 +73,7 @@ import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -411,30 +413,30 @@ gameStateRoundTripSpec s registry corpus = do
     mountain <- S.printingOf s registry "Mountain"
     roundTrips "a play" (S.oneMountainState mountain Phase.PrecombatMain) {GameState.cardsPlayed = Map.singleton (ObjectId.MkObjectId 7) S.bob}
 
-  -- GameState.boardAfterEvent, CR 603.4's board per event: a whole GameState
+  -- Snapshots.boardAfterEvent, CR 603.4's board per event: a whole GameState
   -- under a GameState's own codec.
   Spec.it s "a board after an event round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
     let board = S.oneMountainState mountain Phase.PrecombatMain
-    roundTrips "a board after an event" board {GameState.boardAfterEvent = Map.singleton EventGroup.first board}
+    roundTrips "a board after an event" board {GameState.snapshots = (GameState.snapshots board) {Snapshots.boardAfterEvent = Map.singleton EventGroup.first board}}
 
-  -- GameState.boardBeforeEvent, CR 603.10a / 603.10d's board, likewise.
+  -- Snapshots.boardBeforeEvent, CR 603.10a / 603.10d's board, likewise.
   Spec.it s "a board before a departure round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
     let board = S.oneMountainState mountain Phase.PrecombatMain
-    roundTrips "a board before a departure" board {GameState.boardBeforeEvent = Map.singleton EventGroup.first board}
+    roundTrips "a board before a departure" board {GameState.snapshots = (GameState.snapshots board) {Snapshots.boardBeforeEvent = Map.singleton EventGroup.first board}}
 
-  -- GameState.boardAtControlSample, CR 603.10d's board in waiting, likewise.
+  -- Snapshots.boardAtControlSample, CR 603.10d's board in waiting, likewise.
   Spec.it s "a board at a control sample round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
     let board = S.oneMountainState mountain Phase.PrecombatMain
-    roundTrips "a board at a control sample" board {GameState.boardAtControlSample = Just board}
+    roundTrips "a board at a control sample" board {GameState.snapshots = (GameState.snapshots board) {Snapshots.boardAtControlSample = Just board}}
 
-  -- GameState.heldBoards, CR 603.8's boards across CR 725.1c's check, likewise.
+  -- Snapshots.heldBoards, CR 603.8's boards across CR 725.1c's check, likewise.
   Spec.it s "a held board round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
     let board = S.oneMountainState mountain Phase.PrecombatMain
-    roundTrips "a held board" board {GameState.heldBoards = [board]}
+    roundTrips "a held board" board {GameState.snapshots = (GameState.snapshots board) {Snapshots.heldBoards = [board]}}
 
   -- TurnRegisters.permanentsAsTurnBegan, CR 500.12's record.
   Spec.it s "the permanents as the turn began round trip" $ do
@@ -574,7 +576,7 @@ gameStateRoundTripSpec s registry corpus = do
     mountain <- S.printingOf s registry "Mountain"
     piker <- S.printingOf s registry "Goblin Piker"
     let (_, gs) = S.addPermanent piker S.alice (S.oneMountainState mountain Phase.PrecombatMain)
-    Spec.assertBool s (Map.size (GameState.printings gs) >= 2) "the fixture should hold two printings"
+    Spec.assertBool s (Map.size (Bookkeeping.printings (GameState.bookkeeping gs)) >= 2) "the fixture should hold two printings"
     roundTrips "two interned printings" gs
 
   -- Forces GameState.enteringCounters non-empty by hand rather than through

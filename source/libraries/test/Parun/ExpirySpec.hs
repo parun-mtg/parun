@@ -628,7 +628,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
     Spec.assertEqWith s "under alice" (Projection.controllerOf thief gone) (Just S.alice)
     -- The stored SetController effect stays, with an `affected` set naming an
     -- object that no longer exists. It is inert: Projection.controllerOf
-    -- returns Nothing for an unknown id, and GameState.nextObjectId is
+    -- returns Nothing for an unknown id, and Bookkeeping.nextObjectId is
     -- monotone so the id is never reused. Pinned rather than tidied, because
     -- CR 800.4a ends only the effects that GIVE the departing player control
     -- and this one gives control to alice, who is still here.

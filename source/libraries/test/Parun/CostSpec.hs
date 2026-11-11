@@ -56,6 +56,7 @@ import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
@@ -5406,7 +5407,7 @@ announcedReversalSpec s registry = Spec.describe s "Reversal after an announceme
         Spec.assertEqWith s "the payer who reverses gets nothing floating" (poolSize S.alice reversed) 0
         Spec.assertBool s (not (isTapped battlementsId reversed || isTapped mountainId reversed)) "and both lands untapped"
         Spec.assertEqWith s "alice was asked once per land" asked 2
-        Spec.assertEqWith s "CR 601.2h and the next priority can say why" (GameState.undone kept) (Map.singleton S.alice Undoing.UnpaidCost)
+        Spec.assertEqWith s "CR 601.2h and the next priority can say why" (Bookkeeping.undone (GameState.bookkeeping kept)) (Map.singleton S.alice Undoing.UnpaidCost)
 
   -- Tyrant's Machine's "{4}, {T}: Tap target creature." announced with a
   -- player for its creature. Two Pikers, so the target is asked (CR 601.2c).
@@ -5426,7 +5427,7 @@ announcedReversalSpec s registry = Spec.describe s "Reversal after an announceme
         let after = S.runPure illegal gs (Activate.activateAbility S.alice machineId ability)
         Spec.assertEqWith s "CR 602.2a's ability object is gone from the stack" (TurnRegisters.stack (GameState.turn after)) []
         Spec.assertBool s (not (isTapped machineId after)) "the Machine is untapped"
-        Spec.assertEqWith s "and the next priority can say why" (GameState.undone after) (Map.singleton S.alice Undoing.IllegalProposal)
+        Spec.assertEqWith s "and the next priority can say why" (Bookkeeping.undone (GameState.bookkeeping after)) (Map.singleton S.alice Undoing.IllegalProposal)
       _ -> Spec.assertFailure s "Tyrant's Machine should print one activated ability"
 
   -- Mystic Gate's "{W/U}, {T}" activated from nothing: its own window taps the
@@ -6349,7 +6350,7 @@ assistSpec s registry = Spec.describe s "Charging Binox" $ do
     Spec.assertEqWith s "and with her kept Forest tapped" (fmap (isTapped forestId) seenKeep) [True, True, True]
     -- CR 104.4b: the stamp bob's question wrote survives the final restore,
     -- which for two reversals goes back to a state from before the cast.
-    Spec.assertEqWith s "CR 104.4b the last question's stamp stands" (fmap GameState.lastChoice (take 1 (reverse seenNeither))) [GameState.lastChoice neither]
+    Spec.assertEqWith s "CR 104.4b the last question's stamp stands" (fmap (Bookkeeping.lastChoice . GameState.bookkeeping) (take 1 (reverse seenNeither))) [Bookkeeping.lastChoice (GameState.bookkeeping neither)]
   -- CR 106.6a on the HELPER's mana: bob sacrifices Generator Servant ({T},
   -- Sacrifice: "Add {C}{C}. If any of that mana is spent on a creature spell, it
   -- gains haste until end of turn.") in his assist window and pays seven with its

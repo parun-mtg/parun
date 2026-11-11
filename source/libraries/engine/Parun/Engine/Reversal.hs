@@ -25,6 +25,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Mana as Mana
@@ -32,6 +33,7 @@ import Parun.Types.Object (Object)
 import qualified Parun.Types.Object as Object
 import Parun.Types.Player (Player)
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -80,22 +82,22 @@ withoutAnnouncement before entry closed = do
   manaPool <- pools (GameState.manaPool before) (GameState.manaPool entry) (GameState.manaPool closed)
   combat <- one (TurnRegisters.combat . GameState.turn)
   events <- Event.restampLifeChanges <$> eventsOf (TurnRegisters.events . GameState.turn)
-  nextEventGroup <- newest GameState.nextEventGroup
-  eventGroupDepth <- one GameState.eventGroupDepth
+  nextEventGroup <- newest (Bookkeeping.nextEventGroup . GameState.bookkeeping)
+  eventGroupDepth <- one (Bookkeeping.eventGroupDepth . GameState.bookkeeping)
   enteringTogether <- one GameState.enteringTogether
   arrivals <- one GameState.arrivals
   payingOnResolution <- one GameState.payingOnResolution
   causing <- one GameState.causing
-  lastKnown <- mapOf GameState.lastKnown
-  stackArchive <- mapOf GameState.stackArchive
+  lastKnown <- mapOf (Snapshots.lastKnown . GameState.snapshots)
+  stackArchive <- mapOf (Snapshots.stackArchive . GameState.snapshots)
   scannedThrough <- one (TurnRegisters.scannedThrough . GameState.turn)
-  battlefieldWhenTriggered <- mapOfMaps GameState.battlefieldWhenTriggered
-  boardAfterEvent <- mapOf GameState.boardAfterEvent
-  boardBeforeEvent <- mapOf GameState.boardBeforeEvent
-  controlSample <- mapOf GameState.controlSample
+  battlefieldWhenTriggered <- mapOfMaps (Snapshots.battlefieldWhenTriggered . GameState.snapshots)
+  boardAfterEvent <- mapOf (Snapshots.boardAfterEvent . GameState.snapshots)
+  boardBeforeEvent <- mapOf (Snapshots.boardBeforeEvent . GameState.snapshots)
+  controlSample <- mapOf (Snapshots.controlSample . GameState.snapshots)
   -- A sample, retaken at every check either side ran.
-  boardAtControlSample <- newest GameState.boardAtControlSample
-  heldBoards <- one GameState.heldBoards
+  boardAtControlSample <- newest (Snapshots.boardAtControlSample . GameState.snapshots)
+  heldBoards <- one (Snapshots.heldBoards . GameState.snapshots)
   damageScannedThrough <- one (TurnRegisters.damageScannedThrough . GameState.turn)
   delayedTriggers <- seqOf (StoredEffects.delayedTriggers . GameState.stored)
   continuousEffects <- listOf (StoredEffects.continuousEffects . GameState.stored)
@@ -135,23 +137,23 @@ withoutAnnouncement before entry closed = do
   result <- one GameState.result
   restartSignal <- one GameState.restartSignal
   endTurnSignal <- one (TurnRegisters.endTurnSignal . GameState.turn)
-  nextObjectId <- newest GameState.nextObjectId
-  printings <- newest GameState.printings
-  printingIds <- newest GameState.printingIds
-  lookedUp <- newest GameState.lookedUp
-  referenceNames <- newest GameState.referenceNames
+  nextObjectId <- newest (Bookkeeping.nextObjectId . GameState.bookkeeping)
+  printings <- newest (Bookkeeping.printings . GameState.bookkeeping)
+  printingIds <- newest (Bookkeeping.printingIds . GameState.bookkeeping)
+  lookedUp <- newest (Bookkeeping.lookedUp . GameState.bookkeeping)
+  referenceNames <- newest (Bookkeeping.referenceNames . GameState.bookkeeping)
   outsideCopies <- setOf GameState.outsideCopies
   namedCopyChoices <- mapOf GameState.namedCopyChoices
   notedCards <- mapOf GameState.notedCards
   notedMana <- mapOf GameState.notedMana
-  nextPrintingId <- newest GameState.nextPrintingId
-  nextTimestamp <- newest GameState.nextTimestamp
-  lastChoice <- newest GameState.lastChoice
+  nextPrintingId <- newest (Bookkeeping.nextPrintingId . GameState.bookkeeping)
+  nextTimestamp <- newest (Bookkeeping.nextTimestamp . GameState.bookkeeping)
+  lastChoice <- newest (Bookkeeping.lastChoice . GameState.bookkeeping)
   -- CR 801.16: stamps, which only ever rise; the announcement's are no later
   -- than the choice that began it, so no loop's window can reach them.
   loopInvolvement <- newest GameState.loopInvolvement
   drewFromEmpty <- setOf GameState.drewFromEmpty
-  fellShort <- newest GameState.fellShort
+  fellShort <- newest (Bookkeeping.fellShort . GameState.bookkeeping)
   landsPlayed <- mapOf GameState.landsPlayed
   cardsPlayed <- mapOf GameState.cardsPlayed
   drawsThisTurn <- mapOf (TurnRegisters.drawsThisTurn . GameState.turn)
@@ -159,7 +161,7 @@ withoutAnnouncement before entry closed = do
   announcedTops <- one GameState.announcedTops
   actionTops <- one GameState.actionTops
   loopPicks <- one GameState.loopPicks
-  repeatPicks <- one GameState.repeatPicks
+  repeatPicks <- one (Bookkeeping.repeatPicks . GameState.bookkeeping)
   revealedTops <- mapOf GameState.revealedTops
   departedThisTurn <- setOf GameState.departedThisTurn
   couldAttackThisTurn <- setOf (TurnRegisters.couldAttackThisTurn . GameState.turn)
@@ -210,7 +212,7 @@ withoutAnnouncement before entry closed = do
   throwing <- one GameState.throwing
   rethrowRequested <- one GameState.rethrowRequested
   -- Written only once a reversal is over, which no announcement spans.
-  undone <- one GameState.undone
+  undone <- one (Bookkeeping.undone . GameState.bookkeeping)
   pure
     GameState.MkGameState
       { GameState.settings = settings,
@@ -256,20 +258,37 @@ withoutAnnouncement before entry closed = do
         GameState.broughtIn = broughtIn,
         GameState.departedCards = departedCards,
         GameState.manaPool = manaPool,
-        GameState.nextEventGroup = nextEventGroup,
-        GameState.eventGroupDepth = eventGroupDepth,
         GameState.enteringTogether = enteringTogether,
         GameState.arrivals = arrivals,
         GameState.payingOnResolution = payingOnResolution,
         GameState.causing = causing,
-        GameState.lastKnown = lastKnown,
-        GameState.stackArchive = stackArchive,
-        GameState.battlefieldWhenTriggered = battlefieldWhenTriggered,
-        GameState.boardAfterEvent = boardAfterEvent,
-        GameState.boardBeforeEvent = boardBeforeEvent,
-        GameState.controlSample = controlSample,
-        GameState.boardAtControlSample = boardAtControlSample,
-        GameState.heldBoards = heldBoards,
+        GameState.bookkeeping =
+          Bookkeeping.MkBookkeeping
+            { Bookkeeping.nextObjectId = nextObjectId,
+              Bookkeeping.nextPrintingId = nextPrintingId,
+              Bookkeeping.nextTimestamp = nextTimestamp,
+              Bookkeeping.nextEventGroup = nextEventGroup,
+              Bookkeeping.eventGroupDepth = eventGroupDepth,
+              Bookkeeping.printings = printings,
+              Bookkeeping.printingIds = printingIds,
+              Bookkeeping.lookedUp = lookedUp,
+              Bookkeeping.referenceNames = referenceNames,
+              Bookkeeping.lastChoice = lastChoice,
+              Bookkeeping.repeatPicks = repeatPicks,
+              Bookkeeping.undone = undone,
+              Bookkeeping.fellShort = fellShort
+            },
+        GameState.snapshots =
+          Snapshots.MkSnapshots
+            { Snapshots.lastKnown = lastKnown,
+              Snapshots.stackArchive = stackArchive,
+              Snapshots.battlefieldWhenTriggered = battlefieldWhenTriggered,
+              Snapshots.boardAfterEvent = boardAfterEvent,
+              Snapshots.boardBeforeEvent = boardBeforeEvent,
+              Snapshots.controlSample = controlSample,
+              Snapshots.boardAtControlSample = boardAtControlSample,
+              Snapshots.heldBoards = heldBoards
+            },
         GameState.stored =
           StoredEffects.MkStoredEffects
             { StoredEffects.continuousEffects = continuousEffects,
@@ -303,28 +322,18 @@ withoutAnnouncement before entry closed = do
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,
         GameState.restartSignal = restartSignal,
-        GameState.nextObjectId = nextObjectId,
-        GameState.printings = printings,
-        GameState.printingIds = printingIds,
-        GameState.lookedUp = lookedUp,
-        GameState.referenceNames = referenceNames,
         GameState.outsideCopies = outsideCopies,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
         GameState.notedMana = notedMana,
-        GameState.nextPrintingId = nextPrintingId,
-        GameState.nextTimestamp = nextTimestamp,
-        GameState.lastChoice = lastChoice,
         GameState.loopInvolvement = loopInvolvement,
         GameState.drewFromEmpty = drewFromEmpty,
-        GameState.fellShort = fellShort,
         GameState.landsPlayed = landsPlayed,
         GameState.cardsPlayed = cardsPlayed,
         GameState.keptFaceDown = keptFaceDown,
         GameState.announcedTops = announcedTops,
         GameState.actionTops = actionTops,
         GameState.loopPicks = loopPicks,
-        GameState.repeatPicks = repeatPicks,
         GameState.revealedTops = revealedTops,
         GameState.departedThisTurn = departedThisTurn,
         GameState.triggeredThisGame = triggeredThisGame,
@@ -354,8 +363,7 @@ withoutAnnouncement before entry closed = do
         GameState.gamesThisMatch = gamesThisMatch,
         GameState.gameNumber = gameNumber,
         GameState.throwing = throwing,
-        GameState.rethrowRequested = rethrowRequested,
-        GameState.undone = undone
+        GameState.rethrowRequested = rethrowRequested
       }
   where
     -- A whole value, compared as one leaf.

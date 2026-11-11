@@ -47,6 +47,7 @@ import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
@@ -218,17 +219,17 @@ gameSpec s registry = Spec.describe s "Game" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     mountain <- S.printingOf s registry "Mountain"
     let (oid, gs) = S.addPermanent piker S.bob (S.landsInPlay mountain 1)
-        before = GameState.nextTimestamp gs
+        before = Bookkeeping.nextTimestamp (GameState.bookkeeping gs)
         movedState = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Graveyard)
         movedId = case Game.zoneMembers Zone.Graveyard S.bob movedState of
           i : _ -> i
           [] -> ObjectId.MkObjectId 999
         stamp = fmap Object.timestamp (Game.lookupObject movedId movedState)
     Spec.assertEqWith s "the incarnation carries the pre-move next timestamp" stamp (Just before)
-    Spec.assertBool s (GameState.nextTimestamp movedState > before) "the counter advanced"
+    Spec.assertBool s (Bookkeeping.nextTimestamp (GameState.bookkeeping movedState) > before) "the counter advanced"
 
   Spec.it s "emptyGame starts the timestamp counter at zero" $ do
-    Spec.assertEqWith s "zero" (GameState.nextTimestamp (Setup.emptyGame S.bothPlayers)) (Timestamp.MkTimestamp 0)
+    Spec.assertEqWith s "zero" (Bookkeeping.nextTimestamp (GameState.bookkeeping (Setup.emptyGame S.bothPlayers))) (Timestamp.MkTimestamp 0)
 
   Spec.it s "a fresh game has no continuous effects" $ do
     Spec.assertEqWith s "empty" ((StoredEffects.continuousEffects . GameState.stored) (Setup.emptyGame S.bothPlayers)) []
@@ -2029,7 +2030,7 @@ printingSpec s registry = Spec.describe s "PrintingTable" $ do
     let (a, gs1) = Game.intern mountain (Setup.emptyGame S.bothPlayers)
         (b, gs2) = Game.intern mountain gs1
     Spec.assertEqWith s "same id" a b
-    Spec.assertEqWith s "and no second entry" (Map.size (GameState.printings gs2)) 1
+    Spec.assertEqWith s "and no second entry" (Map.size (Bookkeeping.printings (GameState.bookkeeping gs2))) 1
 
   Spec.it s "intern mints a distinct id for a distinct printing" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -2037,7 +2038,7 @@ printingSpec s registry = Spec.describe s "PrintingTable" $ do
     let (a, gs1) = Game.intern mountain (Setup.emptyGame S.bothPlayers)
         (b, gs2) = Game.intern piker gs1
     Spec.assertBool s (a /= b) "ids differ"
-    Spec.assertEqWith s "two entries" (Map.size (GameState.printings gs2)) 2
+    Spec.assertEqWith s "two entries" (Map.size (Bookkeeping.printings (GameState.bookkeeping gs2))) 2
 
   Spec.it s "an unminted id names nothing" $
     Spec.assertEqWith
@@ -2147,18 +2148,17 @@ mandatoryLoopBoardSpec s registry = Spec.describe s "a mandatory loop (CR 104.4b
     let (mirrorId, gs1) = S.addPermanent mirror S.bob (Setup.emptyGame S.bothPlayers)
         stocked = iterate (snd . S.addLibraryCard island S.alice) (S.giveControl mirrorId S.alice gs1) !! 8
         board =
-          ( Game.overTurn
-              ( \registers ->
-                  registers
-                    { TurnRegisters.phase = Phase.PrecombatMain,
-                      TurnRegisters.remaining = Seq.empty
-                    }
-              )
-              (S.addPlayerCounter PlayerCounterKind.Poison 10 S.alice stocked)
-          )
-            { GameState.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10),
-              GameState.lastChoice = Timestamp.MkTimestamp 0
-            }
+          Game.overBookkeeping
+            (\bookkeeping -> bookkeeping {Bookkeeping.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10), Bookkeeping.lastChoice = Timestamp.MkTimestamp 0})
+            ( Game.overTurn
+                ( \registers ->
+                    registers
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.remaining = Seq.empty
+                      }
+                )
+                (S.addPlayerCounter PlayerCounterKind.Poison 10 S.alice stocked)
+            )
         after = S.runPure S.identityAnswer board Engine.settleForPriority
     Spec.assertEqWith s "CR 104.4b" (GameState.result after) (Just Result.Drawn)
 
@@ -2193,7 +2193,7 @@ mandatoryLoopBoardSpec s registry = Spec.describe s "a mandatory loop (CR 104.4b
 -- The seed Forest enters TAPPED (CR 107.5). S.addPermanent settles what it
 -- places, and Life and Limb makes a Forest a 1/1 creature, so an untapped one
 -- would offer alice CR 605.3a's mana ability at her first priority and move
--- GameState.lastChoice. That is a speed measure, not what makes the loop
+-- Bookkeeping.lastChoice. That is a speed measure, not what makes the loop
 -- mandatory: Aether Flash buries the Forest before a second priority, so
 -- dropping the tap only postpones the draw by the thousand events the marker
 -- then has to climb again, and the case stays green. The TOKENS need no such
@@ -2226,8 +2226,11 @@ loopBoard flash limb sporemound forest castable =
                 { TurnRegisters.phase = Phase.PrecombatMain,
                   TurnRegisters.remaining = Seq.empty
                 },
-            GameState.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10),
-            GameState.lastChoice = Timestamp.MkTimestamp 0
+            GameState.bookkeeping =
+              (GameState.bookkeeping gs5)
+                { Bookkeeping.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10),
+                  Bookkeeping.lastChoice = Timestamp.MkTimestamp 0
+                }
           }
    in S.tapObject forestId seeded
 
@@ -2289,12 +2292,11 @@ mandatoryLoopSpec s = Spec.describe s "the mandatory-loop guard (CR 104.4b)" $ d
 atGap :: Natural -> GameState.GameState
 atGap n =
   (Setup.emptyGame S.bothPlayers)
-    { GameState.nextTimestamp = Timestamp.MkTimestamp n,
-      GameState.lastChoice = Timestamp.MkTimestamp 0
+    { GameState.bookkeeping = (GameState.bookkeeping (Setup.emptyGame S.bothPlayers)) {Bookkeeping.nextTimestamp = Timestamp.MkTimestamp n, Bookkeeping.lastChoice = Timestamp.MkTimestamp 0}
     }
 
 -- CR 104.4b's "loops that contain an optional action": what makes an action
--- optional is that the player had more than one answer to give. GameState.lastChoice
+-- optional is that the player had more than one answer to give. Bookkeeping.lastChoice
 -- is how the engine remembers when that last happened, and Parun.Engine.Game.choose
 -- is the only thing that advances it.
 lastChoiceSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -2302,7 +2304,7 @@ lastChoiceSpec s registry = Spec.describe s "lastChoice (CR 104.4b)" $ do
   Spec.it s "a priority round whose only action is Pass leaves it alone" $ do
     mountain <- S.printingOf s registry "Mountain"
     let after = S.runPure S.identityAnswer (choicelessBoard mountain True) Engine.priorityLoop
-    Spec.assertEqWith s "no player was offered a choice" (GameState.lastChoice after) (Timestamp.MkTimestamp 0)
+    Spec.assertEqWith s "no player was offered a choice" (Bookkeeping.lastChoice (GameState.bookkeeping after)) (Timestamp.MkTimestamp 0)
 
   Spec.it s "CR 605.3a an untapped land's own mana ability is that optional action" $ do
     -- The board differs by ONE BIT from the one above: the same lone Mountain,
@@ -2313,7 +2315,7 @@ lastChoiceSpec s registry = Spec.describe s "lastChoice (CR 104.4b)" $ do
     let board = choicelessBoard mountain False
         after = S.runPure S.identityAnswer board Engine.priorityLoop
     Spec.assertEqWith s "the menu is Pass and the mana ability, nothing else" (length (Action.legalActions S.alice board)) 2
-    Spec.assertBool s (GameState.lastChoice after > Timestamp.MkTimestamp 0) "alice was offered a choice"
+    Spec.assertBool s (Bookkeeping.lastChoice (GameState.bookkeeping after) > Timestamp.MkTimestamp 0) "alice was offered a choice"
 
 -- alice, active, in her precombat main phase with an empty stack, nothing
 -- scheduled after it, and one Mountain. Her hand is empty, so her menu is
@@ -2329,7 +2331,7 @@ choicelessBoard mountain tapped =
               { TurnRegisters.phase = Phase.PrecombatMain,
                 TurnRegisters.remaining = Seq.empty
               },
-          GameState.lastChoice = Timestamp.MkTimestamp 0
+          GameState.bookkeeping = (GameState.bookkeeping gs2) {Bookkeeping.lastChoice = Timestamp.MkTimestamp 0}
         }
 
 -- One Lightning Bolt in bob's hand.

@@ -7,7 +7,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- | One permanent as CR 603.10's trigger scan needs to see it: who controlled it
 -- (CR 603.3a), what it looked like and what was attached to it at that moment. Parun.Engine.Event's
 -- battlefieldCandidates builds these, and
--- Parun.Types.GameState.battlefieldWhenTriggered files them per event group with
+-- Parun.Types.Snapshots.battlefieldWhenTriggered files them per event group with
 -- the reasoning for why a sample is needed at all.
 --
 -- A record rather than a pair, so neither half can be taken for the other; both
@@ -17,7 +17,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- PARAMETRIC in what is carried beside the controller, because the scan narrows
 -- it: the stored form holds projected characteristics, and the scan maps those
 -- to the abilities that function on the battlefield. Neither field is strict --
--- GameState.battlefieldWhenTriggered's entries are thunks over the state at that
+-- Snapshots.battlefieldWhenTriggered's entries are thunks over the state at that
 -- moment, and forcing one here would cost the projection the laziness exists to
 -- avoid.
 data BattlefieldCandidate a = MkBattlefieldCandidate
