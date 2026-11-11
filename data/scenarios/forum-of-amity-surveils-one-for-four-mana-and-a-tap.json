@@ -121,6 +121,20 @@
     },
     {
       "check": {
+        "View": {
+          "is": [
+            "Hill Giant"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "Tapped": {
           "object": "$forum",
           "tapped": true

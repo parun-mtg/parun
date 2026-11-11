@@ -135,6 +135,22 @@
     },
     {
       "check": {
+        "View": {
+          "is": [
+            "Island",
+            "Forest",
+            "Mountain"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "Count": {
           "card": "Forest",
           "count": 1,

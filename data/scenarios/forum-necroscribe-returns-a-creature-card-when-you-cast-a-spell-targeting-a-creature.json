@@ -80,7 +80,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.21a, 115.1: Forum Necroscribe's Repartee returns a creature card from your graveyard to the battlefield when you cast an instant targeting a creature",
+  "description": "CR 603.2, 115.1: Forum Necroscribe's Repartee returns a creature card from your graveyard to the battlefield when you cast an instant targeting a creature",
   "timeline": [
     {
       "do": {

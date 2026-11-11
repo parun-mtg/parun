@@ -68,7 +68,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 613.4b, 105.3, 205.1b: Fractalize makes target creature a green and blue Fractal with base power and toughness X plus 1 until end of turn, keeping its abilities",
+  "description": "CR 613.4b, 613.1d, 105.3: Fractalize makes target creature a green and blue Fractal with base power and toughness X plus 1 until end of turn, keeping its abilities",
   "timeline": [
     {
       "do": {

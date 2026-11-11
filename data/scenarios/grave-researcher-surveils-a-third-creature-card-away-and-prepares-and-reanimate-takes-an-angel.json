@@ -85,7 +85,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 701.25a, 608.2c: Grave Researcher surveils 1, then becomes prepared once the surveilled card makes three creature cards in your graveyard; its Reanimate copy takes a creature card from any graveyard and loses life equal to its mana value",
+  "description": "CR 701.25a, 608.2c, 723.3a: Grave Researcher surveils 1, then becomes prepared once the surveilled card makes three creature cards in your graveyard; its Reanimate copy takes a creature card from any graveyard and loses life equal to its mana value",
   "timeline": [
     {
       "check": {
