@@ -3238,8 +3238,8 @@ combatRestrictionChildren c restriction = case restriction of
 
 -- | A cost to attack's children (CR 508.1h). Its scope is left as it is.
 attackCostChildren :: (Applicative f) => CombatChildren f -> AttackCost.AttackCost -> f AttackCost.AttackCost
-attackCostChildren c (AttackCost.MkAttackCost subject perAttacker scope while) =
-  AttackCost.MkAttackCost <$> combatAffected c subject <*> perCreatureChildren c perAttacker <*> pure scope <*> traverse (combatCondition c) while
+attackCostChildren c (AttackCost.MkAttackCost subject perAttacker scope_ while) =
+  AttackCost.MkAttackCost <$> combatAffected c subject <*> perCreatureChildren c perAttacker <*> pure scope_ <*> traverse (combatCondition c) while
 
 -- | A cost to block's children (CR 509.1d).
 blockCostChildren :: (Applicative f) => CombatChildren f -> BlockCost.BlockCost -> f BlockCost.BlockCost
