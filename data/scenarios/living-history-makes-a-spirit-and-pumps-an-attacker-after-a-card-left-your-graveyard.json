@@ -1,0 +1,340 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "sw",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Living History",
+            "label": "lh"
+          },
+          {
+            "card": "Return to Nature",
+            "label": "rtn"
+          },
+          {
+            "card": "Disentomb",
+            "label": "dis"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4, 508.3d, 111.1: Living History makes a 2/2 red and white Spirit; its attack trigger pumps a target attacker +2/+0 after a card left your graveyard that turn, and does nothing on a turn when a card left only an opponent's",
+  "note": "Turn 1 has no draw, so Disentomb's return is the only card leaving a zone you own besides casts; turn 3's draw and cast leave the library and hand, and only bob's graveyard loses a card.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$lh",
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "Spirit Token",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "Colors",
+          "object": "Spirit Token",
+          "is": [
+            "White",
+            "Red"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$dis",
+          "mana": [
+            "$sw",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1,
+      "do": {
+        "Attack": [
+          "$piker"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 4,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1,
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 16
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "do": {
+        "Cast": {
+          "object": "$rtn",
+          "modes": [
+            2
+          ],
+          "targets": [
+            "$bbears"
+          ],
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3,
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3,
+      "do": {
+        "Attack": [
+          "$piker",
+          "Spirit Token"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3,
+      "check": {
+        "PowerToughness": {
+          "object": "Spirit Token",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3,
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 2,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3,
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 12
+        }
+      }
+    }
+  ]
+}
