@@ -40,6 +40,7 @@ import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
+import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackCompany as AttackCompany
 import qualified Parun.Types.AttackCost as AttackCost
@@ -85,6 +86,10 @@ import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
+import qualified Parun.Types.Chooser as Chooser
+import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
+import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
+import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
@@ -175,6 +180,10 @@ import qualified Parun.Types.DungeonRoom as DungeonRoom
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.DuringPhase as DuringPhase
+import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
+import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
+import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
+import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Emerge as Emerge
@@ -217,6 +226,7 @@ import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
 import qualified Parun.Types.ForetellCost as ForetellCost
 import qualified Parun.Types.FreeCast as FreeCast
+import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
@@ -323,6 +333,7 @@ import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
+import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Power as Power
@@ -338,6 +349,8 @@ import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RandomCard as RandomCard
+import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Reinforce as Reinforce
@@ -402,6 +415,8 @@ import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
+import qualified Parun.Types.TopOfLibrary as TopOfLibrary
+import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -428,6 +443,7 @@ import qualified Parun.Types.While as While
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
+import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- | One visitor per kind of child a DSL tree holds. The traversals below are
 -- the ONE place that matches each constructor positionally, so a new
@@ -2262,7 +2278,7 @@ entryRewriteChildren c rewrite = case rewrite of
     fmap EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber <$> replacementFilter c filter_ <*> traverse (replacementCounterKind c) kind <*> replacementQuantity c each)
   EntryRewrite.SacrificeToEnter (SacrificeToEnter.MkSacrificeToEnter count filter_) -> fmap EntryRewrite.SacrificeToEnter (SacrificeToEnter.MkSacrificeToEnter count <$> replacementFilter c filter_)
   EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard filter_ players count orGraveyard kinds each) ->
-    fmap EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard <$> replacementFilter c filter_ <*> pure players <*> howManyChildren c count <*> pure orGraveyard <*> traverse (replacementCounterKind c) kinds <*> replacementQuantity c each)
+    fmap EntryRewrite.ExileFromGraveyard (ExileFromGraveyard.MkExileFromGraveyard <$> replacementFilter c filter_ <*> pure players <*> howManyChildren (replacementQuantity c) count <*> pure orGraveyard <*> traverse (replacementCounterKind c) kinds <*> replacementQuantity c each)
   EntryRewrite.EntersAttachedTo filter_ -> EntryRewrite.EntersAttachedTo <$> replacementFilter c filter_
   EntryRewrite.Riot -> pure rewrite
   EntryRewrite.ReadAhead -> pure rewrite
@@ -2403,11 +2419,11 @@ counterSubjectChildren c subject = case subject of
   CounterSubject.ByPlayer whose -> CounterSubject.ByPlayer <$> replacementWhose c whose
   CounterSubject.ByAnything -> pure subject
 
--- | How many cards an entry exiles (CR 608.2d).
-howManyChildren :: (Applicative f) => ReplacementChildren card ability effect f -> HowMany.HowMany -> f HowMany.HowMany
-howManyChildren c count = case count of
-  HowMany.Exactly n -> HowMany.Exactly <$> replacementQuantity c n
-  HowMany.UpTo n -> HowMany.UpTo <$> traverse (replacementQuantity c) n
+-- | How many cards a choice takes (CR 608.2d), its count through the visitor.
+howManyChildren :: (Applicative f) => (Quantity.Quantity -> f Quantity.Quantity) -> HowMany.HowMany -> f HowMany.HowMany
+howManyChildren onCount count = case count of
+  HowMany.Exactly n -> HowMany.Exactly <$> onCount n
+  HowMany.UpTo n -> HowMany.UpTo <$> traverse onCount n
 
 -- | One visitor per kind of child a condition holds: a CR 611.2b "for as long
 -- as", a CR 603.8 state trigger's, a CR 603.4 intervening "if".
@@ -3069,3 +3085,94 @@ traverseSlots c onValue = fmap Map.fromList . traverse (\(name, value) -> (,) <$
 -- | A set's members, each through a visitor; members the visitor maps together merge.
 traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)
 traverseSet f = fmap Set.fromList . traverse f . Set.toList
+
+-- | One visitor per kind of child an object reference holds: the objects an
+-- instruction acts on (CR 608.2c).
+data ObjectRefChildren f = MkObjectRefChildren
+  { -- | A Filter a field holds, judged of the objects it describes.
+    refFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A Quantity a field holds: a count of cards, a walk's weight.
+    refQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A slot the reference reads: a bound group, an attached-to object.
+    refSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | A player a field names: whose library, who chooses.
+    refPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | Whose zones a walk reaches, whole.
+    refZones :: ZoneScope.ZoneScope -> f ZoneScope.ZoneScope,
+    -- | Who chooses a card out of a graveyard (CR 608.2d), whole.
+    refChooser :: Chooser.Chooser -> f Chooser.Chooser,
+    -- | A nested reference: AtRandom's, AllOf's.
+    refNested :: ObjectRef.ObjectRef -> f ObjectRef.ObjectRef,
+    -- | The events the engine looks back over to resolve the reference.
+    refLooksBack :: HistoryRead.HistoryRead -> f ()
+  }
+
+-- | Every child of an object reference left as it is: the base a walk overrides.
+objectRefLeaves :: (Applicative f) => ObjectRefChildren f
+objectRefLeaves =
+  MkObjectRefChildren
+    { refFilter = pure,
+      refQuantity = pure,
+      refSlot = pure,
+      refPlayer = pure,
+      refZones = pure,
+      refChooser = pure,
+      refNested = pure,
+      refLooksBack = const (pure ())
+    }
+
+-- | An ObjectRef's immediate children, its payload matched positionally. A
+-- nested reference is handed to refNested and not descended here.
+objectRefChildren :: (Applicative f) => ObjectRefChildren f -> ObjectRef.ObjectRef -> f ObjectRef.ObjectRef
+objectRefChildren c ref = case ref of
+  ObjectRef.InSlot bound -> ObjectRef.InSlot <$> refSlot c bound
+  ObjectRef.EachMatching filter_ -> ObjectRef.EachMatching <$> refFilter c filter_
+  ObjectRef.EachCardInGraveyard (EachCardInGraveyard.MkEachCardInGraveyard graveyards filter_) -> fmap ObjectRef.EachCardInGraveyard (EachCardInGraveyard.MkEachCardInGraveyard <$> refZones c graveyards <*> refFilter c filter_)
+  ObjectRef.EachCardInYourHand -> pure ref
+  ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand hands filter_) -> fmap ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand <$> refZones c hands <*> traverse (refFilter c) filter_)
+  ObjectRef.EachCardInYourLibrary filter_ -> ObjectRef.EachCardInYourLibrary <$> traverse (refFilter c) filter_
+  ObjectRef.EachCardYouOwn filter_ -> ObjectRef.EachCardYouOwn <$> refFilter c filter_
+  ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile filter_) -> fmap ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile pile <$> traverse (refFilter c) filter_)
+  ObjectRef.EachCardEncodedOnSource filter_ -> ObjectRef.EachCardEncodedOnSource <$> traverse (refFilter c) filter_
+  ObjectRef.EachSpell filter_ -> ObjectRef.EachSpell <$> refFilter c filter_
+  ObjectRef.EachAbility filter_ -> ObjectRef.EachAbility <$> refFilter c filter_
+  ObjectRef.EachOnStack filter_ -> ObjectRef.EachOnStack <$> refFilter c filter_
+  ObjectRef.Players (PlayersWho.MkPlayersWho players who) -> fmap ObjectRef.Players (PlayersWho.MkPlayersWho <$> refPlayer c players <*> traverse (refFilter c) who)
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count)
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil seat filter_ weight count) -> fmap ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c weight <*> refQuantity c count)
+  ObjectRef.TopOfGraveyard seat -> ObjectRef.TopOfGraveyard <$> refPlayer c seat
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count) ->
+    fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand seat filter_ count) -> fmap ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand <$> refPlayer c seat <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count chooser pileChooser faceUpPile selection) ->
+    fmap
+      ObjectRef.ChosenCardFromAmong
+      ( ChosenCardFromAmong.MkChosenCardFromAmong
+          <$> refSlot c bound
+          <*> refFilter c filter_
+          <*> howManyChildren (refQuantity c) count
+          <*> refPlayer c chooser
+          <*> traverse (refPlayer c) pileChooser
+          <*> pure faceUpPile
+          <*> pure selection
+      )
+  ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong bound filter_) -> fmap ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong <$> refSlot c bound <*> refFilter c filter_)
+  ObjectRef.RandomCard (RandomCard.MkRandomCard zone seat filter_ count) -> fmap ObjectRef.RandomCard (RandomCard.MkRandomCard zone <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c count)
+  ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard players filter_ count) -> fmap ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard <$> refZones c players <*> refFilter c filter_ <*> refQuantity c count)
+  ObjectRef.AtRandom inner -> ObjectRef.AtRandom <$> refNested c inner
+  ObjectRef.ChosenPermanents choice -> ObjectRef.ChosenPermanents <$> chosenPermanentsChildren c choice
+  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound bound filter_) -> fmap ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound <$> refSlot c bound <*> refFilter c filter_)
+  ObjectRef.AttackedBy bound -> ObjectRef.AttackedBy <$> refSlot c bound
+  -- CR 400.7j: which object the slot's card became is read off the zone moves.
+  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among)
+  ObjectRef.AllOf refs -> ObjectRef.AllOf <$> traverse (refNested c) refs
+
+-- | A battlefield choice's children (CR 608.2d): what it picks among, who
+-- picks and how many.
+chosenPermanentsChildren :: (Applicative f) => ObjectRefChildren f -> ChosenPermanents.ChosenPermanents -> f ChosenPermanents.ChosenPermanents
+chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count zone) =
+  ChosenPermanents.MkChosenPermanents
+    <$> refFilter c filter_
+    <*> refPlayer c chooser
+    <*> howManyChildren (refQuantity c) count
+    <*> pure zone

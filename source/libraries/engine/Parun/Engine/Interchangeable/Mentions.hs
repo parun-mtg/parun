@@ -21,8 +21,9 @@
 -- AlternativeCost, GrantedAbility, Modal with its Mode, Clause and
 -- ModeSelection, Face and Card, and the stored rows: ActiveReplacement,
 -- DelayedTrigger, ActiveLaterPayment, Prevention, PreventionRider, the
--- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry) is
--- matched there instead, its leaf types discarded there.
+-- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry, and
+-- ObjectRef with ChosenPermanents) is matched there instead, its leaf types
+-- discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -62,7 +63,6 @@ import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
-import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
@@ -83,9 +83,6 @@ import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Chooser as Chooser
-import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
-import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
-import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
@@ -110,10 +107,6 @@ import qualified Parun.Types.DungeonRoom as DungeonRoom
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.DuringPhase as DuringPhase
-import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
-import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
-import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
-import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.EntryAttack as EntryAttack
@@ -129,12 +122,10 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
-import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HistoryRead as HistoryRead
-import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
@@ -168,7 +159,6 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
-import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prevention as Prevention
@@ -176,8 +166,6 @@ import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Quantity as Quantity
-import qualified Parun.Types.RandomCard as RandomCard
-import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
@@ -196,8 +184,6 @@ import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
-import qualified Parun.Types.TopOfLibrary as TopOfLibrary
-import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
@@ -439,10 +425,6 @@ attachRestrictionNames :: (Monoid r) => Asking r -> AttachRestriction.AttachRest
 attachRestrictionNames asking x = case x of
   AttachRestriction.MkAttachRestriction affected attachers -> affectedNames asking affected <> filterNames asking attachers
 
-attachedToBoundNames :: (Monoid r) => Asking r -> AttachedToBound.AttachedToBound -> r
-attachedToBoundNames asking x = case x of
-  AttachedToBound.MkAttachedToBound slot filter_ -> slotNames asking slot <> filterNames asking filter_
-
 attackCostNames :: (Monoid r) => Asking r -> AttackCost.AttackCost -> r
 attackCostNames asking x = case x of
   AttackCost.MkAttackCost subject perAttacker _scope while -> affectedNames asking subject <> perCreatureNames asking perAttacker <> foldMap (conditionNames asking) while
@@ -542,21 +524,23 @@ chooserNames asking x = case x of
   Chooser.EachInScope -> mempty
   Chooser.BoundInSlot slotName -> slotNames asking slotName
 
-chosenCardFromAmongNames :: (Monoid r) => Asking r -> ChosenCardFromAmong.ChosenCardFromAmong -> r
-chosenCardFromAmongNames asking x = case x of
-  ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count chooser pileChooser _ _ -> slotNames asking slot <> filterNames asking filter_ <> foldMap (quantityNames asking) (HowMany.quantity count) <> playerRefNames asking chooser <> foldMap (playerRefNames asking) pileChooser
-
-chosenCardInGraveyardNames :: (Monoid r) => Asking r -> ChosenCardInGraveyard.ChosenCardInGraveyard -> r
-chosenCardInGraveyardNames asking x = case x of
-  ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count -> chooserNames asking chooser <> zoneScopeNames asking players <> filterNames asking filter_ <> foldMap (quantityNames asking) (HowMany.quantity count)
-
-chosenCardInHandNames :: (Monoid r) => Asking r -> ChosenCardInHand.ChosenCardInHand -> r
-chosenCardInHandNames asking x = case x of
-  ChosenCardInHand.MkChosenCardInHand player filter_ count -> playerRefNames asking player <> filterNames asking filter_ <> foldMap (quantityNames asking) (HowMany.quantity count)
-
 chosenPermanentsNames :: (Monoid r) => Asking r -> ChosenPermanents.ChosenPermanents -> r
-chosenPermanentsNames asking x = case x of
-  ChosenPermanents.MkChosenPermanents filter_ chooser count _zone -> filterNames asking filter_ <> playerRefNames asking chooser <> foldMap (quantityNames asking) (HowMany.quantity count)
+chosenPermanentsNames asking = Const.getConst . Children.chosenPermanentsChildren (objectRefVisitors asking)
+
+-- Parun.Engine.Children's traversal at Const. FromAnywhere's read of the zone
+-- moves (CR 400.7j) is refLooksBack.
+objectRefVisitors :: (Monoid r) => Asking r -> Children.ObjectRefChildren (Const.Const r)
+objectRefVisitors asking =
+  Children.MkObjectRefChildren
+    { Children.refFilter = Const.Const . filterNames asking,
+      Children.refQuantity = Const.Const . quantityNames asking,
+      Children.refSlot = Const.Const . slotNames asking,
+      Children.refPlayer = Const.Const . playerRefNames asking,
+      Children.refZones = Const.Const . zoneScopeNames asking,
+      Children.refChooser = Const.Const . chooserNames asking,
+      Children.refNested = Const.Const . objectRefNames asking,
+      Children.refLooksBack = Const.Const . history asking
+    }
 
 combatRestrictionNames :: (Monoid r) => Asking r -> CombatRestriction.CombatRestriction -> r
 combatRestrictionNames asking x = case x of
@@ -708,22 +692,6 @@ durationVisitors asking =
       Children.durationFilter = Const.Const . filterNames asking,
       Children.durationObject = \oid -> Const.Const (names asking (== oid))
     }
-
-eachCardFromAmongNames :: (Monoid r) => Asking r -> EachCardFromAmong.EachCardFromAmong -> r
-eachCardFromAmongNames asking x = case x of
-  EachCardFromAmong.MkEachCardFromAmong slot filter_ -> slotNames asking slot <> filterNames asking filter_
-
-fromAnywhereNames :: (Monoid r) => Asking r -> FromAnywhere.FromAnywhere -> r
-fromAnywhereNames asking x = case x of
-  FromAnywhere.MkFromAnywhere slot among -> slotNames asking slot <> foldMap (slotNames asking) among
-
-eachCardInGraveyardNames :: (Monoid r) => Asking r -> EachCardInGraveyard.EachCardInGraveyard -> r
-eachCardInGraveyardNames asking x = case x of
-  EachCardInGraveyard.MkEachCardInGraveyard graveyards filter_ -> zoneScopeNames asking graveyards <> filterNames asking filter_
-
-eachCardInHandNames :: (Monoid r) => Asking r -> EachCardInHand.EachCardInHand -> r
-eachCardInHandNames asking x = case x of
-  EachCardInHand.MkEachCardInHand hands filter_ -> zoneScopeNames asking hands <> foldMap (filterNames asking) filter_
 
 -- Parun.Engine.Children's traversal at Const: every child an effect holds,
 -- each through its own walk. No effect constructor reads the history or
@@ -1087,35 +1055,7 @@ movedKindsNames asking x = case x of
   MovedKinds.UpToOneChosen -> mempty
 
 objectRefNames :: (Monoid r) => Asking r -> ObjectRef.ObjectRef -> r
-objectRefNames asking x = case x of
-  ObjectRef.InSlot slotName -> slotNames asking slotName
-  ObjectRef.EachMatching filter_ -> filterNames asking filter_
-  ObjectRef.EachCardInGraveyard eachCardInGraveyard -> eachCardInGraveyardNames asking eachCardInGraveyard
-  ObjectRef.EachCardInYourHand -> mempty
-  ObjectRef.EachCardInHand eachCardInHand -> eachCardInHandNames asking eachCardInHand
-  ObjectRef.EachCardInYourLibrary filter_ -> foldMap (filterNames asking) filter_
-  ObjectRef.EachCardYouOwn filter_ -> filterNames asking filter_
-  ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile _pile filter_) -> foldMap (filterNames asking) filter_
-  ObjectRef.EachCardEncodedOnSource filter_ -> foldMap (filterNames asking) filter_
-  ObjectRef.EachSpell filter_ -> filterNames asking filter_
-  ObjectRef.EachAbility filter_ -> filterNames asking filter_
-  ObjectRef.EachOnStack filter_ -> filterNames asking filter_
-  ObjectRef.Players (PlayersWho.MkPlayersWho playerRef who) -> playerRefNames asking playerRef <> foldMap (filterNames asking) who
-  ObjectRef.TopOfLibrary topOfLibrary -> topOfLibraryNames asking topOfLibrary
-  ObjectRef.TopOfLibraryUntil topOfLibraryUntil -> topOfLibraryUntilNames asking topOfLibraryUntil
-  ObjectRef.TopOfGraveyard playerRef -> playerRefNames asking playerRef
-  ObjectRef.ChosenCardInGraveyard chosenCardInGraveyard -> chosenCardInGraveyardNames asking chosenCardInGraveyard
-  ObjectRef.ChosenCardInHand chosenCardInHand -> chosenCardInHandNames asking chosenCardInHand
-  ObjectRef.ChosenCardFromAmong chosenCardFromAmong -> chosenCardFromAmongNames asking chosenCardFromAmong
-  ObjectRef.EachCardFromAmong eachCardFromAmong -> eachCardFromAmongNames asking eachCardFromAmong
-  ObjectRef.RandomCard randomCard -> randomCardNames asking randomCard
-  ObjectRef.RandomCardInGraveyard randomCardInGraveyard -> randomCardInGraveyardNames asking randomCardInGraveyard
-  ObjectRef.AtRandom inner -> objectRefNames asking inner
-  ObjectRef.ChosenPermanents chosenPermanents -> chosenPermanentsNames asking chosenPermanents
-  ObjectRef.AttachedToBound attachedToBound -> attachedToBoundNames asking attachedToBound
-  ObjectRef.AttackedBy slot -> slotNames asking slot
-  ObjectRef.FromAnywhere fromAnywhere -> history asking HistoryRead.Moves <> fromAnywhereNames asking fromAnywhere
-  ObjectRef.AllOf refs -> foldMap (objectRefNames asking) refs
+objectRefNames asking = Const.getConst . Children.objectRefChildren (objectRefVisitors asking)
 
 operandNames :: (Monoid r) => Asking r -> Operand.Operand -> r
 operandNames asking x = case x of
@@ -1281,14 +1221,6 @@ quantityNames asking x =
               x
           )
 
-randomCardInGraveyardNames :: (Monoid r) => Asking r -> RandomCardInGraveyard.RandomCardInGraveyard -> r
-randomCardInGraveyardNames asking x = case x of
-  RandomCardInGraveyard.MkRandomCardInGraveyard players filter_ count -> zoneScopeNames asking players <> filterNames asking filter_ <> quantityNames asking count
-
-randomCardNames :: (Monoid r) => Asking r -> RandomCard.RandomCard -> r
-randomCardNames asking x = case x of
-  RandomCard.MkRandomCard _ player filter_ count -> playerRefNames asking player <> filterNames asking filter_ <> quantityNames asking count
-
 recipientNames :: (Monoid r) => Asking r -> Recipient.Recipient -> r
 recipientNames asking x = case x of
   Recipient.ToCreature objectId -> names asking (== objectId)
@@ -1382,14 +1314,6 @@ staticAbilityNames asking onAbility = Const.getConst . Children.staticAbilityChi
 targetSlotNames :: (Monoid r) => Asking r -> TargetSlot.TargetSlot -> r
 targetSlotNames asking x = case x of
   TargetSlot.MkTargetSlot pool filter_ count amount chooser perPlayer divided _together asCast -> poolNames asking pool <> foldMap (filterNames asking) filter_ <> foldMap (filterNames asking) asCast <> slotCountNames asking count <> foldMap (quantityNames asking) amount <> foldMap (playerRefNames asking) chooser <> foldMap (slotPerPlayerNames asking) perPlayer <> foldMap (quantityNames asking) divided
-
-topOfLibraryNames :: (Monoid r) => Asking r -> TopOfLibrary.TopOfLibrary -> r
-topOfLibraryNames asking x = case x of
-  TopOfLibrary.MkTopOfLibrary player count -> playerRefNames asking player <> quantityNames asking count
-
-topOfLibraryUntilNames :: (Monoid r) => Asking r -> TopOfLibraryUntil.TopOfLibraryUntil -> r
-topOfLibraryUntilNames asking x = case x of
-  TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ weight count -> playerRefNames asking player <> filterNames asking filter_ <> quantityNames asking weight <> quantityNames asking count
 
 toughnessNames :: (Monoid r) => Asking r -> Toughness.Toughness -> r
 toughnessNames asking x = case x of

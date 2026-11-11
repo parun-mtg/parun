@@ -25,7 +25,6 @@ import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
-import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
@@ -41,9 +40,6 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
-import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
-import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
-import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Condition as Condition.Type
@@ -56,10 +52,6 @@ import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Duration as Duration
-import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
-import qualified Parun.Types.EachCardInExiledPile as EachCardInExiledPile
-import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
-import qualified Parun.Types.EachCardInHand as EachCardInHand
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryRestriction as EntryRestriction
@@ -69,7 +61,6 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
-import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.ManaAddition as ManaAddition
@@ -89,12 +80,9 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
-import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity.Type
-import qualified Parun.Types.RandomCard as RandomCard
-import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
 import qualified Parun.Types.RemovalCount as RemovalCount
 import Parun.Types.ReplacementEffect (ReplacementEffect)
 import qualified Parun.Types.RuleAbilities as RuleAbilities
@@ -108,8 +96,6 @@ import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
-import qualified Parun.Types.TopOfLibrary as TopOfLibrary
-import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TypeLine as TypeLine
@@ -488,65 +474,31 @@ swapWordIn family pairs s = case swapTextWordIn (Set.singleton family) pairs (Te
   TextWord.SubtypeWord t -> t
   TextWord.ColorWord _ -> s
 
--- CR 612.1 through an ObjectRef. An InSlot names an object chosen at cast time,
--- and the player-naming arms hold no subtype word; only the Filters and the
--- Quantities can carry one -- the Filter that says what ends a walk of a library
--- included, and ChosenCardInGraveyard's, ChosenCardFromAmong's,
--- RandomCard's and RandomCardInGraveyard's counts beside the two library walks'.
+-- CR 612.1 through an ObjectRef: Parun.Engine.Children's traversal at
+-- Identity, every Filter and Quantity rewritten -- the Filter that says what
+-- ends a walk of a library included, and the chosen and random picks' counts.
+-- Slots, seats, choosers and zone scopes hold no subtype word.
+--
+-- Proved by the scenario
+-- cr-612-2-a-sleighted-disorder-burns-each-player-who-controls-a-green-creature
+-- (Players' Filter). EachCardInYourLibrary's, RandomCard's and
+-- RandomCardInGraveyard's Filters are regression fences: no printing in the
+-- pool changes the text of an ability that writes one with such a word.
 rewriteObjectRef :: [(TextWord.TextWord, TextWord.TextWord)] -> ObjectRef.ObjectRef -> ObjectRef.ObjectRef
-rewriteObjectRef pairs ref = case ref of
-  ObjectRef.InSlot _ -> ref
-  ObjectRef.EachMatching f -> ObjectRef.EachMatching (Filter.rewrite pairs f)
-  ObjectRef.EachCardInGraveyard (EachCardInGraveyard.MkEachCardInGraveyard s f) -> ObjectRef.EachCardInGraveyard (EachCardInGraveyard.MkEachCardInGraveyard s (Filter.rewrite pairs f))
-  ObjectRef.EachCardInYourHand -> ref
-  ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand s f) -> ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand s (fmap (Filter.rewrite pairs) f))
-  -- A REGRESSION FENCE rather than proven behaviour: the one printing that
-  -- states this Filter is under a triggered ability no card in the pool changes
-  -- the text of, so dropping the rewrite here leaves the suite green.
-  ObjectRef.EachCardInYourLibrary f -> ObjectRef.EachCardInYourLibrary (fmap (Filter.rewrite pairs) f)
-  ObjectRef.EachCardYouOwn f -> ObjectRef.EachCardYouOwn (Filter.rewrite pairs f)
-  ObjectRef.EachCardInExiledPile e -> ObjectRef.EachCardInExiledPile e {EachCardInExiledPile.filter = fmap (Filter.rewrite pairs) (EachCardInExiledPile.filter e)}
-  ObjectRef.EachCardEncodedOnSource f -> ObjectRef.EachCardEncodedOnSource (fmap (Filter.rewrite pairs) f)
-  ObjectRef.EachSpell f -> ObjectRef.EachSpell (Filter.rewrite pairs f)
-  ObjectRef.EachAbility f -> ObjectRef.EachAbility (Filter.rewrite pairs f)
-  ObjectRef.EachOnStack f -> ObjectRef.EachOnStack (Filter.rewrite pairs f)
-  -- Proved by the scenario
-  -- cr-612-2-a-sleighted-disorder-burns-each-player-who-controls-a-green-creature.
-  ObjectRef.Players p -> ObjectRef.Players p {PlayersWho.who = fmap (Filter.rewrite pairs) (PlayersWho.who p)}
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary p c) -> ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary p (rewriteQuantity pairs c))
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil p f w c) -> ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil p (Filter.rewrite pairs f) (rewriteQuantity pairs w) (rewriteQuantity pairs c))
-  -- Names a POSITION and a seat, and neither is a subtype word, so CR 612.1 has
-  -- nothing to swap: the arms above reach one only through a Filter or a
-  -- Quantity, and this one carries neither.
-  ObjectRef.TopOfGraveyard _ -> ref
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard c s f n) -> ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard c s (Filter.rewrite pairs f) (rewriteHowMany pairs n))
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand p f n) -> ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand p (Filter.rewrite pairs f) (rewriteHowMany pairs n))
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong n f c w p u r) -> ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong n (Filter.rewrite pairs f) (rewriteHowMany pairs c) w p u r)
-  ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong n f) -> ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong n (Filter.rewrite pairs f))
-  -- A REGRESSION FENCE rather than proven behaviour, EachCardInYourLibrary's
-  -- reason: no card in the pool narrows a random pick by a land type, and no
-  -- printing changes the text of the ones that write this ref.
-  ObjectRef.RandomCard (RandomCard.MkRandomCard z p f c) -> ObjectRef.RandomCard (RandomCard.MkRandomCard z p (Filter.rewrite pairs f) (rewriteQuantity pairs c))
-  -- The arm above's regression fence, for its reason: Ghoulraiser's Zombie is a
-  -- creature type and no printing changes this trigger's text.
-  ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard s f c) -> ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard s (Filter.rewrite pairs f) (rewriteQuantity pairs c))
-  ObjectRef.ChosenPermanents choice -> ObjectRef.ChosenPermanents (rewriteChosenPermanents pairs choice)
-  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot f) -> ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot (Filter.rewrite pairs f))
-  ObjectRef.AttackedBy _ -> ref
-  ObjectRef.FromAnywhere _ -> ref
-  ObjectRef.AtRandom inner -> ObjectRef.AtRandom (rewriteObjectRef pairs inner)
-  ObjectRef.AllOf refs -> ObjectRef.AllOf (fmap (rewriteObjectRef pairs) refs)
+rewriteObjectRef pairs = Identity.runIdentity . Children.objectRefChildren (objectRefRewrites pairs)
 
 -- CR 612.1 through a battlefield choice: its Filter and its count are card
 -- text, and its chooser names a seat, never a subtype.
 rewriteChosenPermanents :: [(TextWord.TextWord, TextWord.TextWord)] -> ChosenPermanents.ChosenPermanents -> ChosenPermanents.ChosenPermanents
-rewriteChosenPermanents pairs (ChosenPermanents.MkChosenPermanents f chooser count zone) =
-  ChosenPermanents.MkChosenPermanents (Filter.rewrite pairs f) chooser (rewriteHowMany pairs count) zone
+rewriteChosenPermanents pairs = Identity.runIdentity . Children.chosenPermanentsChildren (objectRefRewrites pairs)
 
-rewriteHowMany :: [(TextWord.TextWord, TextWord.TextWord)] -> HowMany.HowMany -> HowMany.HowMany
-rewriteHowMany pairs count = case count of
-  HowMany.Exactly n -> HowMany.Exactly (rewriteQuantity pairs n)
-  HowMany.UpTo n -> HowMany.UpTo (fmap (rewriteQuantity pairs) n)
+objectRefRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.ObjectRefChildren Identity.Identity
+objectRefRewrites pairs =
+  Children.objectRefLeaves
+    { Children.refFilter = Identity.Identity . Filter.rewrite pairs,
+      Children.refQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.refNested = Identity.Identity . rewriteObjectRef pairs
+    }
 
 -- CR 612.1/612.2a through the CARD an Effect.Create or an Effect.CreateEmblem
 -- defines its token or emblem with: the type line, the name, and the rules text.
