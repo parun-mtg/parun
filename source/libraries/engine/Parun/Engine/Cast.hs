@@ -2,6 +2,7 @@ module Parun.Engine.Cast where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -103,6 +104,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Payment as Payment
 import qualified Parun.Types.PaymentMoment as PaymentMoment
 import qualified Parun.Types.PaymentSubject as PaymentSubject
+import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
@@ -2029,12 +2031,20 @@ castableGiven shared pid oid name facing gs =
       -- the reduction and the spending of SOME permission the cast could be made
       -- under (Dawnhand Dissident's costs, Urianger Augurelt's reduction, Tinybones,
       -- Bauble Burglar's mana of any type).
-      extras candidate = maybe [([], [], ManaSpending.AsProduced)] (\face -> permissionCostChoices pid oid face (proposedFor oid (CandidateCost.keyword candidate) proposed) (CandidateCost.keyword candidate)) (proposedFace oid name proposed)
+      extras candidate = maybe [([], [], ManaSpending.AsProduced, Nothing)] (\face -> permissionCostChoices pid oid face (proposedFor oid (CandidateCost.keyword candidate) proposed) (CandidateCost.keyword candidate)) (proposedFace oid name proposed)
       candidateOk candidate =
         candidateAllowed pid oid proposed candidate
           && candidateInZone pid oid name proposed candidate
           && candidateFillable pid oid name proposed candidate
-          && any (\(extra, less, wayGives) -> payable (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra (CandidateCost.cost candidate))) (extras candidate)
+          && any (wayPayable candidate) (extras candidate)
+      -- CR 118.9: a way's alternative cost, laid over the candidate it fits.
+      wayPayable candidate (extra, less, wayGives, alternative) = case (alternative, proposedFace oid name proposed) of
+        (Nothing, _) -> payableUnder candidate extra less wayGives (CandidateCost.cost candidate)
+        (Just _, Nothing) -> False
+        (Just _, Just face) -> case underAlternative face alternative candidate of
+          Nothing -> False
+          Just cost -> payableUnder candidate extra less wayGives cost
+      payableUnder candidate extra less wayGives cost = payable (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra cost)
    in cardGatesOk pid oid name proposed
         && lookGateOk pid oid name gs proposed
         -- Gated HERE, upstream of Action.legalActions, because the engine never
@@ -2998,7 +3008,8 @@ ownPayingWays oid face gs =
           CastFromZone.pool = PermissionPool.EveryCard,
           CastFromZone.additionalCosts = additional,
           CastFromZone.reduction = 0,
-          CastFromZone.spending = ManaSpending.AsProduced
+          CastFromZone.spending = ManaSpending.AsProduced,
+          CastFromZone.alternativeCost = Nothing
         }
     )
   | CastingPermission.CastFromGraveyard _ additional@(_ : _) <- Cost.permissionsOf oid face gs
@@ -3037,17 +3048,30 @@ candidatesWithWays pid oid name proposed candidates = case proposedFace oid name
            in maybe True (not . null) (candidateWays (const False) False pid oid (Game.zoneOf oid proposed) face (proposedFor oid castFor proposed) castFor)
      in if any hasWay candidates then filter hasWay candidates else candidates
 
--- CR 118.8 / 601.2f / 118.14: the additional costs, the reductions and the
--- spending each way a cast could be made under would bring, one empty row where
--- there is none to choose among.
-wayCosts :: Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)] -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending)]
+-- CR 118.8 / 601.2f / 118.14 / 118.9: the additional costs, the reductions, the
+-- spending and the alternative cost each way a cast could be made under would
+-- bring, one empty row where there is none to choose among.
+wayCosts :: Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)] -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending, Maybe PermissionCost.PermissionCost)]
 wayCosts ways = case Maybe.fromMaybe [] ways of
-  [] -> [([], [], ManaSpending.AsProduced)]
-  options -> fmap (\way -> (PlayerEffect.permissionCosts way, PlayerEffect.permissionReductions way, PlayerEffect.permissionSpending way)) options
+  [] -> [([], [], ManaSpending.AsProduced, Nothing)]
+  options -> fmap (\way -> (PlayerEffect.permissionCosts way, PlayerEffect.permissionReductions way, PlayerEffect.permissionSpending way, PlayerEffect.permissionAlternative way)) options
+
+-- CR 118.9 / 118.9a: what `candidate` costs under a way offering `alternative`.
+-- Its own cost where the way offers none; the alternative laid over it where
+-- the candidate is the printed cost (no keyword's, the face's own mana);
+-- Nothing, the way being unusable for it, where the candidate is already an
+-- alternative cost, since only one applies to a spell. Zaffai and the Tempests'
+-- scenarios prove it.
+underAlternative :: Face.Face card -> Maybe PermissionCost.PermissionCost -> CandidateCost.CandidateCost -> Maybe (Cost Keyword)
+underAlternative face alternative candidate = case alternative of
+  Nothing -> Just (CandidateCost.cost candidate)
+  Just paid
+    | Maybe.isNothing (CandidateCost.keyword candidate) && Cost.Type.mana (CandidateCost.cost candidate) == Face.manaCost face -> Just (Cost.paidInstead paid face (CandidateCost.cost candidate))
+    | otherwise -> Nothing
 
 -- wayCosts at the gate, asked of the board castSpellWith asks: no spell's rider
 -- weighed, since the gate prices a cast and such a rider is no price.
-permissionCostChoices :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending)]
+permissionCostChoices :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending, Maybe PermissionCost.PermissionCost)]
 permissionCostChoices pid oid face gs = wayCosts . candidateWays (const False) False pid oid (Game.zoneOf oid gs) face gs
 
 -- CR 601.2f: `cost` with a permission's additional costs added to it.
@@ -3414,7 +3438,15 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
         _ -> Binding.setModeChooser modeChooser
   State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = stampChooser (Object.bindings o)}) sid (GameState.objects g)})
   gs <- State.get
-  let candidates = fmap (\candidate -> (CandidateCost.reductions candidate, CandidateCost.cost candidate)) candidateCosts
+  let -- CR 118.9d: each candidate also as each way's alternative cost would
+      -- price it, so an additional cost is offered on top of a free cast.
+      offeredCosts =
+        [ candidate {CandidateCost.cost = cost}
+        | candidate <- candidateCosts,
+          alternative <- ListUtils.nubOrd (Nothing : fmap PlayerEffect.permissionAlternative (Maybe.fromMaybe [] (permissions (CandidateCost.keyword candidate)))),
+          Just cost <- [underAlternative face alternative candidate]
+        ]
+      candidates = fmap (\candidate -> (CandidateCost.reductions candidate, CandidateCost.cost candidate)) offeredCosts
       decider = Decide.deciderFor pid gs
       -- CR 601.2a: the spell's keywords as it stands on the stack, printed and
       -- granted (Cost.spellKeywords), which every announcement below reads.
@@ -3548,7 +3580,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           announcedCandidates = fmap (fmap (withModeCost . withEscalate . withEntwine)) candidates
           -- Each beside the keyword that offered it, so a gate pricing it reads
           -- the board that candidate makes (proposedFor).
-          keyedCandidates = zip (fmap CandidateCost.keyword candidateCosts) announcedCandidates
+          keyedCandidates = zip (fmap CandidateCost.keyword offeredCosts) announcedCandidates
           -- CR 702.33a/b/c's, CR 702.157a's and CR 702.175a's costs, read ONCE off
           -- the spell's keywords: the announcement below and the limit it is
           -- judged against are the same list. Each with how many instances the
@@ -3673,10 +3705,22 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- Urianger Augurelt's {2} less). Which one it is made under is asked
           -- below, and payableCost re-asks the cost with that permission's own
           -- reduction once it is.
+          --
+          -- CR 118.9d: a permission's alternative cost (underAlternative) is laid
+          -- over the candidate BEFORE the additional costs are folded in, so a
+          -- kicker is still paid on top of "without paying its mana cost". Each
+          -- folded candidate the prompt shows is kept beside the one it came from.
+          folded cost = withSplice (withBuyback (withKicker (withModeCost (withEscalate (withEntwine cost)))))
+          withFolded = fmap (\candidate -> (candidate {CandidateCost.cost = folded (CandidateCost.cost candidate)}, candidate)) candidateCosts
+          payableUnder candidate (extra, less, wayGives, alternative) = case underAlternative face alternative candidate of
+            Nothing -> False
+            Just cost -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (folded cost))
           payableCandidates =
-            filter
-              (\candidate -> settledFor candidate && any (\(extra, less, wayGives) -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (CandidateCost.cost candidate))) (wayCosts (permissions (CandidateCost.keyword candidate))))
-              (fmap (\candidate -> candidate {CandidateCost.cost = withSplice (withBuyback (withKicker (withModeCost (withEscalate (withEntwine (CandidateCost.cost candidate))))))}) candidateCosts)
+            [ shown
+            | (shown, candidate) <- withFolded,
+              settledFor candidate,
+              any (payableUnder candidate) (wayCosts (permissions (CandidateCost.keyword candidate)))
+            ]
       if null payableCandidates || overKickerLimit || not spliceValid
         then reject
         else do
@@ -3696,7 +3740,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           if notElem chosenCandidate payableCandidates
             then reject
             else do
-              let chosenCost = CandidateCost.cost chosenCandidate
+              let unfolded = Maybe.fromMaybe chosenCandidate (lookup chosenCandidate withFolded)
                   -- The record CR 702.34a's "if the flashback cost was paid"
                   -- reads once the cast is complete.
                   castFor = CandidateCost.keyword chosenCandidate
@@ -3712,8 +3756,15 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- it is made under -- the budget it spends and the rider it gets.
               -- CR 400.7: a permission the card carries for itself (ownPayingWays)
               -- is named by the spell the card has become.
-              permissionUsed <- choosePlayPermission pid sid (fmap (fmap (\way@(src, grant) -> if src == oid then (sid, grant) else way)) (Maybe.fromMaybe [] ways))
+              -- CR 118.9a: only the ways whose alternative cost, if any, this
+              -- candidate can take.
+              let usable way = Maybe.isJust (underAlternative face (PlayerEffect.permissionAlternative way) unfolded)
+              permissionUsed <- choosePlayPermission pid sid (filter usable (fmap (fmap (\way@(src, grant) -> if src == oid then (sid, grant) else way)) (Maybe.fromMaybe [] ways)))
               let ridersUsed = riders permissionUsed
+                  -- CR 118.9: the permission's alternative cost, laid over the
+                  -- candidate before its additional costs; `usable` leaves no
+                  -- way it refuses, so the fallback is never taken.
+                  chosenCost = maybe (CandidateCost.cost chosenCandidate) folded (underAlternative face (PlayerEffect.permissionAlternative permissionUsed) unfolded)
                   -- CR 118.8 / 601.2f: the permission's additional costs join
                   -- the chosen candidate's.
                   unannouncedCost = withPermissionCosts (PlayerEffect.permissionCosts permissionUsed) chosenCost
