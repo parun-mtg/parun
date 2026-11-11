@@ -288,15 +288,18 @@ to agents as written. What it doesn't say:
     `Parun.Engine.Event.Match`'s `matchesTriggerGiven` (a new `GameEvent` stops
     the build only in `anyTriggerReads`; grep the arms a sibling event reaches),
     `Parun.ZoneTriggerSpec`'s hand-kept `everyTriggerCondition` and
-    `representativeEvents`, `Parun.CardSpec`'s filter and keyword traversals.
+    `representativeEvents`, the position-tagging collectors
+    (`Parun.CardSpec`'s `cardFilters` family, `Parun.EffectLintSpec`'s
+    `effectObjectRefs`).
     An `Arm.tagged` codec forces only the new constructor's tag; a tag with no
     arm encodes as `{}`, so it still owes a round-trip case. An `Arm.enum`
     codec needs neither.
 
     A TYPE THAT GAINS an ObjectId, a slot name or a Filter where it held none:
-    `Parun.Engine.Interchangeable.Mentions` discards its fields by name and
-    compiles on. Give the type a function there and turn each discard into a
-    read.
+    `Parun.Engine.Children` passes it whole (`pure x`), and
+    `Parun.Engine.Interchangeable.Mentions` discards the fields of a type
+    Children has no traversal for by name; both compile on. Give the type a
+    traversal there and turn each discard into a visit.
 
     A CONSTRUCTOR GREP allows for the module ALIAS: `Keyword.Flying` is
     `Keyword.Type.Flying` in some modules (`Parun.Engine.Filter`'s
@@ -317,10 +320,9 @@ to agents as written. What it doesn't say:
 
     A RECORD UPDATE keeps the old value of a field you added, so a descent
     that rebuilds a record drops it: grep `{ SomeRecord.field = ` and say in
-    the PR which you checked. The recurring site is
-    `Parun.Engine.Projection.Rewrite`'s walks over payload types (CR 612.1);
-    its `rewriteEffect` is forced by `Parun.Engine.Children`'s positional
-    match. A write an instruction makes whether or not it happened --- a
+    the PR which you checked. A walk built on a `Parun.Engine.Children`
+    traversal is forced by its positional match instead. A write an
+    instruction makes whether or not it happened --- a
     prune, a cache, a stamp, a zero tally --- goes in `GameState.bookkeeping`
     or `GameState.snapshots`, which
     `Parun.Engine.Resolve.Common.happenedBetween` (CR 603.12) skips whole;

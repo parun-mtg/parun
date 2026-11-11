@@ -24,6 +24,7 @@ module Parun.AbilitySlotLintSpec where
 -- whole card written by somebody else and so an independent witness to the
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Const
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -33,6 +34,7 @@ import qualified Data.Text as Text
 import Parun.CardSpec (anyFace, anyFaceOrMinted, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, effectCounts, effectWithNested, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Binding as Event
@@ -114,7 +116,6 @@ import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
-import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -1634,17 +1635,11 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
 
 -- Every AbilityName a face's layer-6 removals refer to. Both carriers of a
 -- Modification are swept: the printed ones on Face.staticAbilities, and the
--- stored ones a resolution creates, which reach a Modification only through
--- Effect.ModifyTarget.
---
--- The WILDCARD on Effect is deliberate and is the one hole here: ModifyTarget is
--- the sole Effect arm carrying a Modification, so a second one added later would
--- escape this lint without breaking the build.
+-- stored ones a resolution creates, each off Parun.Engine.Children's traversal,
+-- so an opcode gaining a Modification is swept without an arm here.
 namedRemovals :: Face.Face Card.Type.Card -> Set.Set AbilityName.AbilityName
 namedRemovals face =
-  let stored effect = case effect of
-        Effect.ModifyTarget modify -> [ModifyTarget.modification modify]
-        _ -> []
+  let stored = Const.getConst . Children.effectChildren Children.effectLeaves {Children.onModification = \modification -> Const.Const [modification]}
       printed ability = Foldable.toList (StaticAbility.modifications ability)
       removals modification = case modification of
         Modification.LoseNamedAbility name -> [name]

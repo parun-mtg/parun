@@ -3364,6 +3364,25 @@ data ModificationChildren ability f = MkModificationChildren
     modificationColors :: Set.Set Color.Color -> f (Set.Set Color.Color)
   }
 
+-- | Every child of a Modification left as it is: the base a walk overrides.
+modificationLeaves :: (Applicative f) => ModificationChildren ability f
+modificationLeaves =
+  MkModificationChildren
+    { modificationKeyword = pure,
+      modificationStampedKeyword = pure,
+      modificationTargetSlot = pure,
+      modificationCastingPermission = pure,
+      modificationAbility = pure,
+      modificationFilter = pure,
+      modificationRestriction = pure,
+      modificationAbilityName = pure,
+      modificationQuantity = pure,
+      modificationPlayer = pure,
+      modificationLandSubtype = pure,
+      modificationCreatureSubtype = pure,
+      modificationColors = pure
+    }
+
 -- | A Modification's children (CR 613.1). Its change modes, card types,
 -- supertypes, unfamilied subtypes, stored word change, names, controllers,
 -- keyword families, cost keywords and combat damage markers are left as they
@@ -3745,6 +3764,23 @@ data PermissionChildren f = MkPermissionChildren
     -- | The events the engine looks back over to judge a restriction.
     permissionLooksBack :: HistoryRead.HistoryRead -> f ()
   }
+
+-- | Every child of a target slot, casting permission or activation
+-- restriction left as it is: the base a walk overrides.
+permissionLeaves :: (Applicative f) => PermissionChildren f
+permissionLeaves =
+  MkPermissionChildren
+    { permissionFilter = pure,
+      permissionQuantity = pure,
+      permissionPlayer = pure,
+      permissionZones = pure,
+      permissionSlot = pure,
+      permissionCondition = pure,
+      permissionCost = pure,
+      permissionTurn = pure,
+      permissionMana = pure,
+      permissionLooksBack = const (pure ())
+    }
 
 -- | A target slot's children (CR 115.1, 601.2c). A printed count, the players
 -- a per-player slot is announced for and its "together" rider are left as

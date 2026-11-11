@@ -22,6 +22,7 @@ module Parun.EffectLintSpec where
 -- whole card written by somebody else and so an independent witness to the
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Const
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -34,6 +35,7 @@ import qualified Parun.Codec.Card as Card.Codec
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.PlayerEffect as PlayerEffect.Engine
 import qualified Parun.Engine.Projection as Projection
@@ -51,10 +53,8 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AgainstSlot as AgainstSlot
-import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
-import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
@@ -66,9 +66,6 @@ import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecomeCopy as BecomeCopy
-import qualified Parun.Types.Bid as Bid
-import qualified Parun.Types.BindAmount as BindAmount
-import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
@@ -76,8 +73,6 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseGroup as ChooseGroup
-import qualified Parun.Types.ChooseNumber as ChooseNumber
-import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -133,12 +128,9 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Fight as Fight
 import qualified Parun.Types.Filter as Filter.Type
-import qualified Parun.Types.FlipCoin as FlipCoin
 import qualified Parun.Types.ForEach as ForEach
-import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.ForbidAttack as ForbidAttack
 import qualified Parun.Types.ForbidBeingBlocked as ForbidBeingBlocked
-import qualified Parun.Types.FromReference as FromReference
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
@@ -151,13 +143,11 @@ import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
-import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.MakeForetold as MakeForetold
@@ -173,7 +163,6 @@ import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
-import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.ObjectId as ObjectId
@@ -189,14 +178,12 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
-import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
-import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
@@ -221,10 +208,7 @@ import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
 import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
-import qualified Parun.Types.RemovePlayerCounters as RemovePlayerCounters
 import qualified Parun.Types.Repeat as Repeat
-import qualified Parun.Types.RepeatIf as RepeatIf
-import qualified Parun.Types.Replace as Replace
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
@@ -245,12 +229,9 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.Supertype as Supertype
-import qualified Parun.Types.Surveil as Surveil
-import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
@@ -290,211 +271,33 @@ durationQuantities = concatMap Resolve.conditionQuantities . durationConditions
 -- the same quantities twice. And no descent into a MINTED object's text either,
 -- the boundary effectNestedEffects draws in so many words: a token's number is
 -- evaluated in a resolution of its own.
---
--- Hand-maintained, ownCounts' caveat: a new OPCODE the compiler forces, since
--- this case is exhaustive; a new Quantity FIELD on an existing one it does not.
 effectQuantities :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Quantity.Type.Quantity]
 effectQuantities effect = concatMap Resolve.objectRefQuantities (Resolve.effectObjectRefs effect) <> ownQuantities effect
 
--- effectQuantities' half that is not an ObjectRef's. In ownCounts' arm order, so
--- the two are checkable side by side; the arms that differ from it are the entry
--- riders, whose per-kind count is a Quantity Resolve.slotsOf reads and ownCounts
--- leaves to the Filter sweep.
+-- effectQuantities' half that is not an ObjectRef's: Parun.Engine.Children's
+-- traversal at Const, nested effects, minted cards and replacements left out.
+-- It differs from ownCounts at the entry riders, whose per-kind count is a
+-- Quantity Resolve.slotsOf reads and ownCounts leaves to the Filter sweep.
 ownQuantities :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Quantity.Type.Quantity]
-ownQuantities effect = case effect of
-  Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> fmap DamagePart.quantity (Foldable.toList parts)
-  Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification _ _) -> durationQuantities duration <> Projection.quantitiesOf modification
-  Effect.ChangeText x -> durationQuantities (ChangeText.duration x)
-  Effect.AddMana _ -> []
-  Effect.Firebend _ -> []
-  Effect.ActivateManaAbilities _ -> []
-  Effect.MoveMana _ -> []
-  Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ counters _ _ _ _ _ _) -> Maybe.maybeToList quantity <> Map.elems counters
-  Effect.ExileAllGraveyards -> []
-  Effect.Proliferate _ -> []
-  Effect.Rethrow -> []
-  Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName _ -> []
-  Effect.ChooseQuality _ -> []
-  Effect.FromOutsideTheGame _ -> []
-  Effect.ExileThisSpell -> []
-  Effect.Bolster quantity -> [quantity]
-  Effect.Amass (Amass.MkAmass _ quantity _ _) -> [quantity]
-  Effect.Blight (Blight.MkBlight _ quantity _) -> [quantity]
-  Effect.Earthbend (Earthbend.MkEarthbend quantity _) -> [quantity]
-  Effect.Airbend {} -> []
-  Effect.Assimilate {} -> []
-  Effect.TemptWithTheRing -> []
-  Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
-  Effect.Abandon -> []
-  Effect.ClaimPrize -> []
-  Effect.Forage -> []
-  Effect.Populate -> []
-  Effect.TimeTravel -> []
-  Effect.Recruit -> []
-  Effect.Learn -> []
-  Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
-  Effect.Venture {} -> []
-  Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ quantity _) -> [quantity]
-  Effect.Vote {} -> []
-  Effect.Bid bid -> [Bid.opening bid]
-  Effect.RestartGame _ -> []
-  Effect.ControlPlayerNextTurn _ -> []
-  Effect.ControlPlayerThisResolution _ -> []
-  Effect.Destroy {} -> []
-  Effect.Sacrifice _ -> []
-  -- The entry riders' counts, which Resolve.slotsOf reads and ownCounts does
-  -- not: CR 122.6's per-kind number is a Quantity like any other.
-  Effect.MoveToZone (MoveToZone.MkMoveToZone _ _ riders _ _ placement _) -> Resolve.riderQuantities riders <> Resolve.placementQuantities placement
-  Effect.Draw (Draw.MkDraw _ quantity _) -> [quantity]
-  Effect.Mill (Mill.MkMill _ quantity _ _) -> [quantity]
-  Effect.Reveal {} -> []
-  Effect.LookAt {} -> []
-  Effect.Guess {} -> []
-  Effect.Scry (PlayerQuantity.MkPlayerQuantity _ quantity) -> [quantity]
-  Effect.Surveil (Surveil.MkSurveil _ quantity _) -> [quantity]
-  Effect.Fateseal (PlayerQuantity.MkPlayerQuantity _ quantity) -> [quantity]
-  Effect.Clash {} -> []
-  Effect.AsYouCascade {} -> []
-  Effect.Explore {} -> []
-  Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary {} -> []
-  Effect.Connive (Connive.MkConnive quantity _) -> [quantity]
-  Effect.Discard subject -> case subject of
-    Discard.Counted (CountedDiscard.MkCountedDiscard _ quantity _) -> [quantity]
-    Discard.These {} -> []
-    Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard _ (AnyNumberMatching.MkAnyNumberMatching _ atMost) _) -> Foldable.toList atMost
-  Effect.LoseLife (LifeLoss.MkLifeLoss _ quantity _ _) -> [quantity]
-  Effect.GainLife (PlayerQuantity.MkPlayerQuantity _ quantity) -> [quantity]
-  Effect.ExchangeLifeTotals _ -> []
-  Effect.ExchangeValues x -> durationQuantities (ExchangeValues.duration x)
-  Effect.ExchangeZones _ -> []
-  Effect.ExchangeCardZones _ -> []
-  Effect.SetLifeTotal (PlayerQuantity.MkPlayerQuantity _ quantity) -> [quantity]
-  Effect.LoseGame {} -> []
-  Effect.WinGame {} -> []
-  Effect.DrawGame {} -> []
-  Effect.RedistributeLifeTotals -> []
-  Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> [quantity]
-  Effect.DecreaseSpeed d -> [SpeedDecrease.quantity d]
-  Effect.Create (Create.MkCreate quantity _ riders _ _ _) -> quantity : Resolve.riderQuantities riders
-  Effect.Conjure (Conjure.MkConjure quantity cards _ _ _) ->
-    quantity : case cards of
-      ConjureCards.Written {} -> []
-      ConjureCards.Duplicate {} -> []
-      ConjureCards.Reference from -> Maybe.maybeToList (FromReference.amount from)
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _ _) -> quantity : Resolve.riderQuantities riders
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationQuantities duration
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> [quantity]
-  Effect.SetX (SetX.MkSetX value _) -> NewX.quantities value
-  Effect.Replace (Replace.MkReplace duration _ _ condition _) -> durationQuantities duration <> foldMap Resolve.conditionQuantities condition
-  Effect.SkipPhase (SkipPhase.MkSkipPhase _ _ _ duration count) -> count : durationQuantities duration
-  Effect.LaterPayment (LaterPayment.MkLaterPayment duration _ _) -> durationQuantities duration
-  Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage duration _ _ _ _ _ quantity _) -> quantity : durationQuantities duration
-  Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage duration _ _ _ _ _ _ _ _) -> durationQuantities duration
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ _ _ _ _) -> durationQuantities duration
-  Effect.RedirectDamage (RedirectDamage.MkRedirectDamage duration _ amount _ _ _ _ _ _ _) -> Maybe.maybeToList amount <> durationQuantities duration
-  Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown _ listed) ->
-    fmap (\(Power.MkPower quantity) -> quantity) (Maybe.maybeToList (FaceDownCharacteristics.power listed))
-      <> fmap (\(Toughness.MkToughness quantity) -> quantity) (Maybe.maybeToList (FaceDownCharacteristics.toughness listed))
-  Effect.TurnFaceUp _ -> []
-  Effect.Fight _ -> []
-  Effect.RemoveFromCombat _ -> []
-  Effect.BlockAttacker _ -> []
-  Effect.BecomesBlocked _ -> []
-  Effect.SwitchBlockers _ -> []
-  Effect.ExchangeBlocks _ -> []
-  Effect.Counter {} -> []
-  Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _) -> [quantity]
-  Effect.Divide divide -> [Divide.quantity divide]
-  Effect.PutCountersFrom {} -> []
-  Effect.MoveCounters (MoveCounters.MkMoveCounters _ kinds _ _) -> Maybe.maybeToList (MovedKinds.quantityOf kinds)
-  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity _ _) -> [quantity]
-  Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count _ _ _) -> Maybe.maybeToList (RemovalCount.quantityOf count)
-  Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters _ _ quantity) -> [quantity]
-  Effect.RemovePlayerCounters removal -> [RemovePlayerCounters.quantity removal]
-  Effect.PayAnyEnergy _ -> []
-  Effect.ChooseNumber number -> Foldable.toList (ChooseNumber.upTo number)
-  Effect.BindAmount payload -> [BindAmount.quantity payload]
-  Effect.Tap _ -> []
-  Effect.Untap _ -> []
-  Effect.Unattach _ -> []
-  Effect.Detain _ -> []
-  Effect.Goad _ -> []
-  Effect.Pair _ -> []
-  Effect.GrantLookAtExiled _ -> []
-  Effect.MakePlotted _ -> []
-  Effect.MakeForetold _ -> []
-  Effect.MakeWarped _ -> []
-  Effect.DoesNotUntapNext _ -> []
-  Effect.Transform _ -> []
-  Effect.Convert _ -> []
-  Effect.Flip _ -> []
-  Effect.Meld (Meld.MkMeld _ _) -> []
-  Effect.PhaseOut _ -> []
-  Effect.AddPhases _ -> []
-  Effect.EndTurn -> []
-  Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl duration _ _) -> durationQuantities duration
-  Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger {} -> []
-  Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ _) -> durationQuantities duration
-  Effect.RequireBlock (RequireBlock.MkRequireBlock duration _ _ _) -> durationQuantities duration
-  Effect.Prohibit (Prohibit.MkProhibit _ duration _) -> durationQuantities duration
-  Effect.ForbidAttack (ForbidAttack.MkForbidAttack duration _ _) -> durationQuantities duration
-  Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked duration _ _) -> durationQuantities duration
-  Effect.RequireAttack (RequireAttack.MkRequireAttack duration _ _) -> durationQuantities duration
-  Effect.CreateEmblem _ -> []
-  Effect.BecomeMonarch _ -> []
-  Effect.TakeTheInitiative _ -> []
-  -- CR 701.37c's X, the one Quantity a designation carries.
-  Effect.Designate (Designate.MkDesignate _ _ value) -> Foldable.toList value
-  Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ _) -> []
-  Effect.Undesignate _ -> []
-  Effect.SetHalfLocked {} -> []
-  Effect.CounterAndMark _ -> []
-  Effect.BecomeProtector _ -> []
-  Effect.Mentor _ -> []
-  Effect.Exploit -> []
-  Effect.GiveGift -> []
-  Effect.ItBecomes _ -> []
-  Effect.ExileHaunting {} -> []
-  Effect.Attach _ -> []
-  Effect.AttachAsThoughCreature _ -> []
-  Effect.AttachTarget {} -> []
-  Effect.AttachTargetToEach {} -> []
-  Effect.AttachBound {} -> []
-  Effect.AttachAll {} -> []
-  Effect.PlaySubgame _ -> []
-  Effect.ChoosePlayer _ -> []
-  Effect.ChoosePlayerAtRandom _ -> []
-  Effect.ChoosePermanents choice -> Foldable.toList (HowMany.quantity (ChosenPermanents.count (ChoosePermanents.permanents choice)))
-  Effect.ChooseGroup _ -> []
-  Effect.RollDie rollDie -> RollDie.count rollDie : Maybe.maybeToList (RollDie.modifier rollDie)
-  Effect.FlipCoin flipCoin -> [FlipCoin.count flipCoin]
-  Effect.TakeExtraTurn takeExtraTurn -> [TakeExtraTurn.count takeExtraTurn]
-  Effect.ShuffleIntoLibrary {} -> []
-  Effect.Ante {} -> []
-  Effect.PutSticker putSticker -> Maybe.maybeToList (PutSticker.ticketCap putSticker)
-  Effect.SetOwner {} -> []
-  Effect.ExchangeOwnership {} -> []
-  Effect.Shuffle {} -> []
-  Effect.OfferNamedCopy {} -> []
-  Effect.OfferNotedCopy {} -> []
-  Effect.OfferCast {} -> []
-  Effect.GrantPlayFromExile grant -> durationQuantities (GrantPlayFromExile.duration grant)
-  Effect.ForEach {} -> []
-  Effect.ForEachNumber loop -> [ForEachNumber.upTo loop]
-  Effect.Repeat loop -> foldMap Resolve.conditionQuantities (Repeat.gate loop)
-  Effect.RepeatIf loop -> Resolve.conditionQuantities (RepeatIf.condition loop)
-  Effect.Heal _ -> []
-  Effect.ChooseNewTargets _ -> []
-  Effect.ChangeTargets _ -> []
+ownQuantities =
+  Const.getConst
+    . Children.effectChildren
+      Children.effectLeaves
+        { Children.onQuantity = \quantity -> Const.Const [quantity],
+          Children.onDuration = Const.Const . durationQuantities,
+          Children.onCondition = Const.Const . Resolve.conditionQuantities,
+          Children.onModification = Const.Const . Projection.quantitiesOf,
+          Children.onEntryRiders = Const.Const . Resolve.riderQuantities,
+          Children.onPlacement = Const.Const . Resolve.placementQuantities,
+          Children.onFaceDown = \listed ->
+            Const.Const
+              ( foldMap (\(Power.MkPower quantity) -> [quantity]) (FaceDownCharacteristics.power listed)
+                  <> foldMap (\(Toughness.MkToughness quantity) -> [quantity]) (FaceDownCharacteristics.toughness listed)
+              ),
+          Children.onMovedKinds = Const.Const . Maybe.maybeToList . MovedKinds.quantityOf,
+          Children.onRemovalCount = Const.Const . Maybe.maybeToList . RemovalCount.quantityOf,
+          Children.onChosenPermanents = Const.Const . Foldable.toList . HowMany.quantity . ChosenPermanents.count
+        }
 
 -- The shapes CR 208.1 and CR 208.2 allow in a printed power or toughness box:
 -- "two numbers separated by a slash", or a value that "includes a star (*)" --

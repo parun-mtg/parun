@@ -19,6 +19,7 @@ module Parun.CardSpec where
 -- whole card written by somebody else and so an independent witness to the
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Const
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -33,6 +34,7 @@ import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Filter as Filter
@@ -968,20 +970,7 @@ conditionCounts = concatMap quantityCounts . Resolve.conditionQuantities
 -- sweeps take from it,
 -- Resolve.conditionQuantities' role one type up.
 restrictionConditions :: ActivationRestriction.ActivationRestriction -> [Condition.Type.Condition]
-restrictionConditions restriction = case restriction of
-  ActivationRestriction.SorcerySpeed -> []
-  ActivationRestriction.DuringPhase _ -> []
-  ActivationRestriction.DuringTurn _ -> []
-  ActivationRestriction.AttackedThisStep -> []
-  ActivationRestriction.AfterBlockersDeclared -> []
-  ActivationRestriction.DuringCombatBefore _ -> []
-  ActivationRestriction.BeforeStep _ -> []
-  ActivationRestriction.OnlyIf condition -> [condition]
-  ActivationRestriction.TimesEver _ -> []
-  ActivationRestriction.TimesEachTurn _ -> []
-  ActivationRestriction.DuringThrow -> []
-  ActivationRestriction.InstantSpeed -> []
-  ActivationRestriction.SpendOnly _ -> []
+restrictionConditions = Const.getConst . Children.activationRestrictionChildren Children.permissionLeaves {Children.permissionCondition = \condition -> Const.Const [condition]}
 
 -- Every Condition a "cast this spell only ..." clause holds: only CR 601.3's
 -- OnlyIf carries one. restrictionConditions' role for the casting side.
@@ -1007,19 +996,11 @@ counterabilityConditions counterability = case counterability of
 -- Every Condition a casting permission holds: only CR 601.3d's flash
 -- permission carries one.
 castingPermissionConditions :: CastingPermission.CastingPermission -> [Condition.Type.Condition]
-castingPermissionConditions permission = case permission of
-  CastingPermission.CastFromLibraryWhileSearching -> []
-  CastingPermission.CastFromGraveyard _ _ -> []
-  CastingPermission.PlayFromGraveyard -> []
-  CastingPermission.CastAsThoughItHadFlash condition _ -> Maybe.maybeToList condition
+castingPermissionConditions = Const.getConst . Children.castingPermissionChildren Children.permissionLeaves {Children.permissionCondition = \condition -> Const.Const [condition]}
 
 -- Every additional cost a casting permission states (CR 118.8).
 castingPermissionCosts :: CastingPermission.CastingPermission -> [CostComponent.CostComponent Keyword.Keyword]
-castingPermissionCosts permission = case permission of
-  CastingPermission.CastFromGraveyard _ additional -> additional
-  CastingPermission.CastFromLibraryWhileSearching -> []
-  CastingPermission.PlayFromGraveyard -> []
-  CastingPermission.CastAsThoughItHadFlash _ _ -> []
+castingPermissionCosts = Const.getConst . Children.castingPermissionChildren Children.permissionLeaves {Children.permissionCost = \cost -> Const.Const [cost]}
 
 -- CR 701.46a's per-clause gate. Mode.allEffects and Modal.allEffects drop clause
 -- boundaries by design, so every lint that reaches a card through them needs
@@ -1049,113 +1030,25 @@ modalPayGateQuantities =
 -- "for as long as" clause's number cannot be dropped where its Count is kept
 -- (#2740).
 durationConditions :: Duration.Duration -> [Condition.Type.Condition]
-durationConditions duration = case duration of
-  Duration.UntilEndOfTurn -> []
-  Duration.Indefinite -> []
-  Duration.Perpetual -> []
-  Duration.UntilYourNextTurn -> []
-  Duration.UntilNextStepOf _ -> []
-  Duration.UntilEndOfYourNextTurn -> []
-  -- A PlayerRef carries no Condition, and so no Count.
-  Duration.UntilEndOfNextTurnOf _ -> []
-  Duration.DuringNextTurnOf _ -> []
-  Duration.DuringNextUntapStepOf _ -> []
-  Duration.DuringYourNextTurn -> []
-  Duration.DuringThatExtraTurn -> []
-  Duration.ForAsLongAs condition -> [condition]
-  Duration.UntilEndOfCombat -> []
-  Duration.UntilEndOfCombatOnYourNextTurn -> []
-  -- CR 116.2c's price is a Cost, whose Filters are swept by durationFilters
-  -- below and never through a Condition -- an activated ability's own cost takes
-  -- exactly that split (activatedAbilityCounts against activatedAbilityFilters).
-  Duration.UntilPaid _ -> []
-  Duration.UntilUsed _ -> []
-  Duration.UntilEvent _ -> []
+durationConditions = Const.getConst . Children.durationChildren Children.durationLeaves {Children.durationCondition = \condition -> Const.Const [condition]}
 
 -- Every Count reachable from a Duration, off the enumeration above.
 durationCounts :: Duration.Duration -> [Count.Type.Count Quantity.Type.Quantity]
 durationCounts = concatMap conditionCounts . durationConditions
 
--- Every Count reachable from a Modification: only its P/T quantities
--- (layers 7b/7c) carry one.
+-- Every Count reachable from a Modification: its quantities (layers 7b/7c),
+-- a granted permission's or restriction's condition, and a granted ability's.
+-- A Filter's Counts are reached through modificationFilters and countFilters.
 modificationCounts :: Projection.Modification -> [Count.Type.Count Quantity.Type.Quantity]
-modificationCounts modification = case modification of
-  Modification.GainKeyword _ -> []
-  -- A computed-cost keyword carries no cost at all, so it reaches neither a
-  -- Count nor, below, a Filter.
-  Modification.GainKeywordAtManaCost _ -> []
-  -- CR 702.5a's granted enchant carries a TargetSlot, whose Filter can nest a
-  -- Count -- but a Filter's Counts are reached through modificationFilters below
-  -- and countFilters, never through this sweep, which is the answer GainKeyword
-  -- gives above for the Filter inside its keyword.
-  Modification.GainEnchant _ -> []
-  Modification.LoseEnchant _ -> []
-  -- CR 601.3d's flash permission's condition.
-  Modification.GainCastingPermission permission -> concatMap conditionCounts (castingPermissionConditions permission)
-  -- CR 613.1f's other grant carries a whole ability, so the sweep descends into
-  -- it exactly as it does into a printed one, whichever of CR 113.3's kinds it is.
-  Modification.GainAbility granted -> case granted of
-    GrantedAbility.Activated ability -> activatedAbilityCounts ability
-    GrantedAbility.Triggered ability -> triggeredAbilityCounts ability
-    GrantedAbility.Static ability -> staticAbilityCounts ability
-    GrantedAbility.Rules rules -> ruleAbilitiesCounts rules
-    GrantedAbility.Replacement ability -> concatMap conditionCounts (Maybe.maybeToList (PrintedReplacement.condition ability))
-    GrantedAbility.Player ability -> concatMap conditionCounts (Maybe.maybeToList (PlayerStaticAbility.condition ability))
-    GrantedAbility.SelfCostReduction reduction ->
-      quantityCounts (CostReduction.perEach reduction)
-        <> concatMap conditionCounts (Maybe.maybeToList (CostReduction.condition reduction))
-    GrantedAbility.SelfAlternativeCost alternative -> concatMap conditionCounts (Maybe.maybeToList (AlternativeCost.condition alternative))
-    -- Carries no Count.
-    GrantedAbility.SelfSpendManaAsThough _ -> []
-  -- Rule 702.165a's grant names the source, and the keywords it carries are
-  -- minted from the card's Backup keyword, swept there.
-  Modification.GainAbilitiesOfSource _ -> []
-  -- The rider's CR 602.5 conditions; the abilities are the exiled cards', and
-  -- their Filter's Counts are reached through modificationFilters.
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ _ extra) -> concatMap conditionCounts (concatMap restrictionConditions extra)
-  Modification.GainAbilitiesOfStickers -> []
-  Modification.LoseAllAbilities -> []
-  -- Carries a name, which reaches no Count.
-  Modification.LoseNamedAbility _ -> []
-  -- Carries a Keyword, whose Filter is reached through modificationFilters below
-  -- rather than through this sweep -- the answer GainKeyword gives above.
-  Modification.LoseKeyword _ -> []
-  -- Carries a payload-free family, which nests neither a Count nor a Filter.
-  Modification.LoseKeywordFamily _ -> []
-  Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityCounts p <> foldMap quantityCounts t
-  Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> quantityCounts p <> quantityCounts t
-  Modification.Intensify n -> quantityCounts n
-  Modification.LandSubtype {} -> []
-  Modification.ChosenSubtype {} -> []
-  Modification.CreatureSubtype {} -> []
-  Modification.AddEveryCreatureSubtype -> []
-  Modification.LoseEverySubtype _ -> []
-  Modification.SetCreatureSubtypesOfLastCardExiledWith _ -> []
-  Modification.AddSubtype _ -> []
-  Modification.RemoveSubtype _ -> []
-  Modification.CardType {} -> []
-  Modification.LoseCardType _ -> []
-  Modification.AddSupertype _ -> []
-  Modification.RemoveSupertype _ -> []
-  Modification.ChangeWord {} -> []
-  Modification.SetController _ -> []
-  Modification.SetControllerToSource -> []
-  Modification.Colors {} -> []
-  Modification.ChosenColor _ -> []
-  Modification.SwitchPowerToughness -> []
-  Modification.ExchangeTextBoxes -> []
-  -- Its Filter's Counts are reached through modificationFilters, GainEnchant's
-  -- answer.
-  Modification.AddNamesMatching _ -> []
-  Modification.SetName _ -> []
-  Modification.InsertNameWords _ -> []
-  -- The extra text descends as GainAbility's does; a PlayerRef holds no Count.
-  Modification.HasFullText ft -> concatMap (modificationCounts . Modification.GainAbility) (FullText.alsoHas ft)
-  -- Payload-free, both of them, so there is no Count to sweep.
-  Modification.AssignCombatDamage _ -> []
-  Modification.GrantsStationToughness -> []
-  -- An enum payload holds neither.
-  Modification.MayAssignCombatDamage _ -> []
+modificationCounts =
+  Const.getConst
+    . Children.modificationChildren
+      Children.modificationLeaves
+        { Children.modificationQuantity = Const.Const . quantityCounts,
+          Children.modificationCastingPermission = Const.Const . concatMap conditionCounts . castingPermissionConditions,
+          Children.modificationRestriction = Const.Const . concatMap conditionCounts . restrictionConditions,
+          Children.modificationAbility = Const.Const . grantedAbilityCounts
+        }
 
 -- Every Count reachable from a StaticAbility: its modifications' P/T quantities,
 -- plus CR 604.2's "as long as" gate, which is a Condition and so a pair of
@@ -1167,132 +1060,16 @@ staticAbilityCounts ability =
     <> concatMap durationCounts (Maybe.maybeToList (StaticAbility.lingers ability))
     <> concatMap modificationCounts (StaticAbility.modifications ability)
 
--- Every Count reachable from a TriggerCondition: only StateIs (CR 603.8, a
--- trigger's own condition) carries one.
+-- Every Count reachable from a TriggerCondition: its conditions' (CR 603.8, an
+-- attack's or a cast's "while"), nested conditions' included.
 triggerConditionCounts :: TriggerCondition.TriggerCondition -> [Count.Type.Count Quantity.Type.Quantity]
-triggerConditionCounts triggerCondition = case triggerCondition of
-  -- CR 603.6a's Filter is a predicate over the entering permanent, and a
-  -- Filter holds no Count (Parun.Types.Filter's atoms are all characteristics).
-  TriggerCondition.Enters _ -> []
-  -- CR 709.5h names a half, which is a CardName and not a Quantity.
-  TriggerCondition.SelfHalfUnlocked _ -> []
-  -- CR 709.5i names a PlayerRelation, which holds no Count.
-  TriggerCondition.RoomFullyUnlocked _ -> []
-  -- Recursive: a branch of an AnyOf may be any condition, StateIs included, so
-  -- the traversal has to go through rather than stop here.
-  TriggerCondition.AnyOf conditions -> concatMap triggerConditionCounts conditions
-  TriggerCondition.CausedBy narrowed -> triggerConditionCounts (CausedBy.condition narrowed)
-  -- CR 708.7's carries at most a Filter, which holds no Count for Matching
-  -- Enters' reason.
-  TriggerCondition.TurnedFaceUp _ -> []
-  -- CR 701.27f's names a face, a CardName and not a Quantity, beside a subject
-  -- whose Filter holds no Count either.
-  TriggerCondition.Transforms _ -> []
-  -- PermanentActs carries an action and, for a bystander, a Filter -- which
-  -- holds no Count for a Matching Enters' reason.
-  TriggerCondition.PermanentActs _ -> []
-  TriggerCondition.FaceDownPermanentLeavesRevealed -> []
-  -- CR 702.112b's condition carries a Filter for the same reason, and no Count.
-  TriggerCondition.PermanentBecomesDesignated {} -> []
-  -- CR 702.134c's is nullary too, so it holds no Quantity.
-  TriggerCondition.AttachedCreatureMentors -> []
-  TriggerCondition.BecomesTapState _ -> []
-  TriggerCondition.TappedForMana _ -> []
-  TriggerCondition.AbilityAddsMana {} -> []
-  TriggerCondition.SelfManaAbilityResolves -> []
-  -- Nor does CR 702.110b's, whose Filters hold no Count for a Matching Enters'
-  -- reason.
-  TriggerCondition.Exploits {} -> []
-  -- Nor does CR 702.122e's: its payload is a TriggerFrequency.
-  -- Nor does CR 702.122b's crewer side, nullary too.
-  TriggerCondition.Crews _ -> []
-  -- CR 701.21a's carries a PlayerRelation and a Filter, neither of which holds a
-  -- Count.
-  TriggerCondition.PermanentSacrificed {} -> []
-  -- CR 603.3b's carries a PlayerRelation, which holds no Count.
-  TriggerCondition.SagaFinalChapterTriggers _ -> []
-  -- A card-zone trigger carries a Filter, zones and a TurnScope, and none holds a
-  -- Count.
-  TriggerCondition.LeavesZone _ -> []
-  TriggerCondition.PutIntoZone _ -> []
-  TriggerCondition.StepBegins {} -> []
-  TriggerCondition.StateIs condition -> conditionCounts condition
-  TriggerCondition.DealsDamage _ -> []
-  TriggerCondition.IsDealtDamage _ -> []
-  TriggerCondition.PlayerIsDealtDamage _ -> []
-  -- Its watcher-scoped sibling carries a Filter, and a Filter holds no Count.
-  TriggerCondition.PermanentsDealDamageToPlayer _ -> []
-  TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
-  TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
-  TriggerCondition.PlayerTookInitiative -> []
-  -- CR 508.3's Filters hold no Count for a Matching Enters' reason, and CR
-  -- 508.3c's floor is a bare Natural; only the attacker's or the attacking
-  -- player's state can.
-  TriggerCondition.Attacks (AttackTrigger.Attacker t) -> foldMap conditionCounts (AttackerTrigger.while t)
-  TriggerCondition.Attacks (AttackTrigger.Declaration t) -> foldMap conditionCounts (DeclarationTrigger.while t)
-  TriggerCondition.Attacks _ -> []
-  -- CR 509.3's Filters are predicates over the creatures of a block, holding no
-  -- Count for a Matching Enters' reason, and CR 509.3e's floor is a bare Natural.
-  TriggerCondition.Blocks _ -> []
-  -- CR 603.6c's holds a Filter, owned zones, a SlotName and a Batching, none
-  -- of which holds a Count.
-  TriggerCondition.Leaves _ -> []
-  TriggerCondition.SelfRevealedForMiracle -> []
-  TriggerCondition.RevealedThisWay _ -> []
-  -- CR 701.9a's discard condition is a PlayerRelation, a Filter and two enums,
-  -- none of which holds a Count.
-  TriggerCondition.Discards _ -> []
-  TriggerCondition.PlayerDrawsNthCard {} -> []
-  -- CR 726.1's crowning condition is a PlayerRelation too.
-  TriggerCondition.PlayerBecomesMonarch _ -> []
-  -- CR 603.7's slot-named subject holds a SlotName, which is no Count, and CR
-  -- 603.10d's self subject carries nothing at all.
-  TriggerCondition.LosesControl _ -> []
-  TriggerCondition.RoomEntered _ -> []
-  -- CR 603.2's PlayerActs carries a PlayerAction and a PlayerRelation, neither
-  -- a Count.
-  TriggerCondition.PlayerActs _ -> []
-  -- CR 603.9's too.
-  TriggerCondition.PlayerLosesGame _ -> []
-  TriggerCondition.PlayerPlaysLand _ -> []
-  TriggerCondition.PlayerManifestsDread _ -> []
-  TriggerCondition.PlayerFacesDilemma _ -> []
-  TriggerCondition.PlayerRollsResult _ -> []
-  TriggerCondition.Visit -> []
-  TriggerCondition.ChaosEnsues -> []
-  TriggerCondition.PlayerRollsPlaneswalker _ -> []
-  TriggerCondition.SelfTurnedUpOffDeck -> []
-  TriggerCondition.SelfPlaneswalkedAwayFrom -> []
-  TriggerCondition.FlipsCoin _ -> []
-  -- CR 702.170a carries nothing at all, so holds no Count.
-  TriggerCondition.SelfBecomesPlotted -> []
-  TriggerCondition.PlacesSticker _ -> []
-  -- CR 701.3a's carries a Filter, and a Filter holds no Count for a Matching
-  -- TurnedFaceUp's reason.
-  TriggerCondition.AttachmentChanges _ -> []
-  -- CR 603.12's carries nothing at all, so no Count.
-  TriggerCondition.Reflexive -> []
-  -- CR 701.6a's countering condition is a kind and a PlayerRelation, which
-  -- hold no Count, exactly as the discard condition above.
-  TriggerCondition.Countered _ -> []
-  -- CR 615.13's prevention condition is a PlayerRelation too.
-  TriggerCondition.DamageToPlayerPrevented _ -> []
-  -- Rule 615.13's other reading carries a Filter, which holds no Count either.
-  TriggerCondition.SelfPreventsDamage _ -> []
-  TriggerCondition.LifeChanges _ -> []
-  -- A counter trigger carries a kind, a relation, a Filter and a Natural, none of
-  -- which is a Count.
-  TriggerCondition.CountersChange _ -> []
-  TriggerCondition.SelfBecomesClassLevel _ -> []
-  -- CR 601.2i's Filter is a predicate over the spell that was cast, and a Filter
-  -- holds no Count, exactly as CR 603.6a's does above. Its ordinal is a bare
-  -- Natural, as CR 715.2b's is; only its state can.
-  TriggerCondition.SpellCast c -> foldMap conditionCounts (SpellCast.while c)
-  -- CR 602.2b's activation carries a Filter, which holds no Count.
-  TriggerCondition.AbilityActivated _ -> []
-  -- CR 601.2c's carries a subject, a PlayerRelation, a StackObjectKind and a
-  -- Batching, and no Count.
-  TriggerCondition.BecomesTargeted {} -> []
+triggerConditionCounts =
+  Const.getConst
+    . Children.triggerConditionChildren
+      Children.triggerLeaves
+        { Children.triggerNested = Const.Const . triggerConditionCounts,
+          Children.triggerState = Const.Const . conditionCounts
+        }
 
 -- Every Count reachable from one effect: the Quantities nested in its
 -- ObjectRefs, its own Quantity/Duration fields, and -- for Create/CreateEmblem
@@ -1309,244 +1086,32 @@ effectCounts effect = concatMap refCounts (Resolve.effectObjectRefs effect) <> o
 -- hold, and what its nested effects hold through the recursion back into
 -- effectCounts.
 ownCounts :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
-ownCounts effect = case effect of
-  Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> concatMap (quantityCounts . DamagePart.quantity) parts
-  Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification _ _) -> durationCounts duration <> modificationCounts modification
-  Effect.ChangeText x -> durationCounts (ChangeText.duration x)
-  Effect.AddMana _ -> []
-  Effect.Firebend _ -> []
-  Effect.ActivateManaAbilities _ -> []
-  Effect.MoveMana _ -> []
-  -- The search's count is a Quantity like any other -- Explosive Vegetation's
-  -- "up to two" -- so its Counts are reachable from here. A search stating no
-  -- count (Mana Severance) has none to reach.
-  Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ counters _ _ _ _ _ _) -> foldMap quantityCounts quantity <> foldMap quantityCounts counters
-  Effect.ExileAllGraveyards -> []
-  Effect.Proliferate _ -> []
-  Effect.Rethrow -> []
-  Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName _ -> []
-  Effect.ChooseQuality _ -> []
-  Effect.FromOutsideTheGame _ -> []
-  Effect.ExileThisSpell -> []
-  -- Bolster's N is a Quantity like the Search's above, so its Counts are
-  -- reachable from here.
-  Effect.Bolster quantity -> quantityCounts quantity
-  -- Amass's N is a Quantity like the Search's above, so its Counts are reachable
-  -- from here.
-  Effect.Amass (Amass.MkAmass _ quantity _ _) -> quantityCounts quantity
-  -- Blight's N is a Quantity like bolster's above, so its Counts are reachable
-  -- from here.
-  Effect.Blight (Blight.MkBlight _ quantity _) -> quantityCounts quantity
-  -- Earthbend's N likewise.
-  Effect.Earthbend (Earthbend.MkEarthbend quantity _) -> quantityCounts quantity
-  Effect.Airbend {} -> []
-  Effect.Assimilate {} -> []
-  Effect.TemptWithTheRing -> []
-  Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
-  Effect.Abandon -> []
-  Effect.ClaimPrize -> []
-  Effect.Forage -> []
-  Effect.Populate -> []
-  Effect.TimeTravel -> []
-  Effect.Recruit -> []
-  Effect.Learn -> []
-  Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
-  Effect.Venture {} -> []
-  Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ quantity _) -> quantityCounts quantity
-  Effect.Vote {} -> []
-  Effect.Bid bid -> quantityCounts (Bid.opening bid)
-  Effect.RestartGame _ -> []
-  Effect.ControlPlayerNextTurn _ -> []
-  Effect.ControlPlayerThisResolution _ -> []
-  Effect.Destroy {} -> []
-  Effect.Sacrifice _ -> []
-  -- CR 611.2e's effects, ModifyTarget's arm above.
-  Effect.MoveToZone move -> foldMap modificationCounts (EntryRiders.characteristics (MoveToZone.riders move))
-  Effect.Draw (Draw.MkDraw _ quantity _) -> quantityCounts quantity
-  Effect.Mill (Mill.MkMill _ quantity _ _) -> quantityCounts quantity
-  Effect.Reveal {} -> []
-  Effect.LookAt {} -> []
-  Effect.Guess {} -> []
-  Effect.Scry (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantityCounts quantity
-  Effect.Surveil (Surveil.MkSurveil _ quantity _) -> quantityCounts quantity
-  Effect.Fateseal (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantityCounts quantity
-  Effect.Clash {} -> []
-  Effect.AsYouCascade {} -> []
-  -- No Quantity at all: rule 701.44a's counter is a literal one and its card is
-  -- the one on top, so there is no number a card author writes.
-  Effect.Explore {} -> []
-  Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary {} -> []
-  -- Connive's N is a Quantity like the Search's above, so its Counts are
-  -- reachable from here.
-  Effect.Connive (Connive.MkConnive quantity _) -> quantityCounts quantity
-  Effect.Discard subject -> case subject of
-    Discard.Counted (CountedDiscard.MkCountedDiscard _ quantity _) -> quantityCounts quantity
-    Discard.These {} -> []
-    Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard _ (AnyNumberMatching.MkAnyNumberMatching _ atMost) _) -> foldMap quantityCounts atMost
-  Effect.LoseLife (LifeLoss.MkLifeLoss _ quantity _ _) -> quantityCounts quantity
-  Effect.GainLife (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantityCounts quantity
-  Effect.ExchangeLifeTotals _ -> []
-  Effect.ExchangeValues x -> durationCounts (ExchangeValues.duration x)
-  Effect.ExchangeZones _ -> []
-  Effect.ExchangeCardZones _ -> []
-  Effect.SetLifeTotal (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantityCounts quantity
-  Effect.LoseGame {} -> []
-  Effect.WinGame {} -> []
-  Effect.DrawGame {} -> []
-  Effect.RedistributeLifeTotals -> []
-  Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantityCounts quantity
-  -- The floor beside it is a printed literal and holds no Count.
-  Effect.DecreaseSpeed d -> quantityCounts (SpeedDecrease.quantity d)
-  Effect.Create (Create.MkCreate quantity card _ _ _ _) -> quantityCounts quantity <> overFaces cardCounts card
-  Effect.Conjure (Conjure.MkConjure quantity cards _ _ _) -> quantityCounts quantity <> foldMap quantityCounts (conjureCardsAmount cards) <> foldMap (overFaces cardCounts) (ConjureCards.written cards)
-  -- No embedded card -- the copied permanent supplies the text -- but the count
-  -- is card data like Create's. The riders are skipped for the reason Create's
-  -- arm above skips its own: a rider count is a Quantity, and effectFilters below
-  -- is where a Filter under one is swept.
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ _ _ _ _ _) -> quantityCounts quantity
-  -- The DURATION's own Counts, ModifyTarget's arm above; the refs' Filters are
-  -- effectFilters' business below.
-  Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationCounts duration
-  -- CR 702.40a's "for each" count is card data like CreateCopy's.
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> quantityCounts quantity
-  Effect.SetX (SetX.MkSetX value _) -> concatMap quantityCounts (NewX.quantities value)
-  -- The Condition is Galvanic Blast's and Synthetic Voltaic Surge's "if you
-  -- control three or more artifacts", and its Counts are as much card data as a
-  -- Duration's.
-  Effect.Replace (Replace.MkReplace duration _ _ condition replacement) -> durationCounts duration <> foldMap conditionCounts condition <> concatMap effectCounts (replacementEffectRiders replacement) <> concatMap (overFaces cardCounts) (replacementMintedCards replacement)
-  -- CR 614.10a's "next two" is a Quantity, so its Counts are reachable here.
-  Effect.SkipPhase (SkipPhase.MkSkipPhase _ _ _ duration count) -> durationCounts duration <> quantityCounts count
-  -- CR 615.5's rider is an effect list a card authors, so its Counts are this
-  -- card's Counts -- the same recursion Create takes into a minted token.
-  Effect.LaterPayment (LaterPayment.MkLaterPayment duration _ effects) -> durationCounts duration <> concatMap effectCounts effects
-  Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage duration _ _ _ _ _ quantity rider) -> durationCounts duration <> quantityCounts quantity <> concatMap effectCounts rider
-  Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage duration _ _ _ _ _ _ _ rider) -> durationCounts duration <> concatMap effectCounts rider
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ _ _ rider _) -> durationCounts duration <> concatMap effectCounts rider
-  Effect.RedirectDamage (RedirectDamage.MkRedirectDamage duration _ amount _ _ _ _ _ _ _) -> durationCounts duration <> foldMap quantityCounts amount
-  -- CR 708.2's listed characteristics are card data, so the listed power and
-  -- toughness are walked for the reason Create's minted face is. The listed type
-  -- line holds no Quantity.
-  Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown _ listed) ->
-    concatMap (\(Power.MkPower quantity) -> quantityCounts quantity) (Maybe.maybeToList (FaceDownCharacteristics.power listed))
-      <> concatMap (\(Toughness.MkToughness quantity) -> quantityCounts quantity) (Maybe.maybeToList (FaceDownCharacteristics.toughness listed))
-  -- CR 708.8 has the permanent regain its own values, so this one lists nothing.
-  Effect.TurnFaceUp _ -> []
-  -- CR 701.14a fixes both amounts at the fighters' own powers, so no Quantity.
-  Effect.Fight _ -> []
-  Effect.RemoveFromCombat _ -> []
-  Effect.BlockAttacker _ -> []
-  Effect.BecomesBlocked _ -> []
-  Effect.SwitchBlockers _ -> []
-  Effect.ExchangeBlocks _ -> []
-  Effect.Counter {} -> []
-  Effect.PutCounters (PutCounters.MkPutCounters _ quantity _ _) -> quantityCounts quantity
-  Effect.Divide divide -> quantityCounts (Divide.quantity divide)
-  Effect.PutCountersFrom {} -> []
-  -- The count the moved kinds may write. CR 122.5's GIVER carries the other one,
-  -- through the ObjectRef it became when the first side was widened to a group,
-  -- and refCounts reaches it from effectCounts above -- an arm reading the kinds
-  -- alone kept compiling (#2729).
-  Effect.MoveCounters (MoveCounters.MkMoveCounters _ kinds _ _) -> foldMap quantityCounts (MovedKinds.quantityOf kinds)
-  Effect.RemoveCounters (RemoveCounters.MkRemoveCounters _ quantity _ _) -> quantityCounts quantity
-  Effect.RemoveCountersAmong (RemoveCountersAmong.MkRemoveCountersAmong count _ _ _) -> foldMap quantityCounts (RemovalCount.quantityOf count)
-  Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters _ _ quantity) -> quantityCounts quantity
-  Effect.RemovePlayerCounters removal -> quantityCounts (RemovePlayerCounters.quantity removal)
-  Effect.PayAnyEnergy _ -> []
-  Effect.ChooseNumber number -> foldMap quantityCounts (ChooseNumber.upTo number)
-  Effect.BindAmount payload -> quantityCounts (BindAmount.quantity payload)
-  Effect.Tap _ -> []
-  Effect.Untap _ -> []
-  Effect.Unattach _ -> []
-  Effect.Detain _ -> []
-  Effect.Goad _ -> []
-  Effect.Pair _ -> []
-  Effect.GrantLookAtExiled _ -> []
-  Effect.MakePlotted _ -> []
-  Effect.MakeForetold _ -> []
-  Effect.MakeWarped _ -> []
-  Effect.DoesNotUntapNext _ -> []
-  Effect.Transform _ -> []
-  Effect.Convert _ -> []
-  Effect.Flip _ -> []
-  -- CR 701.42a's combined back face, Create's token one opcode over: card data
-  -- nested in card data, so its own counts are swept.
-  Effect.Meld (Meld.MkMeld _ card) -> overFaces cardCounts card
-  Effect.PhaseOut _ -> []
-  Effect.AddPhases _ -> []
-  Effect.EndTurn -> []
-  Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl duration _ _) -> durationCounts duration
-  Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger arm -> foldMap triggeredAbilityCounts (Game.carriedDelayedAbility arm)
-  Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ playerEffect) -> durationCounts duration <> playerEffectCounts playerEffect
-  Effect.RequireBlock (RequireBlock.MkRequireBlock duration _ _ _) -> durationCounts duration
-  Effect.Prohibit (Prohibit.MkProhibit _ duration _) -> durationCounts duration
-  Effect.ForbidAttack (ForbidAttack.MkForbidAttack duration _ _) -> durationCounts duration
-  Effect.ForbidBeingBlocked (ForbidBeingBlocked.MkForbidBeingBlocked duration _ _) -> durationCounts duration
-  Effect.RequireAttack (RequireAttack.MkRequireAttack duration _ _) -> durationCounts duration
-  Effect.CreateEmblem emblem -> overFaces cardCounts (CreateEmblem.card emblem)
-  Effect.BecomeMonarch _ -> []
-  Effect.TakeTheInitiative _ -> []
-  -- CR 701.37c's X is a Quantity like any other -- Search's count above, same
-  -- sentence. A designation set with no number has no Count to reach.
-  Effect.Designate (Designate.MkDesignate _ _ value) -> foldMap quantityCounts value
-  Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ _) -> []
-  Effect.Undesignate _ -> []
-  Effect.SetHalfLocked {} -> []
-  Effect.CounterAndMark _ -> []
-  Effect.BecomeProtector _ -> []
-  Effect.Mentor _ -> []
-  Effect.Exploit -> []
-  Effect.GiveGift -> []
-  Effect.ItBecomes _ -> []
-  Effect.ExileHaunting {} -> []
-  Effect.Attach _ -> []
-  Effect.AttachAsThoughCreature _ -> []
-  Effect.AttachTarget {} -> []
-  Effect.AttachTargetToEach {} -> []
-  Effect.AttachBound {} -> []
-  Effect.AttachAll {} -> []
-  Effect.PlaySubgame _ -> []
-  Effect.ChoosePlayer _ -> []
-  Effect.ChoosePlayerAtRandom _ -> []
-  Effect.ChoosePermanents choice -> foldMap quantityCounts (HowMany.quantity (ChosenPermanents.count (ChoosePermanents.permanents choice)))
-  Effect.ChooseGroup _ -> []
-  -- CR 706.2's modifier and CR 706.1's count are Quantities, so their Counts
-  -- are reachable here.
-  Effect.RollDie rollDie -> quantityCounts (RollDie.count rollDie) <> foldMap quantityCounts (RollDie.modifier rollDie)
-  -- CR 705.1's number of coins is a Quantity, so its Counts are reachable here.
-  Effect.FlipCoin flipCoin -> quantityCounts (FlipCoin.count flipCoin)
-  -- CR 500.7's number of turns is a Quantity, so its Counts are reachable here.
-  Effect.TakeExtraTurn takeExtraTurn -> quantityCounts (TakeExtraTurn.count takeExtraTurn)
-  Effect.ShuffleIntoLibrary {} -> []
-  Effect.Ante {} -> []
-  Effect.PutSticker putSticker -> foldMap quantityCounts (PutSticker.ticketCap putSticker)
-  Effect.SetOwner {} -> []
-  Effect.ExchangeOwnership {} -> []
-  Effect.Shuffle {} -> []
-  Effect.OfferNamedCopy {} -> []
-  Effect.OfferNotedCopy {} -> []
-  Effect.OfferCast offer -> concatMap quantityCounts (Resolve.repetitionQuantities (OfferCast.repetition offer))
-  -- The Duration's Condition, exactly as GainControl's: Victor Mancha, Runaway's
-  -- "for as long as you control this creature" is a Count, and dropping it here
-  -- would take its Filters out of the lint with it.
-  Effect.GrantPlayFromExile grant -> durationCounts (GrantPlayFromExile.duration grant)
-  -- CR 608.2f's body is an effect list a card authors, so its Counts are this
-  -- card's -- the rider's recursion one opcode over.
-  Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> concatMap effectCounts body
-  Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo _ body) -> quantityCounts upTo <> concatMap effectCounts body
-  Effect.Repeat (Repeat.MkRepeat _ body gate _ ifAgain) -> foldMap conditionCounts gate <> concatMap effectCounts (body <> ifAgain)
-  Effect.RepeatIf (RepeatIf.MkRepeatIf process condition ifHolds) -> conditionCounts condition <> concatMap effectCounts (process <> ifHolds)
-  Effect.Heal _ -> []
-  Effect.ChooseNewTargets _ -> []
-  Effect.ChangeTargets _ -> []
+ownCounts =
+  let minted = Const.Const . overFaces cardCounts
+   in Const.getConst
+        . Children.effectChildren
+          Children.effectLeaves
+            { Children.onQuantity = Const.Const . quantityCounts,
+              Children.onDuration = Const.Const . durationCounts,
+              Children.onCondition = Const.Const . conditionCounts,
+              Children.onModification = Const.Const . modificationCounts,
+              Children.onEffect = Const.Const . effectCounts,
+              Children.onCard = minted,
+              Children.onConjured = minted,
+              Children.onMelded = minted,
+              Children.onReplacement = \replacement -> Const.Const (concatMap effectCounts (replacementEffectRiders replacement) <> concatMap (overFaces cardCounts) (replacementMintedCards replacement)),
+              Children.onAbility = Const.Const . foldMap triggeredAbilityCounts . carriedTrigger,
+              Children.onPlayerEffect = Const.Const . playerEffectCounts,
+              Children.onEntryRiders = Const.Const . foldMap modificationCounts . EntryRiders.characteristics,
+              Children.onFaceDown = \listed ->
+                Const.Const
+                  ( foldMap (\(Power.MkPower quantity) -> quantityCounts quantity) (FaceDownCharacteristics.power listed)
+                      <> foldMap (\(Toughness.MkToughness quantity) -> quantityCounts quantity) (FaceDownCharacteristics.toughness listed)
+                  ),
+              Children.onMovedKinds = Const.Const . foldMap quantityCounts . MovedKinds.quantityOf,
+              Children.onRemovalCount = Const.Const . foldMap quantityCounts . RemovalCount.quantityOf,
+              Children.onChosenPermanents = Const.Const . foldMap quantityCounts . HowMany.quantity . ChosenPermanents.count
+            }
 
 -- Every Count reachable from one triggered ability (a card's own, or a
 -- delayed one -- both TriggeredAbility Card): its TriggerCondition, its
@@ -1839,211 +1404,23 @@ cardResolutionEffects = concatMap effectWithNested . cardCarrierEffects
 effectWithNested :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
 effectWithNested effect = effect : concatMap effectWithNested (effectNestedEffects effect)
 
--- The effects one effect carries in its own payload -- exactly the four arms
--- Parun.Types.Effect declares parametrically in `Effect card`, since an arm with
--- no effect-typed field can hold none.
+-- The effects one effect carries in its own payload: Parun.Engine.Children's
+-- onEffect, an installed replacement's printed effects, and a carried delayed
+-- trigger's.
 --
 -- A Create's token and a CreateEmblem's emblem are NOT nested effects, though
 -- each embeds a whole Card: those effects are the MINTED object's, not this
 -- card's, and folding them in would attribute a token's slot binding to the card
 -- that created it. mintedFaces is the traversal for that axis.
---
--- Exhaustive and hand-maintained, with effectReplacements' caveat: a NEW effect
--- carrying effects of its own must be added here too, and the build breaks until
--- it is.
 effectNestedEffects :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-effectNestedEffects effect = case effect of
-  -- CR 615.5's rider and CR 614.1c's as-enters instruction, on the replacement a
-  -- resolution INSTALLS; the PRINTED twin arrives through cardCarrierEffects'
-  -- last limb instead.
-  Effect.Replace (Replace.MkReplace _ _ _ _ replacement) -> replacementPrintedEffects replacement
-  -- CR 615.5's rider on the three prevention opcodes a SPELL authors: Test of
-  -- Faith's counters, Inkshield's Inklings, Reverse Damage's life.
-  Effect.LaterPayment (LaterPayment.MkLaterPayment _ _ effects) -> Foldable.toList effects
-  Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ _ _ _ _ _ riders) -> Foldable.toList riders
-  Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ _ _ _ _ _ _ riders) -> Foldable.toList riders
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ riders _) -> Foldable.toList riders
-  -- CR 608.2f's body, run once per member of the fold.
-  Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> Foldable.toList body
-  Effect.ForEachNumber (ForEachNumber.MkForEachNumber _ _ body) -> Foldable.toList body
-  Effect.Repeat (Repeat.MkRepeat _ body _ _ ifAgain) -> Foldable.toList (body <> ifAgain)
-  Effect.RepeatIf (RepeatIf.MkRepeatIf process _ ifHolds) -> Foldable.toList (process <> ifHolds)
-  Effect.Heal _ -> []
-  Effect.ChooseNewTargets _ -> []
-  Effect.ChangeTargets _ -> []
-  Effect.Create {} -> []
-  Effect.Conjure {} -> []
-  Effect.CreateCopy {} -> []
-  Effect.BecomeCopy {} -> []
-  Effect.CopyStackObject {} -> []
-  Effect.SetX {} -> []
-  Effect.CreateEmblem {} -> []
-  Effect.BecomeMonarch {} -> []
-  Effect.TakeTheInitiative {} -> []
-  Effect.Designate {} -> []
-  Effect.SetClassLevel {} -> []
-  Effect.DealDamage {} -> []
-  Effect.ModifyTarget {} -> []
-  Effect.AddMana {} -> []
-  Effect.Firebend {} -> []
-  Effect.ActivateManaAbilities {} -> []
-  Effect.MoveMana {} -> []
-  Effect.Search {} -> []
-  Effect.ExileAllGraveyards -> []
-  Effect.Proliferate _ -> []
-  Effect.Rethrow -> []
-  Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName _ -> []
-  Effect.ChooseQuality _ -> []
-  Effect.FromOutsideTheGame _ -> []
-  Effect.ExileThisSpell -> []
-  Effect.Bolster {} -> []
-  Effect.Amass {} -> []
-  Effect.Blight {} -> []
-  Effect.Earthbend {} -> []
-  Effect.Airbend {} -> []
-  Effect.Assimilate {} -> []
-  Effect.TemptWithTheRing -> []
-  Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
-  Effect.Abandon -> []
-  Effect.ClaimPrize -> []
-  Effect.Forage -> []
-  Effect.Populate -> []
-  Effect.TimeTravel -> []
-  Effect.Recruit -> []
-  Effect.Learn -> []
-  Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
-  Effect.Venture {} -> []
-  Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
-  Effect.PlayerSacrifices {} -> []
-  Effect.Vote {} -> []
-  Effect.Bid {} -> []
-  Effect.RestartGame {} -> []
-  Effect.ControlPlayerNextTurn {} -> []
-  Effect.ControlPlayerThisResolution {} -> []
-  Effect.Destroy {} -> []
-  Effect.Sacrifice {} -> []
-  Effect.MoveToZone {} -> []
-  Effect.Draw {} -> []
-  Effect.Mill {} -> []
-  Effect.Reveal {} -> []
-  Effect.LookAt {} -> []
-  Effect.Guess {} -> []
-  Effect.Scry {} -> []
-  Effect.Surveil {} -> []
-  Effect.Fateseal {} -> []
-  Effect.Clash {} -> []
-  Effect.AsYouCascade {} -> []
-  Effect.Explore {} -> []
-  Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary {} -> []
-  Effect.Connive {} -> []
-  Effect.Discard {} -> []
-  Effect.LoseLife {} -> []
-  Effect.GainLife {} -> []
-  Effect.ExchangeLifeTotals {} -> []
-  Effect.ExchangeValues {} -> []
-  Effect.ExchangeZones {} -> []
-  Effect.ExchangeCardZones {} -> []
-  Effect.SetLifeTotal {} -> []
-  Effect.LoseGame {} -> []
-  Effect.WinGame {} -> []
-  Effect.DrawGame {} -> []
-  Effect.RedistributeLifeTotals -> []
-  Effect.IncreaseSpeed {} -> []
-  Effect.DecreaseSpeed {} -> []
-  Effect.SkipPhase {} -> []
-  Effect.RedirectDamage {} -> []
-  Effect.TurnFaceDown {} -> []
-  Effect.TurnFaceUp {} -> []
-  Effect.Fight {} -> []
-  Effect.RemoveFromCombat {} -> []
-  Effect.BlockAttacker {} -> []
-  Effect.BecomesBlocked {} -> []
-  Effect.SwitchBlockers {} -> []
-  Effect.ExchangeBlocks {} -> []
-  Effect.Counter {} -> []
-  Effect.PutCounters {} -> []
-  Effect.Divide {} -> []
-  Effect.PutCountersFrom {} -> []
-  Effect.MoveCounters {} -> []
-  Effect.RemoveCounters {} -> []
-  Effect.RemoveCountersAmong {} -> []
-  Effect.GainPlayerCounters {} -> []
-  Effect.RemovePlayerCounters {} -> []
-  Effect.PayAnyEnergy _ -> []
-  Effect.ChooseNumber _ -> []
-  Effect.BindAmount _ -> []
-  Effect.Tap {} -> []
-  Effect.Untap {} -> []
-  Effect.Unattach {} -> []
-  Effect.Detain {} -> []
-  Effect.Goad {} -> []
-  Effect.Pair {} -> []
-  Effect.GrantLookAtExiled {} -> []
-  Effect.MakePlotted {} -> []
-  Effect.MakeForetold {} -> []
-  Effect.MakeWarped {} -> []
-  Effect.DoesNotUntapNext {} -> []
-  Effect.Transform {} -> []
-  Effect.Convert {} -> []
-  Effect.Flip {} -> []
-  -- Create's answer: the combined face's effects belong to ANOTHER object, and
-  -- effectMintedFaces is what reaches them.
-  Effect.Meld {} -> []
-  Effect.PhaseOut {} -> []
-  Effect.AddPhases {} -> []
-  Effect.EndTurn -> []
-  Effect.EndCombatPhase -> []
-  Effect.GainControl {} -> []
-  Effect.ExchangeControl _ -> []
-  Effect.Undesignate {} -> []
-  Effect.SetHalfLocked {} -> []
-  Effect.CounterAndMark {} -> []
-  Effect.BecomeProtector {} -> []
-  Effect.Mentor {} -> []
-  Effect.Exploit -> []
-  Effect.GiveGift -> []
-  Effect.ItBecomes {} -> []
-  Effect.ExileHaunting {} -> []
-  Effect.Attach {} -> []
-  Effect.AttachAsThoughCreature {} -> []
-  Effect.AttachTarget {} -> []
-  Effect.AttachTargetToEach {} -> []
-  Effect.AttachBound {} -> []
-  Effect.AttachAll {} -> []
-  Effect.PlaySubgame {} -> []
-  Effect.ChoosePlayer {} -> []
-  Effect.ChoosePlayerAtRandom {} -> []
-  Effect.ChoosePermanents {} -> []
-  Effect.ChooseGroup {} -> []
-  Effect.RollDie {} -> []
-  Effect.FlipCoin {} -> []
-  -- CR 603.7a: the delayed ability an arm carries, as Face.delayedAbilities'
-  -- are a carrier of cardCarrierEffects.
-  Effect.ArmDelayedTrigger arm -> foldMap (Modal.allEffects . TriggeredAbility.modal) (Game.carriedDelayedAbility arm)
-  Effect.AffectPlayers {} -> []
-  Effect.RequireBlock {} -> []
-  Effect.Prohibit {} -> []
-  Effect.ForbidAttack {} -> []
-  Effect.ForbidBeingBlocked {} -> []
-  Effect.RequireAttack {} -> []
-  Effect.TakeExtraTurn {} -> []
-  Effect.ShuffleIntoLibrary {} -> []
-  Effect.Ante {} -> []
-  Effect.PutSticker {} -> []
-  Effect.SetOwner {} -> []
-  Effect.ExchangeOwnership {} -> []
-  Effect.Shuffle {} -> []
-  Effect.OfferNamedCopy {} -> []
-  Effect.OfferNotedCopy {} -> []
-  Effect.OfferCast {} -> []
-  Effect.GrantPlayFromExile {} -> []
-  Effect.ChangeText {} -> []
+effectNestedEffects =
+  Const.getConst
+    . Children.effectChildren
+      Children.effectLeaves
+        { Children.onEffect = \effect -> Const.Const [effect],
+          Children.onReplacement = Const.Const . replacementPrintedEffects,
+          Children.onAbility = Const.Const . foldMap (Modal.allEffects . TriggeredAbility.modal) . carriedTrigger
+        }
 
 -- The carriers themselves, before the nesting closure above: one limb per field
 -- of a Face that holds effects. Hand-maintained, with cardCounts' caveat: a NEW
@@ -2349,7 +1726,13 @@ cardReplacementEffects card =
 -- what the lints downstream ask is whether a card authored the effect rather than
 -- which field it sat in.
 replacementPrintedEffects :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-replacementPrintedEffects replacement = replacementEffectRiders replacement <> replacementRewriteEffects replacement
+replacementPrintedEffects =
+  Const.getConst
+    . Children.replacementEffectChildren
+      Children.replacementLeaves
+        { Children.replacementEffect = \effect -> Const.Const [effect],
+          Children.replacementCopy = Const.Const . Foldable.toList . AsCopy.whenYouDo
+        }
 
 -- The effects a REWRITE runs, on the two axes that carry a program: CR 614.1c's
 -- as-enters (Monstrous War-Leech's mill) and CR 614.1a's instead (Kill-Suit
@@ -2426,230 +1809,30 @@ replacementEffectRiders replacement = case replacement of
 -- Ruadach's Soldier, Draconic Visitor's Dragon), the one arm embedding a whole
 -- Card. The axis
 -- effectMintedFaces walks for a Create, one carrier over.
---
--- Exhaustive rather than a wildcard, this file's discipline for a sum: a second
--- card-bearing arm must be classified here.
 replacementMintedCards :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [Card.Type.Card]
-replacementMintedCards replacement = case replacement of
-  ReplacementEffect.TokenR (TokenR.MkTokenR _ _ plus) -> foldMap Foldable.toList plus
-  ReplacementEffect.DamageR {} -> []
-  ReplacementEffect.CounterR {} -> []
-  ReplacementEffect.ZoneChangeR {} -> []
-  ReplacementEffect.EntryR {} -> []
-  ReplacementEffect.DestructionR _ -> []
-  ReplacementEffect.TurnUpR {} -> []
-  ReplacementEffect.AttachR {} -> []
-  ReplacementEffect.UntapR _ -> []
-  ReplacementEffect.LifeLossR {} -> []
-  ReplacementEffect.LifeGainR {} -> []
-  ReplacementEffect.DrawR {} -> []
-  ReplacementEffect.DrawCountR {} -> []
-  ReplacementEffect.InstructionR {} -> []
-  ReplacementEffect.DieRollR {} -> []
-  ReplacementEffect.PerformerR {} -> []
-  ReplacementEffect.ManaR {} -> []
-  ReplacementEffect.GameLossR {} -> []
-  ReplacementEffect.PlaneswalkR {} -> []
-  ReplacementEffect.PhaseR _ -> []
+replacementMintedCards = Const.getConst . Children.replacementEffectChildren Children.replacementLeaves {Children.replacementCard = \card -> Const.Const [card]}
 
 -- Every ReplacementEffect one effect authors: the one an Effect.Replace installs
 -- directly, plus everything a minted token (CR 111) or emblem (CR 114.2) prints,
 -- since each of those is a whole Card that can carry replacementEffects of its
 -- own. The same recursion cardCounts and cardFilters take, and for the same
--- reason -- without it a baked whosePhase could hide one Card deep.
---
--- Exhaustive and hand-maintained, with effectCounts' caveat: a NEW effect
--- carrying a ReplacementEffect or embedding a Card must be added here too, and
--- the build breaks until it is.
+-- reason -- without it a baked whosePhase could hide one Card deep. A face-down
+-- listing's replacements are the effect's too.
 effectReplacements :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
-effectReplacements effect = case effect of
-  Effect.Replace (Replace.MkReplace _ _ _ _ replacement) -> replacement : concatMap effectReplacements (replacementPrintedEffects replacement) <> concatMap (overFaces cardReplacementEffects) (replacementMintedCards replacement)
-  Effect.Create (Create.MkCreate _ token _ _ _ _) -> overFaces cardReplacementEffects token
-  Effect.Conjure (Conjure.MkConjure _ cards _ _ _) -> foldMap (overFaces cardReplacementEffects) (ConjureCards.written cards)
-  Effect.CreateCopy {} -> []
-  Effect.BecomeCopy {} -> []
-  Effect.CopyStackObject {} -> []
-  Effect.SetX {} -> []
-  Effect.CreateEmblem emblem -> overFaces cardReplacementEffects (CreateEmblem.card emblem)
-  Effect.DealDamage (DealDamage.MkDealDamage {}) -> []
-  Effect.ModifyTarget {} -> []
-  Effect.AddMana _ -> []
-  Effect.Firebend _ -> []
-  Effect.ActivateManaAbilities _ -> []
-  Effect.MoveMana _ -> []
-  Effect.Search {} -> []
-  Effect.ExileAllGraveyards -> []
-  Effect.Proliferate _ -> []
-  Effect.Rethrow -> []
-  Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName _ -> []
-  Effect.ChooseQuality _ -> []
-  Effect.FromOutsideTheGame _ -> []
-  Effect.ExileThisSpell -> []
-  Effect.Bolster _ -> []
-  Effect.Amass _ -> []
-  Effect.Blight _ -> []
-  Effect.Earthbend _ -> []
-  Effect.Airbend _ -> []
-  Effect.Assimilate _ -> []
-  Effect.TemptWithTheRing -> []
-  Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
-  Effect.Abandon -> []
-  Effect.ClaimPrize -> []
-  Effect.Forage -> []
-  Effect.Populate -> []
-  Effect.TimeTravel -> []
-  Effect.Recruit -> []
-  Effect.Learn -> []
-  Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
-  Effect.Venture {} -> []
-  Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
-  Effect.PlayerSacrifices {} -> []
-  Effect.Vote {} -> []
-  Effect.Bid {} -> []
-  Effect.RestartGame _ -> []
-  Effect.ControlPlayerNextTurn _ -> []
-  Effect.ControlPlayerThisResolution _ -> []
-  Effect.Destroy {} -> []
-  Effect.Sacrifice _ -> []
-  -- CR 708.2's listed replacement effects, TurnFaceDown's below.
-  Effect.MoveToZone move -> foldMap (listedReplacements . FaceDownState.listed) (EntryRiders.faceDown (MoveToZone.riders move))
-  Effect.Draw {} -> []
-  Effect.Mill {} -> []
-  Effect.Reveal {} -> []
-  Effect.LookAt {} -> []
-  Effect.Guess {} -> []
-  Effect.Scry {} -> []
-  Effect.Surveil {} -> []
-  Effect.Fateseal {} -> []
-  Effect.Clash {} -> []
-  Effect.AsYouCascade {} -> []
-  Effect.Explore {} -> []
-  Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary {} -> []
-  Effect.Connive {} -> []
-  Effect.Discard {} -> []
-  Effect.LoseLife (LifeLoss.MkLifeLoss _ _ _cause _) -> []
-  Effect.GainLife (PlayerQuantity.MkPlayerQuantity _ _) -> []
-  Effect.ExchangeLifeTotals _ -> []
-  Effect.ExchangeValues _ -> []
-  Effect.ExchangeZones _ -> []
-  Effect.ExchangeCardZones _ -> []
-  Effect.SetLifeTotal (PlayerQuantity.MkPlayerQuantity _ _) -> []
-  Effect.LoseGame {} -> []
-  Effect.WinGame {} -> []
-  Effect.DrawGame {} -> []
-  Effect.RedistributeLifeTotals -> []
-  Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ _) -> []
-  Effect.DecreaseSpeed _ -> []
-  Effect.SkipPhase {} -> []
-  -- CR 615.5's rider can carry an Effect.Replace, so this descends.
-  Effect.LaterPayment (LaterPayment.MkLaterPayment _ _ effects) -> concatMap effectReplacements effects
-  Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ _ _ _ _ _ rider) -> concatMap effectReplacements rider
-  Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ _ _ _ _ _ _ rider) -> concatMap effectReplacements rider
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ rider _) -> concatMap effectReplacements rider
-  -- CR 608.2f's body can too, for the same reason.
-  Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> concatMap effectReplacements body
-  Effect.ForEachNumber (ForEachNumber.MkForEachNumber _ _ body) -> concatMap effectReplacements body
-  Effect.Repeat (Repeat.MkRepeat _ body _ _ ifAgain) -> concatMap effectReplacements (body <> ifAgain)
-  Effect.RepeatIf (RepeatIf.MkRepeatIf process _ ifHolds) -> concatMap effectReplacements (process <> ifHolds)
-  Effect.Heal _ -> []
-  Effect.ChooseNewTargets _ -> []
-  Effect.ChangeTargets _ -> []
-  Effect.RedirectDamage {} -> []
-  -- CR 708.2's listed replacement abilities.
-  Effect.TurnFaceDown turn -> listedReplacements (TurnFaceDown.characteristics turn)
-  Effect.TurnFaceUp _ -> []
-  Effect.Fight _ -> []
-  Effect.RemoveFromCombat _ -> []
-  Effect.BlockAttacker _ -> []
-  Effect.BecomesBlocked _ -> []
-  Effect.SwitchBlockers _ -> []
-  Effect.ExchangeBlocks _ -> []
-  Effect.Counter {} -> []
-  Effect.PutCounters {} -> []
-  Effect.Divide {} -> []
-  Effect.PutCountersFrom {} -> []
-  Effect.MoveCounters {} -> []
-  Effect.RemoveCounters {} -> []
-  Effect.RemoveCountersAmong {} -> []
-  Effect.GainPlayerCounters {} -> []
-  Effect.RemovePlayerCounters {} -> []
-  Effect.PayAnyEnergy _ -> []
-  Effect.ChooseNumber _ -> []
-  Effect.BindAmount _ -> []
-  Effect.Tap _ -> []
-  Effect.Untap _ -> []
-  Effect.Unattach _ -> []
-  Effect.Detain _ -> []
-  Effect.Goad _ -> []
-  Effect.Pair _ -> []
-  Effect.GrantLookAtExiled _ -> []
-  Effect.MakePlotted _ -> []
-  Effect.MakeForetold _ -> []
-  Effect.MakeWarped _ -> []
-  Effect.DoesNotUntapNext _ -> []
-  Effect.Transform _ -> []
-  Effect.Convert _ -> []
-  Effect.Flip _ -> []
-  -- CR 614: the combined back face may print its own entry replacement, so the
-  -- sweep descends into it as it does a token's.
-  Effect.Meld (Meld.MkMeld _ card) -> overFaces cardReplacementEffects card
-  Effect.PhaseOut _ -> []
-  Effect.AddPhases _ -> []
-  Effect.EndTurn -> []
-  Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl {}) -> []
-  Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger arm -> concatMap effectReplacements (foldMap (Modal.allEffects . TriggeredAbility.modal) (Game.carriedDelayedAbility arm))
-  Effect.AffectPlayers {} -> []
-  Effect.RequireBlock {} -> []
-  Effect.Prohibit {} -> []
-  Effect.ForbidAttack {} -> []
-  Effect.ForbidBeingBlocked {} -> []
-  Effect.RequireAttack {} -> []
-  Effect.BecomeMonarch _ -> []
-  Effect.TakeTheInitiative _ -> []
-  Effect.Designate (Designate.MkDesignate {}) -> []
-  Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ _) -> []
-  Effect.Undesignate _ -> []
-  Effect.SetHalfLocked {} -> []
-  Effect.CounterAndMark _ -> []
-  Effect.BecomeProtector _ -> []
-  Effect.Mentor _ -> []
-  Effect.Exploit -> []
-  Effect.GiveGift -> []
-  Effect.ItBecomes _ -> []
-  Effect.ExileHaunting {} -> []
-  Effect.Attach _ -> []
-  Effect.AttachAsThoughCreature _ -> []
-  Effect.AttachTarget {} -> []
-  Effect.AttachTargetToEach {} -> []
-  Effect.AttachBound {} -> []
-  Effect.AttachAll {} -> []
-  Effect.PlaySubgame _ -> []
-  Effect.ChoosePlayer _ -> []
-  Effect.ChoosePlayerAtRandom _ -> []
-  Effect.ChoosePermanents _ -> []
-  Effect.ChooseGroup _ -> []
-  Effect.RollDie {} -> []
-  Effect.FlipCoin {} -> []
-  Effect.TakeExtraTurn {} -> []
-  Effect.ShuffleIntoLibrary {} -> []
-  Effect.Ante {} -> []
-  Effect.PutSticker {} -> []
-  Effect.SetOwner {} -> []
-  Effect.ExchangeOwnership {} -> []
-  Effect.Shuffle {} -> []
-  Effect.OfferNamedCopy {} -> []
-  Effect.OfferNotedCopy {} -> []
-  Effect.OfferCast {} -> []
-  Effect.GrantPlayFromExile {} -> []
-  Effect.ChangeText {} -> []
+effectReplacements =
+  let minted = Const.Const . overFaces cardReplacementEffects
+   in Const.getConst
+        . Children.effectChildren
+          Children.effectLeaves
+            { Children.onEffect = Const.Const . effectReplacements,
+              Children.onReplacement = \replacement -> Const.Const (replacement : concatMap effectReplacements (replacementPrintedEffects replacement) <> concatMap (overFaces cardReplacementEffects) (replacementMintedCards replacement)),
+              Children.onCard = minted,
+              Children.onConjured = minted,
+              Children.onMelded = minted,
+              Children.onAbility = Const.Const . concatMap effectReplacements . foldMap (Modal.allEffects . TriggeredAbility.modal) . carriedTrigger,
+              Children.onEntryRiders = Const.Const . foldMap (listedReplacements . FaceDownState.listed) . EntryRiders.faceDown,
+              Children.onFaceDown = Const.Const . listedReplacements
+            }
 
 -- Every modal one face carries, in the four scopes cardSlotNamesCollide sweeps
 -- plus its rooms -- the list that lint spells out inline, hoisted because the
@@ -3041,204 +2224,23 @@ data MintedKind
     MintedCard
   deriving (Eq, Ord, Show)
 
--- The faces one effect mints. Exhaustive and hand-maintained, with
--- effectReplacements' caveat: a NEW effect embedding a Card must be added here
--- too, and the build breaks until it is.
+-- The faces one effect mints, tagged by which card visitor reached them; the
+-- one card visitor two opcodes share, onCard, is told apart by the opcode.
 effectMintedFaces :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [(MintedKind, Face.Face Card.Type.Card)]
-effectMintedFaces effect = case effect of
-  Effect.Create (Create.MkCreate _ token _ _ _ _) -> fmap ((,) MintedToken) (NonEmpty.toList (Card.Type.faces token))
-  Effect.Conjure (Conjure.MkConjure _ cards _ _ _) -> fmap ((,) MintedCard) (concatMap (NonEmpty.toList . Card.Type.faces) (ConjureCards.written cards))
-  -- Mints no face of its own: the token's text is the copied permanent's.
-  Effect.CreateCopy {} -> []
-  -- Mints nothing at all: it rewrites an existing permanent's copiable values.
-  Effect.BecomeCopy {} -> []
-  -- Mints no face either: the copy's text is the copied spell's.
-  Effect.CopyStackObject {} -> []
-  Effect.SetX {} -> []
-  Effect.CreateEmblem emblem -> fmap ((,) MintedEmblem) (NonEmpty.toList (Card.Type.faces (CreateEmblem.card emblem)))
-  Effect.Replace (Replace.MkReplace _ _ _ _ replacement) -> concatMap effectMintedFaces (replacementEffectRiders replacement) <> replacementMintedFaces replacement
-  Effect.DealDamage (DealDamage.MkDealDamage {}) -> []
-  Effect.ModifyTarget {} -> []
-  Effect.AddMana _ -> []
-  Effect.Firebend _ -> []
-  Effect.ActivateManaAbilities _ -> []
-  Effect.MoveMana _ -> []
-  Effect.Search {} -> []
-  Effect.ExileAllGraveyards -> []
-  Effect.Proliferate _ -> []
-  Effect.Rethrow -> []
-  Effect.RerollStoredResults _ -> []
-  Effect.ChooseCardName _ -> []
-  Effect.ChooseQuality _ -> []
-  Effect.FromOutsideTheGame _ -> []
-  Effect.ExileThisSpell -> []
-  Effect.Bolster _ -> []
-  -- The Army and Jace tokens are Parun.Engine.Amass's, minted from the rulebook
-  -- rather than embedded in card data, so this arm mints no face of the card's own.
-  Effect.Amass _ -> []
-  Effect.Blight _ -> []
-  Effect.Earthbend _ -> []
-  Effect.Airbend _ -> []
-  Effect.Assimilate _ -> []
-  Effect.TemptWithTheRing -> []
-  Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
-  Effect.Abandon -> []
-  Effect.ClaimPrize -> []
-  Effect.Forage -> []
-  Effect.Populate -> []
-  Effect.TimeTravel -> []
-  Effect.Recruit -> []
-  Effect.Learn -> []
-  Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
-  Effect.Venture {} -> []
-  Effect.ExileHandThenDraw -> []
-  Effect.NoteManaSpent -> []
-  Effect.PlayerSacrifices {} -> []
-  Effect.Vote {} -> []
-  Effect.Bid {} -> []
-  Effect.RestartGame _ -> []
-  Effect.ControlPlayerNextTurn _ -> []
-  Effect.ControlPlayerThisResolution _ -> []
-  Effect.Destroy {} -> []
-  Effect.Sacrifice _ -> []
-  Effect.MoveToZone {} -> []
-  Effect.Draw {} -> []
-  Effect.Mill {} -> []
-  Effect.Reveal {} -> []
-  Effect.LookAt {} -> []
-  Effect.Guess {} -> []
-  Effect.Scry {} -> []
-  Effect.Surveil {} -> []
-  Effect.Fateseal {} -> []
-  Effect.Clash {} -> []
-  Effect.AsYouCascade {} -> []
-  Effect.Explore {} -> []
-  Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary {} -> []
-  Effect.Connive {} -> []
-  Effect.Discard {} -> []
-  Effect.LoseLife (LifeLoss.MkLifeLoss _ _ _cause _) -> []
-  Effect.GainLife (PlayerQuantity.MkPlayerQuantity _ _) -> []
-  Effect.ExchangeLifeTotals _ -> []
-  Effect.ExchangeValues _ -> []
-  Effect.ExchangeZones _ -> []
-  Effect.ExchangeCardZones _ -> []
-  Effect.SetLifeTotal (PlayerQuantity.MkPlayerQuantity _ _) -> []
-  Effect.LoseGame {} -> []
-  Effect.WinGame {} -> []
-  Effect.DrawGame {} -> []
-  Effect.RedistributeLifeTotals -> []
-  Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ _) -> []
-  Effect.DecreaseSpeed _ -> []
-  Effect.SkipPhase {} -> []
-  -- CR 615.5's rider can mint a token or emblem of its own, so this descends.
-  Effect.LaterPayment (LaterPayment.MkLaterPayment _ _ effects) -> concatMap effectMintedFaces effects
-  Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage _ _ _ _ _ _ _ rider) -> concatMap effectMintedFaces rider
-  Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage _ _ _ _ _ _ _ _ rider) -> concatMap effectMintedFaces rider
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance _ _ _ _ rider _) -> concatMap effectMintedFaces rider
-  -- CR 608.2f's body can too, for the same reason.
-  Effect.ForEach (ForEach.MkForEach _ _ _ body _ _ _) -> concatMap effectMintedFaces body
-  Effect.ForEachNumber (ForEachNumber.MkForEachNumber _ _ body) -> concatMap effectMintedFaces body
-  Effect.Repeat (Repeat.MkRepeat _ body _ _ ifAgain) -> concatMap effectMintedFaces (body <> ifAgain)
-  Effect.RepeatIf (RepeatIf.MkRepeatIf process _ ifHolds) -> concatMap effectMintedFaces (process <> ifHolds)
-  Effect.Heal _ -> []
-  Effect.ChooseNewTargets _ -> []
-  Effect.ChangeTargets _ -> []
-  Effect.RedirectDamage {} -> []
-  -- CR 708.2's listed characteristics are not a minted FACE: they replace an
-  -- existing object's, and Parun.Engine.Card.faceDownFace supplies every field
-  -- they do not name.
-  Effect.TurnFaceDown _ -> []
-  Effect.TurnFaceUp _ -> []
-  Effect.Fight _ -> []
-  Effect.RemoveFromCombat _ -> []
-  Effect.BlockAttacker _ -> []
-  Effect.BecomesBlocked _ -> []
-  Effect.SwitchBlockers _ -> []
-  Effect.ExchangeBlocks _ -> []
-  Effect.Counter {} -> []
-  Effect.PutCounters {} -> []
-  Effect.Divide {} -> []
-  Effect.PutCountersFrom {} -> []
-  Effect.MoveCounters {} -> []
-  Effect.RemoveCounters {} -> []
-  Effect.RemoveCountersAmong {} -> []
-  Effect.GainPlayerCounters {} -> []
-  Effect.RemovePlayerCounters {} -> []
-  Effect.PayAnyEnergy _ -> []
-  Effect.ChooseNumber _ -> []
-  Effect.BindAmount _ -> []
-  Effect.Tap _ -> []
-  Effect.Untap _ -> []
-  Effect.Unattach _ -> []
-  Effect.Detain _ -> []
-  Effect.Goad _ -> []
-  Effect.Pair _ -> []
-  Effect.GrantLookAtExiled _ -> []
-  Effect.MakePlotted _ -> []
-  Effect.MakeForetold _ -> []
-  Effect.MakeWarped _ -> []
-  Effect.DoesNotUntapNext _ -> []
-  Effect.Transform _ -> []
-  Effect.Convert _ -> []
-  Effect.Flip _ -> []
-  -- CR 701.42a: the combined back face is a face this card mints, interned at
-  -- resolution exactly as a token's card is.
-  Effect.Meld (Meld.MkMeld _ card) -> fmap ((,) MintedMeld) (NonEmpty.toList (Card.Type.faces card))
-  Effect.PhaseOut _ -> []
-  Effect.AddPhases _ -> []
-  Effect.EndTurn -> []
-  Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl {}) -> []
-  Effect.ExchangeControl _ -> []
-  Effect.ArmDelayedTrigger arm -> concatMap effectMintedFaces (foldMap (Modal.allEffects . TriggeredAbility.modal) (Game.carriedDelayedAbility arm))
-  Effect.AffectPlayers {} -> []
-  Effect.RequireBlock {} -> []
-  Effect.Prohibit {} -> []
-  Effect.ForbidAttack {} -> []
-  Effect.ForbidBeingBlocked {} -> []
-  Effect.RequireAttack {} -> []
-  Effect.BecomeMonarch _ -> []
-  Effect.TakeTheInitiative _ -> []
-  Effect.Designate (Designate.MkDesignate {}) -> []
-  Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ _) -> []
-  Effect.Undesignate _ -> []
-  Effect.SetHalfLocked {} -> []
-  Effect.CounterAndMark _ -> []
-  Effect.BecomeProtector _ -> []
-  Effect.Mentor _ -> []
-  Effect.Exploit -> []
-  Effect.GiveGift -> []
-  Effect.ItBecomes _ -> []
-  Effect.ExileHaunting {} -> []
-  Effect.Attach _ -> []
-  Effect.AttachAsThoughCreature _ -> []
-  Effect.AttachTarget {} -> []
-  Effect.AttachTargetToEach {} -> []
-  Effect.AttachBound {} -> []
-  Effect.AttachAll {} -> []
-  Effect.PlaySubgame _ -> []
-  Effect.ChoosePlayer _ -> []
-  Effect.ChoosePlayerAtRandom _ -> []
-  Effect.ChoosePermanents _ -> []
-  Effect.ChooseGroup _ -> []
-  Effect.RollDie {} -> []
-  Effect.FlipCoin {} -> []
-  Effect.TakeExtraTurn {} -> []
-  Effect.ShuffleIntoLibrary {} -> []
-  Effect.Ante {} -> []
-  Effect.PutSticker {} -> []
-  Effect.SetOwner {} -> []
-  Effect.ExchangeOwnership {} -> []
-  Effect.Shuffle {} -> []
-  Effect.OfferNamedCopy {} -> []
-  Effect.OfferNotedCopy {} -> []
-  Effect.OfferCast {} -> []
-  Effect.GrantPlayFromExile {} -> []
-  Effect.ChangeText {} -> []
+effectMintedFaces effect =
+  let tagged kind = Const.Const . fmap ((,) kind) . NonEmpty.toList . Card.Type.faces
+   in Const.getConst
+        ( Children.effectChildren
+            Children.effectLeaves
+              { Children.onEffect = Const.Const . effectMintedFaces,
+                Children.onReplacement = \replacement -> Const.Const (concatMap effectMintedFaces (replacementEffectRiders replacement) <> replacementMintedFaces replacement),
+                Children.onCard = tagged (case effect of Effect.CreateEmblem {} -> MintedEmblem; _ -> MintedToken),
+                Children.onConjured = tagged MintedCard,
+                Children.onMelded = tagged MintedMeld,
+                Children.onAbility = Const.Const . concatMap effectMintedFaces . foldMap (Modal.allEffects . TriggeredAbility.modal) . carriedTrigger
+              }
+            effect
+        )
 
 -- Every slot ONE FACE declares as a target: its spell modes plus CR 303.4a's
 -- enchant slot (Card.allTargetSlots), and its activated, triggered and delayed
@@ -8658,3 +7660,26 @@ castHalf land printing half =
           [only] -> Just only
           _ -> Nothing
       )
+
+-- The triggered ability an ArmDelayedTrigger carries (CR 603.7), as
+-- Game.carriedDelayedAbility reads it.
+carriedTrigger :: GrantedAbility.GrantedAbility Card.Type.Card -> [TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
+carriedTrigger ability = case ability of
+  GrantedAbility.Triggered triggered -> [triggered]
+  _ -> []
+
+-- Every Count a granted ability holds, whichever of CR 113.3's kinds it is.
+grantedAbilityCounts :: GrantedAbility.GrantedAbility Card.Type.Card -> [Count.Type.Count Quantity.Type.Quantity]
+grantedAbilityCounts granted = case granted of
+  GrantedAbility.Activated ability -> activatedAbilityCounts ability
+  GrantedAbility.Triggered ability -> triggeredAbilityCounts ability
+  GrantedAbility.Static ability -> staticAbilityCounts ability
+  GrantedAbility.Rules rules -> ruleAbilitiesCounts rules
+  GrantedAbility.Replacement ability -> concatMap conditionCounts (Maybe.maybeToList (PrintedReplacement.condition ability))
+  GrantedAbility.Player ability -> concatMap conditionCounts (Maybe.maybeToList (PlayerStaticAbility.condition ability))
+  GrantedAbility.SelfCostReduction reduction ->
+    quantityCounts (CostReduction.perEach reduction)
+      <> concatMap conditionCounts (Maybe.maybeToList (CostReduction.condition reduction))
+  GrantedAbility.SelfAlternativeCost alternative -> concatMap conditionCounts (Maybe.maybeToList (AlternativeCost.condition alternative))
+  -- Carries no Count.
+  GrantedAbility.SelfSpendManaAsThough _ -> []
