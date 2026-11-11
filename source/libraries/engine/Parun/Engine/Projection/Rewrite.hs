@@ -102,6 +102,9 @@ type Modification = Modification.Modification (GrantedAbility.GrantedAbility Car
 -- generic term, and a stored ChangeWord's words are its own resolution's choice
 -- (CR 608.2d), a text changer's printed clause being rewriteEffect's.
 rewriteModification :: [(TextWord.TextWord, TextWord.TextWord)] -> Modification -> Modification
+-- No pairs, no rebuild: Parun.Engine.Projection's staticParts asks this of
+-- every static ability on every projection.
+rewriteModification [] = id
 rewriteModification pairs =
   let -- `inFamily` is CR 612.2's gate.
       swap inFamily s = case lookup (TextWord.SubtypeWord s) pairs of
