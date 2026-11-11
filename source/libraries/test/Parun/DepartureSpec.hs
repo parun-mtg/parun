@@ -44,6 +44,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MonarchWatch as MonarchWatch
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
@@ -64,6 +65,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
@@ -1019,7 +1021,10 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
                 (GameState.turn lent)
                   { TurnRegisters.activePlayer = S.alice
                   },
-              GameState.contested = Map.fromList [(lentId, Just mirrorId), (keptId, Just mirrorId)]
+              GameState.scratch =
+                (GameState.scratch lent)
+                  { Scratch.contested = Map.fromList [(lentId, Just mirrorId), (keptId, Just mirrorId)]
+                  }
             }
         step :: Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
         step p = case p of
@@ -1061,7 +1066,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     diversion <- S.printingOf s registry "Synthetic Exile Diversion"
     let ranged gs =
           let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (fmap (\pid -> (pid, 1)) (GameState.turnOrder gs)))
-           in gs {GameState.settings = (GameState.settings gs) {GameSettings.rangeOfInfluence = ranges}}
+           in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = ranges}}}
         boardWith holder =
           let (islandId, g1) = S.addPermanent island S.carol (ranged S.fourPlayerGame)
               (_, g2) = S.addPermanent diversion holder g1

@@ -29,6 +29,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -85,7 +86,7 @@ spec s registry = Spec.describe s "Parun.Engine.Archenemy" $ do
         alices = commanderDeck {Deck.sideDecks = Map.singleton SideDeck.Scheme (Map.singleton look 2)}
         teamed shared =
           let gs = Setup.emptyGame S.threePlayers
-           in gs {GameState.settings = (GameState.settings gs) {GameSettings.sharedTeamLife = shared}}
+           in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.sharedTeamLife = shared}}}
         started shared = S.runPure S.identityAnswer (teamed shared) (Setup.newGame (Resolve.performHandAction Resolve.noSubgame) ((S.alice, alices) NonEmpty.:| [(S.bob, commanderDeck), (S.carol, commanderDeck)]))
         lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
         struck = S.runPure S.identityAnswer (started True) (Event.changeLife S.bob (-7))

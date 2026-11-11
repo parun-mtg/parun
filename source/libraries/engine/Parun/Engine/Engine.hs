@@ -106,11 +106,13 @@ import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.History as History
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoopTrail as LoopTrail
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -537,7 +539,7 @@ discardToHandSize pid = do
 skipsDraw :: GameState -> Bool
 skipsDraw gs =
   TurnRegisters.turnNumber (GameState.turn gs) == 1
-    && (length (GameState.turnOrder gs) <= 2 || GameSettings.twoHeadedGiant (GameState.settings gs))
+    && (length (GameState.turnOrder gs) <= 2 || GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)))
     && case GameState.turnOrder gs of
       starter : _ -> starter == TurnRegisters.activePlayer (GameState.turn gs)
       [] -> False
@@ -808,7 +810,7 @@ reactions incoming = do
       -- The per-GAME rider's own record, written beside the log because the log
       -- is cleared at the turn handoff. Only that rider's bearers are stored, so
       -- the record stays the size of the rider's use rather than the game's.
-      State.modify' (\g -> g {GameState.triggeredThisGame = GameState.triggeredThisGame g <> Seq.fromList (Maybe.mapMaybe perGameRecord batch)})
+      State.modify' (\g -> g {GameState.history = (GameState.history g) {History.triggeredThisGame = History.triggeredThisGame (GameState.history g) <> Seq.fromList (Maybe.mapMaybe perGameRecord batch)}})
       gs <- State.get
       let recorded = Event.unscannedGrouped gs
           fresh = Event.reactionTriggers recorded gs
@@ -874,7 +876,7 @@ placeOne pending = do
   -- the loop too (Trigger.loopShapers). Only a game using limited range reads
   -- the stamp, so only one looks the effects up.
   gs <- State.get
-  let shapers = if GameSettings.rangeOfInfluence (GameState.settings gs) == RangeOfInfluence.unlimited then [] else Trigger.loopShapers pending gs
+  let shapers = if GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs)) == RangeOfInfluence.unlimited then [] else Trigger.loopShapers pending gs
   State.put (foldr Game.involve gs (PendingTrigger.controller pending : shapers))
   case PendingTrigger.source pending of
     TriggerSource.Sourceless -> placeSourceless pending
@@ -1908,7 +1910,7 @@ priorityDecision trail = do
 offerConcessions :: Game ()
 offerConcessions = do
   gs <- State.get
-  Monad.when (GameSettings.grandMelee (GameState.settings gs))
+  Monad.when (GameSettings.grandMelee (MatchScope.settings (GameState.match gs)))
     . Monad.forM_ (filter (not . GrandMelee.eligible gs) (Game.stillPlayingInOrder gs))
     $ \p -> do
       concession <- Game.ask (Prompt.Concede p)
@@ -2253,7 +2255,7 @@ walkToNextTurn seatsLeft anchor seat = do
 -- CR 800.4i: a departed player's last turn answers "during their last turn"
 -- only until their next turn would have begun, which is here.
 expireLastTurn :: PlayerId -> GameState -> GameState
-expireLastTurn pid gs = gs {GameState.attacksInOwnLastTurn = Map.delete pid (GameState.attacksInOwnLastTurn gs)}
+expireLastTurn pid gs = gs {GameState.history = (GameState.history gs) {History.attacksInOwnLastTurn = Map.delete pid (History.attacksInOwnLastTurn (GameState.history gs))}}
 
 -- CR 611.2a's sweep for a turn that begins: every player who takes it, which
 -- under CR 805.4 is the whole team. A departed teammate's turn is one that
@@ -2334,27 +2336,6 @@ closeTurn gs =
                 TurnRegisters.scannedThrough = 0,
                 TurnRegisters.damageScannedThrough = 0
               },
-          -- CR 502.2 / 732.2: the count the NEXT turn's untap step asks about
-          -- "the previous turn's active player".
-          --
-          -- CR 502.2a / 732.2a: under the shared team turns option the rule asks
-          -- whether NO player on the previous active team cast a spell and
-          -- whether ANY cast two or more, and the most any one of them cast
-          -- answers both.
-          GameState.spellsCastLastTurn = List.foldl' max 0 (fmap (\p -> Map.findWithDefault 0 p casts) outgoing),
-          -- CR 608.2i: the outgoing log, kept before it is cleared above, for
-          -- the per-seat view and for every "last turn" tally a CARD asks
-          -- (Quantity's SpellsCast and LifeChanged at WhichTurn.LastTurn).
-          GameState.eventsLastTurn = TurnRegisters.events (GameState.turn gs),
-          -- CR 601.2i: the outgoing turn's casts join the game-long record
-          -- before the log holding them is cleared above.
-          GameState.castsBeforeThisTurn = GameState.castsBeforeThisTurn gs <> Game.castsInLog gs,
-          -- CR 120.1: the outgoing turn's damage joins the game-long record the
-          -- same way, for a look-back as long as an object's own life.
-          GameState.damageBeforeThisTurn = GameState.damageBeforeThisTurn gs <> Game.damageInLog gs,
-          -- CR 508.1a: the outgoing turn becomes each of its takers' own last
-          -- turn, REPLACING the row, an attackless turn included (CR 805.4).
-          GameState.attacksInOwnLastTurn = List.foldl' (\rows p -> Map.insert p (Game.attacksInLog gs) rows) (GameState.attacksInOwnLastTurn gs) outgoing,
           -- Cleared with the log it describes: the settle Engine.advance runs
           -- immediately before this leaves nothing unscanned.
           -- Snapshots.lastKnown is deliberately NOT cleared alongside them: CR
@@ -2367,6 +2348,30 @@ closeTurn gs =
               { Snapshots.boardAfterEvent = Map.empty,
                 Snapshots.boardBeforeEvent = Map.empty,
                 Snapshots.battlefieldWhenTriggered = Map.empty
+              },
+          GameState.history =
+            (GameState.history gs)
+              { -- CR 502.2 / 732.2: the count the NEXT turn's untap step asks about
+                -- "the previous turn's active player".
+                --
+                -- CR 502.2a / 732.2a: under the shared team turns option the rule asks
+                -- whether NO player on the previous active team cast a spell and
+                -- whether ANY cast two or more, and the most any one of them cast
+                -- answers both.
+                History.spellsCastLastTurn = List.foldl' max 0 (fmap (\p -> Map.findWithDefault 0 p casts) outgoing),
+                -- CR 608.2i: the outgoing log, kept before it is cleared above, for
+                -- the per-seat view and for every "last turn" tally a CARD asks
+                -- (Quantity's SpellsCast and LifeChanged at WhichTurn.LastTurn).
+                History.eventsLastTurn = TurnRegisters.events (GameState.turn gs),
+                -- CR 601.2i: the outgoing turn's casts join the game-long record
+                -- before the log holding them is cleared above.
+                History.castsBeforeThisTurn = History.castsBeforeThisTurn (GameState.history gs) <> Game.castsInLog gs,
+                -- CR 120.1: the outgoing turn's damage joins the game-long record the
+                -- same way, for a look-back as long as an object's own life.
+                History.damageBeforeThisTurn = History.damageBeforeThisTurn (GameState.history gs) <> Game.damageInLog gs,
+                -- CR 508.1a: the outgoing turn becomes each of its takers' own last
+                -- turn, REPLACING the row, an attackless turn included (CR 805.4).
+                History.attacksInOwnLastTurn = List.foldl' (\rows p -> Map.insert p (Game.attacksInLog gs) rows) (History.attacksInOwnLastTurn (GameState.history gs)) outgoing
               }
         }
 
@@ -2907,12 +2912,12 @@ playSubgame = do
   -- interpreter rolls. Only the players still in the main game are in the subgame
   -- (CR 730.4). Not asked when the answer is forced.
   starter <- Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn parent)) <$> Game.drawAmong Prompt.RandomFirstPlayer (Game.stillPlayingInOrder parent)
-  -- CR 100.6a: the one match-scoped tally, raised BEFORE the subgame is built
+  -- CR 100.6a: the match's subgame tally, raised BEFORE the subgame is built
   -- so the subgame it counts is inside its own answer (Shahrazad and Sindbad's
   -- "if there haven't been any subgames this match" is false inside the subgame
   -- it started), and raised on the PARENT, which is the state the main game
   -- resumes from under CR 730.5.
-  State.modify' (\g -> g {GameState.subgamesThisMatch = 1 + GameState.subgamesThisMatch g})
+  State.modify' (\g -> g {GameState.match = (GameState.match g) {MatchScope.subgamesThisMatch = 1 + MatchScope.subgamesThisMatch (GameState.match g)}})
   counted <- State.get
   let sub0 = Setup.subgameStateFrom starter counted
   -- CR 730.1a: every question the subgame raises passes outward through this

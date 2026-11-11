@@ -76,6 +76,7 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
@@ -96,6 +97,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sacrifice as Sacrifice
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
@@ -211,7 +213,7 @@ castEngineSpec s registry = Spec.describe s "CastEngine" $ do
     gs <- castGameState s registry
     Spec.assertBool
       s
-      (any (\pl -> Player.life pl < Setup.startingLife (GameState.settings gs) (length (GameState.turnOrder gs)) Nothing 0) (Map.elems (GameState.players gs)))
+      (any (\pl -> Player.life pl < Setup.startingLife (MatchScope.settings (GameState.match gs)) (length (GameState.turnOrder gs)) Nothing 0) (Map.elems (GameState.players gs)))
       "a spell resolved and dealt damage"
   Spec.it s "a casting game still terminates" $ do
     gs <- castGameState s registry
@@ -5255,7 +5257,7 @@ announcedTopSpec s registry = Spec.describe s "CR 401.5" $ do
     (goblins, after) <- cast [("piker", "Goblin Piker"), ("prospector", "Skirk Prospector")] []
     Spec.assertBool s (not (sacrificed goblins after)) "Snoop had no ability of the Prospector during the payment"
     Spec.assertEqWith s "the Piker became cast" (fmap (\oid -> Game.namesOf oid after) (TurnRegisters.stack (GameState.turn after))) [Set.singleton (CardName.MkCardName (Text.pack "Goblin Piker"))]
-    Spec.assertEqWith s "and the mark is gone with the window" (GameState.announcedTops after) Nothing
+    Spec.assertEqWith s "and the mark is gone with the window" (Scratch.announcedTops (GameState.scratch after)) Nothing
   -- The same hold-back, read by Vampire Nocturnus (the docs/decisions.md entry
   -- "Whether a library's held-back top card is its top card"). Leafkin Avenger
   -- tells: it adds {G}{G} for Grizzly Bears' {1}{G} exactly when Nocturnus has
@@ -5342,7 +5344,7 @@ keptFaceDownSpec s registry = Spec.describe s "KeptFaceDown" $ do
     let after = S.runPure (answerer land (== forest)) (Staged.state built) (S.cast S.alice insight)
     loggedBefore "the miracle reveal is logged after CR 601.2i's cast, not during CR 601.2g's payment" isSpellCast isMiracleReveal after
     loggedBefore "and after CR 601.2h discarded the Forest" isDiscard isMiracleReveal after
-    Spec.assertEqWith s "the Wrath is face up again: CR 121.8's mark is gone" (GameState.keptFaceDown after) Nothing
+    Spec.assertEqWith s "the Wrath is face up again: CR 121.8's mark is gone" (Scratch.keptFaceDown (GameState.scratch after)) Nothing
   -- CR 734.1: the {R} is unpaid with only the Forest's {G}{G}, so the cast is
   -- reversed after the draw. The draw is an action CR 734.1 never reverses, and
   -- CR 121.8 offers the reveal only "after the spell becomes cast", which never

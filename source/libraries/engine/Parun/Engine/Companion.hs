@@ -51,6 +51,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.OutsideObject as OutsideObject
@@ -145,7 +146,7 @@ fulfilled condition pid gs =
           case [Filter.cardTypes view | (printingId, _) <- deck, Just view <- [viewOf printingId], Filter.matches context view predicate] of
             [] -> True
             first : rest -> not (Set.null (List.foldl' Set.intersection first rest))
-        CompanionCondition.CardsOverMinimum extra -> case GameSettings.format (GameState.settings gs) of
+        CompanionCondition.CardsOverMinimum extra -> case GameSettings.format (MatchScope.settings (GameState.match gs)) of
           Nothing -> False
           Just format -> sum (fmap snd deck) >= RuleFamily.minimumDeckSize (Format.rules format) + extra
 
@@ -172,7 +173,7 @@ revealable pid gs =
       -- companion printing it would refute this).
       barredPrinting printingId = case Game.cardOfPrinting printingId gs of
         Nothing -> False
-        Just card -> Ante.barred (GameState.settings gs) (Game.resolveFaceFor Nothing card)
+        Just card -> Ante.barred (MatchScope.settings (GameState.match gs)) (Game.resolveFaceFor Nothing card)
       fromPool = fmap (OutsideCard.InPool . fst) (filter (\(printingId, n) -> n > 0 && admits printingId) (Map.toAscList pool))
       admitsOuter entry =
         OutsideObject.owner entry == pid

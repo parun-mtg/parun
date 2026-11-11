@@ -129,6 +129,7 @@ import qualified Parun.Types.RemoveCounters as RemoveCounters
 import qualified Parun.Types.RemoveCountersAmong as RemoveCountersAmong
 import qualified Parun.Types.RemovePlayerCounters as RemovePlayerCounters
 import Parun.Types.Result (Result)
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
@@ -1385,7 +1386,7 @@ blight resolving source controller legal (Blight.Type.MkBlight ref quantity mSlo
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       named = playerRefPlayers legal resolving source controller gs ref
       blighters = filter (\pid -> List.elem pid named) (Game.apnapOrder gs)
-      pool = if GameState.payingOnResolution gs then Blight.payable else Blight.instructed
+      pool = if Scratch.payingOnResolution (GameState.scratch gs) then Blight.payable else Blight.instructed
   blightedCreatures <- Event.simultaneously . fmap Maybe.catMaybes . Monad.forM blighters $ \pid ->
     case Common.evaluateForRecipient viewOf context gs resolving source pid quantity of
       Nothing -> pure Nothing -- unevaluable quantity: no-op (the powerOf posture)

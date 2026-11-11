@@ -166,6 +166,7 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.ReplacementProvenance as ReplacementProvenance
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
+import qualified Parun.Types.Scratch as Scratch
 import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotName as SlotName
@@ -853,7 +854,7 @@ matchesPrinted viewOf gs event candidate =
         -- naming a DISCARD cause admits only a CR 701.9a discard of that cause
         -- (Library of Leng's "if an effect causes you to discard"). A pattern
         -- naming a CAUSE admits only a move made as CR 609.1's effect of a
-        -- spell or ability, its controller read live (GameState.causing) since the
+        -- spell or ability, its controller read live (Scratch.causing) since the
         -- move has not happened yet -- the one Moved.causedBy will record.
         --
         -- CR 614.12 / 616.1c: a pattern naming the battlefield judges the card as
@@ -867,7 +868,7 @@ matchesPrinted viewOf gs event candidate =
         -- and hallowed-moonlight-leaves-a-caged-creature-card-in-the-graveyard.
         (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
           let oid = ZoneChange.object zc
-              entering = Map.member oid (GameState.enteringSubjects gs)
+              entering = Map.member oid (Scratch.enteringSubjects (GameState.scratch gs))
               namesBattlefield = ZoneChangePattern.whenDestination pat == Just Zone.Battlefield
               -- The zone it leaves is the event's, not a characteristic, so
               -- IsInZone still reads it there; the scenario
@@ -876,7 +877,7 @@ matchesPrinted viewOf gs event candidate =
            in namesBattlefield == entering
                 && maybe True (== ZoneChange.to zc) (ZoneChangePattern.whenDestination pat)
                 && maybe True ((== discarded) . Just) (ZoneChangePattern.whenDiscarded pat)
-                && all (\relation -> maybe False (PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) . Just) (GameState.causing gs)) (ZoneChangePattern.causedBy pat)
+                && all (\relation -> maybe False (PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) . Just) (Scratch.causing (GameState.scratch gs))) (ZoneChangePattern.causedBy pat)
                 && (resolving || not (ZoneChangePattern.duringResolution pat))
                 && matchesZoneOwner gs candidate (ZoneChangePattern.whoseObject pat) oid
                 && ( matchesFiltered judgedView gs candidate (ZoneChangePattern.whatObject pat) oid
@@ -919,7 +920,7 @@ matchesPrinted viewOf gs event candidate =
         -- CR 614.16 at the ENTRY level: the counters this permanent is entering
         -- with are a placement this row may scale, and CR 616.1 orders it against
         -- every other row modifying the same entry. What it scales is the PENDING
-        -- count; see GameState.enteringCounters.
+        -- count; see Scratch.enteringCounters.
         --
         -- The cause is synthesized per share as the one the flush will place it
         -- under (enteringPutter), so matchesPutter still parts Vorinclex's "if
@@ -1409,7 +1410,7 @@ admitsEntry gs oid rewrite = case rewrite of
      in maybe False (> 0) (Quantity.evaluate (Projection.fullView gs) context gs oid (Quantity.Type.PlayersDealtDamage DamageTally.MkDamageTally {DamageTally.dealt = DealtDamage.MkDealtDamage {DealtDamage.recipient = PlayerRef.Relative PlayerRelation.Opponent, DealtDamage.kind = Nothing, DealtDamage.by = Nothing}, DamageTally.turn = WhichTurn.ThisTurn}))
   -- CR 702.150a's own first condition, the ability's rather than the pattern's:
   -- "If this permanent WOULD ENTER WITH ONE OR MORE LOYALTY COUNTERS ON IT". The
-  -- pending count is what that asks about (GameState.enteringCounters), so the
+  -- pending count is what that asks about (Scratch.enteringCounters), so the
   -- row is inapplicable until CR 306.5b's has placed something -- which is also
   -- what makes CR 616.2 sequence the two: this row and CR 614.16's multiplier
   -- become applicable together on the pass after the loyalty row applied.
@@ -1862,7 +1863,7 @@ sacrificeCandidatesGiven board you slots pid source filter_ gs =
 -- graveyard, and the filter is matched against the CARD's projection there (CR
 -- 400.7) rather than against a permanent's.
 --
--- MINUS GameState.enteringPending, which is CR 614.13a's "or any other object
+-- MINUS Scratch.enteringPending, which is CR 614.13a's "or any other object
 -- entering the battlefield at the same time" -- its own example is Sutured
 -- Ghoul and Runeclaw Bear entering together out of one graveyard. A batch bound
 -- for the battlefield is moved one member at a time (Parun.Engine.Resolve.Effect's
@@ -1877,7 +1878,7 @@ graveyardCandidates pid scope filter_ gs =
   let context = Filter.contextIn gs (Just pid) Nothing
       viewOf = Projection.viewsOf gs
       owners = Maybe.fromMaybe [] (PlayerEffect.playersInScope (Just pid) (Just pid) gs scope)
-      offered oid = not (Map.member oid (GameState.enteringPending gs)) && Filter.matches context (viewOf oid) filter_
+      offered oid = not (Map.member oid (Scratch.enteringPending (GameState.scratch gs))) && Filter.matches context (viewOf oid) filter_
    in List.sort (concatMap (\owner -> filter offered (Game.cardsIn Zone.Graveyard owner gs)) owners)
 
 -- CR 614.1a / 614.1c-d: does the event's subject satisfy this replacement's
@@ -1996,9 +1997,9 @@ matchesTokenLot gs context filter_ pid lot =
    in Filter.matches context view filter_
 
 -- The counters `oid` is so far entering with, by putter, empty outside an entry
--- (see GameState.enteringCounters).
+-- (see Scratch.enteringCounters).
 enteringCountersOf :: GameState -> ObjectId -> Map.Map (Maybe PlayerId) (Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural)
-enteringCountersOf gs oid = Map.findWithDefault Map.empty oid (GameState.enteringCounters gs)
+enteringCountersOf gs oid = Map.findWithDefault Map.empty oid (Scratch.enteringCounters (GameState.scratch gs))
 
 -- CR 122.6a: the player putting one share of them -- the one the effect named,
 -- else the object's controller.

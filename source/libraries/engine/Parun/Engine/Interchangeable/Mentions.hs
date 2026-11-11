@@ -1357,7 +1357,7 @@ triggerLimitNames asking x = case x of
   TriggerLimit.OncePerTurn SpentOn.Triggering -> history asking HistoryRead.Triggers
   -- TurnRegisters.instructionsTakenThisTurn, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> mempty
-  -- GameState.triggeredThisGame, which Parun.Engine.Fragmented.digest keeps.
+  -- History.triggeredThisGame, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerGame -> mempty
 
 triggeredAbilityNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> TriggeredAbility.TriggeredAbility card ability -> r

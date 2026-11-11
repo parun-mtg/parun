@@ -147,6 +147,7 @@ import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.ModeIndex as ModeIndex
@@ -206,6 +207,7 @@ import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.Sacrificer as Sacrificer
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.Sickness as Sickness
@@ -518,9 +520,12 @@ happenedBetween before after =
             GameState.damagePreventedBy = GameState.damagePreventedBy before,
             GameState.exiledWith = GameState.exiledWith before,
             GameState.exilePiles = GameState.exilePiles before,
-            GameState.ambientAmounts = GameState.ambientAmounts before,
             GameState.objects = objectTallyless (GameState.objects gs),
-            GameState.detachedBindings = Map.filter (not . Map.null) (fmap tallyless (GameState.detachedBindings gs))
+            GameState.detachedBindings = Map.filter (not . Map.null) (fmap tallyless (GameState.detachedBindings gs)),
+            GameState.scratch =
+              (GameState.scratch gs)
+                { Scratch.ambientAmounts = Scratch.ambientAmounts (GameState.scratch before)
+                }
           }
    in Seq.length (TurnRegisters.events (GameState.turn after)) > Seq.length (TurnRegisters.events (GameState.turn before))
         || comparable before /= comparable after
@@ -629,7 +634,7 @@ oneSeat legal resolving source controller gs ref = case playerRefPlayers legal r
 -- The count is pickCounted's, read here -- Teferi, Hero of Dominaria's "up to
 -- two lands".
 --
--- Each prompt carries GameState.loopPicks (CR 101.4b). Beside the picks, the
+-- Each prompt carries Scratch.loopPicks (CR 101.4b). Beside the picks, the
 -- seat that was asked, pickCounted's.
 chosenPermanents :: AnyNumberOf.AnyNumberOf -> Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> ChosenPermanents.ChosenPermanents -> Game (Maybe PlayerId, [ObjectId])
 chosenPermanents purpose legal resolving controller source choice = do
@@ -639,7 +644,7 @@ chosenPermanents purpose legal resolving controller source choice = do
       count = ChosenPermanents.count choice
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source
-      earlier = Maybe.fromMaybe Seq.empty (GameState.loopPicks gs)
+      earlier = Maybe.fromMaybe Seq.empty (Scratch.loopPicks (GameState.scratch gs))
   pickByChooser
     resolving
     source
@@ -680,7 +685,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
   gs <- State.get
   let named = namesChooser legal resolving source controller gs chooser
       asked = askedChooser resolving source controller legal chooser
-      unlimited = Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs)))
+      unlimited = Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))))
       refusals = maybe Map.empty RepeatPicks.refused (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
   (seat, picked) <-
     if unlimited && Map.null refusals
@@ -2208,7 +2213,7 @@ chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmon
 -- either. A ref naming nobody takes nothing (CR
 -- 101.3).
 --
--- CR 101.4b: the prompt carries GameState.loopPicks, and a nonempty take joins
+-- CR 101.4b: the prompt carries Scratch.loopPicks, and a nonempty take joins
 -- it beside its taker. Proved by Parun.BoardEffectSpec's "CR 101.4b the later
 -- defending player is told the earlier one's pile" (Stand or Fall).
 takePile :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerRef -> [ObjectId] -> [ObjectId] -> Game [ObjectId]
@@ -2217,11 +2222,11 @@ takePile resolving source controller legal pileRef matching split = do
       rest = Set.difference (Set.fromList matching) first
       piles = if rest == first then [first] else [first, rest]
   seat <- askedChooser resolving source controller legal pileRef
-  earlier <- State.gets (Maybe.fromMaybe Seq.empty . GameState.loopPicks)
+  earlier <- State.gets (Maybe.fromMaybe Seq.empty . Scratch.loopPicks . GameState.scratch)
   taken <- case seat of
     Nothing -> pure Nothing
     Just who -> Game.chooseAmong (\decider asked offered -> Prompt.ChoosePile decider asked source offered earlier) who piles
-  let record who pile g = g {GameState.loopPicks = fmap (Seq.|> (who, pile)) (GameState.loopPicks g)}
+  let record who pile g = g {GameState.scratch = (GameState.scratch g) {Scratch.loopPicks = fmap (Seq.|> (who, pile)) (Scratch.loopPicks (GameState.scratch g))}}
   Monad.forM_ ((,) <$> seat <*> taken) $ \(who, pile) ->
     Monad.unless (Set.null pile) (State.modify' (record who pile))
   pure (foldMap Set.toList taken)
@@ -3894,9 +3899,9 @@ recordRoll controller throwers results = do
 withThrowing :: ThrowResult.ThrowResult -> Game a -> Game a
 withThrowing landed act = do
   previous <- State.get
-  State.modify' (\g -> g {GameState.throwing = Just landed, GameState.rethrowRequested = False})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.throwing = Just landed, Scratch.rethrowRequested = False}})
   result <- act
-  State.modify' (\g -> g {GameState.throwing = GameState.throwing previous, GameState.rethrowRequested = GameState.rethrowRequested previous})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.throwing = Scratch.throwing (GameState.scratch previous), Scratch.rethrowRequested = Scratch.rethrowRequested (GameState.scratch previous)}})
   pure result
 
 -- CR 123.6e's "that sticker": bind the placed sticker under @slot@, on

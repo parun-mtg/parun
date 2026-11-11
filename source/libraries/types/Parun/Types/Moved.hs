@@ -67,7 +67,7 @@ data Moved = MkMoved
     -- battlefield or into exile face down (CR 406.3, 708.2).
     seenArriving :: Bool,
     -- | CR 609.1: the controller of the spell or ability whose effect made this
-    -- move, read off GameState.causing as the move happens. Nothing for a move
+    -- move, read off Scratch.causing as the move happens. Nothing for a move
     -- no effect made: a cost to cast or activate (CR 601.2h; Guerrilla Tactics'
     -- ruling of 2004-10-04), a state-based action (CR 704.1), a turn-based
     -- action, a cast. A CR 118.12 cost paid on resolution records the

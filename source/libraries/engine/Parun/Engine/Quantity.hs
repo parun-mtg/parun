@@ -68,6 +68,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.Object as Object
@@ -85,6 +86,7 @@ import Parun.Types.Quantity (Quantity)
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Quotient as Quotient
 import qualified Parun.Types.Rounding as Rounding
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotArity as SlotArity
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
@@ -136,7 +138,7 @@ evaluate viewOf context gs oid = evaluateFor viewOf context gs oid oid
 --     resolve regardless (#544).
 --
 -- Quantity.InSlot asks `oid` FIRST, falls back to `announcedOn`, and then to
--- GameState.ambientAmounts, because it has three writers:
+-- Scratch.ambientAmounts, because it has three writers:
 -- Resolve.bindAmountSlot writes to the effect's source mid-resolution (Bane of
 -- Progress binds and reads one inside a TRIGGERED ability, where the two ids
 -- differ), Event.eventBindings writes to the stack object as a trigger is
@@ -263,7 +265,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --     Read after both object readings, so neither is disturbed, and it can
         --     collide with neither -- the map is empty except while a target slot's
         --     bound is being evaluated.
-        --   * Resolve.runPreventionRider writes GameState.ambientAmounts, for the span
+        --   * Resolve.runPreventionRider writes Scratch.ambientAmounts, for the span
         --     of one CR 615.5 rider -- Inkshield's "for each 1 damage prevented this
         --     way". That writer has NO object to bind to: the shielded recipient can be
         --     a player, and CR 400.7 replaced the installing spell. Read LAST, so no
@@ -293,7 +295,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Parun.OutsideTheGameSpec's Synthetic Subgame Tithe case proves it.
         Quantity.InSlot slot ->
           let boundOn holder = Binding.amountOf slot (maybe (Map.findWithDefault Map.empty holder (GameState.detachedBindings gs)) Object.bindings (Game.lookupObject holder gs))
-           in fmap toInteger ((mOid >>= boundOn) <|> boundOn announcedOn <|> Map.lookup slot (Filter.boundAmounts context) <|> Map.lookup slot (GameState.ambientAmounts gs))
+           in fmap toInteger ((mOid >>= boundOn) <|> boundOn announcedOn <|> Map.lookup slot (Filter.boundAmounts context) <|> Map.lookup slot (Scratch.ambientAmounts (GameState.scratch gs)))
         -- CR 601.2d: the recipient's part of the slot's announced division, which
         -- the caller applying the effect to that recipient hands over.
         Quantity.Share slot -> fmap toInteger (Map.lookup slot (Filter.shares context))
@@ -827,7 +829,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.AttackersDeclaredThisCombat ->
           Just (toInteger (Set.size (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))))
         -- CR 508.1a as a 0/1, PlayedBy's footing: an object related to a player,
-        -- read off GameState.attacksInOwnLastTurn rather than the turn's log.
+        -- read off History.attacksInOwnLastTurn rather than the turn's log.
         Quantity.AttackedInLastTurnOf ref -> case (playersOf ref, mOid) of
           (Just [pid], Just oid) -> Just (if Game.attackedInLastTurnOf gs pid oid then 1 else 0)
           _ -> Nothing
@@ -1032,7 +1034,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- Always a number, never Nothing: nothing here is read off an object, so an
         -- evaluation aimed at none still answers, and a match with no subgame is 0.
-        Quantity.SubgamesThisMatch -> Just (toInteger (GameState.subgamesThisMatch gs))
+        Quantity.SubgamesThisMatch -> Just (toInteger (MatchScope.subgamesThisMatch (GameState.match gs)))
         -- CR 309.7: how many dungeons that player has completed. LifeTotal's arm in
         -- ARITY -- one player's tally, so a reference naming several answers "whose?"
         -- rather than a sum -- and in SOURCE: read straight off the player, because

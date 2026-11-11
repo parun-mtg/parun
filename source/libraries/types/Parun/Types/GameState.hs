@@ -5,26 +5,18 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
-import qualified Parun.Types.AbilityTriggered as AbilityTriggered
-import qualified Parun.Types.Arrival as Arrival
-import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLink as CounterLink
-import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Daytime as Daytime
-import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryLink as EntryLink
-import qualified Parun.Types.EntryOrigin as EntryOrigin
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExtraTurn as ExtraTurn
-import qualified Parun.Types.GameSettings as GameSettings
-import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OutsideObject as OutsideObject
@@ -36,20 +28,18 @@ import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.RestartSignal as RestartSignal
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
-import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 data GameState = MkGameState
-  { -- | CR 800.2: the options this game was started with; never written after
-    -- the game begins.
-    settings :: GameSettings.GameSettings,
+  { -- | CR 100.6a: what crosses a restart and a subgame (Parun.Types.MatchScope).
+    match :: MatchScope.MatchScope,
     objects :: Map.Map ObjectId.ObjectId Object.Object,
     library :: Map.Map PlayerId.PlayerId (Seq.Seq ObjectId.ObjectId),
     hand :: Map.Map PlayerId.PlayerId (Seq.Seq ObjectId.ObjectId),
@@ -92,22 +82,9 @@ data GameState = MkGameState
     departedCards :: Map.Map ObjectId.ObjectId Object.Object,
     -- | CR 106.4. Absent from the map means an empty pool.
     manaPool :: Map.Map PlayerId.PlayerId Mana.Mana,
-    -- | CR 613.7m: the arrivals of the CR 608.2f action under way, ordered when
-    -- it ends (Event.together). Nothing outside one.
-    enteringTogether :: Maybe EnteringTogether.EnteringTogether,
-    -- | CR 401.4 / 404.3: the redirected library arrivals and the graveyard
-    -- arrivals of the Event.arrivingTogether scope under way, arranged by their
-    -- owners when it ends. Nothing outside one.
-    arrivals :: Maybe (Seq.Seq Arrival.Arrival),
-    -- | CR 118.12: the instructions running are the "[do something]" a later
-    -- clause's "If [a player] does" reads, so a cost paid on resolution rather
-    -- than an effect (Event.payingOnResolution). False outside one.
-    payingOnResolution :: Bool,
-    -- | CR 609.1: the controller of the spell or ability whose effect is being
-    -- performed (Event.causedBy), which Moved and Discarded record as their
-    -- cause. Nothing outside one, and inside a cost's payment outside a
-    -- resolution (Parun.Engine.Cost.payComponent).
-    causing :: Maybe PlayerId.PlayerId,
+    -- | What one resolution, entry, announcement or check holds while it runs
+    -- (Parun.Types.Scratch).
+    scratch :: Scratch.Scratch,
     -- | CR 611.2 / 603.7 / 614: every row a resolution stored, kind by kind
     -- (Parun.Engine.Stored walks them).
     stored :: StoredEffects.StoredEffects,
@@ -117,58 +94,10 @@ data GameState = MkGameState
     -- | CR 603.10 / 608.2h: the game as it stood at earlier moments
     -- (Parun.Types.Snapshots).
     snapshots :: Snapshots.Snapshots GameState,
-    -- | CR 616.1 and Lich's Mirror's ruling: the objects a state-based action
-    -- check moves, keyed to the source of the replacement whose effects run in
-    -- place of a loss in that check, or to Nothing once kept for the check. A
-    -- move those effects make of one asks its controller which of the two
-    -- happens (Event.contestedKept). Empty outside that window.
-    contested :: Map.Map ObjectId.ObjectId (Maybe ObjectId.ObjectId),
-    -- | CR 615.5's amount channel: the amount bindings a prevention rider can
-    -- read outside any object's environment, its recipient possibly being a
-    -- player. Empty at every priority window.
-    ambientAmounts :: Map.Map SlotName.SlotName Natural.Natural,
     -- | CR 730.5: the slots a resolution filled after its own object ceased to
     -- exist, keyed by that object's id; the fallback Parun.Engine.Resolve reads
     -- for an object it can no longer find. Never pruned.
     detachedBindings :: Map.Map ObjectId.ObjectId (Map.Map SlotName.SlotName Binding.Binding),
-    -- | CR 113.6 / 614.12: the permanents entering beside the one whose entry
-    -- loop is running -- materialized but not yet entered, so their static
-    -- abilities do not function. Never holds the loop's own subject. Also held
-    -- while the subject's as-enters effects run
-    -- (Parun.Engine.Resolve.Effect.runEntryEffect), and a resolution's
-    -- battlefield sweep skips it. Empty at every priority window.
-    enteringBeside :: Set.Set ObjectId.ObjectId,
-    -- | CR 614.12: the subject of every entry loop currently running,
-    -- materialized but not entered, with the zone it left, if any; with
-    -- `enteringBeside`, what Parun.Engine.Projection.boardAsEntering subtracts.
-    -- Empty at every priority window.
-    enteringSubjects :: Map.Map ObjectId.ObjectId (Maybe EntryOrigin.EntryOrigin),
-    -- | CR 614.12 / 608.2f: the zone each permanent that has entered so far in
-    -- the Event.arrivingTogether scope under way left, so a later member's entry
-    -- still counts it there (Parun.Engine.Projection.boardAsEntering). Empty
-    -- outside one.
-    enteredFrom :: Map.Map ObjectId.ObjectId EntryOrigin.EntryOrigin,
-    -- | CR 614.12b: the members of a CR 608.2f move onto the battlefield that
-    -- have not yet been moved, each with the player it will enter under, which
-    -- the one-at-a-time funnel would otherwise hide from an earlier member's
-    -- entry choice. Empty at every priority window.
-    enteringPending :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
-    -- | CR 614.1a: while a land play is moving its card, the pre-move ids whose
-    -- entry an EntryRewrite.SacrificeToEnter turned into the graveyard -- the
-    -- land was still played (CR 305.1). Nothing when no play is listening,
-    -- which is at every priority window.
-    refusedEntries :: Maybe (Set.Set ObjectId.ObjectId),
-    -- | CR 614.1c: the counters each entering permanent is so far going to
-    -- enter with, by the player putting them -- Nothing for CR 122.6a's
-    -- default, the object's controller, and Just for a player the effect names
-    -- (CR 702.104a's opponent) -- pending until runEntry flushes them onto the
-    -- object. Empty outside an entry.
-    enteringCounters :: Map.Map ObjectId.ObjectId (Map.Map (Maybe PlayerId.PlayerId) (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural.Natural)),
-    -- | CR 707.9e: the share of each entering permanent's enteringCounters that
-    -- the copy effect applied to it last placed as its exception, which a later
-    -- copy effect on the same entry takes back. Always CR 122.6a's default
-    -- putter's share. Empty outside an entry.
-    copyExceptionCounters :: Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural.Natural),
     -- | The seating order (CR 800.5) rotated so the starting player is first,
     -- which CR 103.1 makes the turn order. Lists every player who began the
     -- game and is never shortened -- CR 800.4a and 800.4m need a departed
@@ -215,26 +144,6 @@ data GameState = MkGameState
     -- 400.7i), naming who played it. Never cleared: a delayed trigger may ask on
     -- a later turn (CR 603.7), and CR 400.7 never reuses an id.
     cardsPlayed :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
-    -- | CR 121.8: Nothing unless a spell is being cast or an ability activated
-    -- (Parun.Engine.Event.announcing); then the cards drawn since it began, each
-    -- kept face down in its hand with no characteristics, keyed to the ordinal
-    -- GameEvent.Drew stamped on its draw.
-    keptFaceDown :: Maybe (Map.Map ObjectId.ObjectId Natural.Natural),
-    -- | CR 401.5: Nothing unless a spell is being cast or an ability activated
-    -- (Parun.Engine.Event.announcing); then each library's top card as it
-    -- began, the only one that stays shown until it ends (Game.shownTop).
-    announcedTops :: Maybe (Map.Map PlayerId.PlayerId ObjectId.ObjectId),
-    -- | CR 401.5: Nothing unless a player is taking a special action
-    -- (Parun.Engine.Event.takingSpecialAction); then each library's top card as
-    -- it began, the only one that stays shown until it ends (Game.shownTop).
-    -- Apart from announcedTops, whose window a mana ability activated during the
-    -- action opens and closes inside this one.
-    actionTops :: Maybe (Map.Map PlayerId.PlayerId ObjectId.ObjectId),
-    -- | CR 101.4b: Nothing outside a Parun.Types.ForEach loop; inside one, the
-    -- permanents each ChoosePermanents of it has picked so far, beside who
-    -- picked them, which a later pick's prompt carries
-    -- (Parun.Engine.Resolve.Arms.Zones.forEach).
-    loopPicks :: Maybe (Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId)),
     -- | CR 401.6: each library's top card as the last settle found it revealed
     -- to every player by a player effect (Event.settleRevealedTops).
     revealedTops :: Map.Map PlayerId.PlayerId ObjectId.ObjectId,
@@ -242,14 +151,6 @@ data GameState = MkGameState
     -- whose seats still count toward range of influence until the next turn
     -- begins; cleared at turn handoff.
     departedThisTurn :: Set.Set PlayerId.PlayerId,
-    -- | The printed rider "This ability triggers only once"
-    -- (Parun.Types.TriggerLimit's OncePerGame), spent here: every triggering of an
-    -- ability carrying that rider, as the same record CR 603.3b's log carries.
-    -- Stored beside the log rather than read off it, because `events` is cleared
-    -- at the turn handoff and this record must outlive it; a sequence rather
-    -- than a set, because Parun.Engine.Event.withinTriggerLimit COUNTS these
-    -- records exactly as it counts the log's (CR 113.2c).
-    triggeredThisGame :: Seq.Seq AbilityTriggered.AbilityTriggered,
     -- | CR 724.1: pending player-controlling effects, keyed by the player to be
     -- controlled; last created wins (CR 724.1a), promoted into `control` at
     -- that player's turn (CR 724.1b) with the timestamp of its creation.
@@ -274,40 +175,14 @@ data GameState = MkGameState
     -- unreachable once either has been gained. Written only by
     -- Parun.Engine.Daytime.
     daytime :: Maybe Daytime.Daytime,
-    -- | CR 502.2 / 732.2: how many spells the previous turn's active player cast
-    -- that turn, snapshotted at handoff from the outgoing log, which is cleared
-    -- there. Under the shared team turns option, the most any one player on the
-    -- previous active team cast (CR 732.2a).
-    spellsCastLastTurn :: Natural.Natural,
-    -- | CR 608.2i: the turn just ended's `events`, kept at the handoff. The
-    -- per-seat view reads it, and so does every "last turn" tally
-    -- (WhichTurn.LastTurn). On the first turn it holds what the log held as that
-    -- turn began.
-    eventsLastTurn :: Seq.Seq LoggedEvent.LoggedEvent,
-    -- | CR 601.2i / 608.2i: every spell cast this game BEFORE the turn in
-    -- progress, oldest first, appended at the turn handoff from the log it
-    -- clears. Parun.Engine.Count's CastWindow.ThisGame fold joins it
-    -- to the live log.
-    castsBeforeThisTurn :: Seq.Seq SpellWasCast.SpellWasCast,
-    -- | CR 120.1 / 608.2i: every damage event dealt this game BEFORE the turn in
-    -- progress, oldest first, appended at the turn handoff from the log it
-    -- clears, as castsBeforeThisTurn is. Lookback.AsThisObject's
-    -- Filter.DealtDamageTo joins it to the live log.
-    damageBeforeThisTurn :: Seq.Seq DamageEvent.DamageEvent,
+    -- | CR 608.2i: what this game did that outlives the turn's log
+    -- (Parun.Types.History).
+    history :: History.History,
     -- | CR 615.5 / 615.13: how much damage each object's printed prevention
     -- effect has stopped this game, keyed by the DamagePrevented.by's printer.
     -- Never cleared: a next end step can come on a later turn, and CR 400.7
     -- never reuses an id.
     damagePreventedBy :: Map.Map ObjectId.ObjectId Natural.Natural,
-    -- | CR 508.1a / 608.2i: the attackers declared during each player's OWN most
-    -- recent turn, keyed by that player and replaced as their next turn ends
-    -- (Engine.beginTurn). A departed player's row stands until their next turn
-    -- would have begun (CR 800.4i), where Engine's seat walk removes it.
-    attacksInOwnLastTurn :: Map.Map PlayerId.PlayerId (Seq.Seq AttackerDeclared.AttackerDeclared),
-    -- | CR 702.192a: the names of the spells each player controlled that have
-    -- resolved this game, as they resolved, written by
-    -- Parun.Engine.Resolve.noteResolved.
-    resolvedNames :: Map.Map PlayerId.PlayerId (Set.Set CardName.CardName),
     -- | CR 610.3: objects moved "until" a specified event, keyed by the
     -- incarnation the move minted, swept by Parun.Engine.MoveDuration.returnDue.
     -- Not an Expiry, which cannot perform a zone change.
@@ -359,28 +234,6 @@ data GameState = MkGameState
     -- | CR 807.4b / 807.5: every running Grand Melee turn but `turn`, by its
     -- marker's number (Parun.Engine.Engine.runStep's scheduler); empty in every
     -- other game.
-    parkedTurns :: Map.Map Natural.Natural TurnRegisters.TurnRegisters,
-    -- | CR 100.6a / 730.1a: how many subgames have begun this match, counting
-    -- one in progress. The only match-scoped field: CR 730.1b keeps a subgame's
-    -- effects out of the main game, but a match is a series of games, so this
-    -- is inherited by the subgame (Setup.subgameStateFrom) and kept across CR
-    -- 728.1's restart, which begins a new game of the SAME match. Parun models
-    -- no match beyond it, so a game built by Setup.emptyGame starts at 0.
-    subgamesThisMatch :: Natural.Natural,
-    -- | CR 728.1 / 730.1a: how many games have begun this match, counting this
-    -- one, every subgame and every restarted game; match-scoped as
-    -- `subgamesThisMatch` is, and carried as it is.
-    gamesThisMatch :: Natural.Natural,
-    -- | CR 728.1 / 730.1a: which of `gamesThisMatch` this game is, so a
-    -- subgame's or a restarted game's turn numbers, which begin again at 1,
-    -- are not taken for this game's. Parun.Engine.PlayerView shows it.
-    gameNumber :: Natural.Natural,
-    -- | CR 706.2 / 705.1: what the die whose modification step is open, or the
-    -- coin just flipped, came up, while Parun.Engine.Resolve.Effect offers to
-    -- throw it again; Nothing otherwise.
-    throwing :: Maybe ThrowResult.ThrowResult,
-    -- | CR 706.2b: whether an ability activated inside that window asked for
-    -- the die to be rerolled or the coin reflipped (Goblin Bookie).
-    rethrowRequested :: Bool
+    parkedTurns :: Map.Map Natural.Natural TurnRegisters.TurnRegisters
   }
   deriving (Eq, Ord, Show)

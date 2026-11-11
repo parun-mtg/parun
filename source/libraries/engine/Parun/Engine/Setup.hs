@@ -45,6 +45,7 @@ import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import Parun.Types.HandActionPerformer (HandActionPerformer)
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectId as ObjectId
@@ -228,7 +229,7 @@ gameWith settings order =
               Player.crankCounter = Designation.Sprocket3
             }
         )
-   in (blankGame settings order_ (NonEmpty.head order)) {GameState.players = Map.fromList (fmap newPlayer order_)}
+   in (blankGame (newMatch settings) order_ (NonEmpty.head order)) {GameState.players = Map.fromList (fmap newPlayer order_)}
 
 -- CR 728.1 / 730.2: what a restarted game and a subgame carry of `from`'s
 -- bookkeeping -- the id, printing and timestamp supplies, so every object the
@@ -251,13 +252,27 @@ inheritedBookkeeping from =
       Bookkeeping.lastChoice = Bookkeeping.nextTimestamp from
     }
 
--- CR 728.1 / 730.2 / 800.2: a game nothing has happened in yet, with no player
--- records. gameWith adds its players; restartGame and subgameStateFrom name
--- what crosses into their new game, so a field neither names resets.
-blankGame :: GameSettings.GameSettings -> [PlayerId] -> PlayerId -> GameState
-blankGame settings order active =
+-- CR 100.6a / 800.2: the match a game built from nothing is the first game of,
+-- parun modelling no match around it: no subgame has begun in it yet.
+newMatch :: GameSettings.GameSettings -> MatchScope.MatchScope
+newMatch settings =
+  MatchScope.MkMatchScope
+    { MatchScope.settings = settings,
+      MatchScope.subgamesThisMatch = 0,
+      MatchScope.gamesThisMatch = 1,
+      MatchScope.gameNumber = 1
+    }
+
+-- CR 728.1 / 730.2 / 800.2: a game of `match` nothing has happened in yet, with
+-- no player records. gameWith adds its players. What a restarted game or a
+-- subgame keeps is decided by group: `match` crosses whole, being the argument,
+-- and the bookkeeping through inheritedBookkeeping; every other group resets
+-- here, and so does every top-level field restartGame and subgameStateFrom do
+-- not name.
+blankGame :: MatchScope.MatchScope -> [PlayerId] -> PlayerId -> GameState
+blankGame match order active =
   GameState.MkGameState
-    { GameState.settings = settings,
+    { GameState.match = match,
       GameState.objects = Map.empty,
       GameState.library = Map.empty,
       GameState.hand = Map.empty,
@@ -301,10 +316,7 @@ blankGame settings order active =
       GameState.broughtIn = Seq.empty,
       GameState.departedCards = Map.empty,
       GameState.manaPool = Map.empty,
-      GameState.enteringTogether = Nothing,
-      GameState.arrivals = Nothing,
-      GameState.payingOnResolution = False,
-      GameState.causing = Nothing,
+      GameState.scratch = Game.blankScratch,
       GameState.stored =
         StoredEffects.MkStoredEffects
           { StoredEffects.continuousEffects = [],
@@ -326,18 +338,9 @@ blankGame settings order active =
           },
       GameState.bookkeeping = Game.blankBookkeeping,
       GameState.snapshots = Game.blankSnapshots,
-      GameState.contested = Map.empty,
-      GameState.ambientAmounts = Map.empty,
       GameState.detachedBindings = Map.empty,
-      GameState.enteringBeside = Set.empty,
-      GameState.enteringSubjects = Map.empty,
-      GameState.enteredFrom = Map.empty,
-      GameState.enteringPending = Map.empty,
-      GameState.refusedEntries = Nothing,
-      GameState.enteringCounters = Map.empty,
-      GameState.copyExceptionCounters = Map.empty,
       GameState.turnOrder = order,
-      GameState.turnsBegun = Turn.firstTurnBegun settings order active,
+      GameState.turnsBegun = Turn.firstTurnBegun (MatchScope.settings match) order active,
       GameState.result = Nothing,
       GameState.restartSignal = RestartSignal.Playing,
       GameState.outsideCopies = Set.empty,
@@ -348,26 +351,16 @@ blankGame settings order active =
       GameState.drewFromEmpty = mempty,
       GameState.landsPlayed = mempty,
       GameState.cardsPlayed = mempty,
-      GameState.keptFaceDown = Nothing,
-      GameState.announcedTops = Nothing,
-      GameState.actionTops = Nothing,
-      GameState.loopPicks = Nothing,
       GameState.revealedTops = mempty,
       GameState.departedThisTurn = mempty,
-      GameState.triggeredThisGame = mempty,
       GameState.pendingControl = Map.empty,
       GameState.control = Map.empty,
       GameState.monarch = Nothing,
       GameState.initiative = Nothing,
       -- CR 732.1: "the game starts with neither designation".
       GameState.daytime = Nothing,
-      GameState.spellsCastLastTurn = 0,
-      GameState.eventsLastTurn = mempty,
-      GameState.castsBeforeThisTurn = mempty,
-      GameState.damageBeforeThisTurn = mempty,
+      GameState.history = Game.blankHistory,
       GameState.damagePreventedBy = mempty,
-      GameState.attacksInOwnLastTurn = mempty,
-      GameState.resolvedNames = Map.empty,
       GameState.movedUntil = Map.empty,
       GameState.haunting = Map.empty,
       GameState.encoded = Map.empty,
@@ -377,16 +370,7 @@ blankGame settings order active =
       GameState.exilePiles = Map.empty,
       GameState.extraTurns = [],
       GameState.turnMarkers = [],
-      GameState.parkedTurns = Map.empty,
-      -- CR 100.6a: parun models no match around this game, so the match it
-      -- belongs to has had no subgame yet.
-      GameState.subgamesThisMatch = 0,
-      -- CR 728.1 / 730.1a: the match's first game; startGameFromCards
-      -- numbers each later one.
-      GameState.gamesThisMatch = 1,
-      GameState.gameNumber = 1,
-      GameState.throwing = Nothing,
-      GameState.rethrowRequested = False
+      GameState.parkedTurns = Map.empty
     }
 
 createCard :: PlayerId -> PrintingId.PrintingId -> Game ObjectId
@@ -457,7 +441,7 @@ createDeck pid deck = do
           -- CR 400.11a: the sideboard is recorded on the player for the same
           -- reason and no object is minted for it either. CR 400.11c is what
           -- keeps anything else from reaching these until a card brings one in.
-          let total = startingLifeOf (GameState.settings gs) (length (GameState.turnOrder gs)) pid (Deck.commander deck) (Vanguard.lifeModifierOf pid gs + (if Map.null (Map.findWithDefault Map.empty SideDeck.Scheme (Deck.sideDecks deck)) then 0 else Archenemy.lifeBonus))
+          let total = startingLifeOf (MatchScope.settings (GameState.match gs)) (length (GameState.turnOrder gs)) pid (Deck.commander deck) (Vanguard.lifeModifierOf pid gs + (if Map.null (Map.findWithDefault Map.empty SideDeck.Scheme (Deck.sideDecks deck)) then 0 else Archenemy.lifeBonus))
            in Map.adjust (\p -> p {Player.life = total, Player.startingLife = total, Player.dungeons = Set.fromList dungeonIds, Player.outsideTheGame = Map.fromList sideboardIds, Player.stickerSheets = Deck.stickerSheets deck, Player.draftNotes = Deck.draftNotes deck}) pid (GameState.players gs)
       }
   -- CR 718.2 / 901.4 / 904.4 and the Unstable FAQ: each supplementary deck
@@ -478,7 +462,7 @@ createDeck pid deck = do
   -- deck's claim -- rule 702.124 admits a second commander only for a pair one
   -- of its partner abilities allows, and an inadmissible pair designates
   -- neither.
-  settings <- State.gets GameState.settings
+  settings <- State.gets (MatchScope.settings . GameState.match)
   designatedIds <- Monad.mapM (State.state . Game.intern) (Commander.occurrences (Commander.designations settings deck))
   -- CR 903.3: the card put there is the one designated, by its identity, so
   -- another copy of the printing in the library is no commander.
@@ -567,7 +551,7 @@ newGame perform matchup = do
   randomSeating
   -- CR 103.3: build and shuffle every library before any opening hand is drawn,
   -- so CR 103.5's declaration round sees settled libraries.
-  communal <- State.gets (GameSettings.singlePlanarDeck . GameState.settings)
+  communal <- State.gets (GameSettings.singlePlanarDeck . MatchScope.settings . GameState.match)
   let ownDecks = filter (\kind -> not (communal && kind == SideDeck.Planar)) [minBound .. maxBound]
   Monad.forM_ (NonEmpty.toList matchup) $ \(pid, deck) -> do
     createDeck pid deck
@@ -687,8 +671,8 @@ startGameFromCards perform exemptions = do
   -- CR 728.1 / 730.1a: a restart and a subgame each begin a new game of the
   -- match, numbered after every game begun so far.
   State.modify' $ \g ->
-    let begun = 1 + GameState.gamesThisMatch g
-     in g {GameState.gamesThisMatch = begun, GameState.gameNumber = begun}
+    let begun = 1 + MatchScope.gamesThisMatch (GameState.match g)
+     in g {GameState.match = (GameState.match g) {MatchScope.gamesThisMatch = begun, MatchScope.gameNumber = begun}}
   gs <- State.get
   let owners = Game.stillPlayingInOrder gs
       -- Cards in exile, and nothing else: CR 728.2's "all Magic cards" is what
@@ -885,7 +869,7 @@ chooseConspiracies pid = do
 -- card of the shuffled library is distributed as one of the deck (CR 103.3).
 anteFromLibraries :: [PlayerId] -> Game ()
 anteFromLibraries seated = do
-  playing <- State.gets (GameSettings.ante . GameState.settings)
+  playing <- State.gets (GameSettings.ante . MatchScope.settings . GameState.match)
   let anteOne pid = do
         gs <- State.get
         drawn <- Game.drawAmong Prompt.RandomObject (Game.zoneMembers Zone.Library pid gs)
@@ -919,7 +903,7 @@ drawStickerSheets seated = Monad.forM_ seated $ \pid -> do
 -- CR 904.2) are final.
 countFirstTurn :: Game ()
 countFirstTurn =
-  State.modify' (\g -> g {GameState.turnsBegun = Turn.firstTurnBegun (GameState.settings g) (GameState.turnOrder g) (TurnRegisters.activePlayer (GameState.turn g))})
+  State.modify' (\g -> g {GameState.turnsBegun = Turn.firstTurnBegun (MatchScope.settings (GameState.match g)) (GameState.turnOrder g) (TurnRegisters.activePlayer (GameState.turn g))})
 
 -- CR 103.1c: rotate the turn order to begin with the player whose command zone
 -- holds a card naming them the starting player, superseding CR 103.1's
@@ -958,7 +942,7 @@ claimStartingPlayer = do
 randomSeating :: Game ()
 randomSeating = do
   gs <- State.get
-  Monad.when (Map.null (Teams.unwrap (GameSettings.teams (GameState.settings gs)))) $
+  Monad.when (Map.null (Teams.unwrap (GameSettings.teams (MatchScope.settings (GameState.match gs))))) $
     case GameState.turnOrder gs of
       [] -> pure ()
       starter : rest -> do
@@ -973,7 +957,7 @@ randomSeating = do
 randomEmperorFirst :: Game ()
 randomEmperorFirst = do
   gs <- State.get
-  let emperors = GameSettings.emperors (GameState.settings gs)
+  let emperors = GameSettings.emperors (MatchScope.settings (GameState.match gs))
   drawn <- Game.drawAmong Prompt.RandomFirstPlayer (filter (Emperors.isEmperor emperors) (GameState.turnOrder gs))
   Monad.forM_ drawn $ \starter ->
     State.modify'
@@ -997,7 +981,7 @@ randomEmperorFirst = do
 randomTeamFirst :: Game ()
 randomTeamFirst = do
   gs <- State.get
-  let settings = GameState.settings gs
+  let settings = MatchScope.settings (GameState.match gs)
       order = GameState.turnOrder gs
       teamVsTeam =
         not (Map.null (Teams.unwrap (GameSettings.teams settings)))
@@ -1170,13 +1154,17 @@ restartGame perform exempt starter = do
                     TurnRegisters.stackedIn = TurnRegisters.stackedIn (GameState.turn gs)
                   }
             )
-            (blankGame (GameState.settings gs) order first) -- CR 728.1 restarts "following the procedures set forth in rule
-            -- 103" for the same players with the same decks, and nothing in
-            -- rule 728 turns an option off. CR 728.7 confirms the direction by
-            -- naming an option the restarted game is still using.
+            -- CR 100.6a / 728.1: a restart begins a new game of the SAME
+            -- match, so the match carries across it, for the reason
+            -- nextTimestamp is preserved: the question is not about this
+            -- game. Its options included: CR 728.1 restarts "following the
+            -- procedures set forth in rule 103" for the same players with the
+            -- same decks, and nothing in rule 728 turns an option off. CR
+            -- 728.7 confirms the direction by naming an option the restarted
+            -- game is still using. startGameFromCards numbers the new game.
+            (blankGame (GameState.match gs) order first)
         )
-          { GameState.settings = GameState.settings gs,
-            -- CR 728.2: every card, startGameFromCards funnels them into the
+          { -- CR 728.2: every card, startGameFromCards funnels them into the
             -- new libraries from here.
             GameState.objects = GameState.objects gs,
             GameState.library = GameState.library gs,
@@ -1203,17 +1191,10 @@ restartGame perform exempt starter = do
             GameState.namedCopyChoices = GameState.namedCopyChoices gs,
             GameState.notedCards = GameState.notedCards gs,
             GameState.loopInvolvement = GameState.loopInvolvement gs,
-            -- CR 100.6a / 728.1: a restart begins a new game of the SAME
-            -- match, so the match's tallies carry across it, for the reason
-            -- nextTimestamp is preserved: the question is not about this game.
-            -- startGameFromCards numbers the new game.
-            GameState.subgamesThisMatch = GameState.subgamesThisMatch gs,
-            GameState.gamesThisMatch = GameState.gamesThisMatch gs,
-            GameState.gameNumber = GameState.gameNumber gs,
             -- CR 902.4: the modifier is read off `gs`, the board the restart
             -- starts from, where CR 313.2 has kept every vanguard card since the
             -- game began -- and startGameFromCards leaves it there.
-            GameState.players = resetPlayers (GameState.settings gs) (length order) (`lifeModifierOf` gs) (GameState.players gs),
+            GameState.players = resetPlayers (MatchScope.settings (GameState.match gs)) (length order) (`lifeModifierOf` gs) (GameState.players gs),
             -- CR 728.4: the game the caller was running has been replaced.
             -- Engine.priorityLoop and Engine.runStep read this and unwind to
             -- the rebuilt turn 1 rather than granting priority.
@@ -1375,14 +1356,17 @@ subgameStateFrom starter parent =
          in case (Game.sourceIsToken source, Game.printingIdOfSource source, NonEmpty.nonEmpty arriving) of
               (False, Just printingId, Just cards) -> Just (OutsideObject.MkOutsideObject (Object.owner obj) printingId (Object.facing obj) cards)
               _ -> Nothing
-   in (blankGame (GameState.settings parent) order firstPlayer)
-        { -- CR 730.2's subgame "proceeds like a normal game, following all
-          -- other rules in rule 103", and CR 730.2c speaks of "a subgame of a
-          -- Commander game" -- the subgame is played in the format the main
-          -- game is. CR 730.1b keeps EFFECTS from crossing, not the options the
-          -- game was started with.
-          GameState.settings = GameState.settings parent,
-          -- CR 730.2a: startGameFromCards shuffles each supplementary deck.
+   in -- CR 100.6a: the subgame is a separate GAME (CR 730.1a) but not a
+      -- separate match, so it inherits the match -- the subgame count already
+      -- counting itself, Engine.playSubgame having raised it before building
+      -- this state. CR 730.6's nested subgame therefore counts them all.
+      -- startGameFromCards numbers the new game. Its options included: CR
+      -- 730.2's subgame "proceeds like a normal game, following all other rules
+      -- in rule 103", and CR 730.2c speaks of "a subgame of a Commander game"
+      -- -- the subgame is played in the format the main game is. CR 730.1b
+      -- keeps EFFECTS from crossing, not the options the game was started with.
+      (blankGame (GameState.match parent) order firstPlayer)
+        { -- CR 730.2a: startGameFromCards shuffles each supplementary deck.
           GameState.sideDecks = GameState.sideDecks parent,
           -- The id, printing and timestamp supplies, inherited so every object
           -- the subgame mints gets an id above every parent id, and what is
@@ -1391,20 +1375,12 @@ subgameStateFrom starter parent =
           GameState.outsideCopies = GameState.outsideCopies parent,
           GameState.namedCopyChoices = GameState.namedCopyChoices parent,
           GameState.notedCards = GameState.notedCards parent,
-          -- CR 100.6a: the subgame is a separate GAME (CR 730.1a) but not a
-          -- separate match, so it inherits the match's tallies -- the subgame
-          -- count already counting itself, Engine.playSubgame having raised it
-          -- before building this state. CR 730.6's nested subgame therefore
-          -- counts them all. startGameFromCards numbers the new game.
-          GameState.subgamesThisMatch = GameState.subgamesThisMatch parent,
-          GameState.gamesThisMatch = GameState.gamesThisMatch parent,
-          GameState.gameNumber = GameState.gameNumber parent,
           GameState.objects = movedObjects,
           -- CR 902.4 / CR 730.2b: read off the PARENT, whose command zone still
           -- holds every vanguard card at this point -- `cmdIds` below is what
           -- moves them into the subgame, and it is computed from the same board.
           -- CR 103.4e likewise: the archenemy's scheme deck is the one moving in.
-          GameState.players = resetPlayers (GameState.settings parent) (length order) (`lifeModifierOf` parent) (GameState.players parent),
+          GameState.players = resetPlayers (MatchScope.settings (GameState.match parent)) (length order) (`lifeModifierOf` parent) (GameState.players parent),
           GameState.outsideObjects = outside,
           -- CR 730.2c, above. startGameFromCards keeps them here rather than
           -- funnelling them into a library, which is CR 903.6 for the subgame.
@@ -1659,7 +1635,7 @@ funnelBack finalSub parent =
       -- CR 901.15c: the communal planar deck takes back every planar card,
       -- whoever turned it up last (Planechase.turnUpTop).
       planarDecksBack
-        | GameSettings.singlePlanarDeck (GameState.settings parent) = fmap (const (Seq.fromList (Map.keys planarBack))) (Game.sideDecksOf SideDeck.Planar parent)
+        | GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match parent)) = fmap (const (Seq.fromList (Map.keys planarBack))) (Game.sideDecksOf SideDeck.Planar parent)
         | otherwise = Map.mapWithKey (\pid _ -> ownedIn planarBack pid) (Game.sideDecksOf SideDeck.Planar parent)
       backKind oid = Game.sideDeckBack oid finalSub Applicative.<|> Game.sideDeckBack oid parent
       backedDecks kind = Map.filter (not . Seq.null) (Map.fromList [(pid, ownedIn (Map.filterWithKey (\oid _ -> backKind oid == Just kind) backedBack) pid) | pid <- GameState.turnOrder parent])
@@ -1810,12 +1786,15 @@ funnelBack finalSub parent =
                 -- choice, rather than inheriting a gap the subgame ran up.
                 Bookkeeping.lastChoice = max (Bookkeeping.nextTimestamp (GameState.bookkeeping parent)) (Bookkeeping.nextTimestamp (GameState.bookkeeping finalSub))
               },
-          -- CR 100.6a / 730.6: a subgame the subgame itself started is still a
-          -- subgame of this match, so the resumed main game takes the deeper
-          -- tally -- nextTimestamp's treatment, and monotone for its reason,
-          -- subgameStateFrom having inherited the parent's raised value.
-          GameState.subgamesThisMatch = max (GameState.subgamesThisMatch parent) (GameState.subgamesThisMatch finalSub),
-          -- CR 730.1a: the main game resumes as itself (its gameNumber), with
-          -- the games the subgame began on the match's books.
-          GameState.gamesThisMatch = max (GameState.gamesThisMatch parent) (GameState.gamesThisMatch finalSub)
+          GameState.match =
+            (GameState.match parent)
+              { -- CR 100.6a / 730.6: a subgame the subgame itself started is still a
+                -- subgame of this match, so the resumed main game takes the deeper
+                -- tally -- nextTimestamp's treatment, and monotone for its reason,
+                -- subgameStateFrom having inherited the parent's raised value.
+                MatchScope.subgamesThisMatch = max (MatchScope.subgamesThisMatch (GameState.match parent)) (MatchScope.subgamesThisMatch (GameState.match finalSub)),
+                -- CR 730.1a: the main game resumes as itself (its gameNumber), with
+                -- the games the subgame began on the match's books.
+                MatchScope.gamesThisMatch = max (MatchScope.gamesThisMatch (GameState.match parent)) (MatchScope.gamesThisMatch (GameState.match finalSub))
+              }
         }

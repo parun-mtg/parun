@@ -114,6 +114,7 @@ import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.Mana as Mana.Type
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modification as Modification
@@ -153,6 +154,7 @@ import qualified Parun.Types.RepeatPicks as RepeatPicks
 import Parun.Types.Result (Result)
 import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Reveal as Reveal
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SetOwner as SetOwner
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
@@ -936,8 +938,8 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
   -- CR 101.4b: the body's picks are recorded for its later prompts
   -- (Damage.choosePermanents). An outer loop's record is the one a nested
   -- loop adds to, and only the loop that opened a record closes it.
-  opened <- State.gets (Maybe.isNothing . GameState.loopPicks)
-  Monad.when opened (State.modify' (\gs -> gs {GameState.loopPicks = Just Seq.empty}))
+  opened <- State.gets (Maybe.isNothing . Scratch.loopPicks . GameState.scratch)
+  Monad.when opened (State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.loopPicks = Just Seq.empty}}))
   let -- The slots the BODY defines, computed off the instruction rather than the
       -- board: a body effect binds into the resolving object's live bindings and
       -- the next body effect must see it. Restricted to those names so a target
@@ -1049,7 +1051,7 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
         Map.empty
         members
   State.modify' (bindAcross accumulated . rescope)
-  Monad.when opened (State.modify' (\gs -> gs {GameState.loopPicks = Nothing}))
+  Monad.when opened (State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.loopPicks = Nothing}}))
 
 -- CR 608.2f over numbers: the bound read once off the pre-loop board, and each
 -- number bound on the source (bindAmountSlot) for its iteration's body to
@@ -1933,7 +1935,7 @@ loseGame resolving source controller legal ref = do
 winGame :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerRef -> Game ()
 winGame resolving source controller legal ref = do
   gs <- State.get
-  let limited winner = Maybe.isJust (RangeOfInfluence.rangeOf (GameSettings.rangeOfInfluence (GameState.settings gs)) winner)
+  let limited winner = Maybe.isJust (RangeOfInfluence.rangeOf (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))) winner)
       winners = filter (\pid -> pid `elem` Game.stillPlaying gs && (limited pid || not (PlayerEffect.precludes GameOutcome.Win pid gs))) (playerRefPlayers legal resolving source controller gs ref)
       losers = Set.fromList [pid | winner <- winners, pid <- Players.offer winner gs PlayerRelation.Opponent, not (limited winner && PlayerEffect.precludes GameOutcome.Lose pid gs)]
   Departure.leaveGameTogether (all limited winners) Departure.Type.Lost (filter (`Set.member` losers) (Game.apnapOrder gs))

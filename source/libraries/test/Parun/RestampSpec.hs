@@ -39,6 +39,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
@@ -134,7 +135,7 @@ nightfall :: GameState.GameState -> GameState.GameState
 nightfall gs =
   S.runPure
     S.identityAnswer
-    gs {GameState.spellsCastLastTurn = 0}
+    gs {GameState.history = (GameState.history gs) {History.spellsCastLastTurn = 0}}
     (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
 
 -- Whether the nightfall sweep asked anybody CR 613.7m's order.
@@ -146,7 +147,7 @@ nightPrompts gs =
           State.modify (<> [(pid, length batch)])
           pure (S.identityAnswer p)
         _ -> pure (S.identityAnswer p)
-   in State.execState (Engine.runGame recording gs {GameState.spellsCastLastTurn = 0} (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))) []
+   in State.execState (Engine.runGame recording gs {GameState.history = (GameState.history gs) {History.spellsCastLastTurn = 0}} (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))) []
 
 -- alice, the active player, controls the Keeper, a Wall of Stone and -- when
 -- `both` -- the Warden ahead of it, plus the two Forests Moonmist costs, with

@@ -15,6 +15,7 @@ import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Teams as Teams
@@ -32,13 +33,16 @@ setUp :: Teams.Teams -> Emperors.Emperors -> GameState -> Maybe GameState
 setUp teams emperors gs =
   let set =
         gs
-          { GameState.settings =
-              (GameState.settings gs)
-                { GameSettings.teams = teams,
-                  GameSettings.emperors = emperors,
-                  GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (ranges teams emperors (GameState.turnOrder gs)),
-                  GameSettings.deployCreatures = True,
-                  GameSettings.attackOption = Just AttackOption.Adjacent
+          { GameState.match =
+              (GameState.match gs)
+                { MatchScope.settings =
+                    (MatchScope.settings (GameState.match gs))
+                      { GameSettings.teams = teams,
+                        GameSettings.emperors = emperors,
+                        GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (ranges teams emperors (GameState.turnOrder gs)),
+                        GameSettings.deployCreatures = True,
+                        GameSettings.attackOption = Just AttackOption.Adjacent
+                      }
                 }
           }
    in case Seating.misseated set of
@@ -67,7 +71,7 @@ ranges teams emperors seats =
 -- outside the Emperor variant.
 fallsWith :: Departure.Departure -> [PlayerId.PlayerId] -> GameState -> [(Departure.Departure, PlayerId.PlayerId)]
 fallsWith reason leaving gs =
-  let settings = GameState.settings gs
+  let settings = MatchScope.settings (GameState.match gs)
       emperors = GameSettings.emperors settings
       teams = GameSettings.teams settings
       falling = filter (Emperors.isEmperor emperors) leaving

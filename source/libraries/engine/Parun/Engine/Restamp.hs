@@ -24,6 +24,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StoredEffects as StoredEffects
 import Parun.Types.Timestamp (Timestamp)
@@ -135,10 +136,10 @@ orderFor pid start arrivals = case arrivals of
 settle :: Timestamp -> [ObjectId] -> Game ()
 settle start arrivals = do
   gs <- State.get
-  case GameState.enteringTogether gs of
+  case Scratch.enteringTogether (GameState.scratch gs) of
     Just batch
       | null arrivals -> pure ()
-      | otherwise -> State.put gs {GameState.enteringTogether = Just batch {EnteringTogether.arrivals = EnteringTogether.arrivals batch <> Seq.fromList arrivals}}
+      | otherwise -> State.put gs {GameState.scratch = (GameState.scratch gs) {Scratch.enteringTogether = Just batch {EnteringTogether.arrivals = EnteringTogether.arrivals batch <> Seq.fromList arrivals}}}
     Nothing -> do
       ordered <- order (filter (\oid -> fmap Object.zone (Game.lookupObject oid gs) == Just Zone.Battlefield) arrivals)
       State.modify' (reassign start ordered)

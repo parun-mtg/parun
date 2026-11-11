@@ -15,6 +15,7 @@ import qualified Parun.Types.ExtraTurn as ExtraTurn
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import Parun.Types.TurnMarker (TurnMarker)
@@ -30,12 +31,15 @@ setUp :: GameState -> GameState
 setUp gs =
   handOut
     gs
-      { GameState.settings =
-          (GameState.settings gs)
-            { GameSettings.grandMelee = True,
-              GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(pid, 1) | pid <- GameState.turnOrder gs]),
-              GameSettings.attackOption = Just AttackOption.Leftward,
-              GameSettings.deployCreatures = False
+      { GameState.match =
+          (GameState.match gs)
+            { MatchScope.settings =
+                (MatchScope.settings (GameState.match gs))
+                  { GameSettings.grandMelee = True,
+                    GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(pid, 1) | pid <- GameState.turnOrder gs]),
+                    GameSettings.attackOption = Just AttackOption.Leftward,
+                    GameSettings.deployCreatures = False
+                  }
             }
       }
 
@@ -46,7 +50,7 @@ setUp gs =
 -- 103.1's starting player is settled.
 handOut :: GameState -> GameState
 handOut gs
-  | not (GameSettings.grandMelee (GameState.settings gs)) = gs
+  | not (GameSettings.grandMelee (MatchScope.settings (GameState.match gs))) = gs
   | otherwise =
       let seats = case List.break (== TurnRegisters.activePlayer (GameState.turn gs)) (Game.stillPlayingInOrder gs) of
             (before, after) -> after <> before
@@ -72,7 +76,7 @@ markersFor players = max 1 (div players 4)
 -- influence. Everyone outside the variant.
 eligible :: GameState -> PlayerId -> Bool
 eligible gs pid =
-  not (GameSettings.grandMelee (GameState.settings gs))
+  not (GameSettings.grandMelee (MatchScope.settings (GameState.match gs)))
     -- CR 800.4j: a departed holder's marker stays at their seat until their
     -- turn ends (CR 807.4c).
     || Game.wasInRangeOf pid (TurnRegisters.activePlayer (GameState.turn gs)) gs
@@ -159,7 +163,7 @@ nearestRightOf pid gs =
 -- they name several. Nothing outside the variant.
 departed :: [PlayerId] -> GameState -> GameState
 departed pids gs
-  | not (GameSettings.grandMelee (GameState.settings gs)) || null (GameState.turnMarkers gs) = gs
+  | not (GameSettings.grandMelee (MatchScope.settings (GameState.match gs))) || null (GameState.turnMarkers gs) = gs
   | otherwise =
       let -- CR 807.4f: markers already designated are disregarded.
           counted = Natural.minusSaturating (Natural.length (GameState.turnMarkers gs)) (sum (fmap TurnMarker.removals (GameState.turnMarkers gs)))

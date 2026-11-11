@@ -44,6 +44,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeLossCause as LifeLossCause
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -674,7 +675,7 @@ gatherCombatDamage assigns = do
       -- each team. A group past the seats is the creatures no seat controls.
       waves = zipWith (\mine theirs -> fmap Left mine <> fmap Right theirs) (order attackers) (order blocking)
       together a b =
-        GameSettings.sharedTeamTurns (GameState.settings gs) && Teams.sameTeam (Game.teams gs) a b
+        GameSettings.sharedTeamTurns (MatchScope.settings (GameState.match gs)) && Teams.sameTeam (Game.teams gs) a b
       groups = fmap (concatMap snd) (List.groupBy (\(a, _) (b, _) -> Maybe.fromMaybe False (together <$> a <*> b)) (zip (fmap Just seats <> [Nothing]) waves))
       -- Each creature's assignment reads the board as its turn to assign
       -- comes, which differs from `gs` only where an earlier creature turned

@@ -122,6 +122,7 @@ import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -585,8 +586,8 @@ partnerBoard format mountain plains lands commanders =
           )
           (S.landsFor plains S.alice lands (S.landsInPlay mountain lands))
 
-      settings = (GameState.settings board) {GameSettings.format = format}
-   in S.runPure S.identityAnswer board {GameState.settings = settings} (Setup.createDeck S.alice deck)
+      settings = (MatchScope.settings (GameState.match board)) {GameSettings.format = format}
+   in S.runPure S.identityAnswer board {GameState.match = (GameState.match board) {MatchScope.settings = settings}} (Setup.createDeck S.alice deck)
 
 -- CR 903.13a: a Commander Draft of Commander Legends boosters, the default.
 commanderDraft :: Format.Format

@@ -64,6 +64,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
@@ -75,6 +76,7 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Milled as Milled
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MovedBetween as MovedBetween
@@ -148,7 +150,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
         -- the fold hands snapshotView the same reader the zone arm uses.
         --
         -- CastWindow.ThisGame reaches back past the log to the earlier
-        -- turns' casts, which GameState.castsBeforeThisTurn keeps as the same
+        -- turns' casts, which History.castsBeforeThisTurn keeps as the same
         -- record the log's SpellCast entries carry.
         Scope.InHistory shape ->
           let logged = case shape of
@@ -160,7 +162,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
               thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
               earlier = case shape of
-                EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (GameState.castsBeforeThisTurn gs))
+                EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (History.castsBeforeThisTurn (GameState.history gs)))
                 EventShape.SpellCast CastWindow.ThisTurn -> []
                 EventShape.SpellCast CastWindow.BeforeEvaluated -> []
                 EventShape.SpellCast CastWindow.OtherThanEvaluated -> []
@@ -1227,7 +1229,7 @@ dealtDamageTo oid gs =
 -- is damage by this object.
 dealtDamageEarlier :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind)
 dealtDamageEarlier oid gs =
-  Set.fromList [(DamageEvent.target ev, DamageEvent.kind ev) | ev <- Foldable.toList (GameState.damageBeforeThisTurn gs), DamageEvent.source ev == oid]
+  Set.fromList [(DamageEvent.target ev, DamageEvent.kind ev) | ev <- Foldable.toList (History.damageBeforeThisTurn (GameState.history gs)), DamageEvent.source ev == oid]
 
 -- CR 702.51c: which spells did this object convoke, and which permanents did
 -- those spells become? GameEvent.Convoked is written as the cast's cost is paid
@@ -1638,4 +1640,4 @@ asSnapshotted gs snapshot live =
 -- Does CR 804.2 reach an object snapshotted as it left, or while it was in,
 -- this zone? Only a permanent's (CR 109.2), and only in a game using the option.
 deployIn :: GameState -> Zone.Zone -> Bool
-deployIn gs zone = zone == Zone.Battlefield && GameSettings.deployCreatures (GameState.settings gs)
+deployIn gs zone = zone == Zone.Battlefield && GameSettings.deployCreatures (MatchScope.settings (GameState.match gs))

@@ -32,6 +32,7 @@ import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.Object as Object
@@ -136,7 +137,7 @@ spec s registry = Spec.describe s "Ante" $ do
     mountain <- S.printingOf s registry "Mountain"
     forest <- S.printingOf s registry "Forest"
     let bare = Setup.emptyGame S.bothPlayers
-        (_, g1) = S.addLibraryCard mountain S.alice bare {GameState.settings = anteGame}
+        (_, g1) = S.addLibraryCard mountain S.alice bare {GameState.match = (GameState.match bare) {MatchScope.settings = anteGame}}
         (_, before) = S.addLibraryCard forest S.alice g1
         drawingLast :: Prompt.Prompt r -> r
         drawingLast p = case p of

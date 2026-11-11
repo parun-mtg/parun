@@ -71,11 +71,13 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ManaSpending as ManaSpending
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.Modification as Modification
@@ -107,6 +109,7 @@ import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RoomHalf as RoomHalf
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
@@ -334,7 +337,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   -- CR 728.1 restarts "following the procedures set forth in rule 103" for the
   -- same players, and CR 730.2's subgame "proceeds like a normal game": neither
   -- turns an option off, which is why Setup.restartGame and
-  -- Setup.subgameStateFrom name GameState.settings as kept. Read
+  -- Setup.subgameStateFrom carry GameState.match whole. Read
   -- at gameplay level -- CR 903.12f's twenty-five, which only the carried
   -- setting can produce -- rather than off the field.
   Spec.it s "CR 728.1 / 730.2 a rebuilt Brawl game is still a Brawl game" $ do
@@ -392,6 +395,22 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     Spec.assertEqWith s "CR 730.1b a subgame clears every carrier" (carrierRows subgame) (replicate (length (carrierRows subgame)) 0)
     Spec.assertBool s (Bookkeeping.nextObjectId (GameState.bookkeeping restarted) >= Bookkeeping.nextObjectId (GameState.bookkeeping stored) && Bookkeeping.nextTimestamp (GameState.bookkeeping restarted) >= Bookkeeping.nextTimestamp (GameState.bookkeeping stored)) "a restart's supplies do not move back"
     Spec.assertEqWith s "a subgame inherits the supplies" (Bookkeeping.nextObjectId (GameState.bookkeeping subgame), Bookkeeping.nextTimestamp (GameState.bookkeeping subgame)) (Bookkeeping.nextObjectId (GameState.bookkeeping stored), Bookkeeping.nextTimestamp (GameState.bookkeeping stored))
+
+  -- CR 728.1 / 730.1a: a restart and a subgame are new games, so neither the
+  -- old game's mid-resolution scratch nor its history crosses: both are groups
+  -- Setup.blankGame resets and neither rebuild names.
+  Spec.it s "CR 728.1 / 730.1a a restart and a subgame begin scratch and history again" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    let (land, built) = S.addPermanent mountain S.alice (Setup.gameWith GameSettings.plain S.bothPlayers)
+        busy =
+          built
+            { GameState.scratch = (GameState.scratch built) {Scratch.enteringBeside = Set.singleton land},
+              GameState.history = (GameState.history built) {History.spellsCastLastTurn = 2}
+            }
+        restarted = S.runPure S.identityAnswer busy (Setup.restartGame S.performer Set.empty S.alice)
+        subgame = Setup.subgameStateFrom S.alice busy
+    Spec.assertEqWith s "CR 728.1 a restart begins scratch and history again" (GameState.scratch restarted, GameState.history restarted) (Game.blankScratch, Game.blankHistory)
+    Spec.assertEqWith s "CR 730.1a a subgame begins scratch and history again" (GameState.scratch subgame, GameState.history subgame) (Game.blankScratch, Game.blankHistory)
 
 -- One row in every stored carrier, each from `source`: the fixture the CR
 -- 728.1 / 730.1b case above clears.
@@ -603,14 +622,14 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
     let g0 = addMany mountain 8 S.bob (addMany mountain 8 S.alice (Setup.emptyGame S.bothPlayers))
         played =
           g0
-            { GameState.subgamesThisMatch = 2,
-              GameState.turn =
+            { GameState.turn =
                 (GameState.turn g0)
                   { TurnRegisters.turnNumber = 5
-                  }
+                  },
+              GameState.match = (GameState.match g0) {MatchScope.subgamesThisMatch = 2}
             }
         after = snd (Engine.runGamePure S.identityAnswer played (Setup.restartGame S.performer Set.empty S.alice))
-    Spec.assertEqWith s "CR 100.6a: the two subgames are still this match's" (GameState.subgamesThisMatch after) 2
+    Spec.assertEqWith s "CR 100.6a: the two subgames are still this match's" (MatchScope.subgamesThisMatch (GameState.match after)) 2
     Spec.assertEqWith s "CR 728.1: while the restarted game is back on turn 1" (TurnRegisters.turnNumber (GameState.turn after)) 1
 
   Spec.it s "CR 728.1a: the starting player is the restart's controller, at the head of the turn order" $ do

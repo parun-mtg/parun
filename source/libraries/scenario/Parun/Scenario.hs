@@ -123,6 +123,7 @@ import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MonarchIs as MonarchIs
 import qualified Parun.Types.Move as Move
 import qualified Parun.Types.NamesAre as NamesAre
@@ -430,7 +431,7 @@ settleStartingLife :: Staged.Staged -> Staged.Staged
 settleStartingLife board =
   let gs = Staged.state board
       seats = length (GameState.turnOrder gs)
-      record pid p = p {Player.startingLife = Setup.startingLifeOf (GameState.settings gs) seats pid (Player.commander p) (Setup.lifeModifierOf pid gs)}
+      record pid p = p {Player.startingLife = Setup.startingLifeOf (MatchScope.settings (GameState.match gs)) seats pid (Player.commander p) (Setup.lifeModifierOf pid gs)}
    in board {Staged.state = gs {GameState.players = Map.mapWithKey record (GameState.players gs)}}
 
 -- | CR 103.2a: each seat's starting deck, as setup would have recorded it,

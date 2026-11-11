@@ -107,6 +107,7 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import Parun.Types.ManaUnit (ManaUnit)
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -564,7 +565,7 @@ storedSource active = RowSource.MkRowSource (Just (ActivePlayerEffect.source act
 -- turn, including spells cast before it was on the battlefield.
 --
 -- A Natural rather than an Integer, because a count of log entries cannot be
--- negative and CR 502.2's reader (GameState.spellsCastLastTurn, snapshotted by
+-- negative and CR 502.2's reader (History.spellsCastLastTurn, snapshotted by
 -- Engine.beginTurnOf) holds one.
 --
 -- Read out of Game.castsPerPlayer rather than folding the log itself, so the
@@ -4218,7 +4219,7 @@ precludes outcome pid gs =
         PlayerEffect.CantGainLife -> False
         PlayerEffect.Shows _ -> False
       team = Game.teams gs
-      members = pid : [other | GameSettings.twoHeadedGiant (GameState.settings gs), other <- GameState.turnOrder gs, Teams.sameTeam team pid other]
+      members = pid : [other | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)), other <- GameState.turnOrder gs, Teams.sameTeam team pid other]
    in any (\member -> any (says . snd) (applying member gs)) members
 
 -- CR 609.4b / 613.11: the clauses saying what this player may spend their mana

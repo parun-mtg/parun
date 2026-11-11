@@ -99,6 +99,7 @@ import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -910,7 +911,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
     Spec.assertEqWith
       s
       "the printed rider is spent, so a later second main phase has nothing left to fire"
-      (length (GameState.triggeredThisGame fired))
+      (length (History.triggeredThisGame (GameState.history fired)))
       1
   -- Fear of Change ({G}{U} Enchantment Creature -- Nightmare, 2/3, "When this
   -- creature enters or dies, exile another creature you control. If you do,

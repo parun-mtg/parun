@@ -50,6 +50,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PastActivation as PastActivation
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.RiderClause as RiderClause
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 602.5: does every clause of this ability's printed "activate only ..."
@@ -207,7 +208,7 @@ restrictionMet pid srcId ability gs restriction = case restriction of
   -- activated with nothing to reroll").
   -- Not implemented: activating at priority to reroll a Die creature, which
   -- Pippa, Duchess of Dice's rulings allow (#6221).
-  ActivationRestriction.DuringThrow -> Maybe.isJust (GameState.throwing gs)
+  ActivationRestriction.DuringThrow -> Maybe.isJust (Scratch.throwing (GameState.scratch gs))
   -- A payment rule, not a gate: Parun.Engine.Mana.admitsUnder spends only the
   -- mana it names (PaymentSubject.Activating's colours).
   ActivationRestriction.SpendOnly _ -> True

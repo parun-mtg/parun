@@ -113,6 +113,7 @@ import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -782,7 +783,7 @@ aliceUpkeep gs =
 -- `n` spells on the previous turn's books.
 untapStepAfter :: Natural.Natural -> GameState.GameState -> GameState.GameState
 untapStepAfter n gs =
-  S.runPure S.identityAnswer (gs {GameState.spellsCastLastTurn = n}) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
+  S.runPure S.identityAnswer (gs {GameState.history = (GameState.history gs) {History.spellsCastLastTurn = n}}) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
 
 -- alice's board for CR 701.27h: Tovolar, two Russet Wolves, Mutagen Connoisseur
 -- and a Thraben Gargoyle, settled so CR 702.145d has made it day.
@@ -1398,8 +1399,8 @@ spellsCastLastTurnSpec s registry = Spec.describe s "SpellsCast at LastTurn" $ d
         handed = Engine.beginTurnOf S.bob (castAndResolve S.bob bobFog board)
     -- SPARSE: alice cast nothing and so has no entry at all, which every reader
     -- takes for 0.
-    Spec.assertEqWith s "bob cast one during alice's turn and alice cast none" (Game.castsPerPlayer (GameState.eventsLastTurn handed)) (Map.fromList [(S.bob, 1)])
-    Spec.assertEqWith s "and CR 502.2's scalar still answers about alice alone" (GameState.spellsCastLastTurn handed) 0
+    Spec.assertEqWith s "bob cast one during alice's turn and alice cast none" (Game.castsPerPlayer (History.eventsLastTurn (GameState.history handed))) (Map.fromList [(S.bob, 1)])
+    Spec.assertEqWith s "and CR 502.2's scalar still answers about alice alone" (History.spellsCastLastTurn (GameState.history handed)) 0
 
 -- The two names Ratchet, Field Medic // Ratchet, Rescue Racer prints. CR 701.28
 -- and CR 702.161's group reads both.

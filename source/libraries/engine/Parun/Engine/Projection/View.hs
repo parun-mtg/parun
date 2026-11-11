@@ -70,6 +70,7 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -82,6 +83,7 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
@@ -2246,7 +2248,7 @@ manaCostColors mc = case mc of
 
 -- CR 113.6 / 614.12: the battlefield permanents whose static abilities FUNCTION
 -- right now. Everything on the battlefield, minus the permanents entering beside
--- the one whose entry loop is running (GameState.enteringBeside), which this
+-- the one whose entry loop is running (Scratch.enteringBeside), which this
 -- engine has already materialized but the rules have not let in yet: CR 614.12
 -- admits only the entering permanent's own static abilities and "continuous
 -- effects that already exist", and a sibling's are neither.
@@ -2269,7 +2271,7 @@ manaCostColors mc = case mc of
 -- open. Nor does Parun.Engine.Replacement.replacementsAffecting, whose siblings
 -- Event.loop already drops by SOURCE (channel 2 of applyReplacementsIn's note).
 abilitySources :: GameState -> [ObjectId]
-abilitySources gs = Set.toList (Set.difference (GameState.battlefield gs) (GameState.enteringBeside gs))
+abilitySources gs = Set.toList (Set.difference (GameState.battlefield gs) (Scratch.enteringBeside (GameState.scratch gs)))
 
 -- CR 113.6b: does this static ability function from `zone`? THE zone
 -- classification -- one question, asked by each of gatherGiven's static-ability
@@ -2640,7 +2642,7 @@ objectWasInRangeGiven grants you oid gs = objectInRangeBy Game.wasInRangeOf (\o 
 objectInRangeBy :: (PlayerId.PlayerId -> PlayerId.PlayerId -> GameState -> Bool) -> (ObjectId -> Maybe PlayerId.PlayerId) -> PlayerId.PlayerId -> ObjectId -> GameState -> Bool
 objectInRangeBy seated ctrl you oid gs =
   let reaches = maybe False (\pid -> seated you pid gs)
-   in case RangeOfInfluence.rangeOf (GameSettings.rangeOfInfluence (GameState.settings gs)) you of
+   in case RangeOfInfluence.rangeOf (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))) you of
         Nothing -> True
         Just _ -> reaches (ctrl oid) || reaches (Object.protector =<< Game.lookupObject oid gs)
 
@@ -2651,7 +2653,7 @@ objectInRangeBy seated ctrl you oid gs =
 -- (CR 801.18, Plane.exemptFromRange).
 inSourceRangeGiven :: [ControlGrant] -> ObjectId -> ObjectId -> GameState -> Bool
 inSourceRangeGiven grants source oid gs =
-  Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs)))
+  Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))))
     || Plane.exemptFromRange source gs
     || all (\you -> objectInRangeGiven grants you oid gs) (controllerOfGiven grants source gs)
 
@@ -2712,7 +2714,7 @@ controlNames ctrl gs source a = case a of
 -- grants control by a static ability.
 controlReaches :: (ObjectId -> Maybe PlayerId.PlayerId) -> GameState -> ObjectId -> ObjectId -> Bool
 controlReaches ctrl gs source oid =
-  Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (GameState.settings gs)))
+  Map.null (RangeOfInfluence.unwrap (GameSettings.rangeOfInfluence (MatchScope.settings (GameState.match gs))))
     || Plane.exemptFromRange source gs
     || all (\you -> objectInRangeUnder ctrl you oid gs) (ctrl source)
 

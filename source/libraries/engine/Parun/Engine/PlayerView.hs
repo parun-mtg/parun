@@ -18,9 +18,11 @@ import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectView as ObjectView
@@ -40,7 +42,7 @@ viewFor :: PlayerId.PlayerId -> GameState.GameState -> PlayerView.PlayerView
 viewFor pid gs =
   PlayerView.MkPlayerView
     { PlayerView.viewer = pid,
-      PlayerView.game = GameState.gameNumber gs,
+      PlayerView.game = MatchScope.gameNumber (GameState.match gs),
       PlayerView.turn = TurnRegisters.turnNumber (GameState.turn gs),
       PlayerView.phase = TurnRegisters.phase (GameState.turn gs),
       PlayerView.active = TurnRegisters.activePlayer (GameState.turn gs),
@@ -50,7 +52,7 @@ viewFor pid gs =
       PlayerView.stack = Maybe.mapMaybe (objectView pid gs) (TurnRegisters.stack (GameState.turn gs)),
       PlayerView.parkedStacks = fmap (Maybe.mapMaybe (objectView pid gs) . TurnRegisters.stack) (GameState.parkedTurns gs),
       PlayerView.witnessed = witnessedIn (TurnRegisters.events (GameState.turn gs)),
-      PlayerView.witnessedLastTurn = witnessedIn (GameState.eventsLastTurn gs),
+      PlayerView.witnessedLastTurn = witnessedIn (History.eventsLastTurn (GameState.history gs)),
       PlayerView.result = GameState.result gs,
       PlayerView.undone = Map.lookup pid (Bookkeeping.undone (GameState.bookkeeping gs))
     }

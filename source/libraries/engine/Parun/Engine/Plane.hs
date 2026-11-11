@@ -16,6 +16,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
@@ -48,7 +49,7 @@ isPlanarCard oid gs = maybe False isPlanarFace (Game.faceOf oid gs)
 -- not ownership (CR 901.15b), and it stays keyed after its player leaves.
 planarDeckHolder :: PlayerId -> GameState -> PlayerId
 planarDeckHolder pid gs
-  | GameSettings.singlePlanarDeck (GameState.settings gs) = maybe pid fst (Map.lookupMin (Game.sideDecksOf SideDeck.Planar gs))
+  | GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) = maybe pid fst (Map.lookupMin (Game.sideDecksOf SideDeck.Planar gs))
   | otherwise = pid
 
 -- | CR 901.10 / 901.10b: the owner of the phenomenon card this object is a

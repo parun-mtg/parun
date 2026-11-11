@@ -40,7 +40,7 @@ import qualified Parun.Types.SlotName as SlotName
 -- What is NOT here is the prevented amount: that is a property of the
 -- APPLICATION rather than of the shield, so it rides Parun.Types.Prevention, and
 -- Parun.Engine.Resolve.Effect.runPreventionRider publishes it through
--- Parun.Types.GameState.ambientAmounts for Quantity.InSlot to read -- an ambient
+-- Parun.Types.Scratch.ambientAmounts for Quantity.InSlot to read -- an ambient
 -- channel rather than a binding on an object, because a shielded player has no
 -- object to bind it to.
 data PreventionRider = MkPreventionRider

@@ -308,10 +308,12 @@ to agents as written. What it doesn't say:
     `Object.newIncarnation` resets it on every zone change unless carried
     across there.
 
-    A NEW `GameState` FIELD resets across a restart and a subgame
-    (`Parun.Engine.Setup`'s `blankGame`) unless `restartGame` or
-    `subgameStateFrom` names it as kept, or, for a `Bookkeeping` field,
-    `inheritedBookkeeping`.
+    A NEW `GameState` FIELD's group decides whether it survives a restart
+    and a subgame (`Parun.Engine.Setup`): `match` crosses whole,
+    `bookkeeping` through `inheritedBookkeeping`, and `scratch`, `history`
+    and every other group reset in `blankGame`. A top-level field resets
+    too unless `restartGame` or `subgameStateFrom` names it; only a board
+    field the rebuild carries belongs there.
 
     A RECORD UPDATE keeps the old value of a field you added, so a descent
     that rebuilds a record drops it: grep `{ SomeRecord.field = ` and say in

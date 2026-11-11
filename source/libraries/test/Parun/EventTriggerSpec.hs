@@ -43,6 +43,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Object as Object
@@ -881,7 +882,7 @@ secondMainPhaseSpec s registry =
           Spec.assertEqWith s "no flying counter: the third main phase is not the second" (flyingOn oid after) Nothing
           Spec.assertEqWith s "the extra main phase really ran, with the Cheerleader untapped" (TurnRegisters.phase (GameState.turn secondMain), tapState oid secondMain) (Phase.PostcombatMain, Just TapState.Untapped)
           Spec.assertEqWith s "and the third main phase really ran, with it tapped" (TurnRegisters.phase (GameState.turn thirdMain), tapState oid thirdMain) (Phase.PostcombatMain, Just TapState.Tapped)
-          Spec.assertEqWith s "the rider is unspent, so nothing but the ordinal held the trigger back" (length (GameState.triggeredThisGame after)) 0
+          Spec.assertEqWith s "the rider is unspent, so nothing but the ordinal held the trigger back" (length (History.triggeredThisGame (GameState.history after))) 0
 
 -- The same CR 601.2i cast, read for WHICH cast of the turn it was --
 -- SpellCast.ordinal. The cast-side twin of Erudite Wizard's draw ordinal
@@ -1381,7 +1382,7 @@ wellRestedSpec s registry =
         _ -> Spec.assertFailure s "the Piker should bear the two granted abilities"
     -- The per-GAME rider on the same tally. Engine.reactions writes one
     -- Acrobatic Cheerleader triggering to the turn's log AND to
-    -- GameState.triggeredThisGame; it is one triggering, so a second instance
+    -- History.triggeredThisGame; it is one triggering, so a second instance
     -- is still owed its own. A regression fence driving withinTriggerLimit
     -- directly: no card in data/cards/ grants a "triggers only once" ability,
     -- and the Cheerleader's event recurs once a turn, so no board gives a source
@@ -1393,7 +1394,7 @@ wellRestedSpec s registry =
         ability : _ -> do
           let (oid, g0) = S.addPermanent cheerleader S.alice (Setup.emptyGame S.bothPlayers)
               record = AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability
-              spent = Event.recordEvent (GameEvent.AbilityTriggered record) g0 {GameState.triggeredThisGame = Seq.singleton record}
+              spent = Event.recordEvent (GameEvent.AbilityTriggered record) g0 {GameState.history = (GameState.history g0) {History.triggeredThisGame = Seq.singleton record}}
               pending n = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) S.alice ability Map.empty Nothing Nothing n Map.empty
           Spec.assertEqWith s "the second of two instances still triggers" (length (Event.withinTriggerLimit spent [pending 2])) 1
           Spec.assertEqWith s "while a lone instance is spent" (length (Event.withinTriggerLimit spent [pending 1])) 0

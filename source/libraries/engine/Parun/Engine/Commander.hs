@@ -54,6 +54,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
@@ -370,7 +371,7 @@ designate pid identity gs =
 -- one: docs/decisions.md, "Whether a subgame of a Commander game is one".
 isCommanderGame :: GameState -> Bool
 isCommanderGame gs =
-  GameSettings.brawl (GameState.settings gs)
+  GameSettings.brawl (MatchScope.settings (GameState.match gs))
     || not (all (Set.null . Player.commander) (GameState.players gs))
 
 -- | CR 903.3: is this object a commander?
@@ -513,7 +514,7 @@ chosenColorOf oid gs = commanderCardOf oid gs >>= (`Game.printingOf` gs) . fst >
 -- that reads it still can.
 lethalDamage :: PlayerId -> GameState -> Bool
 lethalDamage pid gs
-  | GameSettings.brawl (GameState.settings gs) = False
+  | GameSettings.brawl (MatchScope.settings (GameState.match gs)) = False
   | otherwise = case Map.lookup pid (GameState.players gs) of
       Nothing -> False
       Just player -> any (>= 21) (Map.elems (Player.commanderDamage player))

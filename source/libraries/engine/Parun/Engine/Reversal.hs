@@ -28,11 +28,14 @@ import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.MatchScope as MatchScope
 import Parun.Types.Object (Object)
 import qualified Parun.Types.Object as Object
 import Parun.Types.Player (Player)
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -62,7 +65,7 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 -- conservative fallback above.
 withoutAnnouncement :: GameState -> GameState -> GameState -> Maybe GameState
 withoutAnnouncement before entry closed = do
-  settings <- one GameState.settings
+  settings <- one (MatchScope.settings . GameState.match)
   objects <- mapWith objectWith (GameState.objects before) (GameState.objects entry) (GameState.objects closed)
   library <- libraries GameState.library
   hand <- zoneOf GameState.hand
@@ -84,10 +87,10 @@ withoutAnnouncement before entry closed = do
   events <- Event.restampLifeChanges <$> eventsOf (TurnRegisters.events . GameState.turn)
   nextEventGroup <- newest (Bookkeeping.nextEventGroup . GameState.bookkeeping)
   eventGroupDepth <- one (Bookkeeping.eventGroupDepth . GameState.bookkeeping)
-  enteringTogether <- one GameState.enteringTogether
-  arrivals <- one GameState.arrivals
-  payingOnResolution <- one GameState.payingOnResolution
-  causing <- one GameState.causing
+  enteringTogether <- one (Scratch.enteringTogether . GameState.scratch)
+  arrivals <- one (Scratch.arrivals . GameState.scratch)
+  payingOnResolution <- one (Scratch.payingOnResolution . GameState.scratch)
+  causing <- one (Scratch.causing . GameState.scratch)
   lastKnown <- mapOf (Snapshots.lastKnown . GameState.snapshots)
   stackArchive <- mapOf (Snapshots.stackArchive . GameState.snapshots)
   scannedThrough <- one (TurnRegisters.scannedThrough . GameState.turn)
@@ -107,17 +110,17 @@ withoutAnnouncement before entry closed = do
   pendingPreventionRiders <- seqOf (StoredEffects.pendingPreventionRiders . GameState.stored)
   pendingReplacementEffects <- seqOf (StoredEffects.pendingReplacementEffects . GameState.stored)
   pendingSkipEffects <- seqOf (StoredEffects.pendingSkipEffects . GameState.stored)
-  contested <- mapOf GameState.contested
-  ambientAmounts <- mapOf GameState.ambientAmounts
+  contested <- mapOf (Scratch.contested . GameState.scratch)
+  ambientAmounts <- mapOf (Scratch.ambientAmounts . GameState.scratch)
   detachedBindings <- mapOfMaps GameState.detachedBindings
   pendingEntryEffects <- seqOf (StoredEffects.pendingEntryEffects . GameState.stored)
-  enteringBeside <- setOf GameState.enteringBeside
-  enteringSubjects <- mapOf GameState.enteringSubjects
-  enteredFrom <- mapOf GameState.enteredFrom
-  enteringPending <- mapOf GameState.enteringPending
-  refusedEntries <- one GameState.refusedEntries
-  enteringCounters <- mapOfMapsOfMaps GameState.enteringCounters
-  copyExceptionCounters <- mapOfMaps GameState.copyExceptionCounters
+  enteringBeside <- setOf (Scratch.enteringBeside . GameState.scratch)
+  enteringSubjects <- mapOf (Scratch.enteringSubjects . GameState.scratch)
+  enteredFrom <- mapOf (Scratch.enteredFrom . GameState.scratch)
+  enteringPending <- mapOf (Scratch.enteringPending . GameState.scratch)
+  refusedEntries <- one (Scratch.refusedEntries . GameState.scratch)
+  enteringCounters <- mapOfMapsOfMaps (Scratch.enteringCounters . GameState.scratch)
+  copyExceptionCounters <- mapOfMaps (Scratch.copyExceptionCounters . GameState.scratch)
   playerEffects <- listOf (StoredEffects.playerEffects . GameState.stored)
   blockRequirements <- listOf (StoredEffects.blockRequirements . GameState.stored)
   attackRequirements <- listOf (StoredEffects.attackRequirements . GameState.stored)
@@ -157,10 +160,10 @@ withoutAnnouncement before entry closed = do
   landsPlayed <- mapOf GameState.landsPlayed
   cardsPlayed <- mapOf GameState.cardsPlayed
   drawsThisTurn <- mapOf (TurnRegisters.drawsThisTurn . GameState.turn)
-  keptFaceDown <- one GameState.keptFaceDown
-  announcedTops <- one GameState.announcedTops
-  actionTops <- one GameState.actionTops
-  loopPicks <- one GameState.loopPicks
+  keptFaceDown <- one (Scratch.keptFaceDown . GameState.scratch)
+  announcedTops <- one (Scratch.announcedTops . GameState.scratch)
+  actionTops <- one (Scratch.actionTops . GameState.scratch)
+  loopPicks <- one (Scratch.loopPicks . GameState.scratch)
   repeatPicks <- one (Bookkeeping.repeatPicks . GameState.bookkeeping)
   revealedTops <- mapOf GameState.revealedTops
   departedThisTurn <- setOf GameState.departedThisTurn
@@ -172,22 +175,22 @@ withoutAnnouncement before entry closed = do
   castPermissionsUsedThisTurn <- mapOfSets (TurnRegisters.castPermissionsUsedThisTurn . GameState.turn)
   rollModifiersUsedThisTurn <- mapOfSets (TurnRegisters.rollModifiersUsedThisTurn . GameState.turn)
   instructionsTakenThisTurn <- seqOf (TurnRegisters.instructionsTakenThisTurn . GameState.turn)
-  triggeredThisGame <- seqOf GameState.triggeredThisGame
+  triggeredThisGame <- seqOf (History.triggeredThisGame . GameState.history)
   pendingControl <- mapOf GameState.pendingControl
   control <- mapOf GameState.control
   monarch <- one GameState.monarch
   initiative <- one GameState.initiative
   daytime <- one GameState.daytime
-  spellsCastLastTurn <- one GameState.spellsCastLastTurn
+  spellsCastLastTurn <- one (History.spellsCastLastTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans.
-  eventsLastTurn <- one GameState.eventsLastTurn
+  eventsLastTurn <- one (History.eventsLastTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans.
-  castsBeforeThisTurn <- one GameState.castsBeforeThisTurn
+  castsBeforeThisTurn <- one (History.castsBeforeThisTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans.
-  damageBeforeThisTurn <- one GameState.damageBeforeThisTurn
+  damageBeforeThisTurn <- one (History.damageBeforeThisTurn . GameState.history)
   damagePreventedBy <- mapOf GameState.damagePreventedBy
-  attacksInOwnLastTurn <- one GameState.attacksInOwnLastTurn
-  resolvedNames <- mapOf GameState.resolvedNames
+  attacksInOwnLastTurn <- one (History.attacksInOwnLastTurn . GameState.history)
+  resolvedNames <- mapOf (History.resolvedNames . GameState.history)
   movedUntil <- mapOf GameState.movedUntil
   haunting <- mapOf GameState.haunting
   encoded <- mapOf GameState.encoded
@@ -203,19 +206,25 @@ withoutAnnouncement before entry closed = do
   turnResume <- one (TurnRegisters.turnResume . GameState.turn)
   -- CR 100.6a: a monotone tally, so the closed window's value is the newest --
   -- nextTimestamp's treatment. Nothing a CR 734.1 reversal undoes can reach it.
-  subgamesThisMatch <- newest GameState.subgamesThisMatch
+  subgamesThisMatch <- newest (MatchScope.subgamesThisMatch . GameState.match)
   -- CR 728.1 / 730.1a: the same, and the game the window was in.
-  gamesThisMatch <- newest GameState.gamesThisMatch
-  gameNumber <- one GameState.gameNumber
+  gamesThisMatch <- newest (MatchScope.gamesThisMatch . GameState.match)
+  gameNumber <- one (MatchScope.gameNumber . GameState.match)
   turnAnchor <- one (TurnRegisters.turnAnchor . GameState.turn)
   extraTurnUnderWay <- one (TurnRegisters.extraTurnUnderWay . GameState.turn)
-  throwing <- one GameState.throwing
-  rethrowRequested <- one GameState.rethrowRequested
+  throwing <- one (Scratch.throwing . GameState.scratch)
+  rethrowRequested <- one (Scratch.rethrowRequested . GameState.scratch)
   -- Written only once a reversal is over, which no announcement spans.
   undone <- one (Bookkeeping.undone . GameState.bookkeeping)
   pure
     GameState.MkGameState
-      { GameState.settings = settings,
+      { GameState.match =
+          MatchScope.MkMatchScope
+            { MatchScope.settings = settings,
+              MatchScope.subgamesThisMatch = subgamesThisMatch,
+              MatchScope.gamesThisMatch = gamesThisMatch,
+              MatchScope.gameNumber = gameNumber
+            },
         GameState.objects = objects,
         GameState.library = library,
         GameState.hand = hand,
@@ -258,10 +267,28 @@ withoutAnnouncement before entry closed = do
         GameState.broughtIn = broughtIn,
         GameState.departedCards = departedCards,
         GameState.manaPool = manaPool,
-        GameState.enteringTogether = enteringTogether,
-        GameState.arrivals = arrivals,
-        GameState.payingOnResolution = payingOnResolution,
-        GameState.causing = causing,
+        GameState.scratch =
+          Scratch.MkScratch
+            { Scratch.enteringTogether = enteringTogether,
+              Scratch.arrivals = arrivals,
+              Scratch.payingOnResolution = payingOnResolution,
+              Scratch.causing = causing,
+              Scratch.contested = contested,
+              Scratch.ambientAmounts = ambientAmounts,
+              Scratch.enteringBeside = enteringBeside,
+              Scratch.enteringSubjects = enteringSubjects,
+              Scratch.enteredFrom = enteredFrom,
+              Scratch.enteringPending = enteringPending,
+              Scratch.refusedEntries = refusedEntries,
+              Scratch.enteringCounters = enteringCounters,
+              Scratch.copyExceptionCounters = copyExceptionCounters,
+              Scratch.keptFaceDown = keptFaceDown,
+              Scratch.announcedTops = announcedTops,
+              Scratch.actionTops = actionTops,
+              Scratch.loopPicks = loopPicks,
+              Scratch.throwing = throwing,
+              Scratch.rethrowRequested = rethrowRequested
+            },
         GameState.bookkeeping =
           Bookkeeping.MkBookkeeping
             { Bookkeeping.nextObjectId = nextObjectId,
@@ -308,16 +335,7 @@ withoutAnnouncement before entry closed = do
               StoredEffects.pendingSkipEffects = pendingSkipEffects,
               StoredEffects.pendingEntryEffects = pendingEntryEffects
             },
-        GameState.contested = contested,
-        GameState.ambientAmounts = ambientAmounts,
         GameState.detachedBindings = detachedBindings,
-        GameState.enteringBeside = enteringBeside,
-        GameState.enteringSubjects = enteringSubjects,
-        GameState.enteredFrom = enteredFrom,
-        GameState.enteringPending = enteringPending,
-        GameState.refusedEntries = refusedEntries,
-        GameState.enteringCounters = enteringCounters,
-        GameState.copyExceptionCounters = copyExceptionCounters,
         GameState.turnOrder = turnOrder,
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,
@@ -330,25 +348,24 @@ withoutAnnouncement before entry closed = do
         GameState.drewFromEmpty = drewFromEmpty,
         GameState.landsPlayed = landsPlayed,
         GameState.cardsPlayed = cardsPlayed,
-        GameState.keptFaceDown = keptFaceDown,
-        GameState.announcedTops = announcedTops,
-        GameState.actionTops = actionTops,
-        GameState.loopPicks = loopPicks,
         GameState.revealedTops = revealedTops,
         GameState.departedThisTurn = departedThisTurn,
-        GameState.triggeredThisGame = triggeredThisGame,
+        GameState.history =
+          History.MkHistory
+            { History.triggeredThisGame = triggeredThisGame,
+              History.spellsCastLastTurn = spellsCastLastTurn,
+              History.eventsLastTurn = eventsLastTurn,
+              History.castsBeforeThisTurn = castsBeforeThisTurn,
+              History.damageBeforeThisTurn = damageBeforeThisTurn,
+              History.attacksInOwnLastTurn = attacksInOwnLastTurn,
+              History.resolvedNames = resolvedNames
+            },
         GameState.pendingControl = pendingControl,
         GameState.control = control,
         GameState.monarch = monarch,
         GameState.initiative = initiative,
         GameState.daytime = daytime,
-        GameState.spellsCastLastTurn = spellsCastLastTurn,
-        GameState.eventsLastTurn = eventsLastTurn,
-        GameState.castsBeforeThisTurn = castsBeforeThisTurn,
-        GameState.damageBeforeThisTurn = damageBeforeThisTurn,
         GameState.damagePreventedBy = damagePreventedBy,
-        GameState.attacksInOwnLastTurn = attacksInOwnLastTurn,
-        GameState.resolvedNames = resolvedNames,
         GameState.movedUntil = movedUntil,
         GameState.haunting = haunting,
         GameState.encoded = encoded,
@@ -358,12 +375,7 @@ withoutAnnouncement before entry closed = do
         GameState.exilePiles = exilePiles,
         GameState.extraTurns = extraTurns,
         GameState.turnMarkers = turnMarkers,
-        GameState.parkedTurns = parkedTurns,
-        GameState.subgamesThisMatch = subgamesThisMatch,
-        GameState.gamesThisMatch = gamesThisMatch,
-        GameState.gameNumber = gameNumber,
-        GameState.throwing = throwing,
-        GameState.rethrowRequested = rethrowRequested
+        GameState.parkedTurns = parkedTurns
       }
   where
     -- A whole value, compared as one leaf.

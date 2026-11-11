@@ -46,6 +46,7 @@ import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
@@ -80,7 +81,7 @@ deckOf pid gs = Game.sideDeckOf SideDeck.Planar (Plane.planarDeckHolder pid gs) 
 -- owner (Parun.Engine.Setup's restart and subgame return).
 gather :: GameState -> GameState
 gather gs
-  | GameSettings.singlePlanarDeck (GameState.settings gs) =
+  | GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) =
       Game.overSideDecks SideDeck.Planar (\decks -> maybe decks (\(holder, _) -> Map.singleton holder (Foldable.fold decks)) (Map.lookupMin decks)) gs
   | otherwise = gs
 
@@ -92,7 +93,7 @@ gather gs
 -- player who brought it leaves" proves it.
 communalDeck :: GameState -> Set.Set ObjectId
 communalDeck gs
-  | GameSettings.singlePlanarDeck (GameState.settings gs) = foldMap (Set.fromList . Foldable.toList) (Game.sideDecksOf SideDeck.Planar gs)
+  | GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) = foldMap (Set.fromList . Foldable.toList) (Game.sideDecksOf SideDeck.Planar gs)
   | otherwise = Set.empty
 
 -- | CR 901.1: is this a Planechase game? Some player brought a planar deck.
@@ -227,7 +228,7 @@ turnUpTop :: PlayerId -> Game (Maybe ObjectId)
 turnUpTop pid = do
   gs <- State.get
   let holder = Plane.planarDeckHolder pid gs
-      owned o = if GameSettings.singlePlanarDeck (GameState.settings gs) then o {Object.owner = pid} else o
+      owned o = if GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) then o {Object.owner = pid} else o
   case deckOf pid gs of
     [] -> pure Nothing
     top : rest -> do

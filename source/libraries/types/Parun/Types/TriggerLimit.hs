@@ -29,6 +29,6 @@ data TriggerLimit
     OncePerTurn SpentOn.SpentOn
   | -- | At most one triggering per game. Spent on TRIGGERING like the arm above,
     -- and over a record that outlives the turn handoff
-    -- (Parun.Types.GameState.triggeredThisGame).
+    -- (Parun.Types.History.triggeredThisGame).
     OncePerGame
   deriving (Eq, Ord, Show)

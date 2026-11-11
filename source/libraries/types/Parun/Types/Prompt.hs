@@ -807,7 +807,7 @@ data Prompt r where
   -- where there is one; the AnyNumberOf says what they are and what is done to
   -- them. Asked at one candidate, where declining is a second answer, and
   -- skipped at zero. Parun.Engine.Replay answers each AnyNumberOf with its own
-  -- Response constructor. The Seq is what the loop (GameState.loopPicks) or
+  -- Response constructor. The Seq is what the loop (Scratch.loopPicks) or
   -- each-player pass this is asked in has picked so far, beside who picked it
   -- (CR 101.4b).
   ChooseAnyNumber :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> AnyNumberOf.AnyNumberOf -> [ObjectId.ObjectId] -> Maybe Natural.Natural -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt (Set.Set ObjectId.ObjectId)

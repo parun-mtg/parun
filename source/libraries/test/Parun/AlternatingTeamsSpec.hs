@@ -15,6 +15,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
@@ -27,7 +28,7 @@ spec s _ = Spec.describe s "AlternatingTeams" $ do
     Spec.assertEqWith
       s
       "CR 811.3 alternating seats start an Alternating Teams game"
-      (fmap (GameSettings.alternatingTeams . GameState.settings) (AlternatingTeams.setUp (teamsOf [0, 1, 0, 1]) (game 4)))
+      (fmap (GameSettings.alternatingTeams . MatchScope.settings . GameState.match) (AlternatingTeams.setUp (teamsOf [0, 1, 0, 1]) (game 4)))
       (Just True)
     Spec.assertEqWith s "CR 811.3 teammates side by side are refused" (Maybe.isJust (AlternatingTeams.setUp (teamsOf [0, 0, 1, 1]) (game 4))) False
 
@@ -51,4 +52,4 @@ spec s _ = Spec.describe s "AlternatingTeams" $ do
     seats n = fmap PlayerId.MkPlayerId [0 .. n - 1]
     game n = Setup.emptyGame (S.alice NonEmpty.:| drop 1 (seats n))
     teamsOf ts = Teams.MkTeams (Map.fromList (zip (fmap PlayerId.MkPlayerId [0 ..]) (fmap TeamId.MkTeamId ts)))
-    withOption option gs = gs {GameState.settings = (GameState.settings gs) {GameSettings.attackOption = option}}
+    withOption option gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.attackOption = option}}}

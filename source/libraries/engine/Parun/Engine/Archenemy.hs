@@ -27,6 +27,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PendingTrigger as PendingTrigger
@@ -65,11 +66,14 @@ setUp :: PlayerId -> GameState -> GameState
 setUp archenemy gs =
   let teamOf pid = TeamId.MkTeamId (if pid == archenemy then 0 else 1)
    in gs
-        { GameState.settings =
-            (GameState.settings gs)
-              { GameSettings.teams = Teams.MkTeams (Map.fromList [(pid, teamOf pid) | pid <- GameState.turnOrder gs]),
-                GameSettings.sharedTeamTurns = True,
-                GameSettings.attackOption = Just AttackOption.MultiplePlayers
+        { GameState.match =
+            (GameState.match gs)
+              { MatchScope.settings =
+                  (MatchScope.settings (GameState.match gs))
+                    { GameSettings.teams = Teams.MkTeams (Map.fromList [(pid, teamOf pid) | pid <- GameState.turnOrder gs]),
+                      GameSettings.sharedTeamTurns = True,
+                      GameSettings.attackOption = Just AttackOption.MultiplePlayers
+                    }
               }
         }
 

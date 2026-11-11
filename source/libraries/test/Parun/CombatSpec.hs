@@ -71,6 +71,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.Label as Label
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
@@ -2168,7 +2169,7 @@ defendingPlayerOfBlockGateSpec s registry = Spec.describe s "DefendingPlayerOfBl
     graxiplon <- S.printingOf s registry "Graxiplon"
     giant <- S.printingOf s registry "Hill Giant"
     let twoHeaded = S.inTeams [[S.alice, S.bob], [S.carol, S.dave]] S.fourPlayerGame
-        shared = twoHeaded {GameState.settings = (GameState.settings twoHeaded) {GameSettings.sharedTeamTurns = True}}
+        shared = twoHeaded {GameState.match = (GameState.match twoHeaded) {MatchScope.settings = (MatchScope.settings (GameState.match twoHeaded)) {GameSettings.sharedTeamTurns = True}}}
         board daveGiants =
           let (grax, g1) = S.addPermanent graxiplon S.alice shared
               (blocker, g2) = S.addPermanent giant S.carol g1

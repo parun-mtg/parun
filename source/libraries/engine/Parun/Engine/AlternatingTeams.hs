@@ -7,6 +7,7 @@ import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Teams as Teams
 
@@ -18,7 +19,7 @@ import qualified Parun.Types.Teams as Teams
 -- GameSettings.plain, so neither is written here.
 setUp :: Teams.Teams -> GameState -> Maybe GameState
 setUp teams gs =
-  let settings = GameState.settings gs
+  let settings = MatchScope.settings (GameState.match gs)
       optionAllowed = case GameSettings.attackOption settings of
         Just AttackOption.MultiplePlayers -> True
         Just AttackOption.Leftward -> True
@@ -26,7 +27,7 @@ setUp teams gs =
         Just AttackOption.Adjacent -> False
         Nothing -> False
    in if optionAllowed && seated teams (GameState.turnOrder gs)
-        then Just gs {GameState.settings = settings {GameSettings.teams = teams, GameSettings.alternatingTeams = True}}
+        then Just gs {GameState.match = (GameState.match gs) {MatchScope.settings = settings {GameSettings.teams = teams, GameSettings.alternatingTeams = True}}}
         else Nothing
 
 -- | CR 811.1 / 811.3: two or more teams of equal size covering the table,

@@ -66,6 +66,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -242,7 +243,7 @@ braceForImpactSpec s registry = Spec.describe s "Brace for Impact (CR 615.5)" $ 
 -- Faith's nor Brace for Impact's nor Stormwild Capridor's permanent recipient can
 -- reach: a player has no Object, so the prevented amount has nowhere to be bound
 -- and CR 615.5's "the amount of damage that was prevented" travels on
--- GameState.ambientAmounts instead. Inkshield ({3}{W}{B} Instant) prints "Prevent
+-- Scratch.ambientAmounts instead. Inkshield ({3}{W}{B} Instant) prints "Prevent
 -- all combat damage that would be dealt to you this turn. For each 1 damage
 -- prevented this way, create a 2/1 white and black Inkling creature token with
 -- flying."
@@ -279,7 +280,7 @@ inkshieldSpec s registry = Spec.describe s "Inkshield (CR 615.5)" $ do
     -- The channel the amount travelled on is put back, which the stamp it
     -- replaced had no test for: a value left behind would shadow every later
     -- reserved-slot read in the game.
-    Spec.assertEqWith s "and CR 615.5's amount channel does not outlive the rider" (GameState.ambientAmounts after) Map.empty
+    Spec.assertEqWith s "and CR 615.5's amount channel does not outlive the rider" (Scratch.ambientAmounts (GameState.scratch after)) Map.empty
     -- The VACUITY guard: unshielded, that same attack really is dealt, so the
     -- prevention above is a prevention rather than an attack that never happened.
     Spec.assertEqWith s "unshielded the same attack takes 5 and makes no token" (S.lifeOf S.alice control, length (S.tokensOf control)) (Just 15, 0)
