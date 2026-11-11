@@ -1,0 +1,271 @@
+1 Aberrant Manawurm
+1 Abigale, Poet Laureate // Heroic Stanza
+1 Abstract Paintmage
+1 Additive Evolution
+1 Adventurous Eater // Have a Bite
+1 Ajani's Response
+1 Ambitious Augmenter
+1 Ancestral Anger
+1 Antiquities on the Loose
+1 Applied Geometry
+1 Arcane Omens
+1 Archaic's Agony
+1 Ark of Hunger
+1 Arnyn, Deathbloom Botanist
+1 Artistic Process
+1 Ascendant Dustspeaker
+1 Aziza, Mage Tower Captain
+1 Banishing Betrayal
+1 Berta, Wise Extrapolator
+1 Biblioplex Tomekeeper
+1 Blazing Firesinger // Seething Song
+1 Blech, Loafing Pest
+1 Bogwater Lumaret
+1 Borrowed Knowledge
+1 Brush Off
+1 Burrog Banemaker
+1 Burrog Barrage
+1 Campus Composer // Aqueous Aria
+1 Cauldron of Essence
+1 Charging Strifeknight
+1 Chase Inspiration
+1 Cheerful Osteomancer // Raise Dead
+1 Chelonian Tackle
+1 Choreographed Sparks
+1 Colorstorm Stallion
+1 Colossus of the Blood Age
+1 Comforting Counsel
+1 Conciliator's Duelist
+1 Cost of Brilliance
+1 Cuboid Colony
+1 Daydream
+1 Deathcap Glade
+1 Decorum Dissertation
+1 Deluge Virtuoso
+1 Diary of Dreams
+1 Dig Site Inventory
+1 Dina's Guidance
+1 Dissection Practice
+1 Divergent Equation
+1 Dreamroot Cascade
+1 Duel Tactics
+1 Eager Glyphmage
+1 Echocasting Symposium
+1 Efflorescence
+1 Elemental Mascot
+1 Elite Interceptor // Rejoinder
+1 Embrace the Paradox
+1 Emeritus of Abundance // Regrowth
+1 Emeritus of Conflict // Lightning Bolt
+1 Emeritus of Ideation // Ancestral Recall
+1 Emeritus of Truce // Swords to Plowshares
+1 Emeritus of Woe // Demonic Tutor
+1 Emil, Vastlands Roamer
+1 Encouraging Aviator // Jump
+1 End of the Hunt
+1 Ennis, Debate Moderator
+1 Environmental Scientist
+1 Erode
+1 Essence Scatter
+1 Essenceknit Scholar
+1 Eternal Student
+1 Exhibition Tidecaller
+1 Expressive Firedancer
+1 Fields of Strife
+1 Fix What's Broken
+1 Flashback
+1 Flow State
+1 Follow the Lumarets
+1 Foolish Fate
+1 Forest
+1 Forum Necroscribe
+1 Forum of Amity
+1 Fractal Anomaly
+1 Fractal Mascot
+1 Fractal Tender
+1 Fractalize
+1 Garrison Excavator
+1 Geometer's Arthropod
+1 Germination Practicum
+1 Glorious Decay
+1 Goblin Glasswright // Craft with Pride
+1 Graduation Day
+1 Grapple with Death
+1 Grave Researcher // Reanimate
+1 Great Hall of the Biblioplex
+1 Group Project
+1 Growth Curve
+1 Hardened Academic
+1 Harmonized Trio // Brainstorm
+1 Harsh Annotation
+1 Heated Argument
+1 Homesickness
+1 Honorbound Page // Forum's Favor
+1 Hungry Graffalon
+1 Hydro-Channeler
+1 Imperious Inkmage
+1 Impractical Joke
+1 Improvisation Capstone
+1 Infirmary Healer // Stream of Life
+1 Informed Inkwright
+1 Inkling Mascot
+1 Inkshape Demonstrator
+1 Interjection
+1 Island
+1 Jadzi, Steward of Fate // Oracle's Gift
+1 Joined Researchers // Secret Rendezvous
+1 Killian's Confidence
+1 Kirol, History Buff // Pack a Punch
+1 Landscape Painter // Vibrant Idea
+1 Last Gasp
+1 Lecturing Scornmage
+1 Leech Collector // Bloodletting
+1 Living History
+1 Lluwen, Exchange Student // Pest Friend
+1 Lorehold Charm
+1 Lorehold, the Historian
+1 Lumaret's Favor
+1 Maelstrom Artisan // Rocket Volley
+1 Mage Tower Referee
+1 Magmablood Archaic
+1 Mana Sculpt
+1 Masterful Flourish
+1 Mathemagics
+1 Matterbending Mage
+1 Melancholic Poet
+1 Mica, Reader of Ruins
+1 Mind Roots
+1 Mind into Matter
+1 Mindful Biomancer
+1 Molten Note
+1 Molten-Core Maestro
+1 Moment of Reckoning
+1 Moseo, Vein's New Dean
+1 Mountain
+1 Muse Seeker
+1 Muse's Encouragement
+1 Nita, Forum Conciliator
+1 Noxious Newt
+1 Old-Growth Educator
+1 Oracle's Restoration
+1 Orysa, Tide Choreographer
+1 Owlin Historian
+1 Page, Loose Leaf
+1 Paradox Gardens
+1 Paradox Surveyor
+1 Pensive Professor
+1 Pest Mascot
+1 Pestbrood Sloth
+1 Petrified Hamlet
+1 Pigment Wrangler // Striking Palette
+1 Plains
+1 Planar Engineering
+1 Poisoner's Apprentice
+1 Postmortem Professor
+1 Potioner's Trove
+1 Pox Plague
+1 Practiced Offense
+1 Practiced Scrollsmith
+1 Primary Research
+1 Prismari Charm
+1 Prismari, the Inspiration
+1 Procrastinate
+1 Proctor's Gaze
+1 Professor Dellian Fel
+1 Pterafractyl
+1 Pull from the Grave
+1 Pursue the Past
+1 Quandrix Charm
+1 Quandrix, the Proof
+1 Quick Study
+1 Quill-Blade Laureate // Twofold Intent
+1 Rabid Attack
+1 Ral Zarek, Guest Lecturer
+1 Rancorous Archaic
+1 Rapier Wit
+1 Rapturous Moment
+1 Rearing Embermare
+1 Rehearsed Debater
+1 Render Speechless
+1 Resonating Lute
+1 Restoration Seminar
+1 Root Manipulation
+1 Rubble Rouser
+1 Run Behind
+1 Sanar, Unfinished Genius // Wild Idea
+1 Scathing Shadelock // Venomous Words
+1 Scheming Silvertongue // Sign in Blood
+1 Scolding Administrator
+1 Seize the Spoils
+1 Send in the Pest
+1 Shattered Acolyte
+1 Shattered Sanctum
+1 Shopkeeper's Bane
+1 Silverquill Charm
+1 Silverquill, the Disputant
+1 Skycoach Conductor // All Aboard
+1 Skycoach Waypoint
+1 Slumbering Trudge
+1 Snarl Song
+1 Sneering Shadewriter
+1 Snooping Page
+1 Soaring Stoneglider
+1 Social Snub
+1 Spectacle Summit
+1 Spectacular Skywhale
+1 Spellbook Seeker // Careful Study
+1 Spirit Mascot
+1 Spiritcall Enthusiast // Scrollboost
+1 Splatter Technique
+1 Stadium Tidalmage
+1 Stand Up for Yourself
+1 Startled Relic Sloth
+1 Steal the Show
+1 Stirring Honormancer
+1 Stirring Hopesinger
+1 Stone Docent
+1 Stormcarved Coast
+1 Stress Dream
+1 Strife Scholar // Awaken the Ages
+1 Strixhaven Skycoach
+1 Studious First-Year // Rampant Growth
+1 Summoned Dromedary
+1 Sundering Archaic
+1 Sundown Pass
+1 Suspend Aggression
+1 Swamp
+1 Tablet of Discovery
+1 Tackle Artist
+1 Tam, Observant Sequencer // Deep Sight
+1 Teacher's Pest
+1 Tenured Concocter
+1 Terramorphic Expanse
+1 Tester of the Tangential
+1 Textbook Tabulator
+1 The Dawning Archaic
+1 Thornfist Striker
+1 Thunderdrum Soloist
+1 Titan's Grave
+1 Together as One
+1 Tome Blast
+1 Topiary Lecturer
+1 Tragedy Feaster
+1 Transcendent Archaic
+1 Traumatic Critique
+1 Ulna Alley Shopkeep
+1 Unsubtle Mockery
+1 Vastlands Scavenger // Bind to Life
+1 Vibrant Outburst
+1 Vicious Rivalry
+1 Visionary's Dance
+1 Wander Off
+1 Wild Hypothesis
+1 Wildgrowth Archaic
+1 Wilt in the Heat
+1 Wisdom of Ages
+1 Witherbloom Charm
+1 Witherbloom, the Balancer
+1 Withering Curse
+1 Zaffai and the Tempests
+1 Zealous Lorecaster
+1 Zimone's Experiment
