@@ -1497,10 +1497,10 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- exactly that incarnation. Its scope is @Relative AnyPlayer@ (CR 601.2i says nothing
   -- about whose turn it is, and no printing narrows its own cast by one), and a
   -- spell's own cast is the first of its kind, so its ordinal is one.
-  TriggerCondition.SpellCast (SpellCast.MkSpellCast subject scope fromZone ordinal window copies) ->
-    let -- What a cast and a copy are both asked: whose turn, which phase, and
+  TriggerCondition.SpellCast (SpellCast.MkSpellCast subject scope fromZone ordinal window copies while_) ->
+    let -- What a cast and a copy are both asked: whose turn, which phase,
         -- which spell -- the bearer, or one the Filter admits as its
-        -- controller sees it.
+        -- controller sees it -- and the state the cast happens in.
         admits controller spell =
           -- "During combat" off the running turns, the TurnScope's reason:
           -- the event happened in this same settle, so the step each turn
@@ -1509,6 +1509,10 @@ armMatches bindings board gs bearer you cond event = case cond of
             && case subject of
               ActingPermanent.Self -> spell == bearer
               ActingPermanent.Matching f -> Filter.matches bearerContext (Projection.viewOfSpell controller spell gs) f
+            -- Social Snub's "while you control a creature", asked of the
+            -- live board as triggers are collected and never re-checked, as
+            -- AttackerTrigger.while is (CR 603.4 is for an "if").
+            && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) bearerContext gs bearer) while_
         ordinalOf caster spell = case subject of
           ActingPermanent.Self -> Just 1
           ActingPermanent.Matching f -> castOrdinal bearerContext f fromZone caster spell gs

@@ -3,6 +3,7 @@
 module Parun.Codec.SpellCast where
 
 import qualified Parun.Codec.ActingPermanent as ActingPermanent
+import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.PhaseSelector as PhaseSelector
 import qualified Parun.Codec.TurnScope as TurnScope
 import qualified Parun.Codec.Zone as Zone
@@ -16,7 +17,8 @@ import qualified Parun.Types.SpellCast as SpellCast
 -- this spell and a cast of a matching one are different cards, and so are an
 -- unscoped trigger and a scoped one, not defaulted ones. The zone and the ordinal are
 -- elided instead, because a trigger that names neither is what almost every
--- printing writes, and the phase and the copy flag for the same reason.
+-- printing writes, and the phase, the copy flag and the while for the same
+-- reason.
 codec :: Codec.Codec SpellCast.SpellCast
 codec = Fields.object $ do
   spell <- Fields.required "spell" ActingPermanent.codec SpellCast.spell
@@ -25,4 +27,5 @@ codec = Fields.object $ do
   ordinal <- Fields.defaulted "ordinal" Nothing (Common.maybe Common.natural) SpellCast.ordinal
   phase <- Fields.defaulted "phase" Nothing (Common.maybe PhaseSelector.codec) SpellCast.phase
   copies <- Fields.defaulted "copies" False Common.boolean SpellCast.copies
-  pure SpellCast.MkSpellCast {SpellCast.spell = spell, SpellCast.scope = scope, SpellCast.zone = zone, SpellCast.ordinal = ordinal, SpellCast.phase = phase, SpellCast.copies = copies}
+  while_ <- Fields.defaulted "while" Nothing (Common.maybe Condition.codec) SpellCast.while
+  pure SpellCast.MkSpellCast {SpellCast.spell = spell, SpellCast.scope = scope, SpellCast.zone = zone, SpellCast.ordinal = ordinal, SpellCast.phase = phase, SpellCast.copies = copies, SpellCast.while = while_}

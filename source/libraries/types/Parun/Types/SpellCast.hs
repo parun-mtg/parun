@@ -2,6 +2,7 @@ module Parun.Types.SpellCast where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.ActingPermanent as ActingPermanent
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -79,7 +80,13 @@ data SpellCast = MkSpellCast
     -- copy of a matching spell is put onto the stack, which CR 707.10 says is
     -- not cast (GameEvent.SpellCopied). A copy came from no zone and is no
     -- cast of the turn, so it never satisfies `zone` or `ordinal` above.
-    copies :: Bool
+    copies :: Bool,
+    -- | Social Snub's "when you cast this spell WHILE YOU CONTROL A CREATURE":
+    -- a state asked as the cast happens and never re-checked, as
+    -- Parun.Types.AttackerTrigger.while is, unlike
+    -- TriggeredAbility.intervening (CR 603.4). Nothing for every other cast
+    -- trigger.
+    while :: Maybe Condition.Condition
   }
   deriving (Eq, Ord, Show)
 
@@ -93,7 +100,8 @@ self =
       zone = Nothing,
       ordinal = Nothing,
       phase = Nothing,
-      copies = False
+      copies = False,
+      while = Nothing
     }
 
 -- | "Whenever ... casts a spell": a spell the Filter admits, otherwise as

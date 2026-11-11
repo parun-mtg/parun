@@ -392,7 +392,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.And [Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]])) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing False))
+      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.And [Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]])) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Nothing Nothing Nothing False Nothing))
       " {\"type\":\"SpellCast\",\"value\":{\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]}]}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}} "
   -- The other half moved on its own, over the plainest Filter there is: Brineborn
   -- Cutthroat's "during an opponent's turn", which no Filter could have said.
@@ -400,7 +400,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) Nothing Nothing Nothing False))
+      (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.Opponent)) Nothing Nothing Nothing False Nothing))
       " {\"type\":\"SpellCast\",\"value\":{\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"Opponent\"}}}} "
   -- CR 702.21a's ward: a Self subject, the relation on the TARGETING side.
   -- Parun.Codec.BecomesTargetedTriggerSpec has the fields.
