@@ -6,6 +6,7 @@ import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.CopyException as CopyException
 import qualified Parun.Codec.EntryRiders as EntryRiders
 import qualified Parun.Codec.ObjectRef as ObjectRef
+import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
@@ -13,6 +14,8 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | The count is ELIDED when it is one, so every card that mints a single copy
 -- writes the ref alone. Previously that was two whole payload SHAPES -- a bare
@@ -34,6 +37,7 @@ codec abilityCodec = Fields.object $ do
   riders <- Fields.defaulted "riders" EntryRiders.defaultValue (EntryRiders.codec abilityCodec) CreateCopy.riders
   slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) CreateCopy.slot
   exceptions <- Fields.defaulted "exceptions" [] (Common.list (CopyException.codec abilityCodec)) CreateCopy.exceptions
+  creator <- Fields.defaulted "creator" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec CreateCopy.creator
   linked <- Fields.defaulted "linked" False Common.boolean CreateCopy.linked
   pure
     CreateCopy.MkCreateCopy
@@ -42,5 +46,6 @@ codec abilityCodec = Fields.object $ do
         CreateCopy.riders = riders,
         CreateCopy.slot = slot,
         CreateCopy.exceptions = exceptions,
+        CreateCopy.creator = creator,
         CreateCopy.linked = linked
       }

@@ -563,7 +563,8 @@ modified context m more = do
       -- Some of the objects an earlier instruction changed "also" change:
       -- "White creatures you control also gain first strike" (Sanctified
       -- Charge), or all of them: "those creatures also gain vigilance"
-      -- (Kytheon's Tactics). Free.
+      -- (Kytheon's Tactics), or the target it named: "that creature also
+      -- gains trample" (Efflorescence). Free.
       conjuncts f = case f of
         Filter.Type.And fs -> fs
         _ -> [f]
@@ -573,6 +574,7 @@ modified context m more = do
                 ObjectRef.EachMatching g -> all (`elem` conjuncts f) (conjuncts g)
                 _ -> False
            in any within (Target.earlier context)
+        ref@(ObjectRef.InSlot _) -> elem ref (Target.earlier context)
         _ -> False
   change <- if among then [changed, Text.pack "also " <> changed] else [changed]
   lasting <- Continuous.duration (ModifyTarget.duration m)

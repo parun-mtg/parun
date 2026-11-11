@@ -2335,6 +2335,7 @@ graveyardTokenCopy exceptions cost =
               -- Nothing looks back at the token, so it binds no slot.
               CreateCopy.slot = Nothing,
               CreateCopy.exceptions = exceptions,
+              CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
               CreateCopy.linked = False
             }
    in ActivatedAbility.MkActivatedAbility
@@ -2451,6 +2452,7 @@ encore cost =
                 EntryRiders.defaultValue,
               CreateCopy.slot = Just encoreTokenSlot,
               CreateCopy.exceptions = [],
+              CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
               CreateCopy.linked = False
             }
       required =
@@ -5454,6 +5456,7 @@ myriad =
                 EntryRiders.defaultValue {EntryRiders.tapped = TapState.Tapped, EntryRiders.attacking = Just (EntryAttack.UnderPlayer myriadOpponentSlot)},
               CreateCopy.slot = Just myriadTokenSlot,
               CreateCopy.exceptions = [],
+              CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
               CreateCopy.linked = False
             }
       loop =
@@ -6673,6 +6676,7 @@ paidTokenCopies keyword quantity exceptions ordinal =
                 EntryRiders.defaultValue,
               CreateCopy.slot = Nothing,
               CreateCopy.exceptions = exceptions,
+              CreateCopy.creator = PlayerRef.Relative PlayerRelation.You,
               CreateCopy.linked = False
             }
    in Mint.triggerIf

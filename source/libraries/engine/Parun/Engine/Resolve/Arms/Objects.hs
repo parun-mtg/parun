@@ -423,7 +423,7 @@ conjure settle resolving source controller legal (Conjure.MkConjure quantity car
   Common.bindObjects resolving mSlot conjured
 
 createCopy :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions linked) = do
+createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked) = do
   gs <- State.get
   -- CR 707.2 / 111.3: this many tokens per named permanent, minted through the
   -- same CR 111.2 funnel, carrying the copied permanent's COPIABLE values
@@ -443,6 +443,8 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
       -- CR 508.4's rider, read ONCE off the pre-effect board for Create's
       -- reason.
       mAttack = Common.entryAttack legal resolving entry gs
+      -- CR 111.2: whose copies, read the way Create's arm reads its creator.
+      creators = Common.apnapPlayersOf creator legal resolving source controller gs
   -- CR 509.4's parenthetical, read the way Create's arm reads it and for the
   -- same reasons: the attacking creature the effect SPECIFIED, named by slot,
   -- once and ahead of the minting loop, through fromAmongMembers. Mirror
@@ -464,7 +466,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
       | n > 0 ->
           -- CR 613.7m over copies of SEVERAL sources, which enter together:
           -- one batch across every createTokens call (Event.together).
-          Event.simultaneously . Event.together . fmap concat . Monad.forM sources $ \src ->
+          Event.simultaneously . Event.together . fmap concat . Monad.forM ((,) <$> creators <*> sources) $ \(creating, src) ->
             fmap concat . Monad.forM (Maybe.maybeToList (Game.cardOfWithLastKnown src gs)) $ \card -> do
               -- CR 707.2 copies no counters, so what the token arrives with
               -- is what the EFFECT said and nothing the original carried --
@@ -490,7 +492,7 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
               -- Nothing for the subject's own copiable values: CR 707.9c's
               -- retained original belongs to an object that already existed,
               -- and a token minted by CR 707.1 did not.
-              made <- Event.createTokens settle controller card (Just (Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions (Event.copiedSnapshotWithLastKnown src gs))) (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
+              made <- Event.createTokens settle creating card (Just (Replacement.applyCopyExceptions (Common.thisAbilitySource resolving gs) Nothing exceptions (Event.copiedSnapshotWithLastKnown src gs))) (Integer.toNaturalSaturating n) (EntryRiders.tapped entry) (EntryRiders.counters frozen) Nothing (Common.resolvingMarks resolving gs)
               -- CR 508.4, after the entry loop for Create's reason.
               Monad.forM_ mAttack (\specified -> Monad.mapM_ (Combat.putOntoBattlefieldAttacking specified) made)
               -- CR 509.4, the blocking twin one rule over, in the same place

@@ -10,6 +10,8 @@ import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.EntryAttack as EntryAttack
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TapState as TapState
@@ -23,14 +25,14 @@ spec s = Spec.describe s "Parun.Codec.CreateCopy" $ do
     Common.assertCodec
       s
       (CreateCopy.codec Common.text)
-      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] False)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
   -- Kicked Rite of Replication's five.
   Spec.it s "MkCreateCopy, a count above one: it is written" $
     Common.assertCodec
       s
       (CreateCopy.codec Common.text)
-      (CreateCopy.MkCreateCopy (Quantity.Literal 5) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] False)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 5) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
       " {\"quantity\":{\"type\":\"Literal\",\"value\":5},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
   -- Littjara Mirrorlake's "except it enters with an additional +1/+1 counter on
   -- it": CR 122.6's rider on the copy opcode, elided above when it is CR 110.5b's
@@ -39,7 +41,7 @@ spec s = Spec.describe s "Parun.Codec.CreateCopy" $ do
     Common.assertCodec
       s
       (CreateCopy.codec Common.text)
-      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue {EntryRiders.counters = Map.singleton CounterKind.PlusOnePlusOne (Quantity.Literal 1)} Nothing [] False)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue {EntryRiders.counters = Map.singleton CounterKind.PlusOnePlusOne (Quantity.Literal 1)} Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"riders\":{\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]}} "
   -- Flamerush Rider's "tapped and attacking", and the slot its delayed exile
   -- names (CR 603.7c).
@@ -47,12 +49,20 @@ spec s = Spec.describe s "Parun.Codec.CreateCopy" $ do
     Common.assertCodec
       s
       (CreateCopy.codec Common.text)
-      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue {EntryRiders.tapped = TapState.Tapped, EntryRiders.attacking = Just EntryAttack.Chosen} (Just (SlotName.MkSlotName (Text.pack "token"))) [] False)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue {EntryRiders.tapped = TapState.Tapped, EntryRiders.attacking = Just EntryAttack.Chosen} (Just (SlotName.MkSlotName (Text.pack "token"))) [] (PlayerRef.Relative PlayerRelation.You) False)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"riders\":{\"tapped\":\"Tapped\",\"attacking\":{\"type\":\"Chosen\"}},\"slot\":\"token\"} "
   Spec.it s "MkCreateCopy, linked to its source" $
     Common.assertCodec
       s
       (CreateCopy.codec Common.text)
-      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] True)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) True)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"linked\":true} "
+  -- CR 111.2: Echocasting Symposium's "target player creates", the key written
+  -- only when the creator is not CR 109.5's "you".
+  Spec.it s "MkCreateCopy, a creator other than you" $
+    Common.assertCodec
+      s
+      (CreateCopy.codec Common.text)
+      (CreateCopy.MkCreateCopy (Quantity.Literal 1) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) EntryRiders.defaultValue Nothing [] (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "player"))) False)
+      " {\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"creator\":{\"type\":\"InSlot\",\"value\":\"player\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (CreateCopy.codec Common.text)

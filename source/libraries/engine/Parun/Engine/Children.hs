@@ -958,8 +958,8 @@ effectChildren c effect = case effect of
     fmap Effect.Create (Create.MkCreate <$> onQuantity c quantity <*> onCard c card <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> onPlayer c creator <*> pure linked)
   Effect.Conjure (Conjure.MkConjure quantity cards selection destination named) ->
     fmap Effect.Conjure (Conjure.MkConjure <$> onQuantity c quantity <*> conjureCardsChildren c cards <*> pure selection <*> pure destination <*> traverse (onSlot c) named)
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders named exceptions linked) ->
-    fmap Effect.CreateCopy (CreateCopy.MkCreateCopy <$> onQuantity c quantity <*> onObjectRef c ref <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> traverse (onCopyException c) exceptions <*> pure linked)
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders named exceptions creator linked) ->
+    fmap Effect.CreateCopy (CreateCopy.MkCreateCopy <$> onQuantity c quantity <*> onObjectRef c ref <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> traverse (onCopyException c) exceptions <*> onPlayer c creator <*> pure linked)
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions newTargets) ->
     fmap Effect.BecomeCopy (BecomeCopy.MkBecomeCopy <$> copyOriginalChildren c original <*> onObjectRef c subject <*> traverse (onDuration c) duration <*> traverse (onCopyException c) exceptions <*> pure newTargets)
   Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity copier exceptions) ->
