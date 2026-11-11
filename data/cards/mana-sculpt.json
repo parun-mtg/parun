@@ -1,0 +1,199 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "add mana spent": {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "StepBegins",
+                "value": {
+                  "phase": {
+                    "type": "PrecombatMain"
+                  },
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "StepBegins",
+                "value": {
+                  "phase": {
+                    "type": "PostcombatMain"
+                  },
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "count": {
+                            "type": "InSlot",
+                            "value": "spent"
+                          },
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Mana Sculpt",
+      "oracleText": "Counter target spell. If you control a Wizard, add an amount of {C} equal to the amount of mana spent to cast that spell at the beginning of your next main phase.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "BindAmount",
+                    "value": {
+                      "quantity": {
+                        "type": "AgainstSlot",
+                        "value": {
+                          "quantity": {
+                            "type": "ManaSpent",
+                            "value": {
+                              "type": "Total"
+                            }
+                          },
+                          "slot": "spell"
+                        }
+                      },
+                      "slot": "spent"
+                    }
+                  },
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "spell"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasSubtype",
+                              "value": "Wizard"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "ArmDelayedTrigger",
+                    "value": {
+                      "name": "add mana spent"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "spell": {
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

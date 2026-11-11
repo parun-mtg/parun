@@ -1,0 +1,284 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Prodigal Sorcerer",
+            "label": "guy"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mana Sculpt",
+            "label": "sculpt"
+          },
+          {
+            "card": "Alhammarret's Archive",
+            "label": "archive"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "b0"
+          },
+          {
+            "card": "Mountain",
+            "label": "b1"
+          },
+          {
+            "card": "Mountain",
+            "label": "b2"
+          },
+          {
+            "card": "Mountain",
+            "label": "b3"
+          },
+          {
+            "card": "Mountain",
+            "label": "b4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Burst Lightning",
+            "label": "burst"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.6a, 702.33d, 601.2h, 603.7, 505.1, 106.4: Mana Sculpt counters a kicked Burst Lightning (mana value 1, five mana spent) and, alice controlling a Wizard, adds five {C} at the beginning of her next main phase (her own turn's, not bob's postcombat one), enough for a {5} artifact",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 1
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b0",
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4"
+          ],
+          "object": "$burst",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$sculpt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Burst Lightning",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Mana Sculpt"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$archive"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Alhammarret's Archive",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
