@@ -4,11 +4,15 @@ import qualified Parun.Codec.SpellCast as SpellCast
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ActingPermanent as ActingPermanent
+import qualified Parun.Types.Compares as Compares
+import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Zone as Zone
@@ -26,7 +30,8 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False
+            SpellCast.copies = False,
+            SpellCast.while = Nothing
           }
       )
       " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}} "
@@ -42,7 +47,8 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False
+            SpellCast.copies = False,
+            SpellCast.while = Nothing
           }
       )
       " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"Opponent\"}}} "
@@ -58,7 +64,8 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Just Zone.Hand,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False
+            SpellCast.copies = False,
+            SpellCast.while = Nothing
           }
       )
       " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"zone\":\"Hand\"} "
@@ -74,7 +81,8 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Just 2,
             SpellCast.phase = Nothing,
-            SpellCast.copies = False
+            SpellCast.copies = False,
+            SpellCast.while = Nothing
           }
       )
       " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"ordinal\":2} "
@@ -90,7 +98,8 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Just PhaseSelector.CombatPhase,
-            SpellCast.copies = False
+            SpellCast.copies = False,
+            SpellCast.while = Nothing
           }
       )
       " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"phase\":{\"type\":\"CombatPhase\"}} "
@@ -105,8 +114,25 @@ spec s = Spec.describe s "Parun.Codec.SpellCast" $ do
             SpellCast.zone = Nothing,
             SpellCast.ordinal = Nothing,
             SpellCast.phase = Nothing,
-            SpellCast.copies = True
+            SpellCast.copies = True,
+            SpellCast.while = Nothing
           }
       )
       " {\"spell\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"copies\":true} "
+  -- Social Snub's "while you control a creature", elided when absent.
+  Spec.it s "MkSpellCast, a window holding a state" $
+    Common.assertCodec
+      s
+      SpellCast.codec
+      ( SpellCast.MkSpellCast
+          { SpellCast.spell = ActingPermanent.Self,
+            SpellCast.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer),
+            SpellCast.zone = Nothing,
+            SpellCast.ordinal = Nothing,
+            SpellCast.phase = Nothing,
+            SpellCast.copies = False,
+            SpellCast.while = Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 0) Comparison.Exactly (Quantity.Literal 0)))
+          }
+      )
+      " {\"spell\":{\"type\":\"Self\"},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"while\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":0},\"comparison\":\"Exactly\",\"threshold\":{\"type\":\"Literal\",\"value\":0}}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s SpellCast.codec

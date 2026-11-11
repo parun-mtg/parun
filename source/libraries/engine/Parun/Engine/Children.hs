@@ -1495,8 +1495,8 @@ triggerConditionChildren c condition = case condition of
           <*> pure grouping
       )
   TriggerCondition.SelfBecomesClassLevel _ -> pure condition
-  TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies) ->
-    fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies)
+  TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies while_) ->
+    fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies <*> traverse (triggerState c) while_)
   TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ kind) -> fmap (\renamed -> TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger renamed kind)) (triggerFilter c filter_)
   TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching) ->
     fmap

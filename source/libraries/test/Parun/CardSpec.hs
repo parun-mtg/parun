@@ -1282,8 +1282,8 @@ triggerConditionCounts triggerCondition = case triggerCondition of
   TriggerCondition.SelfBecomesClassLevel _ -> []
   -- CR 601.2i's Filter is a predicate over the spell that was cast, and a Filter
   -- holds no Count, exactly as CR 603.6a's does above. Its ordinal is a bare
-  -- Natural, as CR 715.2b's is.
-  TriggerCondition.SpellCast {} -> []
+  -- Natural, as CR 715.2b's is; only its state can.
+  TriggerCondition.SpellCast c -> foldMap conditionCounts (SpellCast.while c)
   -- CR 602.2b's activation carries a Filter, which holds no Count.
   TriggerCondition.AbilityActivated _ -> []
   -- CR 601.2c's carries a subject, a PlayerRelation, a StackObjectKind and a
@@ -4828,7 +4828,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- CR 601.2i's "whenever you cast a [type] spell" carries one directly, over
   -- the spell rather than over a permanent; "this spell" names the bearer and
   -- needs no Filter to say so.
-  TriggerCondition.SpellCast c -> actingFilters (SpellCast.spell c)
+  TriggerCondition.SpellCast c -> actingFilters (SpellCast.spell c) <> foldMap (frame Unframed . conditionFilters) (SpellCast.while c)
   TriggerCondition.AbilityActivated t -> unframed [AbilityActivatedTrigger.filter t]
   -- Rule 702.21a's Self subject names the bearer and a You subject CR 109.5's
   -- "you", and neither carries a Filter; a Matching one's is card text like any

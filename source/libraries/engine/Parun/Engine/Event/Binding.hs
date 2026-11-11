@@ -475,11 +475,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- The spell's object targets too (Binding.castSpellTargets), read off the
   -- stack object now for the reason the caster is a slot: Storm, Windrider's
   -- "those creatures" are the ones the cast targeted.
-  (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ _ _ _)) ->
+  (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _ _), GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell _ _ _ _)) ->
     Binding.setTriggerPlayer caster (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs spell) (Binding.setCastSpellX (castX gs spell) (Binding.setCastSpell spell Map.empty)))
   -- Magecraft's "or copy" binds the same three off its own event (CR 707.10):
   -- the copy, the player who copied it, and the copy's targets.
-  (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
+  (TriggerCondition.SpellCast (SpellCast.MkSpellCast (ActingPermanent.Matching _) _ _ _ _ _ _), GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copy)) ->
     Binding.setTriggerPlayer copier (Binding.setCastSpellTargets (ProjectionView.targetsOfStackObject gs copy) (Binding.setCastSpellX (castX gs copy) (Binding.setCastSpell copy Map.empty)))
   -- CR 602.2b's "that ability" and "that player": the ability on the stack and
   -- its activator (CR 602.2a). Unconditional given a match. An activation that

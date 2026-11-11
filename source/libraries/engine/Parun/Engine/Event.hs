@@ -11820,7 +11820,7 @@ controllerTurnScoped cond = case cond of
   -- Brineborn Cutthroat's "an opponent's turn" is turn-scoped and is not the
   -- CONTROLLER's turn, which is the only thing this classification asks. A
   -- Self subject's is each turn: a spell can be cast on anybody's turn.
-  TriggerCondition.SpellCast (SpellCast.MkSpellCast _ scope _ _ _ _) -> Turn.isControllersTurn scope
+  TriggerCondition.SpellCast (SpellCast.MkSpellCast _ scope _ _ _ _ _) -> Turn.isControllersTurn scope
   -- Nor an activation, which CR 117.1b allows on anybody's turn.
   TriggerCondition.AbilityActivated _ -> False
   -- The condition carries no TurnScope, and an opponent can target the bearer,
