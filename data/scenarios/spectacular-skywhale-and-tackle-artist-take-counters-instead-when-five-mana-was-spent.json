@@ -103,6 +103,23 @@
       "turn": 1
     },
     {
+      "do": {
+        "OrderTriggers": [
+          "$whale",
+          "$artist"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
@@ -164,6 +181,23 @@
           "x": 4
         }
       },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$whale",
+          "$artist"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1

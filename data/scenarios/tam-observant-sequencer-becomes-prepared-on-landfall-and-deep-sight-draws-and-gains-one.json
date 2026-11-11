@@ -92,9 +92,7 @@
   "timeline": [
     {
       "do": {
-        "PlayLand": {
-          "object": "$forest"
-        }
+        "PlayLand": "$forest"
       },
       "player": "alice",
       "step": "PrecombatMain",
@@ -125,7 +123,8 @@
         "Cast": {
           "mana": [
             "$f1",
-            "$i1"
+            "$i1",
+            null
           ],
           "object": "Deep Sight#2"
         }

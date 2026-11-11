@@ -137,6 +137,20 @@
       "turn": 1
     },
     {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceHybridHalf",
+          "with": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",

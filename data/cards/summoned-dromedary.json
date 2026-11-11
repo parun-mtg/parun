@@ -78,8 +78,8 @@
       },
       "typeLine": {
         "subtypes": [
-          "Spirit",
-          "Camel"
+          "Camel",
+          "Spirit"
         ],
         "types": [
           "Creature"

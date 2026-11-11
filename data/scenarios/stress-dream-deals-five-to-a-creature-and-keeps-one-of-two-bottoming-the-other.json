@@ -186,14 +186,14 @@
       "check": {
         "View": {
           "is": [
-            "Island",
-            "Island",
-            "Island",
-            "Island",
-            "Island",
-            "Island",
-            "Island",
-            "Island",
+            "Island#4",
+            "Island#5",
+            "Island#6",
+            "Island#7",
+            "Island#8",
+            "Island#9",
+            "Island#10",
+            "Island#11",
             "Hill Giant"
           ],
           "of": "Zone",

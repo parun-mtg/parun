@@ -92,7 +92,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 601.2b, 601.2f, 601.2h: Soaring Stoneglider's additional cost is paid by exiling two cards from your graveyard or by paying {1}{W}",
-  "note": "Eight white: three for the first cast, which exiles two of three graveyard cards, five for the second, which exiles none.",
+  "note": "Eight white: three for the first cast, which exiles two of three graveyard cards; the second, with one card left, can only pay five, emptying the pool.",
   "timeline": [
     {
       "do": {
@@ -179,30 +179,6 @@
     {
       "do": {
         "Cast": {
-          "cost": [
-            {
-              "type": "Generic",
-              "value": 2
-            },
-            {
-              "type": "OfType",
-              "value": {
-                "type": "Colored",
-                "value": "White"
-              }
-            },
-            {
-              "type": "Generic",
-              "value": 1
-            },
-            {
-              "type": "OfType",
-              "value": {
-                "type": "Colored",
-                "value": "White"
-              }
-            }
-          ],
           "object": "$s2"
         }
       },
@@ -236,6 +212,18 @@
           "count": 1,
           "player": "alice",
           "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
         }
       },
       "player": "alice",

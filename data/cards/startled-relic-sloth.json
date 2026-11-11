@@ -3,10 +3,10 @@
     {
       "keywords": [
         {
-          "type": "Trample"
+          "type": "Lifelink"
         },
         {
-          "type": "Lifelink"
+          "type": "Trample"
         }
       ],
       "manaCost": [
@@ -103,8 +103,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Sloth",
-          "Beast"
+          "Beast",
+          "Sloth"
         ],
         "types": [
           "Creature"

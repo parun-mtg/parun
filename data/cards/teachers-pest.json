@@ -118,8 +118,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Skeleton",
-          "Pest"
+          "Pest",
+          "Skeleton"
         ],
         "types": [
           "Creature"

@@ -137,8 +137,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Bird",
-          "Bard"
+          "Bard",
+          "Bird"
         ],
         "types": [
           "Creature"

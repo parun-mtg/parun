@@ -39,7 +39,7 @@
             "card": "Island"
           }
         ],
-        "manaPool": "RRR",
+        "manaPool": "RRRR",
         "name": "alice"
       },
       {
@@ -76,7 +76,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.17a, 601.2a, 106.6: Tablet of Discovery mills a card on entering that you may play this turn, paid here with its {R}{R} for instants and sorceries",
+  "description": "CR 701.17a, 601.2a, 603.6a: Tablet of Discovery mills a card on entering that you may play this turn",
+  "note": "The milled Shock is cast from the graveyard with the pool's fourth red.",
   "timeline": [
     {
       "do": {
@@ -117,7 +118,7 @@
       "do": {
         "Cast": {
           "mana": [
-            "$tablet"
+            null
           ],
           "object": "Shock",
           "targets": [
@@ -140,6 +141,19 @@
         "Life": {
           "life": 18,
           "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
       },
       "player": "alice",
