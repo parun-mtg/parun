@@ -161,7 +161,7 @@ blackCreature =
       Filter.prototyped = False,
       Filter.preparedSpell = False,
       Filter.manaSpentTagColors = Map.empty,
-      Filter.manaSpentAmount = 0,
+      Filter.manaSpent = Mana.MkMana [],
       Filter.manaSpentOnX = Mana.MkMana [],
       -- CR 602.1 / 605.1a: a vanilla creature as far as this axis goes, so the
       -- atom's own cases below say which view they want rather than inheriting it.
@@ -253,7 +253,7 @@ devoidBigCreature =
       Filter.prototyped = False,
       Filter.preparedSpell = False,
       Filter.manaSpentTagColors = Map.empty,
-      Filter.manaSpentAmount = 0,
+      Filter.manaSpent = Mana.MkMana [],
       Filter.manaSpentOnX = Mana.MkMana [],
       Filter.activatedAbilityKinds = Set.empty,
       Filter.grantsStationToughness = False
@@ -337,7 +337,7 @@ castFromGraveyard = blackCreature {Filter.zone = Just Zone.Stack, Filter.castFro
 -- else -- Shadow the Hedgehog's condition, and the one axis the TagWasSpent cases
 -- vary.
 paidWithArtifactMana :: Filter.View
-paidWithArtifactMana = blackCreature {Filter.zone = Just Zone.Stack, Filter.manaSpentTagColors = Map.singleton ProductionTag.Artifact Set.empty, Filter.manaSpentAmount = 2}
+paidWithArtifactMana = blackCreature {Filter.zone = Just Zone.Stack, Filter.manaSpentTagColors = Map.singleton ProductionTag.Artifact Set.empty}
 
 -- A SPELL on the stack aimed at creature 9 and at player 1 -- `blackCreature`
 -- moved to the stack and given targets, which is what the two Targets cases

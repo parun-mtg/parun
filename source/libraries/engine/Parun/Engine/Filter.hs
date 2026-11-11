@@ -799,8 +799,8 @@ data View = MkView
     -- object to read it off, both for the reasons `designations` above gives. Its
     -- readers are Parun.Engine.Quantity's TagWasSpent arm, answering Berg
     -- Strider's and Forsworn Paladin's clause conditions, and its
-    -- TagWasSpentOfOwnColor arm, answering Boreal Outrider's. `manaSpentAmount`
-    -- below is the same record's other question.
+    -- TagWasSpentOfOwnColor arm, answering Boreal Outrider's. `manaSpent` below
+    -- is the same record unclassified.
     --
     -- KEYED by tag, and the value is the colours (CR 106.1a) of the units that
     -- carried it: Parun.Types.ProductionTag is the closed half of what a unit
@@ -814,12 +814,13 @@ data View = MkView
     -- Non-empty for a permanent a spell paid with tagged mana became, which is CR
     -- 400.7d's exception to the forgetting (see Parun.Types.Object.manaSpent).
     manaSpentTagColors :: Map.Map ProductionTag.ProductionTag (Set.Set Color.Color),
-    -- | CR 601.2h / 702.191a: how many mana were spent to pay for this candidate -- the
-    -- COUNT of the units `manaSpentTagColors` above classifies, read off the same
-    -- Object.manaSpent and 0 where there is no object to read it off. Its one
-    -- reader is Parun.Engine.Quantity's ManaSpent arm, answering rule 702.191a's
-    -- "the amount of mana spent to cast that spell".
-    manaSpentAmount :: Natural.Natural,
+    -- | CR 601.2h: the mana spent to pay for this candidate -- the units
+    -- `manaSpentTagColors` above classifies, read off the same Object.manaSpent
+    -- and none where there is no object to read it off. Its one reader is
+    -- Parun.Engine.Quantity's ManaSpent arm, answering rule 702.191a's "the
+    -- amount of mana spent to cast that spell" and Converge's "the number of
+    -- colors of mana spent to cast this spell".
+    manaSpent :: Mana.Mana,
     -- | CR 107.3 / 601.2h: the mana that paid the candidate's X
     -- (Parun.Types.Object.manaSpentOnX), none where nothing recorded any. Its
     -- one reader is Parun.Engine.Quantity's ManaSpent arm, answering Soul Burn's
@@ -1066,7 +1067,7 @@ playerView pid =
       manaSpentTagColors = Map.empty,
       -- A player is no object to have been paid for -- `manaSpentTagColors` above,
       -- same sentence.
-      manaSpentAmount = 0,
+      manaSpent = Mana.MkMana [],
       manaSpentOnX = Mana.MkMana [],
       -- CR 113.1a: an activated ability is an ability OF AN OBJECT, and CR
       -- 109.1's list of what an object is has no player in it -- `keywords`

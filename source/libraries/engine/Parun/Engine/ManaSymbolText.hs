@@ -5,13 +5,16 @@ module Parun.Engine.ManaSymbolText where
 
 import qualified Data.Char as Char
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
+import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Text.Read as Read
 
 -- | A mana symbol's letter as the type of mana it stands for (CR 107.4).
@@ -101,3 +104,7 @@ colorOfManaType :: ManaType.ManaType -> Maybe Color.Color
 colorOfManaType t = case t of
   ManaType.Colored c -> Just c
   ManaType.Colorless -> Nothing
+
+-- CR 106.1a: the colours among these units, colourless (CR 106.1b) none.
+colorsOf :: Mana.Mana -> Set.Set Color.Color
+colorsOf = Set.fromList . Maybe.mapMaybe (colorOfManaType . ManaUnit.manaType) . Mana.unwrap
