@@ -40,7 +40,6 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CostChoice as CostChoice
-import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
@@ -59,9 +58,7 @@ import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
-import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaRestriction as ManaRestriction
-import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Modal as Modal.Type
@@ -92,7 +89,6 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.UntapRestriction as UntapRestriction
-import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.WordFamily as WordFamily
 
@@ -313,32 +309,34 @@ rewritePlayerEffect pairs =
           Children.playerDamage = Identity.Identity . rewriteDamagePattern pairs
         }
 
--- CR 612.1: AddMana's and Firebend's shared payload, each quantity and Filter
--- in it rewritten.
+-- CR 612.1 through a mana payload: Parun.Engine.Children's traversal at
+-- Identity, every Filter and Quantity rewritten -- an addition's count, CR
+-- 106.7's group, a restriction's spells (CR 106.6), a rider's objects -- and a
+-- spend-as-though clause's two halves as written words. A player, a slot and a
+-- keyword designator name no word CR 612.2 reaches.
+--
+-- Proved, each by the scenario named: an addition's count by
+-- cr-612-1-a-text-change-naming-the-count-s-word-moves-which-permanents-it, the
+-- mana a spend-as-though clause speaks about by
+-- cr-609-4b-a-sleighted-celestial-dawn-still-spends-blue-mana-as-any-color. The
+-- other children are regression fences: no test observes their rewrite.
 rewriteManaAddition :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaAddition.ManaAddition -> ManaAddition.ManaAddition
-rewriteManaAddition pairs addition =
-  addition
-    { ManaAddition.production = rewriteManaProduction pairs (ManaAddition.production addition),
-      ManaAddition.count = rewriteQuantity pairs (ManaAddition.count addition),
-      ManaAddition.restriction = fmap (rewriteManaRestriction pairs) (ManaAddition.restriction addition),
-      ManaAddition.rider = fmap (rewriteManaRider pairs) (ManaAddition.rider addition),
-      ManaAddition.whenSpent = fmap (\w -> w {WhenSpent.casts = Filter.rewrite pairs (WhenSpent.casts w)}) (ManaAddition.whenSpent addition)
-    }
+rewriteManaAddition pairs = Identity.runIdentity . Children.manaAdditionChildren (manaRewrites pairs)
 
--- CR 612.1: the one production holding a Filter, CR 106.7's group, has it
--- rewritten.
-rewriteManaProduction :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaProduction.ManaProduction -> ManaProduction.ManaProduction
-rewriteManaProduction pairs production = case production of
-  ManaProduction.OfType _ -> production
-  ManaProduction.AnyColor _ -> production
-  ManaProduction.Chosen -> production
-  ManaProduction.SnowSymbol -> production
-  ManaProduction.Noted -> production
-  ManaProduction.CouldProduce could -> ManaProduction.CouldProduce could {CouldProduce.among = Filter.rewrite pairs (CouldProduce.among could)}
-  ManaProduction.Pooled _ -> production
-  ManaProduction.ProducedByTapped -> production
-  ManaProduction.InCommanderIdentity -> production
-  ManaProduction.Circled -> production
+rewriteManaRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaRestriction.ManaRestriction -> ManaRestriction.ManaRestriction
+rewriteManaRestriction pairs = Identity.runIdentity . Children.manaRestrictionChildren (manaRewrites pairs)
+
+rewriteSpendManaAsThough :: [(TextWord.TextWord, TextWord.TextWord)] -> SpendManaAsThough.SpendManaAsThough -> SpendManaAsThough.SpendManaAsThough
+rewriteSpendManaAsThough pairs = Identity.runIdentity . Children.spendManaAsThoughChildren (manaRewrites pairs)
+
+manaRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.ManaChildren Identity.Identity
+manaRewrites pairs =
+  Children.manaLeaves
+    { Children.manaCriterion = Identity.Identity . Filter.rewrite pairs,
+      Children.manaQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.manaSpent = Identity.Identity . rewriteManaFilter pairs,
+      Children.manaAsThough = Identity.Identity . rewriteAsThough pairs
+    }
 
 -- CR 612's word swap over an effect's AST: Parun.Engine.Children's traversal
 -- at Identity, every child that can hold printed text rewritten through its
@@ -352,8 +350,8 @@ rewriteManaProduction pairs production = case production of
 --
 -- Proved, each by the test named: a Modification by Tidal Warrior and
 -- Presence of Gond, a granted ability inside one by Parun.CounterspellSpec's
--- evolved Clavileño; a mana addition's count by Parun.ManaSpec's hacked Cabal
--- Coffers; an entry rider's keys by Parun.CounterspellSpec's Synthetic Warded
+-- evolved Clavileño; a mana addition's count by rewriteManaAddition's
+-- scenario; an entry rider's keys by Parun.CounterspellSpec's Synthetic Warded
 -- Homecoming; a floating replacement by its evolved Moonmist; a counter kind
 -- by its Synthetic Warding Sigil and Synthetic Erode the Warding; the shields'
 -- recipient and source Filters by data/scenarios/prevention's CR 612.1
@@ -425,27 +423,29 @@ rewriteWrittenManaType pairs t = case t of
   ManaType.Colored c -> ManaType.Colored (TextWord.Engine.colorAfter pairs c)
   ManaType.Colorless -> t
 
--- Both halves of CR 609.4b's clause are written as words: Sunglasses of Urza's
--- "white mana as though it were red mana".
-rewriteSpendManaAsThough :: [(TextWord.TextWord, TextWord.TextWord)] -> SpendManaAsThough.SpendManaAsThough -> SpendManaAsThough.SpendManaAsThough
-rewriteSpendManaAsThough pairs clause =
-  let asThough = SpendManaAsThough.asThough clause
-      -- CR 609.4b's "mana of any color" (Celestial Dawn) names no colour word,
-      -- and a set holding all five can only have been written that way.
-      anyColor = all (\c -> Set.member (ManaType.Colored c) asThough) [minBound ..]
-   in clause
-        { SpendManaAsThough.which = rewriteManaFilter pairs (SpendManaAsThough.which clause),
-          SpendManaAsThough.asThough = if anyColor then asThough else Set.map (rewriteWrittenManaType pairs) asThough,
-          SpendManaAsThough.casting = fmap (Filter.rewrite pairs) (SpendManaAsThough.casting clause)
-        }
+-- The other half of CR 609.4b's clause is written as words too: Sunglasses of
+-- Urza's "white mana as though it were red mana".
+rewriteAsThough :: [(TextWord.TextWord, TextWord.TextWord)] -> Set.Set ManaType.ManaType -> Set.Set ManaType.ManaType
+rewriteAsThough pairs asThough =
+  -- CR 609.4b's "mana of any color" (Celestial Dawn) names no colour word,
+  -- and a set holding all five can only have been written that way.
+  if all (\c -> Set.member (ManaType.Colored c) asThough) [minBound ..]
+    then asThough
+    else Set.map (rewriteWrittenManaType pairs) asThough
 
--- CR 612.1 through a damage pattern's two criteria.
+-- CR 612.1 through a damage pattern's two criteria: Parun.Engine.Children's
+-- traversal at Identity, every Filter rewritten. Parun.CounterspellSpec's
+-- evolved Moonmist proves the source's.
 rewriteDamagePattern :: [(TextWord.TextWord, TextWord.TextWord)] -> DamagePattern.DamagePattern -> DamagePattern.DamagePattern
-rewriteDamagePattern pairs p =
-  p
-    { DamagePattern.whatSource = Filter.rewrite pairs (DamagePattern.whatSource p),
-      DamagePattern.whatRecipient = fmap (Filter.rewrite pairs) (DamagePattern.whatRecipient p)
-    }
+rewriteDamagePattern pairs =
+  Identity.runIdentity
+    . Children.damagePatternChildren
+      Children.MkDamagePatternChildren
+        { Children.damageFilter = Identity.Identity . Filter.rewrite pairs,
+          Children.damageRecipient = pure,
+          Children.damageObject = pure,
+          Children.damageSlot = pure
+        }
 
 -- CR 612.2 over one word whose family a card's text names rather than a
 -- constructor -- a ChangeText's forbidden-word set, an amass's creature type.
@@ -655,25 +655,6 @@ replaceWholeWord from to =
                       then go (done <> to) after
                       else go (done <> Text.take 1 match) (Text.drop 1 match)
    in go Text.empty
-
--- CR 612.1 through CR 106.6a's spending restriction: every half but
--- keywordActivations, a designator naming no quality, is a filter of
--- printed text. See the AddMana arm above for why this is a fence rather than a
--- proof.
-rewriteManaRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaRestriction.ManaRestriction -> ManaRestriction.ManaRestriction
-rewriteManaRestriction pairs restriction =
-  restriction
-    { ManaRestriction.casts = fmap (Filter.rewrite pairs) (ManaRestriction.casts restriction),
-      ManaRestriction.activations = fmap (Filter.rewrite pairs) (ManaRestriction.activations restriction),
-      ManaRestriction.unlocks = fmap (Filter.rewrite pairs) (ManaRestriction.unlocks restriction),
-      ManaRestriction.turnsFaceUp = fmap (Filter.rewrite pairs) (ManaRestriction.turnsFaceUp restriction)
-    }
-
--- CR 612.1 through CR 106.6a's other clause: the rider's condition says WHICH
--- objects it is about, and that is printed text too. Its effect
--- (Parun.Types.ManaRiderEffect) names no word a pair could reach.
-rewriteManaRider :: [(TextWord.TextWord, TextWord.TextWord)] -> ManaRider.ManaRider -> ManaRider.ManaRider
-rewriteManaRider pairs rider = rider {ManaRider.condition = Filter.rewrite pairs (ManaRider.condition rider)}
 
 -- CR 612.1 over an ability record's children: Parun.Engine.Children's
 -- traversal at Identity, shared by every kind of ability below. Every Cost takes

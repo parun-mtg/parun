@@ -22,8 +22,10 @@
 -- ModeSelection, Face and Card, and the stored rows: ActiveReplacement,
 -- DelayedTrigger, ActiveLaterPayment, Prevention, PreventionRider, the
 -- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry,
--- ObjectRef with ChosenPermanents, and the combat rules: CombatRestriction,
--- AttackCost, BlockCost and PerCreature) is matched there instead, its leaf
+-- ObjectRef with ChosenPermanents, the combat rules: CombatRestriction,
+-- AttackCost, BlockCost and PerCreature, the mana payloads: ManaAddition with
+-- its ManaProduction, ManaCount, ManaRestriction, ManaRider and WhenSpent, and
+-- SpendManaAsThough, and DamagePattern) is matched there instead, its leaf
 -- types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
@@ -90,7 +92,6 @@ import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
-import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
@@ -130,10 +131,7 @@ import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.ManaAddition as ManaAddition
-import qualified Parun.Types.ManaCount as ManaCount
-import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaRestriction as ManaRestriction
-import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Modification as Modification
@@ -185,7 +183,6 @@ import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnTally as TurnTally
 import qualified Parun.Types.UntapRestriction as UntapRestriction
-import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.WithCounters as WithCounters
@@ -454,8 +451,7 @@ cardNames :: (Monoid r) => Asking r -> Card.Card -> r
 cardNames asking = Const.getConst . Children.cardChildren (Const.Const . faceNames asking (cardNames asking))
 
 spendManaAsThoughNames :: (Monoid r) => Asking r -> SpendManaAsThough.SpendManaAsThough -> r
-spendManaAsThoughNames asking x = case x of
-  SpendManaAsThough.MkSpendManaAsThough _which _asThough _only casting -> foldMap (filterNames asking) casting
+spendManaAsThoughNames asking = Const.getConst . Children.spendManaAsThoughChildren (manaVisitors asking)
 
 castingPermissionNames :: (Monoid r) => Asking r -> CastingPermission.CastingPermission -> r
 castingPermissionNames asking x = case x of
@@ -629,9 +625,17 @@ targetRestrictionNames :: (Monoid r) => Asking r -> (affected -> r) -> TargetRes
 targetRestrictionNames asking onAffected x = case x of
   TargetRestriction.MkTargetRestriction affected _kind aimers -> onAffected affected <> filterNames asking aimers
 
+-- Parun.Engine.Children's traversal at Const.
 damagePatternNames :: (Monoid r) => Asking r -> DamagePattern.DamagePattern -> r
-damagePatternNames asking x = case x of
-  DamagePattern.MkDamagePattern _whichKind whatSource whatRecipient _whoRecipient whichRecipient whichSource boundRecipient -> filterNames asking whatSource <> foldMap (filterNames asking) whatRecipient <> foldMap (recipientNames asking) whichRecipient <> names asking (`elem` whichSource) <> foldMap (slotNames asking) boundRecipient
+damagePatternNames asking =
+  Const.getConst
+    . Children.damagePatternChildren
+      Children.MkDamagePatternChildren
+        { Children.damageFilter = Const.Const . filterNames asking,
+          Children.damageRecipient = Const.Const . recipientNames asking,
+          Children.damageObject = \oid -> Const.Const (names asking (== oid)),
+          Children.damageSlot = Const.Const . slotNames asking
+        }
 
 activeLaterPaymentNames :: (Monoid r) => Asking r -> ActiveLaterPayment.ActiveLaterPayment -> r
 activeLaterPaymentNames asking = Const.getConst . Children.activeLaterPaymentChildren (storedVisitors asking)
@@ -906,33 +910,22 @@ libraryPlacementNames asking x = case x of
   LibraryPlacement.BeneathOrBottom quantity -> quantityNames asking quantity
 
 manaAdditionNames :: (Monoid r) => Asking r -> ManaAddition.ManaAddition -> r
-manaAdditionNames asking x = case x of
-  ManaAddition.MkManaAddition player production count _retention restriction rider whenSpent -> playerRefNames asking player <> manaProductionNames asking production <> quantityNames asking count <> foldMap (manaRestrictionNames asking) restriction <> foldMap (manaRiderNames asking) rider <> foldMap (whenSpentNames asking) whenSpent
-
-manaProductionNames :: (Monoid r) => Asking r -> ManaProduction.ManaProduction -> r
-manaProductionNames asking x = case x of
-  ManaProduction.OfType _manaType -> mempty
-  ManaProduction.AnyColor _ -> mempty
-  ManaProduction.Chosen -> mempty
-  ManaProduction.SnowSymbol -> mempty
-  ManaProduction.Noted -> mempty
-  ManaProduction.CouldProduce (CouldProduce.MkCouldProduce among _types) -> filterNames asking among
-  ManaProduction.Pooled manaCount -> manaCountNames asking manaCount
-  ManaProduction.ProducedByTapped -> slotNames asking Binding.Engine.manaSource
-  ManaProduction.InCommanderIdentity -> mempty
-  ManaProduction.Circled -> mempty
-
-manaCountNames :: (Monoid r) => Asking r -> ManaCount.ManaCount -> r
-manaCountNames asking x = case x of
-  ManaCount.MkManaCount player _filter_ -> playerRefNames asking player
+manaAdditionNames asking = Const.getConst . Children.manaAdditionChildren (manaVisitors asking)
 
 manaRestrictionNames :: (Monoid r) => Asking r -> ManaRestriction.ManaRestriction -> r
-manaRestrictionNames asking x = case x of
-  ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp _prohibits _paysGeneric -> foldMap (filterNames asking) casts <> foldMap (filterNames asking) activations <> foldMap (keywordDesignatorNames asking) keywordActivations <> foldMap (filterNames asking) unlocks <> foldMap (filterNames asking) turnsFaceUp
+manaRestrictionNames asking = Const.getConst . Children.manaRestrictionChildren (manaVisitors asking)
 
-manaRiderNames :: (Monoid r) => Asking r -> ManaRider.ManaRider -> r
-manaRiderNames asking x = case x of
-  ManaRider.MkManaRider condition _effect -> filterNames asking condition
+-- Parun.Engine.Children's traversal at Const. Mana's type names no object and
+-- reads no history.
+manaVisitors :: (Monoid r) => Asking r -> Children.ManaChildren (Const.Const r)
+manaVisitors asking =
+  Children.manaLeaves
+    { Children.manaCriterion = Const.Const . filterNames asking,
+      Children.manaQuantity = Const.Const . quantityNames asking,
+      Children.manaPlayer = Const.Const . playerRefNames asking,
+      Children.manaSlot = Const.Const . slotNames asking,
+      Children.manaDesignator = Const.Const . keywordDesignatorNames asking
+    }
 
 measuresNames :: (Monoid r) => Asking r -> Measures.Measures -> r
 measuresNames asking x = case x of
@@ -1327,10 +1320,6 @@ triggeredAbilityNames asking onCard onAbility = Const.getConst . Children.trigge
 untapRestrictionNames :: (Monoid r) => Asking r -> UntapRestriction.UntapRestriction -> r
 untapRestrictionNames asking x = case x of
   UntapRestriction.MkUntapRestriction affected _hold while -> affectedNames asking affected <> foldMap (conditionNames asking) while
-
-whenSpentNames :: (Monoid r) => Asking r -> WhenSpent.WhenSpent -> r
-whenSpentNames asking x = case x of
-  WhenSpent.MkWhenSpent casts _ability -> filterNames asking casts
 
 whichCountersNames :: (Monoid r) => Asking r -> (keyword -> r) -> WhichCounters.WhichCounters keyword -> r
 whichCountersNames asking onKeyword x = case x of
