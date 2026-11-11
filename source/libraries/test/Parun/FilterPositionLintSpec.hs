@@ -1924,9 +1924,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- NOT vacuous: the pool authors the operand, and every card that does is
     -- ACCEPTED here rather than skipped.
     --
-    -- At most, against the mana value: Celestine, the Living Saint; Ratchet,
-    -- Field Medic, through a DELAYED ability (CR 603.12's reflexive, whose slot is
-    -- baked and matched exactly as an ordinary trigger's is); Venerable
+    -- At most, against the mana value: Celestine, the Living Saint; Moseo,
+    -- Vein's New Dean, in an up-to-one slot; Ratchet, Field Medic, through a
+    -- DELAYED ability (CR 603.12's reflexive, whose slot is baked and matched
+    -- exactly as an ordinary trigger's is); Venerable
     -- Warsinger, whose X is CR 603.2's own event amount; Stir the Grave, the first
     -- on a SPELL, whose X CR 601.2b announces one step before CR 601.2c chooses the
     -- target; Synthetic Borrowed Exhumation, the first whose slot is also JOINTLY
@@ -1963,6 +1964,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "each author's one operand is in the slot that names its bound"
       enclosingAmountCounts
       [ ("Celestine, the Living Saint", 1),
+        ("Moseo, Vein's New Dean", 1),
         ("Ratchet, Field Medic", 1),
         ("Venerable Warsinger", 1),
         ("Stir the Grave", 1),
