@@ -34,6 +34,7 @@ import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.ExiledPile as ExiledPile
+import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
@@ -209,6 +210,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.Arithmetic (Arithmetic.Negate (Quantity.Literal (-2))))
       " {\"type\":\"Negate\",\"value\":{\"type\":\"Literal\",\"value\":-2}} "
+  -- Mathemagics' 2 to the X on the wire, tagged by Quantity.
+  Spec.it s "Exponentiation" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.Arithmetic (Arithmetic.Exponentiation (Exponentiation.MkExponentiation (Quantity.Literal 2) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))))
+      " {\"type\":\"Exponentiation\",\"value\":{\"base\":{\"type\":\"Literal\",\"value\":2},\"exponent\":{\"type\":\"InSlot\",\"value\":\"X\"}}} "
   -- Rush of Blood's floored X on the wire.
   Spec.it s "NonNegative, over a measure" $
     Common.assertCodec

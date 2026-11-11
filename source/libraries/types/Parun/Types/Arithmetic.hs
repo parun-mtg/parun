@@ -1,6 +1,7 @@
 module Parun.Types.Arithmetic where
 
 import qualified Data.Traversable as Traversable
+import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.Quotient as Quotient
 import qualified Parun.Types.Times as Times
@@ -17,6 +18,8 @@ data Arithmetic quantity
     Quotient (Quotient.Quotient quantity)
   | -- | CR 107.1: one quantity times another; see Parun.Types.Times.
     Times (Times.Times quantity)
+  | -- | CR 107.1: a base raised to an exponent; see Parun.Types.Exponentiation.
+    Exponentiation (Exponentiation.Exponentiation quantity)
   | -- | The negation of the inner quantity -- the minus a card prints in front
     -- of a value, as in "-X/-X". CR 107.1b: a game value may go negative; a
     -- count reader saturates at 0.
@@ -36,5 +39,6 @@ instance Traversable Arithmetic where
     Plus (Plus.MkPlus left right) -> fmap Plus (Plus.MkPlus <$> f left <*> f right)
     Quotient (Quotient.MkQuotient rounding inner divisor) -> fmap Quotient (Quotient.MkQuotient rounding <$> f inner <*> f divisor)
     Times (Times.MkTimes factor inner) -> fmap Times (Times.MkTimes <$> f factor <*> f inner)
+    Exponentiation (Exponentiation.MkExponentiation base power) -> fmap Exponentiation (Exponentiation.MkExponentiation <$> f base <*> f power)
     Negate inner -> fmap Negate (f inner)
     NonNegative inner -> fmap NonNegative (f inner)

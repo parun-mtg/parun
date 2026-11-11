@@ -511,6 +511,7 @@ printedBoxQuantity quantity = case quantity of
     Arithmetic.Plus (Plus.MkPlus left right) -> printedBoxQuantity left && printedBoxQuantity right
     Arithmetic.Quotient {} -> False
     Arithmetic.Times {} -> False
+    Arithmetic.Exponentiation {} -> False
     Arithmetic.NonNegative {} -> False
     Arithmetic.Negate inner -> printedBoxQuantity inner
   Quantity.Type.AtMost {} -> False
