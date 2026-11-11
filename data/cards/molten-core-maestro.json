@@ -145,8 +145,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Goblin",
-          "Bard"
+          "Bard",
+          "Goblin"
         ],
         "types": [
           "Creature"

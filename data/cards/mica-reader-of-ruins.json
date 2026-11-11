@@ -138,8 +138,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Artificer"
+          "Artificer",
+          "Human"
         ],
         "supertypes": [
           "Legendary"
