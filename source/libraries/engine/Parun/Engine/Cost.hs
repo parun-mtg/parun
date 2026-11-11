@@ -230,23 +230,24 @@ insteadOfManaCost mana face =
 -- (CR 202.3e); the rulings' "the only legal choice for X is 0" is CR 107.3b
 -- and falls out, neither cost having a variable.
 permissionCost :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword
-permissionCost alternative face = paidInstead alternative face Cost.MkCost {Cost.mana = Nothing, Cost.components = Face.additionalCosts face}
+permissionCost alternative face = paidInstead alternative face Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = Face.additionalCosts face}
 
--- permissionCost laid over `cost`, the printed cost a candidate already priced:
--- its mana replaced, its components kept (CR 118.9d), so a choice cost
--- `choiceVariants` expanded survives (Parun.Types.CastFromZone.alternativeCost).
+-- permissionCost laid over `cost`, what a candidate adds to the printed mana
+-- cost: the alternative's mana and components first, `cost`'s after (CR
+-- 118.9d), so a choice cost `choiceVariants` expanded survives
+-- (Parun.Types.CastFromZone.alternativeCost).
 paidInstead :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
-paidInstead alternative face cost = case alternative of
-  PermissionCost.InsteadOfManaCost mana -> cost {Cost.mana = Just mana}
+paidInstead alternative face = plus $ case alternative of
+  PermissionCost.InsteadOfManaCost mana -> Cost.MkCost {Cost.mana = Just mana, Cost.components = []}
   PermissionCost.WaterbendManaValue ->
     Cost.MkCost
       { Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic manaValue | manaValue > 0]),
-        Cost.components = CostComponent.WaterbendInstead manaValue : Cost.components cost
+        Cost.components = [CostComponent.WaterbendInstead manaValue]
       }
   PermissionCost.PayLifeManaValue ->
     Cost.MkCost
       { Cost.mana = Just (ManaCost.MkManaCost []),
-        Cost.components = [CostComponent.PayLife (CostAmount.Fixed manaValue) | manaValue > 0] <> Cost.components cost
+        Cost.components = [CostComponent.PayLife (CostAmount.Fixed manaValue) | manaValue > 0]
       }
   where
     manaValue = Integer.toNaturalSaturating (maybe 0 Quantity.manaCostValue (Face.manaCost face))

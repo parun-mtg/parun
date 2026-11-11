@@ -1,0 +1,201 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Zaffai and the Tempests",
+            "label": "zaffai"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw1"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw2"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw3"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Eaten Alive",
+            "label": "eaten"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Under Zaffai and the Tempests, Eaten Alive with no creature to sacrifice is cast for its additional {3}{B} alone: four Swamps exile Hill Giant, its own {B} unpaid",
+  "note": "CR 118.9d: additional costs are applied to the alternative cost; Zaffai's ruling lets them be paid.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePlayPermission",
+          "with": [
+            "$zaffai",
+            {
+              "alternativeCost": {
+                "type": "InsteadOfManaCost",
+                "value": []
+              },
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "You"
+                },
+                "zone": "Hand"
+              },
+              "limit": "OnceEachOfYourTurns",
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Instant"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Sorcery"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "cost": [
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Black"
+              }
+            },
+            {
+              "type": "Generic",
+              "value": 3
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Black"
+              }
+            }
+          ],
+          "mana": [
+            "$sw1",
+            "$sw2",
+            "$sw3",
+            "$sw4"
+          ],
+          "object": "$eaten",
+          "targets": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$sw4",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Zaffai and the Tempests",
+            "label": "zaffai"
+          },
+          {
+            "card": "Swamp",
+            "label": "sw1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Crashing Wave",
+            "label": "wave"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Under Zaffai and the Tempests, Crashing Wave is cast paying only its mandatory waterbend {X}: X = 1 off one Swamp taps Hill Giant and stuns it, its {U}{U} unpaid",
+  "note": "CR 118.9d: a mandatory additional cost is still paid under an alternative cost, per Zaffai's ruling.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePlayPermission",
+          "with": [
+            "$zaffai",
+            {
+              "alternativeCost": {
+                "type": "InsteadOfManaCost",
+                "value": []
+              },
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "You"
+                },
+                "zone": "Hand"
+              },
+              "limit": "OnceEachOfYourTurns",
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Instant"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Sorcery"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ],
+          "mana": [
+            "$sw1"
+          ],
+          "object": "$wave",
+          "targets": [
+            "$giant"
+          ],
+          "x": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$giant",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$sw1",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

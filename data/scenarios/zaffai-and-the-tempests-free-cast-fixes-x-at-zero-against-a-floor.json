@@ -1,0 +1,157 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Zaffai and the Tempests",
+            "label": "zaffai"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mind Grind",
+            "label": "grind"
+          },
+          {
+            "card": "Divination",
+            "label": "div"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Under Zaffai and the Tempests, Mind Grind is refused, X being fixed at 0 below its floor, while Divination is still cast free",
+  "note": "CR 107.3b, 101.1; Zaffai's ruling: X is 0 for a spell cast this way.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [],
+          "object": "$grind",
+          "x": 0
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePlayPermission",
+          "with": [
+            "$zaffai",
+            {
+              "alternativeCost": {
+                "type": "InsteadOfManaCost",
+                "value": []
+              },
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "You"
+                },
+                "zone": "Hand"
+              },
+              "limit": "OnceEachOfYourTurns",
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Instant"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Sorcery"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "$div"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Zaffai and the Tempests",
+            "label": "zaffai"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rout",
+            "label": "rout"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Under Zaffai and the Tempests, Rout is cast in the beginning of combat for its {2} more alone: two of three Plains destroy Hill Giant, its {3}{W}{W} unpaid",
+  "note": "CR 601.3c, 118.9d: the flash permission's added cost is applied to the alternative cost.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChoosePlayPermission",
+          "with": [
+            "$zaffai",
+            {
+              "alternativeCost": {
+                "type": "InsteadOfManaCost",
+                "value": []
+              },
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "You"
+                },
+                "zone": "Hand"
+              },
+              "limit": "OnceEachOfYourTurns",
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Instant"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Sorcery"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            null
+          ],
+          "object": "$rout"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$p3",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
+  ]
+}
