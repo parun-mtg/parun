@@ -220,10 +220,9 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
             -- first time again.
             TriggerFrequency.FirstTimeEachTurn -> declarationsOf attacker gs <= 1
           -- Asked of the game the event left (CR 603.2), never re-checked as
-          -- TriggeredAbility.intervening would be (CR 603.4). That it is not the
-          -- live game is a regression fence here and in the Declaration arm: no
-          -- scenario has a state-based action change the answer between the
-          -- declaration and the gather.
+          -- TriggeredAbility.intervening would be (CR 603.4). data/scenarios's
+          -- ruby-daring-tracker-triggers-though-the-big-attacker-dies-before-the-trigger-is-put
+          -- proves it.
           && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) context atEvent bearer) (AttackerTrigger.while t)
   -- CR 508.3b's "is attacked" is once per TARGET: Event.Trigger.batchScoped
   -- collapses the declaration's group. CR 508.3e's "[a player] attacks" is
@@ -269,7 +268,10 @@ attacks context board atEvent gs bearer you trigger event = case (trigger, event
                 Nothing -> True
                 Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
            in length (filter qualifies (declarationsBy attacker gs)) <= 1
-      -- As the Attacker arm's: asked of the game the event left, never re-checked (CR 603.4).
+      -- As the Attacker arm's: asked of the game the event left, never re-checked
+      -- (CR 603.4). data/scenarios's
+      -- the-chief-warg-triggers-though-the-big-attacker-dies-before-the-trigger-is-put
+      -- proves it.
       && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) context atEvent bearer) (DeclarationTrigger.while t)
   -- CR 508.3f / 509.1h: the event alone answers it. Combat.blockers would
   -- answer for the board at scan time, and rule 509.1h's last sentence keeps
