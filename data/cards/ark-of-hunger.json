@@ -41,7 +41,7 @@
                             "type": "InSlot",
                             "value": "milled"
                           },
-                          "zone": "Graveyard"
+                          "zone": "AnyPublic"
                         }
                       }
                     ]
