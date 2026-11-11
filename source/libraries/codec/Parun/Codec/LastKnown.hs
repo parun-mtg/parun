@@ -17,6 +17,7 @@ import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordInstance as KeywordInstance
+import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ModeIndex as ModeIndex
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerChoice as PlayerChoice
@@ -32,6 +33,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.Zone as Zone
 
 -- | Every axis, none derivable from another: the type's own haddock says why
@@ -61,6 +63,8 @@ codec = Fields.object $ do
   paidCosts <- Fields.defaulted "paidCosts" Map.empty (Common.keyedList (Common.keyValue Keyword.codec (Common.keyedList (Common.keyValue KeywordInstance.codec Common.natural)))) LastKnown.paidCosts
   prototyped <- Fields.defaulted "prototyped" False Common.boolean LastKnown.prototyped
   announcedX <- Fields.defaulted "announcedX" Nothing (Common.maybe Common.natural) LastKnown.announcedX
+  manaSpent <- Fields.defaulted "manaSpent" (Mana.MkMana []) Mana.codec LastKnown.manaSpent
+  manaSpentOnX <- Fields.defaulted "manaSpentOnX" Nothing (Common.maybe Mana.codec) LastKnown.manaSpentOnX
   chosenModes <- Fields.defaulted "chosenModes" Map.empty (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.naturalMap ModeIndex.codec Common.natural))) LastKnown.chosenModes
   controlClock <- Fields.defaulted "controlClock" Map.empty (Common.keyedList ControlClock.entry) LastKnown.controlClock
   zone <- Fields.required "zone" Zone.codec LastKnown.zone
@@ -93,6 +97,8 @@ codec = Fields.object $ do
         LastKnown.paidCosts = paidCosts,
         LastKnown.prototyped = prototyped,
         LastKnown.announcedX = announcedX,
+        LastKnown.manaSpent = manaSpent,
+        LastKnown.manaSpentOnX = manaSpentOnX,
         LastKnown.chosenModes = chosenModes,
         LastKnown.controlClock = controlClock,
         LastKnown.zone = zone,
