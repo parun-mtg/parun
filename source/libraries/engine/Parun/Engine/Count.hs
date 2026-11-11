@@ -154,11 +154,15 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
                 -- Nothing for an evaluation aimed at no object, or at one whose cast
                 -- is not in this turn's log: CR 707.10's copy was never cast.
                 EventShape.SpellCast CastWindow.BeforeEvaluated -> foldMap (fmap GameEvent.SpellCast) (Filter.evaluated context >>= \spell -> Game.castsBefore spell gs)
-                _ -> fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+                EventShape.SpellCast CastWindow.OtherThanEvaluated -> List.filter (not . isEvaluatedCast) thisTurn
+                _ -> thisTurn
+              thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+              isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
               earlier = case shape of
                 EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (GameState.castsBeforeThisTurn gs))
                 EventShape.SpellCast CastWindow.ThisTurn -> []
                 EventShape.SpellCast CastWindow.BeforeEvaluated -> []
+                EventShape.SpellCast CastWindow.OtherThanEvaluated -> []
                 EventShape.MovedBetween {} -> []
                 EventShape.MovedFrom {} -> []
                 EventShape.CardArrivedIn {} -> []
