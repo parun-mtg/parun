@@ -55,6 +55,7 @@ import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MovedBetween as MovedBetween
@@ -795,8 +796,8 @@ data View = MkView
     preparedSpell :: Bool,
     -- CR 400.7d / CR 107.4h: the production tags of the mana that was spent to
     -- cast the spell this candidate is, or was, or to activate the CR 602.2a
-    -- ability it is -- read off Object.manaSpent, and empty where there is no
-    -- object to read it off, both for the reasons `designations` above gives. Its
+    -- ability it is -- read off Object.manaSpent, or LastKnown.manaSpent for one
+    -- that has left (CR 608.2h), and empty where there is neither. Its
     -- readers are Parun.Engine.Quantity's TagWasSpent arm, answering Berg
     -- Strider's and Forsworn Paladin's clause conditions, and its
     -- TagWasSpentOfOwnColor arm, answering Boreal Outrider's. `manaSpent` below
@@ -815,9 +816,8 @@ data View = MkView
     -- 400.7d's exception to the forgetting (see Parun.Types.Object.manaSpent).
     manaSpentTagColors :: Map.Map ProductionTag.ProductionTag (Set.Set Color.Color),
     -- | CR 601.2h: the mana spent to pay for this candidate -- the units
-    -- `manaSpentTagColors` above classifies, read off the same Object.manaSpent
-    -- and none where there is no object to read it off. Its one reader is
-    -- Parun.Engine.Quantity's ManaSpent arm, answering rule 702.191a's "the
+    -- `manaSpentTagColors` above classifies, read off the same records. Its one
+    -- reader is Parun.Engine.Quantity's ManaSpent arm, answering rule 702.191a's "the
     -- amount of mana spent to cast that spell" and Converge's "the number of
     -- colors of mana spent to cast this spell".
     manaSpent :: Mana.Mana,
@@ -870,6 +870,19 @@ data View = MkView
     -- permanent whose Modification this could be.
     grantsStationToughness :: Bool
   }
+
+-- CR 400.7d / 107.4h: `manaSpentTagColors` of a mana-spent record, for the
+-- live builder and Parun.Engine.Count.lastKnownView alike. unionsWith and not
+-- the Map monoid, which is left-biased: two units sharing a tag must contribute
+-- BOTH their colours, or a spell paid with one snow Forest and one snow Mountain
+-- answers for whichever came first.
+spentTagColors :: Mana.Mana -> Map.Map ProductionTag.ProductionTag (Set.Set Color.Color)
+spentTagColors spent =
+  Map.unionsWith
+    Set.union
+    [ Map.fromSet (const (foldMap Set.singleton (ManaSymbolText.colorOfManaType (ManaUnit.manaType unit)))) (ManaUnit.tags unit)
+    | unit <- Mana.unwrap spent
+    ]
 
 -- The view of a PLAYER candidate: no card types, no colours, no controller --
 -- a player is not an object (CR 109.1) and has none of those. The player's own

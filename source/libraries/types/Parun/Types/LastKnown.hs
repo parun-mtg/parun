@@ -16,6 +16,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordInstance as KeywordInstance
+import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerChoice as PlayerChoice
@@ -43,7 +44,7 @@ import qualified Parun.Types.Zone as Zone
 -- 613.4c), so the record has to be taken beside it rather than out of it. Nor is
 -- the ATTACHMENT -- CR 109.3 names "what an Aura enchants" as an example of what
 -- is not one. The COPIABLE values, the OWNER, the CHOSEN NAMES, PLAYER, COLOUR and SUBTYPE, the
--- COMBAT STATUS, the PROTECTOR, the COSTS PAID and the CONTROL CLOCK sit beside
+-- COMBAT STATUS, the PROTECTOR, the COSTS PAID, the MANA SPENT and the CONTROL CLOCK sit beside
 -- them for the reasons their own fields give.
 --
 -- Every field STRICT (!): entries are keyed by an id that no longer exists and
@@ -235,6 +236,14 @@ data LastKnown = MkLastKnown
     -- Object.announcedX as it left, so an enters-the-battlefield ability whose
     -- source is already gone still reads it (Game.announcedXOf).
     announcedX :: !(Maybe Natural.Natural),
+    -- | CR 601.2h / 608.2h: the mana spent to cast it -- Object.manaSpent as it
+    -- left, so a cast trigger whose spell was countered still reads it (Muse
+    -- Seeker's ruling). data/scenarios/muse-seeker-reads-the-mana-spent-on-a-
+    -- countered-spell.json is the proof.
+    manaSpent :: !Mana.Mana,
+    -- | CR 107.3 / 608.2h: Object.manaSpentOnX as it left, `manaSpent`'s
+    -- sibling.
+    manaSpentOnX :: !(Maybe Mana.Mana),
     -- | CR 700.2b / 113.7a: the modes its triggered abilities had chosen --
     -- Object.chosenModes as it left, so a trigger whose source is gone before
     -- CR 603.3 places it still bars them (Parun.Engine.Engine.placeBorne).

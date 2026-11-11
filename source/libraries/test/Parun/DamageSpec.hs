@@ -65,6 +65,7 @@ import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LifeChange as LifeChange
+import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.Object as Object
@@ -824,6 +825,8 @@ lastKnownRiderSpec s registry =
                     LastKnown.paidCosts = Map.empty,
                     LastKnown.prototyped = False,
                     LastKnown.announcedX = Nothing,
+                    LastKnown.manaSpent = Mana.MkMana [],
+                    LastKnown.manaSpentOnX = Nothing,
                     LastKnown.chosenModes = Map.empty,
                     -- CR 702.30a: nothing here asks about an echo window.
                     LastKnown.controlClock = Map.empty,

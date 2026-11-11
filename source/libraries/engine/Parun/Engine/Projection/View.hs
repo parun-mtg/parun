@@ -70,7 +70,6 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -856,17 +855,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- the vocabulary asks (see the field's own comment in Parun.Engine.Filter).
       -- The object may be a CR 602.2a ability on the stack as well as a spell or
       -- the permanent one became; every one of them carries the field.
-      --
-      -- unionWith and not the Map monoid, which is left-biased: two units sharing
-      -- a tag must contribute BOTH their colours, or a spell paid with one snow
-      -- Forest and one snow Mountain answers for whichever came first.
-      Filter.manaSpentTagColors =
-        Map.unionsWith
-          Set.union
-          [ Map.fromSet (const (foldMap Set.singleton (ManaSymbolText.colorOfManaType (ManaUnit.manaType unit)))) (ManaUnit.tags unit)
-          | object <- Maybe.maybeToList (Game.lookupObject oid gs),
-            unit <- Mana.unwrap (Object.manaSpent object)
-          ],
+      Filter.manaSpentTagColors = foldMap (Filter.spentTagColors . Object.manaSpent) (Game.lookupObject oid gs),
       -- CR 601.2h: the same record, unclassified.
       Filter.manaSpent = maybe (Mana.MkMana []) Object.manaSpent (Game.lookupObject oid gs),
       -- CR 107.3 / 601.2h off the record the payment wrote beside it.

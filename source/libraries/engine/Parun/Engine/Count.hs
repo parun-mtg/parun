@@ -1075,6 +1075,11 @@ lastKnownView peers oid gs lastKnown =
             _ -> Nothing,
           Filter.blocking = LastKnown.blocking lastKnown,
           Filter.paidCosts = LastKnown.paidCosts lastKnown,
+          -- CR 601.2h / 608.2h: what was spent to cast it, as it left -- a
+          -- countered spell's still counts (Muse Seeker's ruling).
+          Filter.manaSpentTagColors = Filter.spentTagColors (LastKnown.manaSpent lastKnown),
+          Filter.manaSpent = LastKnown.manaSpent lastKnown,
+          Filter.manaSpentOnX = Maybe.fromMaybe (Mana.MkMana []) (LastKnown.manaSpentOnX lastKnown),
           -- CR 608.2h: the stickers it had as it left, read off their sheets as
           -- the live view reads them. _____ Balls of Fire destroyed in response
           -- (Parun.StickerSpec) is the proof.
