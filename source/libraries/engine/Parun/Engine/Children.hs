@@ -4,6 +4,7 @@ import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Engine.Binding as Binding.Engine
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -128,6 +129,7 @@ import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostScale as CostScale
 import qualified Parun.Types.CostSubject as CostSubject
+import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
@@ -280,9 +282,12 @@ import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
+import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
+import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.ManaSpecification as ManaSpecification
+import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
@@ -446,6 +451,7 @@ import qualified Parun.Types.VoteObjects as VoteObjects
 import qualified Parun.Types.VotePlayers as VotePlayers
 import qualified Parun.Types.VotesReceived as VotesReceived
 import qualified Parun.Types.Ward as Ward
+import qualified Parun.Types.WhenSpent as WhenSpent
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.While as While
 import qualified Parun.Types.WithCounters as WithCounters
@@ -3240,3 +3246,117 @@ perCreatureChildren :: (Applicative f) => CombatChildren f -> PerCreature.PerCre
 perCreatureChildren c share = case share of
   PerCreature.Fixed cost -> PerCreature.Fixed <$> combatCost c cost
   PerCreature.Counted quantity -> PerCreature.Counted <$> combatQuantity c quantity
+
+-- | One visitor per kind of child a mana payload holds: an addition (CR
+-- 106.1), its spending restriction and rider (CR 106.6), and a clause spending
+-- mana as though it were another type (CR 609.4b).
+data ManaChildren f = MkManaChildren
+  { -- | A Filter a field holds: a restriction's spells, a rider's objects, the
+    -- permanents a type could come from (CR 106.7).
+    manaCriterion :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | How much mana an addition adds.
+    manaQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A player a field names: who adds the mana, whose pool is counted.
+    manaPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | The slot a production reads: the permanent tapped for mana (CR 106.12a).
+    manaSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The keyword whose activations a restriction admits, whole.
+    manaDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword),
+    -- | The mana a spend-as-though clause speaks about (CR 609.4b), whole.
+    manaSpent :: ManaFilter.ManaFilter -> f ManaFilter.ManaFilter,
+    -- | The types a spend-as-though clause lets that mana pay as (CR 609.4b), whole.
+    manaAsThough :: Set.Set ManaType.ManaType -> f (Set.Set ManaType.ManaType)
+  }
+
+-- | Every child of a mana payload left as it is: the base a walk overrides.
+manaLeaves :: (Applicative f) => ManaChildren f
+manaLeaves =
+  MkManaChildren
+    { manaCriterion = pure,
+      manaQuantity = pure,
+      manaPlayer = pure,
+      manaSlot = pure,
+      manaDesignator = pure,
+      manaSpent = pure,
+      manaAsThough = pure
+    }
+
+-- | A mana addition's children (CR 106.1). Its retention is left as it is.
+manaAdditionChildren :: (Applicative f) => ManaChildren f -> ManaAddition.ManaAddition -> f ManaAddition.ManaAddition
+manaAdditionChildren c (ManaAddition.MkManaAddition adder production count retention restriction rider whenSpent) =
+  ManaAddition.MkManaAddition
+    <$> manaPlayer c adder
+    <*> manaProductionChildren c production
+    <*> manaQuantity c count
+    <*> pure retention
+    <*> traverse (manaRestrictionChildren c) restriction
+    <*> traverse (manaRiderChildren c) rider
+    <*> traverse (\(WhenSpent.MkWhenSpent casts ability) -> WhenSpent.MkWhenSpent <$> manaCriterion c casts <*> pure ability) whenSpent
+
+-- | A mana production's children. The types a permanent could produce (CR
+-- 106.7) and the counted pool's types (CR 701.10f) are left as they are.
+manaProductionChildren :: (Applicative f) => ManaChildren f -> ManaProduction.ManaProduction -> f ManaProduction.ManaProduction
+manaProductionChildren c production = case production of
+  ManaProduction.OfType _ -> pure production
+  ManaProduction.AnyColor _ -> pure production
+  ManaProduction.Chosen -> pure production
+  ManaProduction.SnowSymbol -> pure production
+  ManaProduction.Noted -> pure production
+  ManaProduction.CouldProduce (CouldProduce.MkCouldProduce among types) -> fmap ManaProduction.CouldProduce (CouldProduce.MkCouldProduce <$> manaCriterion c among <*> pure types)
+  ManaProduction.Pooled (ManaCount.MkManaCount whose filter_) -> fmap ManaProduction.Pooled (ManaCount.MkManaCount <$> manaPlayer c whose <*> pure filter_)
+  ManaProduction.ProducedByTapped -> production <$ manaSlot c Binding.Engine.manaSource
+  ManaProduction.InCommanderIdentity -> pure production
+  ManaProduction.Circled -> pure production
+
+-- | A spending restriction's children (CR 106.6). Whether it prohibits and
+-- whether it pays generic costs are left as they are.
+manaRestrictionChildren :: (Applicative f) => ManaChildren f -> ManaRestriction.ManaRestriction -> f ManaRestriction.ManaRestriction
+manaRestrictionChildren c (ManaRestriction.MkManaRestriction casts activations keywordActivations unlocks turnsFaceUp prohibits paysGeneric) =
+  ManaRestriction.MkManaRestriction
+    <$> traverse (manaCriterion c) casts
+    <*> traverse (manaCriterion c) activations
+    <*> traverse (manaDesignator c) keywordActivations
+    <*> traverse (manaCriterion c) unlocks
+    <*> traverse (manaCriterion c) turnsFaceUp
+    <*> pure prohibits
+    <*> pure paysGeneric
+
+-- | A mana rider's children (CR 106.6). Its effect is left as it is.
+manaRiderChildren :: (Applicative f) => ManaChildren f -> ManaRider.ManaRider -> f ManaRider.ManaRider
+manaRiderChildren c (ManaRider.MkManaRider condition effect) =
+  ManaRider.MkManaRider <$> manaCriterion c condition <*> pure effect
+
+-- | A spend-as-though clause's children (CR 609.4b). Whether it is the only
+-- way that mana pays is left as it is.
+spendManaAsThoughChildren :: (Applicative f) => ManaChildren f -> SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough
+spendManaAsThoughChildren c (SpendManaAsThough.MkSpendManaAsThough which asThough only casting) =
+  SpendManaAsThough.MkSpendManaAsThough
+    <$> manaSpent c which
+    <*> manaAsThough c asThough
+    <*> pure only
+    <*> traverse (manaCriterion c) casting
+
+-- | One visitor per kind of child a damage pattern holds: the damage a
+-- prevention or replacement effect matches (CR 614.1a, 615.1a).
+data DamagePatternChildren f = MkDamagePatternChildren
+  { -- | A Filter a field holds: the source's, the recipient's.
+    damageFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | The one recipient the damage is dealt to, whole.
+    damageRecipient :: Recipient.Recipient -> f Recipient.Recipient,
+    -- | The one source the damage is dealt by (CR 400.7).
+    damageObject :: ObjectId.ObjectId -> f ObjectId.ObjectId,
+    -- | The slot the recipient is bound to.
+    damageSlot :: SlotName.SlotName -> f SlotName.SlotName
+  }
+
+-- | A damage pattern's children. Its damage kind and the recipient's relation
+-- to the controller are left as they are.
+damagePatternChildren :: (Applicative f) => DamagePatternChildren f -> DamagePattern.DamagePattern -> f DamagePattern.DamagePattern
+damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource whatRecipient whoRecipient whichRecipient whichSource boundRecipient) =
+  DamagePattern.MkDamagePattern whichKind
+    <$> damageFilter c whatSource
+    <*> traverse (damageFilter c) whatRecipient
+    <*> pure whoRecipient
+    <*> traverse (damageRecipient c) whichRecipient
+    <*> traverse (damageObject c) whichSource
+    <*> traverse (damageSlot c) boundRecipient
