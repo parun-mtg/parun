@@ -1461,6 +1461,8 @@ data Context = MkContext
     -- through Parun.Engine.Condition.inheritedX -- an enters-the-battlefield
     -- trigger's alone, and off the entering PERMANENT, which CR 400.7 left with no
     -- bindings to stamp it on.
+    -- Parun.Engine.Projection.printedRowLives supplies the same X to a printed
+    -- entry replacement's "if" clause.
     --
     -- Empty in contextFor below, so a bound evaluated
     -- outside a target slot and outside a resolution reads no announcement. What that unfilled read

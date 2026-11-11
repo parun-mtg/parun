@@ -761,7 +761,9 @@ data Object = MkObject
     -- enters-the-battlefield triggered abilities. The replacement readers are CR
     -- 306.5b's intrinsic loyalty ability (Nissa, Steward of Elements) and a CR
     -- 614.1c row a CARD writes (Protean Hydra), both through
-    -- Parun.Engine.Quantity.substituteAnnouncedX, and a CR 614.1c "as [this]
+    -- Parun.Engine.Quantity.substituteAnnouncedX, a CR 614.1d row's "if" clause
+    -- (Slumbering Trudge), through Parun.Engine.Projection.printedRowLives, and
+    -- a CR 614.1c "as [this]
     -- enters" row's effects (Neverwinter Hydra), bound only while
     -- Parun.Engine.Resolve.Effect.runEntryEffect runs them; the trigger's is CR 601.2c's
     -- target count (Lost in the Maze), through Parun.Engine.Engine.placeBorne,
