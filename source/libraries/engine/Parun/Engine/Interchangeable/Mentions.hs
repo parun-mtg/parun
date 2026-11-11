@@ -18,8 +18,8 @@
 -- TriggerCondition, Keyword, Cost, PlayerEffect, ReplacementEffect, Condition,
 -- Duration, and the ability records: ActivatedAbility, TriggeredAbility,
 -- StaticAbility, PlayerStaticAbility, PrintedReplacement, CostReduction,
--- AlternativeCost, GrantedAbility) is matched there instead, its leaf types
--- discarded there.
+-- AlternativeCost, GrantedAbility, and Modal with its Mode, Clause and
+-- ModeSelection) is matched there instead, its leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -80,13 +80,11 @@ import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.CastingRestriction as CastingRestriction
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
-import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
-import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Condition as Condition
@@ -152,8 +150,6 @@ import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal
-import qualified Parun.Types.Mode as Mode
-import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MoveDuration as MoveDuration
@@ -162,8 +158,6 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
-import qualified Parun.Types.Optionality as Optionality
-import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
@@ -567,10 +561,6 @@ chosenCardInHandNames asking x = case x of
 chosenPermanentsNames :: (Monoid r) => Asking r -> ChosenPermanents.ChosenPermanents -> r
 chosenPermanentsNames asking x = case x of
   ChosenPermanents.MkChosenPermanents filter_ chooser count _zone -> filterNames asking filter_ <> playerRefNames asking chooser <> foldMap (quantityNames asking) (HowMany.quantity count)
-
-clauseNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Clause.Clause card ability -> r
-clauseNames asking onCard onAbility x = case x of
-  Clause.MkClause _ifTaken condition orElse optionality payGate effects -> foldMap (conditionNames asking) condition <> foldMap (orElseNames asking) orElse <> optionalityNames asking optionality <> foldMap (payGateNames asking) payGate <> foldMap (effectNames asking onCard onAbility) effects
 
 combatRestrictionNames :: (Monoid r) => Asking r -> CombatRestriction.CombatRestriction -> r
 combatRestrictionNames asking x = case x of
@@ -980,21 +970,21 @@ measuresNames :: (Monoid r) => Asking r -> Measures.Measures -> r
 measuresNames asking x = case x of
   Measures.MkMeasures _measure _comparison operand -> operandNames asking operand
 
+-- Parun.Engine.Children's traversal at Const.
 modalNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Modal.Modal card ability -> r
-modalNames asking onCard onAbility x = case x of
-  Modal.MkModal modes selection _memory shared -> foldMap (modeNames asking onCard onAbility) modes <> modeSelectionNames asking selection <> foldMap (clauseNames asking onCard onAbility) shared
-
-modeSelectionNames :: (Monoid r) => Asking r -> ModeSelection.ModeSelection -> r
-modeSelectionNames asking x = case x of
-  ModeSelection.ChooseExactly _ -> mempty
-  ModeSelection.ChooseExactlyWithRepeats _ -> mempty
-  ModeSelection.ChooseBetween _ -> mempty
-  ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> conditionNames asking condition <> modeSelectionNames asking ordinary <> modeSelectionNames asking instead
-  ModeSelection.ChooseUpTo quantity -> quantityNames asking quantity
-
-modeNames :: (Monoid r) => Asking r -> (card -> r) -> (ability -> r) -> Mode.Mode card ability -> r
-modeNames asking onCard onAbility x = case x of
-  Mode.MkMode clauses targetSlots -> foldMap (clauseNames asking onCard onAbility) clauses <> foldMap (slotNames asking) (Map.keys targetSlots) <> foldMap (targetSlotNames asking) targetSlots
+modalNames asking onCard onAbility =
+  Const.getConst
+    . Children.modalChildren
+      Children.MkModalChildren
+        { Children.modalInstead = Const.Const . conditionNames asking,
+          Children.modalQuantity = Const.Const . quantityNames asking,
+          Children.modalCondition = Const.Const . conditionNames asking,
+          Children.modalPlayer = Const.Const . playerRefNames asking,
+          Children.modalPayGate = Const.Const . payGateNames asking,
+          Children.modalEffect = Const.Const . effectNames asking onCard onAbility,
+          Children.modalSlot = Const.Const . slotNames asking,
+          Children.modalTargetSlot = Const.Const . targetSlotNames asking
+        }
 
 modificationNames :: (Monoid r) => Asking r -> (ability -> r) -> Modification.Modification ability -> r
 modificationNames asking onAbility x = case x of
@@ -1104,15 +1094,6 @@ operandNames asking x = case x of
   -- The other candidates' numbers: two objects alike in every respect read
   -- each other's, so the answer is the same for both.
   Operand.OfEachOtherCandidate _measure -> mempty
-
-optionalityNames :: (Monoid r) => Asking r -> Optionality.Optionality -> r
-optionalityNames asking x = case x of
-  Optionality.Mandatory -> mempty
-  Optionality.Optional playerRef -> playerRefNames asking playerRef
-
-orElseNames :: (Monoid r) => Asking r -> OrElse.OrElse -> r
-orElseNames asking x = case x of
-  OrElse.MkOrElse _siblings chooser _villainous -> playerRefNames asking chooser
 
 paidExpiryNames :: (Monoid r) => Asking r -> PaidExpiry.PaidExpiry -> r
 paidExpiryNames asking x = case x of

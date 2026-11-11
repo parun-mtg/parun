@@ -64,11 +64,13 @@ import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseGroup as ChooseGroup
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
+import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CommanderColors as CommanderColors
@@ -241,6 +243,8 @@ import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
+import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyTarget as ModifyTarget
@@ -261,6 +265,8 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.Optionality as Optionality
+import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
@@ -352,6 +358,7 @@ import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
 import qualified Parun.Types.TappedPermanent as TappedPermanent
 import qualified Parun.Types.TargetRestriction as TargetRestriction
+import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
@@ -2596,6 +2603,83 @@ grantedAbilityChildren c granted = case granted of
   GrantedAbility.SelfCostReduction reduction -> GrantedAbility.SelfCostReduction <$> costReductionChildren c reduction
   GrantedAbility.SelfAlternativeCost alternative -> GrantedAbility.SelfAlternativeCost <$> alternativeCostChildren c alternative
   GrantedAbility.SelfSpendManaAsThough clause -> GrantedAbility.SelfSpendManaAsThough <$> abilitySpendMana c clause
+
+-- | One visitor per kind of child a modal payload holds (CR 700.2): its modes,
+-- their clauses (CR 608.2c) and target slots (CR 115.1), and the instruction
+-- the chosen modes share.
+data ModalChildren card ability f = MkModalChildren
+  { -- | A mode selection's "instead" gate (CR 700.2), whole.
+    modalInstead :: Condition.Condition -> f Condition.Condition,
+    -- | A "choose up to" count (CR 700.2), whole.
+    modalQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A clause's own "if" gate (CR 608.2c), whole.
+    modalCondition :: Condition.Condition -> f Condition.Condition,
+    -- | Who announces an "or" (CR 608.2d) or answers a "may" (CR 603.5).
+    modalPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | A cost paid on resolution (CR 118.12), whole.
+    modalPayGate :: PayGate.PayGate -> f PayGate.PayGate,
+    -- | One of a clause's instructions, whole.
+    modalEffect :: Effect.Effect card ability -> f (Effect.Effect card ability),
+    -- | A mode's target slot's name (CR 601.2c).
+    modalSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | A mode's target slot (CR 601.2c), whole.
+    modalTargetSlot :: TargetSlot.TargetSlot -> f TargetSlot.TargetSlot
+  }
+
+-- | Every child of a modal payload left as it is: the base a walk overrides.
+modalLeaves :: (Applicative f) => ModalChildren card ability f
+modalLeaves =
+  MkModalChildren
+    { modalInstead = pure,
+      modalQuantity = pure,
+      modalCondition = pure,
+      modalPlayer = pure,
+      modalPayGate = pure,
+      modalEffect = pure,
+      modalSlot = pure,
+      modalTargetSlot = pure
+    }
+
+-- | A modal payload's children.
+modalChildren :: (Applicative f) => ModalChildren card ability f -> Modal.Modal card ability -> f (Modal.Modal card ability)
+modalChildren c (Modal.MkModal modes selection memory shared) =
+  Modal.MkModal
+    <$> traverse (modeChildren c) modes
+    <*> modeSelectionChildren c selection
+    <*> pure memory
+    <*> traverse (clauseChildren c) shared
+
+-- | How many modes a player chooses, its payload matched positionally.
+modeSelectionChildren :: (Applicative f) => ModalChildren card ability f -> ModeSelection.ModeSelection -> f ModeSelection.ModeSelection
+modeSelectionChildren c selection = case selection of
+  ModeSelection.ChooseExactly _ -> pure selection
+  ModeSelection.ChooseExactlyWithRepeats _ -> pure selection
+  ModeSelection.ChooseBetween _ -> pure selection
+  ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> fmap ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead <$> modalInstead c condition <*> modeSelectionChildren c ordinary <*> modeSelectionChildren c instead)
+  ModeSelection.ChooseUpTo quantity -> ModeSelection.ChooseUpTo <$> modalQuantity c quantity
+
+-- | A mode's children. Slots a visitor renames together merge.
+modeChildren :: (Applicative f) => ModalChildren card ability f -> Mode.Mode card ability -> f (Mode.Mode card ability)
+modeChildren c (Mode.MkMode clauses targetSlots) =
+  Mode.MkMode
+    <$> traverse (clauseChildren c) clauses
+    <*> fmap Map.fromList (traverse (\(name, target) -> (,) <$> modalSlot c name <*> modalTargetSlot c target) (Map.toList targetSlots))
+
+-- | A clause's children.
+clauseChildren :: (Applicative f) => ModalChildren card ability f -> Clause.Clause card ability -> f (Clause.Clause card ability)
+clauseChildren c (Clause.MkClause ifTaken condition orElse optionality payGate effects) =
+  Clause.MkClause ifTaken
+    <$> traverse (modalCondition c) condition
+    <*> traverse (\(OrElse.MkOrElse siblings chooser villainous) -> (\who -> OrElse.MkOrElse siblings who villainous) <$> modalPlayer c chooser) orElse
+    <*> optionalityChildren c optionality
+    <*> traverse (modalPayGate c) payGate
+    <*> traverse (modalEffect c) effects
+
+-- | Whether a clause is optional, and who answers its "may" (CR 603.5).
+optionalityChildren :: (Applicative f) => ModalChildren card ability f -> Optionality.Optionality -> f Optionality.Optionality
+optionalityChildren c optionality = case optionality of
+  Optionality.Mandatory -> pure optionality
+  Optionality.Optional who -> Optionality.Optional <$> modalPlayer c who
 
 -- | A set's members, each through a visitor; members the visitor maps together merge.
 traverseSet :: (Applicative f, Ord a) => (a -> f a) -> Set.Set a -> f (Set.Set a)
