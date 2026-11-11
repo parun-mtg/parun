@@ -167,8 +167,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Elder",
-          "Dragon"
+          "Dragon",
+          "Elder"
         ],
         "supertypes": [
           "Legendary"

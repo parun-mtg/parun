@@ -132,8 +132,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Inkling",
-          "Cat"
+          "Cat",
+          "Inkling"
         ],
         "types": [
           "Creature"

@@ -106,10 +106,6 @@
                       {
                         "type": "CopyStackObject",
                         "value": {
-                          "quantity": {
-                            "type": "Literal",
-                            "value": 1
-                          },
                           "ref": {
                             "type": "EachOnStack",
                             "value": {
