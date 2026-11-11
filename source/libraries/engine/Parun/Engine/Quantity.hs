@@ -51,6 +51,7 @@ import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.ExiledPile as ExiledPile
+import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
@@ -1302,13 +1303,18 @@ divide rounding n d
       Rounding.Up -> negate (div (negate n) d)
 
 -- CR 107.1: a calculation over its operands' values. Times is integral on both
--- sides, so nothing rounds; Negate has no floor here, CR 107.1b's "zero is used
--- instead" being NonNegative's or the readers' to apply.
+-- sides, so nothing rounds, nor does Exponentiation over a nonnegative
+-- exponent; a negative one would make a fraction CR 107.1a has the card round,
+-- no card prints one, and it reads 0 here. Negate has no floor here, CR
+-- 107.1b's "zero is used instead" being NonNegative's or the readers' to apply.
 calculate :: Arithmetic.Arithmetic Integer -> Integer
 calculate arithmetic = case arithmetic of
   Arithmetic.Plus (Plus.MkPlus a b) -> a + b
   Arithmetic.Quotient (Quotient.MkQuotient rounding a d) -> divide rounding a d
   Arithmetic.Times (Times.MkTimes factor a) -> factor * a
+  Arithmetic.Exponentiation (Exponentiation.MkExponentiation b e)
+    | e < 0 -> 0
+    | otherwise -> b ^ e
   Arithmetic.Negate a -> negate a
   Arithmetic.NonNegative a -> max 0 a
 

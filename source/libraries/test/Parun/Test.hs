@@ -398,6 +398,7 @@ import qualified Parun.Codec.ExpansionSpec
 import qualified Parun.Codec.ExpirySpec
 import qualified Parun.Codec.ExploitTriggerSpec
 import qualified Parun.Codec.ExploitedSpec
+import qualified Parun.Codec.ExponentiationSpec
 import qualified Parun.Codec.ExtraPhaseSpec
 import qualified Parun.Codec.ExtraTurnSpec
 import qualified Parun.Codec.ExtraVotesSpec
@@ -1837,6 +1838,7 @@ spec s registry corpus = do
   Parun.Codec.ThrowResultSpec.spec s
   Parun.Codec.TimedSpec.spec s
   Parun.Codec.TimesSpec.spec s
+  Parun.Codec.ExponentiationSpec.spec s
   Parun.Codec.TimestampSpec.spec s
   Parun.Codec.TogetherSpec.spec s
   Parun.Codec.TokenPatternSpec.spec s

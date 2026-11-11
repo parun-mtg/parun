@@ -18,6 +18,7 @@ import qualified Parun.Codec.DealtDamage as DealtDamage
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.Devotion as Devotion
 import qualified Parun.Codec.DraftNoteTally as DraftNoteTally
+import qualified Parun.Codec.Exponentiation as Exponentiation
 import qualified Parun.Codec.InZone as InZone
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
@@ -54,7 +55,7 @@ import qualified Parun.Types.TurnTally as TurnTally
 -- dispatching type, which is this one.
 --
 -- RECURSIVE, and directly so: @Negate@ names
--- 'codec' itself, and @Plus@, @Quotient@, @AgainstSlot@, @AgainstExiledPile@ and @Count@ each pass it to a payload codec that is
+-- 'codec' itself, and @Plus@, @Quotient@, @Times@, @Exponentiation@, @AgainstSlot@, @AgainstExiledPile@ and @Count@ each pass it to a payload codec that is
 -- parametric in the quantity for exactly that reason. That ties the same knot
 -- Parun.Codec.Filter already ties at the value level, and
 -- Parun.JsonSchema.Define.define breaks it at the schema level by registering the
@@ -89,6 +90,8 @@ codec =
       Arm.payload "Quotient" (Quotient.codec codec) (Quantity.Arithmetic . Arithmetic.Quotient) (\x -> case x of Quantity.Arithmetic (Arithmetic.Quotient y) -> Just y; _ -> Nothing),
       -- CR 107.1: the factor first, then what it multiplies.
       Arm.payload "Times" (Times.codec codec) (Quantity.Arithmetic . Arithmetic.Times) (\x -> case x of Quantity.Arithmetic (Arithmetic.Times y) -> Just y; _ -> Nothing),
+      -- CR 107.1: the base, then the exponent it is raised to.
+      Arm.payload "Exponentiation" (Exponentiation.codec codec) (Quantity.Arithmetic . Arithmetic.Exponentiation) (\x -> case x of Quantity.Arithmetic (Arithmetic.Exponentiation y) -> Just y; _ -> Nothing),
       -- CR 107.1b's negative game value: one whole Quantity on the wire, since a
       -- minus sign carries nothing of its own.
       Arm.payload "Negate" codec (Quantity.Arithmetic . Arithmetic.Negate) (\x -> case x of Quantity.Arithmetic (Arithmetic.Negate y) -> Just y; _ -> Nothing),
@@ -291,6 +294,7 @@ tagOf x = case x of
     Arithmetic.Plus {} -> "Plus"
     Arithmetic.Quotient {} -> "Quotient"
     Arithmetic.Times {} -> "Times"
+    Arithmetic.Exponentiation {} -> "Exponentiation"
     Arithmetic.Negate {} -> "Negate"
     Arithmetic.NonNegative {} -> "NonNegative"
   Quantity.AtMost {} -> "AtMost"

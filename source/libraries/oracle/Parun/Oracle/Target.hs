@@ -17,6 +17,7 @@ import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.EachCardInGraveyard as EachCardInGraveyard
+import qualified Parun.Types.Exponentiation as Exponentiation
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
@@ -127,22 +128,28 @@ xSlot = SlotName.MkSlotName (Text.pack "X")
 thatMuchSlot :: SlotName.SlotName
 thatMuchSlot = SlotName.MkSlotName (Text.pack "thatMuch")
 
--- | A number as digits ("3 damage", "4 life"), X, or the amount a trigger
--- event carried ("that much damage").
+-- | A number as digits ("3 damage", "4 life"), X, a power of X ("2ˣ"), or
+-- the amount a trigger event carried ("that much damage").
 amount :: Quantity.Quantity -> [Text.Text]
 amount q = case q of
   Quantity.Literal n | n >= 0 -> [Text.pack (show n)]
   Quantity.InSlot s
     | s == xSlot -> [Text.pack "X"]
     | s == thatMuchSlot -> [Text.pack "that much"]
+  -- Mathemagics' "2ˣ", the exponent written in superscript.
+  Quantity.Arithmetic (Arithmetic.Exponentiation (Exponentiation.MkExponentiation (Quantity.Literal b) (Quantity.InSlot s)))
+    | b >= 0,
+      s == xSlot ->
+        [Text.pack (show b) <> Text.pack "\x02E3"]
   _ -> []
 
--- | A count of cards: "a card", "two cards", "X cards".
+-- | A count of cards: "a card", "two cards", "X cards", "2ˣ cards".
 cards :: Quantity.Quantity -> [Text.Text]
 cards q = case q of
   Quantity.Literal 1 -> [Text.pack "a card"]
   Quantity.Literal n | n > 1 -> [Prose.cardinal n <> Text.pack " cards"]
   Quantity.InSlot s | s == xSlot -> [Text.pack "X cards"]
+  Quantity.Arithmetic (Arithmetic.Exponentiation _) -> fmap (<> Text.pack " cards") (amount q)
   _ -> []
 
 -- | A number as an instruction states it, with the target slots its words

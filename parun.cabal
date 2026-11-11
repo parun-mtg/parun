@@ -861,6 +861,8 @@ library codec
     Parun.Codec.ExploitedSpec
     Parun.Codec.ExploitTrigger
     Parun.Codec.ExploitTriggerSpec
+    Parun.Codec.Exponentiation
+    Parun.Codec.ExponentiationSpec
     Parun.Codec.ExtraPhase
     Parun.Codec.ExtraPhaseSpec
     Parun.Codec.ExtraTurn
@@ -3028,6 +3030,7 @@ library types
     Parun.Types.Expiry
     Parun.Types.Exploited
     Parun.Types.ExploitTrigger
+    Parun.Types.Exponentiation
     Parun.Types.ExtraPhase
     Parun.Types.ExtraTurn
     Parun.Types.ExtraVotes
