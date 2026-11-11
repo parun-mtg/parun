@@ -9,6 +9,8 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Copyability as Copyability
+import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ObjectId as ObjectId
@@ -70,6 +72,8 @@ sampleSnapshot =
       PC.alternativeSpell = Nothing,
       PC.prototyped = False,
       PC.spell = Face.defaultSpell,
+      PC.counterability = Counterability.Counterable,
+      PC.copyability = Copyability.Copyable,
       PC.circled = Set.empty,
       PC.definesChosenColor = False,
       PC.flipped = Nothing

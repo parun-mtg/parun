@@ -613,15 +613,15 @@ becomeCopy resolving source controller legal (BecomeCopy.MkBecomeCopy original s
         let spellController = Maybe.fromMaybe (Projection.defaultControllerOf obj) (Projection.controllerOf spell g)
          in Common.chooseNewTargetsFor (Maybe.isNothing mOriginalOf) source spellController spellController spell
 
--- CR 113.6g: the spell's own "can't be copied", read off its card as
--- Event.counterOne reads "can't be countered" -- through the last known face,
--- since a ref can name a spell that has left the stack (CR 608.2h) -- less a
--- layer-6 wipe reaching it (Projection.wipedFace).
+-- CR 113.6g: the spell's own "can't be copied", read off its projection as
+-- Event.counterOne reads "can't be countered", so a copy effect's values (CR
+-- 707.2) and a layer-6 wipe (CR 613.1f) both reach it -- through last known
+-- information, since a ref can name a spell that has left the stack (CR
+-- 608.2h). data/scenarios/transcantation proves the copy.
 cantBeCopied :: ObjectId -> GameState.GameState -> Bool
-cantBeCopied oid gs = case fmap (Face.copyability . Projection.wipedFace (Projection.project oid gs)) (Game.faceOfWithLastKnown oid gs) of
-  Just Copyability.CantBeCopied -> True
-  Just Copyability.Copyable -> False
-  Nothing -> False
+cantBeCopied oid gs = case PC.copyability (Projection.projectWithLastKnown oid gs) of
+  Copyability.CantBeCopied -> True
+  Copyability.Copyable -> False
 
 copyStackObject :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CopyStackObject.CopyStackObject (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackObject ref targets quantity copierRef exceptions) = do

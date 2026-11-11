@@ -16,9 +16,11 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
+import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Face as Face
@@ -434,6 +436,12 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- copiable rules text, so a spell that becomes a copy resolves the copied
     -- text (Parun.Engine.Projection.View.spellFaceOf).
     spell :: Modal.Modal Card.Card (GrantedAbility.GrantedAbility Card.Card),
+    -- | CR 113.6g / 707.2: the spell's own "can't be countered", copiable rules
+    -- text, emptied by a layer-6 wipe (CR 613.1f). Read by Event.counterOne.
+    counterability :: Counterability.Counterability,
+    -- | CR 113.6g / 707.2: the spell's own "can't be copied", as counterability
+    -- above. Read by Resolve.Arms.Objects.cantBeCopied.
+    copyability :: Copyability.Copyability,
     -- | CR 207.5: the colours circled on Cryptic Spires, printed rules text
     -- (CR 613.1), so copiable (CR 707.2). ManaProduction.Circled reads it.
     circled :: Set.Set Color.Color,

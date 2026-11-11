@@ -9539,11 +9539,11 @@ destructionsStanding asOf cause regenerability oids = do
 -- immunity -- neither rule grants shroud -- which is why the gates are here and
 -- not in Target. They precede the zone change for destroy's CR 614.7 reason.
 --
---   * CR 113.6g's, read off the SPELL's own card (Rending Volley), since there is
---     no battlefield projection of a spell. Self-referential by that rule's own
---     wording -- "an object's ability that states IT can't be countered" -- so it
---     is asked only on the spell branch: an ability on the stack has no card for
---     it to be printed on, and Game.faceOf answers Nothing for one.
+--   * CR 113.6g's, read off the SPELL's own projection (Rending Volley), a
+--     copiable value (CR 707.2). Self-referential by that rule's own wording --
+--     "an object's ability that states IT can't be countered" -- so it is asked
+--     only on the spell branch: an ability on the stack has no card for it to be
+--     printed on.
 --   * CR 611.1 / 613.11's, asked of Parun.Engine.PlayerEffect (Spider-Punk). That
 --     one is an ability of a BATTLEFIELD PERMANENT about other objects, so it is
 --     gathered from the battlefield like any other player effect and reaches BOTH
@@ -9635,8 +9635,9 @@ counterOne settle before destination counterer source controller oid = do
     -- constructor; Parun.Engine.ManaRider is where the casing lives.
     Just _ | ManaRider.uncounterable oid gs -> pure Nothing
     -- CR 701.6a, reached before the CR 113.6g gate because that gate asks about a
-    -- spell's own card and an ability has none -- Game.faceOf answers Nothing for
-    -- one, so asking first would fall through to the graveyard move by accident.
+    -- spell's own card and an ability has none -- the projection answers
+    -- Counterable for one, so asking first would fall through to the graveyard
+    -- move by accident.
     Just _ | Game.isAbility oid gs -> do
       State.modify' (Game.cease oid)
       State.modify'
@@ -9652,10 +9653,11 @@ counterOne settle before destination counterer source controller oid = do
     -- `before`, the board as the batch began (CR 608.2f, 608.2h), not after
     -- earlier victims moved (Exquisite Firecraft's ruling). The scenarios
     -- exquisite-firecraft-* prove it; data/scenarios/banefire proves the
-    -- condition reads the spell's announced X (CR 107.3a). Less a layer-6 wipe
-    -- reaching the spell (CR 613.1f, Projection.wipedFace).
-    Just _ -> case fmap (Face.counterability . Projection.wipedFace (Projection.project oid gs)) (Game.faceOf oid gs) of
-      Just (Counterability.CantBeCountered condition)
+    -- condition reads the spell's announced X (CR 107.3a). Read off the
+    -- projection, so a copy effect's values (CR 707.2) and a layer-6 wipe (CR
+    -- 613.1f) both reach it; data/scenarios/transcantation proves the first.
+    Just _ -> case PC.counterability (Projection.project oid gs) of
+      Counterability.CantBeCountered condition
         | all (Condition.holds (Projection.fullView before) (Projection.sourceContext before (Projection.controllerOf oid before) oid) before oid) condition -> pure Nothing
       _ -> do
         (zone, position) <- destination

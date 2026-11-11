@@ -22,11 +22,13 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CopyException as CopyException
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostDirection as CostDirection
 import qualified Parun.Types.CostReduction as CostReduction
+import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
@@ -136,6 +138,9 @@ testCharacteristics =
       PC.prototyped = True,
       -- Two empty modes, off the default of one (CR 707.2).
       PC.spell = Face.Type.defaultSpell {Modal.modes = Modal.modes (Face.Type.defaultSpell :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) <> Modal.modes Face.Type.defaultSpell},
+      -- Off both defaults (CR 113.6g).
+      PC.counterability = Counterability.CantBeCountered Nothing,
+      PC.copyability = Copyability.CantBeCopied,
       PC.circled = Set.fromList [Color.Blue, Color.Black],
       -- Synthetic for prepare's reason: a Mountain has no colour-defining
       -- ability (CR 604.3).
@@ -189,6 +194,8 @@ testCharacteristicsJson =
     <> "\"alternativeSpell\":{\"name\":\"Mountain\",\"typeLine\":{\"supertypes\":[\"Basic\"],\"types\":[\"Land\"],\"subtypes\":[\"Mountain\"]}},"
     <> "\"prototyped\":true,"
     <> "\"spell\":{\"modes\":[{},{}]},"
+    <> "\"counterability\":{\"type\":\"CantBeCountered\"},"
+    <> "\"copyability\":\"CantBeCopied\","
     <> "\"circled\":[\"Blue\",\"Black\"],"
     <> "\"definesChosenColor\":true,"
     <> "\"flipped\":{\"names\":[\"Mountain\"],\"cardTypes\":[\"Land\"]}}"
@@ -245,6 +252,8 @@ minimalCharacteristics =
       PC.alternativeSpell = Nothing,
       PC.prototyped = False,
       PC.spell = Face.Type.defaultSpell,
+      PC.counterability = Counterability.Counterable,
+      PC.copyability = Copyability.Copyable,
       PC.circled = Set.empty,
       PC.definesChosenColor = False,
       PC.flipped = Nothing

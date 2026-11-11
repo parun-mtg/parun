@@ -330,8 +330,8 @@ data Face card = MkFace
     -- field alone, for a caller holding a face and no object.
     enchant :: [TargetSlot.TargetSlot],
     -- | CR 113.6g: a can't-be-countered ability functions on the stack (Rending
-    -- Volley). Read off the card by Event.counter less a layer-6 wipe reaching
-    -- the spell (Parun.Engine.Projection.View.wipedFace).
+    -- Volley). Seeds the copiable ProjectedCharacteristics.counterability, which
+    -- Event.counterOne reads.
     --
     -- CR 113.6g's SELF-referential clause only. A permanent's static ability
     -- about OTHER objects being uncounterable (Spider-Punk) rides
@@ -339,8 +339,8 @@ data Face card = MkFace
     -- carriers cannot be merged.
     counterability :: Counterability.Counterability,
     -- | CR 113.6g: a can't-be-copied ability functions on the stack (Choreographed
-    -- Sparks). Read off the card by Resolve.Arms.Objects.copyStackObject less a
-    -- layer-6 wipe reaching the spell, as counterability above is.
+    -- Sparks). Seeds ProjectedCharacteristics.copyability, as counterability
+    -- above does.
     copyability :: Copyability.Copyability,
     -- | CR 118.8: this face's printed additional costs, paid at the same time as
     -- the spell's mana cost (Village Rites). Read off the card, or the copy
