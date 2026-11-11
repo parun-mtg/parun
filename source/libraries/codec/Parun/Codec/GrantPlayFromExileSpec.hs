@@ -10,6 +10,7 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
+import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectRef as ObjectRef
@@ -20,7 +21,6 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TapState as TapState
-import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
@@ -41,7 +41,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"}} "
@@ -61,7 +61,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"spending\":\"AnyType\"} "
@@ -82,7 +82,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]}} "
@@ -103,7 +103,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"player\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"}} "
@@ -124,7 +124,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"verb\":\"Cast\"} "
@@ -144,7 +144,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
   -- Hama, the Bloodbender's: CR 118.9's waterbend alternative, open only
@@ -164,7 +164,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"alternativeCost\":{\"type\":\"WaterbendManaValue\"},\"condition\":{\"type\":\"Compares\",\"value\":{\"comparison\":\"Exactly\",\"measured\":{\"type\":\"IsActivePlayer\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"threshold\":{\"type\":\"Literal\",\"value\":1}}},\"verb\":\"Cast\"} "
@@ -185,7 +185,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 1,
             GrantPlayFromExile.landEnters = TapState.Tapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"Indefinite\"},\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"increase\":1,\"landEnters\":\"Tapped\"} "
@@ -205,7 +205,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Just 2,
-            GrantPlayFromExile.zone = Zone.Exile
+            GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfYourNextTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"upTo\":2} "
@@ -225,7 +225,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
-            GrantPlayFromExile.zone = Zone.Graveyard
+            GrantPlayFromExile.zone = GrantZone.Graveyard
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"verb\":\"Cast\",\"zone\":\"Graveyard\"} "

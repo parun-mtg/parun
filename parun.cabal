@@ -927,6 +927,8 @@ library codec
     Parun.Codec.GrantLookAtExiledSpec
     Parun.Codec.GrantPlayFromExile
     Parun.Codec.GrantPlayFromExileSpec
+    Parun.Codec.GrantZone
+    Parun.Codec.GrantZoneSpec
     Parun.Codec.GraveyardOrder
     Parun.Codec.GraveyardOrderSpec
     Parun.Codec.Grouping
@@ -3060,6 +3062,7 @@ library types
     Parun.Types.GrantedAbility
     Parun.Types.GrantLookAtExiled
     Parun.Types.GrantPlayFromExile
+    Parun.Types.GrantZone
     Parun.Types.GraveyardArrangement
     Parun.Types.GraveyardOrder
     Parun.Types.Grouping

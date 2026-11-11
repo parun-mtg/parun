@@ -353,10 +353,10 @@ data Object = MkObject
     --
     -- Read where the card lies, exile or a graveyard (Jace, Telepath
     -- Unbound's "cast target instant or sorcery card from your graveyard").
-    -- PLAYABLE and not castable, after CR 601.1a, and both halves read it:
-    -- Parun.Engine.Cast.permitsCastFromExile and Parun.Engine.Action.playableLands
-    -- for CR 305.1's special action; a graveyard card's, a cast only,
-    -- Parun.Engine.Cast.permitsCastFromGraveyard.
+    -- PLAYABLE and not castable, after CR 601.1a, and both halves read it in
+    -- either zone: Parun.Engine.Action.playableLands for CR 305.1's special
+    -- action, Parun.Engine.Cast.permitsCastFromExile or
+    -- Parun.Engine.Cast.permitsCastFromGraveyard for a cast.
     playPermission :: Maybe ExilePlayPermission.ExilePlayPermission,
     -- | CR 702.170a: this exiled card is a PLOTTED card, stamped with the turn on
     -- which it became one. The TURN NUMBER and not a Bool because CR 702.170d

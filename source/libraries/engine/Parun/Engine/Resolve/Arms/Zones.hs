@@ -101,6 +101,7 @@ import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
+import qualified Parun.Types.GrantZone as GrantZone
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.GuessAnswer as GuessAnswer
@@ -782,6 +783,9 @@ offerNotedCopy offerOutsideCopy runSubgame resolving source controller legal off
 -- sent elsewhere (Synthetic Exile Diversion) was not "exiled this way" and gets
 -- nothing; proven by
 -- cr-601-3-act-on-impulse-under-synthetic-exile-diversion-grants-nothing-in-the-graveyard.
+-- GrantZone.AnyPublic is CR 701.17c's reader instead: a milled card Rest in
+-- Peace exiled is still "that card"; proven by
+-- ark-of-hunger-plays-a-milled-card-rest-in-peace-exiled.
 grantPlayFromExile :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GrantPlayFromExile.GrantPlayFromExile -> Game ()
 grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrantPlayFromExile duration player ref spending alternativeCost condition verb increase landEnters upTo zone) =
   State.modify' $ \gs ->
@@ -828,7 +832,11 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
              in gs {GameState.objects = foldr (Map.adjust grant) (GameState.objects gs) targets}
         _ -> gs
   where
-    inZone gs oid = maybe False ((== zone) . Object.zone) (Map.lookup oid (GameState.objects gs))
+    inZone gs oid = maybe False (lies . Object.zone) (Map.lookup oid (GameState.objects gs))
+    lies at = case zone of
+      GrantZone.Exile -> at == Zone.Exile
+      GrantZone.Graveyard -> at == Zone.Graveyard
+      GrantZone.AnyPublic -> not (Game.isHiddenZone at)
 
 -- CR 406.3: write the look permission onto every object the ObjectRef names,
 -- as CR 109.5's "you", plus CR 702.75a's ExileLooker.TheExiler where the

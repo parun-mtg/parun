@@ -4,23 +4,23 @@ module Parun.Codec.GrantPlayFromExile where
 
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.Duration as Duration
+import qualified Parun.Codec.GrantZone as GrantZone
 import qualified Parun.Codec.ManaSpending as ManaSpending
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PermissionCost as PermissionCost
 import qualified Parun.Codec.PermissionVerb as PermissionVerb
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.TapState as TapState
-import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
+import qualified Parun.Types.GrantZone as GrantZone.Type
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.PermissionVerb as PermissionVerb.Type
 import qualified Parun.Types.PlayerRef as PlayerRef.Type
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.TapState as TapState.Type
-import qualified Parun.Types.Zone as Zone.Type
 
 -- | A bare object keyed by the record's field names, with each rider elided when
 -- it is the default -- Parun.Codec.OfferCast's posture with its CastOffer, and
@@ -41,7 +41,7 @@ codec = Fields.object $ do
   increase <- Fields.defaulted "increase" 0 Common.natural GrantPlayFromExile.increase
   landEnters <- Fields.defaulted "landEnters" TapState.Type.Untapped TapState.codec GrantPlayFromExile.landEnters
   upTo <- Fields.defaulted "upTo" Nothing (Common.maybe Common.natural) GrantPlayFromExile.upTo
-  zone <- Fields.defaulted "zone" Zone.Type.Exile Zone.codec GrantPlayFromExile.zone
+  zone <- Fields.defaulted "zone" GrantZone.Type.Exile GrantZone.codec GrantPlayFromExile.zone
   pure
     GrantPlayFromExile.MkGrantPlayFromExile
       { GrantPlayFromExile.duration = duration,

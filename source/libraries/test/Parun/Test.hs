@@ -429,6 +429,7 @@ import qualified Parun.Codec.GameSettingsSpec
 import qualified Parun.Codec.GiftSpec
 import qualified Parun.Codec.GrantLookAtExiledSpec
 import qualified Parun.Codec.GrantPlayFromExileSpec
+import qualified Parun.Codec.GrantZoneSpec
 import qualified Parun.Codec.GrantedAbilitySpec
 import qualified Parun.Codec.GraveyardOrderSpec
 import qualified Parun.Codec.GuessSpec
@@ -1475,6 +1476,7 @@ spec s registry corpus = do
   Parun.Codec.GrantedAbilitySpec.spec s
   Parun.Codec.GrantLookAtExiledSpec.spec s
   Parun.Codec.GrantPlayFromExileSpec.spec s
+  Parun.Codec.GrantZoneSpec.spec s
   Parun.Codec.GraveyardOrderSpec.spec s
   Parun.Codec.HalfUnlockedSpec.spec s
   Parun.Codec.QuotientSpec.spec s
