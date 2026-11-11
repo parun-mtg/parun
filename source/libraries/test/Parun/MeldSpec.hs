@@ -103,6 +103,7 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
@@ -566,7 +567,7 @@ spec s registry = Spec.describe s "Meld" $ do
     -- The preconditions, AFTER the assertion so none absorbs a mutation.
     Spec.assertEqWith s "setup: Mirrorweave made the Garrison a Biolume Egg" (Projection.namesOf gId woven) (Set.singleton eggName)
     Spec.assertEqWith s "setup: the sacrifice trigger reached the stack" (length (TurnRegisters.stack (GameState.turn sacrificed))) 1
-    Spec.assertEqWith s "setup: the delayed entry fired and was spent" (Seq.length (GameState.delayedTriggers after)) 0
+    Spec.assertEqWith s "setup: the delayed entry fired and was spent" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
 
   -- The Graf Rats pair end to end: "At the beginning of combat on your turn, if
   -- you both own and control this creature and a creature named Midnight
@@ -1132,7 +1133,7 @@ spec s registry = Spec.describe s "Meld" $ do
         Spec.assertEqWith
           s
           "Pearl Collector stored one effect, under the perpetual arm, naming the melded permanent"
-          (fmap ContinuousEffect.expiry (filter (\e -> ContinuousEffect.source e == collectorId && S.continuousEffectAffects meldedId e) (GameState.continuousEffects byCard)))
+          (fmap ContinuousEffect.expiry (filter (\e -> ContinuousEffect.source e == collectorId && S.continuousEffectAffects meldedId e) (StoredEffects.continuousEffects (GameState.stored byCard))))
           [Expiry.Type.Perpetual]
         Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink meldedId byCard) "the melded permanent had lifelink while it was still on the battlefield"
         Spec.assertBool s (not (Projection.hasKeyword Keyword.Lifelink meldedId board)) "setup: and did not before the ability resolved"
@@ -1206,7 +1207,7 @@ spec s registry = Spec.describe s "Meld" $ do
         Spec.assertEqWith
           s
           "Pearl Collector stored one effect, under the perpetual arm, naming Hanweir Garrison"
-          (fmap ContinuousEffect.expiry (filter (\e -> ContinuousEffect.source e == collectorId && S.continuousEffectAffects garrisonId e) (GameState.continuousEffects byCard)))
+          (fmap ContinuousEffect.expiry (filter (\e -> ContinuousEffect.source e == collectorId && S.continuousEffectAffects garrisonId e) (StoredEffects.continuousEffects (GameState.stored byCard))))
           [Expiry.Type.Perpetual]
         Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink garrisonId byCard) "the Garrison had lifelink before anything melded"
         Spec.assertBool s (not (Projection.hasKeyword Keyword.Lifelink garrisonId board)) "setup: and did not before the ability resolved"
@@ -1547,7 +1548,7 @@ lifelinkUnder expiry oid gs =
             ContinuousEffect.modification = Modification.GainKeyword Keyword.Lifelink,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
           }
-   in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
 
 -- CR 701.27a as ONE instruction over the named permanents (CR 608.2f), through
 -- the opcode a card's "transform target permanent" reaches: the slot the effect

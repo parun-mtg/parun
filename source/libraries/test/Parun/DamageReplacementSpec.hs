@@ -67,6 +67,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -1236,7 +1237,7 @@ apnapSpec s registry = Spec.describe s "APNAP (CR 616.1)" $ do
         toHers = hit his (Recipient.ToCreature hers) 1
         toHis = hit hers (Recipient.ToCreature his) 1
     Spec.assertEqWith s "setup: alice is the active player" (Game.apnapOrder shielded) [S.alice, S.bob]
-    Spec.assertEqWith s "setup: both creatures are shielded" (length (GameState.replacements shielded)) 2
+    Spec.assertEqWith s "setup: both creatures are shielded" (length (StoredEffects.replacements (GameState.stored shielded))) 2
     Spec.assertEqWith
       s
       "alice chooses before bob when her event is gathered first"
@@ -1316,7 +1317,7 @@ apnapSpec s registry = Spec.describe s "APNAP (CR 616.1)" $ do
             hit big (Recipient.ToCreature hers) 4
           ]
         survivors gs = fmap DamageEvent.source (S.damageEventsOf gs)
-    Spec.assertEqWith s "setup: alice's creature is the shielded one" (length (GameState.replacements shielded)) 1
+    Spec.assertEqWith s "setup: alice's creature is the shielded one" (length (StoredEffects.replacements (GameState.stored shielded))) 1
     -- Shield on the 1: it is prevented whole and never happens, and the 4 keeps
     -- the remaining 3 off, leaving 1 for the Furnace to double.
     Spec.assertEqWith
@@ -1533,11 +1534,11 @@ luminesceSpec s registry = Spec.describe s "Luminesce (CR 615.1, CR 609.7b)" $ d
     . withBoard
     $ \wraith piker mammoth shielded -> do
       let after = S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [hit mammoth 3, hit wraith 4, hit piker 2])
-      Spec.assertEqWith s "setup: the shield is a floating replacement" (length (GameState.replacements shielded)) 1
+      Spec.assertEqWith s "setup: the shield is a floating replacement" (length (StoredEffects.replacements (GameState.stored shielded))) 1
       Spec.assertEqWith s "setup: alice starts on 20" (S.lifeOf S.alice shielded) (Just 20)
       Spec.assertEqWith s "only the War Mammoth's event happened" (amounts after) [3]
       Spec.assertEqWith s "so alice loses 3 and no more" (S.lifeOf S.alice after) (Just 17)
-      Spec.assertEqWith s "and it lasts the turn rather than being used up (CR 615.3)" (length (GameState.replacements after)) 1
+      Spec.assertEqWith s "and it lasts the turn rather than being used up (CR 615.3)" (length (StoredEffects.replacements (GameState.stored after))) 1
   -- CR 608.2h's DEPARTED source, the half neither case above reaches: both of
   -- them deal damage from a permanent still on the battlefield, so the recheck
   -- reads a live projection either way. Ghitu Fire-Eater ({2}{R} Creature --
@@ -1584,8 +1585,8 @@ luminesceSpec s registry = Spec.describe s "Luminesce (CR 615.1, CR 609.7b)" $ d
       Spec.assertEqWith s "bob takes nothing: the departed source is read as the red creature it last was" (S.lifeOf S.bob after) (Just 20)
       Spec.assertBool s (not (Set.member fireEater (GameState.battlefield after))) "setup: the cost really did remove the source"
       Spec.assertBool s (Maybe.isNothing (Game.lookupObject fireEater after)) "setup: and the id it left behind names nothing"
-      Spec.assertEqWith s "setup: the shield was a floating replacement before the activation" (length (GameState.replacements shielded)) 1
-      Spec.assertEqWith s "supporting: and it lasts the turn rather than being used up (CR 615.3)" (length (GameState.replacements after)) 1
+      Spec.assertEqWith s "setup: the shield was a floating replacement before the activation" (length (StoredEffects.replacements (GameState.stored shielded))) 1
+      Spec.assertEqWith s "supporting: and it lasts the turn rather than being used up (CR 615.3)" (length (StoredEffects.replacements (GameState.stored after))) 1
 
 -- CR 615.1 / 609.7b again, on two axes at once: a shield that names its source by
 -- CHARACTERISTIC and narrows by DAMAGE KIND. Its producer is Moonmist ({1}{G}
@@ -1642,9 +1643,9 @@ moonmistSpec s registry = Spec.describe s "Moonmist (CR 615.1, CR 609.7b)" $ do
       -- mutation to the card's filter and report itself instead.
       Spec.assertEqWith s "the Wolf's and the Werewolf's events happened, the Piker's did not" (sources after) [wolf, werewolf]
       Spec.assertEqWith s "so alice loses 3 and 3 and no more" (S.lifeOf S.alice after) (Just 14)
-      Spec.assertEqWith s "supporting: the shield is a floating replacement" (length (GameState.replacements shielded)) 1
+      Spec.assertEqWith s "supporting: the shield is a floating replacement" (length (StoredEffects.replacements (GameState.stored shielded))) 1
       Spec.assertEqWith s "supporting: alice started on 20" (S.lifeOf S.alice shielded) (Just 20)
-      Spec.assertEqWith s "and it lasts the turn rather than being used up (CR 615.3)" (length (GameState.replacements after)) 1
+      Spec.assertEqWith s "and it lasts the turn rather than being used up (CR 615.3)" (length (StoredEffects.replacements (GameState.stored after))) 1
   -- The KIND half, which luminesceSpec's card cannot reach: the very same Piker
   -- dealing the very same 2 as NONCOMBAT damage is not prevented. A card file that
   -- dropped whichKind passes the case above and fails this one.
@@ -1704,7 +1705,7 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
         shielded = castSquire g2 spellId
         squire = squireOf shielded
         (dealt, after) = strikeAndSettle shielded [hit attacker (Recipient.ToPlayer S.alice) 3]
-    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (GameState.replacements shielded)) 1
+    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (StoredEffects.replacements (GameState.stored shielded))) 1
     Spec.assertEqWith s "setup: the Squire is on the battlefield as a 1/1" (squire >>= \oid -> S.powerToughnessOf oid shielded) (Just (1, 1))
     -- CR 615.6: a fully prevented event never happens, so alice loses nothing and
     -- no damage event is recorded.
@@ -1730,7 +1731,7 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
         (attacker, g1) = S.addPermanent pikerPrinting S.bob base
         (squire, g2) = S.addPermanent squirePrinting S.alice g1
         (dealt, after) = strikeAndSettle g2 [hit attacker (Recipient.ToPlayer S.alice) 3]
-    Spec.assertEqWith s "setup: no shield was installed" (length (GameState.replacements g2)) 0
+    Spec.assertEqWith s "setup: no shield was installed" (length (StoredEffects.replacements (GameState.stored g2))) 0
     Spec.assertEqWith s "alice takes all 3" (S.lifeOf S.alice after) (Just 17)
     Spec.assertEqWith s "and the damage event happened" (amounts after) [3]
     Spec.assertEqWith s "nothing triggered" (length (TurnRegisters.stack (GameState.turn dealt))) 0
@@ -1957,7 +1958,7 @@ nameDamageSource wanted p = case p of
 -- one row the boards below install. Nothing where the board has no row at all,
 -- which is what makes the setup assertion able to fail.
 shieldedSource :: GameState.GameState -> Maybe ObjectId.ObjectId
-shieldedSource gs = case GameState.replacements gs of
+shieldedSource gs = case StoredEffects.replacements (GameState.stored gs) of
   [active] -> case ActiveReplacement.effect active of
     ReplacementEffect.DamageR (DamageR.MkDamageR matching _ _) -> DamagePattern.whichSource matching
     _ -> Nothing
@@ -2052,7 +2053,7 @@ deflectingPalmSpec s registry = Spec.describe s "Deflecting Palm (CR 615.8 / 615
     Spec.assertEqWith s "CR 615.5 / 108.4 the 7 came back once, at the controller of the source the shield NAMED" (S.lifeOf S.carol after) (Just 13)
     Spec.assertEqWith s "CR 609.7a and never at the other source's controller" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "nothing went on the stack to respond to" (length (TurnRegisters.stack (GameState.turn firstBatch))) 0
-    Spec.assertEqWith s "and the shield is gone once it has prevented an instance" (GameState.replacements firstBatch) []
+    Spec.assertEqWith s "and the shield is gone once it has prevented an instance" (StoredEffects.replacements (GameState.stored firstBatch)) []
 
 -- CR 615.5's additional effect on CR 615.8's shield, read for its AMOUNT --
 -- Reverse Damage ({1}{W}{W} Instant, "The next time a source of your choice
@@ -2128,7 +2129,7 @@ interventionPactSpec s registry = Spec.describe s "Intervention Pact (CR 615.8 /
         shielded = castAndResolve (nameDamageSource spider) g2 spellId
         struck = fst (strikeAndSettleWith (nameDamageSource spider) shielded [hit 6])
     Spec.assertEqWith s "CR 615.5 the prevented 6 came back as life" (S.lifeOf S.alice struck) (Just 26)
-    Spec.assertEqWith s "CR 603.7 the pay-or-lose trigger is armed with nothing prevented yet" (length (GameState.delayedTriggers shielded)) 1
+    Spec.assertEqWith s "CR 603.7 the pay-or-lose trigger is armed with nothing prevented yet" (length (StoredEffects.delayedTriggers (GameState.stored shielded))) 1
 
 -- alice is mid-combat attacking with `mine`; bob defends holding `spells` and
 -- `lands` untapped Plains that pay for them. Sits at the declare attackers step
@@ -2171,7 +2172,7 @@ castInOrder names victim p = case p of
 -- from one that always aims at the first attacker.
 redirectRows :: GameState.GameState -> [(Maybe DamageKind.DamageKind, Maybe Recipient.Recipient, Recipient.Recipient)]
 redirectRows gs = do
-  active <- GameState.replacements gs
+  active <- StoredEffects.replacements (GameState.stored gs)
   case ActiveReplacement.effect active of
     ReplacementEffect.DamageR (DamageR.MkDamageR pat (DamageRewrite.Redirect dest) _) -> pure (DamagePattern.whichKind pat, DamagePattern.whichRecipient pat, dest)
     _ -> []
@@ -2241,7 +2242,7 @@ turnTheTablesSpec s registry = Spec.describe s "Turn the Tables (CR 614.9)" $ do
 -- a proxy for one group rather than a field those cases assert on.
 redirectSources :: GameState.GameState -> [Maybe ObjectId.ObjectId]
 redirectSources gs = do
-  active <- GameState.replacements gs
+  active <- StoredEffects.replacements (GameState.stored gs)
   case ActiveReplacement.effect active of
     ReplacementEffect.DamageR (DamageR.MkDamageR pat (DamageRewrite.Redirect _) _) -> pure (DamagePattern.whichSource pat)
     _ -> []
@@ -2251,7 +2252,7 @@ redirectSources gs = do
 -- off the store so a case can tell a spent row from one never installed.
 countedRedirectRows :: GameState.GameState -> [(Natural.Natural, Maybe Recipient.Recipient, Recipient.Recipient, Maybe ObjectId.ObjectId)]
 countedRedirectRows gs = do
-  active <- GameState.replacements gs
+  active <- StoredEffects.replacements (GameState.stored gs)
   case ActiveReplacement.effect active of
     ReplacementEffect.DamageR (DamageR.MkDamageR pat (DamageRewrite.RedirectNext remaining dest) _) -> pure (remaining, DamagePattern.whichRecipient pat, dest, DamagePattern.whichSource pat)
     _ -> []

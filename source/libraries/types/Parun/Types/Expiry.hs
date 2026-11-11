@@ -72,11 +72,11 @@ data Expiry
     -- only "has this ended" sees this row from the moment it is stored and
     -- applies it a turn early.
     --
-    -- Six carriers ask `begun`: GameState.attackProhibitions (Wall of Dust),
-    -- GameState.attackRequirements (Taunt, Gideon, Battle-Forged),
-    -- GameState.playerEffects (Sphinx's Decree), Object.playPermission
-    -- (Galvanic Relay), GameState.replacements (False Peace) and
-    -- GameState.objectProhibitions (Exhaustion). A row on any
+    -- Six carriers ask `begun`: StoredEffects.attackProhibitions (Wall of Dust),
+    -- StoredEffects.attackRequirements (Taunt, Gideon, Battle-Forged),
+    -- StoredEffects.playerEffects (Sphinx's Decree), Object.playPermission
+    -- (Galvanic Relay), StoredEffects.replacements (False Peace) and
+    -- StoredEffects.objectProhibitions (Exhaustion). A row on any
     -- other would apply from the moment it is stored, so Parun.EffectLintSpec's
     -- windowOffends refuses a card writing one (Scryfall o:/during [^.]*next
     -- turn/, 2026-10-11: every hit is one of the first four or CR 724's player
@@ -96,7 +96,7 @@ data Expiry
   | -- | CR 611.2a / 500.7: Duration.DuringThatExtraTurn, stored as the
     -- ExtraTurn.createdAt of the turn it names. A window like DuringTurnOf
     -- above, inert until that turn is under way (Parun.Engine.Expiry.begun), and
-    -- meaningful only on a carrier that asks `begun`: GameState.playerEffects
+    -- meaningful only on a carrier that asks `begun`: StoredEffects.playerEffects
     -- is where both producers (Alchemist's Gambit, All in Good Time) store it.
     DuringExtraTurn Timestamp.Timestamp
   | -- | CR 500.5: effects lasting until the end of a step or phase expire as it

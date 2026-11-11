@@ -132,6 +132,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.SpendTrigger as SpendTrigger
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TappedForMana as TappedForMana
@@ -863,7 +864,7 @@ triggeredYields watch pid chosen oid option share gs =
       -- once, on the occurrence delayedPending takes when nothing is asked.
       delayed =
         [ pend entry logged
-        | entry <- Foldable.toList (GameState.delayedTriggers board),
+        | entry <- Foldable.toList (StoredEffects.delayedTriggers (GameState.stored board)),
           ManaAbility.mayBeTriggeredManaAbility (DelayedTrigger.ability entry),
           logged <- (if Expiry.firesOnce board (DelayedTrigger.source entry) (DelayedTrigger.expiry entry) then take 1 else id) (occurrences entry)
         ]

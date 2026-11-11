@@ -77,8 +77,14 @@ import qualified Parun.Types.Printing as Printing.Type
 import qualified Parun.Types.PrintingId as PrintingId.Type
 import qualified Parun.Types.RestartSignal as RestartSignal.Type
 import qualified Parun.Types.SlotName as SlotName.Type
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- | Every field but one, in the record's own order.
+--
+-- GameState.stored's fields are written FLAT, each under its own key at the
+-- place it held before the grouping, rather than nested under a `stored` key:
+-- the grouping is the engine's, for Parun.Engine.Stored, and the wire has no
+-- reader of it.
 --
 -- 'Fields.required' is kept for the fields no game can be missing -- `settings`,
 -- `objects`, `players`, `turnOrder`, `turn` -- and for the counters and clocks
@@ -141,18 +147,18 @@ codec resolve = Fields.object $ do
   controlSample <- Fields.defaulted "controlSample" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.controlSample
   boardAtControlSample <- Fields.defaulted "boardAtControlSample" Nothing (Common.maybe (codec resolve)) GameState.boardAtControlSample
   heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) GameState.heldBoards
-  delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) GameState.delayedTriggers
-  continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) GameState.continuousEffects
-  copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) GameState.copyEffects
-  replacements <- Fields.defaulted "replacements" [] (Common.list ActiveReplacement.codec) GameState.replacements
-  laterPayments <- Fields.defaulted "laterPayments" [] (Common.list ActiveLaterPayment.codec) GameState.laterPayments
-  pendingPreventionRiders <- Fields.defaulted "pendingPreventionRiders" Seq.empty (Common.seq Prevention.codec) GameState.pendingPreventionRiders
-  pendingReplacementEffects <- Fields.defaulted "pendingReplacementEffects" Seq.empty (Common.seq PendingReplacementEffect.codec) GameState.pendingReplacementEffects
-  pendingSkipEffects <- Fields.defaulted "pendingSkipEffects" Seq.empty (Common.seq PendingSkipEffect.codec) GameState.pendingSkipEffects
+  delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) (StoredEffects.delayedTriggers . GameState.stored)
+  continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) (StoredEffects.continuousEffects . GameState.stored)
+  copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) (StoredEffects.copyEffects . GameState.stored)
+  replacements <- Fields.defaulted "replacements" [] (Common.list ActiveReplacement.codec) (StoredEffects.replacements . GameState.stored)
+  laterPayments <- Fields.defaulted "laterPayments" [] (Common.list ActiveLaterPayment.codec) (StoredEffects.laterPayments . GameState.stored)
+  pendingPreventionRiders <- Fields.defaulted "pendingPreventionRiders" Seq.empty (Common.seq Prevention.codec) (StoredEffects.pendingPreventionRiders . GameState.stored)
+  pendingReplacementEffects <- Fields.defaulted "pendingReplacementEffects" Seq.empty (Common.seq PendingReplacementEffect.codec) (StoredEffects.pendingReplacementEffects . GameState.stored)
+  pendingSkipEffects <- Fields.defaulted "pendingSkipEffects" Seq.empty (Common.seq PendingSkipEffect.codec) (StoredEffects.pendingSkipEffects . GameState.stored)
   contested <- Fields.defaulted "contested" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe ObjectId.codec)) GameState.contested
   ambientAmounts <- Fields.defaulted "ambientAmounts" Map.empty (Common.textMap SlotName.Type.unwrap (Right . SlotName.Type.MkSlotName) Common.natural) GameState.ambientAmounts
   detachedBindings <- Fields.defaulted "detachedBindings" Map.empty (Common.naturalMap ObjectId.codec Binding.codecMap) GameState.detachedBindings
-  pendingEntryEffects <- Fields.defaulted "pendingEntryEffects" Seq.empty (Common.seq PendingEntryEffect.codec) GameState.pendingEntryEffects
+  pendingEntryEffects <- Fields.defaulted "pendingEntryEffects" Seq.empty (Common.seq PendingEntryEffect.codec) (StoredEffects.pendingEntryEffects . GameState.stored)
   enteringBeside <- Fields.defaulted "enteringBeside" Set.empty (Common.set ObjectId.codec) GameState.enteringBeside
   enteringSubjects <- Fields.defaulted "enteringSubjects" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe EntryOrigin.codec)) GameState.enteringSubjects
   enteredFrom <- Fields.defaulted "enteredFrom" Map.empty (Common.naturalMap ObjectId.codec EntryOrigin.codec) GameState.enteredFrom
@@ -160,13 +166,13 @@ codec resolve = Fields.object $ do
   refusedEntries <- Fields.defaulted "refusedEntries" Nothing (Common.maybe (Common.set ObjectId.codec)) GameState.refusedEntries
   enteringCounters <- Fields.defaulted "enteringCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.keyedList (Common.keyValue (Common.maybe PlayerId.codec) (Common.multiset (CounterKind.codec Keyword.codec))))) GameState.enteringCounters
   copyExceptionCounters <- Fields.defaulted "copyExceptionCounters" Map.empty (Common.naturalMap ObjectId.codec (Common.multiset (CounterKind.codec Keyword.codec))) GameState.copyExceptionCounters
-  playerEffects <- Fields.defaulted "playerEffects" [] (Common.list ActivePlayerEffect.codec) GameState.playerEffects
-  blockRequirements <- Fields.defaulted "blockRequirements" [] (Common.list ActiveBlockRequirement.codec) GameState.blockRequirements
-  attackRequirements <- Fields.defaulted "attackRequirements" [] (Common.list ActiveAttackRequirement.codec) GameState.attackRequirements
-  objectProhibitions <- Fields.defaulted "objectProhibitions" [] (Common.list ActiveObjectProhibition.codec) GameState.objectProhibitions
-  attackProhibitions <- Fields.defaulted "attackProhibitions" [] (Common.list ActiveAttackProhibition.codec) GameState.attackProhibitions
-  evasions <- Fields.defaulted "evasions" [] (Common.list ActiveEvasion.codec) GameState.evasions
-  ignoredAbilities <- Fields.defaulted "ignoredAbilities" [] (Common.list IgnoredAbility.codec) GameState.ignoredAbilities
+  playerEffects <- Fields.defaulted "playerEffects" [] (Common.list ActivePlayerEffect.codec) (StoredEffects.playerEffects . GameState.stored)
+  blockRequirements <- Fields.defaulted "blockRequirements" [] (Common.list ActiveBlockRequirement.codec) (StoredEffects.blockRequirements . GameState.stored)
+  attackRequirements <- Fields.defaulted "attackRequirements" [] (Common.list ActiveAttackRequirement.codec) (StoredEffects.attackRequirements . GameState.stored)
+  objectProhibitions <- Fields.defaulted "objectProhibitions" [] (Common.list ActiveObjectProhibition.codec) (StoredEffects.objectProhibitions . GameState.stored)
+  attackProhibitions <- Fields.defaulted "attackProhibitions" [] (Common.list ActiveAttackProhibition.codec) (StoredEffects.attackProhibitions . GameState.stored)
+  evasions <- Fields.defaulted "evasions" [] (Common.list ActiveEvasion.codec) (StoredEffects.evasions . GameState.stored)
+  ignoredAbilities <- Fields.defaulted "ignoredAbilities" [] (Common.list IgnoredAbility.codec) (StoredEffects.ignoredAbilities . GameState.stored)
   turnOrder <- Fields.required "turnOrder" (Common.list PlayerId.codec) GameState.turnOrder
   turnsBegun <- Fields.defaulted "turnsBegun" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.turnsBegun
   result <- Fields.defaulted "result" Nothing (Common.maybe Result.codec) GameState.result
@@ -257,18 +263,28 @@ codec resolve = Fields.object $ do
         GameState.controlSample = controlSample,
         GameState.boardAtControlSample = boardAtControlSample,
         GameState.heldBoards = heldBoards,
-        GameState.delayedTriggers = delayedTriggers,
-        GameState.continuousEffects = continuousEffects,
-        GameState.copyEffects = copyEffects,
-        GameState.replacements = replacements,
-        GameState.laterPayments = laterPayments,
-        GameState.pendingPreventionRiders = pendingPreventionRiders,
-        GameState.pendingReplacementEffects = pendingReplacementEffects,
-        GameState.pendingSkipEffects = pendingSkipEffects,
+        GameState.stored =
+          StoredEffects.MkStoredEffects
+            { StoredEffects.continuousEffects = continuousEffects,
+              StoredEffects.copyEffects = copyEffects,
+              StoredEffects.replacements = replacements,
+              StoredEffects.playerEffects = playerEffects,
+              StoredEffects.blockRequirements = blockRequirements,
+              StoredEffects.attackRequirements = attackRequirements,
+              StoredEffects.objectProhibitions = objectProhibitions,
+              StoredEffects.attackProhibitions = attackProhibitions,
+              StoredEffects.evasions = evasions,
+              StoredEffects.ignoredAbilities = ignoredAbilities,
+              StoredEffects.laterPayments = laterPayments,
+              StoredEffects.delayedTriggers = delayedTriggers,
+              StoredEffects.pendingPreventionRiders = pendingPreventionRiders,
+              StoredEffects.pendingReplacementEffects = pendingReplacementEffects,
+              StoredEffects.pendingSkipEffects = pendingSkipEffects,
+              StoredEffects.pendingEntryEffects = pendingEntryEffects
+            },
         GameState.contested = contested,
         GameState.ambientAmounts = ambientAmounts,
         GameState.detachedBindings = detachedBindings,
-        GameState.pendingEntryEffects = pendingEntryEffects,
         GameState.enteringBeside = enteringBeside,
         GameState.enteringSubjects = enteringSubjects,
         GameState.enteredFrom = enteredFrom,
@@ -276,13 +292,6 @@ codec resolve = Fields.object $ do
         GameState.refusedEntries = refusedEntries,
         GameState.enteringCounters = enteringCounters,
         GameState.copyExceptionCounters = copyExceptionCounters,
-        GameState.playerEffects = playerEffects,
-        GameState.blockRequirements = blockRequirements,
-        GameState.attackRequirements = attackRequirements,
-        GameState.objectProhibitions = objectProhibitions,
-        GameState.attackProhibitions = attackProhibitions,
-        GameState.evasions = evasions,
-        GameState.ignoredAbilities = ignoredAbilities,
         GameState.turnOrder = turnOrder,
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,

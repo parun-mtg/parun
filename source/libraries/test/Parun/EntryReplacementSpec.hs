@@ -68,6 +68,7 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
@@ -713,7 +714,7 @@ assertBrineRun s answer gs alicePiker carolPiker aliceAfter left =
       -- The store behind it, asserted last so the board is what fails first: the
       -- extra turn's cleanup swept Savor's Expiry.AtCleanup row if it was still
       -- there, and kept every Expiry.Never one.
-      Spec.assertEqWith s "and the extra turn's cleanup left this many rows" (length (GameState.replacements startBob)) left
+      Spec.assertEqWith s "and the extra turn's cleanup left this many rows" (length (StoredEffects.replacements (GameState.stored startBob))) left
     _ -> Spec.assertFailure s "the seven turns did not run"
 
 -- Brine Elemental {4}{U}{U} Creature -- Elemental 5/4: "Morph {5}{U}{U} / When
@@ -751,7 +752,7 @@ brineElementalSpec s registry = Spec.describe s "BrineElemental" $ do
     case armed of
       Nothing -> Spec.assertFailure s "the face-down cast did not reach the battlefield"
       Just (gs, _) -> do
-        Spec.assertEqWith s "the trigger armed one row per opponent, so two" (length (GameState.replacements gs)) 2
+        Spec.assertEqWith s "the trigger armed one row per opponent, so two" (length (StoredEffects.replacements (GameState.stored gs))) 2
         case turnStarts S.identityAnswer 1 gs of
           [atExtra] -> do
             Spec.assertEqWith
@@ -759,7 +760,7 @@ brineElementalSpec s registry = Spec.describe s "BrineElemental" $ do
               "and the extra turn is alice's second"
               (TurnRegisters.turnNumber (GameState.turn atExtra), TurnRegisters.activePlayer (GameState.turn atExtra))
               (2, S.alice)
-            Spec.assertEqWith s "whose beginning added Savor's own, for three" (length (GameState.replacements atExtra)) 3
+            Spec.assertEqWith s "whose beginning added Savor's own, for three" (length (StoredEffects.replacements (GameState.stored atExtra))) 3
           _ -> Spec.assertFailure s "the extra turn did not begin"
   -- THE ELISION GOING AWAY. Two rows apply to one untap step and they are not
   -- interchangeable, so CR 616.1's choice is a real one and the affected player
@@ -1614,7 +1615,7 @@ magneticLockdownSpec s registry = Spec.describe s "Synthetic Magnetic Lockdown (
       Just oid -> do
         Spec.assertEqWith s "the Bauble entered untapped" (fmap Object.tapped (Game.lookupObject oid after)) (Just TapState.Untapped)
         Spec.assertEqWith s "setup: alice controlled two artifacts as it entered" (controlledNamed splitterName S.alice after) 2
-        Spec.assertEqWith s "setup: the row was installed and is still installed" (length (GameState.replacements armed), length (GameState.replacements after)) (1, 1)
+        Spec.assertEqWith s "setup: the row was installed and is still installed" (length (StoredEffects.replacements (GameState.stored armed)), length (StoredEffects.replacements (GameState.stored after))) (1, 1)
       _ -> Spec.assertFailure s "the Bauble did not reach the battlefield"
   Spec.it s "CR 614.12a a third artifact already on the battlefield does count, so the same row taps it" $ do
     (_, after) <- board (3 :: Int)

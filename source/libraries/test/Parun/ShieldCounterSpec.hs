@@ -38,6 +38,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -497,7 +498,7 @@ hurrJackalSpec s registry = Spec.describe s "Hurr Jackal (CR 701.19c)" $ do
       -- CR 701.19c's sharp half: the prohibited creature's shield was never
       -- APPLIED, so it was never spent either. One of the two shields went, and
       -- it is the one that regenerated the Mammoth.
-      Spec.assertEqWith s "the unapplied shield was not consumed" (length (GameState.replacements settled)) 1
+      Spec.assertEqWith s "the unapplied shield was not consumed" (length (StoredEffects.replacements (GameState.stored settled))) 1
   Spec.it s "CR 701.19a the same board without the ability: both shields hold"
     . withBoard
     $ \_ (control, victim, bystander, _) -> do

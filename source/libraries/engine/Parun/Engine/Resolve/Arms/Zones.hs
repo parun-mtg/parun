@@ -157,6 +157,7 @@ import qualified Parun.Types.SetOwner as SetOwner
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.TapState as TapState
@@ -1846,7 +1847,7 @@ exchangeValues settle resolving source controller legal (ExchangeValues.MkExchan
                     ContinuousEffect.modification = Modification.SetBasePowerToughness setting,
                     ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
                   }
-           in g1 {GameState.continuousEffects = eff : GameState.continuousEffects g1}
+           in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}
   -- CR 608.2f's bracket, the ExchangeLifeTotals arm's: one exchange is one
   -- action.
   Monad.forM_ (side one) $ \(oneValue, oneWrite) ->

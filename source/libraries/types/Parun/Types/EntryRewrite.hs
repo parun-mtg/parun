@@ -181,7 +181,7 @@ data EntryRewrite ability effect
     EntersTransformed
   | -- | CR 614.1c / Monstrous War-Leech: "As [this permanent] enters, [do
     -- something]" -- the one arm that RUNS effects, in printed order, deferred onto
-    -- GameState.pendingEntryEffects for Parun.Engine.Resolve.Effect.runEntryEffects to
+    -- StoredEffects.pendingEntryEffects for Parun.Engine.Resolve.Effect.runEntryEffects to
     -- drain.
     RunEffects (Seq.Seq effect)
   deriving (Eq, Ord, Show)

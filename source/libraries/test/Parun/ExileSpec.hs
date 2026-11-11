@@ -96,6 +96,7 @@ import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
@@ -397,7 +398,7 @@ spec s registry = Spec.describe s "Face-down exile" $ do
       -- guard. Dropping Event.changeZoneAttaching's destination gate leaves
       -- this green.
       Spec.assertEqWith s "and nothing in a hand is face down in exile" (concealedIn Zone.Hand S.alice after) []
-      Spec.assertEqWith s "the delayed ability was spent" (length (GameState.delayedTriggers after)) 0
+      Spec.assertEqWith s "the delayed ability was spent" (length (StoredEffects.delayedTriggers (GameState.stored after))) 0
     -- CR 406.3a: a card exiled face down has NO characteristics, so a CR 113.6c
     -- ability that functions from exile does not function from under one.
     -- Grist, the Hunger Tide is a 1/1 Insect creature card in every zone but the

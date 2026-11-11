@@ -8,7 +8,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 508.1c / 611.1: a stored, resolution-generated ATTACKING RESTRICTION,
--- held in GameState.attackProhibitions. Netter en-Dal's "target creature
+-- held in StoredEffects.attackProhibitions. Netter en-Dal's "target creature
 -- can't attack this turn" and Chronomantic Escape's "until your next turn,
 -- creatures can't attack you" are the producers.
 --

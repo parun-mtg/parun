@@ -88,6 +88,7 @@ import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StaticAbility as StaticAbility
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Teams as Teams
 import Parun.Types.Timestamp (Timestamp)
@@ -1533,7 +1534,7 @@ abilityFaceOf oid obj gs
   | Game.keptFaceDown oid gs = Nothing
   | otherwise =
       let stamped =
-            if Maybe.isNothing (Game.copyStampOf obj) && not (Object.flipped obj) && null (GameState.copyEffects gs)
+            if Maybe.isNothing (Game.copyStampOf obj) && not (Object.flipped obj) && null (StoredEffects.copyEffects (GameState.stored gs))
               then Nothing
               else copiableSnapshotOf oid gs
           overlay face pc =
@@ -1581,7 +1582,7 @@ textBoxHolderOf oid gs =
           [a, b] -> Just (ContinuousEffect.timestamp eff, a, b)
           _ -> Nothing
         _ -> Nothing
-      swaps = List.sortOn (\(ts, _, _) -> Ord.Down ts) (Maybe.mapMaybe swapOf (GameState.continuousEffects gs))
+      swaps = List.sortOn (\(ts, _, _) -> Ord.Down ts) (Maybe.mapMaybe swapOf (StoredEffects.continuousEffects (GameState.stored gs)))
       step x (_, a, b)
         | x == a = b
         | x == b = a
@@ -1611,7 +1612,7 @@ staticTimestampOf carrier obj gs
       let touching eff = case (ContinuousEffect.modification eff, ContinuousEffect.affected eff) of
             (Modification.ExchangeTextBoxes, Affected.TheseObjects pair) | Set.member carrier pair -> Just (ContinuousEffect.timestamp eff)
             _ -> Nothing
-       in List.foldl' max (Object.timestamp obj) (Maybe.mapMaybe touching (GameState.continuousEffects gs))
+       in List.foldl' max (Object.timestamp obj) (Maybe.mapMaybe touching (StoredEffects.continuousEffects (GameState.stored gs)))
 
 -- CR 707.2a: the static abilities this object's copiable rules text gives it --
 -- its copy snapshot's when it has one, its printed face's otherwise. Equal to
@@ -1677,7 +1678,7 @@ grantedStaticAbilitiesOf oid gs =
         (Modification.GainAbility (GrantedAbility.Static sa), Affected.TheseObjects held) | Set.member oid held -> [(ContinuousEffect.timestamp eff, sa)]
         (Modification.GainKeyword keyword, Affected.TheseObjects held) | Set.member oid held -> fmap ((,) (ContinuousEffect.timestamp eff)) (Keyword.mintedStaticAbilitiesOf (Set.singleton keyword))
         _ -> []
-   in List.sortOn fst (concatMap grant (GameState.continuousEffects gs))
+   in List.sortOn fst (concatMap grant (StoredEffects.continuousEffects (GameState.stored gs)))
 
 -- CR 116.2: the special actions this object's copiable rules text grants -- its
 -- copy snapshot's when it has one, its printed face's otherwise.
@@ -2539,7 +2540,7 @@ layerTwo :: [ControlGrant] -> GameState -> Map ObjectId PlayerId.PlayerId
 layerTwo grants gs =
   let stored =
         [ (ContinuousEffect.timestamp eff, ContinuousEffect.source eff, ContinuousEffect.affected eff, Just pid, Nothing)
-        | eff <- GameState.continuousEffects gs,
+        | eff <- StoredEffects.continuousEffects (GameState.stored gs),
           Modification.SetController pid <- [ContinuousEffect.modification eff]
         ]
       granted = fmap (\g -> (cgTimestamp g, cgSource g, cgAffected g, Nothing, cgCondition g)) grants

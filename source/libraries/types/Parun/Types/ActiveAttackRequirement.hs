@@ -8,7 +8,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 508.1d / 613.11: a stored, resolution-generated ATTACKING REQUIREMENT,
--- held in GameState.attackRequirements. The attack-axis analogue of
+-- held in StoredEffects.attackRequirements. The attack-axis analogue of
 -- Parun.Types.ActiveBlockRequirement, and the carrier that says WHAT the creature
 -- has to attack: Alluring Siren's "target creature an opponent controls attacks
 -- you this turn if able".

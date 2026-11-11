@@ -73,6 +73,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -2224,7 +2225,7 @@ castTheCardSpec s registry =
                           )
                           Engine.settleForPriority
                   Spec.assertEqWith s "nothing triggered at bob's end step" (length (TurnRegisters.stack (GameState.turn ending))) 0
-                  Spec.assertEqWith s "the trigger was still waiting when bob's turn began" (length (GameState.delayedTriggers bobsTurn), TurnRegisters.activePlayer (GameState.turn bobsTurn)) (1, S.bob)
+                  Spec.assertEqWith s "the trigger was still waiting when bob's turn began" (length (StoredEffects.delayedTriggers (GameState.stored bobsTurn)), TurnRegisters.activePlayer (GameState.turn bobsTurn)) (1, S.bob)
                 _ -> Spec.assertFailure s "Psychic Theft should exile exactly one card"
             _ -> Spec.assertFailure s "six printings"
 

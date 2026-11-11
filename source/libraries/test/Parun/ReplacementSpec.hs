@@ -94,6 +94,7 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -284,10 +285,10 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
     Spec.assertEqWith s "setup: the Aura is an unattached 5/5" (S.powerToughnessOf aura armed) (Just (5, 5))
     Spec.assertEqWith s "setup: attached to nothing, so CR 704.5m names it" (fmap Object.attachedTo (Game.lookupObject aura armed)) (Just Nothing)
     Spec.assertEqWith s "setup: with lethal damage, so CR 704.5g names it as well" (S.damageOf aura armed) (Just 5)
-    Spec.assertEqWith s "setup: exactly one floating replacement, the shield" (length (GameState.replacements armed)) 1
+    Spec.assertEqWith s "setup: exactly one floating replacement, the shield" (length (StoredEffects.replacements (GameState.stored armed))) 1
     Spec.assertBool s (not (Set.member aura (GameState.battlefield after))) "CR 704.5m buried it"
     Spec.assertEqWith s "in its owner's graveyard, not regenerated" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "and the shield was never spent on a destruction that did not happen" (length (GameState.replacements after)) 1
+    Spec.assertEqWith s "and the shield was never spent on a destruction that did not happen" (length (StoredEffects.replacements (GameState.stored after))) 1
   Spec.it s "CR 614.1a a move whose destination the pattern misses is untouched" $ do
     restInPeace <- S.printingOf s registry "Rest in Peace"
     pikerPrinting <- S.printingOf s registry "Goblin Piker"
@@ -342,7 +343,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
     Spec.assertBool s (Set.member troll (GameState.battlefield once)) "the Troll survived the first destruction"
     Spec.assertBool s (Set.member troll (GameState.battlefield twice)) "and the second -- CR 701.19b's static ability is not used up"
     Spec.assertBool s (not (Set.member skel (GameState.battlefield twice))) "while CR 701.19a's shield beside it was, so the Skeletons died to the second"
-    Spec.assertEqWith s "and the only floating row on the board was the Skeletons'" (length (GameState.replacements armed)) 1
+    Spec.assertEqWith s "and the only floating row on the board was the Skeletons'" (length (StoredEffects.replacements (GameState.stored armed))) 1
   -- CR 701.19c: "Effects that say that a permanent can't be regenerated
   -- don't preclude such abilities from being activated or such spells from
   -- being cast; rather, they cause regeneration shields to not be applied."
@@ -356,7 +357,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
     Spec.assertBool s (not (Set.member skel (GameState.battlefield after))) "it died anyway"
     -- CR 701.19c again, and the sharp half: an unapplied shield is not a
     -- spent one. Nothing consumed it, because it was never chosen.
-    Spec.assertEqWith s "and the shield was not consumed" (length (GameState.replacements after)) (length (GameState.replacements shielded))
+    Spec.assertEqWith s "and the shield was not consumed" (length (StoredEffects.replacements (GameState.stored after))) (length (StoredEffects.replacements (GameState.stored shielded)))
   -- The discriminating twin: identical creature, identical shield, and the
   -- only difference is whether the destruction forbids regeneration. This
   -- fails if the gate is ignored, and equally if it is applied to every
@@ -368,7 +369,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
         shielded = S.addRegenShield skel g1
         after = S.runPure S.identityAnswer shielded (Event.destroy (pure ()) Regenerability.Regenerable [skel])
     Spec.assertBool s (Set.member skel (GameState.battlefield after)) "it survived"
-    Spec.assertEqWith s "and this time the shield was spent" (GameState.replacements after) []
+    Spec.assertEqWith s "and this time the shield was spent" (StoredEffects.replacements (GameState.stored after)) []
   -- The twin of the whole-card test: the SAME creature and the SAME shield,
   -- destroyed by the CR 704.5g state-based action instead, which carries no
   -- such clause. Regeneration is exactly what it is for.
@@ -401,7 +402,7 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
         shielded = S.addRegenShield myr g1
         after = S.runPure S.identityAnswer shielded (Event.destroy (pure ()) Regenerability.Regenerable [myr])
     Spec.assertBool s (Set.member myr (GameState.battlefield after)) "the indestructible creature survives"
-    Spec.assertEqWith s "the shield is intact" (length (GameState.replacements after)) 1
+    Spec.assertEqWith s "the shield is intact" (length (StoredEffects.replacements (GameState.stored after))) 1
   -- CR 305.7: a land whose subtype is set to a basic type "loses all
   -- abilities generated from its rules text", and a replacement effect is
   -- one of them. Ashaya makes the Menace a Forest land, Blood Moon sets
@@ -812,7 +813,7 @@ galvanicBlastSpec s registry =
       -- CR 614.1: the row IS installed and simply does not apply, its clause
       -- being false when the damage would happen (voltaicSurgeSpec below is
       -- where that separation is observable). Unspent, since it never applied.
-      Spec.assertEqWith s "the row is installed but unapplied" (length (GameState.replacements after)) 1
+      Spec.assertEqWith s "the row is installed but unapplied" (length (StoredEffects.replacements (GameState.stored after))) 1
     -- The discriminating twin: one more artifact, everything else identical.
     --
     -- The FOUR-artifact leg is what makes this a Comparison.AtLeast test rather
@@ -829,7 +830,7 @@ galvanicBlastSpec s registry =
       Spec.assertEqWith s "at four, still 4 -- not back down to the printed 2" (S.lifeOf S.bob (castAndResolve atBob four fourId)) (Just 16)
       -- CR 614.3's "until they're used up": the row applied, so Uses.Once spent
       -- it. Nothing is left to replace a later damage event this turn.
-      Spec.assertEqWith s "and the one-shot was consumed" (GameState.replacements after) []
+      Spec.assertEqWith s "and the one-shot was consumed" (StoredEffects.replacements (GameState.stored after)) []
     -- CR 614.15's "own effect(s)": the clause replaces the damage ITS OWN SOURCE is
     -- dealing and nothing else.
     --
@@ -916,7 +917,7 @@ voltaicSurgeSpec s registry =
     -- THE PROVING TEST. The clause is true when the row is installed and false
     -- when the second Firebolt would be doubled, and NOTHING removed the row: a
     -- gate read at installation doubles both, and a row that was swept would
-    -- leave GameState.replacements empty.
+    -- leave StoredEffects.replacements empty.
     Spec.it s "CR 614.1 the clause is re-asked, so losing an artifact turns the row off without removing it" $ do
       (_, (gs, surgeId, bolts, splitters)) <- board 3
       case (bolts, splitters) of
@@ -931,7 +932,7 @@ voltaicSurgeSpec s registry =
           -- on this board, so S.countOnBattlefieldByName's owner index answers
           -- the control question too (see Parun.Support).
           Spec.assertEqWith s "setup: alice is down to two artifacts" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Bonesplitter")) S.alice shrunk) 2
-          Spec.assertEqWith s "and the row is still installed -- it stopped applying, it was not removed" (length (GameState.replacements after)) 1
+          Spec.assertEqWith s "and the row is still installed -- it stopped applying, it was not removed" (length (StoredEffects.replacements (GameState.stored after))) 1
         _ -> Spec.assertFailure s "fixture should hold two Firebolts and three artifacts"
 
 -- How many battlefield permanents `pid` CONTROLS are printed with this name. NOT
@@ -1002,7 +1003,7 @@ threeSeatSpecimenBoard island gatherSpecimens creature =
 rowSourceOf :: PlayerId.PlayerId -> GameState.GameState -> Maybe ObjectId.ObjectId
 rowSourceOf who gs =
   Maybe.listToMaybe
-    (fmap ActiveReplacement.source (filter (\active -> ActiveReplacement.controller active == who) (GameState.replacements gs)))
+    (fmap ActiveReplacement.source (filter (\active -> ActiveReplacement.controller active == who) (StoredEffects.replacements (GameState.stored gs))))
 
 -- Name the candidate whose source is `preferred`, but only when CR 616.1's race
 -- is put to `who`; every other prompt takes the default. The readout for WHICH
@@ -1090,7 +1091,7 @@ gatherSpecimensSpec s registry =
           entry = S.cast S.carol moeba >> Stack.resolveTop
           asked = answersFor S.identityAnswer armed entry
           moebaName = CardName.MkCardName $ Text.pack "Narcomoeba"
-      Spec.assertEqWith s "two floating replacements are live" (length (GameState.replacements armed)) 2
+      Spec.assertEqWith s "two floating replacements are live" (length (StoredEffects.replacements (GameState.stored armed))) 2
       Spec.assertBool s (wasAskedToReplace asked) "a ChooseReplacement was raised"
       case (rowSourceOf S.alice armed, rowSourceOf S.bob armed) of
         (Just aliceRow, Just bobRow) ->
@@ -1121,12 +1122,12 @@ gatherSpecimensSpec s registry =
           asked = answersFor S.identityAnswer gone entry
           after = S.runPure S.identityAnswer gone entry
           moebaName = CardName.MkCardName $ Text.pack "Narcomoeba"
-      Spec.assertEqWith s "both rows were floating before alice left" (length (GameState.replacements armed)) 2
+      Spec.assertEqWith s "both rows were floating before alice left" (length (StoredEffects.replacements (GameState.stored armed))) 2
       case newestNamed moebaName after of
         Just moebaObj -> do
           Spec.assertEqWith s "bob's row is the only one left, so the creature is bob's" (Projection.controllerOf moebaObj after) (Just S.bob)
           Spec.assertBool s (not (wasAskedToReplace asked)) "no ChooseReplacement was raised"
-          Spec.assertEqWith s "only bob's row survived alice's departure" (length (GameState.replacements gone)) 1
+          Spec.assertEqWith s "only bob's row survived alice's departure" (length (StoredEffects.replacements (GameState.stored gone))) 1
         Nothing -> Spec.assertFailure s "the creature did not reach the battlefield"
 
 -- Kismet ({3}{W} Enchantment, "Artifacts, creatures, and lands your opponents

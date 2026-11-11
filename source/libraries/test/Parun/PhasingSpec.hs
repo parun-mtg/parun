@@ -105,6 +105,7 @@ import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
@@ -392,7 +393,7 @@ effectSpec s registry = Spec.describe s "Effect" $ do
         Spec.assertEqWith s "setup: it phases in at alice's untap step" (onBattlefield evil back) True
         Spec.assertEqWith s "it phases in an enchantment, not a creature" (Projection.isCreatureOf evil back) False
         Spec.assertEqWith s "with no power" (Projection.powerOf evil back) Nothing
-        Spec.assertEqWith s "and no effect was stored" (GameState.continuousEffects back) []
+        Spec.assertEqWith s "and no effect was stored" (StoredEffects.continuousEffects (GameState.stored back)) []
       _ -> Spec.assertFailure s "Lurking Evil should have one activated ability"
   -- The control half of CR 702.26e, the same board shape: Jinxed Idol's "target
   -- opponent gains control of this artifact" names the Idol through `self`, and
@@ -417,7 +418,7 @@ effectSpec s registry = Spec.describe s "Effect" $ do
         Spec.assertEqWith s "setup: and the ability resolved" (TurnRegisters.stack (GameState.turn hidden)) []
         Spec.assertEqWith s "setup: it phases in at alice's untap step" (onBattlefield jinxed back) True
         Spec.assertEqWith s "it phases in still alice's" (Projection.controllerOf jinxed back) (Just S.alice)
-        Spec.assertEqWith s "and no effect was stored" (GameState.continuousEffects back) []
+        Spec.assertEqWith s "and no effect was stored" (StoredEffects.continuousEffects (GameState.stored back)) []
       _ -> Spec.assertFailure s "Jinxed Idol should have one activated ability"
 
 indirectSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -808,11 +809,11 @@ departureSpec s registry = Spec.describe s "Departure" $ do
               ActiveObjectProhibition.affected = RestrictedCreatures.Named victim
             }
         gone = rippleAt victim first (rippleAt victim borrow board)
-        held = gone {GameState.objectProhibitions = [row]}
+        held = gone {GameState.stored = (GameState.stored gone) {StoredEffects.objectProhibitions = [row]}}
         left = S.runPure S.identityAnswer held (Departure.leaveGame Departure.Type.Conceded S.alice)
         handoff gs = S.runPure S.identityAnswer gs Engine.handoffTurn
         walked = handoff (handoff (handoff left))
-        released = walked {GameState.objectProhibitions = []}
+        released = walked {GameState.stored = (GameState.stored walked) {StoredEffects.objectProhibitions = []}}
     Spec.assertEqWith s "the row is on rule 702.26n's schedule" (Phasing.phasedOutStatus victim walked) (Just (PhasedOut.Orphaned S.alice))
     Spec.assertEqWith s "the hold keeps it out of that untap step" (onBattlefield victim (untapStep S.bob walked)) False
     Spec.assertEqWith s "the same untap step takes it once the hold is gone" (onBattlefield victim (untapStep S.bob released)) True

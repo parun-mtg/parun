@@ -88,6 +88,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Staged as Staged
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TextWord as TextWord
@@ -622,7 +623,7 @@ evasionSpec s registry = Spec.describe s "Evasion" $ do
     let animate oid gs =
           let (ts, gs1) = Game.freshTimestamp gs
               eff = ContinuousEffect.MkContinuousEffect oid ts Expiry.AtCleanup (Modification.CardType ChangeMode.InAddition CardType.Creature) (Affected.TheseObjects (Set.singleton oid))
-           in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+           in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
     case attacking [graxiplon] [arbor, forest, forest] of
       (gs, a : _, [b, f1, f2]) ->
         Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton b (Set.singleton a)) (animate f2 (animate f1 gs)))) "CR 205.3m three creatures sharing only Forest: illegal"
@@ -850,7 +851,7 @@ withMenace oid gs =
             ContinuousEffect.modification = Modification.GainKeyword Keyword.Menace,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
           }
-   in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
 
 -- CR 509.1a: the defending player chooses ONE creature for each blocker to
 -- block, and an effect can raise that number. Foriysian Brigade {3}{W} 2/4,
@@ -2222,7 +2223,7 @@ crossingAttackBoundsSpec s registry = Spec.describe s "CrossingAttackBounds" $ d
         lure sirenId pid lured g =
           let (ts, g') = Game.freshTimestamp g
               stored = ActiveAttackRequirement.MkActiveAttackRequirement sirenId pid ts Expiry.AtCleanup (RestrictedCreatures.Named lured) (Just (AttackTarget.OfPlayer pid))
-           in g' {GameState.attackRequirements = stored : GameState.attackRequirements g'}
+           in g' {GameState.stored = (GameState.stored g') {StoredEffects.attackRequirements = stored : StoredEffects.attackRequirements (GameState.stored g')}}
         g5 = lure daveSiren S.dave toDave (lure carolSiren S.carol toCarol g4)
         board =
           g5
@@ -2580,7 +2581,7 @@ keywordCounterRestrictionSpec s registry = Spec.describe s "KeywordCounterRestri
 -- up can state -- the counter's restriction is indefinite, and a printed row is
 -- gathered live off a source standing on the battlefield. Zirda, the Dawnwaker's
 -- "{1}, {T}: Target creature can't block this turn" (checked against Scryfall) is
--- the pool's printing; the row lands in GameState.objectProhibitions and
+-- the pool's printing; the row lands in StoredEffects.objectProhibitions and
 -- Parun.Engine.CombatRestriction.blockProhibited is what reads it.
 --
 -- THE PAIR that makes these cases discriminating: the SAME activation is made on
@@ -2597,13 +2598,13 @@ storedBlockRestrictionSpec s registry = Spec.describe s "StoredBlockRestriction"
         after = S.runPure S.aggressiveAnswer declaring (Combat.declareBlockers S.manaPerformer)
     Spec.assertEqWith s "only the twin ended up blocking" (Combat.blockersOf attacker after) (Set.singleton twin)
     Spec.assertBool s (not (Combat.canBlock S.bob victim declaring)) "and the named creature is off CR 509.1a's candidate list"
-    Spec.assertEqWith s "one restriction was stored, over the creature named" (fmap ActiveObjectProhibition.affected (GameState.objectProhibitions resolved)) [RestrictedCreatures.Named victim]
+    Spec.assertEqWith s "one restriction was stored, over the creature named" (fmap ActiveObjectProhibition.affected (StoredEffects.objectProhibitions (GameState.stored resolved))) [RestrictedCreatures.Named victim]
   -- The pair's other half: the same activation, aimed at alice's attacker.
   Spec.it s "CR 509.1b aimed elsewhere, both of bob's twins block" $ do
     (attacker, victim, twin, resolved) <- zirdaResolved s registry (\a _ _ -> a)
     let after = S.runPure S.aggressiveAnswer (declaringAttackers resolved) (Combat.declareBlockers S.manaPerformer)
     Spec.assertEqWith s "both twins blocked" (Combat.blockersOf attacker after) (Set.fromList [victim, twin])
-    Spec.assertEqWith s "and the restriction was stored all the same, over the attacker" (fmap ActiveObjectProhibition.affected (GameState.objectProhibitions resolved)) [RestrictedCreatures.Named attacker]
+    Spec.assertEqWith s "and the restriction was stored all the same, over the attacker" (fmap ActiveObjectProhibition.affected (StoredEffects.objectProhibitions (GameState.stored resolved))) [RestrictedCreatures.Named attacker]
   -- CR 514.2 / 611.2a: "this turn" arms Expiry.AtCleanup, so the cleanup sweep
   -- drops the row and the creature blocks again. Through the sweep directly,
   -- which is the narrowest path that shows it.
@@ -2612,7 +2613,7 @@ storedBlockRestrictionSpec s registry = Spec.describe s "StoredBlockRestriction"
     let swept = Expiry.dropAtCleanup resolved
     Spec.assertBool s (not (Combat.canBlock S.bob victim resolved)) "restricted on the turn it resolved"
     Spec.assertBool s (Combat.canBlock S.bob victim swept) "and blocking again once the turn's cleanup has run"
-    Spec.assertEqWith s "with nothing left stored" (GameState.objectProhibitions swept) []
+    Spec.assertEqWith s "with nothing left stored" (StoredEffects.objectProhibitions (GameState.stored swept)) []
   -- CR 509.1c is CR 508.1d's textual mirror -- both count the requirements that
   -- could be obeyed "without disobeying any restrictions" -- and this side
   -- reaches it by the same route storedAttackRestrictionSpec's last case proves
@@ -2709,7 +2710,7 @@ namingTarget oid p = case p of
 -- ATTACKING restriction, which no printed row can state for a creature whose
 -- source has left. Netter en-Dal's "{W}, {T}, Discard a card: Target creature
 -- can't attack this turn" (checked against Scryfall) is the pool's printing; the
--- row lands in GameState.attackProhibitions and
+-- row lands in StoredEffects.attackProhibitions and
 -- Parun.Engine.CombatRestriction.attackProhibited is what reads it.
 --
 -- THE PAIR: the same activation is made on every board here, for the same {W},
@@ -2725,13 +2726,13 @@ storedAttackRestrictionSpec s registry = Spec.describe s "StoredAttackRestrictio
     let after = declaringAttackers resolved
     Spec.assertEqWith s "only the twin ended up attacking" (declaredAttackers after) [twin]
     Spec.assertBool s (not (Combat.canAttack S.alice victim resolved)) "and the named creature is off CR 508.1a's candidate list"
-    Spec.assertEqWith s "one restriction was stored, over the creature named" (fmap ActiveAttackProhibition.affected (GameState.attackProhibitions resolved)) [RestrictedCreatures.Named victim]
+    Spec.assertEqWith s "one restriction was stored, over the creature named" (fmap ActiveAttackProhibition.affected (StoredEffects.attackProhibitions (GameState.stored resolved))) [RestrictedCreatures.Named victim]
   -- The pair's other half: the same activation, aimed at bob's Piker.
   Spec.it s "CR 508.1c aimed elsewhere, both of alice's twins attack" $ do
     (victim, twin, elsewhere, resolved) <- netterResolved s registry (\_ _ e -> e)
     let after = declaringAttackers resolved
     Spec.assertEqWith s "both twins attacked" (declaredAttackers after) [victim, twin]
-    Spec.assertEqWith s "and the restriction was stored all the same, over bob's Piker" (fmap ActiveAttackProhibition.affected (GameState.attackProhibitions resolved)) [RestrictedCreatures.Named elsewhere]
+    Spec.assertEqWith s "and the restriction was stored all the same, over bob's Piker" (fmap ActiveAttackProhibition.affected (StoredEffects.attackProhibitions (GameState.stored resolved))) [RestrictedCreatures.Named elsewhere]
   -- CR 514.2 / 611.2a: "this turn" arms Expiry.AtCleanup, so the cleanup sweep
   -- drops the row and the creature attacks again. Through the sweep directly,
   -- which is the narrowest path that shows it.
@@ -2740,7 +2741,7 @@ storedAttackRestrictionSpec s registry = Spec.describe s "StoredAttackRestrictio
     let swept = Expiry.dropAtCleanup resolved
     Spec.assertBool s (not (Combat.canAttack S.alice victim resolved)) "restricted on the turn it resolved"
     Spec.assertBool s (Combat.canAttack S.alice victim swept) "and attacking again once the turn's cleanup has run"
-    Spec.assertEqWith s "with nothing left stored" (GameState.attackProhibitions swept) []
+    Spec.assertEqWith s "with nothing left stored" (StoredEffects.attackProhibitions (GameState.stored swept)) []
   -- CR 508.1d counts requirements obeyed "without disobeying any restrictions",
   -- so a stored restriction does not deadlock a Curse of the Nightly Hunt -- it
   -- takes the creature off Parun.Engine.Combat.legalAttackers, which is the
@@ -2860,7 +2861,7 @@ storedClassAttackRestrictionSpec s registry = Spec.describe s "StoredClassAttack
     -- CR 508.1a is untouched: the row is about the ANNOUNCEMENT, so both Pikers
     -- stay candidates and it is the declaration that is refused.
     Spec.assertEqWith s "both Pikers are still offered" (Combat.legalAttackers S.bob declaring) [early, late]
-    Spec.assertEqWith s "one row was stored, a class aimed at alice's seat" (fmap ActiveAttackProhibition.affected (GameState.attackProhibitions declaring)) [RestrictedCreatures.Matching (Filter.HasCardType CardType.Creature)]
+    Spec.assertEqWith s "one row was stored, a class aimed at alice's seat" (fmap ActiveAttackProhibition.affected (StoredEffects.attackProhibitions (GameState.stored declaring))) [RestrictedCreatures.Matching (Filter.HasCardType CardType.Creature)]
   -- CR 611.2a: "until your next turn" is Expiry.AtTurnOf alice, so the row
   -- survives alice's own cleanup, bob's whole turn and carol's, and is gone as
   -- alice's begins. Through Engine.handoffTurn, the road
@@ -2875,7 +2876,7 @@ storedClassAttackRestrictionSpec s registry = Spec.describe s "StoredClassAttack
     Spec.assertEqWith s "carol is active" (TurnRegisters.activePlayer (GameState.turn carolsTurn)) S.carol
     Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.bob [(late, AttackTarget.OfPlayer S.alice)] (bobDeclaring carolsTurn))) "still in force through carol's turn"
     Spec.assertEqWith s "alice is active" (TurnRegisters.activePlayer (GameState.turn alicesTurn)) S.alice
-    Spec.assertEqWith s "and nothing is stored once her turn has begun" (GameState.attackProhibitions alicesTurn) []
+    Spec.assertEqWith s "and nothing is stored once her turn has begun" (StoredEffects.attackProhibitions (GameState.stored alicesTurn)) []
     Spec.assertEqWith s "bob is active again" (TurnRegisters.activePlayer (GameState.turn bobsSecondTurn)) S.bob
     Spec.assertBool s (Combat.legalAttackDeclarationAs S.bob [(late, AttackTarget.OfPlayer S.alice)] (bobDeclaring bobsSecondTurn)) "and his Piker may attack alice on his next turn"
 
@@ -2902,15 +2903,15 @@ escapeBoards s registry = do
       resolved = S.runPure S.identityAnswer board (S.cast S.alice escapeId >> Stack.resolveTop)
       (late, restricted) = S.addPermanent piker S.bob (handoff resolved)
       (lateControl, control) = S.addPermanent piker S.bob (handoff board)
-  Spec.assertEqWith s "the Escape resolved and stored one row" (length (GameState.attackProhibitions resolved)) 1
-  Spec.assertEqWith s "and left the pair nothing" (GameState.attackProhibitions control) []
+  Spec.assertEqWith s "the Escape resolved and stored one row" (length (StoredEffects.attackProhibitions (GameState.stored resolved))) 1
+  Spec.assertEqWith s "and left the pair nothing" (StoredEffects.attackProhibitions (GameState.stored control)) []
   pure (early, late, restricted, lateControl, control)
 
 -- CR 611.2a: a duration that names a WINDOW rather than a deadline -- Wall of
 -- Dust's "Whenever this creature blocks a creature, that creature can't attack
 -- during its controller's next turn" (Oracle checked against Scryfall
 -- 2026-09-21), the pool's only printing of such a duration. The row lands in
--- GameState.attackProhibitions under Expiry.DuringTurnOfControllerOf, and
+-- StoredEffects.attackProhibitions under Expiry.DuringTurnOfControllerOf, and
 -- Parun.Engine.CombatRestriction.liveAttackProhibitions is the gate that keeps it
 -- inert until a later turn whose active player controls the creature.
 --
@@ -2933,9 +2934,9 @@ windowAttackRestrictionSpec s registry = Spec.describe s "WindowAttackRestrictio
     (openGiant, openTreason, control) <- wallBoard s registry "Wall of Stone"
     let bobsTurn = stealing treason giant (handoffUntapping blocked)
         openTurn = stealing openTreason openGiant (handoffUntapping control)
-    Spec.assertEqWith s "the block stored one row, over the creature the Wall blocked" (fmap ActiveAttackProhibition.affected (GameState.attackProhibitions blocked)) [RestrictedCreatures.Named giant]
-    Spec.assertEqWith s "and the pair stored none" (GameState.attackProhibitions control) []
-    Spec.assertEqWith s "the row is still stored on bob's turn" (length (GameState.attackProhibitions bobsTurn)) 1
+    Spec.assertEqWith s "the block stored one row, over the creature the Wall blocked" (fmap ActiveAttackProhibition.affected (StoredEffects.attackProhibitions (GameState.stored blocked))) [RestrictedCreatures.Named giant]
+    Spec.assertEqWith s "and the pair stored none" (StoredEffects.attackProhibitions (GameState.stored control)) []
+    Spec.assertEqWith s "the row is still stored on bob's turn" (length (StoredEffects.attackProhibitions (GameState.stored bobsTurn))) 1
     Spec.assertEqWith s "bob controls the Giant and is active" (Projection.controllerOf giant bobsTurn, TurnRegisters.activePlayer (GameState.turn bobsTurn)) (Just S.bob, S.bob)
     Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.bob [(giant, AttackTarget.OfPlayer S.alice)] (declaringAt S.alice bobsTurn))) "CR 611.2a: bob now controls the Giant on his turn, so the Giant may not attack"
     Spec.assertBool s (Combat.legalAttackDeclarationAs S.bob [(openGiant, AttackTarget.OfPlayer S.alice)] (declaringAt S.alice openTurn)) "as the pair's Giant does"
@@ -2943,7 +2944,7 @@ windowAttackRestrictionSpec s registry = Spec.describe s "WindowAttackRestrictio
     -- declaration above rather than being absorbed here: the seat is left open
     -- on the blocked creature (CR 108.4 / 110.2, read when a later turn comes)
     -- and 1 is the turn the block happened on.
-    Spec.assertEqWith s "under a window naming the Giant's controller's turn after turn 1" (fmap ActiveAttackProhibition.expiry (GameState.attackProhibitions blocked)) [Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn giant 1)]
+    Spec.assertEqWith s "under a window naming the Giant's controller's turn after turn 1" (fmap ActiveAttackProhibition.expiry (StoredEffects.attackProhibitions (GameState.stored blocked))) [Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn giant 1)]
   Spec.it s "CR 611.2a and cannot attack once that turn has begun" $ do
     (giant, _, blocked) <- wallBoard s registry "Wall of Dust"
     (openGiant, _, control) <- wallBoard s registry "Wall of Stone"

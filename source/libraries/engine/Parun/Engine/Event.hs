@@ -296,6 +296,7 @@ import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StickerPlacement as StickerPlacement
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Throw as Throw
@@ -3299,7 +3300,7 @@ apply settle batch applied batchPrevented candidate event =
                       grants =
                         fmap Modification.GainKeyword (Set.toList (EntersWith.keywords entersWith))
                           <> fmap Modification.GainAbility (Foldable.toList (EntersWith.abilities entersWith))
-                   in gs3 {GameState.continuousEffects = fmap effectFor grants <> GameState.continuousEffects gs3}
+                   in gs3 {GameState.stored = (GameState.stored gs3) {StoredEffects.continuousEffects = fmap effectFor grants <> StoredEffects.continuousEffects (GameState.stored gs3)}}
             pure (Just event)
       -- CR 616.1b / 110.2: Gather Specimens. The entering object's CR 110.2
       -- DEFAULT controller becomes CR 109.5's "you" -- the candidate's
@@ -3882,7 +3883,7 @@ apply settle batch applied batchPrevented candidate event =
                                 -- matches a filter later.
                                 ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
                               }
-                       in gs3 {GameState.continuousEffects = eff : GameState.continuousEffects gs3}
+                       in gs3 {GameState.stored = (GameState.stored gs3) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs3)}}
             pure (Just event)
       -- CR 702.98a / 614.1c: unleash. "You may have this permanent enter with an
       -- additional +1/+1 counter on it." Riot's arm with the declining half
@@ -4229,7 +4230,7 @@ apply settle batch applied batchPrevented candidate event =
       -- QUEUED, not run here, and the module boundary is the reason: this module
       -- is below Parun.Engine.Resolve and cannot run a card's effects, exactly as
       -- Parun.Engine.Damage cannot run CR 615.5's rider. So the effects go onto
-      -- GameState.pendingEntryEffects with the environment they need and
+      -- StoredEffects.pendingEntryEffects with the environment they need and
       -- Resolve.runEntryEffects performs them; see that field for where it drains
       -- and what the deferral costs.
       --
@@ -4256,13 +4257,16 @@ apply settle batch applied batchPrevented candidate event =
           Just controller -> do
             State.modify' $ \g ->
               g
-                { GameState.pendingEntryEffects =
-                    GameState.pendingEntryEffects g
-                      Seq.|> PendingEntryEffect.MkPendingEntryEffect
-                        { PendingEntryEffect.object = oid,
-                          PendingEntryEffect.controller = controller,
-                          PendingEntryEffect.effects = effects
-                        }
+                { GameState.stored =
+                    (GameState.stored g)
+                      { StoredEffects.pendingEntryEffects =
+                          StoredEffects.pendingEntryEffects (GameState.stored g)
+                            Seq.|> PendingEntryEffect.MkPendingEntryEffect
+                              { PendingEntryEffect.object = oid,
+                                PendingEntryEffect.controller = controller,
+                                PendingEntryEffect.effects = effects
+                              }
+                      }
                 }
             pure (Just event)
     -- Unreachable: `applies` admits EntryR only against WouldEnter.
@@ -4476,14 +4480,17 @@ apply settle batch applied batchPrevented candidate event =
           Just controller -> do
             State.modify' $ \g ->
               g
-                { GameState.pendingReplacementEffects =
-                    GameState.pendingReplacementEffects g
-                      Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
-                        { PendingReplacementEffect.effects = effects,
-                          PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
-                          PendingReplacementEffect.controller = controller,
-                          PendingReplacementEffect.source = ReplacementCandidate.source candidate
-                        }
+                { GameState.stored =
+                    (GameState.stored g)
+                      { StoredEffects.pendingReplacementEffects =
+                          StoredEffects.pendingReplacementEffects (GameState.stored g)
+                            Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                              { PendingReplacementEffect.effects = effects,
+                                PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                                PendingReplacementEffect.controller = controller,
+                                PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                              }
+                      }
                 }
             pure Nothing
       -- CR 614.1a / Illusionary Mask: "instead it's turned face up and ... deals
@@ -4900,7 +4907,7 @@ apply settle batch applied batchPrevented candidate event =
                   PendingReplacementEffect.controller = pid,
                   PendingReplacementEffect.source = ReplacementCandidate.source candidate
                 }
-            queue g = g {GameState.pendingReplacementEffects = GameState.pendingReplacementEffects g Seq.|> loss}
+            queue g = g {GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = StoredEffects.pendingReplacementEffects (GameState.stored g) Seq.|> loss}}
         Monad.unless (any (`elem` Game.zoneMembers Zone.Hand pid after) arrived) (State.modify' queue)
         pure Nothing
       -- CR 614.1a / 701.20a: Abundance's "you may instead choose land or
@@ -5021,14 +5028,17 @@ apply settle batch applied batchPrevented candidate event =
             Monad.forM_ (ReplacementCandidate.controller candidate) $ \controller ->
               State.modify' $ \g ->
                 g
-                  { GameState.pendingReplacementEffects =
-                      GameState.pendingReplacementEffects g
-                        Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
-                          { PendingReplacementEffect.effects = effects,
-                            PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
-                            PendingReplacementEffect.controller = controller,
-                            PendingReplacementEffect.source = ReplacementCandidate.source candidate
-                          }
+                  { GameState.stored =
+                      (GameState.stored g)
+                        { StoredEffects.pendingReplacementEffects =
+                            StoredEffects.pendingReplacementEffects (GameState.stored g)
+                              Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                                { PendingReplacementEffect.effects = effects,
+                                  PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                                  PendingReplacementEffect.controller = controller,
+                                  PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                }
+                        }
                   }
             pure Nothing
     -- Unreachable: `applies` admits DrawR only against WouldDraw.
@@ -5178,14 +5188,17 @@ apply settle batch applied batchPrevented candidate event =
       Monad.forM_ (ReplacementCandidate.controller candidate) $ \controller ->
         State.modify' $ \g ->
           g
-            { GameState.pendingReplacementEffects =
-                GameState.pendingReplacementEffects g
-                  Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
-                    { PendingReplacementEffect.effects = effects,
-                      PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
-                      PendingReplacementEffect.controller = controller,
-                      PendingReplacementEffect.source = ReplacementCandidate.source candidate
-                    }
+            { GameState.stored =
+                (GameState.stored g)
+                  { StoredEffects.pendingReplacementEffects =
+                      StoredEffects.pendingReplacementEffects (GameState.stored g)
+                        Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                          { PendingReplacementEffect.effects = effects,
+                            PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                            PendingReplacementEffect.controller = controller,
+                            PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                          }
+                  }
             }
       pure Nothing
     -- Unreachable: `applies` admits GameLossR only against WouldLoseGame.
@@ -5206,14 +5219,17 @@ apply settle batch applied batchPrevented candidate event =
           Monad.forM_ (ReplacementCandidate.controller candidate) $ \controller ->
             State.modify' $ \g ->
               g
-                { GameState.pendingReplacementEffects =
-                    GameState.pendingReplacementEffects g
-                      Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
-                        { PendingReplacementEffect.effects = effects,
-                          PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
-                          PendingReplacementEffect.controller = controller,
-                          PendingReplacementEffect.source = ReplacementCandidate.source candidate
-                        }
+                { GameState.stored =
+                    (GameState.stored g)
+                      { StoredEffects.pendingReplacementEffects =
+                          StoredEffects.pendingReplacementEffects (GameState.stored g)
+                            Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                              { PendingReplacementEffect.effects = effects,
+                                PendingReplacementEffect.targets = fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate),
+                                PendingReplacementEffect.controller = controller,
+                                PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                              }
+                      }
                 }
           pure Nothing
     -- Unreachable: `applies` admits PlaneswalkR only against WouldPlaneswalk.
@@ -5338,7 +5354,7 @@ apply settle batch applied batchPrevented candidate event =
     -- this artifact". The row's controller decides (CR 109.5), who is the player
     -- beginning it but for a teammate's row under CR 805.8; declining leaves the
     -- event standing, DrawRewrite.MaySkipFor's posture. Skipped, the effects wait
-    -- for the next step to actually begin (GameState.pendingSkipEffects), where
+    -- for the next step to actually begin (StoredEffects.pendingSkipEffects), where
     -- pendingReplacementEffects' drains would run them at once.
     --
     -- CR 733.3: a skip whose source has one queued already, at the same turns to
@@ -5351,11 +5367,11 @@ apply settle batch applied batchPrevented candidate event =
     (ReplacementEffect.PhaseR (PhaseR.MkPhaseR _ (PhaseRewrite.MaySkipFor effects)), ProposedEvent.WouldBeginPhase _ pid) -> do
       gs <- State.get
       let decider = Maybe.fromMaybe pid (ReplacementCandidate.controller candidate)
-          queued = GameState.pendingSkipEffects gs
+          queued = StoredEffects.pendingSkipEffects (GameState.stored gs)
           involved = foldMap (Set.singleton . PendingReplacementEffect.controller . PendingSkipEffect.pending) queued
           fromActive = let (before, after) = List.break (== TurnRegisters.activePlayer (GameState.turn gs)) (GameState.turnOrder gs) in after <> before
           breaker = List.find (`Set.member` involved) fromActive
-          floating = Set.fromList (fmap ActiveReplacement.timestamp (GameState.replacements gs))
+          floating = Set.fromList (fmap ActiveReplacement.timestamp (StoredEffects.replacements (GameState.stored gs)))
           position = (GameState.extraTurns gs, GameState.turnMarkers gs, floating)
           repeats = any (\q -> PendingReplacementEffect.source (PendingSkipEffect.pending q) == ReplacementCandidate.source candidate && (PendingSkipEffect.extraTurns q, PendingSkipEffect.turnMarkers q, PendingSkipEffect.replacements q) == position) queued
       answer <-
@@ -5368,21 +5384,24 @@ apply settle batch applied batchPrevented candidate event =
           Replacement.consume (ReplacementCandidate.identity candidate)
           State.modify' $ \g ->
             g
-              { GameState.pendingSkipEffects =
-                  GameState.pendingSkipEffects g
-                    Seq.|> PendingSkipEffect.MkPendingSkipEffect
-                      { PendingSkipEffect.pending =
-                          PendingReplacementEffect.MkPendingReplacementEffect
-                            { PendingReplacementEffect.effects = effects,
-                              -- "this artifact" (Time Vault), Replacement.printedRider's binding.
-                              PendingReplacementEffect.targets = Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate))) (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate)),
-                              PendingReplacementEffect.controller = decider,
-                              PendingReplacementEffect.source = ReplacementCandidate.source candidate
-                            },
-                        PendingSkipEffect.extraTurns = GameState.extraTurns gs,
-                        PendingSkipEffect.turnMarkers = GameState.turnMarkers gs,
-                        PendingSkipEffect.replacements = floating
-                      }
+              { GameState.stored =
+                  (GameState.stored g)
+                    { StoredEffects.pendingSkipEffects =
+                        StoredEffects.pendingSkipEffects (GameState.stored g)
+                          Seq.|> PendingSkipEffect.MkPendingSkipEffect
+                            { PendingSkipEffect.pending =
+                                PendingReplacementEffect.MkPendingReplacementEffect
+                                  { PendingReplacementEffect.effects = effects,
+                                    -- "this artifact" (Time Vault), Replacement.printedRider's binding.
+                                    PendingReplacementEffect.targets = Map.insert Binding.triggerSource (Set.singleton (Recipient.ToObject (ReplacementCandidate.source candidate))) (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate)),
+                                    PendingReplacementEffect.controller = decider,
+                                    PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                                  },
+                              PendingSkipEffect.extraTurns = GameState.extraTurns gs,
+                              PendingSkipEffect.turnMarkers = GameState.turnMarkers gs,
+                              PendingSkipEffect.replacements = floating
+                            }
+                    }
               }
           pure Nothing
     -- Unreachable: `applies` admits PhaseR only against WouldBeginPhase.
@@ -5717,7 +5736,7 @@ becomeCopyAs batch candidate asCopy oid = do
                       CopyCoverage.SourceHost _ -> True
                       CopyCoverage.Attachment _ -> True
                       CopyCoverage.These _ -> False
-                 in g1 {GameState.copyEffects = row : filter (not . earlier) (GameState.copyEffects g1)}
+                 in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.copyEffects = row : filter (not . earlier) (StoredEffects.copyEffects (GameState.stored g1))}}
             -- CR 611.2a: a stated duration (Vesuvan Shapeshifter's "until
             -- this creature is turned face down") stores the copy as a row
             -- that can end, Effect.BecomeCopy's road. The object is the
@@ -5731,7 +5750,7 @@ becomeCopyAs batch candidate asCopy oid = do
                       CopyRecipient.ThisObject -> CopyCoverage.These (Set.singleton oid)
                       CopyRecipient.ItsHost -> CopyCoverage.SourceHost Map.empty
                     row = ActiveCopy.MkActiveCopy {ActiveCopy.source = oid, ActiveCopy.timestamp = ts, ActiveCopy.expiry = expiry, ActiveCopy.covers = covers, ActiveCopy.snapshot = stamped, ActiveCopy.turned = Nothing}
-                 in g1 {GameState.copyEffects = row : GameState.copyEffects g1}
+                 in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.copyEffects = row : StoredEffects.copyEffects (GameState.stored g1)}}
           pure held
       Foldable.for_ chosen $ \src2 -> do
         -- CR 707.9g: a linked trigger an EARLIER copy effect on this object
@@ -5739,7 +5758,7 @@ becomeCopyAs batch candidate asCopy oid = do
         -- this row's own is armed (Replacement.linkedTrigger), on this
         -- branch alone, with the copied object bound for its effects.
         let linkedEarlier entry = DelayedTrigger.source entry == oid && Map.member Binding.copiedObject (DelayedTrigger.bindings entry)
-        State.modify' (\g -> g {GameState.delayedTriggers = Seq.filter (not . linkedEarlier) (GameState.delayedTriggers g)})
+        State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = Seq.filter (not . linkedEarlier) (StoredEffects.delayedTriggers (GameState.stored g))}})
         Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
           State.modify' (armDelayed linked oid controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing)
       pure (fmap (\src2 -> (src2, Maybe.mapMaybe CopyClause.counters applying)) chosen)
@@ -5922,7 +5941,7 @@ runEntry settle diverting origin given oid = do
   let abandon :: Game ()
       abandon = do
         Monad.void (takeEnteringCounters oid)
-        State.modify' (\gs -> gs {GameState.delayedTriggers = Seq.filter (\entry -> not (DelayedTrigger.source entry == oid && isReflexive entry)) (GameState.delayedTriggers gs)})
+        State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter (\entry -> not (DelayedTrigger.source entry == oid && isReflexive entry)) (StoredEffects.delayedTriggers (GameState.stored gs))}})
         State.modify' (\gs -> gs {GameState.enteringBeside = before, GameState.enteringSubjects = beforeSubjects})
       -- CR 614.17d: which entry prohibitions apply is read off the permanent as
       -- it would exist on the battlefield, which is where it is materialized;
@@ -7588,7 +7607,7 @@ storeEntryEffect entered gs (source, modification) =
             ContinuousEffect.modification = modification,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton entered)
           }
-   in gs1 {GameState.continuousEffects = effect : GameState.continuousEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = effect : StoredEffects.continuousEffects (GameState.stored gs1)}}
 
 -- CR 400.7: a zone change is a move "from one zone to another", so an object
 -- put into the zone it is already in does not change zones and stays the object
@@ -8476,7 +8495,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                         -- removes it: nothing can observe a board where the
                         -- permanent has left and its effect has not yet been handed
                         -- over.
-                        GameState.continuousEffects = handover <> GameState.continuousEffects g1,
+                        GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = handover <> StoredEffects.continuousEffects (GameState.stored g1)},
                         -- CR 608.2h: the object ceases here, so this is the last
                         -- moment its information is known. Filed under the id it had
                         -- while it existed -- the id an ability on the stack still
@@ -9110,7 +9129,7 @@ carryOver carrying oldId newId = case carrying of
   CarryOver.Carried ->
     State.modify' $ \gs ->
       let referred = referTo oldId newId gs
-       in referred {GameState.replacements = fmap (reenter oldId newId) (GameState.replacements referred)}
+       in referred {GameState.stored = (GameState.stored referred) {StoredEffects.replacements = fmap (reenter oldId newId) (StoredEffects.replacements (GameState.stored referred))}}
 
 -- CR 702.140f: an effect referring to or modifying a mutating creature spell
 -- refers to or modifies the permanent it merged with. carryOver's re-keying
@@ -9119,8 +9138,7 @@ carryOver carrying oldId newId = case carrying of
 referTo :: ObjectId -> ObjectId -> GameState -> GameState
 referTo oldId newId gs =
   gs
-    { GameState.continuousEffects = fmap (reanchor oldId (Set.singleton newId)) (GameState.continuousEffects gs),
-      GameState.replacements = fmap (rewatch oldId newId) (GameState.replacements gs),
+    { GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = fmap (reanchor oldId (Set.singleton newId)) (StoredEffects.continuousEffects (GameState.stored gs)), StoredEffects.replacements = fmap (rewatch oldId newId) (StoredEffects.replacements (GameState.stored gs))},
       GameState.exiledWith = fmap (relink oldId newId) (GameState.exiledWith gs)
     }
 
@@ -9255,7 +9273,7 @@ perpetuated oldId arrivals gs =
         if Expiry.follows (ContinuousEffect.expiry eff)
           then reanchor oldId arrivals eff
           else eff
-   in gs {GameState.continuousEffects = fmap follow (GameState.continuousEffects gs)}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = fmap follow (StoredEffects.continuousEffects (GameState.stored gs))}}
 
 -- carryOver's and perpetuate's per-effect half: swap oldId for the arriving ids
 -- in a locked affected set that names it, and leave every other effect alone. A
@@ -10325,8 +10343,7 @@ unenter unentered oid newId gs =
               },
           GameState.lastKnown = restore GameState.lastKnown (GameState.lastKnown placed),
           GameState.stackArchive = restore GameState.stackArchive (GameState.stackArchive placed),
-          GameState.continuousEffects = Maybe.mapMaybe unanchor (GameState.continuousEffects placed),
-          GameState.replacements = fmap (rewatch newId oid . reenter newId oid) (GameState.replacements placed),
+          GameState.stored = (GameState.stored placed) {StoredEffects.continuousEffects = Maybe.mapMaybe unanchor (StoredEffects.continuousEffects (GameState.stored placed)), StoredEffects.replacements = fmap (rewatch newId oid . reenter newId oid) (StoredEffects.replacements (GameState.stored placed))},
           GameState.exiledWith = fmap (relink newId oid) (GameState.exiledWith placed)
         }
 
@@ -10764,9 +10781,9 @@ merge sid target side = do
                   ActiveCopy.timestamp = Game.copyRowTimestamp gs row
                 }
             rewoven row =
-              let (snapshot, turned) = readings (unrowed {GameState.copyEffects = alone row : GameState.copyEffects unrowed})
+              let (snapshot, turned) = readings (unrowed {GameState.stored = (GameState.stored unrowed) {StoredEffects.copyEffects = alone row : StoredEffects.copyEffects (GameState.stored unrowed)}})
                in (alone row) {ActiveCopy.snapshot = snapshot, ActiveCopy.turned = if turned == snapshot then Nothing else Just turned}
-            rows = fmap rewoven (filter (Game.copyCovers gs target) (GameState.copyEffects gs))
+            rows = fmap rewoven (filter (Game.copyCovers gs target) (StoredEffects.copyEffects (GameState.stored gs)))
         State.modify' (referTo sid target)
         State.modify' (`forgetObject` sid)
         joining <- State.state (Game.restampPlacements (Seq.sortOn StickerPlacement.timestamp (Object.stickers spell)))
@@ -10774,7 +10791,7 @@ merge sid target side = do
           ( \g ->
               let u = Game.supersedeStoredCopies (Set.singleton target) g
                in u
-                    { GameState.copyEffects = rows <> GameState.copyEffects u,
+                    { GameState.stored = (GameState.stored u) {StoredEffects.copyEffects = rows <> StoredEffects.copyEffects (GameState.stored u)},
                       GameState.objects =
                         Map.adjust
                           ( \o ->
@@ -11011,7 +11028,7 @@ leaveTheGame asOf g oid = case lastKnownRecord asOf oid of
         combat = TurnRegisters.combat (GameState.turn g1)
      in g1
           { GameState.lastKnown = Map.insert oid known (GameState.lastKnown g1),
-            GameState.continuousEffects = handover <> GameState.continuousEffects g1,
+            GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = handover <> StoredEffects.continuousEffects (GameState.stored g1)},
             GameState.turn =
               (GameState.turn g1)
                 { TurnRegisters.combat = combat {Combat.struckFirst = fmap (Set.delete oid) (Combat.struckFirst combat)}
@@ -11906,7 +11923,7 @@ armDelayed ability source controller captured armed expiry gs = case armed of
               DelayedTrigger.expiry = expiry,
               DelayedTrigger.createdAt = createdAt
             }
-     in gs1 {GameState.delayedTriggers = GameState.delayedTriggers gs1 Seq.|> entry}
+     in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.delayedTriggers = StoredEffects.delayedTriggers (GameState.stored gs1) Seq.|> entry}}
 
 -- CR 603.7a: the printed Onset as the game first stores it. The delayed-trigger
 -- twin of Expiry.arm. "Your next turn" is a boundary that has not happened yet,
@@ -11980,7 +11997,7 @@ settleOnsets begun gs =
         TurnWindow.NextTurnOf _ -> True
         TurnWindow.OnExtraTurn stamp -> any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs)
         TurnWindow.OnTurn n -> n >= TurnRegisters.turnNumber (GameState.turn gs)
-   in gs {GameState.delayedTriggers = Seq.filter live (fmap settled (GameState.delayedTriggers gs))}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter live (fmap settled (StoredEffects.delayedTriggers (GameState.stored gs)))}}
 
 -- Everything that has triggered and is not yet on the stack, from all three
 -- sources, plus the delayed store as it stands afterwards. One function, so
@@ -12040,7 +12057,7 @@ reactionTriggersGiven scope standing events gs = filter (interveningHolds gs) (e
 -- (2026-09-26).
 triggeredSources :: [GameState] -> GameState -> Set ObjectId
 triggeredSources boards gs =
-  let reflexive = [reflexiveFiring gs entry | entry <- Foldable.toList (GameState.delayedTriggers gs), isReflexive entry, delayedArmed gs entry]
+  let reflexive = [reflexiveFiring gs entry | entry <- Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)), isReflexive entry, delayedArmed gs entry]
       pending = filter (interveningHolds gs) (eventTriggers (unscannedGrouped gs) gs <> reflexive) <> stateTriggers boards gs
    in Set.fromList [oid | TriggerSource.OfObject oid <- fmap PendingTrigger.source (withinTriggerLimit gs pending)]
 

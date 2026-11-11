@@ -119,6 +119,7 @@ import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchPlace as SearchPlace
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
@@ -365,7 +366,7 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
                           ContinuousEffect.modification = m,
                           ContinuousEffect.affected = maybe (Affected.TheseObjects (Set.fromList objs)) (Affected.Matching . Common.liveClass legal resolving controller source gs) live
                         }
-                 in g1 {GameState.continuousEffects = eff : GameState.continuousEffects g1}
+                 in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}
               storeSet g (objs, frozen) = case frozen of
                 Nothing -> g
                 Just m -> List.foldl' (store objs) g (Common.expandGrant resolving source gs m)
@@ -408,7 +409,7 @@ changeText resolving source controller legal (ChangeText.MkChangeText families f
                       ContinuousEffect.modification = Modification.ChangeWord (ChangeWord.MkChangeWord from to),
                       ContinuousEffect.affected = Affected.TheseObjects (Set.singleton target)
                     }
-             in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+             in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
   -- CR 608.2b: an illegal target is not affected by this part, and CR 608.2d's
   -- announcement belongs to an effect that IS applied, so nothing is asked.
   _ -> pure ()

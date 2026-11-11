@@ -114,6 +114,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
@@ -151,7 +152,7 @@ withDynamicEffect aff ts m gs =
             ContinuousEffect.modification = m,
             ContinuousEffect.affected = aff
           }
-   in gs {GameState.continuousEffects = eff : GameState.continuousEffects gs}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs)}}
 
 -- Aims every target slot at one object, deferring the rest to S.identityAnswer
 -- (ModalSpec.chooseModeAt's shape). Liquimetal Coating's "target permanent" admits
@@ -871,7 +872,7 @@ preferTarget wanted p = case p of
 -- Tower of the Magistrate's second ability, activated at `victim` and resolved
 -- -- "{1}, {T}: Target creature gains protection from artifacts until end of
 -- turn.", checked against Scryfall on 2026-08-27. A grant from an ACTIVATED
--- ABILITY'S RESOLUTION, so CR 611.2a stores it in GameState.continuousEffects
+-- ABILITY'S RESOLUTION, so CR 611.2a stores it in StoredEffects.continuousEffects
 -- rather than deriving it from anybody's static ability.
 --
 -- The Tower and the two Plains that pay for it stay on the battlefield and trip
@@ -1089,7 +1090,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     giantGrowth <- S.printingOf s registry "Giant Growth"
     let (pikerId, gs) = giantGrowthOnPiker forest piker giantGrowth
-    Spec.assertEqWith s "one stored effect" (length (GameState.continuousEffects gs)) 1
+    Spec.assertEqWith s "one stored effect" (length (StoredEffects.continuousEffects (GameState.stored gs))) 1
     Spec.assertEqWith s "power" (Projection.powerOf pikerId gs) (Just 5)
     Spec.assertEqWith s "toughness" (Projection.toughnessOf pikerId gs) (Just 4)
 
@@ -1142,7 +1143,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     let (pikerId, cast) = giantGrowthOnPiker forest piker giantGrowth
         -- Run the cleanup step's turn-based actions; the +3/+3 must be gone.
         afterCleanup = snd (Engine.runGamePure S.identityAnswer cast (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup)))
-    Spec.assertEqWith s "effect dropped" (GameState.continuousEffects afterCleanup) []
+    Spec.assertEqWith s "effect dropped" (StoredEffects.continuousEffects (GameState.stored afterCleanup)) []
     Spec.assertEqWith s "Piker back to base power" (Projection.powerOf pikerId afterCleanup) (Just 2)
     Spec.assertEqWith s "Piker back to base toughness" (Projection.toughnessOf pikerId afterCleanup) (Just 1)
 
@@ -1785,7 +1786,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     let (wraithId, board) = S.addPermanent bogWraith S.alice (S.landsInPlay island 3)
         after = castAtCreature wraithId turnToFrog board
         afterCleanup = snd (Engine.runGamePure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup)))
-    Spec.assertEqWith s "all four effects dropped" (GameState.continuousEffects afterCleanup) []
+    Spec.assertEqWith s "all four effects dropped" (StoredEffects.continuousEffects (GameState.stored afterCleanup)) []
     Spec.assertEqWith s "Creature -- Wraith again" (Projection.subtypesOf wraithId afterCleanup) (Set.singleton Subtype.Type.Wraith)
     Spec.assertEqWith s "black again" (Projection.colorsOf wraithId afterCleanup) (Set.singleton Color.Black)
     Spec.assertBool s (Projection.hasKeyword (Keyword.Landwalk (Filter.Type.HasSubtype Subtype.Type.Swamp)) wraithId afterCleanup) "swampwalk again"
@@ -3674,7 +3675,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
                     ContinuousEffect.modification = Modification.SetController pid,
                     ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
                   }
-           in g1 {GameState.continuousEffects = eff : GameState.continuousEffects g1}
+           in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}
         gs = install S.alice (install S.bob base) -- bob first (earlier), then alice (later) -> alice wins
         owned = base
     Spec.assertEqWith s "owner controls with no effect" (Projection.controllerOf oid owned) (Just S.bob)
@@ -4106,7 +4107,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
         let board = snd (Engine.runGamePure S.aggressiveAnswer warded (Combat.declareAttackers S.manaPerformer S.alice))
         Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton artifact (Set.singleton attacker)) board)) "the Icehide Golem may not block it"
         Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton black (Set.singleton attacker)) board) "the Cabal Evangel beside it may, so nothing else refused the declaration"
-        Spec.assertEqWith s "CR 611.2a one stored continuous effect, and nothing in the command zone" (length (GameState.continuousEffects board), Set.size (GameState.command board)) (1, 0)
+        Spec.assertEqWith s "CR 611.2a one stored continuous effect, and nothing in the command zone" (length (StoredEffects.continuousEffects (GameState.stored board)), Set.size (GameState.command board)) (1, 0)
         Spec.assertBool s (Projection.hasKeyword fromArtifacts attacker board) "and the attacker really holds the protection"
       _ -> Spec.assertFailure s "fixture should have one attacker and two blockers"
   Spec.it s "CR 113.6b a graveyard grant's protection still prevents the artifact's damage" $ do
@@ -4122,7 +4123,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertBool s (S.onBattlefield mineId byArtifact) "the artifact source's 2 is prevented"
     Spec.assertEqWith s "CR 615.6 with nothing marked on it" (S.damageOf mineId byArtifact) (Just 0)
     Spec.assertBool s (not (S.onBattlefield mineId byCreature)) "and the same 2 from the nonartifact source kills it, so 2 really is lethal here"
-    Spec.assertEqWith s "CR 113.6b no stored effect and nothing in the command zone: the graveyard is the only grantor" (length (GameState.continuousEffects board), Set.size (GameState.command board)) (0, 0)
+    Spec.assertEqWith s "CR 113.6b no stored effect and nothing in the command zone: the graveyard is the only grantor" (length (StoredEffects.continuousEffects (GameState.stored board)), Set.size (GameState.command board)) (0, 0)
     Spec.assertBool s (Projection.hasKeyword fromArtifacts mineId board) "and the layer fold gave alice's creature the protection"
     Spec.assertBool s (not (Projection.hasKeyword fromArtifacts artifactId board)) "which bob's Golem does not have"
   Spec.it s "CR 113.6b a graveyard grant's protection still bars the artifact blocker" $ do
@@ -4135,7 +4136,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
         let board = snd (Engine.runGamePure S.aggressiveAnswer warded (Combat.declareAttackers S.manaPerformer S.alice))
         Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton artifact (Set.singleton attacker)) board)) "the Icehide Golem may not block it"
         Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton black (Set.singleton attacker)) board) "the Cabal Evangel beside it may, so nothing else refused the declaration"
-        Spec.assertEqWith s "CR 113.6b no stored effect and nothing in the command zone: the graveyard is the only grantor" (length (GameState.continuousEffects board), Set.size (GameState.command board)) (0, 0)
+        Spec.assertEqWith s "CR 113.6b no stored effect and nothing in the command zone: the graveyard is the only grantor" (length (StoredEffects.continuousEffects (GameState.stored board)), Set.size (GameState.command board)) (0, 0)
         Spec.assertBool s (Projection.hasKeyword fromArtifacts attacker board) "and the attacker really holds the protection"
       _ -> Spec.assertFailure s "fixture should have one attacker and two blockers"
 

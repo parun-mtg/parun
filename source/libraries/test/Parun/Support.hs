@@ -143,6 +143,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Staged as Staged
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -786,7 +787,7 @@ giveControl oid pid gs =
           }
       settle o = o {Object.sickness = Sickness.Settled pid}
    in g1
-        { GameState.continuousEffects = eff : GameState.continuousEffects g1,
+        { GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)},
           GameState.objects = Map.adjust settle oid (GameState.objects g1)
         }
 
@@ -863,7 +864,7 @@ withEffectAt oid ts m gs =
             ContinuousEffect.modification = m,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
           }
-   in gs {GameState.continuousEffects = eff : GameState.continuousEffects gs}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs)}}
 
 -- withEffectAt, but naming a REAL source instead of the 998 stand-in. Needed
 -- because a modification can read its own source's state: Modification's
@@ -880,7 +881,7 @@ withEffectFromAt src oid ts m gs =
             ContinuousEffect.modification = m,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
           }
-   in gs {GameState.continuousEffects = eff : GameState.continuousEffects gs}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs)}}
 
 -- CR 614.1c: stamp the basic land type a permanent's controller would have
 -- chosen as it entered, without running the entry loop. A STATE fixture, the
@@ -1561,7 +1562,7 @@ withInitiative pid gs = gs {GameState.initiative = Just pid}
 -- resolution).
 addReplacement :: ActiveReplacement.ActiveReplacement -> GameState.GameState -> GameState.GameState
 addReplacement active gs =
-  gs {GameState.replacements = active : GameState.replacements gs}
+  gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored gs)}}
 
 -- Seed a regeneration shield directly (bypasses activating a regenerate ability;
 -- use when a test needs a shield up without the activation). Since P5 a shield is
@@ -1618,7 +1619,7 @@ addPlayerEffect expiry scope effect controller gs =
             ActivePlayerEffect.ability = Nothing,
             ActivePlayerEffect.slots = Map.empty
           }
-   in gs1 {GameState.playerEffects = active : GameState.playerEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored gs1)}}
 
 -- Set an object's tapped state to Tapped directly (bypasses a tap cost or
 -- combat), so a test can set up a tapped permanent for an Untap effect.

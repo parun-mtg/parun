@@ -7,7 +7,7 @@ import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristic
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 613.1a / 611.2: a stored COPY EFFECT with a stated
--- duration, held in GameState.copyEffects. Mirrorweave's "each other creature
+-- duration, held in StoredEffects.copyEffects. Mirrorweave's "each other creature
 -- becomes a copy of target nonlegendary creature until end of turn" is one
 -- producer, and Vesuvan Shapeshifter's "until this creature is turned face
 -- down" (Parun.Types.AsCopy's `duration`) another. Metamorphic Alteration's
@@ -28,7 +28,7 @@ import qualified Parun.Types.Timestamp as Timestamp
 -- falls back to the stamp -- delete-and-recompute, so nothing is explicitly
 -- undone (design.md 2.5).
 --
--- ITS OWN CARRIER rather than a GameState.continuousEffects row, and the module
+-- ITS OWN CARRIER rather than a StoredEffects.continuousEffects row, and the module
 -- graph is what decides it: the payload is a whole ProjectedCharacteristics, and
 -- Parun.Types.Modification cannot name that type -- the cycle runs Modification ->
 -- ProjectedCharacteristics -> Card -> Face -> StaticAbility -> Modification. So

@@ -71,6 +71,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -2255,7 +2256,7 @@ senTripletsSpec s registry =
           let after = senTripletsResolved open
               ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
           Spec.assertBool s (notElem (A.Cast bobSpell name Facing.FaceUp) (offeredTo S.alice ended)) "alice is no longer offered bob's card"
-          Spec.assertEqWith s "and nothing is stored" (GameState.playerEffects ended) []
+          Spec.assertEqWith s "and nothing is stored" (StoredEffects.playerEffects (GameState.stored ended)) []
         -- CR 702.88a's "your hand", the clause Sen Triplets is the pool's only
         -- way to put a spell on the wrong side of. alice casts bob's
         -- Staggershock, so the spell was cast from an OPPONENT's hand and rule

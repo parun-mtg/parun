@@ -90,6 +90,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
@@ -359,7 +360,7 @@ damageSpec s registry =
                 ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
               }
           dropped = Expiry.dropAtCleanup (S.addReplacement shield base)
-       in Spec.assertEqWith s "no replacements remain" (GameState.replacements dropped) []
+       in Spec.assertEqWith s "no replacements remain" (StoredEffects.replacements (GameState.stored dropped)) []
 
 infectSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 infectSpec s registry =

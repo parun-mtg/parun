@@ -39,6 +39,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -422,7 +423,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
     let base = Setup.emptyGame S.bothPlayers
         (oid, gs0) = S.addPermanent piker S.alice base
         cleared = Expiry.dropAtCleanup (S.addRegenShield oid gs0)
-    Spec.assertEqWith s "no shields remain" (GameState.replacements cleared) []
+    Spec.assertEqWith s "no shields remain" (StoredEffects.replacements (GameState.stored cleared)) []
 
   Spec.it s "CR 701.19a Event.destroy (pure ()) consumes a shield and regenerates instead" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -432,7 +433,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
         shielded = S.addRegenShield oid damaged
         after = S.runPure S.identityAnswer shielded (Event.destroy (pure ()) Regenerability.Regenerable [oid])
     Spec.assertEqWith s "still on the battlefield (regenerated, not destroyed)" (Set.member oid (GameState.battlefield after)) True
-    Spec.assertEqWith s "shield spent" (GameState.replacements after) []
+    Spec.assertEqWith s "shield spent" (StoredEffects.replacements (GameState.stored after)) []
     case Game.lookupObject oid after of
       Just obj -> do
         Spec.assertEqWith s "tapped (CR 701.19a)" (Object.tapped obj) TapState.Tapped
@@ -505,7 +506,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
         armed = settleAndResolve (settle gs1)
         after = settleAndResolve (settle (beginEndStep armed))
     Spec.assertEqWith s "the end step put two back: 2 - 1 annihilated, then + 2" (S.counterOf CounterKind.PlusOnePlusOne oid after) 3
-    Spec.assertEqWith s "one delayed ability was armed by the removal" (Seq.length (GameState.delayedTriggers armed)) 1
+    Spec.assertEqWith s "one delayed ability was armed by the removal" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
     Spec.assertEqWith s "CR 704.5q took the -1/-1 counter with it" (S.counterOf CounterKind.MinusOneMinusOne oid after) 0
 
   -- The control for the case above, one board differing in exactly one thing: no
@@ -519,7 +520,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
         armed = settleAndResolve (settle gs1)
         after = settleAndResolve (settle (beginEndStep armed))
     Spec.assertEqWith s "the two it was given are the two it has" (S.counterOf CounterKind.PlusOnePlusOne oid after) 2
-    Spec.assertEqWith s "nothing was armed" (Seq.length (GameState.delayedTriggers armed)) 0
+    Spec.assertEqWith s "nothing was armed" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 0
 
   -- CR 704.3's simultaneity, which is the property the before/after diff in
   -- Parun.Engine.Sba exists to keep: FOUR +1/+1 counters against two -1/-1
@@ -540,7 +541,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
         armed = settleAndResolve (settle gs1)
         after = settleAndResolve (settle (beginEndStep armed))
     Spec.assertEqWith s "4 - 2 annihilated, then + 2 for each counter removed" (S.counterOf CounterKind.PlusOnePlusOne oid after) 6
-    Spec.assertEqWith s "one delayed ability per counter removed" (Seq.length (GameState.delayedTriggers armed)) 2
+    Spec.assertEqWith s "one delayed ability per counter removed" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 2
 
   Spec.it s "CR 603.2 DealsDamage matches the bearer's combat damage to a player" $ do
     let bearer = ObjectId.MkObjectId 1

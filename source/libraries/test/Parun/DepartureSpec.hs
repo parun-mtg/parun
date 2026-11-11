@@ -67,6 +67,7 @@ import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -435,7 +436,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertBool s (not (Projection.hasKeyword Keyword.Flying birdId before)) "with no flying"
     Spec.assertEqWith s "CR 604.2 and it is a 1/2 again the moment bob leaves" (S.powerToughnessOf birdId gone) (Just (1, 2))
     Spec.assertBool s (Projection.hasKeyword Keyword.Flying birdId gone) "with its flying back"
-    Spec.assertEqWith s "nothing was handed over" (GameState.continuousEffects gone) []
+    Spec.assertEqWith s "nothing was handed over" (StoredEffects.continuousEffects (GameState.stored gone)) []
     Spec.assertEqWith s "and bob's Humility really left the game" (Game.lookupObject humilityId gone) Nothing
 
   -- The control for the case above, and what makes its third seat load-bearing:
@@ -455,7 +456,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertEqWith s "the seam says CR 800.4a does not run" (Departure.continuesAfterDeparture before) False
     Spec.assertBool s (S.onBattlefield songId gone) "so bob's Song is still on the battlefield"
     Spec.assertBool s (Projection.isCreatureOf axeId gone) "and the live static ability is what animates the Bonesplitter"
-    Spec.assertEqWith s "nothing became a stored effect" (GameState.continuousEffects gone) []
+    Spec.assertEqWith s "nothing became a stored effect" (StoredEffects.continuousEffects (GameState.stored gone)) []
 
   Spec.it s "CR 510.4 a departing player's id is dropped from the struckFirst snapshot" $ do
     piker <- S.printingOf s registry "Goblin Piker"

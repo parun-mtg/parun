@@ -55,6 +55,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerEntry as TriggerEntry
@@ -322,7 +323,7 @@ lifeGainAmountSpec s registry =
 -- controlled the spell that created it.
 --
 -- The two entries are two copies of Synthetic Singular Cure, one cast by each of
--- two seats; no second card is needed. GameState.delayedTriggers appends in
+-- two seats; no second card is needed. StoredEffects.delayedTriggers appends in
 -- RESOLUTION order and the stack is last-in-first-out (CR 405.2 / 608.1), so the seat who
 -- casts LAST arms FIRST -- which is how arming order and APNAP order come apart
 -- on a two-seat board at all. The first case below asserts that gap on the board
@@ -393,7 +394,7 @@ apnapDelayedSpec s registry =
       -- arming order every later gather reads. Read on the pre-batch board, where
       -- it is both this group's precondition -- arming order is not APNAP order,
       -- or nothing here is observable -- and the fence on that half of the change.
-      armingOrder gs = fmap DelayedTrigger.controller (Foldable.toList (GameState.delayedTriggers gs))
+      armingOrder gs = fmap DelayedTrigger.controller (Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)))
    in Spec.describe s "CR 101.4 simultaneous delayed triggers" $ do
         -- The proving case. alice casts first, so BOB's entry is armed first, and
         -- an engine that walks the store asks bob before alice. Under CR 101.4 the
@@ -409,7 +410,7 @@ apnapDelayedSpec s registry =
           Spec.assertEqWith s "bob's entry was armed first, so arming order is not APNAP order, and the store still holds it" (armingOrder gs) [S.bob, S.alice]
           Spec.assertEqWith s "setup: every seat started at 20" (fmap (\pid -> S.lifeOf pid gs) [S.alice, S.bob, S.carol]) [Just 20, Just 20, Just 20]
           Spec.assertEqWith s "three gains, in one event group" (length (gainsIn (after gs)), Set.size (Set.fromList (gainsIn (after gs)))) (3, 1)
-          Spec.assertEqWith s "and both entries are spent, neither having a stated duration" (Seq.length (GameState.delayedTriggers (after gs))) 0
+          Spec.assertEqWith s "and both entries are spent, neither having a stated duration" (Seq.length ((StoredEffects.delayedTriggers . GameState.stored) (after gs))) 0
         -- The other half of the pair, differing in exactly one thing -- which seat
         -- cast first, and so which entry was armed first. bob casts first, alice
         -- second, and the arming order is now APNAP order already: the same seats
@@ -538,7 +539,7 @@ oneSeatDelayedSpec s registry =
       after picks gs = snd (fst (played picks gs))
       -- The store's own order, which the reordering must NOT disturb: it is the
       -- arming order every later gather reads.
-      armingOrder gs = fmap DelayedTrigger.source (Foldable.toList (GameState.delayedTriggers gs))
+      armingOrder gs = fmap DelayedTrigger.source (Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)))
    in Spec.describe s "CR 101.4c one seat's simultaneous delayed triggers" $ do
         -- The proving case. alice answers the ordering prompt with the reverse of
         -- the store, so the CURE is asked first: it names alice's own gain and
@@ -557,7 +558,7 @@ oneSeatDelayedSpec s registry =
           Spec.assertEqWith s "one ordering prompt before the questions, over alice's two entries in store order" (offered reverse gs) [(0, fmap TriggerSource.OfObject (armingOrder gs)), (2, fmap TriggerSource.OfObject (armingOrder gs))]
           Spec.assertEqWith s "setup: every seat started at 20" (fmap (\pid -> S.lifeOf pid gs) [S.alice, S.bob, S.carol]) [Just 20, Just 20, Just 20]
           Spec.assertEqWith s "three gains, in one event group" (length (gainsIn (after reverse gs)), Set.size (Set.fromList (gainsIn (after reverse gs)))) (3, 1)
-          Spec.assertEqWith s "and both entries are spent, neither having a stated duration" (Seq.length (GameState.delayedTriggers (after reverse gs))) 0
+          Spec.assertEqWith s "and both entries are spent, neither having a stated duration" (Seq.length ((StoredEffects.delayedTriggers . GameState.stored) (after reverse gs))) 0
 
 -- CR 603.2c's FIRST sentence on the LIFE side, and the CR 608.2f bracket that
 -- makes it reachable: "each player gains 4 life" is ONE action taken on several
@@ -915,7 +916,7 @@ forthEorlingasSpec s registry =
               Spec.assertBool s (all (\oid -> Projection.hasKeyword Keyword.Type.Trample oid gs) tokens) "each has trample"
               Spec.assertBool s (all (\oid -> Projection.controllerOf oid gs == Just S.alice) tokens) "and alice controls both"
             other -> Spec.assertFailure s ("expected exactly two Knight tokens, got " <> show (length other))
-          Spec.assertEqWith s "one delayed ability waiting" (Seq.length (GameState.delayedTriggers gs)) 1
+          Spec.assertEqWith s "one delayed ability waiting" (Seq.length (StoredEffects.delayedTriggers (GameState.stored gs))) 1
           Spec.assertEqWith s "nobody is the monarch yet" (GameState.monarch gs) Nothing
         -- The proving case. Two Knights connect in ONE combat damage step, which
         -- is one trigger event, so the entry fires ONCE: one trigger on the
@@ -929,7 +930,7 @@ forthEorlingasSpec s registry =
           Spec.assertEqWith s "one trigger on the stack for the batch, not one per Knight" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "both Knights connected, for four" (S.lifeOf S.bob after) (Just 16)
           Spec.assertEqWith s "CR 510.2: the two damage events were one event group" (length (combatDamageGroups placed)) 1
-          Spec.assertEqWith s "and CR 603.7b's stated duration kept the entry armed" (Seq.length (GameState.delayedTriggers after)) 1
+          Spec.assertEqWith s "and CR 603.7b's stated duration kept the entry armed" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 1
         -- "To ONE OR MORE PLAYERS": three seats, and the Knights split between
         -- bob and carol, so the step damages two players and is still one
         -- trigger event -- where "to a player" (Feline Sovereign) is one per
@@ -989,7 +990,7 @@ forthEorlingasSpec s registry =
           Spec.assertEqWith s "nothing triggered off the batch" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "though both Knights connected, for four" (S.lifeOf S.bob after) (Just 16)
           Spec.assertEqWith s "it is alice's next turn" (TurnRegisters.turnNumber (GameState.turn later), TurnRegisters.activePlayer (GameState.turn later)) (3, S.alice)
-          Spec.assertEqWith s "the entry is gone, not masked" (Seq.length (GameState.delayedTriggers later)) 0
+          Spec.assertEqWith s "the entry is gone, not masked" (Seq.length (StoredEffects.delayedTriggers (GameState.stored later))) 0
           Spec.assertEqWith s "bob took no damage before it" (S.lifeOf S.bob later) (Just 20)
 
 -- CR 120.3's event read by its RECIPIENT, which no condition could ask for

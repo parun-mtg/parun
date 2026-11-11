@@ -91,6 +91,7 @@ import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -580,7 +581,7 @@ applyEpic oid controller = do
                 ActivePlayerEffect.ability = Nothing,
                 ActivePlayerEffect.slots = Map.empty
               }
-       in g1 {GameState.playerEffects = active : GameState.playerEffects g1}
+       in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored g1)}}
     -- Rule 702.50a's SECOND ability. The spell is still on the stack here, so the
     -- object is filed in GameState.stackArchive for Effect.CopyStackObject to
     -- find once CR 400.7 has deleted this id -- carrying rule 702.50a's "except

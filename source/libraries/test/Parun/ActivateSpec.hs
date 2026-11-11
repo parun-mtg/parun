@@ -103,6 +103,7 @@ import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -416,7 +417,7 @@ spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
     Spec.assertEqWith
       s
       "the shield's source is the skeleton itself"
-      (fmap ActiveReplacement.source (GameState.replacements resolved))
+      (fmap ActiveReplacement.source (StoredEffects.replacements (GameState.stored resolved)))
       [skel]
     Spec.assertEqWith s "survived the first destruction (regenerated)" (Set.member skel (GameState.battlefield firstKill)) True
     Spec.assertEqWith s "died to the second (one-shot shield consumed)" (Set.member skel (GameState.battlefield secondKill)) False
@@ -3136,7 +3137,7 @@ unearthSpec s registry = Spec.describe s "Unearth (CR 702.84)" $ do
         let ended = List.foldl' (\g _ -> S.runPure S.identityAnswer g Engine.runStep) after [1 .. (2 :: Int)]
         Spec.assertEqWith s "CR 702.84a the unearthed Zombie is in exile" (zombiesIn Zone.Exile ended) 1
         Spec.assertBool s (S.onBattlefield twinId ended) "while the Dregscape Zombie beside it is still on the battlefield"
-        Spec.assertEqWith s "and the delayed ability is spent" (Seq.length (GameState.delayedTriggers ended)) 0
+        Spec.assertEqWith s "and the delayed ability is spent" (Seq.length (StoredEffects.delayedTriggers (GameState.stored ended))) 0
       (_, other) -> Spec.assertEqWith s "exactly one Zombie returned to the battlefield" (length other) 1
 
 -- alice with Jarad, Golgari Lich Lord in her graveyard, one untapped Bayou, and

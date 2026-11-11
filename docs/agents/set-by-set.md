@@ -97,7 +97,7 @@ an instance of:
 - the same event for another action or actor: `GameEvent.PlayerActed`,
   `GameEvent.PermanentActed`;
 - the same rule over another subject: `CostModifier`, `Effect.Prohibit`;
-- another row in a list something already walks: `Expiry.traverseExpiries`.
+- another row in a list something already walks: `Stored.traverseRows`.
 
 If one exists, extend it and name it in the PR body. If the CR makes the
 difference observable so it cannot carry the new case, say that, with the

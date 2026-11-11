@@ -87,6 +87,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -1541,7 +1542,7 @@ rayOfCommandSpec s registry = Spec.describe s "RayOfCommand" $ do
     -- the event record below, which the turn handoff would also have cleared.
     Spec.assertEqWith s "CR 603.7 Ray of Command's third sentence tapped it" (tapStateOf bobPiker afterCleanup) (Just TapState.Tapped)
     Spec.assertEqWith s "Act of Treason prints no such sentence, so carol's comes home untapped" (tapStateOf carolPiker afterCleanup) (Just TapState.Untapped)
-    Spec.assertEqWith s "CR 603.7b the entry is spent, so nothing is still armed" (GameState.delayedTriggers afterCleanup) Seq.empty
+    Spec.assertEqWith s "CR 603.7b the entry is spent, so nothing is still armed" (StoredEffects.delayedTriggers (GameState.stored afterCleanup)) Seq.empty
     Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn afterCleanup)) []
     -- CR 514.3a: the trigger got its round INSIDE this turn -- the rule's last sentence
     -- begins another cleanup step rather than passing the turn. That is also what keeps

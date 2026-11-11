@@ -101,6 +101,7 @@ import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -130,7 +131,7 @@ effectWith expiry gs =
             ContinuousEffect.modification = Modification.GainKeyword Keyword.Flying,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton effectTarget)
           }
-   in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
 
 -- A stand-in state for the three arms that consult neither source nor state --
 -- only Duration.ForAsLongAs reads them. They pass S.noSource for the source
@@ -161,18 +162,18 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
         bobsTurn = S.runPure S.identityAnswer armed Engine.handoffTurn
         alicesTurn = S.runPure S.identityAnswer bobsTurn Engine.handoffTurn
     Spec.assertEqWith s "alice is active when it is created" (TurnRegisters.activePlayer (GameState.turn armed)) S.alice
-    Spec.assertEqWith s "it survives the creating turn's handoff" (length (GameState.continuousEffects bobsTurn)) 1
+    Spec.assertEqWith s "it survives the creating turn's handoff" (length (StoredEffects.continuousEffects (GameState.stored bobsTurn))) 1
     Spec.assertEqWith s "bob is active" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
-    Spec.assertEqWith s "it ends as alice's next turn begins" (GameState.continuousEffects alicesTurn) []
+    Spec.assertEqWith s "it ends as alice's next turn begins" (StoredEffects.continuousEffects (GameState.stored alicesTurn)) []
   Spec.it s "CR 514.2 does not touch an AtTurnOf effect" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         armed = effectWith (Expiry.Type.AtTurnOf S.alice) gs0
-    Spec.assertEqWith s "survives cleanup" (length (GameState.continuousEffects (Expiry.dropAtCleanup armed))) 1
+    Spec.assertEqWith s "survives cleanup" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
   Spec.it s "CR 611.2a the sweep is scoped to the player whose turn began" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         armed = effectWith (Expiry.Type.AtTurnOf S.bob) gs0
         bobsTurn = S.runPure S.identityAnswer armed Engine.handoffTurn
-    Spec.assertEqWith s "bob's turn ends bob's effect" (GameState.continuousEffects bobsTurn) []
+    Spec.assertEqWith s "bob's turn ends bob's effect" (StoredEffects.continuousEffects (GameState.stored bobsTurn)) []
   Spec.it s "CR 611.2a dropAtTurnOf ends the NAMED player's AtTurnOf effects, whoever is active" $ do
     -- alice is the active player throughout; the sweep is told to fire for
     -- BOB, and does. That divorce from TurnRegisters.activePlayer is the whole
@@ -182,12 +183,12 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
         armed = effectWith (Expiry.Type.AtTurnOf S.alice) (effectWith (Expiry.Type.AtTurnOf S.bob) gs0)
         after = Expiry.dropAtTurnOf S.bob armed
     Spec.assertEqWith s "alice is still the active player" (TurnRegisters.activePlayer (GameState.turn after)) S.alice
-    Spec.assertEqWith s "only alice's effect survives" (fmap ContinuousEffect.expiry (GameState.continuousEffects after)) [Expiry.Type.AtTurnOf S.alice]
+    Spec.assertEqWith s "only alice's effect survives" (fmap ContinuousEffect.expiry (StoredEffects.continuousEffects (GameState.stored after))) [Expiry.Type.AtTurnOf S.alice]
   Spec.it s "CR 611.2a dropAtTurnOf touches no other expiry" $ do
     let gs0 = S.threePlayerGame
         armed = effectWith Expiry.Type.Never (effectWith Expiry.Type.AtCleanup (effectWith (Expiry.Type.AtTurnOf S.bob) gs0))
         after = Expiry.dropAtTurnOf S.bob armed
-    Spec.assertEqWith s "Never and AtCleanup both survive" (length (GameState.continuousEffects after)) 2
+    Spec.assertEqWith s "Never and AtCleanup both survive" (length (StoredEffects.continuousEffects (GameState.stored after))) 2
   Spec.it s "CR 800.4k/800.4m a departed seat is skipped, and its durations end there anyway" $ do
     -- alice, bob, carol. Bob departs, then alice's turn ends. CR 800.4k: bob's
     -- turn doesn't begin, so carol becomes active. CR 800.4m: bob's "until
@@ -196,9 +197,9 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         armed = effectWith (Expiry.Type.AtTurnOf S.bob) gone
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
-    Spec.assertEqWith s "it survived bob's departure itself" (length (GameState.continuousEffects armed)) 1
+    Spec.assertEqWith s "it survived bob's departure itself" (length (StoredEffects.continuousEffects (GameState.stored armed))) 1
     Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
-    Spec.assertEqWith s "bob's effect ended at bob's seat" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "bob's effect ended at bob's seat" (StoredEffects.continuousEffects (GameState.stored after)) []
   Spec.it s "CR 800.4m the walk sweeps only the seats it passes" $ do
     -- Same board. The walk goes bob's seat -> carol's seat and STOPS. Alice's
     -- own AtTurnOf effect must survive: her seat was not passed. The
@@ -211,7 +212,7 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
         armed = effectWith (Expiry.Type.AtTurnOf S.alice) (effectWith (Expiry.Type.AtTurnOf S.bob) gone)
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
     Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
-    Spec.assertEqWith s "alice's survives, bob's does not" (fmap ContinuousEffect.expiry (GameState.continuousEffects after)) [Expiry.Type.AtTurnOf S.alice]
+    Spec.assertEqWith s "alice's survives, bob's does not" (fmap ContinuousEffect.expiry (StoredEffects.continuousEffects (GameState.stored after))) [Expiry.Type.AtTurnOf S.alice]
   Spec.it s "CR 800.4m the sweep reaches a seat the walk only passes through, not just the seat it lands next to" $ do
     -- alice, bob, carol; bob AND carol both departed, alice active. The walk
     -- passes bob's seat, then carol's seat, then begins alice's turn (wrapping
@@ -230,7 +231,7 @@ handoffSpec s = Spec.describe s "DropAtTurnOf" $ do
         armed = effectWith (Expiry.Type.AtTurnOf S.carol) gone
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
     Spec.assertEqWith s "alice takes the turn (wrapping past both departed seats)" (TurnRegisters.activePlayer (GameState.turn after)) S.alice
-    Spec.assertEqWith s "carol's effect ended at carol's seat, two hops past alice" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "carol's effect ended at carol's seat, two hops past alice" (StoredEffects.continuousEffects (GameState.stored after)) []
 
 -- One turn handoff, through the real Engine.handoffTurn -- the same idiom
 -- handoffSpec above uses.
@@ -251,9 +252,9 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
         ownCleanup = Expiry.dropAtCleanup armed
         bobsTurn = Expiry.dropAtCleanup (handoff ownCleanup)
     Spec.assertEqWith s "alice is active on turn 1, the turn it was created on" (TurnRegisters.activePlayer (GameState.turn armed), TurnRegisters.turnNumber (GameState.turn armed)) (S.alice, 1)
-    Spec.assertEqWith s "its own turn's cleanup leaves it" (length (GameState.continuousEffects ownCleanup)) 1
+    Spec.assertEqWith s "its own turn's cleanup leaves it" (length (StoredEffects.continuousEffects (GameState.stored ownCleanup))) 1
     Spec.assertEqWith s "bob is active on turn 2" (TurnRegisters.activePlayer (GameState.turn bobsTurn), TurnRegisters.turnNumber (GameState.turn bobsTurn)) (S.bob, 2)
-    Spec.assertEqWith s "and bob's cleanup leaves it too" (length (GameState.continuousEffects bobsTurn)) 1
+    Spec.assertEqWith s "and bob's cleanup leaves it too" (length (StoredEffects.continuousEffects (GameState.stored bobsTurn))) 1
   Spec.it s "CR 611.2a it ends at the cleanup of the controller's next turn, not as that turn begins" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 1)) gs0
@@ -261,8 +262,8 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
         ended = Expiry.dropAtCleanup alicesNext
     Spec.assertEqWith s "alice is active again on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
     -- Where an AtTurnOf effect is already gone (handoffSpec above).
-    Spec.assertEqWith s "it is still there as that turn begins" (length (GameState.continuousEffects alicesNext)) 1
-    Spec.assertEqWith s "and gone once that turn's cleanup runs" (GameState.continuousEffects ended) []
+    Spec.assertEqWith s "it is still there as that turn begins" (length (StoredEffects.continuousEffects (GameState.stored alicesNext))) 1
+    Spec.assertEqWith s "and gone once that turn's cleanup runs" (StoredEffects.continuousEffects (GameState.stored ended)) []
   -- The mirror board: created on an OPPONENT's turn, so the controller's next
   -- turn is the very next one and the effect ends one cleanup sooner. Same
   -- expiry, same sweeps, different arming turn -- so a sweep that ignored the
@@ -273,20 +274,20 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
         alicesNext = handoff (Expiry.dropAtCleanup armed)
         ended = Expiry.dropAtCleanup alicesNext
     Spec.assertEqWith s "bob is active on turn 2, the turn it was created on" (TurnRegisters.activePlayer (GameState.turn armed), TurnRegisters.turnNumber (GameState.turn armed)) (S.bob, 2)
-    Spec.assertEqWith s "bob's cleanup leaves it" (length (GameState.continuousEffects (Expiry.dropAtCleanup armed))) 1
+    Spec.assertEqWith s "bob's cleanup leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
     Spec.assertEqWith s "alice is active on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
-    Spec.assertEqWith s "and it ends at that turn's cleanup" (GameState.continuousEffects ended) []
+    Spec.assertEqWith s "and it ends at that turn's cleanup" (StoredEffects.continuousEffects (GameState.stored ended)) []
   Spec.it s "CR 611.2a another player's cleanup never ends it, whatever the turn number" $ do
     let gs0 = S.threePlayerGame
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.bob 1)) gs0
         carolsTurn = handoff (handoff armed)
     Spec.assertEqWith s "carol is active on turn 3, past bob's own turn 2" (TurnRegisters.activePlayer (GameState.turn carolsTurn), TurnRegisters.turnNumber (GameState.turn carolsTurn)) (S.carol, 3)
-    Spec.assertEqWith s "carol's cleanup is not bob's" (length (GameState.continuousEffects (Expiry.dropAtCleanup carolsTurn))) 1
+    Spec.assertEqWith s "carol's cleanup is not bob's" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup carolsTurn))) 1
   Spec.it s "CR 611.2a the turn handoff leaves it alone: it ends at that turn's END" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.alice 1)) gs0
         after = Expiry.dropAtTurnOf S.alice armed
-    Spec.assertEqWith s "the sweep that ends an AtTurnOf effect keeps this one" (length (GameState.continuousEffects after)) 1
+    Spec.assertEqWith s "the sweep that ends an AtTurnOf effect keeps this one" (length (StoredEffects.continuousEffects (GameState.stored after))) 1
   -- CR 800.4m, the exception to the case above: a departed player's turn never
   -- begins, so the cleanup that would end this never comes and the rule ends it
   -- at the point that turn would have begun instead.
@@ -294,9 +295,9 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         armed = effectWith (Expiry.Type.AtEndOfTurnOf (AfterTurn.MkAfterTurn S.bob 1)) gone
         after = handoff armed
-    Spec.assertEqWith s "it survived bob's departure itself" (length (GameState.continuousEffects armed)) 1
+    Spec.assertEqWith s "it survived bob's departure itself" (length (StoredEffects.continuousEffects (GameState.stored armed))) 1
     Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
-    Spec.assertEqWith s "bob's effect ended at bob's seat" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "bob's effect ended at bob's seat" (StoredEffects.continuousEffects (GameState.stored after)) []
 
 -- CR 611.2a's WINDOW, the one arm that states a beginning as well as an end. It
 -- ends exactly where DropAtEndOfTurnOf above ends -- same pair, same reading --
@@ -324,7 +325,7 @@ windowSpec s = Spec.describe s "DuringTurnOf" $ do
     Spec.assertBool s (Expiry.begun alicesNext window) "and the window is open on alice's next turn"
     -- Which is the point of the arm: the row was there for all four turns and
     -- only the last one may read it.
-    Spec.assertEqWith s "the row survived every cleanup in between" (length (GameState.continuousEffects alicesNext)) 1
+    Spec.assertEqWith s "the row survived every cleanup in between" (length (StoredEffects.continuousEffects (GameState.stored alicesNext))) 1
   Spec.it s "CR 514.2 the window closes at the cleanup of the turn it named" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         window = Expiry.Type.DuringTurnOf (AfterTurn.MkAfterTurn S.alice 1)
@@ -333,7 +334,7 @@ windowSpec s = Spec.describe s "DuringTurnOf" $ do
         ended = Expiry.dropAtCleanup alicesNext
     Spec.assertEqWith s "alice is active again on turn 3" (TurnRegisters.activePlayer (GameState.turn alicesNext), TurnRegisters.turnNumber (GameState.turn alicesNext)) (S.alice, 3)
     Spec.assertBool s (Expiry.begun alicesNext window) "the window is open while that turn runs"
-    Spec.assertEqWith s "and the row is gone once its cleanup has run" (GameState.continuousEffects ended) []
+    Spec.assertEqWith s "and the row is gone once its cleanup has run" (StoredEffects.continuousEffects (GameState.stored ended)) []
   -- Where the turn handoff leaves an AtEndOfTurnOf row alone, it ends this one
   -- for the same reason it ends that one at a departed seat: a turn that never
   -- begins is a window that never opens.
@@ -342,15 +343,15 @@ windowSpec s = Spec.describe s "DuringTurnOf" $ do
         window = Expiry.Type.DuringTurnOf (AfterTurn.MkAfterTurn S.bob 1)
         armed = effectWith window gone
         after = handoff armed
-    Spec.assertEqWith s "it survived bob's departure itself" (length (GameState.continuousEffects armed)) 1
+    Spec.assertEqWith s "it survived bob's departure itself" (length (StoredEffects.continuousEffects (GameState.stored armed))) 1
     Spec.assertEqWith s "carol takes the turn, not bob" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
-    Spec.assertEqWith s "and bob's window ended at bob's seat" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "and bob's window ended at bob's seat" (StoredEffects.continuousEffects (GameState.stored after)) []
   Spec.it s "CR 611.2a a seat still in the game keeps their window as their turn begins" $ do
     let window = Expiry.Type.DuringTurnOf (AfterTurn.MkAfterTurn S.bob 1)
         armed = effectWith window S.threePlayerGame
         bobsTurn = handoff armed
     Spec.assertEqWith s "bob is active" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
-    Spec.assertEqWith s "and the sweep that ends an AtTurnOf row keeps this one" (length (GameState.continuousEffects bobsTurn)) 1
+    Spec.assertEqWith s "and the sweep that ends an AtTurnOf row keeps this one" (length (StoredEffects.continuousEffects (GameState.stored bobsTurn))) 1
     Spec.assertBool s (Expiry.begun bobsTurn window) "with its window now open"
 
 cleanupSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -359,16 +360,16 @@ cleanupSpec s registry = Spec.describe s "DropAtCleanup" $ do
     let gs0 = Setup.emptyGame S.bothPlayers
         gs1 = effectWith Expiry.Type.Never (effectWith Expiry.Type.AtCleanup gs0)
         after = Expiry.dropAtCleanup gs1
-    Spec.assertEqWith s "two stored before" (length (GameState.continuousEffects gs1)) 2
-    Spec.assertEqWith s "one survives" (fmap ContinuousEffect.expiry (GameState.continuousEffects after)) [Expiry.Type.Never]
+    Spec.assertEqWith s "two stored before" (length (StoredEffects.continuousEffects (GameState.stored gs1))) 2
+    Spec.assertEqWith s "one survives" (fmap ContinuousEffect.expiry (StoredEffects.continuousEffects (GameState.stored after))) [Expiry.Type.Never]
   Spec.it s "CR 514.2 the same sweep drops an AtCleanup floating replacement" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let gs0 = Setup.emptyGame S.bothPlayers
         (oid, gs1) = S.addPermanent piker S.alice gs0
         shielded = S.addRegenShield oid gs1
         after = Expiry.dropAtCleanup shielded
-    Spec.assertEqWith s "one shield before" (length (GameState.replacements shielded)) 1
-    Spec.assertEqWith s "none after" (fmap ActiveReplacement.expiry (GameState.replacements after)) []
+    Spec.assertEqWith s "one shield before" (length (StoredEffects.replacements (GameState.stored shielded))) 1
+    Spec.assertEqWith s "none after" (fmap ActiveReplacement.expiry (StoredEffects.replacements (GameState.stored after))) []
 
 -- A stored continuous effect whose expiry is a live condition over `src`,
 -- affecting `target`. The Master Thief shape, hand-built so the sweep can be
@@ -384,7 +385,7 @@ whileEffect src target you gs =
             ContinuousEffect.modification = Modification.SetController you,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton target)
           }
-   in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
 
 -- Event.stateHolds's retired (you, source, cond, gs) shape, over the FULL
 -- projection (outside the layer fold, per Parun.Engine.Condition's spec) and the one
@@ -448,7 +449,7 @@ conditionalSpec s registry = Spec.describe s "Conditional" $ do
         (changed, swept) = Engine.runGamePure S.identityAnswer gone Expiry.sweepConditional
     Spec.assertEqWith s "alice held it while the source stood" (Projection.controllerOf targetId gs) (Just S.alice)
     Spec.assertBool s changed "the sweep reports a change"
-    Spec.assertEqWith s "the effect is gone, not masked" (GameState.continuousEffects swept) []
+    Spec.assertEqWith s "the effect is gone, not masked" (StoredEffects.continuousEffects (GameState.stored swept)) []
     Spec.assertEqWith s "control reverted" (Projection.controllerOf targetId swept) (Just S.bob)
   Spec.it s "CR 611.2b a sweep that changes nothing reports False" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -464,13 +465,13 @@ conditionalSpec s registry = Spec.describe s "Conditional" $ do
     warMammoth <- S.printingOf s registry "War Mammoth"
     let (srcId, targetId, gs) = board piker warMammoth
         (ts, gs1) = Game.freshTimestamp gs
-        stored = gs1 {GameState.copyEffects = [ActiveCopy.MkActiveCopy srcId ts (Expiry.Type.OnEvent (EventExpiry.MkEventExpiry S.alice DurationEvent.SourceTurnedFaceDown)) (CopyCoverage.These (Set.singleton srcId)) (Projection.project targetId gs) Nothing]}
+        stored = gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.copyEffects = [ActiveCopy.MkActiveCopy srcId ts (Expiry.Type.OnEvent (EventExpiry.MkEventExpiry S.alice DurationEvent.SourceTurnedFaceDown)) (CopyCoverage.These (Set.singleton srcId)) (Projection.project targetId gs) Nothing]}}
         gone = S.runPure S.identityAnswer stored (Event.destroy (pure ()) Regenerability.Regenerable [srcId])
         (keptChanged, kept) = Engine.runGamePure S.identityAnswer stored Expiry.sweepConditional
         (goneChanged, swept) = Engine.runGamePure S.identityAnswer gone Expiry.sweepConditional
-    Spec.assertEqWith s "the source gone, the row is dropped" (length (GameState.copyEffects swept)) 0
+    Spec.assertEqWith s "the source gone, the row is dropped" (length (StoredEffects.copyEffects (GameState.stored swept))) 0
     Spec.assertBool s goneChanged "and the sweep reports it"
-    Spec.assertEqWith s "the source standing, the row stays" (length (GameState.copyEffects kept)) 1
+    Spec.assertEqWith s "the source standing, the row stays" (length (StoredEffects.copyEffects (GameState.stored kept))) 1
     Spec.assertBool s (not keptChanged) "and the sweep reports nothing"
   Spec.it s "CR 704.3 settleForPriority runs the sweep" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -557,7 +558,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
         after = masterThiefResolveAll lethal
     Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the trigger really was on the stack"
     Spec.assertEqWith s "Master Thief died before it resolved" (Game.lookupObject thief after) Nothing
-    Spec.assertEqWith s "nothing was stored" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "nothing was stored" (StoredEffects.continuousEffects (GameState.stored after)) []
     Spec.assertEqWith s "control never changed" (Projection.controllerOf myr after) (Just S.bob)
     -- CR 302.6: a control-change stored by GainControl re-Sicks the
     -- target; the duration never starting must leave that untouched.
@@ -590,7 +591,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
     -- already stored an unrelated AtCleanup SetController effect on
     -- the thief itself, so a blanket `[] == continuousEffects` would
     -- fail for a reason that has nothing to do with this bug.
-    Spec.assertEqWith s "nothing was stored for the artifact" (filter (S.continuousEffectAffects myr) (GameState.continuousEffects after)) []
+    Spec.assertEqWith s "nothing was stored for the artifact" (filter (S.continuousEffectAffects myr) (StoredEffects.continuousEffects (GameState.stored after))) []
     -- CR 302.6: a control-change stored by GainControl re-Sicks the
     -- target; the duration never starting must leave that untouched.
     Spec.assertEqWith s "and was never re-Sicked" (fmap Object.sickness (Game.lookupObject myr after)) (Just (Sickness.Settled S.bob))
@@ -631,7 +632,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
     -- monotone so the id is never reused. Pinned rather than tidied, because
     -- CR 800.4a ends only the effects that GIVE the departing player control
     -- and this one gives control to alice, who is still here.
-    Spec.assertEqWith s "the effect that named it is still stored, and inert" (length (GameState.continuousEffects gone)) 1
+    Spec.assertEqWith s "the effect that named it is still stored, and inert" (length (StoredEffects.continuousEffects (GameState.stored gone))) 1
     Spec.assertEqWith s "CR 104.2a: two survivors, so the game continues" (GameState.result gone) Nothing
   -- CR 800.4a, first example: "If Alex leaves the game, so does Mind Control,
   -- and Assault Griffin reverts to Bianca's control." CR 800.4a's second
@@ -652,7 +653,7 @@ masterThiefSpec s registry = Spec.describe s "MasterThief" $ do
     -- The discriminator against "a sweep would have got there eventually":
     -- CR 800.4a says "It happens as soon as the player leaves the game", and
     -- Expiry.sweepConditional runs at the next settle, not now.
-    Spec.assertEqWith s "no stored effect survives the departure itself" (GameState.continuousEffects gone) []
+    Spec.assertEqWith s "no stored effect survives the departure itself" (StoredEffects.continuousEffects (GameState.stored gone)) []
     Spec.assertEqWith s "CR 104.2a: two survivors, so the game continues" (GameState.result gone) Nothing
 
 -- CR 726.2: the monarch's inherent end-step draw -- a triggered ability that
@@ -816,7 +817,7 @@ garlandSpec s registry = Spec.describe s "GarlandRoyalKidnapper" $ do
     Spec.assertEqWith
       s
       "CR 611.2b: the duration reads bob's crown, with no slot left to resolve"
-      (fmap ContinuousEffect.expiry (filter (S.continuousEffectAffects bobs) (GameState.continuousEffects stolen)))
+      (fmap ContinuousEffect.expiry (filter (S.continuousEffectAffects bobs) (StoredEffects.continuousEffects (GameState.stored stolen))))
       [Expiry.Type.While (While.MkWhile S.alice garlandCondition)]
   -- The other half of a duration: it must not end while its condition holds. A
   -- duration that never ends passes every assertion in the case above, so this
@@ -847,7 +848,7 @@ garlandSpec s registry = Spec.describe s "GarlandRoyalKidnapper" $ do
         crowned = monarchSettle (S.withMonarch S.carol stolen)
     Spec.assertEqWith s "control goes back to bob" (Projection.controllerOf bobs crowned) (Just S.bob)
     -- CR 611.2b's one continuous period: the effect is deleted, not masked.
-    Spec.assertEqWith s "and the stored effect is gone" (filter (S.continuousEffectAffects bobs) (GameState.continuousEffects crowned)) []
+    Spec.assertEqWith s "and the stored effect is gone" (filter (S.continuousEffectAffects bobs) (StoredEffects.continuousEffects (GameState.stored crowned))) []
 
 hagUpkeep :: Phase.Phase
 hagUpkeep = Phase.Beginning BeginningStep.Upkeep
@@ -918,7 +919,7 @@ hagSpec s registry = Spec.describe s "HagOfInnerWeakness" $ do
     -- the two effects can never be confused.
     Spec.assertEqWith s "back to 3/3" (Projection.powerOf mammoth alicesTurn) (Just 3)
     Spec.assertEqWith s "back to 3/3" (Projection.toughnessOf mammoth alicesTurn) (Just 3)
-    Spec.assertEqWith s "nothing stored" (GameState.continuousEffects alicesTurn) []
+    Spec.assertEqWith s "nothing stored" (StoredEffects.continuousEffects (GameState.stored alicesTurn)) []
   Spec.it s "CR 704.5f the modification really applies: a 2/1 becomes 0/0 and dies" $ do
     hag <- S.printingOf s registry "Hag of Inner Weakness"
     piker <- S.printingOf s registry "Goblin Piker"
@@ -959,7 +960,7 @@ hagSpec s registry = Spec.describe s "HagOfInnerWeakness" $ do
         staged = hagSettle (hagBeginUpkeep gs2)
         targetGone = S.runPure S.identityAnswer staged (Event.destroy (pure ()) Regenerability.Regenerable [mammoth])
         resolved = hagResolveAll targetGone
-    Spec.assertEqWith s "nothing was stored, because the trigger fizzled" (GameState.continuousEffects resolved) []
+    Spec.assertEqWith s "nothing was stored, because the trigger fizzled" (StoredEffects.continuousEffects (GameState.stored resolved)) []
   -- CR 603.3a: a triggered ability's controller is whoever controlled its
   -- source WHEN IT TRIGGERED. CR 608.2b then re-checks against that player.
   --
@@ -1089,24 +1090,24 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     let armed = effectWith (Expiry.Type.AtEndOf PhaseSelector.CombatPhase) (Setup.emptyGame S.bothPlayers)
         stepEnded = Expiry.dropAtEndOf (PhaseSelector.Step (Phase.Combat CombatStep.EndOfCombat)) armed
         phaseEnded = Expiry.dropAtEndOf PhaseSelector.CombatPhase armed
-    Spec.assertEqWith s "the end of combat step's own end leaves it alone" (length (GameState.continuousEffects stepEnded)) 1
-    Spec.assertEqWith s "an earlier combat step's end leaves it alone too" (length (GameState.continuousEffects (Expiry.dropAtEndOf (PhaseSelector.Step (Phase.Combat CombatStep.BeginningOfCombat)) armed))) 1
-    Spec.assertEqWith s "and the combat phase's end takes it" (GameState.continuousEffects phaseEnded) []
+    Spec.assertEqWith s "the end of combat step's own end leaves it alone" (length (StoredEffects.continuousEffects (GameState.stored stepEnded))) 1
+    Spec.assertEqWith s "an earlier combat step's end leaves it alone too" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtEndOf (PhaseSelector.Step (Phase.Combat CombatStep.BeginningOfCombat)) armed))) 1
+    Spec.assertEqWith s "and the combat phase's end takes it" (StoredEffects.continuousEffects (GameState.stored phaseEnded)) []
   -- The window is compared by equality, so a DIFFERENT phase's end is not this
   -- one's -- CR 500.1 fixes the set of phases and the beginning phase's end is
   -- not the combat phase's.
   Spec.it s "CR 500.1 dropAtEndOf is scoped to the window that ended" $ do
     let armed = effectWith (Expiry.Type.AtEndOf PhaseSelector.CombatPhase) (Setup.emptyGame S.bothPlayers)
-    Spec.assertEqWith s "the ending phase's end is not the combat phase's" (length (GameState.continuousEffects (Expiry.dropAtEndOf PhaseSelector.EndingPhase armed))) 1
+    Spec.assertEqWith s "the ending phase's end is not the combat phase's" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtEndOf PhaseSelector.EndingPhase armed))) 1
   -- The other three sweeps own other rules, and none of them owns this one: CR
   -- 514.2's cleanup, CR 611.2a's turn handoff and CR 611.2b's condition check
   -- all leave an AtEndOf entry alone. The mirror of "dropAtTurnOf touches no
   -- other expiry" above.
   Spec.it s "CR 514.2 / 611.2a no other sweep touches an AtEndOf effect" $ do
     let armed = effectWith (Expiry.Type.AtEndOf PhaseSelector.CombatPhase) (Setup.emptyGame S.bothPlayers)
-    Spec.assertEqWith s "cleanup keeps it" (length (GameState.continuousEffects (Expiry.dropAtCleanup armed))) 1
-    Spec.assertEqWith s "the turn handoff keeps it" (length (GameState.continuousEffects (Expiry.dropAtTurnOf S.alice armed))) 1
-    Spec.assertEqWith s "and so does the CR 611.2b sweep" (length (GameState.continuousEffects (S.runPure S.identityAnswer armed Expiry.sweepConditional))) 1
+    Spec.assertEqWith s "cleanup keeps it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
+    Spec.assertEqWith s "the turn handoff keeps it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtTurnOf S.alice armed))) 1
+    Spec.assertEqWith s "and so does the CR 611.2b sweep" (length ((StoredEffects.continuousEffects . GameState.stored) (S.runPure S.identityAnswer armed Expiry.sweepConditional))) 1
   -- CR 500.5's ORDER, which no other test can reach: "those effects expire. THEN
   -- any unspent mana left in a player's mana pool empties."
   --
@@ -1176,7 +1177,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     Spec.assertEqWith
       s
       "CR 500.5a stored against the combat PHASE's end, not the step's"
-      (fmap ContinuousEffect.expiry (GameState.continuousEffects afterBeginningOfCombat))
+      (fmap ContinuousEffect.expiry (StoredEffects.continuousEffects (GameState.stored afterBeginningOfCombat)))
       [ Expiry.Type.AtEndOf PhaseSelector.CombatPhase,
         Expiry.Type.AtEndOf PhaseSelector.CombatPhase,
         Expiry.Type.AtEndOf PhaseSelector.CombatPhase
@@ -1203,7 +1204,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
     Spec.assertEqWith s "still a 3/6" (S.powerToughnessOf statueId afterCombatDamage) (Just (3, 6))
     Spec.assertEqWith s "CR 511.3 the combat phase is over" (TurnRegisters.phase (GameState.turn afterEndOfCombat)) Phase.PostcombatMain
     Spec.assertBool s (not (Projection.isCreatureOf statueId afterEndOfCombat)) "and the animation expired with the phase"
-    Spec.assertEqWith s "nothing is left stored" (GameState.continuousEffects afterEndOfCombat) []
+    Spec.assertEqWith s "nothing is left stored" (StoredEffects.continuousEffects (GameState.stored afterEndOfCombat)) []
     Spec.assertEqWith s "it kept its printed 3 damage to bob on the way through" (S.lifeOf S.bob afterEndOfCombat) (Just 17)
   -- The same claim made by a CARD rather than by a projection query, which is
   -- what makes it a gameplay-level observation of the end of combat step itself.
@@ -1253,7 +1254,7 @@ aimAtObject oid p = case p of
 -- CR 604.2 gives a static ability's continuous effect exactly the life of its
 -- permanent on the battlefield, so the second sentence is the card overriding
 -- that: the effect has to survive the ability that made it, which means being
--- handed over to GameState.continuousEffects as the Song goes.
+-- handed over to StoredEffects.continuousEffects as the Song goes.
 lingeringSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 lingeringSpec s registry = Spec.describe s "TitaniasSong" $ do
   -- The gameplay-level proof (design.md section 4), all five moments in one
@@ -1339,7 +1340,7 @@ lingeringSpec s registry = Spec.describe s "TitaniasSong" $ do
     Spec.assertEqWith s "Angelic Edict exiled Humility" (Game.lookupObject humilityId exiled) Nothing
     Spec.assertEqWith s "CR 604.2 and the Maiden is a 1/2 again at once" (S.powerToughnessOf birdId exiled) (Just (1, 2))
     Spec.assertBool s (Projection.hasKeyword Keyword.Flying birdId exiled) "with its flying back"
-    Spec.assertEqWith s "nothing was handed over" (GameState.continuousEffects exiled) []
+    Spec.assertEqWith s "nothing was handed over" (StoredEffects.continuousEffects (GameState.stored exiled)) []
   -- CR 707.2a on the lingering carrier: a COPY of Titania's Song hands its own
   -- effect over as it leaves, which it can only do if the departure walk reads
   -- the copy's static abilities rather than Copy Enchantment's printed face.
@@ -1386,7 +1387,7 @@ lingeringSpec s registry = Spec.describe s "TitaniasSong" $ do
         Spec.assertEqWith s "and the copy after it" (Game.lookupObject copyId copyGone) Nothing
         -- Both departures handed over, rather than one of them twice: two
         -- modifications each (CR 613.6), stored as one effect per part.
-        Spec.assertEqWith s "CR 613.6 each departure stored the Song's four parts, so the copy's doubled the store" (length (GameState.continuousEffects originalGone), length (GameState.continuousEffects copyGone)) (4, 8)
+        Spec.assertEqWith s "CR 613.6 each departure stored the Song's four parts, so the copy's doubled the store" (length (StoredEffects.continuousEffects (GameState.stored originalGone)), length (StoredEffects.continuousEffects (GameState.stored copyGone))) (4, 8)
         Spec.assertBool s (Projection.isCreatureOf axeId copyGone) "and the Bonesplitter, which both sets hold, is animated too"
       _ -> Spec.assertFailure s "the Copy Enchantment did not enter the battlefield as the one new permanent"
 
@@ -1533,21 +1534,21 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
         bobsTurn = handoff armed
         alicesNext = handoff bobsTurn
         combatEnds = Expiry.dropAtEndOf PhaseSelector.CombatPhase
-        count = length . GameState.continuousEffects
+        count = length . (StoredEffects.continuousEffects . GameState.stored)
     Spec.assertEqWith s "a combat phase added to its own turn leaves it" (count (combatEnds armed)) 1
     Spec.assertEqWith s "bob's combat phase leaves it" (count (combatEnds bobsTurn)) 1
     Spec.assertEqWith s "the end of combat STEP of alice's next turn leaves it" (count (Expiry.dropAtEndOf (PhaseSelector.Step (Phase.Combat CombatStep.EndOfCombat)) alicesNext)) 1
     Spec.assertEqWith s "and that turn's combat phase takes it" (count (combatEnds alicesNext)) 0
   Spec.it s "CR 611.2a a next turn with no combat phase takes it at its cleanup" $ do
     let armed = effectWith (Expiry.Type.AtEndOfCombatOn (AfterTurn.MkAfterTurn S.alice 1)) (Setup.emptyGame S.bothPlayers)
-        count = length . GameState.continuousEffects
+        count = length . (StoredEffects.continuousEffects . GameState.stored)
     Spec.assertEqWith s "its own turn's cleanup leaves it" (count (Expiry.dropAtCleanup armed)) 1
     Spec.assertEqWith s "bob's cleanup leaves it" (count (Expiry.dropAtCleanup (handoff armed))) 1
     Spec.assertEqWith s "alice's next cleanup takes it" (count (Expiry.dropAtCleanup (handoff (handoff armed)))) 0
   Spec.it s "CR 800.4m a departed player's duration ends where their turn would have begun" $ do
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         armed = effectWith (Expiry.Type.AtEndOfCombatOn (AfterTurn.MkAfterTurn S.bob 1)) gone
-    Spec.assertEqWith s "it ended at bob's seat" (GameState.continuousEffects (handoff armed)) []
+    Spec.assertEqWith s "it ended at bob's seat" ((StoredEffects.continuousEffects . GameState.stored) (handoff armed)) []
   Spec.it s "CR 500.5a whole card: the permission ends as alice's next combat phase ends" $ do
     (pikerId, armed) <- cannonadeBoard s registry
     let atTurn n phase gs = TurnRegisters.turnNumber (GameState.turn gs) == n && TurnRegisters.phase (GameState.turn gs) == phase
@@ -1713,7 +1714,7 @@ suspendAggressionSpec s registry = Spec.describe s "SuspendAggression" $ do
 --
 -- The pool's producer of a turn-relative duration on a floating REPLACEMENT:
 -- every other Effect.Replace in data/cards/ arms to AtCleanup or Never, so
--- CR 611.2a's sweep over GameState.replacements was reached only by hand before
+-- CR 611.2a's sweep over StoredEffects.replacements was reached only by hand before
 -- this card. The Hag above is the same duration on the other carrier, which is
 -- the contrast that makes this group worth its own board.
 --
@@ -1788,8 +1789,8 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
   Spec.it s "CR 611.2a / 615.3 the -1 installs a shield per direction, each armed to its controller's next turn"
     . withBoard
     $ \(_, _, _, gs) -> do
-      Spec.assertEqWith s "one floating replacement per direction" (length (GameState.replacements gs)) 2
-      Spec.assertEqWith s "CR 611.2a / 109.5: both end at alice's next turn" (fmap ActiveReplacement.expiry (GameState.replacements gs)) [Expiry.Type.AtTurnOf S.alice, Expiry.Type.AtTurnOf S.alice]
+      Spec.assertEqWith s "one floating replacement per direction" (length (StoredEffects.replacements (GameState.stored gs))) 2
+      Spec.assertEqWith s "CR 611.2a / 109.5: both end at alice's next turn" (fmap ActiveReplacement.expiry (StoredEffects.replacements (GameState.stored gs))) [Expiry.Type.AtTurnOf S.alice, Expiry.Type.AtTurnOf S.alice]
   Spec.it s "CR 615.1 the shielded permanent takes none of the batch, and bob's other creature takes all of its own"
     . withBoard
     $ \(shielded, control, attacker, gs) -> do
@@ -1806,11 +1807,11 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
           after = settleDamage bobsTurn [hit attacker (Recipient.ToCreature shielded) 2]
       -- The behaviour first and the stored row second: a sweep that wrongly ate
       -- the shield has to be reported as the damage it let through, not as a
-      -- count of GameState.replacements absorbing the mutation ahead of it.
+      -- count of StoredEffects.replacements absorbing the mutation ahead of it.
       Spec.assertEqWith s "bob's turn began" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
       Spec.assertEqWith s "the same damage is still prevented" (S.damageOf shielded after) (Just 0)
-      Spec.assertEqWith s "cleanup leaves both rows alone" (length (GameState.replacements (Expiry.dropAtCleanup gs))) 2
-      Spec.assertEqWith s "and so does the handoff" (length (GameState.replacements bobsTurn)) 2
+      Spec.assertEqWith s "cleanup leaves both rows alone" (length ((StoredEffects.replacements . GameState.stored) (Expiry.dropAtCleanup gs))) 2
+      Spec.assertEqWith s "and so does the handoff" (length (StoredEffects.replacements (GameState.stored bobsTurn))) 2
   Spec.it s "CR 611.2a it ends as alice's next turn begins, and the same damage then lands"
     . withBoard
     $ \(shielded, _, attacker, gs) -> do
@@ -1821,7 +1822,7 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
       -- Ordered as the case above is, and for the same reason.
       Spec.assertEqWith s "the whole 2 is marked now" (S.damageOf shielded after) (Just 2)
       Spec.assertEqWith s "and the event happened" (amounts after) [2]
-      Spec.assertEqWith s "the row is gone, not masked" (fmap ActiveReplacement.expiry (GameState.replacements alicesNext)) []
+      Spec.assertEqWith s "the row is gone, not masked" (fmap ActiveReplacement.expiry (StoredEffects.replacements (GameState.stored alicesNext))) []
   -- The printed clause's OTHER direction, "and dealt by". One batch carries all
   -- three legs, so the shielded permanent's own damage and the control leg are
   -- read off one board: the shielded permanent's 3 and the unshielded attacker's
@@ -1847,7 +1848,7 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
     warMammoth <- S.printingOf s registry "War Mammoth"
     dovin <- S.printingOf s registry "Dovin, Hand of Control"
     let (_, _, attacker, gs) = dovinBoardAimedAt (\_ hers -> hers) plains piker warMammoth dovin
-    Spec.assertEqWith s "no shield was installed" (fmap ActiveReplacement.expiry (GameState.replacements gs)) []
+    Spec.assertEqWith s "no shield was installed" (fmap ActiveReplacement.expiry (StoredEffects.replacements (GameState.stored gs))) []
     Spec.assertEqWith s "and alice's own creature takes damage as usual" (S.damageOf attacker (settleDamage gs [hit attacker (Recipient.ToCreature attacker) 4])) (Just 4)
 
 -- Old Fat Spider Can't See Me {2}{U} Enchantment -- Saga (The Hobbit; name,
@@ -1859,7 +1860,7 @@ dovinSpec s registry = Spec.describe s "DovinHandOfControl" $ do
 --
 -- The pool's producer of CR 611.2b's conditional duration on a floating
 -- REPLACEMENT: every other Effect.PreventAllDamage in data/cards/ arms to end of
--- turn or to a turn boundary, so Expiry.While reached GameState.replacements
+-- turn or to a turn boundary, so Expiry.While reached StoredEffects.replacements
 -- only through a hand-built fixture before this card, and no card at all walked
 -- Resolve.installDamageRow into Expiry.arm. Chapter I is the same duration off
 -- the same source on the CONTINUOUS-EFFECT carrier, which is the contrast the
@@ -1958,16 +1959,16 @@ oldFatSpiderSpec s registry = Spec.describe s "OldFatSpiderCantSeeMe" $ do
       Spec.assertBool s (not (S.onBattlefield sagaId told)) "CR 704.5s has taken the Saga, its final chapter told"
       -- The behaviour first and the stored row second: a sweep that failed to eat
       -- the shield has to be reported as the damage it wrongly prevented, not as
-      -- a count of GameState.replacements absorbing the mutation ahead of it.
+      -- a count of StoredEffects.replacements absorbing the mutation ahead of it.
       Spec.assertEqWith s "the whole 7 lands now" (S.lifeOf S.alice after) (Just 13)
       Spec.assertEqWith s "and both events happened" (amounts after) [4, 3]
-      Spec.assertEqWith s "the row is gone, not masked" (GameState.replacements told) []
+      Spec.assertEqWith s "the row is gone, not masked" (StoredEffects.replacements (GameState.stored told)) []
   Spec.it s "CR 611.2b / 514.2 the shield is armed to a condition, which the cleanup sweep does not reach"
     . withBoard
     $ \(_, _, _, gs) -> do
-      Spec.assertEqWith s "one floating replacement" (length (GameState.replacements gs)) 1
-      Spec.assertBool s (all (isWhile . ActiveReplacement.expiry) (GameState.replacements gs)) "armed to a While, not to a turn or a cleanup"
-      Spec.assertEqWith s "CR 514.2's cleanup leaves it alone" (length (GameState.replacements (Expiry.dropAtCleanup gs))) 1
+      Spec.assertEqWith s "one floating replacement" (length (StoredEffects.replacements (GameState.stored gs))) 1
+      Spec.assertBool s (all (isWhile . ActiveReplacement.expiry) (StoredEffects.replacements (GameState.stored gs))) "armed to a While, not to a turn or a cleanup"
+      Spec.assertEqWith s "CR 514.2's cleanup leaves it alone" (length ((StoredEffects.replacements . GameState.stored) (Expiry.dropAtCleanup gs))) 1
   -- Chapter I, from a CAST, so the entering lore counter (CR 715.3a) is what
   -- fires it. Same printed duration, same source, other carrier: the grant is a
   -- ContinuousEffect where chapter II's shield is an ActiveReplacement, and the
@@ -1986,7 +1987,7 @@ oldFatSpiderSpec s registry = Spec.describe s "OldFatSpiderCantSeeMe" $ do
         hexproof g = Map.member (Keyword.Hexproof Nothing) (Projection.keywordsOf mine g)
     Spec.assertBool s (hexproof granted) "alice's creature has hexproof while the Saga stands"
     Spec.assertBool s (not (hexproof told)) "and loses it once the Saga is sacrificed"
-    Spec.assertEqWith s "the effect is deleted, not masked" (GameState.continuousEffects told) []
+    Spec.assertEqWith s "the effect is deleted, not masked" (StoredEffects.continuousEffects (GameState.stored told)) []
 
 poolSize :: PlayerId.PlayerId -> GameState.GameState -> Int
 poolSize pid gs = case Game.poolOf pid gs of
@@ -2045,10 +2046,10 @@ whenPaidSpec s = Spec.describe s "WhenPaid" $ do
   Spec.it s "CR 116.2c no sweep of the turn's structure ends it" $ do
     let armed = effectWith (Expiry.Type.WhenPaid (blueOfferTo S.alice)) (Setup.emptyGame S.bothPlayers)
         conditional = S.runPure S.identityAnswer armed Expiry.sweepConditional
-    Spec.assertEqWith s "cleanup leaves it" (length (GameState.continuousEffects (Expiry.dropAtCleanup armed))) 1
-    Spec.assertEqWith s "a turn handoff leaves it" (length (GameState.continuousEffects (Expiry.dropAtTurnOf S.alice armed))) 1
-    Spec.assertEqWith s "the end of a phase leaves it" (length (GameState.continuousEffects (Expiry.dropAtEndOf PhaseSelector.CombatPhase armed))) 1
-    Spec.assertEqWith s "and the conditional sweep leaves it" (length (GameState.continuousEffects conditional)) 1
+    Spec.assertEqWith s "cleanup leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
+    Spec.assertEqWith s "a turn handoff leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtTurnOf S.alice armed))) 1
+    Spec.assertEqWith s "the end of a phase leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtEndOf PhaseSelector.CombatPhase armed))) 1
+    Spec.assertEqWith s "and the conditional sweep leaves it" (length (StoredEffects.continuousEffects (GameState.stored conditional))) 1
   -- The IDENTITY the arm exists for, and the reason Expiry.Never is not it: the
   -- effect is findable by its source, so a payment knows what to end.
   Spec.it s "CR 116.2c the stored effect is findable by its source, with its price" $ do
@@ -2056,7 +2057,7 @@ whenPaidSpec s = Spec.describe s "WhenPaid" $ do
         never = effectWith Expiry.Type.Never (Setup.emptyGame S.bothPlayers)
     Spec.assertEqWith s "the offer names the source, the price and the seat" (Expiry.paidExpiries armed) [(effectSource, blueOfferTo S.alice)]
     Spec.assertEqWith s "an indefinite effect from the same source offers nothing" (Expiry.paidExpiries never) []
-    Spec.assertEqWith s "and paying ends it" (GameState.continuousEffects (Expiry.sweep (Expiry.PaidFor S.noSource) armed)) []
+    Spec.assertEqWith s "and paying ends it" ((StoredEffects.continuousEffects . GameState.stored) (Expiry.sweep (Expiry.PaidFor S.noSource) armed)) []
     Spec.assertEqWith s "and paying for another resolution does not" (Expiry.paidExpiries (Expiry.sweep (Expiry.PaidFor effectSource) armed)) [(effectSource, blueOfferTo S.alice)]
 
 -- {U}, the price every Licid prints.
@@ -2080,10 +2081,10 @@ perpetualSpec s registry = Spec.describe s "Perpetual" $ do
     let armed = effectWith Expiry.Type.Perpetual (Setup.emptyGame S.bothPlayers)
         conditional = S.runPure S.identityAnswer armed Expiry.sweepConditional
     Spec.assertEqWith s "armed" (Expiry.arm S.noSource Map.empty S.alice S.noSource Duration.Perpetual armGs) (Just Expiry.Type.Perpetual)
-    Spec.assertEqWith s "cleanup leaves it" (length (GameState.continuousEffects (Expiry.dropAtCleanup armed))) 1
-    Spec.assertEqWith s "a turn handoff leaves it" (length (GameState.continuousEffects (Expiry.dropAtTurnOf S.alice armed))) 1
-    Spec.assertEqWith s "the end of a phase leaves it" (length (GameState.continuousEffects (Expiry.dropAtEndOf PhaseSelector.CombatPhase armed))) 1
-    Spec.assertEqWith s "and the conditional sweep leaves it" (length (GameState.continuousEffects conditional)) 1
+    Spec.assertEqWith s "cleanup leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtCleanup armed))) 1
+    Spec.assertEqWith s "a turn handoff leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtTurnOf S.alice armed))) 1
+    Spec.assertEqWith s "the end of a phase leaves it" (length ((StoredEffects.continuousEffects . GameState.stored) (Expiry.dropAtEndOf PhaseSelector.CombatPhase armed))) 1
+    Spec.assertEqWith s "and the conditional sweep leaves it" (length (StoredEffects.continuousEffects (GameState.stored conditional))) 1
   -- The IDENTITY the arm exists for, and the reason Expiry.Never is not it: a
   -- zone change has to be able to tell the two apart.
   Spec.it s "CR 400.7 only a perpetual duration follows its objects across a zone change" $ do
@@ -2141,7 +2142,7 @@ perpetualSpec s registry = Spec.describe s "Perpetual" $ do
         Spec.assertBool s (not (Projection.hasKeyword Keyword.Lifelink controlAgain both)) "while the indefinite one is left naming an id nothing answers to"
         Spec.assertBool s (mineAgain /= mineId && controlAgain /= controlId) "CR 400.7: both round trips minted new objects"
         Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink mineId granted && Projection.hasKeyword Keyword.Lifelink controlId granted) "and both grants applied before either creature moved"
-        Spec.assertEqWith s "the ability stored exactly one effect, under the perpetual arm" (fmap ContinuousEffect.expiry (filter ((== collectorId) . ContinuousEffect.source) (GameState.continuousEffects granted))) [Expiry.Type.Perpetual]
+        Spec.assertEqWith s "the ability stored exactly one effect, under the perpetual arm" (fmap ContinuousEffect.expiry (filter ((== collectorId) . ContinuousEffect.source) (StoredEffects.continuousEffects (GameState.stored granted)))) [Expiry.Type.Perpetual]
 
 -- The control grant, and the perpetual one's twin in every respect but its
 -- expiry: same stand-in source, same layer-6 modification, same CR 611.2c
@@ -2157,7 +2158,7 @@ lifelinkUnder expiry oid gs =
             ContinuousEffect.modification = Modification.GainKeyword Keyword.Lifelink,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
           }
-   in gs1 {GameState.continuousEffects = eff : GameState.continuousEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)}}
 
 -- Onto the battlefield by way of its owner's graveyard, which is two zone changes
 -- and so two of CR 400.7's new objects. Answers the id of the last one.

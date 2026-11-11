@@ -13,7 +13,7 @@ import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 611.1 / 613.11: a stored, resolution-generated player or rules-modifying
--- continuous effect, held in GameState.playerEffects. The player-axis analogue of
+-- continuous effect, held in StoredEffects.playerEffects. The player-axis analogue of
 -- ActiveReplacement and ContinuousEffect: the printed carrier
 -- (Parun.Types.PlayerStaticAbility) is re-derived live from the battlefield, while
 -- these are stored because the object that made them may be long gone.

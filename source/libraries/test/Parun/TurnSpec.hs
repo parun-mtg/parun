@@ -72,6 +72,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -649,7 +650,7 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
     -- Filter.DeclaredThisTurn Attacker, since CR 511.3 had cleared the combat record.
     Spec.assertEqWith s "bob took 2 in each of the three combats" (S.lifeOf S.bob played) (Just 14)
     -- CR 514.2 ends the stated duration, so nothing is left armed.
-    Spec.assertEqWith s "and the store is empty by the end of the turn" (Seq.length (GameState.delayedTriggers played)) 0
+    Spec.assertEqWith s "and the store is empty by the end of the turn" (Seq.length (StoredEffects.delayedTriggers (GameState.stored played))) 0
 
 -- Aim every target slot at one player. Time Warp's slot is Pool.Players, so a
 -- recipient tagged for any other pool is not in its legal set at all.
@@ -1020,7 +1021,7 @@ gambitSpec s registry = Spec.describe s "AlchemistsGambit" $ do
     Spec.assertEqWith s "and on bob's turn after it, the window has closed" (struck atBobsTurn) (Just 0)
     -- Hygiene rather than behaviour: `begun` alone decides whether the row
     -- applies, so only the store shows that its turn's cleanup dropped it.
-    Spec.assertEqWith s "the row is dropped at the cleanup of the Gambit's turn, not before" (length (GameState.playerEffects atGambitTurn), GameState.playerEffects atBobsTurn) (1, [])
+    Spec.assertEqWith s "the row is dropped at the cleanup of the Gambit's turn, not before" (length (StoredEffects.playerEffects (GameState.stored atGambitTurn)), StoredEffects.playerEffects (GameState.stored atBobsTurn)) (1, [])
     Spec.assertEqWith s "Time Warp's turn is turn 2 and the Gambit's turn 3, both alice's" (fmap (\g -> (TurnRegisters.turnNumber (GameState.turn g), TurnRegisters.activePlayer (GameState.turn g))) [atWarpTurn, atGambitTurn, atBobsTurn]) [(2, S.alice), (3, S.alice), (4, S.bob)]
     Spec.assertBool s (S.alice `elem` Game.stillPlaying atBobsTurn) "CR 702.148a cleaved, the loss clause is gone and alice survives"
     Spec.assertEqWith s "the Gambit exiled itself" (length (Game.zoneMembers Zone.Exile S.alice resolved), length (Game.zoneMembers Zone.Graveyard S.alice resolved)) (1, 1)
@@ -1478,7 +1479,7 @@ skippedEndOfCombatSpec s registry = Spec.describe s "SkippedEndOfCombat" $ do
     Spec.assertEqWith s "a 3/6 Golem" (S.powerToughnessOf jade damage) (Just (3, 6))
     Spec.assertBool s (not (Projection.isCreatureOf jade after)) "and a noncreature artifact once the phase has ended"
     Spec.assertEqWith s "with no power or toughness" (S.powerToughnessOf jade after) Nothing
-    Spec.assertEqWith s "and nothing left stored" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "and nothing left stored" (StoredEffects.continuousEffects (GameState.stored after)) []
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Turn" $ do

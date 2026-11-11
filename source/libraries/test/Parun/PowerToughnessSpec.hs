@@ -92,6 +92,7 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -1128,7 +1129,7 @@ omnathSpec s registry = Spec.describe s "Omnath, Locus of Mana" $ do
     Spec.assertEqWith s "two Forests" (Projection.powerOf omnathId two) (Just 3)
     Spec.assertEqWith s "three Forests" (Projection.powerOf omnathId three) (Just 4)
     Spec.assertEqWith s "the seed still says 1" (PC.power (Projection.baseCharacteristics omnathId three)) (Just 1)
-    Spec.assertBool s (null (GameState.continuousEffects three)) "no continuous effect was stored for the pump"
+    Spec.assertBool s (null (StoredEffects.continuousEffects (GameState.stored three))) "no continuous effect was stored for the pump"
   -- CR 106.1a: only GREEN mana counts. An Island's {U} floats in the same pool
   -- and is invisible to the count -- the falsifier for a ManaCount that ignores
   -- its filter and just measures the pool's size.

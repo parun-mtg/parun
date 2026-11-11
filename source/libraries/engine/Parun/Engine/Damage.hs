@@ -53,6 +53,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpEvent as TurnUpEvent
@@ -1521,7 +1522,7 @@ processDamage settle events = do
   -- 0 through Binding.eventAmount and does nothing of its own accord (Test of
   -- Faith puts on no counter), which is the rule as well.
   State.modify' $ \gs ->
-    gs {GameState.pendingPreventionRiders = GameState.pendingPreventionRiders gs <> Seq.fromList (filter (Maybe.isJust . Prevention.rider) prevented)}
+    gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingPreventionRiders = StoredEffects.pendingPreventionRiders (GameState.stored gs) <> Seq.fromList (filter (Maybe.isJust . Prevention.rider) prevented)}}
   pure (survivors, gains)
 
 -- CR 615.5: adds one application to the tally Quantity.DamagePreventedThisWay

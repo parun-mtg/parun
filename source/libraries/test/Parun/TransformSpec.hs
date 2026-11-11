@@ -131,6 +131,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.Transformed as Transformed
@@ -547,7 +548,7 @@ spec s registry = Spec.describe s "Transform" $ do
         armed = armAangsDelayedAbility pikerId board
         turned = S.runPure S.identityAnswer armed (S.cast S.alice moonmistId *> Stack.resolveTop)
         fired = atNextUpkeep turned
-    Spec.assertEqWith s "the Piker's death armed exactly one delayed ability" (Seq.length (GameState.delayedTriggers armed)) 1
+    Spec.assertEqWith s "the Piker's death armed exactly one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
     Spec.assertEqWith s "which left Aang on its front face" (aangReadings aangId armed) aangFrontUp
     Spec.assertEqWith s "and Moonmist then turned it over, Aang being a Human" (aangReadings aangId turned) aangBackUp
     Spec.assertEqWith
@@ -555,7 +556,7 @@ spec s registry = Spec.describe s "Transform" $ do
       "CR 701.27g: Aang turned over since the delayed ability was created, so the instruction is ignored and the back face stays up"
       (aangReadings aangId fired)
       aangBackUp
-    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (GameState.delayedTriggers fired), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
+    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (StoredEffects.delayedTriggers (GameState.stored fired)), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
   -- The pair to the case above, differing in exactly one thing: no Moonmist, so
   -- nothing turns Aang over between the delayed ability's creation and its
   -- resolution. CR 701.27g then has nothing to ignore and the delayed ability
@@ -571,14 +572,14 @@ spec s registry = Spec.describe s "Transform" $ do
     let (aangId, pikerId, _, board) = aangBoard aang piker moonmist forest
         armed = armAangsDelayedAbility pikerId board
         fired = atNextUpkeep armed
-    Spec.assertEqWith s "the Piker's death armed exactly one delayed ability" (Seq.length (GameState.delayedTriggers armed)) 1
+    Spec.assertEqWith s "the Piker's death armed exactly one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
     Spec.assertEqWith s "and nothing turned Aang over in the meantime" (Maybe.isNothing (Game.lookupObject aangId armed >>= Object.turnedOverAt)) True
     Spec.assertEqWith
       s
       "CR 701.27g: the delayed ability turns Aang over, so the 4/4 back face is up"
       (aangReadings aangId fired)
       aangBackUp
-    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (GameState.delayedTriggers fired), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
+    Spec.assertEqWith s "with the delayed ability spent and nothing left on the stack" (Seq.length (StoredEffects.delayedTriggers (GameState.stored fired)), length (TurnRegisters.stack (GameState.turn fired))) (0, 0)
   -- CR 712.6d: "While a nonmodal double-faced permanent has its back face up, it
   -- has only the characteristics of its back face. However, its mana value is
   -- calculated using the mana cost of its front face." CR 202.3a exempts that

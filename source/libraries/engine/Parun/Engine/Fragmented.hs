@@ -72,6 +72,7 @@ import qualified Parun.Types.PrintingId as PrintingId
 import Parun.Types.StateDigest (StateDigest)
 import qualified Parun.Types.StateDigest as StateDigest
 import qualified Parun.Types.StickerPlacement as StickerPlacement
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Text.Read as Read
@@ -150,7 +151,7 @@ digest gs =
             GameState.cardsPlayed = Map.empty,
             -- Canonical rather than dropped, so CR 733.3's own example recurs,
             -- and a loop that moves a counter back.
-            GameState.continuousEffects = effects,
+            GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = effects},
             GameState.objects = objects,
             GameState.exiledWith = fmap (\link -> link {ExileLink.acquisition = reacquire (ExileLink.acquisition link)}) (GameState.exiledWith gs),
             GameState.enteredWith = fmap (Set.map (\link -> link {EntryLink.acquisition = reacquire (EntryLink.acquisition link)})) (GameState.enteredWith gs),
@@ -185,7 +186,7 @@ readsOwnCounterLinks gs source =
   let projected = Monoid.getAny . Mentions.projectedCharacteristicsNames Mentions.readsCounterLinks
    in any (Monoid.getAny . Mentions.cardNames Mentions.readsCounterLinks) (Game.cardsOfWithLastKnown source gs)
         || or (Game.liveOrLastKnown (\_ -> projected (Projection.project source gs)) (\known -> projected (LastKnown.characteristics known) || projected (LastKnown.copiable known)) source gs)
-        || any (\entry -> DelayedTrigger.source entry == source && Monoid.getAny (Mentions.delayedTriggerNames Mentions.readsCounterLinks entry)) (GameState.delayedTriggers gs)
+        || any (\entry -> DelayedTrigger.source entry == source && Monoid.getAny (Mentions.delayedTriggerNames Mentions.readsCounterLinks entry)) (StoredEffects.delayedTriggers (GameState.stored gs))
 
 -- How the derived Show renders an object id and a timestamp, up to the
 -- number.
@@ -248,7 +249,7 @@ choiceKey here = renumber (StateDigest.objectRanks here) Map.empty . show
 -- keyed by one (GameState.exiledWith, GameState.enteredWith).
 canonicalStamps :: GameState -> ([ContinuousEffect.ContinuousEffect Card.Card], Map.Map ObjectId.ObjectId Object.Object, Acquisition.Acquisition -> Acquisition.Acquisition)
 canonicalStamps gs =
-  let rows = GameState.continuousEffects gs
+  let rows = StoredEffects.continuousEffects (GameState.stored gs)
       live obj = obj {Object.counterTimestamps = Map.filterWithKey (\kind _ -> Map.findWithDefault 0 kind (Object.counters obj) > 0) (Object.counterTimestamps obj)}
       objects = fmap live (GameState.objects gs)
       erased row = any (supersedes row) rows
@@ -348,7 +349,7 @@ layeredStamps gs =
             <> Maybe.maybeToList (Object.worldSince obj)
     )
     (Map.elems (GameState.objects gs))
-    <> fmap ActiveCopy.timestamp (GameState.copyEffects gs)
+    <> fmap ActiveCopy.timestamp (StoredEffects.copyEffects (GameState.stored gs))
 
 -- | CR 733.3's example makes "nothing in the game cares how many times an
 -- ability has been activated" the precondition: does anything in the game

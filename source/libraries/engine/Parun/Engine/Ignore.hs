@@ -37,6 +37,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.SpecialAction as SpecialAction
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- Every ignore this permanent's copiable rules text grants: which ability each
 -- names (CR 116.2d's "that ability") and what it charges.
@@ -156,13 +157,16 @@ ignore perform pid oid name = do
         State.modify'
           ( \gs ->
               gs
-                { GameState.ignoredAbilities =
-                    IgnoredAbility.MkIgnoredAbility
-                      { IgnoredAbility.player = pid,
-                        IgnoredAbility.source = oid,
-                        IgnoredAbility.ability = name,
-                        IgnoredAbility.expiry = Expiry.AtCleanup
+                { GameState.stored =
+                    (GameState.stored gs)
+                      { StoredEffects.ignoredAbilities =
+                          IgnoredAbility.MkIgnoredAbility
+                            { IgnoredAbility.player = pid,
+                              IgnoredAbility.source = oid,
+                              IgnoredAbility.ability = name,
+                              IgnoredAbility.expiry = Expiry.AtCleanup
+                            }
+                            : StoredEffects.ignoredAbilities (GameState.stored gs)
                       }
-                      : GameState.ignoredAbilities gs
                 }
           )

@@ -109,6 +109,7 @@ import qualified Parun.Types.SearchPlace as SearchPlace
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -949,7 +950,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     -- What the claim rests on: the Song genuinely left, and the handover is a
     -- stored effect rather than the Song still projecting from the battlefield.
     Spec.assertEqWith s "CR 730.4a: the wish took the Song out of the main game entirely" (Map.member songId (GameState.objects after)) False
-    Spec.assertEqWith s "CR 604.2/611.2c: the continuing effect is stored, one per part of the ability" (length (GameState.continuousEffects after)) 4
+    Spec.assertEqWith s "CR 604.2/611.2c: the continuing effect is stored, one per part of the ability" (length (StoredEffects.continuousEffects (GameState.stored after))) 4
     Spec.assertEqWith s "CR 730.5: the Song comes back to her main-game library" (List.elem titaniasSong (printingsIn Zone.Library S.alice after)) True
     Spec.assertEqWith s "CR 730.1b: alice won the subgame, so only bob paid" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 20, Just 10)
   -- CR 730.5's second sentence, the one the case above does not reach: "the spell
@@ -1220,7 +1221,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         twice = case Face.activatedAbilities (S.combinedFace ring) of
           ability : _ -> S.runPure S.identityAnswer g1 (Activate.activateAbility S.alice secondId ability >> Stack.resolveTop)
           [] -> g1
-    Spec.assertEqWith s "setup: both Rings were exiled, so both rows stand" (Set.member secondId (GameState.battlefield twice), length (GameState.replacements twice)) (False, 2)
+    Spec.assertEqWith s "setup: both Rings were exiled, so both rows stand" (Set.member secondId (GameState.battlefield twice), length (StoredEffects.replacements (GameState.stored twice))) (False, 2)
     Spec.assertBool s (not (wasAskedToReplace (answersFor S.identityAnswer twice (Event.drawCard (pure ()) S.alice)))) "no ChooseReplacement was raised"
     Spec.assertEqWith s "CR 400.11c and the card she owns outside the game reached her hand" (printingsIn Zone.Hand S.alice (S.runPure S.identityAnswer twice (Event.drawCard (pure ()) S.alice))) [signInBlood]
   -- The two Rings' rows again, each re-aimed at a filter reading the source's
@@ -1246,9 +1247,9 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           ReplacementEffect.DrawR (DrawR.MkDrawR w e (DrawRewrite.FromOutsideTheGame p)) ->
             row {ActiveReplacement.effect = ReplacementEffect.DrawR (DrawR.MkDrawR w e (DrawRewrite.FromOutsideTheGame p {FromOutsideTheGame.filter = Filter.Shares Trait.Color Anchor.Source}))}
           _ -> row
-        board = g3 {GameState.replacements = zipWith (\src row -> (sharing row) {ActiveReplacement.source = src}) [red, blue] (GameState.replacements g3)}
+        board = g3 {GameState.stored = (GameState.stored g3) {StoredEffects.replacements = zipWith (\src row -> (sharing row) {ActiveReplacement.source = src}) [red, blue] (StoredEffects.replacements (GameState.stored g3))}}
         drawn preferred = S.runPure (preferringRow preferred) board (Event.drawCard (pure ()) S.alice)
-    Spec.assertEqWith s "setup: two rows stand, sourced on the Piker and the Merfolk" (fmap ActiveReplacement.source (GameState.replacements board)) [red, blue]
+    Spec.assertEqWith s "setup: two rows stand, sourced on the Piker and the Merfolk" (fmap ActiveReplacement.source (StoredEffects.replacements (GameState.stored board))) [red, blue]
     -- THE BEHAVIOUR, ahead of every proxy.
     Spec.assertEqWith s "CR 616.1 through the red Piker's row the Hill Giant reached her hand" (printingsIn Zone.Hand S.alice (drawn red)) [giant]
     Spec.assertEqWith s "CR 616.1 through the blue Merfolk's row nothing did" (printingsIn Zone.Hand S.alice (drawn blue)) []

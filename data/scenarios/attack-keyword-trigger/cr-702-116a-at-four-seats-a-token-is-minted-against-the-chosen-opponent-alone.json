@@ -1,6 +1,6 @@
 {
   "description": "CR 702.116a at four seats a token is minted against the chosen opponent alone",
-  "note": "GameState.delayedTriggers is not a check; the armed exile is shown by its effect instead: the token is gone by the postcombat main phase.",
+  "note": "StoredEffects.delayedTriggers is not a check; the armed exile is shown by its effect instead: the token is gone by the postcombat main phase.",
   "board": {
     "seats": [
       {

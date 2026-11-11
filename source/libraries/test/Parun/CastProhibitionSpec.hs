@@ -62,6 +62,7 @@ import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TextWord as TextWord
@@ -91,7 +92,7 @@ silenceSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (_, _, _, _, _, after) = silenceAfter plains silence mountain prodigalSorcerer piker
           ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
-      Spec.assertEqWith s "nothing stored" (GameState.playerEffects ended) []
+      Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored ended)) []
       Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced ended)) "bob may cast again"
 
 -- CR 601.2c: the three-seat Cease-Fire board. alice has three Plains and the
@@ -230,7 +231,7 @@ sphinxsDecreeSpec s registry =
       Spec.assertEqWith s "on carol's turn carol is barred and bob is not" (offered S.carol carolsBolt carolsTurn, offered S.bob bobsBolt carolsTurn) (False, True)
       -- Preconditions, ordered behind the gameplay assertions.
       Spec.assertEqWith s "the Decree resolved on alice's turn 1, into a turn each for bob and carol" (fmap (TurnRegisters.activePlayer . GameState.turn) [resolved, bobsTurn, carolsTurn], TurnRegisters.turnNumber (GameState.turn carolsTurn)) ([S.alice, S.bob, S.carol], 3)
-      Spec.assertEqWith s "one row per opponent, each over that opponent alone" (List.sort (fmap ActivePlayerEffect.scope (GameState.playerEffects resolved))) [AffectedPlayers.Named S.bob, AffectedPlayers.Named S.carol]
+      Spec.assertEqWith s "one row per opponent, each over that opponent alone" (List.sort (fmap ActivePlayerEffect.scope (StoredEffects.playerEffects (GameState.stored resolved)))) [AffectedPlayers.Named S.bob, AffectedPlayers.Named S.carol]
 
 -- Cease-Fire {2}{W} Instant: "Target player can't cast creature spells this
 -- turn. Draw a card." The first card in the pool to store a player effect on a
@@ -267,11 +268,11 @@ ceaseFireSpec s registry =
       Spec.assertBool s (not (offersCast S.carol carolsPiker piker after)) "carol may not cast her creature"
       Spec.assertBool s (offersCast S.bob bobsPiker piker after) "bob, the untargeted opponent, still may"
       Spec.assertBool s (offersCast S.alice alicesPiker piker after) "and so may alice, who cast it"
-      Spec.assertEqWith s "one stored effect" (length (GameState.playerEffects after)) 1
+      Spec.assertEqWith s "one stored effect" (length (StoredEffects.playerEffects (GameState.stored after))) 1
       Spec.assertEqWith
         s
         "stored against the seat itself, not a scope"
-        (fmap ActivePlayerEffect.scope (GameState.playerEffects after))
+        (fmap ActivePlayerEffect.scope (StoredEffects.playerEffects (GameState.stored after)))
         [AffectedPlayers.Named S.carol]
 
     -- CR 514.2: "this turn" ends at cleanup, so the restriction has to end with
@@ -285,7 +286,7 @@ ceaseFireSpec s registry =
       lightningBolt <- S.printingOf s registry "Lightning Bolt"
       let (_, _, carolsPiker, _, _, after) = ceaseFireAfter plains ceaseFire mountain piker lightningBolt
           ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
-      Spec.assertEqWith s "nothing stored" (GameState.playerEffects ended) []
+      Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored ended)) []
       Spec.assertBool s (offersCast S.carol carolsPiker piker ended) "carol may cast her creature again"
 
 -- CR 611.2a's board: three seats, and the SEAT COUNT is load-bearing twice
@@ -376,8 +377,8 @@ blossomingCalmSpec s registry =
       let (calmId, boltId, before) = blossomingCalmBoard plains calm mountain bolt
           resolved = blossomingCalmAfter calmId before
           burned = blossomingCalmBolt boltId resolved
-      Spec.assertEqWith s "one stored player effect" (length (GameState.playerEffects resolved)) 1
-      Spec.assertEqWith s "and it ends at alice's next turn" (fmap ActivePlayerEffect.expiry (GameState.playerEffects resolved)) [Expiry.Type.AtTurnOf S.alice]
+      Spec.assertEqWith s "one stored player effect" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
+      Spec.assertEqWith s "and it ends at alice's next turn" (fmap ActivePlayerEffect.expiry (StoredEffects.playerEffects (GameState.stored resolved))) [Expiry.Type.AtTurnOf S.alice]
       Spec.assertEqWith s "alice gained 2" (S.lifeOf S.alice resolved) (Just 22)
       Spec.assertEqWith s "and takes nothing from the Bolt" (S.lifeOf S.alice burned) (Just 22)
       Spec.assertEqWith s "which landed on bob, the lowest candidate left" (S.lifeOf S.bob burned) (Just 17)
@@ -393,7 +394,7 @@ blossomingCalmSpec s registry =
       let (calmId, boltId, before) = blossomingCalmBoard plains calm mountain bolt
           swept = Expiry.dropAtCleanup (blossomingCalmAfter calmId before)
           burned = blossomingCalmBolt boltId swept
-      Spec.assertEqWith s "still stored" (length (GameState.playerEffects swept)) 1
+      Spec.assertEqWith s "still stored" (length (StoredEffects.playerEffects (GameState.stored swept))) 1
       Spec.assertEqWith s "and alice still takes nothing" (S.lifeOf S.alice burned) (Just 22)
 
     -- THE UNIT'S POINT. Two handoffs pass and the effect survives both; the
@@ -412,13 +413,13 @@ blossomingCalmSpec s registry =
           carolsTurn = blossomingCalmHandoff bobsTurn
           alicesTurn = blossomingCalmHandoff carolsTurn
       Spec.assertEqWith s "bob's turn begins" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
-      Spec.assertEqWith s "and the effect is still stored" (length (GameState.playerEffects bobsTurn)) 1
+      Spec.assertEqWith s "and the effect is still stored" (length (StoredEffects.playerEffects (GameState.stored bobsTurn))) 1
       Spec.assertEqWith s "alice takes nothing on bob's turn" (S.lifeOf S.alice (blossomingCalmBolt boltId bobsTurn)) (Just 22)
       Spec.assertEqWith s "carol's turn begins" (TurnRegisters.activePlayer (GameState.turn carolsTurn)) S.carol
-      Spec.assertEqWith s "and the effect is still stored" (length (GameState.playerEffects carolsTurn)) 1
+      Spec.assertEqWith s "and the effect is still stored" (length (StoredEffects.playerEffects (GameState.stored carolsTurn))) 1
       Spec.assertEqWith s "alice takes nothing on carol's turn either" (S.lifeOf S.alice (blossomingCalmBolt boltId carolsTurn)) (Just 22)
       Spec.assertEqWith s "alice's own next turn begins" (TurnRegisters.activePlayer (GameState.turn alicesTurn)) S.alice
-      Spec.assertEqWith s "and the effect is gone" (GameState.playerEffects alicesTurn) []
+      Spec.assertEqWith s "and the effect is gone" (StoredEffects.playerEffects (GameState.stored alicesTurn)) []
       Spec.assertEqWith s "so the same Bolt now reaches her" (S.lifeOf S.alice (blossomingCalmBolt boltId alicesTurn)) (Just 19)
 
 -- CR 611.2b's board, and the SWAMP is the only thing about it that varies. alice
@@ -525,7 +526,7 @@ conditionalSilenceSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       let (hushId, _, _, _, before) = conditionalSilenceBoard True island swamp hush mountain piker
           resolved = conditionalSilenceAfter hushId before
-      case fmap ActivePlayerEffect.expiry (GameState.playerEffects resolved) of
+      case fmap ActivePlayerEffect.expiry (StoredEffects.playerEffects (GameState.stored resolved)) of
         [Expiry.Type.While (While.MkWhile who _)] -> Spec.assertEqWith s "the duration is keyed to its controller" who S.alice
         other -> Spec.assertFailure s ("expected one conditional player effect, got " <> show other)
       Spec.assertBool s (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced resolved) "bob is prohibited"
@@ -545,7 +546,7 @@ conditionalSilenceSpec s registry =
           resolved = conditionalSilenceAfter hushId before
           (changed, swept) = Engine.runGamePure S.identityAnswer resolved Expiry.sweepConditional
       Spec.assertBool s (not changed) "the sweep reports no change"
-      Spec.assertEqWith s "still stored" (length (GameState.playerEffects swept)) 1
+      Spec.assertEqWith s "still stored" (length (StoredEffects.playerEffects (GameState.stored swept))) 1
       Spec.assertEqWith s "and bob is still stopped" (conditionalSilenceCasts S.bob swept) []
 
     -- CR 611.2b's first sentence: a duration that never STARTS means the effect
@@ -568,7 +569,7 @@ conditionalSilenceSpec s registry =
           resolved = S.runPure S.identityAnswer (S.runPure S.identityAnswer before (S.cast S.alice hushId)) Stack.resolveTop
           settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
       Spec.assertBool s (notElem hushId (TurnRegisters.stack (GameState.turn resolved))) "the spell really did resolve"
-      Spec.assertEqWith s "nothing stored" (GameState.playerEffects resolved) []
+      Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored resolved)) []
       Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob settled)) "so bob may cast"
 
 -- Aims a text changer's one target slot at `oid` -- the SpellsAndPermanents
@@ -677,7 +678,7 @@ hackedSilenceSpec s registry =
       Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob after)) "bob is still offered his Piker"
       Spec.assertBool s (elem (Action.Type.Cast carolsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.carol after)) "and carol hers"
       Spec.assertEqWith s "the Silence really did resolve" (length (TurnRegisters.stack (GameState.turn after))) 0
-      Spec.assertEqWith s "and nothing is stored" (GameState.playerEffects after) []
+      Spec.assertEqWith s "and nothing is stored" (StoredEffects.playerEffects (GameState.stored after)) []
 
 -- The one activated ability at index `n` of what the PROJECTION hands out for
 -- `oid` -- not Face.activatedAbilities, which is the printed list a text change
@@ -803,7 +804,7 @@ lilianaSpec s registry =
           Spec.assertBool s (any (S.isCastOf evangelId) (Action.legalActions S.alice after)) "the Cleric is offered"
           Spec.assertBool s (not (any (S.isCastOf zombieId) (Action.legalActions S.alice after))) "while the Zombie is not"
           Spec.assertBool s (PlayerEffect.mayCastFrom S.alice Zone.Graveyard evangelId after) "the typed question agrees"
-          Spec.assertEqWith s "and exactly one restriction is stored" (length (GameState.playerEffects after)) 1
+          Spec.assertEqWith s "and exactly one restriction is stored" (length (StoredEffects.playerEffects (GameState.stored after))) 1
 
 -- Loaded fresh inside each case that needs it -- equivalent because loading
 -- is deterministic and cached (batch-recipe.md).
@@ -1684,7 +1685,7 @@ stasisCoffinSpec s registry =
 -- exists: it is the pool's only writer of a chosen-name prohibition as a
 -- resolution (CR 611.2c) rather than as a permanent's printed ability, so it is
 -- the only card whose Filter.HasChosenName is read through a
--- GameState.playerEffects row. The name is chosen by CR 201.4 during the resolution (Effect
+-- StoredEffects.playerEffects row. The name is chosen by CR 201.4 during the resolution (Effect
 -- .ChooseCardName) and the two rows stored a clause later read it back.
 --
 -- alice has four Plains, four Mountains and four Swamps -- mana is never the
@@ -1737,7 +1738,7 @@ conjurersBanSpec s registry =
       Spec.assertBool s (PlayerEffect.prohibitsCasting S.alice pikerId VariableChoice.Announced after) "and the prohibition is the named one"
       -- The carrier, asserted AFTER the behaviour: nothing this card makes is a
       -- permanent, so both rows are CR 611.2c stored ones.
-      Spec.assertEqWith s "two stored rows" (length (GameState.playerEffects after)) 2
+      Spec.assertEqWith s "two stored rows" (length (StoredEffects.playerEffects (GameState.stored after))) 2
 
 -- City in a Bottle {2} Artifact -- second sentence: "Players can't cast spells
 -- or play lands with a name originally printed in the Arabian Nights

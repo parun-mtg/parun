@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -- CR 611.2: the life cycle of a stored effect's duration. The ONLY module that
 -- may case on Parun.Types.Expiry -- the standing Parun.Engine.Resolve has over
 -- Effect and Parun.Engine.Projection over Modification. It owns the
@@ -20,13 +22,11 @@ module Parun.Engine.Expiry where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
@@ -35,6 +35,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as View
+import qualified Parun.Engine.Stored as Stored
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
@@ -82,6 +83,9 @@ import Parun.Types.Recipient (Recipient)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
+import qualified Parun.Types.StoredEffects as StoredEffects
+import Parun.Types.StoredKind (StoredKind)
+import qualified Parun.Types.StoredKind as StoredKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.While as While
@@ -578,7 +582,7 @@ dropAtCleanup gs =
 sweepConditional :: Game Bool
 sweepConditional = do
   gs <- State.get
-  let changed = any (uncurry (endsAt gs Settle)) (sourcedExpiries gs) || any (orphanedHostCopy gs) (GameState.copyEffects gs)
+  let changed = any (uncurry (endsAt gs Settle)) (sourcedExpiries gs) || any (orphanedHostCopy gs) (StoredEffects.copyEffects (GameState.stored gs))
   Monad.when changed $ State.put (dropOrphanedHostCopies (sweep Settle gs))
   pure changed
 
@@ -595,7 +599,7 @@ orphanedHostCopy gs row = case ActiveCopy.covers row of
   CopyCoverage.These _ -> False
 
 dropOrphanedHostCopies :: GameState -> GameState
-dropOrphanedHostCopies gs = gs {GameState.copyEffects = filter (not . orphanedHostCopy gs) (GameState.copyEffects gs)}
+dropOrphanedHostCopies gs = gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = filter (not . orphanedHostCopy gs) (StoredEffects.copyEffects (GameState.stored gs))}}
 
 -- CR 701.35a's duration, ended: a detain lasts "until the next turn of the
 -- controller of that spell or ability", which is dropAtTurnOf's own moment, so
@@ -693,46 +697,58 @@ windowReached gs afterObjectTurn =
         && maybe False (Turn.isActive gs) (View.controllerOf oid gs)
 
 -- CR 611.2: every stored row that carries an expiry, walked once. The ONE
--- place that names the carriers: every sweep, the rewrite and the offer in this
--- module go through it, so a carrier added here reaches all of them and one
--- left out reaches none. `edit` is handed each row's source and expiry and
--- answers the expiry the row keeps, or Nothing to end it.
+-- place that asks a row for its expiry: every sweep, the rewrite and the offer
+-- in this module go through it, and it reaches every stored row through
+-- Parun.Engine.Stored.traverseRows, so a new kind of row is a build error in
+-- `rowExpiry` until it says what its expiry is. `edit` is handed each row's
+-- source and expiry and answers the expiry the row keeps, or Nothing to end it.
 --
 -- A row ended is DROPPED from its list, except an object's play permission
 -- (CR 601.3, Object.playPermission), which is CLEARED on an object that
--- stays. A delayed trigger stating no duration (CR 603.7b) has no expiry to
--- hand over, so `edit` never sees it and it is kept.
+-- stays.
 traverseExpiries :: (Applicative f) => (ObjectId -> Expiry -> f (Maybe Expiry)) -> GameState -> f GameState
 traverseExpiries edit gs =
-  let delayed x = case DelayedTrigger.expiry x of
-        Nothing -> pure (Just x)
-        Just e -> fmap (fmap (\e' -> x {DelayedTrigger.expiry = Just e'})) (edit (DelayedTrigger.source x) e)
-      object o = case Object.playPermission o of
+  let object o = case Object.playPermission o of
         Nothing -> pure o
         Just p ->
           fmap
             (\kept -> o {Object.playPermission = fmap (\e -> p {ExilePlayPermission.expiry = e}) kept})
             (edit (ExilePlayPermission.source p) (ExilePlayPermission.expiry p))
-   in fmap (foldr ($) gs) . sequenceA $
-        [ (\xs g -> g {GameState.continuousEffects = xs}) <$> rows edit ContinuousEffect.source ContinuousEffect.expiry (\x e -> x {ContinuousEffect.expiry = e}) (GameState.continuousEffects gs),
-          (\xs g -> g {GameState.copyEffects = xs}) <$> rows edit ActiveCopy.source ActiveCopy.expiry (\x e -> x {ActiveCopy.expiry = e}) (GameState.copyEffects gs),
-          (\xs g -> g {GameState.replacements = xs}) <$> rows edit ActiveReplacement.source ActiveReplacement.expiry (\x e -> x {ActiveReplacement.expiry = e}) (GameState.replacements gs),
-          (\xs g -> g {GameState.playerEffects = xs}) <$> rows edit ActivePlayerEffect.source ActivePlayerEffect.expiry (\x e -> x {ActivePlayerEffect.expiry = e}) (GameState.playerEffects gs),
-          (\xs g -> g {GameState.blockRequirements = xs}) <$> rows edit ActiveBlockRequirement.source ActiveBlockRequirement.expiry (\x e -> x {ActiveBlockRequirement.expiry = e}) (GameState.blockRequirements gs),
-          (\xs g -> g {GameState.attackRequirements = xs}) <$> rows edit ActiveAttackRequirement.source ActiveAttackRequirement.expiry (\x e -> x {ActiveAttackRequirement.expiry = e}) (GameState.attackRequirements gs),
-          (\xs g -> g {GameState.objectProhibitions = xs}) <$> rows edit ActiveObjectProhibition.source ActiveObjectProhibition.expiry (\x e -> x {ActiveObjectProhibition.expiry = e}) (GameState.objectProhibitions gs),
-          (\xs g -> g {GameState.attackProhibitions = xs}) <$> rows edit ActiveAttackProhibition.source ActiveAttackProhibition.expiry (\x e -> x {ActiveAttackProhibition.expiry = e}) (GameState.attackProhibitions gs),
-          (\xs g -> g {GameState.evasions = xs}) <$> rows edit ActiveEvasion.source ActiveEvasion.expiry (\x e -> x {ActiveEvasion.expiry = e}) (GameState.evasions gs),
-          (\xs g -> g {GameState.ignoredAbilities = xs}) <$> rows edit IgnoredAbility.source IgnoredAbility.expiry (\x e -> x {IgnoredAbility.expiry = e}) (GameState.ignoredAbilities gs),
-          (\xs g -> g {GameState.laterPayments = xs}) <$> rows edit (PreventionRider.source . ActiveLaterPayment.payoff) ActiveLaterPayment.expiry (\x e -> x {ActiveLaterPayment.expiry = e}) (GameState.laterPayments gs),
-          (\xs g -> g {GameState.delayedTriggers = xs}) . Seq.fromList . Maybe.catMaybes <$> traverse delayed (Foldable.toList (GameState.delayedTriggers gs)),
-          (\xs g -> g {GameState.objects = xs}) <$> traverse object (GameState.objects gs)
-        ]
+   in (\stored objects -> gs {GameState.stored = stored, GameState.objects = objects})
+        <$> Stored.traverseRows (rowExpiry edit) (GameState.stored gs)
+        <*> traverse object (GameState.objects gs)
 
--- One carrier's list under traverseExpiries' edit, survivors in order.
-rows :: (Applicative f) => (ObjectId -> Expiry -> f (Maybe Expiry)) -> (r -> ObjectId) -> (r -> Expiry) -> (r -> Expiry -> r) -> [r] -> f [r]
-rows edit source expiry set =
-  fmap Maybe.catMaybes . traverse (\x -> fmap (fmap (set x)) (edit (source x) (expiry x)))
+-- One stored row under traverseExpiries' edit: the row kept under the expiry
+-- `edit` answers, or ended.
+--
+-- A delayed trigger stating no duration (CR 603.7b) has no expiry to hand
+-- over, so `edit` never sees it and it is kept. Neither does a pending queue's
+-- entry: each is drained before the next priority window (the
+-- StoredEffects fields say where), so no duration could end one first.
+rowExpiry :: (Applicative f) => (ObjectId -> Expiry -> f (Maybe Expiry)) -> StoredKind r -> r -> f (Maybe r)
+rowExpiry edit kind row = case kind of
+  StoredKind.Continuous -> withExpiry edit ContinuousEffect.source ContinuousEffect.expiry (\x e -> x {ContinuousEffect.expiry = e}) row
+  StoredKind.Copy -> withExpiry edit ActiveCopy.source ActiveCopy.expiry (\x e -> x {ActiveCopy.expiry = e}) row
+  StoredKind.Replacement -> withExpiry edit ActiveReplacement.source ActiveReplacement.expiry (\x e -> x {ActiveReplacement.expiry = e}) row
+  StoredKind.PlayerEffect -> withExpiry edit ActivePlayerEffect.source ActivePlayerEffect.expiry (\x e -> x {ActivePlayerEffect.expiry = e}) row
+  StoredKind.BlockRequirement -> withExpiry edit ActiveBlockRequirement.source ActiveBlockRequirement.expiry (\x e -> x {ActiveBlockRequirement.expiry = e}) row
+  StoredKind.AttackRequirement -> withExpiry edit ActiveAttackRequirement.source ActiveAttackRequirement.expiry (\x e -> x {ActiveAttackRequirement.expiry = e}) row
+  StoredKind.ObjectProhibition -> withExpiry edit ActiveObjectProhibition.source ActiveObjectProhibition.expiry (\x e -> x {ActiveObjectProhibition.expiry = e}) row
+  StoredKind.AttackProhibition -> withExpiry edit ActiveAttackProhibition.source ActiveAttackProhibition.expiry (\x e -> x {ActiveAttackProhibition.expiry = e}) row
+  StoredKind.Evasion -> withExpiry edit ActiveEvasion.source ActiveEvasion.expiry (\x e -> x {ActiveEvasion.expiry = e}) row
+  StoredKind.IgnoredAbility -> withExpiry edit IgnoredAbility.source IgnoredAbility.expiry (\x e -> x {IgnoredAbility.expiry = e}) row
+  StoredKind.LaterPayment -> withExpiry edit (PreventionRider.source . ActiveLaterPayment.payoff) ActiveLaterPayment.expiry (\x e -> x {ActiveLaterPayment.expiry = e}) row
+  StoredKind.DelayedTrigger -> case DelayedTrigger.expiry row of
+    Nothing -> pure (Just row)
+    Just e -> fmap (fmap (\e' -> row {DelayedTrigger.expiry = Just e'})) (edit (DelayedTrigger.source row) e)
+  StoredKind.PendingPreventionRider -> pure (Just row)
+  StoredKind.PendingReplacementEffect -> pure (Just row)
+  StoredKind.PendingSkipEffect -> pure (Just row)
+  StoredKind.PendingEntryEffect -> pure (Just row)
+
+-- One row that always states an expiry, under traverseExpiries' edit.
+withExpiry :: (Functor f) => (ObjectId -> Expiry -> f (Maybe Expiry)) -> (r -> ObjectId) -> (r -> Expiry) -> (r -> Expiry -> r) -> r -> f (Maybe r)
+withExpiry edit source expiry set row = fmap (set row) <$> edit (source row) (expiry row)
 
 -- traverseExpiries under Identity: each row kept under the expiry `edit`
 -- answers, or ended.

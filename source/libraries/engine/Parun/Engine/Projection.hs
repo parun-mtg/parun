@@ -138,6 +138,7 @@ import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StickerContent as StickerContent
 import qualified Parun.Types.StickerPlacement as StickerPlacement
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
@@ -384,7 +385,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- CR 702.165a's grant never reaches a STORED effect: Resolve.Effect's
         -- expandGrant turns it into the ordinary GainKeyword and GainAbility arms
         -- above as the ability resolves, so nothing with this modification is ever
-        -- put in GameState.continuousEffects. The identity keeps the walk total,
+        -- put in StoredEffects.continuousEffects. The identity keeps the walk total,
         -- which is the posture SetController's arm below takes.
         Modification.GainAbilitiesOfSource _ -> pc
         -- CR 613.1f / 607.2a: the activated abilities of each card the payload
@@ -752,7 +753,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- an object with none.
         Modification.InsertNameWords (NameInsertion.MkNameInsertion ws k) ->
           pc {PC.names = if Set.null (PC.names pc) then Set.singleton (CardName.MkCardName ws) else Set.map (NameWords.insertAfter k ws) (PC.names pc)}
-        -- CR 613.1b layer 2: controllerOf reads GameState.continuousEffects
+        -- CR 613.1b layer 2: controllerOf reads StoredEffects.continuousEffects
         -- directly. Identity here to keep gather/project's walk total.
         Modification.SetController _ -> pc
         Modification.SetControllerToSource -> pc
@@ -1996,7 +1997,7 @@ setLandSubtypeEffectsGiven functioning gs =
             setter ok (_, sa) = any isSet (StaticAbility.modifications sa) && functionsFromZone Zone.Battlefield sa && ok sa
          in fmap (\(n, sa) -> (permId, Just n, rewriteAffected changes (StaticAbility.affected sa))) (filter (setter lives) (zip [0 ..] printed))
               <> fmap (\(n, sa) -> (permId, Just n, StaticAbility.affected sa)) (filter (setter grantedLives) (zip [List.genericLength printed ..] (fmap snd (grantedStaticAbilitiesOf permId gs))))
-   in concatMap fromStored (GameState.continuousEffects gs)
+   in concatMap fromStored (StoredEffects.continuousEffects (GameState.stored gs))
         <> concatMap fromPerm (abilitySources gs)
 
 -- CR 305.7: a land whose subtype is set to a basic type loses its rules-text
@@ -2120,7 +2121,7 @@ typeChangersGiven functioning gs =
                       then [(part permId (max (Object.timestamp obj) grantTs) (StaticAbility.affected sa) m, Nothing) | m <- typeParts parts]
                       else []
            in concat (zipWith printedOf [0 ..] (staticAbilitiesOf permId gs)) <> concatMap grantedOf (grantedStaticAbilitiesOf permId gs)
-   in concatMap fromStored (GameState.continuousEffects gs) <> concatMap fromPerm (abilitySources gs)
+   in concatMap fromStored (StoredEffects.continuousEffects (GameState.stored gs)) <> concatMap fromPerm (abilitySources gs)
 
 -- CR 305.7's subject: only a LAND loses its rules text to a subtype set. CR 205.3d
 -- is what makes that a precondition rather than a description of every board a
@@ -2254,7 +2255,7 @@ setterPartsOf src aff gs =
             gModification = m
           }
       changes = textChangesAffecting src gs
-      stored = [ContinuousEffect.modification eff | eff <- GameState.continuousEffects gs, ContinuousEffect.source eff == src, ContinuousEffect.affected eff == aff]
+      stored = [ContinuousEffect.modification eff | eff <- StoredEffects.continuousEffects (GameState.stored gs), ContinuousEffect.source eff == src, ContinuousEffect.affected eff == aff]
       setting sa = any setsLandSubtype (StaticAbility.modifications sa)
       typeParts sa = filter ((== Layer.Type) . layer) (NonEmpty.toList (StaticAbility.modifications sa))
       printed = [m | sa <- staticAbilitiesOf src gs, setting sa, rewriteAffected changes (StaticAbility.affected sa) == aff, m <- typeParts sa]
@@ -2282,7 +2283,7 @@ setterPartsOf src aff gs =
 -- exchange touches `oid` and at most one swap does needs no fold at all.
 textChangesAffecting :: ObjectId -> GameState -> [(TextWord.TextWord, TextWord.TextWord)]
 textChangesAffecting oid gs =
-  let stored = GameState.continuousEffects gs
+  let stored = StoredEffects.continuousEffects (GameState.stored gs)
       pairOf eff = case ContinuousEffect.modification eff of
         Modification.ChangeWord (ChangeWord.MkChangeWord from to) ->
           if affectsGiven (baseView gs) (ContinuousEffect.source eff) oid (ContinuousEffect.affected eff) (copiableCharacteristics oid gs) gs
@@ -2343,7 +2344,7 @@ textLayerOf oid gs =
                       gModification = m
                     }
               else Nothing
-   in fst (projectDeciding (<= Layer.Text) (Maybe.mapMaybe candidate (GameState.continuousEffects gs)) oid gs)
+   in fst (projectDeciding (<= Layer.Text) (Maybe.mapMaybe candidate (StoredEffects.continuousEffects (GameState.stored gs))) oid gs)
 
 -- The CR 612 word swap a modification makes, for CR 613.8a's exact test between
 -- two of them (projectDecidingFrom's changesText).
@@ -2542,7 +2543,7 @@ gatherGiven stripped waited functioning seed gs =
         Just cands -> setSubtypeStripped cands setEffs gs
       -- A stored effect carries exactly one modification, and its set is CR
       -- 611.2c's TheseObjects, locked when the effect began -- every writer of
-      -- GameState.continuousEffects stores that arm, the CR 611.2c freeze in
+      -- StoredEffects.continuousEffects stores that arm, the CR 611.2c freeze in
       -- frozenStaticParts included.
       --
       -- grantedDefiningParts still splits a devoid or a changeling in two here,
@@ -2575,7 +2576,7 @@ gatherGiven stripped waited functioning seed gs =
                   gModification = m
                 }
          in fmap one (NonEmpty.toList (grantedDefiningParts (ContinuousEffect.modification eff)))
-      stored = concatMap fromStored (GameState.continuousEffects gs)
+      stored = concatMap fromStored (StoredEffects.continuousEffects (GameState.stored gs))
       static = concatMap (fmap snd . permanentParts stripped waited functioning setEffs setStripped gs) (abilitySources gs)
       fromCommandZone commandId = case Game.lookupObject commandId gs of
         Nothing -> []
@@ -3161,7 +3162,7 @@ grantedRuleAbilities gs =
   let grant eff = case (ContinuousEffect.modification eff, ContinuousEffect.affected eff) of
         (Modification.GainAbility (GrantedAbility.Rules rules), Affected.TheseObjects holders) -> Just (ContinuousEffect.timestamp eff, holders, rules)
         _ -> Nothing
-      grants = List.sortOn (\(ts, _, _) -> ts) (Maybe.mapMaybe grant (GameState.continuousEffects gs))
+      grants = List.sortOn (\(ts, _, _) -> ts) (Maybe.mapMaybe grant (StoredEffects.continuousEffects (GameState.stored gs)))
       removedAfter = namedAbilityRemovalAfter gs
       -- Each row asked by its own name, so a CR 613.1f removal naming one
       -- takes that one alone. A regression fence: no card in data/cards/ both
@@ -6438,7 +6439,7 @@ mintingOrTriggeredGrantInForce mints =
 -- stored effect writing a minting modification gathers the whole board however
 -- narrow its set. That over-trips and can never drop a row.
 storedWrites :: (Modification -> Bool) -> GameState -> Bool
-storedWrites p gs = any (any p . grantedDefiningParts . ContinuousEffect.modification) (GameState.continuousEffects gs)
+storedWrites p gs = any (any p . grantedDefiningParts . ContinuousEffect.modification) (StoredEffects.continuousEffects (GameState.stored gs))
 
 -- Does any static ability functioning from a zone OTHER than the battlefield
 -- write a modification satisfying `p`? storedWrites' sibling disjunct in both

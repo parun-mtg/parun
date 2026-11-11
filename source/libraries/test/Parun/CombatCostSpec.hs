@@ -61,6 +61,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -1473,9 +1474,9 @@ alluringSirenSpec s registry = Spec.describe s "AlluringSiren" $ do
     case sirenBoard siren jace piker centaur of
       Nothing -> Spec.assertFailure s "fixture should build"
       Just (control, lured, _, _, activated) -> do
-        Spec.assertEqWith s "stored once the ability has resolved" (fmap ActiveAttackRequirement.attacker (GameState.attackRequirements activated)) [RestrictedCreatures.Named lured]
-        Spec.assertEqWith s "and gone at cleanup (CR 514.2)" (GameState.attackRequirements (Expiry.dropAtCleanup activated)) []
-        Spec.assertEqWith s "nothing was stored without the ability" (GameState.attackRequirements control) []
+        Spec.assertEqWith s "stored once the ability has resolved" (fmap ActiveAttackRequirement.attacker (StoredEffects.attackRequirements (GameState.stored activated))) [RestrictedCreatures.Named lured]
+        Spec.assertEqWith s "and gone at cleanup (CR 514.2)" ((StoredEffects.attackRequirements . GameState.stored) (Expiry.dropAtCleanup activated)) []
+        Spec.assertEqWith s "nothing was stored without the ability" (StoredEffects.attackRequirements (GameState.stored control)) []
   Spec.it s "CR 508.1d whole cards: a real declare attackers step sends the lured creature at bob" $ do
     -- The gameplay-level case, through Combat.declareAttackers rather than the
     -- legality predicate, with an interpreter that attacks with everything and
@@ -1568,7 +1569,7 @@ tauntSpec s registry = Spec.describe s "Taunt" $ do
         resolved = S.runPure (aimingAtPlayer S.bob) cast Engine.priorityLoop
         withGiant = snd (S.addPermanent giant S.bob resolved)
         afterTurn n = turnsUntil (\gs -> TurnRegisters.turnNumber (GameState.turn gs) > n) withGiant
-    Spec.assertEqWith s "Taunt resolved on bob's turn 2" (length (GameState.attackRequirements resolved), TurnRegisters.turnNumber (GameState.turn resolved), TurnRegisters.activePlayer (GameState.turn resolved)) (1, 2, S.bob)
+    Spec.assertEqWith s "Taunt resolved on bob's turn 2" (length (StoredEffects.attackRequirements (GameState.stored resolved)), TurnRegisters.turnNumber (GameState.turn resolved), TurnRegisters.activePlayer (GameState.turn resolved)) (1, 2, S.bob)
     Spec.assertEqWith s "CR 611.2a bob's current turn is not his next one, so nothing attacked" (S.lifeOf S.alice (afterTurn 2)) (Just 20)
     Spec.assertEqWith s "CR 611.2c on his next turn both creatures attacked alice, the Giant too" (S.lifeOf S.alice (afterTurn 4)) (Just 15)
     Spec.assertEqWith s "and the turn after that, nothing is required" (S.lifeOf S.alice (afterTurn 6)) (Just 15)

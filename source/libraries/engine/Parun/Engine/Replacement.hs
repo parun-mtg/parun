@@ -170,6 +170,7 @@ import Parun.Types.SkipWindow (SkipWindow)
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
@@ -225,7 +226,7 @@ asZoneChange event = case event of
 --      effects in printed order. Read from `sources`, which for a CR 608.2f
 --      batch is the board the batch began in rather than the live one (see
 --      Event.applyReplacementsIn).
---   2. The FLOATING store (GameState.replacements): newest first, since every
+--   2. The FLOATING store (StoredEffects.replacements): newest first, since every
 --      installer prepends as it creates the row. Always the LIVE store, never a
 --      frozen one: CR 614.3 spends a one-shot as it is applied, and `consume`
 --      writes that back here.
@@ -425,7 +426,7 @@ collect sources floating =
             }
       -- CR 614.1: a replacement effect is not locked in ahead of time, so the
       -- printed "if" the installing clause carried is asked HERE rather than at
-      -- installation -- the row stays in GameState.replacements and is asked
+      -- installation -- the row stays in StoredEffects.replacements and is asked
       -- again next time. The permanent segment's twin is
       -- Projection.replacementsOf, which drops its own clause the same way --
       -- CR 611.3a's there, since a permanent's is a static ability's, and CR
@@ -562,7 +563,7 @@ applicable asOf gs event =
       -- One gather and one grant walk, shared by every candidate asked.
       viewOf = Projection.viewsOf sources
       grants = Projection.controlGrants sources
-   in filter (\candidate -> applies viewOf grants sources event candidate && changesLoss gs event candidate) (collect sources (GameState.replacements gs))
+   in filter (\candidate -> applies viewOf grants sources event candidate && changesLoss gs event candidate) (collect sources (StoredEffects.replacements (GameState.stored gs)))
 
 -- CR 120.4c / 120.4d: would a LifeLossR row change this loss, judged on the
 -- live board even where `asOf` freezes the candidates. A damage batch's
@@ -595,7 +596,7 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
 manaRewrites :: GameState -> ObjectId -> [ManaType.ManaType]
 manaRewrites gs =
   let viewOf = Projection.viewsOf gs
-      rows = [(candidate, row) | candidate <- collect gs (GameState.replacements gs), ReplacementEffect.ManaR row <- [ReplacementCandidate.effect candidate]]
+      rows = [(candidate, row) | candidate <- collect gs (StoredEffects.replacements (GameState.stored gs)), ReplacementEffect.ManaR row <- [ReplacementCandidate.effect candidate]]
    in \oid -> [ManaR.produces row | (candidate, row) <- rows, matchesFiltered viewOf gs candidate (ManaR.matching row) oid]
 
 -- CR 614.1: does this instance apply to this proposed event? The arms must agree
@@ -2811,7 +2812,7 @@ choose gs event candidates =
 observedSource :: GameState -> ReplacementCandidate -> Bool
 observedSource gs c =
   (Maybe.isJust (ReplacementCandidate.rider c) && Maybe.isJust (Game.lookupObject source gs))
-    || any (\entry -> DelayedTrigger.source entry == source && Mentions.readsPrevention (DelayedTrigger.ability entry)) (GameState.delayedTriggers gs)
+    || any (\entry -> DelayedTrigger.source entry == source && Mentions.readsPrevention (DelayedTrigger.ability entry)) (StoredEffects.delayedTriggers (GameState.stored gs))
     || any stackedReader (Game.allStacks gs)
   where
     source = ReplacementCandidate.source c
@@ -3044,14 +3045,14 @@ applyEntryOption oid option gs =
         CopyCoverage.These oids -> Just (row, oids)
         CopyCoverage.SourceHost _ -> Nothing
         CopyCoverage.Attachment _ -> Nothing
-      covering = List.sortOn (Ord.Down . ActiveCopy.timestamp . fst) (filter (Set.member oid . snd) (Maybe.mapMaybe fixed (GameState.copyEffects gs)))
+      covering = List.sortOn (Ord.Down . ActiveCopy.timestamp . fst) (filter (Set.member oid . snd) (Maybe.mapMaybe fixed (StoredEffects.copyEffects (GameState.stored gs))))
    in case covering of
         (newest, oids) : _ ->
-          let others = filter (/= newest) (GameState.copyEffects gs)
+          let others = filter (/= newest) (StoredEffects.copyEffects (GameState.stored gs))
               remaining = Set.delete oid oids
               rest = newest {ActiveCopy.covers = CopyCoverage.These remaining}
               alone = newest {ActiveCopy.covers = CopyCoverage.These (Set.singleton oid), ActiveCopy.snapshot = stamped, ActiveCopy.turned = Nothing}
-           in gs {GameState.copyEffects = alone : [rest | not (Set.null remaining)] <> others}
+           in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = alone : [rest | not (Set.null remaining)] <> others}}
         [] -> gs {GameState.objects = Map.adjust write oid (GameState.objects gs)}
 
 -- CR 707.9: fold a copy effect's "except ..." clauses into the snapshot the copy
@@ -3227,7 +3228,7 @@ consume identity_ = case identity_ of
             ActiveReplacement.source active == src
               && ActiveReplacement.timestamp active == ts
               && ActiveReplacement.uses active == Uses.Once
-       in gs {GameState.replacements = filter (not . spent) (GameState.replacements gs)}
+       in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . spent) (StoredEffects.replacements (GameState.stored gs))}}
 
 -- CR 615.7: write back what is left of a shield after it prevented some damage,
 -- and drop the row entirely once nothing is -- a row that can prevent nothing is
@@ -3265,7 +3266,7 @@ setShield identity_ damageR spent = case identity_ of
             | not (mine active) = Just active
             | remainingOf spent == Just 0 = Nothing
             | otherwise = Just active {ActiveReplacement.effect = ReplacementEffect.DamageR damageR {DamageR.rewrite = spent}}
-       in gs {GameState.replacements = Maybe.mapMaybe rewrite (GameState.replacements gs)}
+       in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = Maybe.mapMaybe rewrite (StoredEffects.replacements (GameState.stored gs))}}
 
 -- CR 615.7's remaining amount, for the two rewrites that count one down --
 -- Mending Hands' shield and Harm's Way's counted redirection -- and Nothing for
@@ -4099,7 +4100,7 @@ allocations gs threads =
               (\(pid, ps) -> (ReplacementCandidate.identity candidate, left, pid, Set.toAscList (Set.fromList ps)))
               (Map.toList (Map.fromListWith (<>) (Maybe.mapMaybe (\(position, event) -> fmap (\pid -> (pid, [position])) (chooserOf gs (ProposedEvent.WouldDealDamage event))) hits)))
           )
-   in concatMap allocationsBy (collect gs (GameState.replacements gs))
+   in concatMap allocationsBy (collect gs (StoredEffects.replacements (GameState.stored gs)))
 
 -- What a counted rewrite has left to divide: the number on its row
 -- (`remainingOf`), or the counters on its permanent for one spending those.
@@ -4344,7 +4345,7 @@ contested gs threads =
                       )
                   )
           _ -> Nothing
-      groups = concatMap contestedBy (collect gs (GameState.replacements gs))
+      groups = concatMap contestedBy (collect gs (StoredEffects.replacements (GameState.stored gs)))
       merged = Map.fromListWith (<>) groups
    in fmap
         (\(pid, positions) -> (pid, Set.toAscList (Set.fromList positions)))
@@ -4730,7 +4731,7 @@ asTokens event = case event of
 --
 -- Here rather than in Parun.Engine.Resolve, which installs Effect.SkipPhase's
 -- rows: the two differ only on WHEN the row exists, and this module is the one
--- that reads GameState.replacements. The row is the shape Resolve builds for a
+-- that reads StoredEffects.replacements. The row is the shape Resolve builds for a
 -- "next" skip -- PhaseR, scoped to the taker, Uses.Once -- so
 -- Event.beginsPhase answers a turn-scoped skip and a next-occurrence skip
 -- through one mechanism, and CR 616.1's loop orders them against each other
@@ -4790,7 +4791,7 @@ installTurnSkips entry gs =
                   -- CR 608.2h, for every row's reason; a PhaseR reads none.
                   ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf (ExtraTurn.source entry) g) (ExtraTurn.source entry) g
                 }
-         in g1 {GameState.replacements = active : GameState.replacements g1}
+         in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored g1)}}
    in List.foldl' install gs (Set.toAscList (ExtraTurn.skipped entry))
 
 -- CR 608.2n's move is what all four of these rows watch, and
@@ -4871,7 +4872,7 @@ installSpellMoveRow destination shuffling spellId caster gs =
             -- CR 608.2h, for every row's reason; no pattern here reads one.
             ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf spellId gs) spellId gs
           }
-   in (ts, gs1 {GameState.replacements = active : GameState.replacements gs1})
+   in (ts, gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored gs1)}})
 
 -- CR 702.27a's second static ability: "if the buyback cost was paid, put this
 -- spell into its owner's hand instead of into that player's graveyard as it
@@ -4913,7 +4914,7 @@ installOmenShuffle = installSpellMoveRow Zone.Library True
 rowApplied :: ObjectId -> Timestamp -> GameState -> Bool
 rowApplied spellId ts gs =
   let standing active = ActiveReplacement.source active == spellId && ActiveReplacement.timestamp active == ts
-   in not (any standing (GameState.replacements gs))
+   in not (any standing (StoredEffects.replacements (GameState.stored gs)))
 
 asPhaseBegin :: ProposedEvent -> Maybe (SkipWindow, PlayerId)
 asPhaseBegin event = case event of

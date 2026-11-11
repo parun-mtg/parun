@@ -94,6 +94,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepBegins as StepBegins
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TextWord as TextWord
@@ -398,7 +399,7 @@ sacrificeSpec s registry =
           gs = S.addRegenShield piker gs0
           after = S.runPure S.identityAnswer gs (Event.sacrifice (pure ()) S.bob piker)
       Spec.assertEqWith s "still sacrificed" (S.creaturesInPlay S.bob after) 0
-      Spec.assertEqWith s "the shield's source is untouched" (fmap ActiveReplacement.source (GameState.replacements after)) [piker]
+      Spec.assertEqWith s "the shield's source is untouched" (fmap ActiveReplacement.source (StoredEffects.replacements (GameState.stored after))) [piker]
     Spec.it s "only a battlefield permanent can be sacrificed (CR 701.21a)" $ do
       piker <- S.printingOf s registry "Goblin Piker"
       let (card, gs) = S.addLibraryCard piker S.bob (Setup.emptyGame S.bothPlayers)
@@ -1286,8 +1287,11 @@ delayedSpec s registry =
       -- stated-duration mechanism can be exercised on a real armed entry.
       withExpiry expiry gs =
         gs
-          { GameState.delayedTriggers =
-              fmap (\entry -> entry {DelayedTrigger.expiry = expiry}) (GameState.delayedTriggers gs)
+          { GameState.stored =
+              (GameState.stored gs)
+                { StoredEffects.delayedTriggers =
+                    fmap (\entry -> entry {DelayedTrigger.expiry = expiry}) (StoredEffects.delayedTriggers (GameState.stored gs))
+                }
           }
    in Spec.describe s "DelayedTrigger" $ do
         -- CR 603.7b: "only once, the next time its trigger event occurs".
@@ -1296,7 +1300,7 @@ delayedSpec s registry =
           island <- S.printingOf s registry "Island"
           let after = resolveAll (settle (beginEndStep (castWave tidalWave island)))
           Spec.assertEqWith s "no Wall left" (walls after) []
-          Spec.assertEqWith s "the store is empty" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
         -- CR 603.7b's other half: "unless it has a stated duration, such as
         -- 'this turn.'" Tidal Wave's entry is reused with an expiry stamped on
         -- it, so the mechanism is tested without inventing a card; Full
@@ -1308,7 +1312,7 @@ delayedSpec s registry =
               stated = withExpiry (Just Expiry.Type.AtCleanup) armed
               began = [GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)]
               (firedOnce, survivors) = delayedFrom began stated
-              (firedAgain, _) = delayedFrom began stated {GameState.delayedTriggers = survivors}
+              (firedAgain, _) = delayedFrom began stated {GameState.stored = (GameState.stored stated) {StoredEffects.delayedTriggers = survivors}}
           Spec.assertEqWith s "it fired" (length firedOnce) 1
           Spec.assertEqWith s "and stayed armed" (Seq.length survivors) 1
           Spec.assertEqWith s "so the next end step fires it again" (length firedAgain) 1
@@ -1319,7 +1323,7 @@ delayedSpec s registry =
           tidalWave <- S.printingOf s registry "Tidal Wave"
           island <- S.printingOf s registry "Island"
           let armed = castWave tidalWave island
-              swept expiry = GameState.delayedTriggers (Expiry.dropAtCleanup (withExpiry expiry armed))
+              swept expiry = (StoredEffects.delayedTriggers . GameState.stored) (Expiry.dropAtCleanup (withExpiry expiry armed))
           Spec.assertEqWith s "an 'this turn' entry is gone" (Seq.length (swept (Just Expiry.Type.AtCleanup))) 0
           Spec.assertEqWith s "an end-of-game entry stays" (Seq.length (swept (Just Expiry.Type.Never))) 1
           -- CR 603.7b's one shot is spent by FIRING, not by time, so an entry
@@ -1416,9 +1420,9 @@ delayedSpec s registry =
                       )
                   )
                   (Engine.placePendingTriggers [])
-          Spec.assertEqWith s "the fixture really armed one delayed ability" (Seq.length (GameState.delayedTriggers armed)) 1
+          Spec.assertEqWith s "the fixture really armed one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
           Spec.assertEqWith s "bob's ability is not put on the stack" (TurnRegisters.stack (GameState.turn placed)) []
-          Spec.assertEqWith s "CR 603.7b: it still triggered, so its one shot is spent" (Seq.length (GameState.delayedTriggers placed)) 0
+          Spec.assertEqWith s "CR 603.7b: it still triggered, so its one shot is spent" (Seq.length (StoredEffects.delayedTriggers (GameState.stored placed))) 0
           Spec.assertEqWith s "with bob still in the game the SAME ability IS placed -- the filter is what did it" (length (TurnRegisters.stack (GameState.turn control))) 1
           Spec.assertEqWith s "nothing reached the stack, so placePendingTriggers honestly reports it placed nothing" placedAny False
           Spec.assertEqWith s "with bob still in the game, something genuinely got placed" controlAny True
@@ -1473,7 +1477,7 @@ tokenSetSpec s registry =
               after = resolveAll (settle (beginEndStep armed))
           Spec.assertEqWith s "three were minted" (length (humans armed)) 3
           Spec.assertEqWith s "and none is left" (humans after) []
-          Spec.assertEqWith s "the store is empty" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
         -- CR 603.7c's "no longer in the zone it's expected to be in": one token
         -- already gone does not spare the others, and the ability is still spent.
         Spec.it s "CR 603.7c one token already gone leaves the rest sacrificed" $ do
@@ -1486,7 +1490,7 @@ tokenSetSpec s registry =
               after = resolveAll (settle (beginEndStep killed))
           Spec.assertEqWith s "two were left to sacrifice" (length (humans killed)) 2
           Spec.assertEqWith s "and both are gone" (humans after) []
-          Spec.assertEqWith s "the store is still emptied" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the store is still emptied" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
           Spec.assertEqWith s "nothing stuck on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
 -- Salt Road Skirmish {3}{B} Sorcery: "Destroy target creature. Create two 1/1 red
@@ -1526,7 +1530,7 @@ tokenGroupReadSpec s registry =
               after = resolveAll gone
           Spec.assertBool s (Set.notMember victim (GameState.battlefield after)) "the target really left"
           Spec.assertEqWith s "no Warriors were minted" (warriors after) []
-          Spec.assertEqWith s "and nothing was armed" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "and nothing was armed" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
           -- Otherwise "no Warriors" would also be true of a spell still sitting
           -- on the stack, which is a different bug wearing the same result.
           Spec.assertEqWith s "the spell left the stack rather than stalling on it" (TurnRegisters.stack (GameState.turn after)) []
@@ -1588,7 +1592,7 @@ tokenGroupMoveSpec s registry =
           Spec.assertEqWith s "and none is left" (elementals after) []
           Spec.assertBool s (Set.member pikerId (GameState.battlefield after)) "alice's own non-token creature stayed"
           Spec.assertBool s (Set.member ratsId (GameState.battlefield after)) "bob's creature stayed"
-          Spec.assertEqWith s "the store is empty" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
           Spec.assertEqWith s "nothing stuck on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
 -- Harried Dronesmith {3}{R} Creature -- Human Artificer 2/3: "At the beginning of
@@ -1683,7 +1687,7 @@ singleTokenSlotReadSpec s registry =
                 (Set.fromList [CardType.Artifact, CardType.Creature])
               Spec.assertEqWith s "under alice's control" (Projection.controllerOf token after) (Just S.alice)
               Spec.assertEqWith s "and untapped" (fmap Object.tapped (Game.lookupObject token after)) (Just TapState.Untapped)
-              Spec.assertEqWith s "the same resolution armed the delayed ability" (Seq.length (GameState.delayedTriggers after)) 1
+              Spec.assertEqWith s "the same resolution armed the delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 1
             other -> Spec.assertFailure s ("expected exactly one Thopter token, got " <> show (length other))
         -- THE PROVING CASE. "It gains haste until end of turn" is the
         -- sentence after the one that made the token, on a TRIGGERED ability, and
@@ -1716,7 +1720,7 @@ singleTokenSlotReadSpec s registry =
               after = throughEndStep armed
           Spec.assertEqWith s "one Thopter before the end step" (length (thopters armed)) 1
           Spec.assertEqWith s "none after it" (thopters after) []
-          Spec.assertEqWith s "and the store is empty" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "and the store is empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
           Spec.assertEqWith s "with nothing stuck on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
 -- CR 603.3b: "puts each triggered ability they control ... on the stack in any
@@ -2379,7 +2383,7 @@ towershellSkipSpec s registry = Spec.describe s "DelayedOnsetSkipped" $ do
       (List.elem (Phase.Combat CombatStep.DeclareAttackers) (combatStepsOf S.alice turn5))
       "alice's turn 5 declare attackers step happens (CR 614.10a)"
     Spec.assertEqWith s "and the return never fires at all" (S.countOnBattlefieldByName towershellName S.alice turn5) 0
-    Spec.assertEqWith s "nor is it left in the store forever" (length (GameState.delayedTriggers turn5)) 0
+    Spec.assertEqWith s "nor is it left in the store forever" (length (StoredEffects.delayedTriggers (GameState.stored turn5))) 0
 
 -- alice at her declare attackers step on turn 1 with one Meandering Towershell;
 -- bob has four untapped Plains (exactly Stonehorn Dignitary's {3}{W}) and the

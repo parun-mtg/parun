@@ -113,6 +113,7 @@ import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
@@ -1760,7 +1761,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
 
   -- Parun.Engine.Interchangeable.namedByStored SEARCHES a stored continuous
-  -- effect for the two ids rather than requiring GameState.continuousEffects
+  -- effect for the two ids rather than requiring StoredEffects.continuousEffects
   -- empty. Here the effect sits on the Bonesplitter, which is attached to
   -- nothing, so it says nothing about any Elf and the three are still one
   -- option. The +0/+0 changes no projection, so the control below differs from
@@ -1838,7 +1839,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
     let (elves, plain) = elfBoard elf 3
         (bear, withBears) = S.addPermanent bears S.bob plain
         board = S.withEffect bear nothingMore withBears
-        lasting criterion = board {GameState.continuousEffects = fmap (\row -> row {ContinuousEffect.expiry = Expiry.While (While.MkWhile S.alice (onBattlefield criterion))}) (GameState.continuousEffects board)}
+        lasting criterion = board {GameState.stored = (GameState.stored board) {StoredEffects.continuousEffects = fmap (\row -> row {ContinuousEffect.expiry = Expiry.While (While.MkWhile S.alice (onBattlefield criterion))}) (StoredEffects.continuousEffects (GameState.stored board))}}
         (offers, paid, after) = greenWindow (lasting (Filter.HeldByPlayer Holder.Controller S.bob))
         (named, _, _) = greenWindow (lasting (Filter.IsObject (NonEmpty.head elves)))
     Spec.assertEqWith s "asked once, and the three Elves are one candidate" (fmap length offers) [1]
@@ -1853,7 +1854,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
   Spec.it s "CR 615.7 Mending Hands shielding another creature leaves the elision standing" $ do
     (elves, shielded) <- mendingHandsBoard s registry (\_ bear -> bear)
     let (offers, paid, after) = greenWindow shielded
-    Spec.assertBool s (not (null (GameState.replacements shielded))) "the shield is stored"
+    Spec.assertBool s (not (null (StoredEffects.replacements (GameState.stored shielded)))) "the shield is stored"
     Spec.assertEqWith s "asked once, and the three Elves are one candidate" (fmap length offers) [1]
     Spec.assertBool s paid "the {G} was paid"
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
@@ -1928,7 +1929,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
   Spec.it s "CR 603.7c Salt Road Skirmish's delayed sacrifice leaves the elision standing" $ do
     (elves, armed) <- saltRoadBoard s registry
     let (offers, paid, after) = greenWindow armed
-    Spec.assertEqWith s "the sacrifice is armed" (Seq.length (GameState.delayedTriggers armed)) 1
+    Spec.assertEqWith s "the sacrifice is armed" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
     Spec.assertEqWith s "asked once, and the three Elves are one candidate" (fmap length offers) [1]
     Spec.assertBool s paid "the {G} was paid"
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
@@ -1938,7 +1939,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
   Spec.it s "CR 603.7c an Elf a delayed trigger will sacrifice is a candidate of its own" $ do
     (elves, armed) <- saltRoadBoard s registry
     let aimed binding = binding {Binding.objects = Just (Seq.singleton (NonEmpty.head elves))}
-        moved = armed {GameState.delayedTriggers = fmap (\entry -> entry {DelayedTrigger.bindings = fmap aimed (DelayedTrigger.bindings entry)}) (GameState.delayedTriggers armed)}
+        moved = armed {GameState.stored = (GameState.stored armed) {StoredEffects.delayedTriggers = fmap (\entry -> entry {DelayedTrigger.bindings = fmap aimed (DelayedTrigger.bindings entry)}) (StoredEffects.delayedTriggers (GameState.stored armed))}}
         (offers, paid, after) = greenWindow moved
     Spec.assertEqWith s "asked once, with the doomed Elf beside the two that are alike" (fmap length offers) [2]
     Spec.assertBool s paid "the {G} was paid"
@@ -1961,7 +1962,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
         (black, board) = S.addPermanent swamp S.alice one
         returned = castResolving (Set.fromList [white, black]) spell dead board
         (offers, paid, after) = greenWindow returned
-    Spec.assertBool s (any (granted . ContinuousEffect.modification) (GameState.continuousEffects returned)) "the ability is granted"
+    Spec.assertBool s (any (granted . ContinuousEffect.modification) (StoredEffects.continuousEffects (GameState.stored returned))) "the ability is granted"
     Spec.assertEqWith s "asked once, and the three Elves are one candidate" (fmap length offers) [1]
     Spec.assertBool s paid "the {G} was paid"
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
@@ -1981,7 +1982,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
         (blue, board) = S.addPermanent island S.alice withBears
         granting = castResolving (Set.singleton blue) helix bear board
         (offers, paid, after) = greenWindow granting
-    Spec.assertBool s (any (granted . ContinuousEffect.modification) (GameState.continuousEffects granting)) "the ability is granted"
+    Spec.assertBool s (any (granted . ContinuousEffect.modification) (StoredEffects.continuousEffects (GameState.stored granting))) "the ability is granted"
     Spec.assertEqWith s "asked once, and the three Elves are one candidate" (fmap length offers) [1]
     Spec.assertBool s paid "the {G} was paid"
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
@@ -2016,18 +2017,18 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
   Spec.it s "CR 508.1c an Elf that can't attack is a candidate of its own" $ do
     offers <- namedRowOffers s registry $ \bear elf gs ->
       let (ts, gs1) = Game.freshTimestamp gs
-       in gs1 {GameState.attackProhibitions = [ActiveAttackProhibition.MkActiveAttackProhibition bear S.bob ts Expiry.AtCleanup (RestrictedCreatures.Named elf) Nothing]}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.attackProhibitions = [ActiveAttackProhibition.MkActiveAttackProhibition bear S.bob ts Expiry.AtCleanup (RestrictedCreatures.Named elf) Nothing]}}
     Spec.assertEqWith s "asked once, with the named Elf beside the two that are alike" offers [2]
 
   Spec.it s "CR 509.1c an Elf that must block the Bears is a candidate of its own" $ do
     offers <- namedRowOffers s registry $ \bear elf gs ->
       let (ts, gs1) = Game.freshTimestamp gs
-       in gs1 {GameState.blockRequirements = [ActiveBlockRequirement.MkActiveBlockRequirement bear S.alice ts Expiry.AtCleanup (RestrictedCreatures.Named elf) (Just (RestrictedCreatures.Named bear)) RequirementArity.EachSubject]}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.blockRequirements = [ActiveBlockRequirement.MkActiveBlockRequirement bear S.alice ts Expiry.AtCleanup (RestrictedCreatures.Named elf) (Just (RestrictedCreatures.Named bear)) RequirementArity.EachSubject]}}
     Spec.assertEqWith s "asked once, with the named Elf beside the two that are alike" offers [2]
 
   Spec.it s "CR 116.2d an Elf whose ability a player ignores is a candidate of its own" $ do
     offers <- namedRowOffers s registry $ \_ elf gs ->
-      gs {GameState.ignoredAbilities = [IgnoredAbility.MkIgnoredAbility S.bob elf (AbilityName.MkAbilityName (Text.pack "mana")) Expiry.AtCleanup]}
+      gs {GameState.stored = (GameState.stored gs) {StoredEffects.ignoredAbilities = [IgnoredAbility.MkIgnoredAbility S.bob elf (AbilityName.MkAbilityName (Text.pack "mana")) Expiry.AtCleanup]}}
     Spec.assertEqWith s "asked once, with the named Elf beside the two that are alike" offers [2]
 
   -- A copy of itself: CR 707.2's copiable values are the ones it already has, so
@@ -2035,7 +2036,7 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
   Spec.it s "CR 707.2 an Elf a stored copy effect names is a candidate of its own" $ do
     offers <- namedRowOffers s registry $ \bear elf gs ->
       let (ts, gs1) = Game.freshTimestamp gs
-       in gs1 {GameState.copyEffects = [ActiveCopy.MkActiveCopy bear ts Expiry.AtCleanup (CopyCoverage.These (Set.singleton elf)) (Projection.project elf gs) Nothing]}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.copyEffects = [ActiveCopy.MkActiveCopy bear ts Expiry.AtCleanup (CopyCoverage.These (Set.singleton elf)) (Projection.project elf gs) Nothing]}}
     Spec.assertEqWith s "asked once, with the named Elf beside the two that are alike" offers [2]
 
   -- CR 509.1b / 611.2c: Veiling Oddity's "creatures can't be blocked this turn"
@@ -2274,7 +2275,7 @@ unregeneratable :: ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState
 unregeneratable source oid gs =
   let (ts, gs1) = Game.freshTimestamp gs
       row = ActiveObjectProhibition.MkActiveObjectProhibition {ActiveObjectProhibition.source = source, ActiveObjectProhibition.controller = S.alice, ActiveObjectProhibition.timestamp = ts, ActiveObjectProhibition.expiry = Expiry.AtCleanup, ActiveObjectProhibition.what = Prohibition.Regenerate, ActiveObjectProhibition.affected = RestrictedCreatures.Named oid}
-   in gs1 {GameState.objectProhibitions = row : GameState.objectProhibitions gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.objectProhibitions = row : StoredEffects.objectProhibitions (GameState.stored gs1)}}
 
 -- A fixture write standing in for Veiling Oddity's trigger resolving: the one
 -- CR 509.1b row Parun.Engine.Resolve.Effect stores for ForbidBeingBlocked, over
@@ -2283,7 +2284,7 @@ evasion :: ObjectId.ObjectId -> Filter.Filter Keyword.Keyword -> GameState.GameS
 evasion source affected gs =
   let (ts, gs1) = Game.freshTimestamp gs
       row = ActiveEvasion.MkActiveEvasion {ActiveEvasion.source = source, ActiveEvasion.controller = S.alice, ActiveEvasion.timestamp = ts, ActiveEvasion.expiry = Expiry.AtCleanup, ActiveEvasion.affected = affected, ActiveEvasion.blockers = Filter.HasCardType CardType.Creature}
-   in gs1 {GameState.evasions = row : GameState.evasions gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.evasions = row : StoredEffects.evasions (GameState.stored gs1)}}
 
 -- Bob's attacker declared at alice and, when given, the creature blocking it
 -- (CR 508.1, 509.1) -- the combat record, and nothing tapped or moved.

@@ -25,6 +25,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.StickerPlacement as StickerPlacement
+import qualified Parun.Types.StoredEffects as StoredEffects
 import Parun.Types.Timestamp (Timestamp)
 import qualified Parun.Types.Zone as Zone
 
@@ -151,7 +152,7 @@ settle start arrivals = do
 reassign :: Timestamp -> [ObjectId] -> GameState -> GameState
 reassign start ordered gs =
   let objects = GameState.objects gs
-      effects = GameState.continuousEffects gs
+      effects = StoredEffects.continuousEffects (GameState.stored gs)
       fresh ts = ts >= start
       blockOf oid =
         let own = foldMap (\obj -> Object.timestamp obj : filter fresh (Map.elems (Object.counterTimestamps obj) <> fmap StickerPlacement.timestamp (Foldable.toList (Object.stickers obj)))) (Map.lookup oid objects)
@@ -172,7 +173,7 @@ reassign start ordered gs =
       restampEffect e
         | member (ContinuousEffect.source e) = e {ContinuousEffect.timestamp = remap (ContinuousEffect.timestamp e)}
         | otherwise = e
-   in gs {GameState.objects = Map.mapWithKey restampObject objects, GameState.continuousEffects = fmap restampEffect effects}
+   in gs {GameState.objects = Map.mapWithKey restampObject objects, GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = fmap restampEffect effects}}
 
 -- CR 613.7m over the permanents one instruction turns over: those CR 613.7g
 -- restamps, ordered as `order` above orders them, and then the merged ones,

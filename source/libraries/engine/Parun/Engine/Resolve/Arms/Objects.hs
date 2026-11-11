@@ -159,6 +159,7 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.Uses as Uses
@@ -600,7 +601,7 @@ becomeCopy resolving source controller legal (BecomeCopy.MkBecomeCopy original s
                             ActiveCopy.turned = Nothing
                           }
                       rows = fmap row . Map.toList . Map.fromListWith Set.union $ fmap (\subject -> (snapshotFor subject, Set.singleton subject)) subjects
-                   in acquire gs1 {GameState.copyEffects = rows <> GameState.copyEffects gs1}
+                   in acquire gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.copyEffects = rows <> StoredEffects.copyEffects (GameState.stored gs1)}}
       Nothing -> gs
   -- CR 707.10c's "its controller may choose new targets for it": each subject
   -- on the stack, asked of that spell's controller (CR 405.4), once it is the
@@ -1010,7 +1011,7 @@ replace resolving source controller legal (Replace.MkReplace duration uses origi
                       -- CR 608.2h, installDamageRow's bake.
                       ActiveReplacement.choices = SourceContext.choicesOf (Game.readingAcquisition resolving source gs source) source gs
                     }
-             in gs1 {GameState.replacements = active : GameState.replacements gs1}
+             in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored gs1)}}
 
 -- A row's number naming a slot is the one this resolution settled, so it is
 -- written down as the row is installed: the slot dies with the resolution, and
@@ -1055,7 +1056,7 @@ laterPayment resolving source controller legal (LaterPayment.MkLaterPayment dura
                 ActiveLaterPayment.createdAt = createdAt,
                 ActiveLaterPayment.expiry = expiry
               }
-       in g1 {GameState.laterPayments = GameState.laterPayments g1 <> [row]}
+       in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.laterPayments = StoredEffects.laterPayments (GameState.stored g1) <> [row]}}
 
 preventNextDamage :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PreventNextDamage.PreventNextDamage (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
 preventNextDamage resolving source controller legal chosen (PreventNextDamage.MkPreventNextDamage duration kind ref whatRecipient whoRecipient sourceFilter quantity riderEffects) = do
@@ -1377,7 +1378,7 @@ skipPhase resolving source controller legal (SkipPhase.MkSkipPhase ref selector 
                     -- CR 608.2h, installDamageRow's bake; a PhaseR reads none.
                     ActiveReplacement.choices = SourceContext.choicesOf (Game.readingAcquisition resolving source g source) source g
                   }
-           in g1 {GameState.replacements = active : GameState.replacements g1}
+           in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored g1)}}
   State.modify' (\g -> List.foldl' (flip install) g (concatMap (List.genericReplicate rows) named))
 
 affectPlayers :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> AffectPlayers.AffectPlayers -> Game ()
@@ -1462,7 +1463,7 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
                     -- (#5706).
                     ActivePlayerEffect.slots = Map.empty
                   }
-           in g1 {GameState.playerEffects = active : GameState.playerEffects g1}
+           in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored g1)}}
      in List.foldl' install gs ((,) <$> armed <*> bakedEffects)
 
 requireBlock :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RequireBlock.RequireBlock -> Game ()
@@ -1498,7 +1499,7 @@ requireBlock resolving source controller legal (RequireBlock.MkRequireBlock dura
                   ActiveBlockRequirement.attacker = attacker,
                   ActiveBlockRequirement.arity = arity
                 }
-       in gs1 {GameState.blockRequirements = stored <> GameState.blockRequirements gs1}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.blockRequirements = stored <> StoredEffects.blockRequirements (GameState.stored gs1)}}
 
 prohibit :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Prohibit.Prohibit -> Game ()
 prohibit resolving source controller legal (Prohibit.MkProhibit what duration affected) =
@@ -1539,7 +1540,7 @@ prohibit resolving source controller legal (Prohibit.MkProhibit what duration af
                     }
               )
               subjects
-       in gs1 {GameState.objectProhibitions = stored <> GameState.objectProhibitions gs1}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.objectProhibitions = stored <> StoredEffects.objectProhibitions (GameState.stored gs1)}}
 
 forbidAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ForbidAttack.ForbidAttack -> Game ()
 forbidAttack resolving source controller legal (ForbidAttack.MkForbidAttack duration affected aimedAt) =
@@ -1590,7 +1591,7 @@ forbidAttack resolving source controller legal (ForbidAttack.MkForbidAttack dura
                   ActiveAttackProhibition.affected = subject,
                   ActiveAttackProhibition.aimedAt = aim
                 }
-       in gs1 {GameState.attackProhibitions = stored <> GameState.attackProhibitions gs1}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.attackProhibitions = stored <> StoredEffects.attackProhibitions (GameState.stored gs1)}}
 
 forbidBeingBlocked :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ForbidBeingBlocked.ForbidBeingBlocked -> Game ()
 forbidBeingBlocked resolving source controller legal (ForbidBeingBlocked.MkForbidBeingBlocked duration f barred) =
@@ -1613,7 +1614,7 @@ forbidBeingBlocked resolving source controller legal (ForbidBeingBlocked.MkForbi
                 ActiveEvasion.affected = Common.storedClass legal resolving controller source gs f,
                 ActiveEvasion.blockers = Common.storedClass legal resolving controller source gs barred
               }
-       in gs1 {GameState.evasions = stored : GameState.evasions gs1}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.evasions = stored : StoredEffects.evasions (GameState.stored gs1)}}
 
 requireAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RequireAttack.RequireAttack -> Game ()
 requireAttack resolving source controller legal (RequireAttack.MkRequireAttack duration attackerRef defenderRef) =
@@ -1660,7 +1661,7 @@ requireAttack resolving source controller legal (RequireAttack.MkRequireAttack d
                   ActiveAttackRequirement.attacker = attacker,
                   ActiveAttackRequirement.defender = defender
                 }
-       in gs1 {GameState.attackRequirements = stored <> GameState.attackRequirements gs1}
+       in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.attackRequirements = stored <> StoredEffects.attackRequirements (GameState.stored gs1)}}
 
 createEmblem :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CreateEmblem.CreateEmblem Card.Type.Card -> Game ()
 createEmblem resolving source controller legal (CreateEmblem.MkCreateEmblem card player) = do

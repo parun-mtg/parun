@@ -15,6 +15,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PreventionRider as PreventionRider
+import qualified Parun.Types.StoredEffects as StoredEffects
 import Parun.Types.Timestamp (Timestamp)
 
 -- What this player may pay for right now, each as its source and its row, in
@@ -24,7 +25,7 @@ import Parun.Types.Timestamp (Timestamp)
 payable :: PlayerId -> GameState -> [(ObjectId, Timestamp)]
 payable pid gs =
   [ (sourceOf row, ActiveLaterPayment.createdAt row)
-  | row <- GameState.laterPayments gs,
+  | row <- StoredEffects.laterPayments (GameState.stored gs),
     PreventionRider.controller (ActiveLaterPayment.payoff row) == pid,
     Cost.canPay PaymentSubject.ForNeither pid (sourceOf row) (ActiveLaterPayment.cost row) gs
   ]
@@ -37,7 +38,7 @@ sourceOf = PreventionRider.source . ActiveLaterPayment.payoff
 pay :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Timestamp -> Game (Maybe PreventionRider.PreventionRider)
 pay perform pid createdAt = do
   before <- State.get
-  case List.find ((== createdAt) . ActiveLaterPayment.createdAt) (GameState.laterPayments before) of
+  case List.find ((== createdAt) . ActiveLaterPayment.createdAt) (StoredEffects.laterPayments (GameState.stored before)) of
     Nothing -> pure Nothing
     Just row -> do
       paid <- Cost.payAction perform before PaymentSubject.ForNeither 0 pid (sourceOf row) (ActiveLaterPayment.cost row)

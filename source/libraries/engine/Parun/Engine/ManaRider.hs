@@ -30,6 +30,7 @@ import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- | CR 106.6 through CR 101.2: does a rider on the mana that PAID for this
 -- object stop it from being countered (Boseiju, Who Shelters All, Delighted
@@ -114,7 +115,7 @@ granted oid spent gs =
                       ContinuousEffect.modification = Modification.GainKeyword keyword,
                       ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
                     }
-             in g1 {GameState.continuousEffects = effect : GameState.continuousEffects g1}
+             in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = effect : StoredEffects.continuousEffects (GameState.stored g1)}}
    in List.foldl' mint gs (Maybe.mapMaybe keywordOf (Mana.unwrap spent))
 
 -- Both roads' shared half: does this rider's printed "if that mana is spent on

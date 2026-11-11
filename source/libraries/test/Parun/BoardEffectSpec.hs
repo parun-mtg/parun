@@ -90,6 +90,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -1485,7 +1486,7 @@ runToStep step answer gs0 =
 -- projection: a filter stored here and re-evaluated would pass a naive
 -- power-is-4 assertion.
 affectedSets :: GameState.GameState -> [Affected.Affected]
-affectedSets = fmap ContinuousEffect.affected . GameState.continuousEffects
+affectedSets = fmap ContinuousEffect.affected . (StoredEffects.continuousEffects . GameState.stored)
 
 -- The attacking creatures, by id, in the engine's own combat record.
 attackerIds :: GameState.GameState -> [ObjectId.ObjectId]
@@ -2909,7 +2910,7 @@ teferiUntapSpec s registry =
           result <- run chosen
           case result of
             Just (lands, armed, after, asked) -> do
-              Spec.assertEqWith s "the +1 armed one delayed ability" (length (GameState.delayedTriggers armed)) 1
+              Spec.assertEqWith s "the +1 armed one delayed ability" (length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
               Spec.assertEqWith s "alice's first Island and bob's first Mountain untapped, the other three did not" (fmap (tapped after) lands) [False, True, True, False, True]
               Spec.assertEqWith s "asked once, offered every land, at most two" asked [(lands, Just 2)]
             Nothing -> Spec.assertFailure s "Teferi prints a +1"
@@ -3165,7 +3166,7 @@ comeBackWrongSpec s registry =
           Spec.assertEqWith s "one creature was on the battlefield to sacrifice" (length (creaturesOnBattlefield armed)) 1
           Spec.assertEqWith s "and none is left" (creaturesOnBattlefield after) []
           Spec.assertEqWith s "CR 701.21a a sacrifice puts it in its OWNER's graveyard, not the caster's" (namesIn Zone.Graveyard S.bob after) [Just (S.nameOf (Printing.card piker))]
-          Spec.assertEqWith s "the delayed store is spent" (length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the delayed store is spent" (length (StoredEffects.delayedTriggers (GameState.stored after))) 0
 
 -- Apocalypse Chime {2} Artifact -- "{2}, {T}, Sacrifice this artifact: Destroy
 -- all nontoken permanents with a name originally printed in the Homelands
@@ -3222,7 +3223,7 @@ apocalypseChimeSpec s registry =
         Nothing -> Spec.assertFailure s "Apocalypse Chime should print exactly one activated ability"
         Just ability -> do
           let after = S.runPure S.identityAnswer board (Activate.activateAbility S.alice chimeId ability >> Stack.resolveTop)
-          Spec.assertBool s (not (null (GameState.replacements board))) "the fixture really armed a regeneration shield"
+          Spec.assertBool s (not (null (StoredEffects.replacements (GameState.stored board)))) "the fixture really armed a regeneration shield"
           Spec.assertBool s (not (S.onBattlefield carolsId after)) "CR 206.3c carol's Serra Inquisitors, a listed nontoken permanent, was destroyed"
           Spec.assertBool s (not (S.onBattlefield stormId after)) "CR 701.19c alice's Aether Storm was destroyed through its regeneration shield"
           Spec.assertBool s (S.onBattlefield tokenId after) "CR 111.1 bob's token of that same listed card survives"

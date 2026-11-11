@@ -50,6 +50,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -1052,7 +1053,7 @@ towershellSpec s registry = Spec.describe s "MeanderingTowershell" $ do
     -- even though the attacker is gone -- the same fact TurnSpec's Ray of
     -- Command case pins, reached here by the card exiling itself.
     Spec.assertEqWith s "the declare blockers step was reached anyway" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
-    Spec.assertEqWith s "and one delayed ability is waiting" (length (GameState.delayedTriggers atBlockers)) 1
+    Spec.assertEqWith s "and one delayed ability is waiting" (length (StoredEffects.delayedTriggers (GameState.stored atBlockers))) 1
     -- CR 506.4: the exiled Towershell left the battlefield, so it is no longer a
     -- live combat participant and deals no combat damage. The stale entry stays
     -- in the record on purpose (see Parun.Engine.Projection's filterReads); every

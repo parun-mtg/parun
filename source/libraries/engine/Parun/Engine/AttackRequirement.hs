@@ -33,6 +33,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.RequiredDefender as RequiredDefender
 import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- CR 508.1d: every requirement in force right now, INSTANTIATED against the
 -- (creature, target) pairs the active player may declare -- as a weight on one
@@ -360,6 +361,6 @@ instances candidates targets gs =
         AttackTarget.OfBattle _ -> False
       gathered =
         fmap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
-          <> fmap fromStored (GameState.attackRequirements gs)
+          <> fmap fromStored (StoredEffects.attackRequirements (GameState.stored gs))
           <> fmap fromGoad candidates
    in Requirement.gather (concatMap fst gathered) (concatMap snd gathered)
