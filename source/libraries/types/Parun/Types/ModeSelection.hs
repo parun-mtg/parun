@@ -19,20 +19,19 @@ import qualified Parun.Types.Quantity as Quantity
 -- 'ChooseBetween' is the third printed shape: an instruction naming a RANGE
 -- rather than a number, `least` then `most`, both inclusive. "Choose one or
 -- both --" over two modes (Vandalize) is 1 to 2, and CR 702.120a's escalate
--- ("Choose one or more --") is 1 to the printed mode count. Repeat-free: there is
--- no fourth constructor for a range with CR 700.2d's exception (Moment of
--- Reckoning's "Choose up to four", absent from the pool) (gap #6252), which is why
--- Parun.Engine.Modal may read `most` where it means "the count" on the repeating
--- arm.
+-- ("Choose one or more --") is 1 to the printed mode count.
+-- 'ChooseBetweenWithRepeats' is the same range under CR 700.2d's exception
+-- (Moment of Reckoning's "Choose up to four. You may choose the same mode more
+-- than once.").
 --
--- 'ChooseInstead' is the fourth: one instruction replaced by another while a
+-- 'ChooseInstead' is the next: one instruction replaced by another while a
 -- condition holds (CR 700.2; Parun.Types.ChooseInstead). Parun.Engine.Modal reads
 -- it as either instruction until something settles the condition, which
 -- Parun.Engine.Cast does once the costs are announced (CR 601.4),
 -- Parun.Engine.Activate once an activation's are (CR 602.2b), and
 -- Parun.Engine.Engine as a triggered ability is put on the stack (CR 603.3c).
 --
--- 'ChooseUpTo' is the fifth: zero through a number computed as the modes are
+-- 'ChooseUpTo' is the last: zero through a number computed as the modes are
 -- chosen ("choose up to X --", The Ruinous Wrecking Crew), settled to a
 -- 'ChooseBetween' where 'ChooseInstead' is. Until then Parun.Engine.Modal reads it
 -- as having no ceiling of its own.
@@ -57,6 +56,7 @@ data ModeSelection
   = ChooseExactly Natural.Natural
   | ChooseExactlyWithRepeats Natural.Natural
   | ChooseBetween ChooseBetween.ChooseBetween
+  | ChooseBetweenWithRepeats ChooseBetween.ChooseBetween
   | ChooseInstead (ChooseInstead.ChooseInstead ModeSelection)
   | ChooseUpTo Quantity.Quantity
   deriving (Eq, Ord, Show)

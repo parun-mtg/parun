@@ -1,0 +1,190 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-5",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "dead-bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Moment of Reckoning",
+            "label": "moment"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Moment of Reckoning destroys four permanents choosing one mode four times",
+  "final": [
+    {
+      "Count": {
+        "card": "Moment of Reckoning",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 0,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Wall of Stone",
+        "count": 0,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Ornithopter",
+        "count": 0,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 0,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 0,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "CR 700.2d under a range: the destroy mode chosen four times offers four slots, each aimed at a different permanent of bob's, and all four die. Alice's graveyard holds a Grizzly Bears so the return mode is legal too and the choice is a real one; it stays there.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            "$swamp-1",
+            "$swamp-2",
+            "$swamp-3",
+            "$swamp-4",
+            "$swamp-5"
+          ],
+          "modes": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "object": "$moment",
+          "targetsBySlot": {
+            "permanent": [
+              "$piker"
+            ],
+            "permanent#1": [
+              "$wall"
+            ],
+            "permanent#2": [
+              "$thopter"
+            ],
+            "permanent#3": [
+              "$bears"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

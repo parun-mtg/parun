@@ -32766,6 +32766,7 @@
     "PSOS": {
       "78p": {"card":"Decorum Dissertation"},
       "149p": {"card":"Germination Practicum"},
+      "205p": {"card":"Moment of Reckoning"},
       "30p": {"card":"Restoration Seminar"},
       "226p": {"card":"Silverquill, the Disputant"},
       "130p": {"card":"Steal the Show"},
@@ -36688,6 +36689,8 @@
       "274": {"card":"Island"},
       "275": {"card":"Island"},
       "86": {"card":"Last Gasp"},
+      "205": {"card":"Moment of Reckoning"},
+      "353": {"card":"Moment of Reckoning"},
       "270": {"card":"Mountain"},
       "278": {"card":"Mountain"},
       "279": {"card":"Mountain"},

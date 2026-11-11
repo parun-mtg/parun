@@ -2681,6 +2681,7 @@ modeSelectionChildren c selection = case selection of
   ModeSelection.ChooseExactly _ -> pure selection
   ModeSelection.ChooseExactlyWithRepeats _ -> pure selection
   ModeSelection.ChooseBetween _ -> pure selection
+  ModeSelection.ChooseBetweenWithRepeats _ -> pure selection
   ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> fmap ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead <$> modalInstead c condition <*> modeSelectionChildren c ordinary <*> modeSelectionChildren c instead)
   ModeSelection.ChooseUpTo quantity -> ModeSelection.ChooseUpTo <$> modalQuantity c quantity
 

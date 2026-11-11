@@ -1,0 +1,148 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-5",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Moment of Reckoning",
+            "label": "moment"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Moment of Reckoning with one legal mode may choose it once",
+  "final": [
+    {
+      "Count": {
+        "card": "Moment of Reckoning",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Wall of Stone",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Ornithopter",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Alice's graveyard is empty, so only the destroy mode is legal (CR 700.2a). Under \"Choose up to four\" that mode may still be taken zero to four times, so the engine asks rather than forcing it four times: choosing it once destroys the Piker alone and bob's other three permanents stay.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            "$swamp-1",
+            "$swamp-2",
+            "$swamp-3",
+            "$swamp-4",
+            "$swamp-5"
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$moment",
+          "targetsBySlot": {
+            "permanent": [
+              "$piker"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
