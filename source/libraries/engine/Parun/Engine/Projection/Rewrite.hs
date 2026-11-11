@@ -23,7 +23,6 @@ import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.Card as Card.Type
-import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.ChangeText as ChangeText
@@ -39,7 +38,6 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
-import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.ManaAddition as ManaAddition
@@ -50,7 +48,6 @@ import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Modification as Modification
-import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayGate as PayGate
@@ -61,7 +58,6 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RemovalCount as RemovalCount
 import Parun.Types.ReplacementEffect (ReplacementEffect)
 import qualified Parun.Types.RuleAbilities as RuleAbilities
-import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype.Type
@@ -77,153 +73,61 @@ import qualified Parun.Types.WordFamily as WordFamily
 -- written against a whole Card (CR 707.8a).
 type Modification = Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)
 
--- Apply text-changes to a modification's subtype and colour words (CR
--- 612.1/612.2).
+-- Apply text-changes to a modification (CR 612.1/612.2). Parun.Engine.Children's
+-- traversal at Identity, looking each word up once in the composed table.
 --
--- CR 612.2 gates each arm: the arm's family is fixed by its constructor, and the
--- PAIR's family is read off the word being replaced, which is why no family tag
--- rides on the stored ChangeWord. Exhaustive rather than a catch-all, which
--- is what had let GainKeyword go unrewritten while carrying a land-type word.
--- Descends into the quoted ability a CR 613.1f grant carries, through
--- rewriteGrantedAbility below -- which is mutually recursive with this, since
--- that ability's own clauses hold effects that can grant again.
+-- CR 612.2 gates the two subtype visitors: the position's family is fixed by
+-- its constructor, and the PAIR's family is read off the word being replaced,
+-- which is why no family tag rides on the stored ChangeWord. AddSubtype and
+-- RemoveSubtype carry no family to check the word against, so the traversal
+-- leaves them whole; Parun.EffectLintSpec keeps land-type and creature-type
+-- words out of them.
+--
+-- Every other word is text printed on the GRANTER (CR 612.3): a hacked Lord of
+-- Atlantis grants swampwalk, and the same descent reaches a granted enchant's
+-- Filter, a flash permission's condition, the Filters naming names or exiled
+-- cards, a lent card's restrictions, both boxes of a power and toughness
+-- change (a hacked Aspect of Wolf counts the new type), and the whole quoted
+-- ability of a CR 613.1f grant or a CR 612.6 full text -- through
+-- rewriteGrantedAbility, mutually recursive with this, since that ability's
+-- own clauses hold effects that can grant again. A colour word is rewritten
+-- where used as one, "is black" printed on the setter.
+--
+-- Left whole, each for want of a word: a backup grant's keywords are its
+-- source's copiable values as the ability was put on the stack (CR 702.165d,
+-- Parun.Engine.Resolve.Effect's expandGrant); a lost ability's name names an
+-- ability, no subtype; a full text's graveyard is a player. The traversal
+-- leaves the rest whole for the same want: card types and supertypes are other
+-- lists than subtypes (CR 205.2a, 205.4a), a keyword family names CR 702.14a's
+-- generic term, and a stored ChangeWord's words are its own resolution's choice
+-- (CR 608.2d), a text changer's printed clause being rewriteEffect's.
 rewriteModification :: [(TextWord.TextWord, TextWord.TextWord)] -> Modification -> Modification
-rewriteModification pairs m =
-  let apply1 acc (from, to) =
-        let -- `inFamily f` is CR 612.2's gate.
-            swap inFamily s = case (from, to) of
-              (TextWord.SubtypeWord f, TextWord.SubtypeWord t) | s == f && inFamily f -> t
-              _ -> s
-            colors = Set.map (TextWord.Engine.colorAfter [(from, to)])
-         in case acc of
-              Modification.LandSubtype mode s -> Modification.LandSubtype mode (swap Subtype.isLandType s)
+-- No pairs, no rebuild: Parun.Engine.Projection's staticParts asks this of
+-- every static ability on every projection.
+rewriteModification [] = id
+rewriteModification pairs =
+  let -- `inFamily` is CR 612.2's gate.
+      swap inFamily s = case lookup (TextWord.SubtypeWord s) pairs of
+        Just (TextWord.SubtypeWord t) | inFamily s -> t
+        _ -> s
+   in Identity.runIdentity
+        . Children.modificationChildren
+          Children.MkModificationChildren
+            { Children.modificationKeyword = Identity.Identity . Filter.rewriteKeyword pairs,
+              Children.modificationStampedKeyword = pure,
+              Children.modificationTargetSlot = Identity.Identity . rewriteTargetSlot pairs,
+              Children.modificationCastingPermission = Identity.Identity . rewriteCastingPermission pairs,
+              Children.modificationAbility = Identity.Identity . rewriteGrantedAbility pairs,
+              Children.modificationFilter = Identity.Identity . Filter.rewrite pairs,
+              Children.modificationRestriction = Identity.Identity . rewriteRestriction pairs,
+              Children.modificationAbilityName = pure,
+              Children.modificationQuantity = Identity.Identity . rewriteQuantity pairs,
+              Children.modificationPlayer = pure,
+              Children.modificationLandSubtype = Identity.Identity . swap Subtype.isLandType,
               -- CR 612.2's other named example: a Turn to Frog's Frog on the stack.
-              Modification.CreatureSubtype mode s -> Modification.CreatureSubtype mode (swap Subtype.isCreatureType s)
-              -- Holds no word to swap: it names CR 205.3m's list, not a member of it.
-              Modification.AddEveryCreatureSubtype -> acc
-              -- Names a card type's whole subtype set (CR 205.1a), not a member
-              -- of it, so no word to swap for the same reason.
-              Modification.LoseEverySubtype _ -> acc
-              -- CR 612.1 through its Filter, printed on the granter (CR 612.3).
-              Modification.SetCreatureSubtypesOfLastCardExiledWith f -> Modification.SetCreatureSubtypesOfLastCardExiledWith (Filter.rewrite [(from, to)] f)
-              -- Deliberately unrewritten. CR 612.2 changes only a word used in the
-              -- correct way, and this arm carries no family to check the word against;
-              -- the two family-tagged arms above are where a land-type or creature-type
-              -- word rides, and Parun.EffectLintSpec keeps those words out of this one.
-              Modification.AddSubtype _ -> acc
-              -- The removal's word, unrewritten for the same reason.
-              Modification.RemoveSubtype _ -> acc
-              -- CR 702.14a: "[type]walk" holds a land-type word, so a hacked Lord of
-              -- Atlantis grants swampwalk. The GRANTER's text is what this reads, which
-              -- is CR 612.3. Filter.rewriteKeyword since the word is inside a Filter; no
-              -- family gate is restated there -- the word's use is its family.
-              Modification.GainKeyword k -> Modification.GainKeyword (Filter.rewriteKeyword [(from, to)] k)
-              -- Carries no word: the keyword is rule 702's and the cost is the
-              -- RECEIVER's mana cost, so neither half is text a pair could name --
-              -- ChosenSubtype's answer for the same reason.
-              Modification.GainKeywordAtManaCost _ -> acc
-              -- CR 612.1 through the granted enchant's own Filter, which is text
-              -- printed on the GRANTER (CR 612.3) exactly as the keyword above is.
-              -- rewriteTargetSlot is the same descent a mode's target slots take.
-              Modification.GainEnchant slot -> Modification.GainEnchant (rewriteTargetSlot [(from, to)] slot)
-              Modification.LoseEnchant slot -> Modification.LoseEnchant (rewriteTargetSlot [(from, to)] slot)
-              -- CR 612.1 through a flash permission's condition, printed on the
-              -- granter (CR 612.3); every other arm carries no word.
-              Modification.GainCastingPermission permission -> Modification.GainCastingPermission (rewriteCastingPermission [(from, to)] permission)
-              -- CR 612.1 through the names' own Filter, printed on the granter (CR
-              -- 612.3) as the enchant's is.
-              Modification.AddNamesMatching f -> Modification.AddNamesMatching (Filter.rewrite [(from, to)] f)
-              -- A name is no subtype word (CR 612.2).
-              Modification.SetName _ -> acc
-              Modification.InsertNameWords _ -> acc
-              -- CR 612.1 over the whole quoted ability: the words are printed on the
-              -- GRANTER, so a text change affecting it rewrites them before the grant.
-              Modification.GainAbility a -> Modification.GainAbility (rewriteGrantedAbility [(from, to)] a)
-              -- The same descent into CR 612.6's extra text, printed on the granter;
-              -- a PlayerRef names no subtype word.
-              Modification.HasFullText ft -> Modification.HasFullText ft {FullText.alsoHas = fmap (rewriteGrantedAbility [(from, to)]) (FullText.alsoHas ft)}
-              -- Carries no word: rule 702.165a's grant names the SOURCE, and the
-              -- abilities it will hand over are that object's copiable values as the
-              -- ability was put on the stack (CR 702.165d, Parun.Engine.Resolve.Effect's
-              -- expandGrant).
-              Modification.GainAbilitiesOfSource _ -> acc
-              -- CR 612.1 through the Filter naming the exiled cards, printed on the
-              -- granter (CR 612.3) as AddNamesMatching's is, and through the extra
-              -- restrictions, printed there too. The abilities are the cards', read
-              -- at projection time. Unproven: no card in data/cards/ gives such a
-              -- grant a subtype or colour word.
-              Modification.GainCardAbilities e ->
-                Modification.GainCardAbilities
-                  e
-                    { CardAbilities.cards = Filter.rewrite [(from, to)] (CardAbilities.cards e),
-                      CardAbilities.restrictions = fmap (rewriteRestriction [(from, to)]) (CardAbilities.restrictions e)
-                    }
-              -- Carries no word: the abilities are the stickers', read at projection
-              -- time.
-              Modification.GainAbilitiesOfStickers -> acc
-              -- Carries no word: the type is read off the source at projection time.
-              Modification.ChosenSubtype {} -> acc
-              -- A control op carries no subtype word either.
-              Modification.SetController _ -> acc
-              Modification.SetControllerToSource -> acc
-              -- An ability wipe names nothing at all, and neither does a P/T switch.
-              Modification.LoseAllAbilities -> acc
-              -- Names an ABILITY of the same card, which is no subtype word.
-              Modification.LoseNamedAbility _ -> acc
-              -- CR 612.3 through the removal's own keyword, exactly as GainKeyword
-              -- above: "loses islandwalk" is text printed on the REMOVER, so a text
-              -- change affecting it swaps the land-type word before the removal is
-              -- read. Scarwood Hag's "loses forestwalk" is the printing that carries
-              -- one, and it is not in the pool: every written keyword a card here
-              -- removes is payload-free -- Sky Tether's flying, Melira's infect -- so
-              -- this arm is a regression fence where the hacked Lord of Atlantis proves
-              -- the grant above.
-              Modification.LoseKeyword k -> Modification.LoseKeyword (Filter.rewriteKeyword [(from, to)] k)
-              -- Nothing to rewrite, and not for want of a descent: CR 612.1 swaps a
-              -- WORD, and a KeywordFamily holds none -- "all landwalk abilities" names
-              -- CR 702.14a's generic term, which has no land type in it. A Hack on
-              -- Hammerheim changes what its removal reaches not at all.
-              Modification.LoseKeywordFamily _ -> acc
-              -- CR 612.5's exchange names no word to swap: its two sides are object
-              -- ids in the effect's affected set, so there is nothing here to rewrite.
-              Modification.ExchangeTextBoxes -> acc
-              Modification.SwitchPowerToughness -> acc
-              -- Nothing to rewrite: two bare markers naming no subtype word.
-              Modification.AssignCombatDamage _ -> acc
-              Modification.GrantsStationToughness -> acc
-              -- Nor here: an option names no word either.
-              Modification.MayAssignCombatDamage _ -> acc
-              -- CR 612.1 through the amount, ModifyPowerToughness's descent below.
-              Modification.Intensify n -> Modification.Intensify (rewriteQuantity [(from, to)] n)
-              -- CR 612.1 through both boxes: a Quantity.Count carries a Filter, so a
-              -- hacked Aspect of Wolf counts the new type. rewriteQuantity is the same
-              -- descent rewriteCondition and the CDA path take.
-              Modification.SetBasePowerToughness pt ->
-                Modification.SetBasePowerToughness
-                  pt
-                    { SetBasePowerToughness.power = fmap (rewriteQuantity [(from, to)]) (SetBasePowerToughness.power pt),
-                      SetBasePowerToughness.toughness = fmap (rewriteQuantity [(from, to)]) (SetBasePowerToughness.toughness pt)
-                    }
-              Modification.ModifyPowerToughness pt ->
-                Modification.ModifyPowerToughness
-                  pt
-                    { ModifyPowerToughness.power = rewriteQuantity [(from, to)] (ModifyPowerToughness.power pt),
-                      ModifyPowerToughness.toughness = rewriteQuantity [(from, to)] (ModifyPowerToughness.toughness pt)
-                    }
-              -- CR 205.2a's card types are a different list from CR 205.3's subtypes, and
-              -- CR 205.4a's supertypes a third, so these hold no word a pair could name.
-              Modification.CardType {} -> acc
-              Modification.LoseCardType _ -> acc
-              Modification.AddSupertype _ -> acc
-              Modification.RemoveSupertype _ -> acc
-              -- The two words of a STORED text change are its own resolution's choice
-              -- (CR 608.2d). A text changer's PRINTED clause is reached by rewriteEffect.
-              Modification.ChangeWord {} -> acc
-              -- CR 612.2's colour word used as a colour word: "is black", printed on
-              -- the setter. A chosen colour is no word on the card.
-              Modification.Colors mode cs -> Modification.Colors mode (colors cs)
-              Modification.ChosenColor _ -> acc
-   in List.foldl' apply1 m pairs
+              Children.modificationCreatureSubtype = Identity.Identity . swap Subtype.isCreatureType,
+              Children.modificationColors = Identity.Identity . Set.map (TextWord.Engine.colorAfter pairs)
+            }
 
 -- rewriteModification's sibling for the other half of a static ability. Under CR
 -- 612.1 an ability's affected clause is rules text like any other, so a hacked

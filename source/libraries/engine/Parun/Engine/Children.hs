@@ -7,6 +7,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding.Engine
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -77,6 +78,7 @@ import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CastFromZone as CastFromZone
@@ -246,6 +248,7 @@ import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Types.FromReference as FromReference
+import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
 import qualified Parun.Types.Gift as Gift
@@ -306,6 +309,7 @@ import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
+import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MonarchTarget as MonarchTarget
 import qualified Parun.Types.Morph as Morph
@@ -404,6 +408,7 @@ import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Search as Search
+import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
@@ -3327,6 +3332,90 @@ affectedChildren c affected = case affected of
   Affected.Attached -> pure affected
   Affected.AttachedPlayerControls filter_ -> Affected.AttachedPlayerControls <$> affectedFilter c filter_
   Affected.PlayedThisWay duration -> Affected.PlayedThisWay <$> affectedDuration c duration
+
+-- | One visitor per kind of child a Modification holds (CR 613.1).
+data ModificationChildren ability f = MkModificationChildren
+  { -- | A keyword gained or lost (CR 613.1f), whole.
+    modificationKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | A keyword a backup grant carries, stamped from its source as the
+    -- ability was put on the stack (CR 702.165d), whole.
+    modificationStampedKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | An enchant ability's target slot, gained or lost (CR 702.5a), whole.
+    modificationTargetSlot :: TargetSlot.TargetSlot -> f TargetSlot.TargetSlot,
+    -- | A permission to be cast (CR 601.3), whole.
+    modificationCastingPermission :: CastingPermission.CastingPermission -> f CastingPermission.CastingPermission,
+    -- | A quoted ability granted, alone or with a full text (CR 612.6).
+    modificationAbility :: ability -> f ability,
+    -- | A Filter a grant or a name change holds.
+    modificationFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A restriction on activating a lent card's abilities, whole.
+    modificationRestriction :: ActivationRestriction.ActivationRestriction -> f ActivationRestriction.ActivationRestriction,
+    -- | The name of the abilities an object loses.
+    modificationAbilityName :: AbilityName.AbilityName -> f AbilityName.AbilityName,
+    -- | A Quantity a power, toughness or intensity change holds.
+    modificationQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | The player whose graveyard a full text is read from (CR 612.6).
+    modificationPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | The land type an object becomes or gains (CR 305.7).
+    modificationLandSubtype :: Subtype.Subtype -> f Subtype.Subtype,
+    -- | The creature type an object becomes or gains (CR 205.1a, 205.1b).
+    modificationCreatureSubtype :: Subtype.Subtype -> f Subtype.Subtype,
+    -- | The colours an object becomes or gains (CR 105.3), whole.
+    modificationColors :: Set.Set Color.Color -> f (Set.Set Color.Color)
+  }
+
+-- | A Modification's children (CR 613.1). Its change modes, card types,
+-- supertypes, unfamilied subtypes, stored word change, names, controllers,
+-- keyword families, cost keywords and combat damage markers are left as they
+-- are.
+modificationChildren :: (Applicative f) => ModificationChildren ability f -> Modification.Modification ability -> f (Modification.Modification ability)
+modificationChildren c modification = case modification of
+  Modification.GainKeyword gained -> Modification.GainKeyword <$> modificationKeyword c gained
+  Modification.GainKeywordAtManaCost _ -> pure modification
+  Modification.GainEnchant targetSlot -> Modification.GainEnchant <$> modificationTargetSlot c targetSlot
+  Modification.LoseEnchant targetSlot -> Modification.LoseEnchant <$> modificationTargetSlot c targetSlot
+  Modification.GainCastingPermission permission -> Modification.GainCastingPermission <$> modificationCastingPermission c permission
+  Modification.GainAbility ability -> Modification.GainAbility <$> modificationAbility c ability
+  Modification.GainAbilitiesOfSource keywords -> Modification.GainAbilitiesOfSource . Set.fromList <$> traverse (modificationStampedKeyword c) (Set.toList keywords)
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards restrictions) ->
+    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> traverse (modificationRestriction c) restrictions)
+  Modification.GainAbilitiesOfStickers -> pure modification
+  Modification.LoseAllAbilities -> pure modification
+  Modification.LoseNamedAbility name -> Modification.LoseNamedAbility <$> modificationAbilityName c name
+  Modification.LoseKeyword lost -> Modification.LoseKeyword <$> modificationKeyword c lost
+  Modification.LoseKeywordFamily _ -> pure modification
+  Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness power toughness) ->
+    fmap Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness <$> traverse (modificationQuantity c) power <*> traverse (modificationQuantity c) toughness)
+  Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness power toughness) ->
+    fmap Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness <$> modificationQuantity c power <*> modificationQuantity c toughness)
+  Modification.LandSubtype mode subtype -> Modification.LandSubtype mode <$> modificationLandSubtype c subtype
+  Modification.ChosenSubtype {} -> pure modification
+  Modification.CreatureSubtype mode subtype -> Modification.CreatureSubtype mode <$> modificationCreatureSubtype c subtype
+  Modification.AddEveryCreatureSubtype -> pure modification
+  Modification.LoseEverySubtype _ -> pure modification
+  Modification.SetCreatureSubtypesOfLastCardExiledWith filter_ -> Modification.SetCreatureSubtypesOfLastCardExiledWith <$> modificationFilter c filter_
+  Modification.AddSubtype _ -> pure modification
+  Modification.RemoveSubtype _ -> pure modification
+  Modification.CardType {} -> pure modification
+  Modification.LoseCardType _ -> pure modification
+  Modification.AddSupertype _ -> pure modification
+  Modification.RemoveSupertype _ -> pure modification
+  Modification.ChangeWord _ -> pure modification
+  Modification.ExchangeTextBoxes -> pure modification
+  Modification.AddNamesMatching filter_ -> Modification.AddNamesMatching <$> modificationFilter c filter_
+  Modification.HasFullText (FullText.MkFullText graveyard alsoHas) ->
+    fmap Modification.HasFullText (FullText.MkFullText <$> modificationPlayer c graveyard <*> traverse (modificationAbility c) alsoHas)
+  Modification.SetName _ -> pure modification
+  Modification.InsertNameWords _ -> pure modification
+  Modification.SetController _ -> pure modification
+  Modification.SetControllerToSource -> pure modification
+  Modification.Colors mode colors -> Modification.Colors mode <$> modificationColors c colors
+  Modification.ChosenColor _ -> pure modification
+  Modification.SwitchPowerToughness -> pure modification
+  Modification.AssignCombatDamage _ -> pure modification
+  Modification.MayAssignCombatDamage _ -> pure modification
+  Modification.GrantsStationToughness -> pure modification
+  Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
 -- comparison, company count and defenders are left as they are.

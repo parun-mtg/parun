@@ -1663,6 +1663,13 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
       "and a land pair leaves a creature-type position alone"
       (rewrite Subtype.Type.Island Subtype.Type.Swamp (Modification.CreatureSubtype ChangeMode.Replace Subtype.Type.Island))
       (Modification.CreatureSubtype ChangeMode.Replace Subtype.Type.Island)
+    -- textChangesAffecting composes the swaps into one table (CR 613.7), so a
+    -- word is looked up once: a swap of two land types moves each only once.
+    Spec.assertEqWith
+      s
+      "a composed swap rewrites a land-type word once"
+      (Projection.rewriteModification [(TextWord.SubtypeWord Subtype.Type.Island, TextWord.SubtypeWord Subtype.Type.Swamp), (TextWord.SubtypeWord Subtype.Type.Swamp, TextWord.SubtypeWord Subtype.Type.Island)] (Modification.LandSubtype ChangeMode.Replace Subtype.Type.Island))
+      (Modification.LandSubtype ChangeMode.Replace Subtype.Type.Swamp)
 
   -- CR 613.8a: Kormus Bell's affected set READS subtypes at layer 4, and
   -- Urborg's LandSubtype InAddition WRITES them at layer 4 -- so the two are dependent
