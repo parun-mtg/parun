@@ -29,8 +29,10 @@
 -- its CopyClause, CopyException, WithCounters, EntryRiders with its
 -- EntryAttack, EntryBlock, EntryController and EntryHost, FaceDownState and
 -- FaceDownCharacteristics, CharacteristicPT, and TargetSlot with its Pool,
--- SlotCount and SlotPerPlayer, CastingPermission, and ActivationRestriction)
--- is matched there instead, its leaf types discarded there.
+-- SlotCount and SlotPerPlayer, CastingPermission, ActivationRestriction, and
+-- PayGate with its CostChoice, MovedKinds, RemovalCount, and LibraryPlacement
+-- with its ArrangedArrival) is matched there instead, its leaf types discarded
+-- there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -65,7 +67,6 @@ import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.AimedPlayers as AimedPlayers
 import qualified Parun.Types.AlternativeCost as AlternativeCost
-import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
@@ -857,13 +858,7 @@ keywordDesignatorNames asking x = case x of
   KeywordDesignator.OfInstance keyword _ordinal -> keywordNames asking keyword
 
 libraryPlacementNames :: (Monoid r) => Asking r -> LibraryPlacement.LibraryPlacement -> r
-libraryPlacementNames asking x = case x of
-  LibraryPlacement.Stated _libraryPosition -> mempty
-  LibraryPlacement.OwnerChooses -> mempty
-  LibraryPlacement.RandomOrder _libraryPosition -> mempty
-  LibraryPlacement.ArrangedBy (ArrangedArrival.MkArrangedArrival _libraryPosition chooser) -> playerRefNames asking chooser
-  LibraryPlacement.Beneath quantity -> quantityNames asking quantity
-  LibraryPlacement.BeneathOrBottom quantity -> quantityNames asking quantity
+libraryPlacementNames asking = Const.getConst . Children.libraryPlacementChildren (countVisitors asking)
 
 manaAdditionNames :: (Monoid r) => Asking r -> ManaAddition.ManaAddition -> r
 manaAdditionNames asking = Const.getConst . Children.manaAdditionChildren (manaVisitors asking)
@@ -958,16 +953,7 @@ moveDurationNames asking x = case x of
   MoveDuration.UntilAnOpponentBecomesTheMonarch -> history asking HistoryRead.MonarchChanges
 
 movedKindsNames :: (Monoid r) => Asking r -> MovedKinds.MovedKinds -> r
-movedKindsNames asking x = case x of
-  MovedKinds.Every -> mempty
-  MovedKinds.Named counterKind quantity -> counterKindNames asking (keywordNames asking) counterKind <> quantityNames asking quantity
-  MovedKinds.EveryOfKind counterKind -> counterKindNames asking (keywordNames asking) counterKind
-  MovedKinds.Chosen quantity -> quantityNames asking quantity
-  MovedKinds.AnyNumber -> mempty
-  MovedKinds.AtLeastOne -> mempty
-  MovedKinds.AnyNumberOfKind counterKind -> counterKindNames asking (keywordNames asking) counterKind
-  MovedKinds.EachAbsentKind -> mempty
-  MovedKinds.UpToOneChosen -> mempty
+movedKindsNames asking = Const.getConst . Children.movedKindsChildren (countVisitors asking)
 
 objectRefNames :: (Monoid r) => Asking r -> ObjectRef.ObjectRef -> r
 objectRefNames asking = Const.getConst . Children.objectRefChildren (objectRefVisitors asking)
@@ -985,8 +971,19 @@ operandNames asking x = case x of
   Operand.OfEachOtherCandidate _measure -> mempty
 
 payGateNames :: (Monoid r) => Asking r -> PayGate.PayGate -> r
-payGateNames asking x = case x of
-  PayGate.MkPayGate payer cost basis _branch _obligation perEach chosenX _offeredAt -> playerRefNames asking payer <> costChoiceNames asking cost <> foldMap (costBasisNames asking) basis <> foldMap (quantityNames asking) perEach <> foldMap (quantityNames asking) chosenX
+payGateNames asking = Const.getConst . Children.payGateChildren (countVisitors asking)
+
+-- Parun.Engine.Children's pay gate, counter move, counter removal and library
+-- placement traversal at Const.
+countVisitors :: (Monoid r) => Asking r -> Children.CountChildren (Const.Const r)
+countVisitors asking =
+  Children.MkCountChildren
+    { Children.countQuantity = Const.Const . quantityNames asking,
+      Children.countPlayer = Const.Const . playerRefNames asking,
+      Children.countKind = Const.Const . counterKindNames asking (keywordNames asking),
+      Children.countCost = Const.Const . costNames asking (keywordNames asking),
+      Children.countBasis = Const.Const . costBasisNames asking
+    }
 
 pendingDamageEffectNames :: (Monoid r) => Asking r -> PendingReplacementEffect.PendingReplacementEffect -> r
 pendingDamageEffectNames asking = Const.getConst . Children.pendingReplacementEffectChildren (storedVisitors asking)
@@ -1124,11 +1121,7 @@ recipientNames asking x = case x of
   Recipient.ToPile _pile -> mempty
 
 removalCountNames :: (Monoid r) => Asking r -> RemovalCount.RemovalCount -> r
-removalCountNames asking x = case x of
-  RemovalCount.Exactly quantity -> quantityNames asking quantity
-  RemovalCount.UpTo quantity -> quantityNames asking quantity
-  RemovalCount.AnyNumber -> mempty
-  RemovalCount.All -> mempty
+removalCountNames asking = Const.getConst . Children.removalCountChildren (countVisitors asking)
 
 -- A replacement effect through its children, each through its own walk. The
 -- history reads sit in the children (a draw-step exception, bloodthirst).

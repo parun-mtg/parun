@@ -37,6 +37,7 @@ import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
+import qualified Parun.Types.ArrangedArrival as ArrangedArrival
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
@@ -124,6 +125,7 @@ import qualified Parun.Types.CopyTargets as CopyTargets
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
@@ -3614,3 +3616,66 @@ activationRestrictionChildren c restriction = case restriction of
   ActivationRestriction.DuringThrow -> pure restriction
   ActivationRestriction.InstantSpeed -> pure restriction
   ActivationRestriction.SpendOnly specified -> ActivationRestriction.SpendOnly <$> permissionMana c specified
+
+-- | One visitor per kind of child a pay gate (CR 118.12), a counter move's
+-- kinds (CR 122.5), a counter removal's count or a library placement (CR
+-- 401.7) holds.
+data CountChildren f = MkCountChildren
+  { -- | A Quantity: a count of counters, a depth in a library, a gate's "for
+    -- each" scale or announced X.
+    countQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A player: the one a gate offers its cost to, the one who orders an
+    -- arrival in a library.
+    countPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | The kind of counter a move names (CR 122.1).
+    countKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword),
+    -- | One of the costs a gate offers.
+    countCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | The described cost a gate offers (CR 118.6), whole.
+    countBasis :: CostBasis.CostBasis -> f CostBasis.CostBasis
+  }
+
+-- | A pay gate's children (CR 118.12). Its branch, its obligation and the
+-- clause it is offered at are left as they are.
+payGateChildren :: (Applicative f) => CountChildren f -> PayGate.PayGate -> f PayGate.PayGate
+payGateChildren c (PayGate.MkPayGate payer (CostChoice.MkCostChoice costs) basis branch obligation perEach x offeredAt) =
+  PayGate.MkPayGate
+    <$> countPlayer c payer
+    <*> fmap CostChoice.MkCostChoice (traverse (countCost c) costs)
+    <*> traverse (countBasis c) basis
+    <*> pure branch
+    <*> pure obligation
+    <*> traverse (countQuantity c) perEach
+    <*> traverse (countQuantity c) x
+    <*> pure offeredAt
+
+-- | The children of the counters a move carries (CR 122.5).
+movedKindsChildren :: (Applicative f) => CountChildren f -> MovedKinds.MovedKinds -> f MovedKinds.MovedKinds
+movedKindsChildren c kinds = case kinds of
+  MovedKinds.Every -> pure kinds
+  MovedKinds.Named kind quantity -> MovedKinds.Named <$> countKind c kind <*> countQuantity c quantity
+  MovedKinds.EveryOfKind kind -> MovedKinds.EveryOfKind <$> countKind c kind
+  MovedKinds.Chosen quantity -> MovedKinds.Chosen <$> countQuantity c quantity
+  MovedKinds.AnyNumber -> pure kinds
+  MovedKinds.AtLeastOne -> pure kinds
+  MovedKinds.AnyNumberOfKind kind -> MovedKinds.AnyNumberOfKind <$> countKind c kind
+  MovedKinds.EachAbsentKind -> pure kinds
+  MovedKinds.UpToOneChosen -> pure kinds
+
+-- | A counter removal's count's children.
+removalCountChildren :: (Applicative f) => CountChildren f -> RemovalCount.RemovalCount -> f RemovalCount.RemovalCount
+removalCountChildren c count = case count of
+  RemovalCount.Exactly quantity -> RemovalCount.Exactly <$> countQuantity c quantity
+  RemovalCount.UpTo quantity -> RemovalCount.UpTo <$> countQuantity c quantity
+  RemovalCount.AnyNumber -> pure count
+  RemovalCount.All -> pure count
+
+-- | A library placement's children (CR 401.7). A stated end is left as it is.
+libraryPlacementChildren :: (Applicative f) => CountChildren f -> LibraryPlacement.LibraryPlacement -> f LibraryPlacement.LibraryPlacement
+libraryPlacementChildren c placement = case placement of
+  LibraryPlacement.Stated _ -> pure placement
+  LibraryPlacement.OwnerChooses -> pure placement
+  LibraryPlacement.RandomOrder _ -> pure placement
+  LibraryPlacement.ArrangedBy (ArrangedArrival.MkArrangedArrival position chooser) -> LibraryPlacement.ArrangedBy . ArrangedArrival.MkArrangedArrival position <$> countPlayer c chooser
+  LibraryPlacement.Beneath quantity -> LibraryPlacement.Beneath <$> countQuantity c quantity
+  LibraryPlacement.BeneathOrBottom quantity -> LibraryPlacement.BeneathOrBottom <$> countQuantity c quantity

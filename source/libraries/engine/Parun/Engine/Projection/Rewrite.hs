@@ -37,7 +37,6 @@ import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.CopyException as CopyException
-import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
@@ -843,12 +842,6 @@ rewriteModal pairs =
 -- producer: Magical Hack swaps the land type word, and CR 612.2 licenses it
 -- because the word is used as a land type.
 --
--- Written out field by field rather than as a record update, Children.costChildren's
--- posture one level up: `cost` and `perEach` are the fields a printed word can
--- reach -- `payer` names a player, `branch` and `obligation` name rules
--- categories, and `offeredAt` is CR 608.2e's ordinal -- so a later field carrying
--- one must fail to compile here instead of silently keeping the printed word.
---
 -- `perEach` takes rewriteQuantity, rewriteEffect's own descent through a counted
 -- amount: a gate scaled by "for each Elf you control" counts what a Magical Hack
 -- made an Elf.
@@ -858,16 +851,20 @@ rewriteModal pairs =
 -- describes is read off the projection of the named object as the gate is
 -- offered, so a word swap there lands through that object's own rewrite.
 rewritePayGate :: [(TextWord.TextWord, TextWord.TextWord)] -> PayGate.PayGate -> PayGate.PayGate
-rewritePayGate pairs gate =
-  PayGate.MkPayGate
-    { PayGate.payer = PayGate.payer gate,
-      PayGate.cost = CostChoice.MkCostChoice (fmap (Filter.rewriteCost pairs) (CostChoice.unwrap (PayGate.cost gate))),
-      PayGate.basis = PayGate.basis gate,
-      PayGate.branch = PayGate.branch gate,
-      PayGate.obligation = PayGate.obligation gate,
-      PayGate.perEach = fmap (rewriteQuantity pairs) (PayGate.perEach gate),
-      PayGate.x = fmap (rewriteQuantity pairs) (PayGate.x gate),
-      PayGate.offeredAt = PayGate.offeredAt gate
+rewritePayGate pairs = Identity.runIdentity . Children.payGateChildren (countRewrites pairs)
+
+-- Parun.Engine.Children's pay gate, counter move, counter removal and library
+-- placement traversal at Identity. A payer, an arrival's chooser and a
+-- described cost hold no word Parun.Types.ChangeText's pairs swap, so they stay
+-- as they are.
+countRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.CountChildren Identity.Identity
+countRewrites pairs =
+  Children.MkCountChildren
+    { Children.countQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.countPlayer = pure,
+      Children.countKind = Identity.Identity . Filter.rewriteCounterKind pairs,
+      Children.countCost = Identity.Identity . Filter.rewriteCost pairs,
+      Children.countBasis = pure
     }
 
 -- A single target slot under CR 612.1. Top-level because Parun.Engine.Resolve
@@ -979,35 +976,16 @@ rewriteDuration pairs =
 -- behaviour: every kind-naming move in data/cards/ names +1/+1, which carries no
 -- word CR 612.2 can swap, so mutating those lines reddens nothing.
 rewriteMovedKinds :: [(TextWord.TextWord, TextWord.TextWord)] -> MovedKinds.MovedKinds -> MovedKinds.MovedKinds
-rewriteMovedKinds pairs kinds = case kinds of
-  MovedKinds.Every -> kinds
-  MovedKinds.Named kind quantity -> MovedKinds.Named (Filter.rewriteCounterKind pairs kind) (rewriteQuantity pairs quantity)
-  MovedKinds.EveryOfKind kind -> MovedKinds.EveryOfKind (Filter.rewriteCounterKind pairs kind)
-  MovedKinds.Chosen quantity -> MovedKinds.Chosen (rewriteQuantity pairs quantity)
-  MovedKinds.AnyNumber -> kinds
-  MovedKinds.AtLeastOne -> kinds
-  MovedKinds.AnyNumberOfKind kind -> MovedKinds.AnyNumberOfKind (Filter.rewriteCounterKind pairs kind)
-  MovedKinds.EachAbsentKind -> kinds
-  MovedKinds.UpToOneChosen -> kinds
+rewriteMovedKinds pairs = Identity.runIdentity . Children.movedKindsChildren (countRewrites pairs)
 
 -- CR 612.1 through a RemovalCount: the count's Quantity, where it writes one.
 rewriteRemovalCount :: [(TextWord.TextWord, TextWord.TextWord)] -> RemovalCount.RemovalCount -> RemovalCount.RemovalCount
-rewriteRemovalCount pairs count = case count of
-  RemovalCount.Exactly quantity -> RemovalCount.Exactly (rewriteQuantity pairs quantity)
-  RemovalCount.UpTo quantity -> RemovalCount.UpTo (rewriteQuantity pairs quantity)
-  RemovalCount.AnyNumber -> count
-  RemovalCount.All -> count
+rewriteRemovalCount pairs = Identity.runIdentity . Children.removalCountChildren (countRewrites pairs)
 
--- CR 612.1 through a Quantity: a Count's Filter is where the subtype word hides,
--- and its Aggregation may name a further Quantity. Every remaining arm is a leaf.
+-- CR 612.1 through a LibraryPlacement: the depth a CR 401.7 placement counts,
+-- where it states one.
 rewritePlacement :: [(TextWord.TextWord, TextWord.TextWord)] -> LibraryPlacement.LibraryPlacement -> LibraryPlacement.LibraryPlacement
-rewritePlacement pairs placement = case placement of
-  LibraryPlacement.Stated _ -> placement
-  LibraryPlacement.OwnerChooses -> placement
-  LibraryPlacement.RandomOrder _ -> placement
-  LibraryPlacement.ArrangedBy _ -> placement
-  LibraryPlacement.Beneath quantity -> LibraryPlacement.Beneath (rewriteQuantity pairs quantity)
-  LibraryPlacement.BeneathOrBottom quantity -> LibraryPlacement.BeneathOrBottom (rewriteQuantity pairs quantity)
+rewritePlacement pairs = Identity.runIdentity . Children.libraryPlacementChildren (countRewrites pairs)
 
 -- CR 612.1 through a quantity: every Filter it nests (a Count's, an activation
 -- tally's, a linked card's criterion) and every nested quantity, through
