@@ -16,9 +16,11 @@ import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Codec.CombatDamageOption as CombatDamageOption
 import qualified Parun.Codec.CopyException as CopyException
+import qualified Parun.Codec.Copyability as Copyability
 import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.CostReduction as CostReduction
+import qualified Parun.Codec.Counterability as Counterability
 import qualified Parun.Codec.Defense as Defense
 import qualified Parun.Codec.Effect as Effect
 import qualified Parun.Codec.Face as Face
@@ -41,6 +43,8 @@ import qualified Parun.Codec.TriggeredAbility as TriggeredAbility
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.Copyability as Copyability.Type
+import qualified Parun.Types.Counterability as Counterability.Type
 import qualified Parun.Types.Face as Face.Type
 import qualified Parun.Types.ProjectedCharacteristics as PC
 
@@ -98,6 +102,8 @@ codec = Fields.object $ do
   alternativeSpell <- Fields.defaulted "alternativeSpell" Nothing (Common.maybe (Face.codec Card.codec)) PC.alternativeSpell
   prototyped <- Fields.defaulted "prototyped" False Common.boolean PC.prototyped
   spell <- Fields.defaulted "spell" Face.Type.defaultSpell (Modal.codec Card.codec (GrantedAbility.codec Card.codec)) PC.spell
+  counterability <- Fields.defaulted "counterability" Counterability.Type.Counterable Counterability.codec PC.counterability
+  copyability <- Fields.defaulted "copyability" Copyability.Type.Copyable Copyability.codec PC.copyability
   circled <- Fields.defaulted "circled" Set.empty (Common.set Color.codec) PC.circled
   definesChosenColor <- Fields.defaulted "definesChosenColor" False Common.boolean PC.definesChosenColor
   flipped <- Fields.defaulted "flipped" Nothing (Common.maybe codec) PC.flipped
@@ -151,6 +157,8 @@ codec = Fields.object $ do
         PC.alternativeSpell = alternativeSpell,
         PC.prototyped = prototyped,
         PC.spell = spell,
+        PC.counterability = counterability,
+        PC.copyability = copyability,
         PC.circled = circled,
         PC.definesChosenColor = definesChosenColor,
         PC.flipped = flipped

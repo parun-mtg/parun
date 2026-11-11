@@ -1481,16 +1481,17 @@ stampedSnapshotOf oid gs = do
     then fmap (\stamp -> Maybe.fromMaybe stamp (PC.flipped stamp)) stamped
     else stamped
 
--- CR 113.6d / 113.6e / 113.6g / 613.1f: a face, less the abilities it prints
--- about its own casting where a layer-6 wipe reaches the spell (`spell`,
+-- CR 113.6d / 113.6e / 613.1f: a face, less the abilities it prints about its
+-- own casting where a layer-6 wipe reaches the spell (`spell`,
 -- Parun.Engine.Cost.asSpellProjected): its additional and alternative costs (CR
--- 118.8, 118.9), its casting restrictions and X ceiling (CR 113.6e) and its
--- "can't be countered" and "can't be copied" (CR 113.6g). A perpetual wipe reaches the spell, one
+-- 118.8, 118.9) and its casting restrictions and X ceiling (CR 113.6e). CR
+-- 113.6g's "can't be countered" and "can't be copied" are PC fields the wipe
+-- empties in the projection itself. A perpetual wipe reaches the spell, one
 -- confined to graveyards does not. Parun.CostSpec's "CR 118.8 a Demon of
 -- Catastrophes that perpetually lost all abilities is cast without a
 -- sacrifice" and "CR 113.6d under Yixlid Jailer a Fireblast cast from the
 -- graveyard still sacrifices two Mountains", and the scenarios
--- patriars-humiliation/cr-113-6g-* and cr-113-6e-*, prove it.
+-- patriars-humiliation/cr-113-6e-*, prove it.
 wipedFace :: ProjectedCharacteristics -> Face.Face card -> Face.Face card
 wipedFace spell face
   | PC.lostAllAbilities spell =
@@ -1499,9 +1500,7 @@ wipedFace spell face
           Face.additionalCostChoices = [],
           Face.alternativeCosts = [],
           Face.castingRestrictions = [],
-          Face.maximumX = [],
-          Face.counterability = Counterability.Counterable,
-          Face.copyability = Copyability.Copyable
+          Face.maximumX = []
         }
   | otherwise = face
 
@@ -1859,6 +1858,9 @@ noCharacteristics =
       PC.prototyped = False,
       -- CR 113.3a: no card, so no spell ability either.
       PC.spell = Face.defaultSpell,
+      -- CR 113.6g: nor a "can't be countered" or "can't be copied".
+      PC.counterability = Counterability.Counterable,
+      PC.copyability = Copyability.Copyable,
       -- CR 207.5: no card, so nothing circled.
       PC.circled = Set.empty,
       -- CR 604.3: no card, so no colour-defining ability.
@@ -2059,6 +2061,10 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.prototyped = False,
               -- CR 707.2: rules text, so copiable, for enchant's reason.
               PC.spell = Face.spell face,
+              -- CR 113.6g / 707.2: rules text, so copiable for enchant's
+              -- reason. data/scenarios/transcantation proves a copy drops it.
+              PC.counterability = Face.counterability face,
+              PC.copyability = Face.copyability face,
               -- CR 207.5: printed rules text (CR 613.1), so copiable for
               -- enchant's reason. data/scenarios/cryptic-spires proves a copy
               -- taps for the original's colours.

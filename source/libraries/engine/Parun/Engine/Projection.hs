@@ -67,10 +67,12 @@ import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
@@ -474,6 +476,11 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               -- the removal is recorded instead and read back by
               -- Parun.Engine.Subtype.intrinsicManaAbilityOf.
               PC.lostAllAbilities = True,
+              -- CR 113.6g: a spell's own "can't be countered" and "can't be
+              -- copied" go too; the scenarios patriars-humiliation/cr-113-6g-*
+              -- prove the first.
+              PC.counterability = Counterability.Counterable,
+              PC.copyability = Copyability.Copyable,
               -- CR 702.5a makes enchant an ability, so CR 613.1f's removal takes
               -- it with the rest. Unproven: Humility reaches only creatures, and
               -- though Titania's Song and Tamiyo's Compleation wipe noncreature
