@@ -25,8 +25,11 @@
 -- ObjectRef with ChosenPermanents, the combat rules: CombatRestriction,
 -- AttackCost, BlockCost and PerCreature, the mana payloads: ManaAddition with
 -- its ManaProduction, ManaCount, ManaRestriction, ManaRider and WhenSpent, and
--- SpendManaAsThough, and DamagePattern) is matched there instead, its leaf
--- types discarded there.
+-- SpendManaAsThough, DamagePattern, the copy and entry payloads: AsCopy with
+-- its CopyClause, CopyException, WithCounters, EntryRiders with its
+-- EntryAttack, EntryBlock, EntryController and EntryHost, FaceDownState and
+-- FaceDownCharacteristics, and CharacteristicPT) is matched there instead, its
+-- leaf types discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -85,7 +88,6 @@ import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CommanderDeckRule as CommanderDeckRule
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControllerRelation as ControllerRelation
-import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostBasis as CostBasis
@@ -105,17 +107,12 @@ import qualified Parun.Types.DurationEvent as DurationEvent
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EnteredZone as EnteredZone
-import qualified Parun.Types.EntryAttack as EntryAttack
-import qualified Parun.Types.EntryBlock as EntryBlock
-import qualified Parun.Types.EntryController as EntryController
-import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.EventShape as EventShape
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
-import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
 import qualified Parun.Types.FullText as FullText
@@ -400,8 +397,7 @@ onsetNames asking x = case x of
   Onset.FromThatExtraTurn -> mempty
 
 asCopyNames :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> AsCopy.AsCopy ability effect -> r
-asCopyNames asking onAbility onEffect x = case x of
-  AsCopy.MkAsCopy eligible clauses _tapped whenYouDo _among duration _recipient _optional -> filterNames asking eligible <> foldMap (copyClauseNames asking onAbility) clauses <> foldMap onEffect whenYouDo <> foldMap (durationNames asking) duration
+asCopyNames asking onAbility onEffect = Const.getConst . Children.asCopyChildren (copyVisitors asking onAbility onEffect)
 
 attachRestrictionNames :: (Monoid r) => Asking r -> AttachRestriction.AttachRestriction -> r
 attachRestrictionNames asking x = case x of
@@ -478,8 +474,7 @@ castingRestrictionNames asking x = case x of
   CastingRestriction.SpendOnlyOnX _color -> mempty
 
 characteristicPTNames :: (Monoid r) => Asking r -> CharacteristicPT.CharacteristicPT -> r
-characteristicPTNames asking x = case x of
-  CharacteristicPT.MkCharacteristicPT power toughness -> quantityNames asking power <> quantityNames asking toughness
+characteristicPTNames asking = Const.getConst . Children.characteristicPTChildren (Const.Const . quantityNames asking)
 
 chooserNames :: (Monoid r) => Asking r -> Chooser.Chooser -> r
 chooserNames asking x = case x of
@@ -539,25 +534,32 @@ controllerRelationNames asking x = case x of
   ControllerRelation.InSlot slotName -> slotNames asking slotName
   ControllerRelation.Among _playerId -> mempty
 
-copyClauseNames :: (Monoid r) => Asking r -> (ability -> r) -> CopyClause.CopyClause ability -> r
-copyClauseNames asking onAbility x = case x of
-  CopyClause.MkCopyClause condition exceptions counters -> foldMap (conditionNames asking) condition <> foldMap (copyExceptionNames asking onAbility) exceptions <> foldMap (withCountersNames asking) counters
-
 copyExceptionNames :: (Monoid r) => Asking r -> (ability -> r) -> CopyException.CopyException ability -> r
-copyExceptionNames asking onAbility x = case x of
-  CopyException.SetPowerToughness _setPowerToughness -> mempty
-  CopyException.GainKeywords keyword -> foldMap (keywordNames asking) keyword
-  CopyException.GainThisAbility -> mempty
-  CopyException.CardTypes _mode _cardType -> mempty
-  CopyException.AddSubtypes _subtype -> mempty
-  CopyException.AddSupertypes _supertype -> mempty
-  CopyException.SetCreatureSubtypes _subtype -> mempty
-  CopyException.RemoveSupertypes _supertype -> mempty
-  CopyException.SetName _cardName -> mempty
-  CopyException.SetColors _color -> mempty
-  CopyException.NoManaCost -> mempty
-  CopyException.GainAbility ability -> onAbility ability
-  CopyException.DontCopyColors -> mempty
+copyExceptionNames asking onAbility = Const.getConst . Children.copyExceptionChildren (copyVisitors asking onAbility (const mempty))
+
+-- Parun.Engine.Children's traversal at Const. A subtype, a colour and a type
+-- line name no object and read no history.
+copyVisitors :: (Monoid r) => Asking r -> (ability -> r) -> (effect -> r) -> Children.CopyChildren ability effect (Const.Const r)
+copyVisitors asking onAbility onEffect =
+  Children.MkCopyChildren
+    { Children.copyFilter = Const.Const . filterNames asking,
+      Children.copyQuantity = Const.Const . quantityNames asking,
+      Children.copyCounterKind = Const.Const . counterKindNames asking (keywordNames asking),
+      Children.copyKeyword = Const.Const . keywordNames asking,
+      Children.copySubtype = pure,
+      Children.copyColor = pure,
+      Children.copyAbility = Const.Const . onAbility,
+      Children.copyEffect = Const.Const . onEffect,
+      Children.copyCondition = Const.Const . conditionNames asking,
+      Children.copyDuration = Const.Const . durationNames asking,
+      Children.copySlot = Const.Const . slotNames asking,
+      Children.copyPlayer = Const.Const . playerRefNames asking,
+      Children.copyModification = Const.Const . modificationNames asking onAbility,
+      Children.copyTypeLine = pure,
+      Children.copyPower = Const.Const . powerNames asking,
+      Children.copyToughness = Const.Const . toughnessNames asking,
+      Children.copyListedKeyword = Const.Const . keywordNames asking
+    }
 
 costNames :: (Monoid r) => Asking r -> (keyword -> r) -> Cost.Cost keyword -> r
 costNames asking onKeyword = Const.getConst . Children.costChildren (costVisitors asking onKeyword)
@@ -698,7 +700,7 @@ effectNames asking onCard onAbility =
           Children.onPlayerEffect = Const.Const . playerEffectNames asking,
           Children.onReplacement = Const.Const . replacementEffectNames asking onCard onAbility (effectNames asking onCard onAbility),
           Children.onPayGate = Const.Const . payGateNames asking,
-          Children.onEntryRiders = Const.Const . entryRidersNames asking (quantityNames asking) onAbility,
+          Children.onEntryRiders = Const.Const . entryRidersNames asking onAbility,
           Children.onPlacement = Const.Const . libraryPlacementNames asking,
           Children.onCopyException = Const.Const . copyExceptionNames asking onAbility,
           Children.onFaceDown = Const.Const . faceDownCharacteristicsNames asking onAbility,
@@ -710,34 +712,12 @@ effectNames asking onCard onAbility =
           Children.onChosenPermanents = Const.Const . chosenPermanentsNames asking
         }
 
-entryAttackNames :: (Monoid r) => Asking r -> EntryAttack.EntryAttack -> r
-entryAttackNames asking x = case x of
-  EntryAttack.Chosen -> mempty
-  EntryAttack.SameAs slotName -> slotNames asking slotName
-  EntryAttack.UnderPlayer slotName -> slotNames asking slotName
-
-entryBlockNames :: (Monoid r) => Asking r -> EntryBlock.EntryBlock -> r
-entryBlockNames asking x = case x of
-  EntryBlock.Chosen -> mempty
-  EntryBlock.Specified slotName -> slotNames asking slotName
-
-entryHostNames :: (Monoid r) => Asking r -> EntryHost.EntryHost -> r
-entryHostNames asking x = case x of
-  EntryHost.Specified slotName -> slotNames asking slotName
-  EntryHost.Chosen filter_ -> filterNames asking filter_
-
 entryRestrictionNames :: (Monoid r) => Asking r -> EntryRestriction.EntryRestriction -> r
 entryRestrictionNames asking x = case x of
   EntryRestriction.MkEntryRestriction affected _origins -> affectedNames asking affected
 
-entryRidersNames :: (Monoid r) => Asking r -> (count -> r) -> (ability -> r) -> EntryRiders.EntryRiders count ability -> r
-entryRidersNames asking onCount onAbility x = case x of
-  EntryRiders.MkEntryRiders _tapped attacking blocking _transformed counters under _exiledFaceDown attachedTo faceDown _noted characteristics -> entryControllerNames asking under <> foldMap (entryAttackNames asking) attacking <> foldMap (entryBlockNames asking) blocking <> foldMap (counterKindNames asking (keywordNames asking)) (Map.keys counters) <> foldMap onCount counters <> foldMap (entryHostNames asking) attachedTo <> foldMap (faceDownStateNames asking onAbility) faceDown <> foldMap (modificationNames asking onAbility) characteristics
-
-entryControllerNames :: (Monoid r) => Asking r -> EntryController.EntryController -> r
-entryControllerNames asking x = case x of
-  EntryController.Instructed player -> playerRefNames asking player
-  EntryController.Owner -> mempty
+entryRidersNames :: (Monoid r) => Asking r -> (ability -> r) -> EntryRiders.EntryRiders Quantity.Quantity ability -> r
+entryRidersNames asking onAbility = Const.getConst . Children.entryRidersChildren (copyVisitors asking onAbility (const mempty))
 
 expiryNames :: (Monoid r) => Asking r -> Expiry.Expiry -> r
 expiryNames asking = Const.getConst . Children.expiryChildren (storedVisitors asking)
@@ -816,12 +796,7 @@ faceNames asking onCard =
         }
 
 faceDownCharacteristicsNames :: (Monoid r) => Asking r -> (ability -> r) -> FaceDownCharacteristics.FaceDownCharacteristics ability -> r
-faceDownCharacteristicsNames asking onAbility x = case x of
-  FaceDownCharacteristics.MkFaceDownCharacteristics _typeLine power toughness keywords abilities -> foldMap (powerNames asking) power <> foldMap (toughnessNames asking) toughness <> foldMap (keywordNames asking) keywords <> foldMap onAbility abilities
-
-faceDownStateNames :: (Monoid r) => Asking r -> (ability -> r) -> FaceDownState.FaceDownState ability -> r
-faceDownStateNames asking onAbility x = case x of
-  FaceDownState.MkFaceDownState _reason listed _turnsUpBefore -> faceDownCharacteristicsNames asking onAbility listed
+faceDownCharacteristicsNames asking onAbility = Const.getConst . Children.faceDownChildren (copyVisitors asking onAbility (const mempty))
 
 floatingCandidateNames :: Asking r -> FloatingCandidate.FloatingCandidate -> r
 floatingCandidateNames asking x = case x of
@@ -1327,8 +1302,7 @@ whichCountersNames asking onKeyword x = case x of
   WhichCounters.OfAnyKind -> mempty
 
 withCountersNames :: (Monoid r) => Asking r -> WithCounters.WithCounters -> r
-withCountersNames asking x = case x of
-  WithCounters.MkWithCounters counters -> foldMap (counterKindNames asking (keywordNames asking)) (Map.keys counters) <> foldMap (quantityNames asking) counters
+withCountersNames asking = Const.getConst . Children.withCountersChildren (copyVisitors asking (const mempty) (const mempty))
 
 zoneScopeNames :: (Monoid r) => Asking r -> ZoneScope.ZoneScope -> r
 zoneScopeNames asking x = case x of

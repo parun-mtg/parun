@@ -20,7 +20,6 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
-import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
@@ -37,7 +36,6 @@ import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Condition as Condition.Type
-import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CounterRestriction as CounterRestriction
@@ -46,12 +44,10 @@ import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.Devotion as Devotion
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
-import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
@@ -69,7 +65,6 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
-import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -763,121 +758,69 @@ rewriteReplacementEffect pairs =
           Children.replacementCopy = Identity.Identity . rewriteAsCopy pairs
         }
 
--- CR 612.1 through CR 707.9's "except ..." clause. Exhaustive rather than a
--- wildcard, so a later arm carrying a word fails to compile here.
+-- CR 612.1 through a copy or entry payload: Parun.Engine.Children's traversal
+-- at Identity, shared by a copy rewrite (CR 614.1c, 614.1e), its CR 707.9
+-- exceptions, an entry's riders and a face-down listing (CR 708.2).
 --
--- NO BOARD OBSERVES IT, an entry option's keywords' position: what changes
--- is a keyword that CARRIES a word, a quoted ability, or CR 707.9b's subtype
--- clause, and no card in data/cards puts a text-changing effect on any of them --
--- no producer of the CR 707.9a arms names a word (Dack's Duplicate grants haste
--- and dethrone, Omni-Changeling changeling, Mercurial Pretender a bounce), and
--- Wall of Stolen Identity's "a Wall" would need an Artificial Evolution aimed at
--- it. The arms are the rule rather than a proven
--- behaviour -- an "except it has islandwalk", or that Artificial Evolution, would
--- be what proves them. CR 707.9b's remaining arms name no word a text
--- changer's family holds (Parun.Types.WordFamily): the pair is two literals,
--- the type clause names CR
--- 205.2a's card types, the supertype clauses CR 205.4a's supertypes, and the name
--- clause a name, which CR 612.2's last sentence puts out of reach outright.
-rewriteCopyException :: [(TextWord.TextWord, TextWord.TextWord)] -> CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card) -> CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteCopyException pairs exception = case exception of
-  CopyException.SetPowerToughness _ -> exception
-  CopyException.GainKeywords keywords -> CopyException.GainKeywords (Set.map (Filter.rewriteKeyword pairs) keywords)
-  -- CR 707.9b's type clause names CARD types (CR 205.2a's list), and no text
-  -- changer's family holds one (Parun.Types.WordFamily), so there is nothing here
-  -- for a pair to change.
-  CopyException.CardTypes {} -> exception
-  -- CR 707.9b's subtype clause DOES name a word CR 612.2's swap reaches -- "a
-  -- Wall in addition to its other types" is one of the "all instances of one
-  -- creature type" Artificial Evolution changes -- so the pairs apply, exactly as
-  -- they do to a Filter's HasSubtype atom (Filter.rewrite).
-  CopyException.AddSubtypes subtypes -> CopyException.AddSubtypes (Set.map (TextWord.Engine.subtypeAfter pairs) subtypes)
-  -- The same swap over the replacing clause's subtypes (Dino DNA's "Dinosaur").
-  -- A REGRESSION FENCE: no test changes Dino DNA's text.
-  CopyException.SetCreatureSubtypes subtypes -> CopyException.SetCreatureSubtypes (Set.map (TextWord.Engine.subtypeAfter pairs) subtypes)
-  -- CR 205.4a's supertypes for the same reason CR 707.9b's card types are left
-  -- alone, whichever direction the clause runs: no text changer's family holds a
-  -- supertype (Parun.Types.WordFamily).
-  CopyException.AddSupertypes _ -> exception
-  CopyException.RemoveSupertypes _ -> exception
-  -- CR 201.1's name is the one CR 612.2 rules out in so many words: "an effect
-  -- that changes a color word or a subtype can't change a card name". The
-  -- effects that do are CR 612.7-612.9's, in layer 3 (Modification's
-  -- AddNamesMatching, SetName and InsertNameWords), rather than a rewrite of
-  -- this clause.
-  CopyException.SetName _ -> exception
-  -- CR 612.2's colour word used as a colour word ("except it's white"). A
-  -- REGRESSION FENCE: no test changes a colour exception's text. A missing mana
-  -- cost carries no word.
-  CopyException.SetColors colors -> CopyException.SetColors (Set.map (TextWord.Engine.colorAfter pairs) colors)
-  CopyException.NoManaCost -> exception
-  -- CR 707.9c's clause names a characteristic and no word, so CR 612.2's subtype
-  -- swap has nothing to reach.
-  CopyException.DontCopyColors -> exception
-  -- CR 707.9a's "this ability" carries no word of its own. The ability it points
-  -- at is the resolving one, which the projection already rewrote where it was
-  -- read (rewriteTriggeredAbility).
-  CopyException.GainThisAbility -> exception
-  -- A quoted ability is card text like any other, so its subtype words move.
-  CopyException.GainAbility granted -> CopyException.GainAbility (rewriteGrantedAbility pairs granted)
-
--- CR 612.1 through a copy rewrite, on either event class it rides (CR 614.1c,
--- 614.1e). The "which permanents" clause names a word, and so does CR 707.9a's
--- gained ability -- a keyword, and a keyword may carry one
--- (rewriteCopyException). CR 707.9e's additional counters take
--- rewriteWithCounters' descent, the same one the CR 614.1c row gets: the amount
--- is a Quantity and the kind may be a whole keyword. A REGRESSION FENCE, the
--- Create arm's reason: Altered Ego's amount is CR 601.2b's X and its kind is
--- +1/+1, neither of which holds a word, so neutralizing this half leaves the
--- suite green. The `tapped` flag and `zone` are passed through and hold no word
--- (Vesuva). CR 707.9g's linked trigger takes rewriteEffect's descent, the
--- duration rewriteDuration's, and the clauses rewriteCopyClause's.
-rewriteAsCopy :: [(TextWord.TextWord, TextWord.TextWord)] -> AsCopy.AsCopy (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> AsCopy.AsCopy (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-rewriteAsCopy pairs c =
-  c
-    { AsCopy.eligible = Filter.rewrite pairs (AsCopy.eligible c),
-      AsCopy.clauses = fmap (rewriteCopyClause pairs) (AsCopy.clauses c),
-      AsCopy.whenYouDo = fmap (rewriteEffect pairs) (AsCopy.whenYouDo c),
-      AsCopy.duration = fmap (rewriteDuration pairs) (AsCopy.duration c)
+-- Kept: a slot and a player name no word, and a CR 708.2 listing's power,
+-- toughness and keywords are left as written, as before this walk was shared.
+-- So are, by Children, an exception's power and toughness (two literals), its
+-- card types and supertypes (no text changer's family holds one,
+-- Parun.Types.WordFamily), and its name, which CR 612.2's last sentence puts
+-- out of reach outright: the effects that change a name are CR 612.7-612.9's,
+-- in layer 3 (Modification's AddNamesMatching, SetName and InsertNameWords).
+--
+-- Proved, each by the scenario named: an entry rider's counter keys by
+-- cr-612-1-hacked-zombie-goblin-the-entry-rider-s-counter-is-a-hexproof-from-goblins-counter,
+-- the collision merge by cr-122-1-hacked-zombie-skeleton-the-two-colliding-riders-merge
+-- and cr-612-2-122-1-hacked-island-swamp-the-two-rows-merge-into-one, a
+-- listing's subtypes by cr-612-1-a-hacked-yedora-returns-a-face-down-island-that-taps-for-blue.
+--
+-- NO BOARD OBSERVES the rest, each a regression fence: CR 707.9a's keywords
+-- and quoted ability, CR 707.9b's subtype clauses (Wall of Stolen Identity's
+-- "a Wall" would need an Artificial Evolution aimed at it; no test changes
+-- Dino DNA's text) and colour clause, CR 707.9e's counters (Altered Ego's
+-- amount is CR 601.2b's X and its kind +1/+1, neither holding a word), and a
+-- copy's "which permanents", "when you do" and duration.
+copyRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.CopyChildren (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) Identity.Identity
+copyRewrites pairs =
+  Children.MkCopyChildren
+    { Children.copyFilter = Identity.Identity . Filter.rewrite pairs,
+      Children.copyQuantity = Identity.Identity . rewriteQuantity pairs,
+      -- CR 122.1b's keyword counter is the one counter kind holding a word.
+      Children.copyCounterKind = Identity.Identity . Filter.rewriteCounterKind pairs,
+      Children.copyKeyword = Identity.Identity . Filter.rewriteKeyword pairs,
+      -- "A Wall in addition to its other types" is one of the "all instances
+      -- of one creature type" Artificial Evolution changes, exactly as a
+      -- Filter's HasSubtype atom is (Filter.rewrite).
+      Children.copySubtype = Identity.Identity . TextWord.Engine.subtypeAfter pairs,
+      -- CR 612.2's colour word used as a colour word ("except it's white").
+      Children.copyColor = Identity.Identity . TextWord.Engine.colorAfter pairs,
+      Children.copyAbility = Identity.Identity . rewriteGrantedAbility pairs,
+      Children.copyEffect = Identity.Identity . rewriteEffect pairs,
+      Children.copyCondition = Identity.Identity . rewriteCondition pairs,
+      Children.copyDuration = Identity.Identity . rewriteDuration pairs,
+      Children.copySlot = pure,
+      Children.copyPlayer = pure,
+      -- CR 611.2e's effects, ModifyTarget's modification rewrite.
+      Children.copyModification = Identity.Identity . rewriteModification pairs,
+      Children.copyTypeLine = \typeLine -> Identity.Identity (List.foldl' (\line pair -> maybe line (\(_, _, swapped) -> swapped) (swapSubtype pair line)) typeLine pairs),
+      Children.copyPower = pure,
+      Children.copyToughness = pure,
+      Children.copyListedKeyword = pure
     }
 
--- CR 612.1 through one clause of a copy exception: its CR 707.9f condition,
--- its exceptions (rewriteCopyException) and its CR 707.9e counters
--- (rewriteWithCounters).
-rewriteCopyClause :: [(TextWord.TextWord, TextWord.TextWord)] -> CopyClause.CopyClause (GrantedAbility.GrantedAbility Card.Type.Card) -> CopyClause.CopyClause (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteCopyClause pairs (CopyClause.MkCopyClause condition exceptions counters) =
-  CopyClause.MkCopyClause (fmap (rewriteCondition pairs) condition) (fmap (rewriteCopyException pairs) exceptions) (fmap (rewriteWithCounters pairs) counters)
+rewriteCopyException :: [(TextWord.TextWord, TextWord.TextWord)] -> CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card) -> CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)
+rewriteCopyException pairs = Identity.runIdentity . Children.copyExceptionChildren (copyRewrites pairs)
 
--- CR 122.1b's keyword counter is the one counter kind holding a word. The amount
--- holds a second, on the same axis Effect.PutCounters' quantity does: CR 614.1c
--- admits "a number of +1/+1 counters equal to the number of creature cards in all
--- graveyards" (Undergrowth Scavenger), and a Count inside it names a card type or
--- a subtype CR 612.2 licenses swapping.
---
--- EVERY KIND on the row, since the row carries a map of them, see #2314.
--- 'Map.mapKeysWith' and not 'Map.mapKeys': the swap can map two kinds onto one --
--- a hexproof from Islands counter and a hexproof from Swamps counter, hacked
--- Island -> Swamp -- and 'Map.mapKeys' would keep an arbitrary survivor, losing a
--- row. CR 122.1's last sentence is why merging is what the rules ask for rather
--- than a convenience: counters with the same name are interchangeable, so the two
--- rows are one tally of that one kind. Projection's
--- Modification.ChangeWord arm above guards the same hazard the same way,
--- over a permanent's projected keywords instead of an entry row.
---
--- The combiner is Arithmetic.Plus, CR 208.2's composition: it needs no Num instance
--- (Parun.Types.Quantity has none, deliberately), and it leaves the two amounts
--- unevaluated exactly as the rewrite found them, so a Count that must be read
--- against a board is still read against the board the entry happens on.
--- 'Map.mapKeysWith' passes the value at the GREATER of the two original keys
--- first, so the map's own ascending order is what Plus's left and right hold --
--- addition commutes (Parun.Types.Plus), so this reads true rather than computing
--- anything different.
+rewriteAsCopy :: [(TextWord.TextWord, TextWord.TextWord)] -> AsCopy.AsCopy (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> AsCopy.AsCopy (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
+rewriteAsCopy pairs = Identity.runIdentity . Children.asCopyChildren (copyRewrites pairs)
+
+-- The collision merge Children.traverseCounters makes is what CR 122.1 asks
+-- for: a hexproof from Islands counter and a hexproof from Swamps counter,
+-- hacked Island -> Swamp, are one tally of that one kind.
 rewriteWithCounters :: [(TextWord.TextWord, TextWord.TextWord)] -> WithCounters.WithCounters -> WithCounters.WithCounters
-rewriteWithCounters pairs w =
-  WithCounters.MkWithCounters
-    . Map.mapKeysWith (\greater lesser -> Quantity.Type.Arithmetic (Arithmetic.Plus (Plus.MkPlus lesser greater))) (Filter.rewriteCounterKind pairs)
-    . fmap (rewriteQuantity pairs)
-    $ WithCounters.counters w
+rewriteWithCounters pairs = Identity.runIdentity . Children.withCountersChildren (copyRewrites pairs)
 
 -- The modal payload both abilities carry, its shared clauses too: Children's
 -- modalChildren at Identity. Both halves of a mode: its clauses' conditions,
@@ -1100,41 +1043,18 @@ rewriteQuantity pairs quantity = case quantity of
           quantity
       )
 
--- CR 612.1 over an entry row's counter AMOUNTS and KEYS -- "enters with a +1/+1
--- counter for each Goblin you control" is a Count like any other, and CR 122.1b's
--- keyword counter carries a keyword whose word rule 612 reaches.
--- rewriteWithCounters' collision combiner comes with the key rewrite: CR 122.1's
--- last sentence makes counters with the same name interchangeable, so a swap
--- that collides two keys merges the rows rather than keeping an arbitrary
--- survivor.
+-- CR 612.1 over an entry row: copyRewrites' traversal. Its counter amounts
+-- ("enters with a +1/+1 counter for each Goblin you control" is a Count like
+-- any other) and keys merge as rewriteWithCounters' do, CR 303.4f's narrowing
+-- filter takes EntersAttachedTo's rewrite and CR 611.2e's effects
+-- ModifyTarget's.
 rewriteEntryRiders :: [(TextWord.TextWord, TextWord.TextWord)] -> EntryRiders.EntryRiders Quantity.Type.Quantity (GrantedAbility.GrantedAbility Card.Type.Card) -> EntryRiders.EntryRiders Quantity.Type.Quantity (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteEntryRiders pairs riders =
-  riders
-    { EntryRiders.counters =
-        Map.mapKeysWith (\greater lesser -> Quantity.Type.Arithmetic (Arithmetic.Plus (Plus.MkPlus lesser greater))) (Filter.rewriteCounterKind pairs)
-          . fmap (rewriteQuantity pairs)
-          $ EntryRiders.counters riders,
-      EntryRiders.faceDown = fmap (\state -> state {FaceDownState.listed = rewriteListing pairs (FaceDownState.listed state)}) (EntryRiders.faceDown riders),
-      -- CR 612.1 over CR 303.4f's narrowing filter, EntersAttachedTo's rewrite.
-      EntryRiders.attachedTo = fmap rewriteHost (EntryRiders.attachedTo riders),
-      -- CR 612.1 over CR 611.2e's effects, ModifyTarget's modification rewrite.
-      EntryRiders.characteristics = fmap (rewriteModification pairs) (EntryRiders.characteristics riders)
-    }
-  where
-    rewriteHost host = case host of
-      EntryHost.Specified _ -> host
-      EntryHost.Chosen f -> EntryHost.Chosen (Filter.rewrite pairs f)
+rewriteEntryRiders pairs = Identity.runIdentity . Children.entryRidersChildren (copyRewrites pairs)
 
 -- CR 612.1 / 612.2 over a CR 708.2 listing's subtypes and quoted abilities, both
--- printed on the card whose effect lists them. The text-change scenarios of an
--- evolved Cyber Conversion and a hacked Yedora, Grave Gardener prove the
--- subtype swap.
+-- printed on the card whose effect lists them: copyRewrites' traversal.
 rewriteListing :: [(TextWord.TextWord, TextWord.TextWord)] -> FaceDownCharacteristics.FaceDownCharacteristics (GrantedAbility.GrantedAbility Card.Type.Card) -> FaceDownCharacteristics.FaceDownCharacteristics (GrantedAbility.GrantedAbility Card.Type.Card)
-rewriteListing pairs listed =
-  listed
-    { FaceDownCharacteristics.typeLine = List.foldl' (\typeLine pair -> maybe typeLine (\(_, _, swapped) -> swapped) (swapSubtype pair typeLine)) (FaceDownCharacteristics.typeLine listed) pairs,
-      FaceDownCharacteristics.abilities = fmap (rewriteGrantedAbility pairs) (FaceDownCharacteristics.abilities listed)
-    }
+rewriteListing pairs = Identity.runIdentity . Children.faceDownChildren (copyRewrites pairs)
 
 -- CR 612.2: one subtype swap over a type line holding the old word, with the
 -- swapped pair, which a defined face's name follows too (CR 612.2a).
@@ -1148,10 +1068,7 @@ swapSubtype pair typeLine = case pair of
 
 -- CR 612.1 through CR 208.2a's characteristic-defining power and toughness. Both
 -- boxes are rewritten rather than only the one a card fills, since seedCharacteristicPT
--- already keeps them as a pair.
+-- already keeps them as a pair. Proved by
+-- cr-612-1-a-magical-hack-makes-nightmare-s-cda-count-islands.
 rewriteCharacteristicPT :: [(TextWord.TextWord, TextWord.TextWord)] -> CharacteristicPT.CharacteristicPT -> CharacteristicPT.CharacteristicPT
-rewriteCharacteristicPT pairs cda =
-  CharacteristicPT.MkCharacteristicPT
-    { CharacteristicPT.power = rewriteQuantity pairs (CharacteristicPT.power cda),
-      CharacteristicPT.toughness = rewriteQuantity pairs (CharacteristicPT.toughness cda)
-    }
+rewriteCharacteristicPT pairs = Identity.runIdentity . Children.characteristicPTChildren (Identity.Identity . rewriteQuantity pairs)
