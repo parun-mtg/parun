@@ -11649,7 +11649,7 @@ revealedObjects revealed gs =
 -- and every condition but one. `matchesTriggerGiven` below is the same act with CR
 -- 603.7c's captured environment in hand.
 matchesTrigger :: GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTrigger gs = matchesTriggerGiven Map.empty (battlefieldCandidates gs) gs
+matchesTrigger gs = matchesTriggerGiven Map.empty (battlefieldCandidates gs) gs gs
 
 -- CR 603.2b / 109.5: does this condition restrict the turn its event may occur
 -- on to the ABILITY'S CONTROLLER's turn? True for "at the beginning of YOUR
