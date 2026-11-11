@@ -41,7 +41,7 @@ data TurnWindow
     -- arrives.
     NextTurnOf (Maybe PlayerId.PlayerId)
   | -- | The same onset once that turn has begun: the number
-    -- Parun.Engine.Event.settleOnsets read off GameState.turnNumber as it did, and
+    -- Parun.Engine.Event.settleOnsets read off TurnRegisters.turnNumber as it did, and
     -- NO other turn.
     --
     -- Closed at both ends, which a lower bound cannot be. The printed phrase

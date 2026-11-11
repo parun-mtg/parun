@@ -164,6 +164,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.VariableChoice as VariableChoice
 import qualified Parun.Types.While as While
 import qualified Parun.Types.Zone as Zone
@@ -183,9 +184,12 @@ ruleOfLawBoard plains ruleOfLaw =
         b,
         c,
         gs3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -220,11 +224,11 @@ ruleOfLawSpec s registry =
       let (_, x, _, plain) = ruleOfLawBoard plains ruleOfLaw
           onBoard = snd (S.addPermanent ruleOfLaw S.alice plain)
           cast = S.runPure S.identityAnswer onBoard (S.cast S.alice x)
-      case GameState.stack cast of
+      case TurnRegisters.stack (GameState.turn cast) of
         [] -> Spec.assertFailure s "expected the spell on the stack"
         top : _ -> do
           let countered = S.runPure S.identityAnswer cast (Event.counter (pure ()) S.noSource S.bob top)
-          Spec.assertEqWith s "the stack is empty again" (GameState.stack countered) []
+          Spec.assertEqWith s "the stack is empty again" (TurnRegisters.stack (GameState.turn countered)) []
           Spec.assertBool s (PlayerEffect.prohibitsCasting S.alice anySpellId VariableChoice.Announced countered) "still prohibited"
 
     -- The effect is RE-DERIVED from the battlefield on every read, so there
@@ -638,9 +642,12 @@ thaliaBoard mountain thalia lightningBolt piker n =
    in ( bolt,
         pikerId,
         gs3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -656,9 +663,12 @@ thaliaWith mountain thalia lightningBolt extras n =
    in ( bolt,
         thaliaId,
         gs3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -666,7 +676,16 @@ thaliaUntaxed :: Printing.Printing -> Printing.Printing -> Int -> (ObjectId.Obje
 thaliaUntaxed mountain lightningBolt n =
   let base = S.landsInPlay mountain n
       (bolt, gs1) = S.addHandCard lightningBolt S.alice base
-   in (bolt, gs1 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice})
+   in ( bolt,
+        gs1
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
+      )
 
 -- Thalia, Guardian of Thraben {1}{W} Legendary Creature -- Human Soldier 2/1:
 -- "First strike / Noncreature spells cost {1} more to cast."
@@ -836,9 +855,12 @@ medallionBoard island sapphireMedallion unsummonPrinting divinationPrinting ligh
         divination,
         bolt,
         gs5
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs5)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -851,9 +873,12 @@ medallionBothBoard island sapphireMedallion thalia unsummonPrinting =
       (unsummon, gs3) = S.addHandCard unsummonPrinting S.alice gs2
    in ( unsummon,
         gs3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -918,9 +943,12 @@ medallionSpec s registry =
                 (d, gs1) = S.addHandCard divinationPrinting S.alice base
              in ( d,
                   gs1
-                    { GameState.phase = Phase.PrecombatMain,
-                      GameState.activePlayer = S.alice,
-                      GameState.priority = Just S.alice
+                    { GameState.turn =
+                        (GameState.turn gs1)
+                          { TurnRegisters.phase = Phase.PrecombatMain,
+                            TurnRegisters.activePlayer = S.alice,
+                            TurnRegisters.priority = Just S.alice
+                          }
                     }
                 )
           (bareDivination, bare) = bareBoard
@@ -977,9 +1005,12 @@ geistBoard island thinkTwice n =
    in ( yardId,
         handId,
         gs3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1143,9 +1174,12 @@ titaniasSongBoard island sapphireMedallion divinationPrinting titaniasSong =
       (divination, gs2) = S.addHandCard divinationPrinting S.alice gs1
       bare =
         gs2
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       (_, sung) = S.addPermanent titaniasSong S.bob bare
    in (medallion, divination, bare, sung)
@@ -1227,9 +1261,12 @@ edgewalkerBoard plains edgewalker piker copies n =
    in ( spell,
         pikerId,
         gs2
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1333,9 +1370,12 @@ phyrexianDiscountBoard forest discount cub growth copies n =
    in ( cubId,
         growthId,
         gs2
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1453,9 +1493,12 @@ snowDiscountBoard forest discount cub piker copies n =
    in ( cubId,
         pikerId,
         gs2
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1579,9 +1622,12 @@ hybridDiscountBoard land discount spell solRing copies n =
    in ( spellId,
         ringId,
         gs2
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1762,9 +1808,12 @@ textChangedEdgewalkerBoard s registry changerName swap = do
       (changerId, g5) = S.addHandCard changer S.alice g4
       ready =
         g5
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       after = case swap of
         Nothing -> ready
@@ -1992,7 +2041,14 @@ nerdRageSpec s registry =
         board = boardWith [] []
     Spec.it s "CR 113.7 Nerd Rage's quoted ability lifts the enchanted creature's controller's maximum" $ do
       (_, gs) <- board
-      let bobsCleanup = reliquaryCleanup gs {GameState.activePlayer = S.bob}
+      let bobsCleanup =
+            reliquaryCleanup
+              gs
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.activePlayer = S.bob
+                      }
+                }
       Spec.assertEqWith s "bob keeps all nine cards at his cleanup" (S.handSize S.bob bobsCleanup) 9
       Spec.assertEqWith s "bob has no maximum hand size" (PlayerEffect.maximumHandSize S.bob gs) Nothing
       Spec.assertEqWith s "alice, who controls the Aura but not the creature, still discards to seven" (S.handSize S.alice (reliquaryCleanup gs)) 7
@@ -2004,8 +2060,36 @@ nerdRageSpec s registry =
       humility <- S.printingOf s registry "Humility"
       (_, later) <- boardWith [] [humility]
       (_, earlier) <- boardWith [humility] []
-      Spec.assertEqWith s "Humility after the Aura: bob discards to seven" (S.handSize S.bob (reliquaryCleanup later {GameState.activePlayer = S.bob})) 7
-      Spec.assertEqWith s "Humility before the Aura: bob keeps all nine" (S.handSize S.bob (reliquaryCleanup earlier {GameState.activePlayer = S.bob})) 9
+      Spec.assertEqWith
+        s
+        "Humility after the Aura: bob discards to seven"
+        ( S.handSize
+            S.bob
+            ( reliquaryCleanup
+                later
+                  { GameState.turn =
+                      (GameState.turn later)
+                        { TurnRegisters.activePlayer = S.bob
+                        }
+                  }
+            )
+        )
+        7
+      Spec.assertEqWith
+        s
+        "Humility before the Aura: bob keeps all nine"
+        ( S.handSize
+            S.bob
+            ( reliquaryCleanup
+                earlier
+                  { GameState.turn =
+                      (GameState.turn earlier)
+                        { TurnRegisters.activePlayer = S.bob
+                        }
+                  }
+            )
+        )
+        9
 
     -- CR 707.2: a grant is not a copiable value, so alice's Clone of the
     -- enchanted Elves gives her nothing.
@@ -2136,9 +2220,12 @@ ringsAndRestoration ringsFirst plains island tenRings restoration =
       (spellId, withSpell) = S.addHandCard restoration S.alice stocked
       ready =
         withSpell
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withSpell)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       frontName = CardName.MkCardName (Text.pack "Sea Gate Restoration")
       cast g = S.runPure S.identityAnswer g (Cast.castSpell S.manaPerformer S.alice spellId frontName Facing.FaceUp)
@@ -2230,7 +2317,13 @@ theTenRingsSpec s registry =
 -- show up as a different discard rather than as the same one from the other seat.
 adjustedHands :: Printing.Printing -> [Printing.Printing] -> Int -> PlayerId.PlayerId -> GameState.GameState
 adjustedHands plains extra held active =
-  let gs0 = (Setup.emptyGame S.bothPlayers) {GameState.activePlayer = active}
+  let gs0 =
+        (Setup.emptyGame S.bothPlayers)
+          { GameState.turn =
+              (GameState.turn (Setup.emptyGame S.bothPlayers))
+                { TurnRegisters.activePlayer = active
+                }
+          }
       put g printing = snd (S.addPermanent printing S.alice g)
       withExtra = List.foldl' put gs0 extra
       add pid g _ = snd (S.addHandCard plains pid g)
@@ -2460,7 +2553,7 @@ storedSpec s registry =
           armed = S.addPlayerEffect (Expiry.Type.AtTurnOf S.alice) (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.Opponent)) PlayerEffect.Type.CantCastSpells S.alice forBob
           bobsTurn = S.runPure S.identityAnswer armed Engine.handoffTurn
        in do
-            Spec.assertEqWith s "bob is active" (GameState.activePlayer bobsTurn) S.bob
+            Spec.assertEqWith s "bob is active" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
             Spec.assertEqWith
               s
               "the bob-keyed entry ended; the alice-keyed entry survives"
@@ -2516,9 +2609,12 @@ silenceBoard plains silence mountain prodigalSorcerer piker =
         pikerId,
         landId,
         gs9
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.bob,
-            GameState.priority = Just S.bob
+          { GameState.turn =
+              (GameState.turn gs9)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.bob,
+                  TurnRegisters.priority = Just S.bob
+                }
           }
       )
 
@@ -2544,7 +2640,14 @@ threeSeatSilenceBoard plains silence mountain piker =
    in ( silenceId,
         bobsPiker,
         carolsPiker,
-        gs9 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        gs9
+          { GameState.turn =
+              (GameState.turn gs9)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
       )
 
 -- alice casts Silence and it resolves.
@@ -2588,9 +2691,12 @@ faithBoard plains faith cindermaw mawSeats =
       (gs1, oid) = S.handOne faith withMaws
    in ( oid,
         gs1
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -2643,9 +2749,12 @@ emperionBoard mountain bolt emperion emperionSeats =
       (gs1, oid) = S.handOne bolt withEmperions
    in ( oid,
         gs1
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -2701,9 +2810,12 @@ angelicArbiterSpec s registry =
               (bobPiker, gs5) = S.addPermanent piker S.bob gs4
               positioned =
                 gs5
-                  { GameState.phase = step,
-                    GameState.activePlayer = S.bob,
-                    GameState.priority = Just S.bob
+                  { GameState.turn =
+                      (GameState.turn gs5)
+                        { TurnRegisters.phase = step,
+                          TurnRegisters.activePlayer = S.bob,
+                          TurnRegisters.priority = Just S.bob
+                        }
                   }
           pure (bobBolt, carolBolt, bobPiker, S.withEvents (acted bobPiker) positioned)
         attacked piker = [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared piker S.alice (AttackTarget.OfPlayer S.alice) 1 S.bob (S.attackerSnapshot piker S.bob 0))]
@@ -2717,7 +2829,19 @@ angelicArbiterSpec s registry =
       (bobBolt, carolBolt, _, afterAttack) <- board attacked Phase.PostcombatMain
       (quietBolt, _, _, quiet) <- board (const []) Phase.PostcombatMain
       Spec.assertBool s (not (S.castable S.bob bobBolt afterAttack)) "bob, who attacked with his Piker, can't cast Lightning Bolt"
-      Spec.assertBool s (S.castable S.carol carolBolt afterAttack {GameState.priority = Just S.carol}) "carol, who attacked with nothing, still can"
+      Spec.assertBool
+        s
+        ( S.castable
+            S.carol
+            carolBolt
+            afterAttack
+              { GameState.turn =
+                  (GameState.turn afterAttack)
+                    { TurnRegisters.priority = Just S.carol
+                    }
+              }
+        )
+        "carol, who attacked with nothing, still can"
       Spec.assertBool s (S.castable S.bob quietBolt quiet) "and bob can on the same board had he not attacked"
 
     Spec.it s "CR 508.1c an opponent who cast a spell this turn can't attack with creatures" $ do

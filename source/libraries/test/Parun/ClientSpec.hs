@@ -142,6 +142,7 @@ import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
@@ -190,7 +191,13 @@ spec s registry = Spec.describe s "Client" $ do
   Spec.it s "a seat is shown what it witnessed once" $ do
     gs <- started s registry
     let revealed = GameEvent.Revealed (Revealed.MkRevealed S.bob (ObjectId.MkObjectId 7) RevealCause.LeavingFaceDown S.emptyCharacteristics)
-        witnessing = gs {GameState.events = Seq.singleton (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) revealed)}
+        witnessing =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.events = Seq.singleton (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0) revealed)
+                  }
+            }
         acting = Asked.MkAsked [] witnessing (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass])
         twice = Answerer.unwrap human acting >> Answerer.unwrap human acting
         human = Game.human (S.fixtureRegistry []) (screen 2 (const (Just (Text.pack "1")))) (const (Right Nothing))
@@ -202,24 +209,37 @@ spec s registry = Spec.describe s "Client" $ do
     lands <- mapM (S.printingOf s registry) ["Mountain", "Mountain", "Forest"]
     bears <- S.printingOf s registry "Grizzly Bears"
     let (board, _) = S.handOne bears (List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) gs lands)
-        turn = GameState.turnNumber board
+        turn = TurnRegisters.turnNumber (GameState.turn board)
         seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 200 (castsOnce "auto" "Grizzly Bears")) (const (Right Nothing)))) botOrDefault
-        run = Driver.drive [] seats 40 (pure . (> turn) . GameState.turnNumber) board
+        run = Driver.drive [] seats 40 (pure . (> turn) . (TurnRegisters.turnNumber . GameState.turn)) board
         (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (S.seeded 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
         -- Since alice last answered: the auto payment ends her questions.
         unanswered = pending sc
     Spec.assertBool s (any (Text.isPrefixOf (Text.pack "Grizzly Bears moves from the stack to the battlefield")) unanswered) ("shown the bear resolve: " <> show unanswered)
     Spec.assertEqWith s "as a line of its own, to a seat that never stopped looking" (filter (Text.isPrefixOf (Text.pack "Since you last looked")) unanswered) []
     Spec.assertBool s (Text.pack "Player 1 passes in their precombat main phase (no other actions)." `elem` unanswered) "passed for, in its main phase"
-    Spec.assertEqWith s "into the next turn" (fmap ((> turn) . GameState.turnNumber) outcome) (Right True)
+    Spec.assertEqWith s "into the next turn" (fmap ((> turn) . (TurnRegisters.turnNumber . GameState.turn)) outcome) (Right True)
 
   Spec.it s "a seat the screen does not face is handed it at a priority offering only passing, and shown its news there" $ do
     gs <- started s registry
     hand <- maybe (Spec.assertFailure s "no card in hand") pure (Maybe.listToMaybe (Game.Engine.zoneMembers Zone.Hand S.alice gs))
     let revealed = GameEvent.Revealed (Revealed.MkRevealed S.bob (ObjectId.MkObjectId 7) RevealCause.LeavingFaceDown S.emptyCharacteristics)
         decider = Decider.MkDecider S.alice
-        witnessing = gs {GameState.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) [revealed, revealed])}
-        nextTurn = gs {GameState.events = Seq.empty, GameState.turnNumber = GameState.turnNumber gs + 1}
+        witnessing =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) [revealed, revealed])
+                  }
+            }
+        nextTurn =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.events = Seq.empty,
+                    TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn gs) + 1
+                  }
+            }
         passing = Answerer.unwrap human (Asked.MkAsked [] witnessing (Prompt.ChooseAction decider S.alice [Action.Pass]))
         acting = Answerer.unwrap human (Asked.MkAsked [] nextTurn (Prompt.ChooseAction decider S.alice [Action.Play hand Nothing, Action.Pass]))
         -- Enter at the hand-off and to pass, then Pass.
@@ -235,10 +255,10 @@ spec s registry = Spec.describe s "Client" $ do
     gs <- started s registry
     giant <- S.printingOf s registry "Hill Giant"
     let board = snd (S.addHandCard giant S.alice gs)
-        turn = GameState.turnNumber board
+        turn = TurnRegisters.turnNumber (GameState.turn board)
         person = Game.human (S.fixtureRegistry []) (screen 200 discardsGiant) (const (Right Nothing))
         seats = Driver.bySeat (Map.fromList [(S.alice, person), (S.bob, person)]) botOrDefault
-        run = Driver.drive [] seats 200 (pure . (> turn + 1) . GameState.turnNumber) board
+        run = Driver.drive [] seats 200 (pure . (> turn + 1) . (TurnRegisters.turnNumber . GameState.turn)) board
         shown = reverse (written (State.execState (Except.runExceptT (State.evalStateT (State.evalStateT run (S.seeded 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank))
         discarding = Text.isPrefixOf (Text.pack "Choose 1 card to discard")
         -- Bob's first screen after the discard.
@@ -255,10 +275,13 @@ spec s registry = Spec.describe s "Client" $ do
     -- Eight library cards each once Player 1 draws: the subgame's turn 4 draw
     -- decks its second seat (CR 704.5b), past the main game's turn 3.
     let stock pid n g = List.foldl' (\g' _ -> snd (S.addLibraryCard mountain pid g')) g (replicate n ())
-        board = (snd (S.addHandCard shahrazad S.alice (S.landsFor plains S.alice 2 (stock S.bob 8 (stock S.alice 9 (Setup.emptyGame (S.alice NonEmpty.:| [S.bob]))))))) {GameState.turnNumber = 3}
+        board =
+          Game.Engine.overTurn
+            (\registers -> registers {TurnRegisters.turnNumber = 3})
+            (snd (S.addHandCard shahrazad S.alice (S.landsFor plains S.alice 2 (stock S.bob 8 (stock S.alice 9 (Setup.emptyGame (S.alice NonEmpty.:| [S.bob])))))))
         person = Game.human (S.fixtureRegistry []) (screen 400 (castsOnce "auto" "Shahrazad")) (const (Right Nothing))
         seats = Driver.bySeat (Map.fromList [(S.alice, person), (S.bob, person)]) botOrDefault
-        run = Driver.drive [] seats 40 (pure . (> 3) . GameState.turnNumber) board
+        run = Driver.drive [] seats 40 (pure . (> 3) . (TurnRegisters.turnNumber . GameState.turn)) board
         (outcome, sc) = State.runState (Except.runExceptT (State.evalStateT (State.evalStateT run (S.seeded 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank
         shown = reverse (written sc)
         -- Player 1's last look at the subgame, in its turn 4, then its first
@@ -269,16 +292,16 @@ spec s registry = Spec.describe s "Client" $ do
         summary line = any (`Text.isPrefixOf` line) [Text.pack "Turn ", Text.pack "Player 1 (you)", Text.pack "Player 2: ", Text.pack "  "] || Text.null line
     Spec.assertBool s (elem lastLook shown) "the subgame reached its turn 4"
     Spec.assertEqWith s "exactly the main game's entries not yet shown, once" (filter (not . summary) resumed) [Text.pack "Player 1's library is shuffled.", Text.pack "Player 2's library is shuffled.", Text.pack "Player 2 loses 10 life.", Text.pack "Shahrazad is put into a graveyard from the stack."]
-    Spec.assertEqWith s "into the main game's next turn" (fmap GameState.turnNumber outcome) (Right 4)
+    Spec.assertEqWith s "into the main game's next turn" (fmap (TurnRegisters.turnNumber . GameState.turn) outcome) (Right 4)
 
   Spec.it s "CR 113.7a Mindslaver's ability is named by its source at its target prompt and on the stack" $ do
     gs <- started s registry
     mindslaver <- S.printingOf s registry "Mindslaver"
     mountains <- mapM (S.printingOf s registry) ["Mountain", "Mountain", "Mountain", "Mountain"]
     let board = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) gs (mindslaver : mountains)
-        turn = GameState.turnNumber board
+        turn = TurnRegisters.turnNumber (GameState.turn board)
         seats = Driver.bySeat (Map.singleton S.alice (Game.human (S.fixtureRegistry []) (screen 200 slavesBob) (const (Right Nothing)))) botOrDefault
-        run = Driver.drive [] seats 200 (pure . (> turn) . GameState.turnNumber) board
+        run = Driver.drive [] seats 200 (pure . (> turn) . (TurnRegisters.turnNumber . GameState.turn)) board
         shown = reverse (written (State.execState (Except.runExceptT (State.evalStateT (State.evalStateT run (S.seeded 1)) Hotseat.fresh {Hotseat.facing = Just S.alice, Hotseat.autoPass = False})) blank))
         stacks = filter (Text.isPrefixOf (Text.pack "Stack, top first: "))
         stackLine = Text.pack "Stack, top first: Mindslaver's ability"
@@ -316,10 +339,10 @@ spec s registry = Spec.describe s "Client" $ do
     mindslaver <- S.printingOf s registry "Mindslaver"
     mountains <- mapM (S.printingOf s registry) ["Mountain", "Mountain", "Mountain", "Mountain"]
     let board = snd (S.addHandCard giant S.alice (List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) gs (mindslaver : mountains)))
-        turn = GameState.turnNumber board
+        turn = TurnRegisters.turnNumber (GameState.turn board)
         person = Game.human (S.fixtureRegistry []) (screen 400 slavesBob) (const (Right Nothing))
         seats = Driver.bySeat (Map.fromList [(S.alice, person), (S.bob, person)]) botOrDefault
-        run = Driver.drive [] seats 400 (pure . (> turn + 3) . GameState.turnNumber) board
+        run = Driver.drive [] seats 400 (pure . (> turn + 3) . (TurnRegisters.turnNumber . GameState.turn)) board
         shown = reverse (written (State.execState (Except.runExceptT (State.evalStateT (State.evalStateT run (S.seeded 1)) Hotseat.fresh {Hotseat.facing = Just S.alice})) blank))
         facingBob = facedBy (Text.pack "Pass to Player 2") shown
         news = filter (Text.isPrefixOf (Text.pack "Since you last looked: ")) facingBob
@@ -343,7 +366,14 @@ spec s registry = Spec.describe s "Client" $ do
     giant <- S.printingOf s registry "Hill Giant"
     case S.combatBoardOf [giant] [giant, giant] of
       (board, [attacker], [first, second]) -> do
-        let blocking = board {GameState.phase = Phase.Combat CombatStep.DeclareBlockers, GameState.combat = (GameState.combat board) {Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob)}}
+        let blocking =
+              board
+                { GameState.turn =
+                    (GameState.turn board)
+                      { TurnRegisters.phase = Phase.Combat CombatStep.DeclareBlockers,
+                        TurnRegisters.combat = (TurnRegisters.combat (GameState.turn board)) {Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.bob)}
+                      }
+                }
         Spec.assertEqWith s "blockers" (answering blocking "2:1" (Prompt.DeclareBlockers bob S.bob [first, second] [attacker])) (Right (Map.singleton second (Set.singleton attacker)))
       _ -> Spec.assertFailure s "fixture should have one attacker and two blockers"
     -- Player 2 first: the view shows no seat for o9, so it is listed last.
@@ -413,7 +443,13 @@ spec s registry = Spec.describe s "Client" $ do
   Spec.it s "a run of one player's draws is told as one" $ do
     gs <- started s registry
     let drew pid n = LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup n) (GameEvent.Drew (Drew.MkDrew pid n))
-        drawing = gs {GameState.events = Seq.fromList [drew S.bob 1, drew S.bob 2, drew S.alice 1, drew S.bob 3]}
+        drawing =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.events = Seq.fromList [drew S.bob 1, drew S.bob 2, drew S.alice 1, drew S.bob 3]
+                  }
+            }
         shown = snd (asking Hotseat.fresh {Hotseat.facing = Just S.alice, Hotseat.autoPass = False} [] drawing (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass]))
     Spec.assertEqWith s "told" (filter (Text.isInfixOf (Text.pack " draws ")) shown) [Text.pack "Player 2 draws 2 cards.", Text.pack "Player 1 draws a card.", Text.pack "Player 2 draws a card."]
 
@@ -464,7 +500,14 @@ spec s registry = Spec.describe s "Client" $ do
         manaOnly = Prompt.ChooseAction decider S.alice [Action.ActivateManaAbility forest, Action.Pass]
         facingBob = Hotseat.fresh {Hotseat.facing = Just S.bob}
         facingAlice = Hotseat.fresh {Hotseat.facing = Just S.alice}
-        upkeep = gs {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.activePlayer = S.bob}
+        upkeep =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                    TurnRegisters.activePlayer = S.bob
+                  }
+            }
     Spec.assertEqWith s "passed for, in the other seat's upkeep" (asking facingAlice [] upkeep manaOnly) (Right Action.Pass, [Text.pack "Player 1's library is shuffled.", Text.pack "Player 2's library is shuffled.", Text.pack "Player 1 draws 7 cards.", Text.pack "Player 2 draws 7 cards.", Text.pack "Player 1 keeps.", Text.pack "Player 2 keeps.", Text.pack "Player 1 passes in Player 2's upkeep (no other actions)."])
     let menu (outcome, shown) = (outcome, any menuHeading shown)
         handedOff (outcome, shown) = (outcome, take 2 shown)
@@ -643,12 +686,32 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith
       s
       "floats nothing once covered"
-      (asking facing {Hotseat.paying = Map.singleton S.alice Set.empty} [] board {GameState.events = Seq.empty} (Prompt.ChooseExtraManaSource decider S.alice (m NonEmpty.:| [])))
+      ( asking
+          facing {Hotseat.paying = Map.singleton S.alice Set.empty}
+          []
+          board
+            { GameState.turn =
+                (GameState.turn board)
+                  { TurnRegisters.events = Seq.empty
+                  }
+            }
+          (Prompt.ChooseExtraManaSource decider S.alice (m NonEmpty.:| []))
+      )
       (Right Nothing, [])
     Spec.assertEqWith
       s
       "spends no life for the seat"
-      (asking facing {Hotseat.paying = Map.singleton S.alice Set.empty} [] board {GameState.events = Seq.empty} (Prompt.PayLifeForMana decider S.alice 1 ManaType.Colorless))
+      ( asking
+          facing {Hotseat.paying = Map.singleton S.alice Set.empty}
+          []
+          board
+            { GameState.turn =
+                (GameState.turn board)
+                  { TurnRegisters.events = Seq.empty
+                  }
+            }
+          (Prompt.PayLifeForMana decider S.alice 1 ManaType.Colorless)
+      )
       (Right OptionalDecision.Declines, [])
 
   Spec.it s "a seat's battlefield is grouped lands, creatures, then the rest, each by mana value and name" $ do
@@ -840,7 +903,13 @@ spec s registry = Spec.describe s "Client" $ do
             moved Zone.Battlefield Zone.Battlefield,
             moved Zone.Hand Zone.Stack
           ]
-        witnessing = board {GameState.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) logged)}
+        witnessing =
+          board
+            { GameState.turn =
+                (GameState.turn board)
+                  { TurnRegisters.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) logged)
+                  }
+            }
         view = PlayerView.viewFor S.alice witnessing
     Spec.assertEqWith
       s
@@ -871,7 +940,13 @@ spec s registry = Spec.describe s "Client" $ do
             GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice S.alice),
             GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.alice, DieResult.result = 4}
           ]
-        witnessing = gs {GameState.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) logged)}
+        witnessing =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.events = Seq.fromList (fmap (LoggedEvent.MkLoggedEvent (EventGroup.MkEventGroup 0)) logged)
+                  }
+            }
         view = PlayerView.viewFor S.bob witnessing
     Spec.assertEqWith
       s
@@ -894,7 +969,7 @@ spec s registry = Spec.describe s "Client" $ do
     gs <- started s registry
     let offer = MulliganOffer.MkMulliganOffer {MulliganOffer.taken = 0, MulliganOffer.bottomCount = 1}
         (_, shown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["1"] gs (Prompt.DeclareMulligan (Decider.MkDecider S.alice) S.alice offer)
-    Spec.assertEqWith s "the heading" (take 1 (drop 1 shown)) [Text.pack "Before the first turn. " <> Render.player (GameState.activePlayer gs) <> Text.pack " plays first."]
+    Spec.assertEqWith s "the heading" (take 1 (drop 1 shown)) [Text.pack "Before the first turn. " <> Render.player (TurnRegisters.activePlayer (GameState.turn gs)) <> Text.pack " plays first."]
 
   Spec.it s "CR 404.3 a graveyard batch is listed top first; numbers rearrange it, Enter keeps it, and a repeat is refused" $ do
     bears <- S.printingOf s registry "Grizzly Bears"

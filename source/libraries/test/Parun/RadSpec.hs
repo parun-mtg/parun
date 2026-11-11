@@ -50,6 +50,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -85,14 +86,14 @@ abilitySpec s registry = Spec.describe s "CR 729.1's inherent ability" $ do
     -- all -- a difference other players can see, and one that survives the CR
     -- 608.2a recheck doing the same job on resolution. Read at the settle point,
     -- because Engine.runStep's own priority round would have resolved it away.
-    Spec.assertEqWith s "and no ability went on the stack at all" (length (GameState.stack (settledAtPrecombatMain S.alice stocked))) 0
+    Spec.assertEqWith s "and no ability went on the stack at all" (length (TurnRegisters.stack (GameState.turn (settledAtPrecombatMain S.alice stocked)))) 0
   -- The same reading in the positive direction, so the case above cannot pass by
   -- the ability never existing.
   Spec.it s "CR 603.4 a player WITH rad counters does put it on the stack" $ do
     bolt <- S.printingOf s registry "Lightning Bolt"
     let base = S.addPlayerCounter PlayerCounterKind.Rad 1 S.alice (Setup.emptyGame S.bothPlayers)
         stocked = libraryTopped [bolt, bolt] S.alice base
-    Spec.assertEqWith s "one ability on the stack" (length (GameState.stack (settledAtPrecombatMain S.alice stocked))) 1
+    Spec.assertEqWith s "one ability on the stack" (length (TurnRegisters.stack (GameState.turn (settledAtPrecombatMain S.alice stocked)))) 1
 
 -- alice activates The Master's one activated ability and everything resolves.
 -- S.identityAnswer picks the least recipient offered, which is deliberately NOT
@@ -140,9 +141,12 @@ settledAtPrecombatMain pid gs =
 precombatMainOf :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 precombatMainOf pid gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = pid,
-      GameState.priority = Just pid
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = pid,
+            TurnRegisters.priority = Just pid
+          }
     }
 
 -- An interpreter that aims every target slot at one player, where

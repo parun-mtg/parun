@@ -158,6 +158,7 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Zone as Zone
@@ -885,7 +886,7 @@ setX resolving source controller legal (SetX.MkSetX value ref) = do
         NewX.Becomes quantity -> const (evaluated quantity)
         NewX.Multiplied factor -> \obj -> Just (factor * Maybe.fromMaybe 0 (Binding.amountOf Binding.variableX (Object.bindings obj)))
       put obj = maybe obj (\n -> obj {Object.bindings = Map.insert Binding.variableX (Binding.toAmount n) (Object.bindings obj)}) (newX obj)
-      onStack oid = elem oid (GameState.stack gs)
+      onStack oid = elem oid (TurnRegisters.stack (GameState.turn gs))
       named = filter onStack (objectRefObjects legal resolving controller source gs ref)
   State.modify (\g -> g {GameState.objects = Foldable.foldl' (flip (Map.adjust put)) (GameState.objects g) named})
 

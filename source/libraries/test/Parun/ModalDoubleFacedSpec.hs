@@ -61,6 +61,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The two names the card prints, plus the basic land every case pays with. CR
@@ -101,9 +102,12 @@ bloodbogName = CardName.MkCardName (Text.pack "Zof Bloodbog")
 readyForMain :: GameState.GameState -> GameState.GameState
 readyForMain gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = S.alice,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- readyForMain with the given cards in alice's hand, returning their ids in the
@@ -216,7 +220,7 @@ spec s registry = Spec.describe s "ModalDoubleFaced" $ do
     -- CR 712.6e's first half: the SPELL on the stack has only the
     -- characteristics of the face that's up, which is already how a chosen half
     -- reaches the stack (CR 712.8c).
-    case GameState.stack cast of
+    case TurnRegisters.stack (GameState.turn cast) of
       [top] -> Spec.assertEqWith s "the spell on the stack is Harnfel" (faceReadings top cast) harnfelReadings
       other -> Spec.assertFailure s ("expected one spell on the stack, got " <> show (length other))
     Spec.assertEqWith s "all five Mountains paid {4}{R}" (S.tappedCount S.alice cast) 5

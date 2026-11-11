@@ -61,6 +61,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnRole as TurnRole
 
 -- CR 702.68a's frenzy, which rule 702 states as a triggered ability: "'Frenzy N'
@@ -603,7 +604,7 @@ trygonPredatorSpec s registry =
         -- not merely which one an effect happened to reach.
         Spec.it s "CR 603.3d the slot admits only the damaged player's permanent" $ do
           (mine, theirs, others, placed) <- board
-          case (mine, theirs, others, GameState.stack placed) of
+          case (mine, theirs, others, TurnRegisters.stack (GameState.turn placed)) of
             ([_, alices], [bobs], [carols], [abilityId]) -> do
               let bindings = maybe Map.empty Object.bindings (Game.lookupObject abilityId placed)
                   slotOf name = Map.lookup (SlotName.MkSlotName (Text.pack name)) (Binding.targetsOf bindings)
@@ -681,7 +682,7 @@ questingBeastSpec s registry =
         -- named and which permanent the filter OFFERED.
         Spec.it s "CR 603.3d the slot admits only the damaged player's planeswalker" $ do
           (_, theirs, others, _, placed) <- board
-          case (theirs, others, GameState.stack placed) of
+          case (theirs, others, TurnRegisters.stack (GameState.turn placed)) of
             ([bobs], [carols], [abilityId]) -> do
               let bindings = maybe Map.empty Object.bindings (Game.lookupObject abilityId placed)
                   slotOf name = Map.lookup (SlotName.MkSlotName (Text.pack name)) (Binding.targetsOf bindings)
@@ -722,7 +723,7 @@ larcenySpec s registry =
         -- The slot itself, read off the placed ability.
         Spec.it s "CR 603.2 the damaged player is what the event stamped" $ do
           (_, placed) <- board
-          case GameState.stack placed of
+          case TurnRegisters.stack (GameState.turn placed) of
             [abilityId] -> do
               let bindings = maybe Map.empty Object.bindings (Game.lookupObject abilityId placed)
               Spec.assertEqWith s "thatPlayer is carol" (Map.lookup (SlotName.MkSlotName (Text.pack "thatPlayer")) (Binding.targetsOf bindings)) (Just (Set.singleton (Recipient.ToPlayer S.carol)))
@@ -871,7 +872,7 @@ evolveSpec s registry =
               onStack = settle gs
               responded = S.withEffect raptorId (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Type.Literal 2) (Quantity.Type.Literal 2))) onStack
               after = resolveAll responded
-          Spec.assertBool s (not (null (GameState.stack onStack))) "the trigger really was on the stack"
+          Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the trigger really was on the stack"
           Spec.assertEqWith s "the Raptor is a 2/3, which the Piker beats on neither axis" (S.powerToughnessOf raptorId responded) (Just (2, 3))
           Spec.assertEqWith s "so no counter on resolution" (countersOn raptorId after) Map.empty
         -- CR 608.2h, the other half of that re-check: the ENTRANT is killed while
@@ -894,7 +895,7 @@ evolveSpec s registry =
               onStack = settle gs
               dead = settle (S.markDamage pikerId 1 onStack)
               after = resolveAll dead
-          Spec.assertBool s (not (null (GameState.stack onStack))) "the trigger really was on the stack"
+          Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the trigger really was on the stack"
           Spec.assertEqWith s "and the Piker is gone before it resolves" (S.onBattlefield pikerId dead) False
           Spec.assertEqWith s "the counter goes on all the same" (countersOn raptorId after) (Map.singleton CounterKind.PlusOnePlusOne 1)
           Spec.assertEqWith s "so it is a 1/2" (S.powerToughnessOf raptorId after) (Just (1, 2))
@@ -913,7 +914,7 @@ evolveSpec s registry =
               shrunk = S.withEffect pikerId (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Type.Literal (-2)) (Quantity.Type.Literal (-1)))) onStack
               dead = settle shrunk
               after = resolveAll dead
-          Spec.assertBool s (not (null (GameState.stack onStack))) "the trigger really was on the stack"
+          Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the trigger really was on the stack"
           Spec.assertEqWith s "the Piker left as a 0/0" (S.powerToughnessOf pikerId shrunk) (Just (0, 0))
           Spec.assertEqWith s "and is gone before the trigger resolves" (S.onBattlefield pikerId dead) False
           Spec.assertEqWith s "no counters" (countersOn raptorId after) Map.empty

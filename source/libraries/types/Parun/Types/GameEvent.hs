@@ -67,7 +67,7 @@ import qualified Parun.Types.ZoneChange as ZoneChange
 -- | CR 608.2i: one entry of the turn-scoped record of what happened. Effects
 -- that look back in time read it, so entries are APPENDED by the
 -- change-and-emit funnels and never removed by a reader. Each reader keeps its
--- own watermark into GameState.events; the log itself is cleared only at turn
+-- own watermark into TurnRegisters.events; the log itself is cleared only at turn
 -- handoff.
 data GameEvent
   = -- | CR 400.7: an object moved between zones. The ZoneChange is the RESOLVED

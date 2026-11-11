@@ -267,6 +267,7 @@ import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
 import qualified Parun.Types.UntilPaid as UntilPaid
@@ -3064,7 +3065,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
         viewOf = Projection.viewsOf gs
      in filter
           (\oid -> Game.isSpell oid gs && Filter.matches context (viewOf oid) filter_)
-          (GameState.stack gs)
+          (TurnRegisters.stack (GameState.turn gs))
   -- CR 113.9's second sentence, "effects that specifically counter abilities":
   -- the arm above with Game.isAbility in place of Game.isSpell, the SIBLING
   -- classification and never its complement. A mana ability is never here to be
@@ -3075,7 +3076,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
         viewOf = Projection.viewsOf gs
      in filter
           (\oid -> Game.isAbility oid gs && Filter.matches context (viewOf oid) filter_)
-          (GameState.stack gs)
+          (TurnRegisters.stack (GameState.turn gs))
   -- CR 405.1's whole zone: the two arms above without their classification, since
   -- a sentence naming spells AND abilities names everything the stack holds. Same
   -- order, top first (CR 405.2), and read LIVE (CR 608.2h).
@@ -3084,7 +3085,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
         viewOf = Projection.viewsOf gs
      in filter
           (\oid -> Filter.matches context (viewOf oid) filter_)
-          (GameState.stack gs)
+          (TurnRegisters.stack (GameState.turn gs))
   -- Names players and so no objects at all.
   ObjectRef.Players _ -> []
   -- CR 401.2's ordered pile, whose head is the top (CR 121.1). The depth is taken

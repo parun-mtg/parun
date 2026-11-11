@@ -34,6 +34,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- The saddle ability, taken from the PROJECTION rather than from the card's
 -- face: rule 702.171a's ability is minted by Parun.Engine.Keyword and appended by
@@ -52,7 +53,16 @@ board bighorn others =
   let (mountId, gs0) = S.addPermanent bighorn S.alice S.threePlayerGame
       add (ids, g) p = let (oid, g1) = S.addPermanent p S.alice g in (ids <> [oid], g1)
       (otherIds, gs1) = List.foldl' add ([], gs0) others
-   in (mountId, otherIds, gs1 {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice})
+   in ( mountId,
+        otherIds,
+        gs1
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
+      )
 
 -- Can alice activate the Mount's saddle ability on this board?
 saddleable :: ObjectId.ObjectId -> GameState.GameState -> Bool
@@ -84,6 +94,12 @@ saddleCostSpec s registry = Spec.describe s "SaddleCost" $ do
     bighorn <- S.printingOf s registry "Bridled Bighorn"
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (mountId, _, gs) = board bighorn [hillGiant]
-        inCombat = gs {GameState.phase = Phase.Combat CombatStep.DeclareAttackers}
+        inCombat =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers
+                  }
+            }
     Spec.assertBool s (saddleable mountId gs) "alice's precombat main phase admits it"
     Spec.assertBool s (not (saddleable mountId inCombat)) "her declare attackers step does not"

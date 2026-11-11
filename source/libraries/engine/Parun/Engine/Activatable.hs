@@ -62,6 +62,7 @@ import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.RowSource (RowSource)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 302.6: a creature's {T}-cost ability can't be activated while summoning
@@ -405,7 +406,7 @@ riderOk pid srcId ability gs =
            )
 
 loyaltyActivatedThisTurn :: ObjectId -> GameState -> Bool
-loyaltyActivatedThisTurn srcId gs = any (loyaltyOf . LoggedEvent.event) (GameState.events gs)
+loyaltyActivatedThisTurn srcId gs = any (loyaltyOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
   where
     loyaltyOf event = case event of
       GameEvent.AbilityActivated a -> AbilityWasActivated.loyalty a && AbilityWasActivated.source a == srcId
@@ -419,7 +420,7 @@ graceUsed :: PlayerId -> ObjectId -> GameState -> Int
 graceUsed pid srcId gs =
   let activators =
         [ PastActivation.activator past
-        | past <- Foldable.toList (GameState.activationsThisTurn gs),
+        | past <- Foldable.toList (TurnRegisters.activationsThisTurn (GameState.turn gs)),
           ObjectSnapshot.object (PastActivation.source past) == srcId,
           any (Loyalty.isLoyaltyCost . ActivatedAbility.cost) (PastActivation.ability past)
         ]

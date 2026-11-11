@@ -108,6 +108,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The sweep every settle runs, at the answerer these boards take. Duplicated
@@ -123,7 +124,12 @@ untapStep :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 untapStep pid gs =
   S.runPure
     S.identityAnswer
-    gs {GameState.activePlayer = pid}
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.activePlayer = pid
+            }
+      }
     (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
 
 -- Is this permanent among the ones the game currently treats as existing? The
@@ -382,7 +388,7 @@ effectSpec s registry = Spec.describe s "Effect" $ do
             back = settleFor (untapStep S.alice hidden)
         Spec.assertEqWith s "setup: unconcealed, the ability makes it a 4/4" (Projection.powerOf evil plain) (Just 4)
         Spec.assertEqWith s "setup: concealed, it phased out" (Phasing.isPhasedOut evil hidden) True
-        Spec.assertEqWith s "setup: and the ability resolved" (GameState.stack hidden) []
+        Spec.assertEqWith s "setup: and the ability resolved" (TurnRegisters.stack (GameState.turn hidden)) []
         Spec.assertEqWith s "setup: it phases in at alice's untap step" (onBattlefield evil back) True
         Spec.assertEqWith s "it phases in an enchantment, not a creature" (Projection.isCreatureOf evil back) False
         Spec.assertEqWith s "with no power" (Projection.powerOf evil back) Nothing
@@ -408,7 +414,7 @@ effectSpec s registry = Spec.describe s "Effect" $ do
             back = settleFor (untapStep S.alice hidden)
         Spec.assertEqWith s "setup: unconcealed, bob gains control of the Idol" (Projection.controllerOf jinxed plain) (Just S.bob)
         Spec.assertEqWith s "setup: concealed, it phased out" (Phasing.isPhasedOut jinxed hidden) True
-        Spec.assertEqWith s "setup: and the ability resolved" (GameState.stack hidden) []
+        Spec.assertEqWith s "setup: and the ability resolved" (TurnRegisters.stack (GameState.turn hidden)) []
         Spec.assertEqWith s "setup: it phases in at alice's untap step" (onBattlefield jinxed back) True
         Spec.assertEqWith s "it phases in still alice's" (Projection.controllerOf jinxed back) (Just S.alice)
         Spec.assertEqWith s "and no effect was stored" (GameState.continuousEffects back) []
@@ -550,7 +556,7 @@ indirectSpec s registry = Spec.describe s "Indirect" $ do
     let (crocId, auraId, board) = enchantedCrocodile crocodile pacifism S.alice S.alice (Setup.emptyGame S.bothPlayers)
         gone = untapStep S.alice board
         back = untapStep S.alice gone
-        logged before after = fmap LoggedEvent.event (Foldable.toList (Seq.drop (length (GameState.events before)) (GameState.events after)))
+        logged before after = fmap LoggedEvent.event (Foldable.toList (Seq.drop (length (TurnRegisters.events (GameState.turn before))) (TurnRegisters.events (GameState.turn after))))
         acts action = List.sort [GameEvent.PermanentActed (PermanentActed.MkPermanentActed action oid) | oid <- [crocId, auraId]]
     Spec.assertEqWith s "phasing out logged its two phase-outs alone" (List.sort (logged board gone)) (acts PermanentAction.PhaseOut)
     Spec.assertEqWith s "and phasing in its two phase-ins alone" (List.sort (logged gone back)) (acts PermanentAction.PhaseIn)
@@ -688,7 +694,13 @@ nonexistenceSpec s registry = Spec.describe s "Nonexistence" $ do
   Spec.it s "CR 702.26b a phased-out creature is not a legal attacker, blocker or combat damage source" $ do
     crocodile <- S.printingOf s registry "Sandbar Crocodile"
     let (crocId, board) = crocodileBoard crocodile
-        attacking = board {GameState.activePlayer = S.alice}
+        attacking =
+          board
+            { GameState.turn =
+                (GameState.turn board)
+                  { TurnRegisters.activePlayer = S.alice
+                  }
+            }
         gone = untapStep S.alice attacking
     Spec.assertEqWith s "it could attack while phased in" (Combat.canAttack S.alice crocId attacking) True
     Spec.assertEqWith s "and cannot once phased out" (Combat.canAttack S.alice crocId gone) False
@@ -833,7 +845,7 @@ departureSpec s registry = Spec.describe s "Departure" $ do
     Spec.assertEqWith s "but not the one that phased out under alice" (onBattlefield victim bobs) False
     Spec.assertEqWith s "nor does carol's" (onBattlefield victim carols) False
     -- CR 800.4k: alice's turn does not begin, and the walk passes her seat.
-    Spec.assertEqWith s "the walk skips her seat back to bob" (GameState.activePlayer walked) S.bob
+    Spec.assertEqWith s "the walk skips her seat back to bob" (TurnRegisters.activePlayer (GameState.turn walked)) S.bob
     Spec.assertEqWith s "the row is on rule 702.26n's schedule now" (Phasing.phasedOutStatus victim walked) (Just (PhasedOut.Orphaned S.alice))
     Spec.assertEqWith s "still saying who it phased out under" (Phasing.phasedOutUnder victim walked) (Just S.alice)
     Spec.assertEqWith s "and it phases in at that untap step" (onBattlefield victim back) True
@@ -913,7 +925,15 @@ risenFixture s registry = do
       (riseId, g3) = S.addHandCard rise S.alice g2
       (commandId, g4) = S.addHandCard command S.carol g3
       (rippleId, g5) = S.addHandCard ripple S.carol g4
-      board = g5 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+      board =
+        g5
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
   pure (MkRisenFixture piker riseId commandId rippleId shredderId board)
 
 -- alice's Rise from the Grave resolved, with the risen Piker's id, and then
@@ -927,9 +947,17 @@ risenAndRippled fixture =
 -- `pid` casts `spell` at `victim` and it resolves.
 castBy :: PlayerId.PlayerId -> ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 castBy pid victim spell gs =
-  S.runPure (aimedAt victim) gs {GameState.priority = Just pid} $ do
-    S.cast pid spell
-    Monad.void Stack.resolveTop
+  S.runPure
+    (aimedAt victim)
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.priority = Just pid
+            }
+      }
+    $ do
+      S.cast pid spell
+      Monad.void Stack.resolveTop
 
 concede :: GameState.GameState -> GameState.GameState
 concede gs = S.runPure S.identityAnswer gs (Departure.leaveGame Departure.Type.Conceded S.alice)

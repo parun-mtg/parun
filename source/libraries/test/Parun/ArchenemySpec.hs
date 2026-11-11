@@ -35,6 +35,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -65,10 +66,10 @@ spec s registry = Spec.describe s "Parun.Engine.Archenemy" $ do
         schemer = plain {Deck.sideDecks = Map.singleton SideDeck.Scheme (Map.singleton look 2)}
         started bobs = S.runPure lastDrawn (Setup.emptyGame S.threePlayers) (Setup.newGame (Resolve.performHandAction Resolve.noSubgame) ((S.alice, plain) NonEmpty.:| [(S.bob, bobs), (S.carol, schemer)]))
         sides gs = (fmap (`Game.opponentsOf` gs) [S.alice, S.bob, S.carol], Turn.sharesTurn gs S.alice S.bob)
-    Spec.assertEqWith s "CR 904.6 carol takes the first turn, the cyclic order kept" (GameState.activePlayer (started plain), GameState.turnOrder (started plain)) (S.carol, [S.carol, S.alice, S.bob])
+    Spec.assertEqWith s "CR 904.6 carol takes the first turn, the cyclic order kept" (TurnRegisters.activePlayer (GameState.turn (started plain)), GameState.turnOrder (started plain)) (S.carol, [S.carol, S.alice, S.bob])
     Spec.assertEqWith s "CR 500.7 it is carol's first turn of the game and nobody else's" (GameState.turnsBegun (started plain)) (Map.singleton S.carol 1)
     Spec.assertEqWith s "CR 904.2 alice and bob are teammates sharing turns, each carol's opponent" (sides (started plain)) ([[S.carol], [S.carol], [S.alice, S.bob]], True)
-    Spec.assertEqWith s "CR 904.12c with two archenemies alice starts a free-for-all" (GameState.activePlayer (started schemer), sides (started schemer)) (S.alice, ([[S.bob, S.carol], [S.alice, S.carol], [S.alice, S.bob]], False))
+    Spec.assertEqWith s "CR 904.12c with two archenemies alice starts a free-for-all" (TurnRegisters.activePlayer (GameState.turn (started schemer)), sides (started schemer)) (S.alice, ([[S.bob, S.carol], [S.alice, S.carol], [S.alice, S.bob]], False))
 
   -- CR 904.13b / 904.13c through Setup.newGame: a three-seat Commander game in
   -- which alice brings the scheme deck and bob and carol are the opposing team,
@@ -104,14 +105,20 @@ spec s registry = Spec.describe s "Parun.Engine.Archenemy" $ do
   -- ordinary turn sets Look Skyward in motion and makes its Dragon.
   Spec.it s "CR 904.9 no scheme is set in motion during All in Good Time's extra turn, and one is on alice's next turn" $ do
     board <- schemeBoard s registry ["All in Good Time", "Look Skyward and Despair"]
-    let start = (inMain S.alice board) {GameState.remaining = S.phasesAfter Phase.PrecombatMain}
+    let start =
+          (inMain S.alice board)
+            { GameState.turn =
+                (GameState.turn (inMain S.alice board))
+                  { TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
+                  }
+            }
         atExtra = throughTurn start
         afterExtra = throughTurn atExtra
         afterNext = throughTurn (throughTurn afterExtra)
     Spec.assertEqWith s "during the extra turn nothing was set in motion, so alice has no Dragon" (creaturesOf S.alice afterExtra) []
     Spec.assertEqWith s "and Look Skyward and Despair is still on top" (names (Archenemy.deckOf S.alice afterExtra) afterExtra) ["Look Skyward and Despair", "All in Good Time"]
     Spec.assertEqWith s "on alice's next turn it is set in motion and makes its 5/5 Dragon" (fmap (`S.powerToughnessOf` afterNext) (creaturesOf S.alice afterNext)) [Just (5, 5)]
-    Spec.assertEqWith s "the extra turn is turn 2 and alice's, and the last read follows alice's turn 4" (fmap (\g -> (GameState.turnNumber g, GameState.activePlayer g)) [atExtra, afterNext]) [(2, S.alice), (5, S.bob)]
+    Spec.assertEqWith s "the extra turn is turn 2 and alice's, and the last read follows alice's turn 4" (fmap (\g -> (TurnRegisters.turnNumber (GameState.turn g), TurnRegisters.activePlayer (GameState.turn g))) [atExtra, afterNext]) [(2, S.alice), (5, S.bob)]
 
 -- A two-player board with alice's scheme deck stacked in the order named, top
 -- first, and twenty Forests in each library. No opening hands are drawn.
@@ -130,14 +137,22 @@ schemeBoard s registry order = do
 throughTurn :: GameState.GameState -> GameState.GameState
 throughTurn gs =
   let go n g =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || GameState.turnNumber g /= GameState.turnNumber gs
+        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || TurnRegisters.turnNumber (GameState.turn g) /= TurnRegisters.turnNumber (GameState.turn gs)
           then g
           else go (n - 1) (S.runPure S.identityAnswer g Engine.runStep)
    in go 64 gs
 
 -- `pid`'s precombat main phase with priority and an empty stack.
 inMain :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
-inMain pid gs = gs {GameState.activePlayer = pid, GameState.phase = Phase.PrecombatMain, GameState.priority = Just pid}
+inMain pid gs =
+  gs
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = pid,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just pid
+          }
+    }
 
 names :: [ObjectId] -> GameState.GameState -> [String]
 names oids gs = Maybe.mapMaybe (\oid -> fmap (Text.unpack . CardName.unwrap . Face.name) (Game.faceOf oid gs)) oids

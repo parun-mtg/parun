@@ -8,7 +8,7 @@ import qualified Parun.Types.Phase as Phase
 -- with one that names a step of it.
 --
 -- A Parun.Types.Phase value is always a SCHEDULE ENTRY -- one step, or a phase
--- that has none -- since GameState.remaining is a Seq of exactly those. That is
+-- that has none -- since TurnRegisters.remaining is a Seq of exactly those. That is
 -- what `Step` carries, and CR 505.2 makes it enough for either main phase, naming
 -- the phase and naming its one entry being the same act.
 --

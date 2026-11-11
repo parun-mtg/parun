@@ -35,6 +35,7 @@ import Parun.Types.PlayerId (PlayerId)
 import Parun.Types.ReturnEnding (ReturnEnding)
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 610.3's specified event, as a question about the board: has this object
@@ -62,7 +63,7 @@ hasLeftTheBattlefield oid gs = case Game.lookupObject oid gs of
 --
 -- A crowning is an EVENT, so it is looked for in the log: a GameEvent.BecameMonarch
 -- of an opponent of the controller, logged in or after the event group
--- GameState.stackedIn holds for the resolving object -- the first after it was
+-- TurnRegisters.stackedIn holds for the resolving object -- the first after it was
 -- put on the stack, or for a triggered ability the first after its trigger
 -- event. The log is this turn's, and no stack object outlives a turn. An
 -- effect with no stack object behind it has nothing to have happened since.
@@ -76,7 +77,7 @@ hasLeftTheBattlefield oid gs = case Game.lookupObject oid gs of
 hasHappened :: MoveDuration -> ObjectId -> ObjectId -> PlayerId -> GameState -> Bool
 hasHappened duration resolving source controller gs = case duration of
   MoveDuration.Type.UntilSourceLeavesTheBattlefield -> hasLeftTheBattlefield source gs
-  MoveDuration.Type.UntilAnOpponentBecomesTheMonarch -> case Map.lookup resolving (GameState.stackedIn gs) of
+  MoveDuration.Type.UntilAnOpponentBecomesTheMonarch -> case Map.lookup resolving (TurnRegisters.stackedIn (GameState.turn gs)) of
     Nothing -> False
     Just since ->
       any
@@ -84,7 +85,7 @@ hasHappened duration resolving source controller gs = case duration of
             GameEvent.BecameMonarch pid -> LoggedEvent.group logged >= since && Game.areOpponents gs controller pid
             _ -> False
         )
-        (GameState.events gs)
+        (TurnRegisters.events (GameState.turn gs))
 
 -- | The watch a move with this duration arms, for the move's source and the
 -- effect's controller. CR 726's watch is armed undischarged whoever holds the
@@ -173,4 +174,4 @@ departedIn src gs =
         _ -> found
     )
     Nothing
-    (GameState.events gs)
+    (TurnRegisters.events (GameState.turn gs))

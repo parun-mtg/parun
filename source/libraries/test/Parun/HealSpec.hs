@@ -36,6 +36,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- alice: a Plains and a Mountain in play, a Barkhide Mauler (4/4) carrying 2
 -- marked damage, and both spells in hand. The lands are one of each colour so
@@ -81,7 +82,16 @@ pyramidsBoard plains pyramids arbor growth =
   let (source, g1) = S.addPermanent pyramids S.alice (S.landsInPlay plains 2)
       (land, g2) = S.addPermanent arbor S.bob g1
       (aura, g3) = S.addPermanent growth S.bob g2
-   in (source, land, aura, (S.attach aura land g3) {GameState.priority = Just S.alice})
+   in ( source,
+        land,
+        aura,
+        (S.attach aura land g3)
+          { GameState.turn =
+              (GameState.turn (S.attach aura land g3))
+                { TurnRegisters.priority = Just S.alice
+                }
+          }
+      )
 
 -- Activate Pyramids' one ability in mode `mode` at `target` and resolve it.
 pyramidsMode :: Printing.Printing -> ObjectId.ObjectId -> Natural.Natural -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState

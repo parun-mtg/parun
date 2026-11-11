@@ -163,7 +163,7 @@ objects pcs gs a b =
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs
       -- Every View field Parun.Engine.Projection.View fills from the turn's log
       -- (CR 608.2i), GameState.damageBeforeThisTurn (CR 120.1) or
-      -- GameState.couldAttackThisTurn (CR 508.1).
+      -- TurnRegisters.couldAttackThisTurn (CR 508.1).
       -- Hand-kept: a new look-back field owes a line here.
       lookBack view =
         ( Filter.Engine.declaredThisTurn view,
@@ -229,7 +229,7 @@ objects pcs gs a b =
 -- proves the damage arm, both ways; the other three are regression fences.
 actedOnBy :: ObjectId -> GameState -> (Set.Set ObjectId, Set.Set ObjectId, Set.Set ObjectId, Set.Set ObjectId)
 actedOnBy oid gs =
-  let events = fmap LoggedEvent.event (Foldable.toList (GameState.events gs <> foldMap TurnRegisters.events (GameState.parkedTurns gs)))
+  let events = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs) <> foldMap TurnRegisters.events (GameState.parkedTurns gs)))
       damagers =
         Set.fromList [DamageEvent.source dealt | event@(GameEvent.DamageDealt dealt) <- events, (Game.damageRecipient event >>= Recipient.objectOf) == Just oid]
           <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (GameState.damageBeforeThisTurn gs), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
@@ -264,7 +264,7 @@ representatives pcs gs candidates =
 --     names a Decider, a lifetime and rule 724.7's restriction -- no object),
 --     GameState.monarch, GameState.initiative, GameState.drewFromEmpty,
 --     GameState.loopInvolvement, GameState.extraTurns, GameState.turnMarkers,
---     GameState.turnResume
+--     TurnRegisters.turnResume
 --     and the per-player
 --     counters (landsPlayed, departedThisTurn, turnsBegun,
 --     spellsCastLastTurn, resolvedNames) are keyed by or valued
@@ -280,16 +280,16 @@ representatives pcs gs candidates =
 --     800.4a), read only by the ownership report and CR 730.5's return.
 --   * GameState.damagePreventedBy is read only for the source of the ability
 --     resolving, a spell already gone from the stack, never for a candidate.
---   * GameState.drawsThisTurn names cards, and is read here through the same two
+--   * TurnRegisters.drawsThisTurn names cards, and is read here through the same two
 --     views (Filter.LeftLibraryThisTurn), where a draw shows as a look-back.
---   * GameState.events is read here through the two Filter views objects
+--   * TurnRegisters.events is read here through the two Filter views objects
 --     compares, which is where a Filter's look-back atoms read it, and through
 --     actedOnBy, the relations those views hold from the other end; an event
 --     the choice itself writes names whichever object was chosen, alike.
 --     Its rider triggerings are read by namedByRelation too, for the granter
 --     their ability is named for (Binding.acquiredFrom), as are the counted
---     activations of GameState.activatedThisTurn and Object.activatedOnce.
---     GameState.couldAttackThisTurn and GameState.damageBeforeThisTurn are
+--     activations of TurnRegisters.activatedThisTurn and Object.activatedOnce.
+--     TurnRegisters.couldAttackThisTurn and GameState.damageBeforeThisTurn are
 --     read through the same two views, and the latter through actedOnBy too.
 --     GameState.controlSample (CR 603.2's control diff),
 --     GameState.battlefieldWhenTriggered (CR 603.10's look-back) and
@@ -300,12 +300,12 @@ representatives pcs gs candidates =
 --   * GameState.parkedTurns holds each parked Grand Melee turn's copy of the
 --     turn fields (CR 807.4b), read beside the live ones by namedByStored,
 --     namedByRelation and actedOnBy; its stacks are a zone, as
---     GameState.stack is. Its look-back fields are not read through the two
+--     TurnRegisters.stack is. Its look-back fields are not read through the two
 --     views, which read the live turn's alone (gap #6538).
 --   * GameState.eventsLastTurn is read by the per-seat view and by the "last
 --     turn" tallies (Quantity's SpellsCast and LifeChanged), which count per
 --     PLAYER and name no object, so no choice between objects can turn on it.
---   * GameState.permanentsAsTurnBegan is keyed by every permanent, but no
+--   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
 --     choice this turn can change it and it is read only by a Count over the
 --     whole record, so what two candidates' entries say cannot separate them.
 --   * GameState.outsideObjects (CR 730.4) is keyed by ids belonging to a game
@@ -378,7 +378,7 @@ quiet gs =
 -- in the suite reaches a mana-source window with one non-empty.
 namedByStored :: ObjectId -> GameState -> Bool
 namedByStored oid gs =
-  combatNames oid (GameState.combat gs)
+  combatNames oid (TurnRegisters.combat (GameState.turn gs))
     || any (combatNames oid . TurnRegisters.combat) (GameState.parkedTurns gs)
     || any (continuousNames oid gs) (GameState.continuousEffects gs)
     || any (copyNames oid) (GameState.copyEffects gs)
@@ -569,7 +569,7 @@ affectedNames oid source gs affected = case affected of
 --     assimilated it.
 --   * GameState.counteredWith (CR 607.1), keyed by the object, its values
 --     naming the sources whose effects moved counters on it.
---   * The per-object budgets and notes: GameState.activatedThisTurn (CR
+--   * The per-object budgets and notes: TurnRegisters.activatedThisTurn (CR
 --     602.5b), castPermissionsUsedThisTurn (CR 601.3), rollModifiersUsedThisTurn
 --     (CR 706.2), namedCopyChoices (CR 707.13), notedCards (CR 707.14),
 --     notedMana (CR 607.2e), keptFaceDown (CR 121.8), announcedTops and
@@ -622,11 +622,11 @@ namedByRelation oid gs =
         || relates pileNames (GameState.exilePiles gs)
         || relates (Set.map EntryLink.source) (GameState.enteredWith gs)
         || relates (Set.map CounterLink.source) (GameState.counteredWith gs)
-        || keyed (GameState.activatedThisTurn gs)
+        || keyed (TurnRegisters.activatedThisTurn (GameState.turn gs))
         -- CR 610.3a: keyed by a stack object, which is never a candidate.
-        || keyed (GameState.stackedIn gs)
-        || keyed (GameState.castPermissionsUsedThisTurn gs)
-        || keyed (GameState.rollModifiersUsedThisTurn gs)
+        || keyed (TurnRegisters.stackedIn (GameState.turn gs))
+        || keyed (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs))
+        || keyed (TurnRegisters.rollModifiersUsedThisTurn (GameState.turn gs))
         || keyed (GameState.namedCopyChoices gs)
         || keyed (GameState.notedCards gs)
         || keyed (GameState.notedMana gs)
@@ -638,11 +638,11 @@ namedByRelation oid gs =
         || elem oid (GameState.revealedTops gs)
         || Set.member oid (GameState.outsideCopies gs)
         || any (triggeredNames oid) (GameState.triggeredThisGame gs)
-        || any (triggeredNames oid) (GameState.instructionsTakenThisTurn gs)
-        || any (triggeredNames oid) [record | GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs))]
-        || any (any (spentActivationNames oid) . Map.keys) (Map.elems (GameState.activatedThisTurn gs))
+        || any (triggeredNames oid) (TurnRegisters.instructionsTakenThisTurn (GameState.turn gs))
+        || any (triggeredNames oid) [record | GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))]
+        || any (any (spentActivationNames oid) . Map.keys) (Map.elems (TurnRegisters.activatedThisTurn (GameState.turn gs)))
         || any (any (spentActivationNames oid) . Map.keys . Object.activatedOnce) (Map.elems (GameState.objects gs))
-        || any (activationNames oid) (GameState.activationsThisTurn gs)
+        || any (activationNames oid) (TurnRegisters.activationsThisTurn (GameState.turn gs))
         -- CR 807.4b: each parked Grand Melee turn's own, as the fields above.
         || any (keyed . TurnRegisters.activatedThisTurn) parked
         || any (keyed . TurnRegisters.stackedIn) parked

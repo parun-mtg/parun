@@ -33,6 +33,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | Where the log between two states fails to account for the later one. Empty
 -- when the two are not one game carried forward (`logBetween`).
@@ -49,11 +50,11 @@ discrepancies before after = case logBetween before after of
 logBetween :: GameState.GameState -> GameState.GameState -> Maybe (Seq.Seq LoggedEvent.LoggedEvent)
 logBetween before after
   | GameState.gameNumber before /= GameState.gameNumber after = Nothing
-  | GameState.turnNumber after == GameState.turnNumber before = past (GameState.events after)
-  | GameState.turnNumber after == GameState.turnNumber before + 1 = fmap (<> GameState.events after) (past (GameState.eventsLastTurn after))
+  | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) = past (TurnRegisters.events (GameState.turn after))
+  | TurnRegisters.turnNumber (GameState.turn after) == TurnRegisters.turnNumber (GameState.turn before) + 1 = fmap (<> TurnRegisters.events (GameState.turn after)) (past (GameState.eventsLastTurn after))
   | otherwise = Nothing
   where
-    earlier = GameState.events before
+    earlier = TurnRegisters.events (GameState.turn before)
     past whole =
       if Seq.take (Seq.length earlier) whole == earlier
         then Just (Seq.drop (Seq.length earlier) whole)

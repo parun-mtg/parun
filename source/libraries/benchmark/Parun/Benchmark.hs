@@ -34,6 +34,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Two players, seeded from the benchmark's argument.
@@ -79,7 +80,13 @@ anthemBoard land anthem spell n =
       times :: Natural -> (GameState.GameState -> GameState.GameState) -> GameState.GameState -> GameState.GameState
       times k f = foldr (.) id (List.genericReplicate k f)
       built = times n (place Zone.Hand spell) (times n (place Zone.Battlefield spell) (times 3 (place Zone.Battlefield anthem) (times 5 (place Zone.Battlefield land) (Setup.emptyGame players))))
-   in built {GameState.phase = Phase.PrecombatMain, GameState.priority = Just alice}
+   in built
+        { GameState.turn =
+            (GameState.turn built)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.priority = Just alice
+              }
+        }
 
 -- How many casts the first player may propose on `anthemBoard`: through
 -- Cast.castableSpells when `shared`, and otherwise card by card through the
@@ -88,7 +95,7 @@ anthemBoard land anthem spell n =
 castableCount :: Bool -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Natural -> Int
 castableCount shared land anthem spell n =
   let gs = anthemBoard land anthem spell n
-      pid = GameState.activePlayer gs
+      pid = TurnRegisters.activePlayer (GameState.turn gs)
    in if shared
         then length (Cast.castableSpells pid gs)
         else length (filter (\(oid, name, facing) -> Cast.castable pid oid name facing gs) (Cast.castProposals (const True) pid gs))
@@ -140,7 +147,7 @@ loadRedDeck registry = do
 -- drops (CR 305.2), all 4 Myr resolve as legal Cast targets for Control Magic
 -- ({2}{U}{U}, also Island-payable) to enchant, in turn making all 6 Control
 -- Magic across the mirror match legal casts. Observed (via 'cabal repl',
--- reading 'GameState.turnNumber' after 'Engine.runMatchPure'): this deck
+-- reading 'TurnRegisters.turnNumber' after 'Engine.runMatchPure'): this deck
 -- decks out on turn 108. Darksteel Myr is 0/1 Indestructible, so once all 8
 -- are on the battlefield, "fighting 2p aura" runs a full 4v4 attack/block/
 -- damage cycle on essentially every one of those 108 turns -- nothing ever
@@ -166,7 +173,7 @@ loadControlDeck registry = do
 --
 -- Deck size and creature count are held fixed on purpose, because both drive
 -- the workload. 60 cards means the same number of turns: both decks are observed
--- (via 'cabal repl bench:parun-benchmark', reading 'GameState.turnNumber' after
+-- (via 'cabal repl bench:parun-benchmark', reading 'TurnRegisters.turnNumber' after
 -- 'Engine.runMatchPure Script.fighting') to deck out on turn 108, and to leave a
 -- battlefield of comparable size -- 115 permanents here against 120 there. And 4
 -- Darksteel Myr a side is the same attack/block/damage cycle, since a 0/1
@@ -283,7 +290,13 @@ inZones players printings buried =
                 }
          in Game.insertIntoZone zone LibraryPosition.Bottom pid oid settled
       board = Foldable.foldl' (place Zone.Graveyard) (Foldable.foldl' (place Zone.Battlefield) (Setup.emptyGame players) printings) buried
-   in board {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+   in board
+        { GameState.turn =
+            (GameState.turn board)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.remaining = Seq.empty
+              }
+        }
 
 -- Mana.canPay's answer for one cost on one board. Parameterized for the reason
 -- 'goldfish' gives: the board depends on the argument, so nothing floats out.
@@ -298,7 +311,16 @@ legalActionCount :: Printing.Printing -> Natural -> Int
 legalActionCount tapper n =
   let players = playersFrom 0
       gs = onBattlefield players (List.genericReplicate n tapper)
-   in length (Action.legalActions (NonEmpty.head players) gs {GameState.priority = Just (NonEmpty.head players)})
+   in length
+        ( Action.legalActions
+            (NonEmpty.head players)
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.priority = Just (NonEmpty.head players)
+                    }
+              }
+        )
 {-# NOINLINE legalActionCount #-}
 
 -- legalActionCount over `n` of each of `printings` on the battlefield and `n` of
@@ -310,7 +332,16 @@ legalActionCountOf printings buried n =
       times :: [Printing.Printing] -> [Printing.Printing]
       times = concatMap (List.genericReplicate n)
       gs = inZones players (times printings) (times buried)
-   in length (Action.legalActions (NonEmpty.head players) gs {GameState.priority = Just (NonEmpty.head players)})
+   in length
+        ( Action.legalActions
+            (NonEmpty.head players)
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.priority = Just (NonEmpty.head players)
+                    }
+              }
+        )
 {-# NOINLINE legalActionCountOf #-}
 
 -- Every shape #595 names that keeps a source plural, on one board: Treasonous

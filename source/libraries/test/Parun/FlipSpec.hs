@@ -77,6 +77,7 @@ import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 akkiName, tokTokName :: CardName.CardName
@@ -160,7 +161,17 @@ redirectPair s registry = do
   let (base, mine, _) = S.combatBoardOf [akki] []
       g1 = S.landsFor plains S.bob 1 base
       (harmsWayId, ready) = S.addHandCard harmsWay S.bob g1
-      cast gs akkiId = S.runPure (harmsWayAtAlice akkiId) (gs {GameState.priority = Just S.bob}) (S.cast S.bob harmsWayId *> Stack.resolveTop)
+      cast gs akkiId =
+        S.runPure
+          (harmsWayAtAlice akkiId)
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.priority = Just S.bob
+                    }
+              }
+          )
+          (S.cast S.bob harmsWayId *> Stack.resolveTop)
       fight = S.runCombat (S.attackTo S.bob)
   case mine of
     [akkiId] -> pure (akkiId, fight ready, fight (cast ready akkiId))

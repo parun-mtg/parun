@@ -150,6 +150,7 @@ import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.When as When
 import qualified Parun.Types.Zone as Zone
@@ -1137,9 +1138,12 @@ handOne printing base =
    in ( gs2
           { GameState.objects = Map.insert oid obj (GameState.objects gs2),
             GameState.hand = Map.insert alice (Seq.singleton oid) (GameState.hand gs2),
-            GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = alice,
-            GameState.priority = Just alice
+            GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = alice,
+                  TurnRegisters.priority = Just alice
+                }
           },
         oid
       )
@@ -1160,9 +1164,12 @@ pikerInHand land piker n ph =
         gs2
           { GameState.objects = Map.insert oid obj (GameState.objects gs2),
             GameState.hand = Map.insert alice (Seq.singleton oid) (GameState.hand gs2),
-            GameState.phase = ph,
-            GameState.activePlayer = alice,
-            GameState.priority = Just alice
+            GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.phase = ph,
+                  TurnRegisters.activePlayer = alice,
+                  TurnRegisters.priority = Just alice
+                }
           }
    in (gs3, oid)
 
@@ -1171,7 +1178,14 @@ pikerInHand land piker n ph =
 boltInHand :: Printing.Printing -> Printing.Printing -> Int -> Phase.Phase -> (GameState.GameState, ObjectId.ObjectId)
 boltInHand land bolt n ph =
   let (gs, oid) = handOne bolt (landsInPlay land n)
-   in (gs {GameState.phase = ph}, oid)
+   in ( gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = ph
+                }
+          },
+        oid
+      )
 
 -- alice is active with one Settled creature per printing in `mine`; bob defends
 -- with one per printing in `theirs`. Returns their ids alongside the state, in
@@ -1186,17 +1200,20 @@ combatBoardOf mine theirs =
       (ours, gs1) = addAll alice mine (Setup.emptyGame bothPlayers)
       (yours, gs2) = addAll bob theirs gs1
    in ( gs2
-          { GameState.activePlayer = alice,
-            GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            -- The board sits AFTER the beginning of combat step, so CR 703.4h has
-            -- already happened and the defending player is settled. alice is
-            -- active, so by CR 506.2's second sentence bob is the defending
-            -- player. Stated rather than derived, because a direct-call test
-            -- never runs the turn-based action that would fill this in.
-            GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [bob]},
-            -- The steps after declare attackers, so a runStep-driven test (Tasks
-            -- 2 and 4) can advance through combat. Direct-call tests ignore it.
-            GameState.remaining = phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+          { GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.activePlayer = alice,
+                  TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  -- The board sits AFTER the beginning of combat step, so CR 703.4h has
+                  -- already happened and the defending player is settled. alice is
+                  -- active, so by CR 506.2's second sentence bob is the defending
+                  -- player. Stated rather than derived, because a direct-call test
+                  -- never runs the turn-based action that would fill this in.
+                  TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [bob]},
+                  -- The steps after declare attackers, so a runStep-driven test (Tasks
+                  -- 2 and 4) can advance through combat. Direct-call tests ignore it.
+                  TurnRegisters.remaining = phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
+                }
           },
         ours,
         yours
@@ -1226,9 +1243,12 @@ threePlayerCombat mine theirs others =
       (yours, gs2) = addAll bob theirs gs1
       (hers, gs3) = addAll carol others gs2
    in ( gs3
-          { GameState.activePlayer = alice,
-            GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-            GameState.remaining = phasesAfter (Phase.Combat CombatStep.BeginningOfCombat)
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.activePlayer = alice,
+                  TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                  TurnRegisters.remaining = phasesAfter (Phase.Combat CombatStep.BeginningOfCombat)
+                }
           },
         ours,
         yours,
@@ -1305,7 +1325,7 @@ combatGame :: Game.Type.Game ()
 combatGame =
   let go n = do
         gs <- State.get
-        if n <= (0 :: Natural) || Maybe.isJust (GameState.result gs) || not (inCombatPhase (GameState.phase gs))
+        if n <= (0 :: Natural) || Maybe.isJust (GameState.result gs) || not (inCombatPhase (TurnRegisters.phase (GameState.turn gs)))
           then pure ()
           else do
             Engine.runStep
@@ -1324,8 +1344,8 @@ runToStep :: Phase.Phase -> (forall r. Prompt.Prompt r -> r) -> GameState.GameSt
 runToStep step answer gs0 =
   let go n g =
         if n <= (0 :: Int)
-          || GameState.phase g == step
-          || not (inCombatPhase (GameState.phase g))
+          || TurnRegisters.phase (GameState.turn g) == step
+          || not (inCombatPhase (TurnRegisters.phase (GameState.turn g)))
           then g
           else go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
    in go 8 gs0
@@ -1404,7 +1424,7 @@ markDamage oid n gs =
 -- Parun.Engine.Event.Trigger.eventTriggers asks (CR 603.10a), and it reads the log itself;
 -- an assertion about what happened wants the events alone.
 eventsOf :: GameState.GameState -> [GameEvent.GameEvent]
-eventsOf = fmap LoggedEvent.event . Foldable.toList . GameState.events
+eventsOf = fmap LoggedEvent.event . Foldable.toList . (TurnRegisters.events . GameState.turn)
 
 -- The damage events recorded so far this turn, in order. Replaces the
 -- GameState.damageEvents list P4 folded into the one turn-scoped log.
@@ -1485,15 +1505,18 @@ attackerSnapshot oid pid power =
 withEvents :: [GameEvent.GameEvent] -> GameState.GameState -> GameState.GameState
 withEvents events gs =
   gs
-    { GameState.events = Seq.fromList (zipWith (\n event -> LoggedEvent.MkLoggedEvent {LoggedEvent.group = EventGroup.MkEventGroup n, LoggedEvent.event = event}) [0 ..] events),
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.events = Seq.fromList (zipWith (\n event -> LoggedEvent.MkLoggedEvent {LoggedEvent.group = EventGroup.MkEventGroup n, LoggedEvent.event = event}) [0 ..] events),
+            TurnRegisters.scannedThrough = 0,
+            TurnRegisters.damageScannedThrough = 0
+          },
       GameState.nextEventGroup = EventGroup.MkEventGroup (Natural.length events),
       GameState.eventGroupDepth = 0,
       GameState.enteringTogether = Nothing,
       GameState.arrivals = Nothing,
       GameState.payingOnResolution = False,
       GameState.causing = Nothing,
-      GameState.scannedThrough = 0,
-      GameState.damageScannedThrough = 0,
       -- Rewriting the log rewrites the groups, so any sample Event.recordEvent
       -- took is now filed under a group number this fixture has just reused for a
       -- different event. Cleared rather than left standing, which sends
@@ -1513,7 +1536,10 @@ withGroupedEvents groups gs =
   let logged = withEvents (concat groups) gs
       numbered = concat (zipWith (fmap . const . EventGroup.MkEventGroup) [0 ..] groups)
    in logged
-        { GameState.events = Seq.fromList (zipWith (\group entry -> entry {LoggedEvent.group = group}) numbered (Foldable.toList (GameState.events logged))),
+        { GameState.turn =
+            (GameState.turn logged)
+              { TurnRegisters.events = Seq.fromList (zipWith (\group entry -> entry {LoggedEvent.group = group}) numbered (Foldable.toList (TurnRegisters.events (GameState.turn logged))))
+              },
           GameState.nextEventGroup = EventGroup.MkEventGroup (Natural.length groups)
         }
 
@@ -1701,11 +1727,17 @@ oneMountainState mountain ph =
       printingId = oneMountainPrintingId
       obj =
         Game.cardObject oid alice printingId Zone.Hand (Timestamp.MkTimestamp 0)
-   in (Setup.blankGame GameSettings.plain [alice] alice)
+   in ( Game.overTurn
+          ( \registers ->
+              registers
+                { TurnRegisters.phase = ph,
+                  TurnRegisters.priority = Just alice
+                }
+          )
+          (Setup.blankGame GameSettings.plain [alice] alice)
+      )
         { GameState.objects = Map.singleton oid obj,
           GameState.hand = Map.singleton alice (Seq.singleton oid),
-          GameState.phase = ph,
-          GameState.priority = Just alice,
           GameState.nextObjectId = ObjectId.MkObjectId 1,
           GameState.printings = Map.singleton printingId mountain,
           GameState.printingIds = Map.singleton mountain printingId,
@@ -1793,7 +1825,7 @@ pikerOf gs = case Game.zoneMembers Zone.Battlefield bob gs of
   [] -> ObjectId.MkObjectId 999
 
 -- Put a fresh `printing` spell (owned by `pid`) onto the stack: a Stack-zone
--- object added to GameState.stack (mirrors EventSpec's inline placement). Used to
+-- object added to TurnRegisters.stack (mirrors EventSpec's inline placement). Used to
 -- set up counter targets without paying to cast the victim.
 spellOnStack :: Printing.Printing -> PlayerId.PlayerId -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)
 spellOnStack printing pid gs =
@@ -1807,7 +1839,10 @@ spellOnStack printing pid gs =
    in ( oid,
         gs2
           { GameState.objects = Map.insert oid obj (GameState.objects gs2),
-            GameState.stack = oid : GameState.stack gs2
+            GameState.turn =
+              (GameState.turn gs2)
+                { TurnRegisters.stack = oid : TurnRegisters.stack (GameState.turn gs2)
+                }
           }
       )
 

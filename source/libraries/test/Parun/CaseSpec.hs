@@ -73,6 +73,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -96,7 +97,13 @@ throughEndStep gs =
     . settle
     $ Event.recordEvent
       (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) S.alice))
-      (gs {GameState.phase = Phase.Ending EndingStep.EndStep})
+      ( gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.Ending EndingStep.EndStep
+                }
+          }
+      )
 
 -- CR 720.3b's marker itself, which no characteristic reports.
 solvedness :: ObjectId.ObjectId -> GameState.GameState -> Bool
@@ -183,7 +190,15 @@ pilferedProofSpec s registry = Spec.describe s "Case of the Pilfered Proof" $ do
         run detectives =
           let (caseId, withCase) = S.addPermanent proof S.alice (S.landsInPlay swamp 4)
               filled = List.foldl' (\g _ -> snd (S.addPermanent stalker S.alice g)) withCase [1 .. detectives :: Int]
-              ready = filled {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+              ready =
+                filled
+                  { GameState.turn =
+                      (GameState.turn filled)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
               solved = throughEndStep ready
               after = resolveAll (settle (snd (S.entersWithTrigger inspector S.alice solved)))
            in (solvedness caseId solved, S.countOnBattlefieldByName clue S.alice after)
@@ -203,9 +218,12 @@ proofBoard proof detective swamp lands =
    in ( caseId,
         bystander,
         withBystander
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withBystander)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 

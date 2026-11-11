@@ -22,6 +22,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
 
 -- | CR 311.1 / 312.1: does this face print the plane or the phenomenon card
@@ -72,7 +73,7 @@ isOrphanedPhenomenonAbility oid gs = maybe False (`List.notElem` Game.stillPlayi
 
 -- | CR 311.5 / 312.4 / 901.6: the planar controller, normally the active
 -- player. While that seat has left (CR 800.4j leaves the turn with no active
--- player, though GameState.activePlayer still names the seat), CR 800.4p's
+-- player, though TurnRegisters.activePlayer still names the seat), CR 800.4p's
 -- heir: the next still-playing seat in turn order. Derived, not stored: the
 -- designation moves only off a departing holder and reverts at the next turn,
 -- so the walk from the active seat always finds it. Parun.PlanechaseSpec's "CR
@@ -80,7 +81,7 @@ isOrphanedPhenomenonAbility oid gs = maybe False (`List.notElem` Game.stillPlayi
 -- planar deck" proves it.
 planarController :: GameState -> PlayerId
 planarController gs =
-  let active = GameState.activePlayer gs
+  let active = TurnRegisters.activePlayer (GameState.turn gs)
       playing = Game.stillPlaying gs
       order = GameState.turnOrder gs
       after = drop 1 (List.dropWhile (/= active) order) <> order

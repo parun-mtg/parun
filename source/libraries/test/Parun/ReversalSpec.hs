@@ -19,6 +19,7 @@ import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Reversal" $ do
@@ -64,7 +65,7 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
               GameState.loopInvolvement = GameState.loopInvolvement closed
             }
     Spec.assertBool s (Reversal.withoutAnnouncement began closed closed == Just expected) "every field the cast wrote is back at where the action began, the monotone counters apart"
-    Spec.assertNeWith s "the transition wrote something, so the law above is not vacuous" (Seq.length (GameState.events closed)) (Seq.length (GameState.events began))
+    Spec.assertNeWith s "the transition wrote something, so the law above is not vacuous" (Seq.length (TurnRegisters.events (GameState.turn closed))) (Seq.length (TurnRegisters.events (GameState.turn began)))
 
   -- Both sides at once, which is the whole point: the announcement took the card
   -- out of the hand and put it on the stack, the window tapped a land for mana,
@@ -82,7 +83,10 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
         let entry =
               began
                 { GameState.hand = Map.adjust (Seq.filter (\oid -> oid /= spell)) S.alice (GameState.hand began),
-                  GameState.stack = spell : GameState.stack began
+                  GameState.turn =
+                    (GameState.turn began)
+                      { TurnRegisters.stack = spell : TurnRegisters.stack (GameState.turn began)
+                      }
                 }
             -- CR 605.3a: one land tapped for one red mana.
             closed =
@@ -97,7 +101,7 @@ withoutAnnouncementSpec s registry = Spec.describe s "withoutAnnouncement" $ do
           Just kept -> do
             Spec.assertEqWith s "the mana the window made is still floating" (Game.poolOf S.alice kept) (Mana.Type.MkMana [red])
             Spec.assertEqWith s "and the land it came from is still tapped" (fmap Object.tapped (Map.lookup land (GameState.objects kept))) (Just TapState.Tapped)
-            Spec.assertEqWith s "the spell is off the stack" (GameState.stack kept) []
+            Spec.assertEqWith s "the spell is off the stack" (TurnRegisters.stack (GameState.turn kept)) []
             Spec.assertEqWith s "and back in the hand it was announced from" (Map.lookup S.alice (GameState.hand kept)) (Map.lookup S.alice (GameState.hand began))
 
   -- CR 508.1g exerts an attacker and the toll's window taps that same creature

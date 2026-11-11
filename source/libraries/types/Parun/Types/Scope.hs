@@ -89,6 +89,6 @@ data Scope
     -- the InZone names; no candidate in an unordered zone.
     InPosition ZonePosition.ZonePosition InZone.InZone
   | -- | CR 500.12: the permanents as this turn began, seen through
-    -- GameState.permanentsAsTurnBegan; the Filter says whose.
+    -- TurnRegisters.permanentsAsTurnBegan; the Filter says whose.
     AsTurnBegan
   deriving (Eq, Ord, Show)

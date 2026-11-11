@@ -50,6 +50,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The two costs the card offers (CR 719.3), written out so every board names the
@@ -74,7 +75,7 @@ prototyping = castingFor insetCost
 payingPrinted = castingFor printedCost
 
 topOfStack :: GameState.GameState -> Maybe ObjectId.ObjectId
-topOfStack gs = case GameState.stack gs of
+topOfStack gs = case TurnRegisters.stack (GameState.turn gs) of
   oid : _ -> Just oid
   [] -> Nothing
 

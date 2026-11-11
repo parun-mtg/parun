@@ -1264,7 +1264,7 @@ Entries are ordered by the first rule each cites.
   reading keeps its untargeted reach there too.
 - **Site**: `Parun.Engine.Resolve.Arms.Counters.endTurn` and
   `Parun.Engine.Resolve.Slots`' each-spell arms, which read
-  `GameState.stack`. `Parun.GrandMeleeSpec`'s "CR 725.1b Time Stop ends only
+  `TurnRegisters.stack`. `Parun.GrandMeleeSpec`'s "CR 725.1b Time Stop ends only
   its own marker's turn".
 - **Issue**: #6117.
 

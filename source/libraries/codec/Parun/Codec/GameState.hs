@@ -7,7 +7,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.AbilityTriggered as AbilityTriggered
-import qualified Parun.Codec.ActivatedAbility as ActivatedAbility
 import qualified Parun.Codec.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Codec.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Codec.ActiveBlockRequirement as ActiveBlockRequirement
@@ -23,15 +22,12 @@ import qualified Parun.Codec.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Codec.Binding as Binding
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardName as CardName
-import qualified Parun.Codec.CastFromZone as CastFromZone
-import qualified Parun.Codec.Combat as Combat
 import qualified Parun.Codec.ContinuousEffect as ContinuousEffect
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLink as CounterLink
 import qualified Parun.Codec.DamageEvent as DamageEvent
 import qualified Parun.Codec.Daytime as Daytime
 import qualified Parun.Codec.DelayedTrigger as DelayedTrigger
-import qualified Parun.Codec.EndTurnSignal as EndTurnSignal
 import qualified Parun.Codec.EnteringTogether as EnteringTogether
 import qualified Parun.Codec.EntryLink as EntryLink
 import qualified Parun.Codec.EntryOrigin as EntryOrigin
@@ -40,22 +36,18 @@ import qualified Parun.Codec.ExileLink as ExileLink
 import qualified Parun.Codec.ExtraTurn as ExtraTurn
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.GameSettings as GameSettings
-import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.IgnoredAbility as IgnoredAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.LastKnown as LastKnown
 import qualified Parun.Codec.LoggedEvent as LoggedEvent
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ManaType as ManaType
-import qualified Parun.Codec.ModifiedRoll as ModifiedRoll
 import qualified Parun.Codec.Object as Object
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.OutsideObject as OutsideObject
-import qualified Parun.Codec.PastActivation as PastActivation
 import qualified Parun.Codec.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Codec.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Codec.PendingSkipEffect as PendingSkipEffect
-import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.PhasedOut as PhasedOut
 import qualified Parun.Codec.Player as Player
 import qualified Parun.Codec.PlayerControl as PlayerControl
@@ -74,31 +66,25 @@ import qualified Parun.Codec.ThrowResult as ThrowResult
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.TurnMarker as TurnMarker
 import qualified Parun.Codec.TurnRegisters as TurnRegisters
-import qualified Parun.Codec.TurnResume as TurnResume
 import qualified Parun.Codec.Undoing as Undoing
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName.Type
-import qualified Parun.Types.EndTurnSignal as EndTurnSignal.Type
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Printing as Printing.Type
 import qualified Parun.Types.PrintingId as PrintingId.Type
 import qualified Parun.Types.RestartSignal as RestartSignal.Type
 import qualified Parun.Types.SlotName as SlotName.Type
-import qualified Parun.Types.TurnResume as TurnResume.Type
 
 -- | Every field but one, in the record's own order.
 --
 -- 'Fields.required' is kept for the fields no game can be missing -- `settings`,
--- `objects`, `players`, `turnOrder`, `activePlayer`, `phase` -- and for the
--- counters and clocks whose zero is a position rather than an absence:
--- `nextEventGroup`, `nextObjectId`, `nextPrintingId`, `nextTimestamp`,
--- `lastChoice`, `turnNumber`, and `remaining`, which is the rest of the turn
--- and not a collection that happens to be empty. `combat` stays required too,
--- and costs almost nothing now that Parun.Codec.Combat defaults its own fields:
--- a cleared combat (CR 511.3) writes @{"struckFirst":null}@.
+-- `objects`, `players`, `turnOrder`, `turn` -- and for the counters and clocks
+-- whose zero is a position rather than an absence: `nextEventGroup`,
+-- `nextObjectId`, `nextPrintingId`, `nextTimestamp` and `lastChoice`.
+-- Parun.Codec.TurnRegisters keeps the same split for `turn`'s own fields.
 --
 -- Everything else is 'Fields.defaulted', which omits a field equal to its
 -- default and reads an absence back as that same value, so the round trip is
@@ -135,15 +121,12 @@ codec resolve = Fields.object $ do
   command <- Fields.defaulted "command" Set.empty (Common.set ObjectId.codec) GameState.command
   ante <- Fields.defaulted "ante" Set.empty (Common.set ObjectId.codec) GameState.ante
   sideDecks <- Fields.defaulted "sideDecks" Map.empty (Common.keyedList (Common.keyValue SideDeck.codec (Common.naturalMap PlayerId.codec (Common.seq ObjectId.codec)))) GameState.sideDecks
-  stack <- Fields.defaulted "stack" [] (Common.list ObjectId.codec) GameState.stack
-  stackedIn <- Fields.defaulted "stackedIn" Map.empty (Common.naturalMap ObjectId.codec EventGroup.codec) GameState.stackedIn
+  turn <- Fields.required "turn" TurnRegisters.codec GameState.turn
   players <- Fields.required "players" (Common.naturalMap PlayerId.codec Player.codec) GameState.players
   outsideObjects <- Fields.defaulted "outsideObjects" Map.empty (Common.naturalMap ObjectId.codec OutsideObject.codec) GameState.outsideObjects
   broughtIn <- Fields.defaulted "broughtIn" Seq.empty (Common.seq ObjectId.codec) GameState.broughtIn
   departedCards <- Fields.defaulted "departedCards" Map.empty (Common.naturalMap ObjectId.codec Object.codec) GameState.departedCards
   manaPool <- Fields.defaulted "manaPool" Map.empty (Common.naturalMap PlayerId.codec Mana.codec) GameState.manaPool
-  combat <- Fields.required "combat" Combat.codec GameState.combat
-  events <- Fields.defaulted "events" Seq.empty (Common.seq LoggedEvent.codec) GameState.events
   nextEventGroup <- Fields.required "nextEventGroup" EventGroup.codec GameState.nextEventGroup
   eventGroupDepth <- Fields.defaulted "eventGroupDepth" 0 Common.natural GameState.eventGroupDepth
   enteringTogether <- Fields.defaulted "enteringTogether" Nothing (Common.maybe EnteringTogether.codec) GameState.enteringTogether
@@ -152,14 +135,12 @@ codec resolve = Fields.object $ do
   causing <- Fields.defaulted "causing" Nothing (Common.maybe PlayerId.codec) GameState.causing
   lastKnown <- Fields.defaulted "lastKnown" Map.empty (Common.naturalMap ObjectId.codec LastKnown.codec) GameState.lastKnown
   stackArchive <- Fields.defaulted "stackArchive" Map.empty (Common.naturalMap ObjectId.codec Object.codec) GameState.stackArchive
-  scannedThrough <- Fields.defaulted "scannedThrough" 0 Common.natural GameState.scannedThrough
   battlefieldWhenTriggered <- Fields.defaulted "battlefieldWhenTriggered" Map.empty (Common.naturalMap EventGroup.codec (Common.naturalMap ObjectId.codec (BattlefieldCandidate.codec ProjectedCharacteristics.codec))) GameState.battlefieldWhenTriggered
   boardAfterEvent <- Fields.defaulted "boardAfterEvent" Map.empty (Common.naturalMap EventGroup.codec (codec resolve)) GameState.boardAfterEvent
   boardBeforeEvent <- Fields.defaulted "boardBeforeEvent" Map.empty (Common.naturalMap EventGroup.codec (codec resolve)) GameState.boardBeforeEvent
   controlSample <- Fields.defaulted "controlSample" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.controlSample
   boardAtControlSample <- Fields.defaulted "boardAtControlSample" Nothing (Common.maybe (codec resolve)) GameState.boardAtControlSample
   heldBoards <- Fields.defaulted "heldBoards" [] (Common.list (codec resolve)) GameState.heldBoards
-  damageScannedThrough <- Fields.defaulted "damageScannedThrough" 0 Common.natural GameState.damageScannedThrough
   delayedTriggers <- Fields.defaulted "delayedTriggers" Seq.empty (Common.seq DelayedTrigger.codec) GameState.delayedTriggers
   continuousEffects <- Fields.defaulted "continuousEffects" [] (Common.list (ContinuousEffect.codec Card.codec)) GameState.continuousEffects
   copyEffects <- Fields.defaulted "copyEffects" [] (Common.list ActiveCopy.codec) GameState.copyEffects
@@ -187,17 +168,9 @@ codec resolve = Fields.object $ do
   evasions <- Fields.defaulted "evasions" [] (Common.list ActiveEvasion.codec) GameState.evasions
   ignoredAbilities <- Fields.defaulted "ignoredAbilities" [] (Common.list IgnoredAbility.codec) GameState.ignoredAbilities
   turnOrder <- Fields.required "turnOrder" (Common.list PlayerId.codec) GameState.turnOrder
-  activePlayer <- Fields.required "activePlayer" PlayerId.codec GameState.activePlayer
-  phase <- Fields.required "phase" Phase.codec GameState.phase
-  remaining <- Fields.required "remaining" (Common.seq Phase.codec) GameState.remaining
-  priority <- Fields.defaulted "priority" Nothing (Common.maybe PlayerId.codec) GameState.priority
-  passed <- Fields.defaulted "passed" Set.empty (Common.set PlayerId.codec) GameState.passed
-  turnNumber <- Fields.required "turnNumber" Common.natural GameState.turnNumber
   turnsBegun <- Fields.defaulted "turnsBegun" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.turnsBegun
-  permanentsAsTurnBegan <- Fields.defaulted "permanentsAsTurnBegan" Nothing (Common.maybe (Common.naturalMap ObjectId.codec LastKnown.codec)) GameState.permanentsAsTurnBegan
   result <- Fields.defaulted "result" Nothing (Common.maybe Result.codec) GameState.result
   restartSignal <- Fields.defaulted "restartSignal" RestartSignal.Type.Playing RestartSignal.codec GameState.restartSignal
-  endTurnSignal <- Fields.defaulted "endTurnSignal" EndTurnSignal.Type.Running EndTurnSignal.codec GameState.endTurnSignal
   nextObjectId <- Fields.required "nextObjectId" ObjectId.codec GameState.nextObjectId
   printings <- Fields.defaulted "printings" Map.empty (Common.naturalMap PrintingId.codec (Printing.reference resolve)) GameState.printings
   lookedUp <- Fields.defaulted "lookedUp" Set.empty (Common.set PrintingId.codec) GameState.lookedUp
@@ -214,7 +187,6 @@ codec resolve = Fields.object $ do
   fellShort <- Fields.defaulted "fellShort" 0 Common.natural GameState.fellShort
   landsPlayed <- Fields.defaulted "landsPlayed" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.landsPlayed
   cardsPlayed <- Fields.defaulted "cardsPlayed" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) GameState.cardsPlayed
-  drawsThisTurn <- Fields.defaulted "drawsThisTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq ObjectId.codec)) GameState.drawsThisTurn
   keptFaceDown <- Fields.defaulted "keptFaceDown" Nothing (Common.maybe (Common.naturalMap ObjectId.codec Common.natural)) GameState.keptFaceDown
   announcedTops <- Fields.defaulted "announcedTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) GameState.announcedTops
   actionTops <- Fields.defaulted "actionTops" Nothing (Common.maybe (Common.naturalMap PlayerId.codec ObjectId.codec)) GameState.actionTops
@@ -222,13 +194,7 @@ codec resolve = Fields.object $ do
   repeatPicks <- Fields.defaulted "repeatPicks" Nothing (Common.maybe RepeatPicks.codec) GameState.repeatPicks
   revealedTops <- Fields.defaulted "revealedTops" Map.empty (Common.naturalMap PlayerId.codec ObjectId.codec) GameState.revealedTops
   departedThisTurn <- Fields.defaulted "departedThisTurn" Set.empty (Common.set PlayerId.codec) GameState.departedThisTurn
-  couldAttackThisTurn <- Fields.defaulted "couldAttackThisTurn" Set.empty (Common.set ObjectId.codec) GameState.couldAttackThisTurn
   -- Common.repeats, for Parun.Codec.Object's activatedOnce reason.
-  activatedThisTurn <- Fields.defaulted "activatedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.repeats (ActivatedAbility.codec Card.codec (GrantedAbility.codec Card.codec)))) GameState.activatedThisTurn
-  activationsThisTurn <- Fields.defaulted "activationsThisTurn" Seq.empty (Common.seq PastActivation.codec) GameState.activationsThisTurn
-  castPermissionsUsedThisTurn <- Fields.defaulted "castPermissionsUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set CastFromZone.codec)) GameState.castPermissionsUsedThisTurn
-  rollModifiersUsedThisTurn <- Fields.defaulted "rollModifiersUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set ModifiedRoll.codec)) GameState.rollModifiersUsedThisTurn
-  instructionsTakenThisTurn <- Fields.defaulted "instructionsTakenThisTurn" Seq.empty (Common.seq AbilityTriggered.codec) GameState.instructionsTakenThisTurn
   triggeredThisGame <- Fields.defaulted "triggeredThisGame" Seq.empty (Common.seq AbilityTriggered.codec) GameState.triggeredThisGame
   pendingControl <- Fields.defaulted "pendingControl" Map.empty (Common.naturalMap PlayerId.codec PlayerControl.codec) GameState.pendingControl
   control <- Fields.defaulted "control" Map.empty (Common.naturalMap PlayerId.codec (Common.nonEmpty PlayerControl.codec)) GameState.control
@@ -252,12 +218,9 @@ codec resolve = Fields.object $ do
   extraTurns <- Fields.defaulted "extraTurns" [] (Common.list ExtraTurn.codec) GameState.extraTurns
   turnMarkers <- Fields.defaulted "turnMarkers" [] (Common.list TurnMarker.codec) GameState.turnMarkers
   parkedTurns <- Fields.defaulted "parkedTurns" Map.empty (Common.naturalMap Common.natural TurnRegisters.codec) GameState.parkedTurns
-  turnResume <- Fields.defaulted "turnResume" TurnResume.Type.AtStepStart TurnResume.codec GameState.turnResume
   subgamesThisMatch <- Fields.defaulted "subgamesThisMatch" 0 Common.natural GameState.subgamesThisMatch
   gamesThisMatch <- Fields.defaulted "gamesThisMatch" 1 Common.natural GameState.gamesThisMatch
   gameNumber <- Fields.defaulted "gameNumber" 1 Common.natural GameState.gameNumber
-  turnAnchor <- Fields.defaulted "turnAnchor" Nothing (Common.maybe PlayerId.codec) GameState.turnAnchor
-  extraTurnUnderWay <- Fields.defaulted "extraTurnUnderWay" Nothing (Common.maybe Timestamp.codec) GameState.extraTurnUnderWay
   throwing <- Fields.defaulted "throwing" Nothing (Common.maybe ThrowResult.codec) GameState.throwing
   rethrowRequested <- Fields.defaulted "rethrowRequested" False Common.boolean GameState.rethrowRequested
   undone <- Fields.defaulted "undone" Map.empty (Common.naturalMap PlayerId.codec Undoing.codec) GameState.undone
@@ -274,15 +237,12 @@ codec resolve = Fields.object $ do
         GameState.command = command,
         GameState.ante = ante,
         GameState.sideDecks = sideDecks,
-        GameState.stack = stack,
-        GameState.stackedIn = stackedIn,
+        GameState.turn = turn,
         GameState.players = players,
         GameState.outsideObjects = outsideObjects,
         GameState.broughtIn = broughtIn,
         GameState.departedCards = departedCards,
         GameState.manaPool = manaPool,
-        GameState.combat = combat,
-        GameState.events = events,
         GameState.nextEventGroup = nextEventGroup,
         GameState.eventGroupDepth = eventGroupDepth,
         GameState.enteringTogether = enteringTogether,
@@ -291,14 +251,12 @@ codec resolve = Fields.object $ do
         GameState.causing = causing,
         GameState.lastKnown = lastKnown,
         GameState.stackArchive = stackArchive,
-        GameState.scannedThrough = scannedThrough,
         GameState.battlefieldWhenTriggered = battlefieldWhenTriggered,
         GameState.boardAfterEvent = boardAfterEvent,
         GameState.boardBeforeEvent = boardBeforeEvent,
         GameState.controlSample = controlSample,
         GameState.boardAtControlSample = boardAtControlSample,
         GameState.heldBoards = heldBoards,
-        GameState.damageScannedThrough = damageScannedThrough,
         GameState.delayedTriggers = delayedTriggers,
         GameState.continuousEffects = continuousEffects,
         GameState.copyEffects = copyEffects,
@@ -326,17 +284,9 @@ codec resolve = Fields.object $ do
         GameState.evasions = evasions,
         GameState.ignoredAbilities = ignoredAbilities,
         GameState.turnOrder = turnOrder,
-        GameState.activePlayer = activePlayer,
-        GameState.phase = phase,
-        GameState.remaining = remaining,
-        GameState.priority = priority,
-        GameState.passed = passed,
-        GameState.turnNumber = turnNumber,
         GameState.turnsBegun = turnsBegun,
-        GameState.permanentsAsTurnBegan = permanentsAsTurnBegan,
         GameState.result = result,
         GameState.restartSignal = restartSignal,
-        GameState.endTurnSignal = endTurnSignal,
         GameState.nextObjectId = nextObjectId,
         GameState.printings = printings,
         GameState.lookedUp = lookedUp,
@@ -353,7 +303,6 @@ codec resolve = Fields.object $ do
         GameState.fellShort = fellShort,
         GameState.landsPlayed = landsPlayed,
         GameState.cardsPlayed = cardsPlayed,
-        GameState.drawsThisTurn = drawsThisTurn,
         GameState.keptFaceDown = keptFaceDown,
         GameState.announcedTops = announcedTops,
         GameState.actionTops = actionTops,
@@ -361,12 +310,6 @@ codec resolve = Fields.object $ do
         GameState.repeatPicks = repeatPicks,
         GameState.revealedTops = revealedTops,
         GameState.departedThisTurn = departedThisTurn,
-        GameState.couldAttackThisTurn = couldAttackThisTurn,
-        GameState.activatedThisTurn = activatedThisTurn,
-        GameState.activationsThisTurn = activationsThisTurn,
-        GameState.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,
-        GameState.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
-        GameState.instructionsTakenThisTurn = instructionsTakenThisTurn,
         GameState.triggeredThisGame = triggeredThisGame,
         GameState.pendingControl = pendingControl,
         GameState.control = control,
@@ -390,12 +333,9 @@ codec resolve = Fields.object $ do
         GameState.extraTurns = extraTurns,
         GameState.turnMarkers = turnMarkers,
         GameState.parkedTurns = parkedTurns,
-        GameState.turnResume = turnResume,
         GameState.subgamesThisMatch = subgamesThisMatch,
         GameState.gamesThisMatch = gamesThisMatch,
         GameState.gameNumber = gameNumber,
-        GameState.turnAnchor = turnAnchor,
-        GameState.extraTurnUnderWay = extraTurnUnderWay,
         GameState.throwing = throwing,
         GameState.rethrowRequested = rethrowRequested,
         GameState.undone = undone,

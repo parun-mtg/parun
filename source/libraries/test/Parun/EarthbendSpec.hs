@@ -66,6 +66,7 @@ import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Aim a target slot at this permanent, PINNED rather than searched: an answerer
@@ -139,18 +140,21 @@ arrivals before after =
 attacking :: GameState.GameState -> GameState.GameState
 attacking gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-      GameState.remaining =
-        Seq.fromList
-          [ Phase.Combat CombatStep.DeclareBlockers,
-            Phase.Combat CombatStep.CombatDamage,
-            Phase.Combat CombatStep.EndOfCombat,
-            Phase.PostcombatMain,
-            Phase.Ending EndingStep.EndStep,
-            Phase.Ending EndingStep.Cleanup
-          ]
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
+            TurnRegisters.remaining =
+              Seq.fromList
+                [ Phase.Combat CombatStep.DeclareBlockers,
+                  Phase.Combat CombatStep.CombatDamage,
+                  Phase.Combat CombatStep.EndOfCombat,
+                  Phase.PostcombatMain,
+                  Phase.Ending EndingStep.EndStep,
+                  Phase.Ending EndingStep.Cleanup
+                ]
+          }
     }
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -226,7 +230,17 @@ aangBackName = CardName.MkCardName (Text.pack "Aang, Destined Savior")
 atBeginningOfCombat :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 atBeginningOfCombat target gs =
   let step = Phase.Combat CombatStep.BeginningOfCombat
-      began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan step S.alice)) (gs {GameState.phase = step, GameState.activePlayer = S.alice})
+      began =
+        Event.recordEvent
+          (GameEvent.StepBegan (StepBegan.MkStepBegan step S.alice))
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = step,
+                      TurnRegisters.activePlayer = S.alice
+                    }
+              }
+          )
    in S.runPure (aimedAt target) began (Engine.placePendingTriggers [] *> Stack.resolveTop)
 
 -- The two printings that write the opcode, and the one thing that separates them.

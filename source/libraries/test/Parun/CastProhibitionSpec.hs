@@ -65,6 +65,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.VariableChoice as VariableChoice
 import qualified Parun.Types.While as While
 import qualified Parun.Types.Zone as Zone
@@ -139,7 +140,14 @@ ceaseFireBoard plains ceaseFire mountain piker lightningBolt =
         -- carol's own main phase, which is when the card is really cast: its
         -- effect lasts "this turn", so aiming it at the player whose turn it is
         -- is what makes it bite at all.
-        stocked {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.carol, GameState.priority = Just S.alice}
+        stocked
+          { GameState.turn =
+              (GameState.turn stocked)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.carol,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
       )
 
 -- Every target prompt answers with CAROL -- pinned rather than searched, so a
@@ -165,7 +173,16 @@ offersCast :: PlayerId.PlayerId -> ObjectId.ObjectId -> Printing.Printing -> Gam
 offersCast pid oid printing gs =
   elem
     (Action.Type.Cast oid (S.printingName printing) Facing.FaceUp)
-    (Action.legalActions pid (gs {GameState.activePlayer = pid}))
+    ( Action.legalActions
+        pid
+        ( gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.activePlayer = pid
+                  }
+            }
+        )
+    )
 
 -- Sphinx's Decree {1}{W} Sorcery: "Each opponent can't cast instant or sorcery
 -- spells during that player's next turn." (Oracle checked against Scryfall
@@ -184,15 +201,35 @@ sphinxsDecreeSpec s registry =
       bolt <- S.printingOf s registry "Lightning Bolt"
       let (decreeId, bobsBolt, carolsBolt, before) = threeSeatSilenceBoard plains decree mountain bolt
           resolved = S.runPure S.identityAnswer (S.runPure S.identityAnswer before (S.cast S.alice decreeId)) Engine.priorityLoop
-          handoff gs = (S.runPure S.identityAnswer (Expiry.dropAtCleanup gs) Engine.handoffTurn) {GameState.phase = Phase.PrecombatMain}
+          handoff gs =
+            Game.overTurn
+              ( \registers ->
+                  registers
+                    { TurnRegisters.phase = Phase.PrecombatMain
+                    }
+              )
+              (S.runPure S.identityAnswer (Expiry.dropAtCleanup gs) Engine.handoffTurn)
+
           bobsTurn = handoff resolved
           carolsTurn = handoff bobsTurn
-          offered pid oid gs = elem (Action.Type.Cast oid (S.printingName bolt) Facing.FaceUp) (Action.legalActions pid (gs {GameState.priority = Just pid}))
+          offered pid oid gs =
+            elem
+              (Action.Type.Cast oid (S.printingName bolt) Facing.FaceUp)
+              ( Action.legalActions
+                  pid
+                  ( gs
+                      { GameState.turn =
+                          (GameState.turn gs)
+                            { TurnRegisters.priority = Just pid
+                            }
+                      }
+                  )
+              )
       Spec.assertBool s (offered S.bob bobsBolt resolved) "the window has not begun on alice's turn, so bob may still cast his Bolt"
       Spec.assertEqWith s "on bob's turn bob is barred and carol is not" (offered S.bob bobsBolt bobsTurn, offered S.carol carolsBolt bobsTurn) (False, True)
       Spec.assertEqWith s "on carol's turn carol is barred and bob is not" (offered S.carol carolsBolt carolsTurn, offered S.bob bobsBolt carolsTurn) (False, True)
       -- Preconditions, ordered behind the gameplay assertions.
-      Spec.assertEqWith s "the Decree resolved on alice's turn 1, into a turn each for bob and carol" (fmap GameState.activePlayer [resolved, bobsTurn, carolsTurn], GameState.turnNumber carolsTurn) ([S.alice, S.bob, S.carol], 3)
+      Spec.assertEqWith s "the Decree resolved on alice's turn 1, into a turn each for bob and carol" (fmap (TurnRegisters.activePlayer . GameState.turn) [resolved, bobsTurn, carolsTurn], TurnRegisters.turnNumber (GameState.turn carolsTurn)) ([S.alice, S.bob, S.carol], 3)
       Spec.assertEqWith s "one row per opponent, each over that opponent alone" (List.sort (fmap ActivePlayerEffect.scope (GameState.playerEffects resolved))) [AffectedPlayers.Named S.bob, AffectedPlayers.Named S.carol]
 
 -- Cease-Fire {2}{W} Instant: "Target player can't cast creature spells this
@@ -274,9 +311,12 @@ blossomingCalmBoard plains calm mountain bolt =
    in ( calmId,
         boltId,
         gs4
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs4)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -298,7 +338,14 @@ blossomingCalmBolt boltId gs =
       prefersAlice p = case p of
         Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer S.alice) sets
         _ -> S.identityAnswer p
-      staged = gs {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+      staged =
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.bob
+                }
+          }
    in S.runPure prefersAlice staged (S.cast S.bob boltId >> Stack.resolveTop)
 
 -- CR 611.2a's turn boundary, as Engine.handoffTurn -- the call every "until your
@@ -364,13 +411,13 @@ blossomingCalmSpec s registry =
           bobsTurn = blossomingCalmHandoff resolved
           carolsTurn = blossomingCalmHandoff bobsTurn
           alicesTurn = blossomingCalmHandoff carolsTurn
-      Spec.assertEqWith s "bob's turn begins" (GameState.activePlayer bobsTurn) S.bob
+      Spec.assertEqWith s "bob's turn begins" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
       Spec.assertEqWith s "and the effect is still stored" (length (GameState.playerEffects bobsTurn)) 1
       Spec.assertEqWith s "alice takes nothing on bob's turn" (S.lifeOf S.alice (blossomingCalmBolt boltId bobsTurn)) (Just 22)
-      Spec.assertEqWith s "carol's turn begins" (GameState.activePlayer carolsTurn) S.carol
+      Spec.assertEqWith s "carol's turn begins" (TurnRegisters.activePlayer (GameState.turn carolsTurn)) S.carol
       Spec.assertEqWith s "and the effect is still stored" (length (GameState.playerEffects carolsTurn)) 1
       Spec.assertEqWith s "alice takes nothing on carol's turn either" (S.lifeOf S.alice (blossomingCalmBolt boltId carolsTurn)) (Just 22)
-      Spec.assertEqWith s "alice's own next turn begins" (GameState.activePlayer alicesTurn) S.alice
+      Spec.assertEqWith s "alice's own next turn begins" (TurnRegisters.activePlayer (GameState.turn alicesTurn)) S.alice
       Spec.assertEqWith s "and the effect is gone" (GameState.playerEffects alicesTurn) []
       Spec.assertEqWith s "so the same Bolt now reaches her" (S.lifeOf S.alice (blossomingCalmBolt boltId alicesTurn)) (Just 19)
 
@@ -409,9 +456,12 @@ conditionalSilenceBoard withSwamp island swamp hush mountain piker =
         bobsPiker,
         carolsPiker,
         gs9
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs9)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -425,7 +475,19 @@ conditionalSilenceAfter hushId before =
 -- with activePlayer flipped to them and nothing else changed -- threeSeatSilenceBoard's
 -- device.
 conditionalSilenceCasts :: PlayerId.PlayerId -> GameState.GameState -> [Action.Type.Action]
-conditionalSilenceCasts who gs = filter isCast (Action.legalActions who (gs {GameState.activePlayer = who}))
+conditionalSilenceCasts who gs =
+  filter
+    isCast
+    ( Action.legalActions
+        who
+        ( gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.activePlayer = who
+                  }
+            }
+        )
+    )
 
 -- SYNTHETIC. "Synthetic Conditional Silence" {U} Instant: "For as long as you
 -- control a Swamp, your opponents can't cast spells." CR 611.2b's duration on the
@@ -505,7 +567,7 @@ conditionalSilenceSpec s registry =
           -- green. The bare resolution can tell them apart.
           resolved = S.runPure S.identityAnswer (S.runPure S.identityAnswer before (S.cast S.alice hushId)) Stack.resolveTop
           settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
-      Spec.assertBool s (notElem hushId (GameState.stack resolved)) "the spell really did resolve"
+      Spec.assertBool s (notElem hushId (TurnRegisters.stack (GameState.turn resolved))) "the spell really did resolve"
       Spec.assertEqWith s "nothing stored" (GameState.playerEffects resolved) []
       Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob settled)) "so bob may cast"
 
@@ -557,9 +619,12 @@ hackedSilenceBoard island hush magicalHack mountain piker =
         bobsPiker,
         carolsPiker,
         gs10
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs10)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -576,7 +641,7 @@ hackedSilenceBoard island hush magicalHack mountain piker =
 hackedSilenceAfter :: Bool -> ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
 hackedSilenceAfter hack hushId hackId before =
   let onStack = S.runPure S.identityAnswer before (S.cast S.alice hushId)
-      spellId = case GameState.stack onStack of
+      spellId = case TurnRegisters.stack (GameState.turn onStack) of
         top : _ -> top
         [] -> S.noSource
       hacked =
@@ -611,7 +676,7 @@ hackedSilenceSpec s registry =
           after = hackedSilenceAfter False hushId hackId before
       Spec.assertBool s (elem (Action.Type.Cast bobsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.bob after)) "bob is still offered his Piker"
       Spec.assertBool s (elem (Action.Type.Cast carolsPiker (S.printingName piker) Facing.FaceUp) (conditionalSilenceCasts S.carol after)) "and carol hers"
-      Spec.assertEqWith s "the Silence really did resolve" (length (GameState.stack after)) 0
+      Spec.assertEqWith s "the Silence really did resolve" (length (TurnRegisters.stack (GameState.turn after))) 0
       Spec.assertEqWith s "and nothing is stored" (GameState.playerEffects after) []
 
 -- The one activated ability at index `n` of what the PROJECTION hands out for
@@ -655,11 +720,15 @@ lilianaBoard island swamp liliana evolution zombie evangel =
         evolutionId,
         zombieId,
         evangelId,
-        (S.addCounter CounterKind.Loyalty 4 lilianaId g7)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
-          }
+        Game.overTurn
+          ( \registers ->
+              registers
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          )
+          (S.addCounter CounterKind.Loyalty 4 lilianaId g7)
       )
 
 -- alice casts the Artificial Evolution at Liliana THE PERMANENT and lets it
@@ -935,7 +1004,7 @@ nullChamberSpec s registry =
             State.execState
               (Engine.runGame (recordingChamberAnswer S.bob picks) board (S.cast S.alice oid >> Stack.resolveTop))
               []
-      Spec.assertEqWith s "alice is active" (GameState.activePlayer board) S.alice
+      Spec.assertEqWith s "alice is active" (TurnRegisters.activePlayer (GameState.turn board)) S.alice
       Spec.assertEqWith s "alice names first, then bob" (fmap fst asked) [S.alice, S.bob]
 
     -- CR 101.4b: a pair of casts differing only in alice's name. bob names
@@ -1130,9 +1199,12 @@ landDropBoard mountain grantors active =
       add g _ = snd (S.addHandCard mountain active g)
       withHand = List.foldl' add withGrantors [1 .. 5 :: Int]
    in withHand
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = active,
-          GameState.priority = Just active
+        { GameState.turn =
+            (GameState.turn withHand)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = active,
+                TurnRegisters.priority = Just active
+              }
         }
 
 -- Take every land play the board allows and stop. S.playLandAnswer plays a land
@@ -1161,8 +1233,11 @@ flashBoard mountain hand extra =
    in ( oid,
         extraIds,
         withExtra
-          { GameState.activePlayer = S.bob,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withExtra)
+                { TurnRegisters.activePlayer = S.bob,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1172,7 +1247,14 @@ flashBoard mountain hand extra =
 flashOnOwnTurn :: Printing.Printing -> Printing.Printing -> [Printing.Printing] -> (ObjectId.ObjectId, GameState.GameState)
 flashOnOwnTurn mountain hand extra =
   let (oid, _, board) = flashBoard mountain hand extra
-   in (oid, board {GameState.activePlayer = S.alice})
+   in ( oid,
+        board
+          { GameState.turn =
+              (GameState.turn board)
+                { TurnRegisters.activePlayer = S.alice
+                }
+          }
+      )
 
 -- CR 109.5's You scope from the other seat: it is ALICE's turn, BOB holds
 -- priority with a Piker of his own, and both players have nine untapped
@@ -1186,9 +1268,12 @@ orreryScopeBoard mountain piker orrery owner =
       withOrrery = snd (S.addPermanent orrery owner withBobsPiker)
    in ( bobsPiker,
         withOrrery
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.bob
+          { GameState.turn =
+              (GameState.turn withOrrery)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.bob
+                }
           }
       )
 
@@ -1205,9 +1290,12 @@ equipBoard mountain piker bonesplitter extra active =
       withExtra = List.foldl' (\g printing -> snd (S.addPermanent printing S.alice g)) withEquipment extra
    in ( equipment,
         withExtra
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = active,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn withExtra)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = active,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1281,9 +1369,12 @@ runedHaloBoard plains halo curse =
    in ( haloId,
         curseId,
         g2
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1316,10 +1407,13 @@ runedHaloCombat plains halo curse piker name defender =
       (_, withPiker) = S.addPermanent piker S.bob (castHalo name base haloId)
       before =
         withPiker
-          { GameState.activePlayer = S.bob,
-            GameState.priority = Just S.bob,
-            GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [defender]}
+          { GameState.turn =
+              (GameState.turn withPiker)
+                { TurnRegisters.activePlayer = S.bob,
+                  TurnRegisters.priority = Just S.bob,
+                  TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defender]}
+                }
           }
       fight = Combat.declareAttackers S.manaPerformer S.bob >> Combat.declareBlockers S.manaPerformer >> Damage.dealCombatDamage (pure ())
    in (before, S.settleSba (S.runPure (S.attackTo defender) before fight))
@@ -1366,10 +1460,13 @@ spyKitCombat giant kit haloed =
            in S.attachTo kitId (Recipient.ToObject giantId) g
       before =
         equipped
-          { GameState.activePlayer = S.bob,
-            GameState.priority = Just S.bob,
-            GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]}
+          { GameState.turn =
+              (GameState.turn equipped)
+                { TurnRegisters.activePlayer = S.bob,
+                  TurnRegisters.priority = Just S.bob,
+                  TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]}
+                }
           }
       fight = Combat.declareAttackers S.manaPerformer S.bob >> Combat.declareBlockers S.manaPerformer >> Damage.dealCombatDamage (pure ())
    in (before, S.settleSba (S.runPure (S.attackTo S.alice) before fight))
@@ -1464,11 +1561,16 @@ runedHaloSpec s registry =
           (giantId, g2) = S.addPermanent giant S.alice g1
           (kitId, g3) = S.addPermanent kit S.alice g2
           board =
-            (S.attachTo kitId (Recipient.ToObject giantId) g3)
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
-              }
+            Game.overTurn
+              ( \registers ->
+                  registers
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              )
+              (S.attachTo kitId (Recipient.ToObject giantId) g3)
+
           kirdApe = CardName.MkCardName (Text.pack "Kird Ape")
           unasked = S.runPure S.identityAnswer board Engine.priorityLoop
       (_, asked) <- Engine.runGameAsked (Interpreter.lookingUpCards registry (S.brokenCorpus s) (pure . S.identityAnswer . Asked.prompt)) board Engine.priorityLoop
@@ -1533,9 +1635,12 @@ stasisCoffinBoard plains coffin curse piker =
         curseId,
         pikerId,
         g3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -1672,9 +1777,12 @@ cityInABottleSpec s registry =
           -- Action.legalActions', and outside it no land is offered at all.
           mainPhase base =
             base
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn base)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
           (_, withBottle) = S.addPermanent bottle S.alice (mainPhase (S.landsInPlay plains 4))
           (aliceDesertId, aliceMountainId, bobDesertId, gs) = hands withBottle

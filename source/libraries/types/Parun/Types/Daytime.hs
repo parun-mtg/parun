@@ -11,7 +11,7 @@ module Parun.Types.Daytime where
 --
 -- Named for the DESIGNATION, not for a phase or a step: rule 732 puts it on the
 -- game, so it is read the way GameState.monarch is (CR 726.1) rather than the
--- way GameState.phase is.
+-- way TurnRegisters.phase is.
 -- CR 732.1a's "day becomes night" needs no operation of its own: the rule makes
 -- it the game losing the first designation and gaining the second, which is one
 -- assignment of the other constructor (Parun.Engine.Daytime.becomes).

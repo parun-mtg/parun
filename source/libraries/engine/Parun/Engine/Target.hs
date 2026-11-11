@@ -86,6 +86,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Together as Together
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneScope as ZoneScope
 
@@ -1066,7 +1067,7 @@ permanentRecipients gs = Set.fromList (fmap Recipient.ToObject (Set.toList (Game
 -- CR 112.1 / 112.1a: only spells on the stack, tagged ToObject; abilities
 -- and permanents are excluded by Game.isSpell.
 spellRecipients :: GameState -> Set Recipient
-spellRecipients gs = Set.fromList (fmap Recipient.ToObject (filter (\oid -> Game.isSpell oid gs) (GameState.stack gs)))
+spellRecipients gs = Set.fromList (fmap Recipient.ToObject (filter (\oid -> Game.isSpell oid gs) (TurnRegisters.stack (GameState.turn gs))))
 
 -- CR 113.9: only activated and triggered abilities (Source.OfAbility /
 -- OfTrigger / OfInherentTrigger) on the stack, tagged ToObject; spells and
@@ -1083,7 +1084,7 @@ spellRecipients gs = Set.fromList (fmap Recipient.ToObject (filter (\oid -> Game
 -- Stifle's "(Mana abilities can't be targeted.)" is reminder text for those rules
 -- -- see Parun.Types.Pool.Abilities.
 abilityRecipients :: GameState -> Set Recipient
-abilityRecipients gs = Set.fromList (fmap Recipient.ToObject (filter (\oid -> Game.isAbility oid gs) (GameState.stack gs)))
+abilityRecipients gs = Set.fromList (fmap Recipient.ToObject (filter (\oid -> Game.isAbility oid gs) (TurnRegisters.stack (GameState.turn gs))))
 
 -- CR 404.1: the cards in the graveyards the scope names, tagged ToObject -- Raise
 -- Dead's "target creature card in your graveyard", and Withered Wretch's "exile

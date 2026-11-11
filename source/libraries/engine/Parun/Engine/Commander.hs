@@ -585,7 +585,7 @@ taxCandidates pid oid gs cost =
 -- graveyard or in exile, and it must have arrived there "since the last time
 -- state-based actions were checked" -- which is what keeps a declining owner from
 -- being asked again on every subsequent check, and what makes the offer land once
--- per arrival. The watermark is GameState.damageScannedThrough, which is not a
+-- per arrival. The watermark is TurnRegisters.damageScannedThrough, which is not a
 -- damage-only mark despite its name: it is how far the STATE-BASED ACTION CHECK
 -- has consumed the event log, the same boundary CR 704.5h reads and the same one
 -- rule 903.9a's "since the last time" names.

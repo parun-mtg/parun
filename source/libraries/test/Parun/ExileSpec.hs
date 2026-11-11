@@ -100,6 +100,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -302,7 +303,15 @@ spec s registry = Spec.describe s "Face-down exile" $ do
       sentry <- S.printingOf s registry "Ogre Sentry"
       recall <- S.printingOf s registry "Synthetic Twin Recall"
       let (spellId, g1) = S.addHandCard recall S.alice (S.landsFor plains S.alice 2 exiled)
-          board = g1 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+          board =
+            g1
+              { GameState.turn =
+                  (GameState.turn g1)
+                    { TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              }
           after = resolveAll (S.runPure throughPile board (S.cast S.alice spellId))
       Spec.assertBool
         s
@@ -328,7 +337,15 @@ spec s registry = Spec.describe s "Face-down exile" $ do
       let (_, g1) = S.addExiledCard riftsweeper S.bob (S.landsFor island S.alice 2 (S.landsFor plains S.alice 2 exiled))
           (recallId, g2) = S.addHandCard recall S.alice g1
           (twincastId, g3) = S.addHandCard twincast S.alice g2
-          board = g3 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+          board =
+            g3
+              { GameState.turn =
+                  (GameState.turn g3)
+                    { TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              }
           isPile recipient = case recipient of
             Recipient.ToPile _ -> True
             _ -> False
@@ -429,7 +446,15 @@ foretold s registry = Spec.describe s "Augury Raven" $ do
     raven <- S.printingOf s registry "Augury Raven"
     island <- S.printingOf s registry "Island"
     let (handRaven, g1) = S.addHandCard raven S.alice (S.landsFor island S.alice 2 S.threePlayerGame)
-        before = g1 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        before =
+          g1
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         foretoldGs = S.runPure S.identityAnswer before (Foretell.foretell S.manaPerformer S.alice handRaven)
         concede board = S.runPure S.identityAnswer board (Departure.leaveGame Departure.Type.Conceded S.alice)
         revealsIn board = [(Revealed.player r, Revealed.card r) | GameEvent.Revealed r <- S.eventsOf board]
@@ -537,12 +562,21 @@ thaliaForetoldBoard s registry = do
       (_, g4) = S.addLibraryCard sentry S.alice g3
       before =
         g4
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g4)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       foretoldGs = S.runPure S.identityAnswer before (Foretell.foretell S.manaPerformer S.alice handRaven)
-      later = foretoldGs {GameState.turnNumber = GameState.turnNumber foretoldGs + 1}
+      later =
+        foretoldGs
+          { GameState.turn =
+              (GameState.turn foretoldGs)
+                { TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn foretoldGs) + 1
+                }
+          }
       ravenId = case faceDownExiled later of
         [only] -> only
         _ -> S.noSource
@@ -572,9 +606,12 @@ foretoldBoard s registry = do
       g5 = S.landsFor island S.bob 2 g4
       before =
         g5
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       board = S.runPure S.identityAnswer before (Foretell.foretell S.manaPerformer S.alice ravenId)
       downId = case faceDownExiled board of
@@ -730,7 +767,14 @@ glimpseBoard s registry = do
       (glimpseId, g2) = S.addHandCard glimpse S.bob g1
       (twincastId, g3) = S.addHandCard twincast S.bob g2
       (deflectionId, g4) = S.addHandCard deflection S.bob g3
-      board = g4 {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+      board =
+        g4
+          { GameState.turn =
+              (GameState.turn g4)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.bob
+                }
+          }
       pikerId = Maybe.fromMaybe S.noSource (List.find (\oid -> namesOf [oid] board == Set.singleton (S.printingName piker)) (faceDownExiled board))
   pure (board, faceUp, pikerId, glimpseId, twincastId, deflectionId)
 
@@ -1099,9 +1143,12 @@ attackedHeightsHiding s registry copier hidden = do
       (_, g9) = S.addHandCard played S.alice g8
       before =
         g9
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g9)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       -- PLAYED and not placed, so CR 603.6a's entry event fires and hideaway
       -- runs. `original` was placed, so its own hideaway never triggered.
@@ -1120,9 +1167,12 @@ attackedHeightsHiding s registry copier hidden = do
           (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
       combatReady =
         untapped
-          { GameState.phase = S.beginningOfCombat,
-            GameState.remaining = S.phasesAfterThroughPostcombatMain S.beginningOfCombat,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn untapped)
+                { TurnRegisters.phase = S.beginningOfCombat,
+                  TurnRegisters.remaining = S.phasesAfterThroughPostcombatMain S.beginningOfCombat,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       leg change landsAlready attackers activated =
         S.runPure
@@ -1198,9 +1248,12 @@ playHeights s registry copier = do
       (_, g7) = S.addHandCard played S.alice g6
       before =
         g7
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g7)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       after = S.runPure (hiding copiedId) before Engine.priorityLoop
       -- The land alice played is the battlefield's one member the copier's
@@ -1324,9 +1377,12 @@ flashbackPileBoard s registry = do
       (cancelId, g5) = S.addHandCard cancel S.alice g5b
       board =
         g5
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       -- Read off the board rather than assumed: CR 400.7 mints a fresh
       -- incarnation as each card is exiled, so the ids the hand held are gone.
@@ -1456,9 +1512,12 @@ pileBoardUncast s registry = do
       (spellId, g6) = S.addHandCard reclamation S.alice blissed
       before =
         g6
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g6)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       -- WHICH card is which is read off the board rather than assumed: CR 400.7
       -- mints a fresh incarnation as each card is exiled, so the ids the pile
@@ -1506,9 +1565,12 @@ twoPileBoard s registry = do
       (spellId, g6) = S.addHandCard reclamation S.alice afterSecond
       board =
         g6
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g6)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       hidden = S.printingName piker
       -- WHICH pile is which is read off the board rather than assumed: CR 400.7
@@ -1635,7 +1697,16 @@ castBliss s registry = do
 endStep :: GameState.GameState -> GameState.GameState
 endStep gs =
   let phase = Phase.Ending EndingStep.EndStep
-      began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice)) (gs {GameState.phase = phase})
+      began =
+        Event.recordEvent
+          (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice))
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = phase
+                    }
+              }
+          )
    in S.runPure S.identityAnswer (S.runPure S.identityAnswer began Engine.settleForPriority) Engine.priorityLoop
 
 -- The exiled cards CR 406.3's default left face up.

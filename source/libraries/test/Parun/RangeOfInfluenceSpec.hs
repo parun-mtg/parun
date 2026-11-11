@@ -87,6 +87,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -101,18 +102,21 @@ spec s registry = Spec.describe s "Range of influence" $ do
     let (mine, staged) = S.addPermanent piker S.alice S.fourPlayerGame
         board =
           staged
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-              GameState.remaining =
-                Seq.fromList
-                  [ Phase.Combat CombatStep.DeclareAttackers,
-                    Phase.Combat CombatStep.DeclareBlockers,
-                    Phase.Combat CombatStep.CombatDamage,
-                    Phase.Combat CombatStep.EndOfCombat,
-                    Phase.PostcombatMain,
-                    Phase.Ending EndingStep.EndStep,
-                    Phase.Ending EndingStep.Cleanup
-                  ]
+            { GameState.turn =
+                (GameState.turn staged)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                    TurnRegisters.remaining =
+                      Seq.fromList
+                        [ Phase.Combat CombatStep.DeclareAttackers,
+                          Phase.Combat CombatStep.DeclareBlockers,
+                          Phase.Combat CombatStep.CombatDamage,
+                          Phase.Combat CombatStep.EndOfCombat,
+                          Phase.PostcombatMain,
+                          Phase.Ending EndingStep.EndStep,
+                          Phase.Ending EndingStep.Cleanup
+                        ]
+                  }
             }
         settle gs = S.runPure S.identityAnswer gs (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat))
         declares at gs = Combat.legalAttackDeclarationAs S.alice [(mine, AttackTarget.OfPlayer at)] (settle gs)
@@ -149,8 +153,25 @@ spec s registry = Spec.describe s "Range of influence" $ do
     lionPrinting <- S.printingOf s registry "Glittering Lion"
     let lands = S.landsFor plains S.bob 3 (S.landsFor plains S.alice 3 S.fourPlayerGame)
         (lion, g0) = S.addPermanent lionPrinting S.carol lands
-        board = g0 {GameState.phase = Phase.PrecombatMain}
-        offeredTo pid gs = any (\a -> case a of A.Activate o _ -> o == lion; _ -> False) (Action.legalActions pid gs {GameState.priority = Just pid})
+        board =
+          g0
+            { GameState.turn =
+                (GameState.turn g0)
+                  { TurnRegisters.phase = Phase.PrecombatMain
+                  }
+            }
+        offeredTo pid gs =
+          any
+            (\a -> case a of A.Activate o _ -> o == lion; _ -> False)
+            ( Action.legalActions
+                pid
+                gs
+                  { GameState.turn =
+                      (GameState.turn gs)
+                        { TurnRegisters.priority = Just pid
+                        }
+                  }
+            )
     Spec.assertBool s (not (offeredTo S.alice (S.withRange 1 board))) "CR 801.6 at range 1 alice is not offered the Lion carol controls"
     Spec.assertBool s (offeredTo S.alice board) "at an unlimited range she is"
     Spec.assertBool s (offeredTo S.bob (S.withRange 1 board)) "and bob, one seat from carol, is at range 1"
@@ -163,7 +184,15 @@ spec s registry = Spec.describe s "Range of influence" $ do
     island <- S.printingOf s registry "Island"
     sirensCall <- S.printingOf s registry "Siren's Call"
     let (call, g0) = S.addHandCard sirensCall S.alice (S.landsFor island S.alice 1 S.fourPlayerGame)
-        board = g0 {GameState.activePlayer = S.carol, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        board =
+          g0
+            { GameState.turn =
+                (GameState.turn g0)
+                  { TurnRegisters.activePlayer = S.carol,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
     Spec.assertBool s (not (Game.wasInRangeOf S.alice S.carol (S.withRange 1 board))) "at range 1 carol is outside alice's range"
     Spec.assertBool s (S.castable S.alice call (S.withRange 1 board)) "CR 806.1 alice may cast Siren's Call on carol's turn at range 1"
     Spec.assertBool s (S.castable S.alice call board) "as at an unlimited range"
@@ -245,15 +274,21 @@ spec s registry = Spec.describe s "Range of influence" $ do
         (attacker, g3) = S.addPermanent piker S.bob g2
         attackBoard =
           g3
-            { GameState.activePlayer = S.carol,
-              GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.dave, S.bob]}
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.carol,
+                    TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.dave, S.bob]}
+                  }
             }
         blockBoard =
           g3
-            { GameState.activePlayer = S.bob,
-              GameState.phase = Phase.Combat CombatStep.DeclareBlockers,
-              GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.carol], Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.carol)}
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.phase = Phase.Combat CombatStep.DeclareBlockers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.carol], Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.carol)}
+                  }
             }
         both = fmap (\oid -> (oid, AttackTarget.OfPlayer S.dave)) [first, second]
         doubleBlock = Map.fromList [(first, Set.singleton attacker), (second, Set.singleton attacker)]
@@ -289,9 +324,9 @@ spec s registry = Spec.describe s "Range of influence" $ do
         losing pid = S.withEvents [GameEvent.LifeLost (LifeChange.MkLifeChange pid 2 True)] fast
         settle gs =
           let placed = S.runPure S.identityAnswer gs (Engine.placePendingTriggers [])
-           in if null (GameState.stack placed) then placed else S.runPure S.identityAnswer placed Stack.resolveTop
+           in if null (TurnRegisters.stack (GameState.turn placed)) then placed else S.runPure S.identityAnswer placed Stack.resolveTop
         speedAfter gs = Player.speed =<< Map.lookup S.alice (GameState.players (settle gs))
-    Spec.assertEqWith s "alice is the active player" (GameState.activePlayer fast) S.alice
+    Spec.assertEqWith s "alice is the active player" (TurnRegisters.activePlayer (GameState.turn fast)) S.alice
     Spec.assertEqWith s "CR 801.11 at range 1 carol's loss raises nothing" (speedAfter (S.withRange 1 (losing S.carol))) (Just 1)
     Spec.assertEqWith s "at an unlimited range it raises alice's speed" (speedAfter (losing S.carol)) (Just 2)
     Spec.assertEqWith s "and at range 1 bob's loss, in range, raises it" (speedAfter (S.withRange 1 (losing S.bob))) (Just 2)
@@ -305,15 +340,20 @@ spec s registry = Spec.describe s "Range of influence" $ do
     bitterblossom <- S.printingOf s registry "Bitterblossom"
     island <- S.printingOf s registry "Island"
     let shared =
-          (S.inTeams [[S.alice], [S.bob, S.carol, S.dave]] S.fourPlayerGame)
-            { GameState.activePlayer = S.bob
-            }
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            )
+            (S.inTeams [[S.alice], [S.bob, S.carol, S.dave]] S.fourPlayerGame)
+
         teamed = shared {GameState.settings = (GameState.settings shared) {GameSettings.sharedTeamTurns = True}}
         stocked = snd (S.addLibraryCard island S.dave (snd (S.addLibraryCard island S.dave teamed)))
         (_, withBlossom) = S.addPermanent bitterblossom S.dave stocked
         settle gs =
           let placed = S.runPure S.identityAnswer gs (Engine.placePendingTriggers [])
-           in if null (GameState.stack placed) then placed else S.runPure S.identityAnswer placed Stack.resolveTop
+           in if null (TurnRegisters.stack (GameState.turn placed)) then placed else S.runPure S.identityAnswer placed Stack.resolveTop
         upkeep = S.withEvents [GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) S.bob)] withBlossom
         endStep = S.withEvents [GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) S.bob)] (S.withMonarch S.dave stocked)
         handOf gs = length (Game.zoneMembers Zone.Hand S.dave gs)
@@ -671,7 +711,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
         (forestId, g0) = S.addPermanent forest S.alice seated
         (plainsIds, g1) = List.foldl' (\(ids, gs) _ -> let (oid, next) = S.addPermanent plains S.bob gs in (ids <> [oid], next)) ([], g0) [1 .. 7 :: Int]
         (spell, board) = S.addHandCard binox S.alice g1
-        cast gs = GameState.stack (S.runPure (assisting (Just S.bob) 7 forestId plainsIds) (onMain gs) (S.cast S.alice spell))
+        cast gs = TurnRegisters.stack (GameState.turn (S.runPure (assisting (Just S.bob) 7 forestId plainsIds) (onMain gs) (S.cast S.alice spell)))
     Spec.assertEqWith s "CR 801.5a at range 1 alice may not name bob, so the Binox is not cast" (length (cast (S.withRange 1 board))) 0
     Spec.assertEqWith s "at an unlimited range bob helps and it is" (length (cast board)) 1
 
@@ -888,8 +928,11 @@ spec s registry = Spec.describe s "Range of influence" $ do
           (forestId, gs4) = S.entersWithTrigger forest S.alice (extra sporemoundId gs3)
           seeded =
             gs4
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.remaining = Seq.empty,
+              { GameState.turn =
+                  (GameState.turn gs4)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.remaining = Seq.empty
+                    },
                 GameState.nextTimestamp = Timestamp.MkTimestamp (Departure.mandatoryLoopLimit - 10),
                 GameState.lastChoice = Timestamp.MkTimestamp 0
               }
@@ -904,22 +947,43 @@ spec s registry = Spec.describe s "Range of influence" $ do
           staged = S.withEvents [GameEvent.Moved (Moved.moved moved (Projection.project oid gs))] gs
        in resolveAll (snd (Engine.runGamePure S.identityAnswer staged Engine.settleForPriority))
     -- A main phase with alice holding priority, for an instant she casts.
-    onMain gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+    onMain gs =
+      gs
+        { GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
+        }
     -- CR 510.2: these creatures, attacking `defender` on `active`'s turn, deal
     -- their combat damage.
     strike active attackers defender gs =
       S.runPure
         S.identityAnswer
         gs
-          { GameState.activePlayer = active,
-            GameState.phase = Phase.Combat CombatStep.CombatDamage,
-            GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [defender], Combat.Type.attackers = Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer defender)) attackers)}
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.activePlayer = active,
+                  TurnRegisters.phase = Phase.Combat CombatStep.CombatDamage,
+                  TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defender], Combat.Type.attackers = Map.fromList (fmap (\oid -> (oid, AttackTarget.OfPlayer defender)) attackers)}
+                }
           }
         (Monad.void (Damage.dealCombatDamage (pure ())))
     -- CR 503.1: `pid`'s upkeep begins and its triggers resolve.
     upkeepOf pid gs =
       let upkeep = Phase.Beginning BeginningStep.Upkeep
-          began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+          began =
+            Event.recordEvent
+              (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
+              ( gs
+                  { GameState.turn =
+                      (GameState.turn gs)
+                        { TurnRegisters.phase = upkeep,
+                          TurnRegisters.activePlayer = pid
+                        }
+                  }
+              )
        in resolveAll (S.runPure S.identityAnswer began Engine.settleForPriority)
 
 -- Answers each Prompt.ChooseVote with the first of the voting seat's
@@ -945,7 +1009,7 @@ retargetBolt s registry name base = do
   let (boltId, g0) = S.addHandCard bolt S.dave (S.landsFor mountain S.dave 1 (S.landsFor island S.alice 4 base))
       (retargetId, board) = S.addHandCard retarget S.alice g0
       aimed = S.runPure (aimingFirst [(S.dave, [(== Just S.alice) . Recipient.playerOf])]) board (S.cast S.dave boltId)
-      spell = take 1 (GameState.stack aimed)
+      spell = take 1 (TurnRegisters.stack (GameState.turn aimed))
       alices = [(S.alice, fmap (\oid -> (== Just oid) . Recipient.objectOf) spell <> fmap (\pid -> (== Just pid) . Recipient.playerOf) [S.carol, S.dave])]
       cast = S.runPure (aimingFirst alices) aimed (S.cast S.alice retargetId)
   Monad.when (null spell) (Spec.assertFailure s "the Bolt never reached the stack")

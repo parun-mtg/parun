@@ -83,6 +83,7 @@ import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.WithCounters as WithCounters
@@ -337,7 +338,17 @@ vanishingSpec s registry =
       -- One upkeep for `pid`, run to the end of the priority loop, so the
       -- trigger is gathered (CR 603.3) and resolved.
       upkeepOf pid gs =
-        let began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+        let began =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = upkeep,
+                            TurnRegisters.activePlayer = pid
+                          }
+                    }
+                )
             settled = snd (Engine.runGamePure S.identityAnswer began Engine.settleForPriority)
          in (settled, snd (Engine.runGamePure S.identityAnswer settled Engine.priorityLoop))
       times = S.counterOf CounterKind.Time
@@ -356,7 +367,7 @@ vanishingSpec s registry =
           let (oid, gs) = S.addPermanent wurm S.alice (Setup.emptyGame S.bothPlayers)
               (settled, resolved) = upkeepOf S.alice gs
           Spec.assertEqWith s "it really has none" (times oid gs) 0
-          Spec.assertEqWith s "nothing on the stack" (GameState.stack settled) []
+          Spec.assertEqWith s "nothing on the stack" (TurnRegisters.stack (GameState.turn settled)) []
           Spec.assertBool s (S.onBattlefield oid resolved) "and it survives its own upkeep"
         -- CR 702.63c: "if a permanent has multiple instances of vanishing, each
         -- works separately". Asserted of BOTH mints, as renown's multiplicity is
@@ -429,7 +440,17 @@ fadingSpec s registry =
       -- end of the priority loop so the trigger is gathered (CR 603.3) and
       -- resolved.
       upkeepOf pid gs =
-        let began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+        let began =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = upkeep,
+                            TurnRegisters.activePlayer = pid
+                          }
+                    }
+                )
             settled = snd (Engine.runGamePure S.identityAnswer began Engine.settleForPriority)
          in (settled, snd (Engine.runGamePure S.identityAnswer settled Engine.priorityLoop))
       fades = S.counterOf CounterKind.Fade
@@ -445,7 +466,7 @@ fadingSpec s registry =
           let (oid, gs) = S.addPermanent ridgeback S.alice (Setup.emptyGame S.bothPlayers)
               (settled, resolved) = upkeepOf S.alice gs
           Spec.assertEqWith s "it really has none" (fades oid gs) 0
-          Spec.assertEqWith s "and the ability still reached the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "and the ability still reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertBool s (not (S.onBattlefield oid resolved)) "so its own first upkeep took it"
         -- The other half of rule 702.32a's one sentence: with a counter to
         -- remove, the trigger removes it and the sacrifice clause's "if you
@@ -459,7 +480,7 @@ fadingSpec s registry =
           Spec.assertEqWith s "it starts with three" (fades oid gs) 3
           Spec.assertBool s (S.onBattlefield oid resolved) "the upkeep trigger left it on the battlefield"
           Spec.assertEqWith s "with one fade counter fewer" (fades oid resolved) 2
-          Spec.assertEqWith s "and the ability did reach the stack" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "and the ability did reach the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         -- The mint, spelled out for vanishingSpec's reason: an assertion written
         -- against Keyword.fading itself would say only that one copy is one copy.
         -- Rule 702.32 states no multiplicity clause, so each instance is its own
@@ -520,7 +541,17 @@ cumulativeUpkeepSpec s registry =
       -- resolved. NO UNTAP STEP, deliberately: rule 702.24a's costs are meant to
       -- outrun the board, and a fixture that untapped between upkeeps would give
       -- alice the same five lands twice.
-      steppedTo pid gs = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+      steppedTo pid gs =
+        Event.recordEvent
+          (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = upkeep,
+                      TurnRegisters.activePlayer = pid
+                    }
+              }
+          )
       upkeepOf pid gs =
         let settled = snd (Engine.runGamePure (paysFor S.alice) (steppedTo pid gs) Engine.settleForPriority)
          in (settled, snd (Engine.runGamePure (paysFor S.alice) settled Engine.priorityLoop))
@@ -591,7 +622,7 @@ cumulativeUpkeepSpec s registry =
               settled = fst (upkeepOf S.alice gs)
               killed = S.runPure (paysFor S.alice) settled (S.cast S.bob held >> Stack.resolveTop)
               ((_, done), transcript) = Replay.record (paysFor S.alice) killed (Engine.settleForPriority >> Engine.priorityLoop)
-          Spec.assertEqWith s "the trigger really was on the stack when bob cast" (length (GameState.stack settled)) 1
+          Spec.assertEqWith s "the trigger really was on the stack when bob cast" (length (TurnRegisters.stack (GameState.turn settled))) 1
           Spec.assertEqWith s "CR 603.4 not one Forest went to an ability whose permanent had gone" (S.tappedCount S.alice done) 0
           Spec.assertEqWith s "because alice was never offered rule 702.24a's cost at all" (payResponses transcript) []
           -- The leaves-play trigger read the pile bob's Murder left it on, which
@@ -681,9 +712,12 @@ modularSpec s registry =
         let (held, gs0) = S.addHandCard printing S.alice (S.landsInPlay swamp lands)
             gs =
               gs0
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn gs0)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             entered = S.runPure S.identityAnswer gs (S.cast S.alice held >> Stack.resolveTop)
             named oid = fmap Face.name (Game.faceOf oid entered) == Just (CardName.MkCardName (Text.pack name))
@@ -697,9 +731,12 @@ modularSpec s registry =
             (held, gs0) = S.addHandCard wanderer S.alice base
             gs =
               gs0
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn gs0)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             entered = S.runPure S.identityAnswer gs (S.cast S.alice held >> Stack.resolveTop)
             named oid = fmap Face.name (Game.faceOf oid entered) == Just (CardName.MkCardName (Text.pack "Arcbound Wanderer"))
@@ -707,7 +744,17 @@ modularSpec s registry =
       -- One upkeep for alice, run to the end of the priority loop, so the
       -- trigger is gathered (CR 603.3) and resolved. vanishingSpec's helper.
       upkeepOf gs =
-        let began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) S.alice)) (gs {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.activePlayer = S.alice})
+        let began =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) S.alice))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                            TurnRegisters.activePlayer = S.alice
+                          }
+                    }
+                )
             settled = snd (Engine.runGamePure S.identityAnswer began Engine.settleForPriority)
          in snd (Engine.runGamePure S.identityAnswer settled Engine.priorityLoop)
       -- The board Arcbound Overseer's "each creature you control with modular"
@@ -768,8 +815,8 @@ modularSpec s registry =
                       Map.adjust (\lk -> lk {LastKnown.counters = Map.empty}) hybridId (GameState.lastKnown settled)
                   }
               after = S.runPure exercising forgotten Stack.resolveTop
-          Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
-          Spec.assertEqWith s "and resolved off it" (GameState.stack after) []
+          Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
+          Spec.assertEqWith s "and resolved off it" (TurnRegisters.stack (GameState.turn after)) []
           Spec.assertEqWith s "and moved nothing, the record being empty" (plusOnes workerId after) 1
         -- The FAMILY, rule 702.43a's N dropped: Arcbound Overseer {8} Artifact
         -- Creature -- Golem 0/0, "At the beginning of your upkeep, put a +1/+1
@@ -809,7 +856,7 @@ modularSpec s registry =
               Spec.assertBool s (not (S.onBattlefield wandererId after)) "the Wanderer died"
               Spec.assertEqWith s "the Worker is up to five, one plus the Wanderer's four" (plusOnes workerId after) 5
               Spec.assertEqWith s "so it is a 5/5" (S.powerToughnessOf workerId after) (Just (5, 5))
-              Spec.assertEqWith s "the death trigger reached the stack" (length (GameState.stack settled)) 1
+              Spec.assertEqWith s "the death trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         -- The pair for the case above: six mana of ONE colour is one counter,
         -- CR 702.44a's colours rather than mana.
         Spec.it s "CR 702.44c six Swamps are one colour, so one counter" $ do
@@ -876,7 +923,7 @@ piaNalaarSpec s registry =
                   GameEvent.DamageDealt ev | DamageEvent.kind ev == DamageKind.Combat -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
-              (Foldable.toList (GameState.events gs))
+              (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
           )
    in Spec.describe s "Batched combat damage" $ do
         -- The proving test: two artifact creatures and Pia connect in one step.
@@ -906,7 +953,17 @@ piaNalaarSpec s registry =
               (_, withCrewer) = S.addPermanent giant S.alice resolved
           case aetherjetIds resolved of
             [jet] -> do
-              let crewed = crewWith S.identityAnswer jet (withCrewer {GameState.priority = Just S.alice})
+              let crewed =
+                    crewWith
+                      S.identityAnswer
+                      jet
+                      ( withCrewer
+                          { GameState.turn =
+                              (GameState.turn withCrewer)
+                                { TurnRegisters.priority = Just S.alice
+                                }
+                          }
+                      )
               Spec.assertEqWith s "crewed, a 3/3: three {E} were paid of the five she held" (S.powerToughnessOf jet crewed) (Just (3, 3))
               Spec.assertEqWith s "CR 208.3 and uncrewed it had none, whatever its box said" (S.powerToughnessOf jet resolved) Nothing
             other -> Spec.assertFailure s ("expected exactly one Aetherjet, got " <> show (length other))
@@ -922,7 +979,17 @@ piaNalaarSpec s registry =
               (_, withCrewer) = S.addPermanent giant S.alice resolved
           case aetherjetIds resolved of
             [jet] -> do
-              let crewed = crewWith S.identityAnswer jet (withCrewer {GameState.priority = Just S.alice})
+              let crewed =
+                    crewWith
+                      S.identityAnswer
+                      jet
+                      ( withCrewer
+                          { GameState.turn =
+                              (GameState.turn withCrewer)
+                                { TurnRegisters.priority = Just S.alice
+                                }
+                          }
+                      )
               Spec.assertEqWith s "crewed, a 2/2: both {E} were paid" (S.powerToughnessOf jet crewed) (Just (2, 2))
             other -> Spec.assertFailure s ("expected exactly one Aetherjet, got " <> show (length other))
           Spec.assertEqWith s "and the two really left her pool" (energy resolved) 0
@@ -944,7 +1011,16 @@ payAtEndStep n = fst . payAtEndStepCounting n
 payAtEndStepCounting :: Natural -> GameState.GameState -> (GameState.GameState, Int)
 payAtEndStepCounting n gs =
   let endStep = Phase.Ending EndingStep.EndStep
-      begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+      begun =
+        Event.recordEvent
+          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = endStep
+                    }
+              }
+          )
       counting :: Prompt.Prompt r -> State.State Int r
       counting p = case p of
         Prompt.ChoosePaidEnergy {} -> do
@@ -1022,7 +1098,7 @@ aragornSpec s registry =
                   after = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (plan [maulers, piker]) second
               Spec.assertEqWith s "the first combat connected for seven" (S.lifeOf S.bob first) (Just 13)
               Spec.assertEqWith s "renown 2 alone renowned the Maulers" (countersOn maulers first) (Map.singleton CounterKind.PlusOnePlusOne 2)
-              Spec.assertEqWith s "the second phase really ran a declaration" (GameState.phase second) (Phase.Combat CombatStep.DeclareAttackers)
+              Spec.assertEqWith s "the second phase really ran a declaration" (TurnRegisters.phase (GameState.turn second)) (Phase.Combat CombatStep.DeclareAttackers)
               Spec.assertEqWith s "and the second combat connected for eleven" (S.lifeOf S.bob after) (Just 2)
               Spec.assertEqWith s "so the Maulers doubled to four, not three" (countersOn maulers after) (Map.singleton CounterKind.PlusOnePlusOne 4)
               Spec.assertEqWith s "making it an 8/8" (S.powerToughnessOf maulers after) (Just (8, 8))
@@ -1241,7 +1317,7 @@ meleeSpec s registry =
           case ours of
             [wings] -> do
               let after = S.runToStep Phase.PostcombatMain (attacking S.bob) gs
-              Spec.assertEqWith s "CR 511.3 the record is cleared" (Combat.Type.declaredAttacked (GameState.combat after)) Set.empty
+              Spec.assertEqWith s "CR 511.3 the record is cleared" (Combat.Type.declaredAttacked (TurnRegisters.combat (GameState.turn after))) Set.empty
               Spec.assertEqWith s "and the Bird is still a 2/2" (S.powerToughnessOf wings after) (Just (2, 2))
             _ -> Spec.assertFailure s "fixture should give alice one Bird"
         -- CR 702.121b: two instances are two abilities, so two triggers and two

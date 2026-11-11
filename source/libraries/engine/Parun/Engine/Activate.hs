@@ -58,6 +58,7 @@ import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticRead as StaticRead
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
 
@@ -100,7 +101,7 @@ revealIfHidden pid srcId = do
 -- ends the window anyway (CR 400.7).
 revealWindowFor :: ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> ObjectId -> GameState.GameState -> RevealWindow.RevealWindow
 revealWindowFor ability abilId gs = case ActivatedAbility.keyword ability of
-  Just Keyword.Type.Forecast -> RevealWindow.DuringUpkeep (GameState.turnNumber gs)
+  Just Keyword.Type.Forecast -> RevealWindow.DuringUpkeep (TurnRegisters.turnNumber (GameState.turn gs))
   _ -> RevealWindow.WhileOnStack abilId
 
 -- The no-subgame activation (every test that activates directly): a triggered

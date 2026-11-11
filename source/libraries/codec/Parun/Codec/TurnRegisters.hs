@@ -29,7 +29,13 @@ import qualified Parun.Types.EndTurnSignal as EndTurnSignal.Type
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnResume as TurnResume.Type
 
--- | Each field as Parun.Codec.GameState writes the field of the same name.
+-- | 'Fields.required' for the fields no turn can be missing -- `activePlayer`,
+-- `phase` -- and for `turnNumber`, a position whose zero is not an absence,
+-- and `remaining`, which is the rest of the turn and not a collection that
+-- happens to be empty. `combat` stays required too, and costs almost nothing
+-- now that Parun.Codec.Combat defaults its own fields: a cleared combat (CR
+-- 511.3) writes @{"struckFirst":null}@. Everything else is 'Fields.defaulted',
+-- for Parun.Codec.GameState's reasons.
 codec :: Codec.Codec TurnRegisters.TurnRegisters
 codec = Fields.object $ do
   activePlayer <- Fields.required "activePlayer" PlayerId.codec TurnRegisters.activePlayer

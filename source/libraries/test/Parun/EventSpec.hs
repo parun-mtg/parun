@@ -41,6 +41,7 @@ import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -63,7 +64,15 @@ counteringsOf gs =
 beginEndStep :: GameState.GameState -> GameState.GameState
 beginEndStep gs =
   let endStep = Phase.Ending EndingStep.EndStep
-   in Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep})
+   in Event.recordEvent
+        (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
+        ( gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = endStep
+                  }
+            }
+        )
 
 -- CR 117.5: state-based actions, then the trigger scan -- the pass that performs
 -- rule 704.5q's annihilation and puts what it triggers on the stack.
@@ -139,7 +148,14 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (_, g0) = S.addPermanent restInPeace S.alice (Setup.emptyGame S.bothPlayers)
         (bolt, g1) = S.addLibraryCard lightningBolt S.bob g0
-        onStack = g1 {GameState.stack = bolt : GameState.stack g1, GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Stack}) bolt (GameState.objects g1)}
+        onStack =
+          g1
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.stack = bolt : TurnRegisters.stack (GameState.turn g1)
+                  },
+              GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Stack}) bolt (GameState.objects g1)
+            }
         after = S.runPure S.identityAnswer onStack (Event.changeZone (pure ()) bolt Zone.Graveyard)
     Spec.assertEqWith s "spell exiled, graveyard empty" (length (Game.zoneMembers Zone.Graveyard S.bob after)) 0
 
@@ -147,7 +163,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (spellId, onStack) = S.spellOnStack piker S.bob (Setup.emptyGame S.bothPlayers)
         after = S.runPure S.identityAnswer onStack (Event.counter (pure ()) S.noSource S.alice spellId)
-    Spec.assertEqWith s "off the stack" (GameState.stack after) []
+    Spec.assertEqWith s "off the stack" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "in bob's graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob after)) 1
     Spec.assertEqWith s "not on the battlefield" (S.creaturesInPlay S.bob after) 0
     -- The distinct event, recorded ALONGSIDE the Moved event the same move
@@ -169,7 +185,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
     rendingVolley <- S.printingOf s registry "Rending Volley"
     let (spellId, onStack) = S.spellOnStack rendingVolley S.bob (Setup.emptyGame S.bothPlayers)
         after = S.runPure S.identityAnswer onStack (Event.counter (pure ()) S.noSource S.alice spellId)
-    Spec.assertEqWith s "still on the stack, under its original id" (GameState.stack after) [spellId]
+    Spec.assertEqWith s "still on the stack, under its original id" (TurnRegisters.stack (GameState.turn after)) [spellId]
     Spec.assertEqWith s "nothing reached the graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob after)) 0
     -- CR 603.2g: "an event that's prevented or replaced won't trigger
     -- anything." A spell that can't be countered was never countered, so the
@@ -477,7 +493,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
   --
   -- The assertion is the CARD's, never the log's: what the delayed ability puts
   -- back is what proves the event reached a trigger, where an assertion over
-  -- GameState.events would pass off an event nothing reads.
+  -- TurnRegisters.events would pass off an event nothing reads.
   --
   -- Every board here leaves +1/+1 counters BEHIND after the annihilation, so the
   -- Hydra survives its own state-based check and the end step can be reached.

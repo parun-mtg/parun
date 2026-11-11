@@ -124,6 +124,7 @@ import qualified Parun.Types.ThrowKind as ThrowKind
 import qualified Parun.Types.ThrowResult as ThrowResult
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 608.2g: make the offer Effect.OfferCast carries, once or over again.
@@ -442,11 +443,11 @@ offerCastOnce runSubgame context named caster optionality verb retake offer = do
         CastObligation.Optional -> mayDo oid name play
     Just (Right (oid, name, applied, excused)) -> do
       let cast = do
-            stackBefore <- State.gets GameState.stack
+            stackBefore <- State.gets (TurnRegisters.stack . GameState.turn)
             Cast.castSpellWith (performManaAbility runSubgame) False True applied (CastOffer.spending offer) caster oid name facing
             -- CR 608.2g: the spell is the new topmost object. A cast that was
             -- reversed put nothing new on top.
-            stackAfter <- State.gets GameState.stack
+            stackAfter <- State.gets (TurnRegisters.stack . GameState.turn)
             let spell = case stackAfter of
                   sid : _ | notElem sid stackBefore -> Just sid
                   _ -> Nothing
@@ -484,7 +485,7 @@ offerCastOnce runSubgame context named caster optionality verb retake offer = do
 applyEffectWith :: Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 applyEffectWith runSubgame resolving source controller legal chosen effect = Event.causedBy (Just controller) $ do
   before <- State.gets GameState.exile
-  logged <- State.gets (Seq.length . GameState.events)
+  logged <- State.gets (Seq.length . (TurnRegisters.events . GameState.turn))
   -- Read BEFORE the effect runs, while the resolving ability is surely still an
   -- object to read.
   ability <- State.gets (resolvingAbilityName resolving)

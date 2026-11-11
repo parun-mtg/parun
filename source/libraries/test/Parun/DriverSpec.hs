@@ -22,6 +22,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Response as Response
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Driver" $ do
@@ -55,8 +56,8 @@ spec s registry = Spec.describe s "Driver" $ do
     Spec.assertEqWith s "transcript" (Maybe.catMaybes seen) recorded
   Spec.it s "drive stops when its predicate says so" $ do
     matchup <- S.redRed (S.printingOf s registry)
-    let stopped = State.evalState (Driver.drive [] casting 1000 (\gs -> pure (GameState.turnNumber gs >= 3)) (started matchup)) ()
-    Spec.assertEqWith s "turn" (GameState.turnNumber stopped) 3
+    let stopped = State.evalState (Driver.drive [] casting 1000 (\gs -> pure (TurnRegisters.turnNumber (GameState.turn gs) >= 3)) (started matchup)) ()
+    Spec.assertEqWith s "turn" (TurnRegisters.turnNumber (GameState.turn stopped)) 3
     Spec.assertBool s (Maybe.isNothing (GameState.result stopped)) "unfinished"
   Spec.it s "drive returns a finished game rather than outrunning it" $ do
     matchup <- S.redRed (S.printingOf s registry)

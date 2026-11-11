@@ -27,6 +27,7 @@ import qualified Parun.Types.PermissionLimit as PermissionLimit
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RollModifier as RollModifier
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | The CR 706.2 modifiers in force over the rolls `pid` is making, read fresh
 -- for EACH die rather than once for the instruction: rule 706.2 words a modifier
@@ -99,7 +100,7 @@ pickModifier roller candidates = case candidates of
 
 -- | Whether a modifier's printed budget still admits it: Night Shift of the
 -- Living Dead's "Do this only once each turn", read against
--- GameState.rollModifiersUsedThisTurn; a once-each-of-your-turns budget only on
+-- TurnRegisters.rollModifiersUsedThisTurn; a once-each-of-your-turns budget only on
 -- `payer`'s own turn as well (CR 805.4a's team turn included), `payer` being
 -- the modifier's "you" (CR 109.5). A
 -- budgeted modifier with no object behind it has nowhere to be spent and is not
@@ -108,7 +109,7 @@ withinLimit :: GameState -> PlayerId -> Maybe ObjectId -> ModifiedRoll.ModifiedR
 withinLimit gs payer stated modifier =
   let unspent = case stated of
         Nothing -> False
-        Just oid -> Set.notMember modifier (Map.findWithDefault Set.empty oid (GameState.rollModifiersUsedThisTurn gs))
+        Just oid -> Set.notMember modifier (Map.findWithDefault Set.empty oid (TurnRegisters.rollModifiersUsedThisTurn (GameState.turn gs)))
    in case ModifiedRoll.limit modifier of
         PermissionLimit.Unlimited -> True
         PermissionLimit.OnceEachTurn -> unspent
@@ -119,7 +120,12 @@ spendLimit :: Maybe ObjectId -> ModifiedRoll.ModifiedRoll -> GameState -> GameSt
 spendLimit stated modifier gs = case stated of
   Just oid
     | ModifiedRoll.limit modifier /= PermissionLimit.Unlimited ->
-        gs {GameState.rollModifiersUsedThisTurn = Map.insertWith Set.union oid (Set.singleton modifier) (GameState.rollModifiersUsedThisTurn gs)}
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.rollModifiersUsedThisTurn = Map.insertWith Set.union oid (Set.singleton modifier) (TurnRegisters.rollModifiersUsedThisTurn (GameState.turn gs))
+                }
+          }
   _ -> gs
 
 -- | CR 706.6: throw away the `n` lowest of these rolls, so that what comes back

@@ -129,6 +129,7 @@ import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Uses as Uses
@@ -1582,7 +1583,7 @@ widerSpending one other = case (one, other) of
 --     exile" -- where CR 716.3d's permission names a player instead, which is why
 --     the two are separate disjuncts above rather than one test;
 --   * the turn is a LATER one than the stamp, "during any turn after the turn in
---     which it became plotted". A strict comparison on GameState.turnNumber,
+--     which it became plotted". A strict comparison on TurnRegisters.turnNumber,
 --     which counts every turn the game takes -- extra turns (CR 500.7) included
 --     -- so the clause needs no other bookkeeping.
 --   * the window, "during their main phase while the stack is empty", which is
@@ -1607,7 +1608,7 @@ permitsCastPlotted :: PlayerId -> ObjectId -> GameState -> Bool
 permitsCastPlotted pid oid gs = Maybe.fromMaybe False $ do
   obj <- Game.lookupObject oid gs
   turn <- Object.plotted obj
-  pure (Object.owner obj == pid && GameState.turnNumber gs > turn && sorcerySpeed pid gs)
+  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn && sorcerySpeed pid gs)
 
 -- CR 702.143a: may this player cast this FORETOLD card? permitsCastPlotted's
 -- stamp, owner and later-turn conjuncts one rule over, and the rule states each
@@ -1624,7 +1625,7 @@ permitsCastPlotted pid oid gs = Maybe.fromMaybe False $ do
 --     only for looking and leaves "it may be cast" passive; the conjunct reads the
 --     caster as that owner.
 --   * the turn is a LATER one, "after the current turn has ended". A strict
---     comparison on GameState.turnNumber, plotted's clause exactly.
+--     comparison on TurnRegisters.turnNumber, plotted's clause exactly.
 --
 -- The rule fixes no window beyond that, unlike CR 702.170d's main phase: a
 -- foretold card is cast whenever its own card type could be, so nothing here
@@ -1638,7 +1639,7 @@ permitsCastForetold :: PlayerId -> ObjectId -> GameState -> Bool
 permitsCastForetold pid oid gs = Maybe.fromMaybe False $ do
   obj <- Game.lookupObject oid gs
   turn <- Object.foretold obj
-  pure (Object.owner obj == pid && GameState.turnNumber gs > turn)
+  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn)
 
 -- CR 702.185a: may this player cast this WARPED card? permitsCastForetold's three
 -- conjuncts one rule over, and rule 702.185a states each of them:
@@ -1647,7 +1648,7 @@ permitsCastForetold pid oid gs = Maybe.fromMaybe False $ do
 --     wrote as rule 702.185a's delayed ability exiled it (CR 702.185b);
 --   * this player is its OWNER, "ITS OWNER may cast this card";
 --   * the turn is a LATER one, "after the current turn has ended" -- foretell's
---     clause word for word, and a strict comparison on GameState.turnNumber for
+--     clause word for word, and a strict comparison on TurnRegisters.turnNumber for
 --     its reason: that counter takes in extra turns (CR 500.7), so the clause
 --     needs no bookkeeping of its own.
 --
@@ -1664,7 +1665,7 @@ permitsCastWarped :: PlayerId -> ObjectId -> GameState -> Bool
 permitsCastWarped pid oid gs = Maybe.fromMaybe False $ do
   obj <- Game.lookupObject oid gs
   turn <- Object.warped obj
-  pure (Object.owner obj == pid && GameState.turnNumber gs > turn)
+  pure (Object.owner obj == pid && TurnRegisters.turnNumber (GameState.turn gs) > turn)
 
 -- The objects in a castable zone that this player might cast, BEFORE any
 -- permission is consulted -- the membership half of inCastableZone's two
@@ -1820,7 +1821,7 @@ xConfinement oid gs = do
 -- Does the game state satisfy this one printed clause?
 restrictionMet :: PlayerId -> ObjectId -> GameState -> CastingRestriction.CastingRestriction -> Bool
 restrictionMet pid oid gs restriction = case restriction of
-  -- CR 500.1's phases and steps: Turn.inWindow asks whether GameState.phase
+  -- CR 500.1's phases and steps: Turn.inWindow asks whether TurnRegisters.phase
   -- falls inside the window the rider names. CONTAINMENT rather than equality,
   -- since a rider may name a phase that has steps; Necrologia names one step of
   -- the ending phase (CR 512.1), so the cleanup step of that same phase is
@@ -1841,7 +1842,7 @@ restrictionMet pid oid gs restriction = case restriction of
   -- side's clause of the same name asks exactly it: one question about the combat
   -- record, two gates that differ in what ELSE they may read (CR 307.5).
   CastingRestriction.AttackedThisStep -> Turn.attackedThisStep pid gs
-  -- CR 506.8b, read off the combat record rather than off GameState.phase:
+  -- CR 506.8b, read off the combat record rather than off TurnRegisters.phase:
   -- Turn.afterBlockersDeclared says why the record answers CR 506.8c and CR
   -- 506.8f as well. Curtain of Light is the card; Trap Runner prints the same
   -- clause on an activation, where CR 506.8g sends
@@ -1852,7 +1853,7 @@ restrictionMet pid oid gs restriction = case restriction of
   CastingRestriction.BeforeStep target -> Turn.beforeStep target gs
   -- CR 506.8b, 506.8c and 506.8e; Turn.duringCombatBefore says why it reads the
   -- phase rather than the combat record. Panic.
-  CastingRestriction.DuringCombatBefore target -> Turn.duringCombatBefore target (GameState.phase gs)
+  CastingRestriction.DuringCombatBefore target -> Turn.duringCombatBefore target (TurnRegisters.phase (GameState.turn gs))
   -- CR 102.1 alone: DuringPhase's second conjunct with no window.
   CastingRestriction.DuringTurn scope -> Turn.duringRunningTurn named gs Nothing scope pid
   -- CR 500.7: the caster's own turns, extra ones included; another player's

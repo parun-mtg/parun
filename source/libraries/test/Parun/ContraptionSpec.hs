@@ -51,6 +51,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SideDeck as SideDeck
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
 
@@ -167,7 +168,17 @@ crankBoard depot piker sprocket =
   let (pikerId, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
       (depotId, g2) = S.addPermanent depot S.alice g1
       onSprocket = g2 {GameState.objects = Map.adjust (\o -> o {Object.designations = Set.insert sprocket (Object.designations o)}) depotId (GameState.objects g2)}
-   in (onSprocket {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}, depotId, pikerId)
+   in ( onSprocket
+          { GameState.turn =
+              (GameState.turn onSprocket)
+                { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          },
+        depotId,
+        pikerId
+      )
 
 -- The upkeep's crank, then everything it triggered resolved.
 upkeep :: Game ()
@@ -204,7 +215,15 @@ crankSpec s registry = Spec.describe s "Crank" $ do
   Spec.it s "a player who controls no Contraption keeps the counter where it is" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (_, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
-        gs = g1 {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        gs =
+          g1
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         (after, _) = driving [] id Nothing gs upkeep
     Spec.assertEqWith s "still the third sprocket" (Contraption.crankCounterOf S.alice after) Designation.Sprocket3
   Spec.it s "the turn machinery itself cranks as the upkeep begins" $ do

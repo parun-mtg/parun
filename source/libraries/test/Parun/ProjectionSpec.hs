@@ -123,6 +123,7 @@ import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
@@ -739,7 +740,17 @@ elspethEmblemBoard s registry ultimate = do
       used = case (ultimate, drop 2 (Face.activatedAbilities (S.combinedFace elspeth))) of
         (True, ability : _) -> S.runPure S.identityAnswer armed (do Activate.activateAbility S.alice elspethId ability; Stack.resolveTop)
         _ -> armed
-  pure (mine, theirs, carols, used {GameState.activePlayer = S.bob})
+  pure
+    ( mine,
+      theirs,
+      carols,
+      used
+        { GameState.turn =
+            (GameState.turn used)
+              { TurnRegisters.activePlayer = S.bob
+              }
+        }
+    )
 
 -- alice puts an emblem-minting artifact out and taps it, so CR 114.2's emblem is
 -- in the command zone. Synthetic Emblem Forge's emblem GRANTS ("{T}: You get an
@@ -799,7 +810,16 @@ dealTo src victim amount gs =
 -- gives a loyalty ability -- Setup.emptyGame leaves the board in the untap step.
 serraEmblemBoard :: Bool -> Printing.Printing -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)
 serraEmblemBoard ultimate serra gs =
-  let (serraId, placed) = S.addPermanent serra S.alice gs {GameState.phase = Phase.PrecombatMain}
+  let (serraId, placed) =
+        S.addPermanent
+          serra
+          S.alice
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.PrecombatMain
+                  }
+            }
       armed = S.addCounter CounterKind.Loyalty 6 serraId placed
    in ( serraId,
         S.settleSba
@@ -1280,7 +1300,13 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     case ability of
       Nothing -> Spec.assertFailure s "Liquimetal Coating should print one activated ability"
       Just coat -> do
-        let ready = g2 {GameState.priority = Just S.alice}
+        let ready =
+              g2
+                { GameState.turn =
+                    (GameState.turn g2)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
             activated = snd (Engine.runGamePure (aimAtObject moonId) ready (Activate.activateAbility S.alice coatingId coat))
             coated = snd (Engine.runGamePure (aimAtObject moonId) activated Stack.resolveTop)
             sung = snd (S.addPermanent titaniasSong S.bob coated)
@@ -2097,7 +2123,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
       ping : _ -> do
         let pinged = snd (Engine.runGamePure (aimAtCreature victimId) g3 (Activate.activateAbility S.alice sorcererId ping))
         Spec.assertEqWith s "the blue Sorcerer is white, so Celestial Dawn is live" (Projection.colorsOf sorcererId pinged) (Set.singleton Color.White)
-        Spec.assertEqWith s "but its ability on the stack stays colourless" (fmap (`Projection.colorsOf` pinged) (filter (`Game.isAbility` pinged) (GameState.stack pinged))) [Set.empty]
+        Spec.assertEqWith s "but its ability on the stack stays colourless" (fmap (`Projection.colorsOf` pinged) (filter (`Game.isAbility` pinged) (TurnRegisters.stack (GameState.turn pinged)))) [Set.empty]
 
   Spec.it s "CR 613.8 Urborg's stripped ability adds no Swamp to a Forest (Blood Moon older)" $ do
     forest <- S.printingOf s registry "Forest"
@@ -3524,7 +3550,13 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     case ability of
       Nothing -> Spec.assertFailure s "Liquimetal Coating should print one activated ability"
       Just coat -> do
-        let ready = g2 {GameState.priority = Just S.alice}
+        let ready =
+              g2
+                { GameState.turn =
+                    (GameState.turn g2)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
             activated = snd (Engine.runGamePure (aimAtObject landId) ready (Activate.activateAbility S.alice coatingId coat))
             coated = snd (Engine.runGamePure (aimAtObject landId) activated Stack.resolveTop)
         Spec.assertBool s (Set.member CardType.Artifact (Projection.cardTypesOf landId coated)) "the Forest is an artifact now"
@@ -4289,7 +4321,15 @@ shapeshifterBoard shapeshifter sorcerer sentry =
             ManaUnit.sourceChoices = Nothing,
             ManaUnit.sourceLastExiled = Nothing
           }
-   in (shifterId, b2 {GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana [blue, blue]), GameState.priority = Just S.alice})
+   in ( shifterId,
+        b2
+          { GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana [blue, blue]),
+            GameState.turn =
+              (GameState.turn b2)
+                { TurnRegisters.priority = Just S.alice
+                }
+          }
+      )
 
 -- alice's Volrath's Shapeshifter, with `top` the only card in her graveyard.
 fullTextBoard :: Printing.Printing -> Printing.Printing -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)
@@ -4896,9 +4936,33 @@ levelerSpec s registry = Spec.describe s "Leveler" $ do
     Spec.assertBool s (not (null (levelUpsOf oid gs))) "offered at zero counters"
     Spec.assertBool s (not (null (levelUpsOf oid (S.addCounter CounterKind.Level 6 oid gs)))) "offered at six"
     Spec.assertBool s (not (null (levelUpsOf oid seven))) "and still offered past the last level symbol"
-    Spec.assertEqWith s "not during combat" (levelUpsOf oid gs {GameState.phase = Phase.Combat CombatStep.DeclareBlockers}) []
-    Spec.assertEqWith s "not on bob's turn" (levelUpsOf oid gs {GameState.activePlayer = S.bob}) []
-    Spec.assertBool s (elem spellId (GameState.stack withSpell)) "the stack really is occupied"
+    Spec.assertEqWith
+      s
+      "not during combat"
+      ( levelUpsOf
+          oid
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareBlockers
+                  }
+            }
+      )
+      []
+    Spec.assertEqWith
+      s
+      "not on bob's turn"
+      ( levelUpsOf
+          oid
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            }
+      )
+      []
+    Spec.assertBool s (elem spellId (TurnRegisters.stack (GameState.turn withSpell))) "the stack really is occupied"
     Spec.assertEqWith s "not with a spell on the stack" (levelUpsOf oid withSpell) []
 
   -- CR 302.6 reaches an ability only through a tap or untap symbol in its cost,
@@ -4935,7 +4999,16 @@ studentBoard s registry plains = do
   student <- S.printingOf s registry "Student of Warfare"
   plainsPrinting <- S.printingOf s registry "Plains"
   let (oid, g0) = S.addPermanent student S.alice (S.landsInPlay plainsPrinting plains)
-  pure (oid, g0 {GameState.priority = Just S.alice, GameState.phase = Phase.PrecombatMain})
+  pure
+    ( oid,
+      g0
+        { GameState.turn =
+            (GameState.turn g0)
+              { TurnRegisters.priority = Just S.alice,
+                TurnRegisters.phase = Phase.PrecombatMain
+              }
+        }
+    )
 
 -- The level counters on a permanent, 0 if it has none.
 levelsOn :: ObjectId.ObjectId -> GameState.GameState -> Natural.Natural
@@ -5249,8 +5322,22 @@ conditionalAbilitySpec s registry = Spec.describe s "ConditionalActivatedAbility
     demon <- S.printingOf s registry "Master of the Feast"
     swamp <- S.printingOf s registry "Swamp"
     let (ogreId, base) = S.addPermanent ogre S.alice (S.landsInPlay swamp 1)
-        alone = base {GameState.priority = Just S.alice}
-        withDemon = (snd (S.addPermanent demon S.alice base)) {GameState.priority = Just S.alice}
+        alone =
+          base
+            { GameState.turn =
+                (GameState.turn base)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
+        withDemon =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (snd (S.addPermanent demon S.alice base))
+
         offered gs = (length (Activatable.abilitiesFor ogreId gs), any (isActivateOfOgre ogreId) (Action.legalActions S.alice gs))
     Spec.assertEqWith
       s
@@ -5265,7 +5352,15 @@ conditionalAbilitySpec s registry = Spec.describe s "ConditionalActivatedAbility
     nexus <- S.printingOf s registry "Maskwood Nexus"
     swamp <- S.printingOf s registry "Swamp"
     let (ogreId, base) = S.addPermanent ogre S.alice (S.landsInPlay swamp 1)
-        gs = (snd (S.addPermanent nexus S.alice base)) {GameState.priority = Just S.alice}
+        gs =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (snd (S.addPermanent nexus S.alice base))
+
     Spec.assertEqWith s "the Ogre is a Demon" (Set.member Subtype.Type.Demon (Projection.subtypesOf ogreId gs)) True
     Spec.assertEqWith s "so the ability is offered" (length (Activatable.abilitiesFor ogreId gs)) 1
   -- CR 613.1: and the clause is judged at the depth of whoever asked. Asked of
@@ -5323,7 +5418,15 @@ hiddenZoneStaticSpec s registry = Spec.describe s "HiddenZoneStatics" $ do
               (_, b3) = S.addLibraryCard mountain S.alice b2
               (_, b4) = S.addHandCard mountain S.alice b3
               (subjectId, b5) = S.addHandCard subject S.alice b4
-           in (entomberId, subjectId, b5 {GameState.priority = Just S.alice})
+           in ( entomberId,
+                subjectId,
+                b5
+                  { GameState.turn =
+                      (GameState.turn b5)
+                        { TurnRegisters.priority = Just S.alice
+                        }
+                  }
+              )
         (gristEntomber, gristHandId, gristBoard) = board grist
         (jaceEntomber, _, jaceBoard) = board jace
         ability = soleActivatedAbility entomber
@@ -5535,7 +5638,7 @@ staticGrantSpec s registry = Spec.describe s "StaticGrantedStatic" $ do
           _ -> S.identityAnswer p
         settle gs =
           let placed = S.runPure S.identityAnswer gs Engine.settleForPriority
-           in if null (GameState.stack placed) then placed else settle (S.runPure S.identityAnswer placed Stack.resolveTop)
+           in if null (TurnRegisters.stack (GameState.turn placed)) then placed else settle (S.runPure S.identityAnswer placed Stack.resolveTop)
         ready = settle (S.runPure S.identityAnswer withArmed (S.cast S.alice armedId))
     case S.tokensOf ready of
       [clueId, otherClueId] -> case filter (Maybe.isJust . ActivatedAbility.keyword) (Projection.abilitiesOf clueId ready) of

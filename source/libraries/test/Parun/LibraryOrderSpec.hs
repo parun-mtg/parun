@@ -102,6 +102,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 countersSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -202,7 +203,13 @@ sauroformHybridSpec s registry = Spec.describe s "SauroformHybrid" $ do
     forest <- S.printingOf s registry "Forest"
     hybrid <- S.printingOf s registry "Sauroform Hybrid"
     let (hybridId, placed) = S.addPermanent hybrid S.alice (S.landsInPlay forest 12)
-        board = placed {GameState.priority = Just S.alice}
+        board =
+          placed
+            { GameState.turn =
+                (GameState.turn placed)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         adapt gs ability = S.runPure S.identityAnswer gs $ do
           Activate.activateAbility S.alice hybridId ability
           Stack.resolveTop
@@ -219,7 +226,7 @@ sauroformHybridSpec s registry = Spec.describe s "SauroformHybrid" $ do
         Spec.assertEqWith s "the second adapt adds none" (countersOn twice) (Just 4)
         Spec.assertEqWith s "and it is still 6/6" (S.powerToughnessOf hybridId twice) (Just (6, 6))
         Spec.assertEqWith s "but it was activated and paid for all the same" (S.tappedCount S.alice twice) 12
-        Spec.assertEqWith s "and nothing is left on the stack" (length (GameState.stack twice)) 0
+        Spec.assertEqWith s "and nothing is left on the stack" (length (TurnRegisters.stack (GameState.turn twice))) 0
       abilities -> Spec.assertFailure s ("expected one adapt ability, got " <> show (length abilities))
 
 -- CR 701.37a: "'Monstrosity N' means 'If this permanent isn't monstrous, put N
@@ -243,7 +250,13 @@ nessianAspSpec s registry = Spec.describe s "NessianAsp" $ do
     forest <- S.printingOf s registry "Forest"
     asp <- S.printingOf s registry "Nessian Asp"
     let (aspId, placed) = S.addPermanent asp S.alice (S.landsInPlay forest 16)
-        board = placed {GameState.priority = Just S.alice}
+        board =
+          placed
+            { GameState.turn =
+                (GameState.turn placed)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         monstrosity gs ability = S.runPure S.identityAnswer gs $ do
           Activate.activateAbility S.alice aspId ability
           Stack.resolveTop
@@ -260,7 +273,7 @@ nessianAspSpec s registry = Spec.describe s "NessianAsp" $ do
         Spec.assertEqWith s "the second monstrosity adds none" (countersOn aspId twice) (Just 4)
         Spec.assertEqWith s "and it is still 8/9" (S.powerToughnessOf aspId twice) (Just (8, 9))
         Spec.assertEqWith s "but it was activated and paid for all the same" (S.tappedCount S.alice twice) 14
-        Spec.assertEqWith s "and nothing is left on the stack" (length (GameState.stack twice)) 0
+        Spec.assertEqWith s "and nothing is left on the stack" (length (TurnRegisters.stack (GameState.turn twice))) 0
       abilities -> Spec.assertFailure s ("expected one monstrosity ability, got " <> show (length abilities))
   -- CR 701.37b's designation, not CR 701.46a's counter count: the two gates agree
   -- on every board where the only counters are monstrosity's own, and this is the
@@ -269,7 +282,15 @@ nessianAspSpec s registry = Spec.describe s "NessianAsp" $ do
     forest <- S.printingOf s registry "Forest"
     asp <- S.printingOf s registry "Nessian Asp"
     let (aspId, placed) = S.addPermanent asp S.alice (S.landsInPlay forest 16)
-        board = (S.addCounter CounterKind.PlusOnePlusOne 1 aspId placed) {GameState.priority = Just S.alice}
+        board =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.addCounter CounterKind.PlusOnePlusOne 1 aspId placed)
+
     case Activatable.abilitiesFor aspId board of
       [ability] -> do
         let after = S.runPure S.identityAnswer board $ do
@@ -291,7 +312,13 @@ nessianAspSpec s registry = Spec.describe s "NessianAsp" $ do
     unsummon <- S.printingOf s registry "Unsummon"
     let (aspId, placed) = S.addPermanent asp S.alice (S.landsInPlay forest 16)
         (_, withIsland) = S.addPermanent island S.alice placed
-        board = withIsland {GameState.priority = Just S.alice}
+        board =
+          withIsland
+            { GameState.turn =
+                (GameState.turn withIsland)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
     case Activatable.abilitiesFor aspId board of
       [ability] -> do
         let once = S.runPure S.identityAnswer board $ do
@@ -561,7 +588,16 @@ scryBoard s registry stock = do
       deck = reverse (take stock [piker, maiden, mountain, forest])
       deal (acc, gs) printing = let (oid, gs2) = S.addLibraryCard printing S.alice gs in (oid : acc, gs2)
       (ids, stocked) = List.foldl' deal ([], placed) deck
-  pure (ids, ballId, stocked {GameState.priority = Just S.alice})
+  pure
+    ( ids,
+      ballId,
+      stocked
+        { GameState.turn =
+            (GameState.turn stocked)
+              { TurnRegisters.priority = Just S.alice
+              }
+        }
+    )
 
 -- Answers Prompt.ChooseScry with a FIXED pair of lists, whatever the engine
 -- offers. Pinned rather than derived from the offered list: an answerer that
@@ -642,7 +678,7 @@ scrySpec s registry = Spec.describe s "Scry" $ do
       "CR 701.22d: each seat scried"
       (filter (`elem` fmap (GameEvent.PlayerActed . PlayerActed.MkPlayerActed PlayerAction.Scry) seats) (S.eventsOf after))
       (fmap (GameEvent.PlayerActed . PlayerActed.MkPlayerActed PlayerAction.Scry) seats)
-    Spec.assertEqWith s "CR 603.6a: the enters trigger, and nothing else, was on the stack" (length (GameState.stack onStack)) 1
+    Spec.assertEqWith s "CR 603.6a: the enters trigger, and nothing else, was on the stack" (length (TurnRegisters.stack (GameState.turn onStack))) 1
 
 -- The elision half. Each case counts the scry prompts one activation raises,
 -- and the two-card board is the one-card board's PAIR: same seats, same mana,
@@ -779,7 +815,16 @@ surveilOpcodeBoard s registry stock = do
   let (sourceId, base) = S.addPermanent piker S.alice (S.landsInPlay island 1)
       deal (acc, gs) printing = let (oid, gs2) = S.addLibraryCard printing S.alice gs in (oid : acc, gs2)
       (ids, stocked) = List.foldl' deal ([], base) (reverse (take stock [maiden, mountain]))
-  pure (ids, sourceId, stocked {GameState.priority = Just S.alice})
+  pure
+    ( ids,
+      sourceId,
+      stocked
+        { GameState.turn =
+            (GameState.turn stocked)
+              { TurnRegisters.priority = Just S.alice
+              }
+        }
+    )
 
 surveilPromptSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 surveilPromptSpec s registry = Spec.describe s "SurveilPrompt" $ do
@@ -961,7 +1006,7 @@ exploreSpec s registry = Spec.describe s "Explore" $ do
     let after = runExplore (exploreAnswer OptionalDecision.Exercises) spell board
         walker = namedOnBattlefield "Merfolk Branchwalker" after
     Spec.assertBool s (Maybe.isJust walker) "the Branchwalker resolved onto the battlefield"
-    Spec.assertEqWith s "stack empty: the spell and its trigger both resolved" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "stack empty: the spell and its trigger both resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "the Mountain left the top of the library" (zoneNames Zone.Library after) ["Bird Maiden"]
     Spec.assertEqWith s "and is in hand" (zoneNames Zone.Hand after) ["Mountain"]
     -- CR 701.20a: the reveal is public, so it is in the log every player reads.
@@ -1053,9 +1098,12 @@ hakbalBoard s registry crowded = do
       snd others,
       myrId,
       stocked
-        { GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn stocked)
+              { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 
@@ -1190,7 +1238,14 @@ runWildsUpkeep answer gs =
       began =
         Event.recordEvent
           (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = upkeep,
+                      TurnRegisters.activePlayer = S.alice
+                    }
+              }
+          )
       settled = S.runPure answer began Engine.settleForPriority
    in S.runPure answer settled Engine.priorityLoop
 
@@ -1217,7 +1272,7 @@ lookAtSpec s registry = Spec.describe s "LookAt" $ do
     let after = runWildsUpkeep (wildsAnswer OptionalDecision.Exercises) board
     Spec.assertEqWith s "the Forest left the library" (zoneNames Zone.Library after) ["Bird Maiden"]
     Spec.assertEqWith s "and is on the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Forest")) S.alice after) 1
-    Spec.assertEqWith s "stack empty: the trigger resolved" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "stack empty: the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
     -- The whole of CR 701.20e: a look is shown to one player, so it records
     -- nothing where CR 701.20a's reveal would have.
     Spec.assertEqWith s "nothing was revealed on the way" (revealedNames after) []
@@ -1248,7 +1303,7 @@ lookAtSpec s registry = Spec.describe s "LookAt" $ do
     board <- wildsBoard s registry []
     let after = runWildsUpkeep (wildsAnswer OptionalDecision.Exercises) board
     Spec.assertEqWith s "the library is still empty" (zoneNames Zone.Library after) []
-    Spec.assertEqWith s "stack empty: the trigger resolved" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "stack empty: the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
 
 -- alice's Clone copying bob's Mudbutton Clanger, over a library holding one
 -- card. The Clone is a Goblin Warrior by CR 707.2 and a Shapeshifter as printed,
@@ -1363,7 +1418,14 @@ lookAtPromptSpec s registry = Spec.describe s "LookAtPrompt" $ do
             began =
               Event.recordEvent
                 (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-                (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = upkeep,
+                            TurnRegisters.activePlayer = S.alice
+                          }
+                    }
+                )
          in State.execState
               (Engine.runGame counting began (Engine.settleForPriority >> Engine.priorityLoop))
               0
@@ -1544,7 +1606,19 @@ denethorBoard s registry = do
       ability = case Face.activatedAbilities (S.combinedFace denethor) of
         ab : _ -> ab
         [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
-  pure (ability, srcId, S.withMonarch S.alice (gs1 {GameState.priority = Just S.alice}))
+  pure
+    ( ability,
+      srcId,
+      S.withMonarch
+        S.alice
+        ( gs1
+            { GameState.turn =
+                (GameState.turn gs1)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
+        )
+    )
 
 -- CR 726.1: "The monarch is a designation a player can have. There is no monarch
 -- in a game until an effect instructs a player to become the monarch." Every
@@ -1573,7 +1647,7 @@ targetedMonarchSpec s registry = Spec.describe s "TargetedMonarch" $ do
     Spec.assertEqWith s "bob took none of it" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "and neither did alice" (S.lifeOf S.alice after) (Just 20)
     Spec.assertEqWith s "the cost sacrificed Denethor into alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "and the ability left the stack" (GameState.stack after) []
+    Spec.assertEqWith s "and the ability left the stack" (TurnRegisters.stack (GameState.turn after)) []
 
   -- The classification half, asserted directly. slotsOf is the READ side of the
   -- D4 dataflow lint and has no runtime consumer: Resolve.resolveModes re-derives
@@ -1780,7 +1854,7 @@ exileUntilMonarchSpec s registry = Spec.describe s "ExileUntilMonarch" $ do
     Spec.assertEqWith s "alice crowning herself frees nobody" (S.creaturesInPlay S.carol toAlice) 0
     Spec.assertEqWith s "she is still the monarch" (GameState.monarch toAlice) (Just S.alice)
     Spec.assertEqWith s "and the watch is still armed" (Map.size (GameState.movedUntil toAlice)) 1
-    Spec.assertEqWith s "both runs resolved the spell" (length (GameState.stack toBob), length (GameState.stack toAlice)) (0, 0)
+    Spec.assertEqWith s "both runs resolved the spell" (length (TurnRegisters.stack (GameState.turn toBob)), length (TurnRegisters.stack (GameState.turn toAlice))) (0, 0)
 
 -- Palace Jailer's exile as its card file spells it: CR 610.3's move with CR
 -- 726's ending, out of the slot's target and into exile.
@@ -1823,7 +1897,15 @@ optionalEffectSpec s registry =
         faith <- S.printingOf s registry printing
         plains <- S.printingOf s registry land
         let (g1, faithId) = S.handOne faith (S.landsInPlay plains 2)
-        pure (g1 {GameState.priority = Just S.alice}, faithId)
+        pure
+          ( g1
+              { GameState.turn =
+                  (GameState.turn g1)
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              },
+            faithId
+          )
       -- Deem Worthy in hand with four Mountains for its {3}{R} cycling, and one
       -- Goblin Piker on the battlefield as the only legal creature target.
       deemWorthyBoard = do
@@ -1832,7 +1914,16 @@ optionalEffectSpec s registry =
         piker <- S.printingOf s registry "Goblin Piker"
         let (creature, g0) = S.addPermanent piker S.alice (S.landsInPlay mountain 4)
             (g1, worthyId) = S.handOne worthy g0
-        pure (g1 {GameState.priority = Just S.alice}, worthyId, creature)
+        pure
+          ( g1
+              { GameState.turn =
+                  (GameState.turn g1)
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              },
+            worthyId,
+            creature
+          )
       -- Eccentric Farmer {2}{G} Creature -- Human Peasant 2/3, "When this
       -- creature enters, mill three cards, then you may return a land card from
       -- your graveyard to your hand." (checked against Scryfall.) Corpse Churn's
@@ -1892,7 +1983,17 @@ optionalEffectSpec s registry =
             (poiId, g2) = S.entersWithTrigger poi S.alice g1
             settled = S.runPure S.identityAnswer g2 (Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
             (g3, spellId) = S.handOne complication settled
-        pure (g3 {GameState.priority = Just S.alice}, spellId, victim, poiId)
+        pure
+          ( g3
+              { GameState.turn =
+                  (GameState.turn g3)
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              },
+            spellId,
+            victim,
+            poiId
+          )
       isSuspected oid gs = fmap (Set.member Designation.Suspected . Object.designations) (Game.lookupObject oid gs)
    in Spec.describe s "OptionalEffect" $ do
         -- The prompt itself, not just its consequence: recording the run puts
@@ -1924,7 +2025,7 @@ optionalEffectSpec s registry =
                   placed = S.runPure takeOptional cycled Engine.settleForPriority
                   gone = S.runPure S.identityAnswer placed (Event.changeZone (pure ()) piker Zone.Graveyard)
                   ((_, after), transcript) = Replay.record takeOptional gone Stack.resolveTop
-              Spec.assertEqWith s "the trigger left the stack" (length (GameState.stack after)) (length (GameState.stack placed) - 1)
+              Spec.assertEqWith s "the trigger left the stack" (length (TurnRegisters.stack (GameState.turn after))) (length (TurnRegisters.stack (GameState.turn placed)) - 1)
               Spec.assertEqWith s "and no may was ever asked" (filter isOptionalResponse transcript) []
             abilities -> Spec.assertFailure s ("expected one cycling ability, got " <> show (length abilities))
         -- CR 608.2d over CR 608.2e's unit: a "may" covers the CLAUSE it is

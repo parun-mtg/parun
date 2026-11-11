@@ -66,6 +66,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RuleFamily as RuleFamily
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -402,7 +403,14 @@ mainGameCompanion s registry = Spec.describe s "CR 730.4 a subgame's companion" 
         hidden = parent {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.Manifested}) faceDown (GameState.objects parent)}
         sub = S.runPure revealingAnswer (Setup.subgameStateFrom S.alice hidden) (Setup.startGameFromCards S.performer Set.empty)
         withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) sub [1 :: Int, 2, 3]
-        ready = withLands {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        ready =
+          withLands
+            { GameState.turn =
+                (GameState.turn withLands)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         taken = S.runPure S.identityAnswer ready (Companion.take S.manaPerformer S.alice)
         zirdasInHand gs = filter (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (CardName.MkCardName (Text.pack "Zirda, the Dawnwaker"))) (Game.zoneMembers Zone.Hand S.alice gs)
     Spec.assertEqWith s "CR 103.2b / 730.4: she reveals the Zirda in her main-game hand, not the face-down one" (companionOf S.alice sub) (Just (OutsideCard.InAnotherGame zirdaInHand))
@@ -433,9 +441,12 @@ actionBoard mountain zirda chosen lands =
    in ( zirdaId,
         gs1
           { GameState.players = Map.adjust stock S.alice (GameState.players gs1),
-            GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice
+            GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -450,8 +461,20 @@ specialAction s registry = Spec.describe s "CR 116.2g the special action" $ do
     let (_, offered) = actionBoard mountain zirda True 3
         (_, unchosen) = actionBoard mountain zirda False 3
         (_, poor) = actionBoard mountain zirda True 2
-        upkeep = offered {GameState.phase = Phase.Beginning BeginningStep.Upkeep}
-        opponents = offered {GameState.activePlayer = S.bob}
+        upkeep =
+          offered
+            { GameState.turn =
+                (GameState.turn offered)
+                  { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep
+                  }
+            }
+        opponents =
+          offered
+            { GameState.turn =
+                (GameState.turn offered)
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            }
     Spec.assertBool s (List.elem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice offered)) "CR 116.2g: three Mountains and a chosen companion"
     Spec.assertBool s (List.notElem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice unchosen)) "CR 103.2b: nobody who revealed nothing may take it"
     Spec.assertBool s (List.notElem Action.Type.PutCompanionIntoHand (Action.legalActions S.alice poor)) "CR 116.2g: two Mountains do not pay {3}"
@@ -504,7 +527,14 @@ commanderGame s registry = Spec.describe s "CR 903.11a a Commander game" $ do
     let ready deck =
           let built = setup revealingAnswer deck aliceDeck
               withLands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.alice g)) built [1 :: Int, 2, 3]
-           in withLands {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+           in withLands
+                { GameState.turn =
+                    (GameState.turn withLands)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                }
         commanded = ready (aliceDeck {Deck.commander = Map.singleton zirda 1})
         plain = ready aliceDeck
     Spec.assertBool s (Maybe.isJust (companionOf S.alice commanded)) "CR 103.2b: she reveals the companion"

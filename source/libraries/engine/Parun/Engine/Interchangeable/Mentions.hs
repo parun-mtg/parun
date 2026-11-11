@@ -31,7 +31,7 @@
 -- function the caller passes for it.
 --
 -- A tree reads the history through the arm of the construct whose engine read
--- site consults GameState.events or GameState.activationsThisTurn -- and a
+-- site consults TurnRegisters.events or TurnRegisters.activationsThisTurn -- and a
 -- keyword's keywordLooksBack in Parun.Engine.Children, where the engine
 -- EXPANDS the keyword into one or gates its cost on one (Parun.Engine.Keyword,
 -- Parun.Engine.Cost.candidateCostsGiven), and a cost component's costLooksBack
@@ -320,7 +320,7 @@ contextNames = context
 --     crewed/convoked/saddled-the-source atoms), EnteredWithSource
 --     (GameState.enteredWith), CounterLinkedToSource
 --     (GameState.counteredWith) and CouldAttackThisTurn
---     (GameState.couldAttackThisTurn) read a record kept per object id,
+--     (TurnRegisters.couldAttackThisTurn) read a record kept per object id,
 --     answered by Asking's keyed -- and the look-back atoms by its history too.
 --   * A RESOLUTION CONTEXT: the slot atoms, the slot and amount operands, the
 --     attach and search subject atoms, CantCrewVehicles and
@@ -1263,7 +1263,7 @@ quantityNames asking x =
         Quantity.AttackersDeclaredThisTurn _ -> history asking HistoryRead.Attacks
         Quantity.AttackersInTheirLastTurn _ -> history asking HistoryRead.Attacks
         -- Draws and land plays read player-keyed tallies naming no object
-        -- (GameState.drawsThisTurn, GameState.landsPlayed), so no history.
+        -- (TurnRegisters.drawsThisTurn, GameState.landsPlayed), so no history.
         Quantity.TalliedThisTurn tally _ -> case tally of
           TurnTally.CardsDiscarded -> history asking HistoryRead.Discards
           TurnTally.CardsDrawn -> mempty
@@ -1448,7 +1448,7 @@ triggerLimitNames :: (Monoid r) => Asking r -> TriggerLimit.TriggerLimit -> r
 triggerLimitNames asking x = case x of
   TriggerLimit.Unlimited -> mempty
   TriggerLimit.OncePerTurn SpentOn.Triggering -> history asking HistoryRead.Triggers
-  -- GameState.instructionsTakenThisTurn, which Parun.Engine.Fragmented.digest keeps.
+  -- TurnRegisters.instructionsTakenThisTurn, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> mempty
   -- GameState.triggeredThisGame, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerGame -> mempty

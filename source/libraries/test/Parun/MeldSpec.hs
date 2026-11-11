@@ -107,6 +107,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -168,7 +169,13 @@ spec s registry = Spec.describe s "Meld" $ do
         (battlementsId, g1) = S.addPermanent battlements S.alice base
         (_, g2) = S.addPermanent mountain S.alice g1
         (pikerId, g3) = S.addPermanent piker S.alice g2
-        ready = g3 {GameState.priority = Just S.alice}
+        ready =
+          g3
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
     case Face.activatedAbilities (S.combinedFace battlements) of
       _ : haste : _ -> do
         Spec.assertBool s (not (Projection.hasKeyword Keyword.Haste pikerId ready)) "the Piker starts without haste"
@@ -377,7 +384,7 @@ spec s registry = Spec.describe s "Meld" $ do
             after = S.runPure S.identityAnswer placed Stack.resolveTop
             movesBetween from to =
               [ m
-              | GameEvent.Moved m <- fmap LoggedEvent.event (Foldable.toList (GameState.events resolved)),
+              | GameEvent.Moved m <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn resolved))),
                 ZoneChange.from (Moved.change m) == from,
                 ZoneChange.to (Moved.change m) == to
               ]
@@ -388,7 +395,7 @@ spec s registry = Spec.describe s "Meld" $ do
         Spec.assertEqWith s "CR 701.42a alice gained 2 life, one for each card that left exile" (S.lifeOf S.alice after) (Just 22)
         -- The proxies, AFTER the assertion above so neither can absorb a
         -- mutation aimed at the departures.
-        Spec.assertEqWith s "exactly one trigger reached the stack" (length (GameState.stack placed)) 1
+        Spec.assertEqWith s "exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
         Spec.assertEqWith s "the one entry names both exiled cards as departed" (fmap (List.sort . Foldable.toList . Moved.departures) entries, length exiled) ([exiled], 2)
         Spec.assertEqWith s "setup: alice started at 20" (S.lifeOf S.alice board) (Just 20)
         -- CR 603.2c's "that many" counts the cards the FILTER admits: the same
@@ -433,7 +440,7 @@ spec s registry = Spec.describe s "Meld" $ do
                           Just (LoggedEvent.group logged, ZoneChange.departed (Moved.change m))
                     _ -> Nothing
                 )
-                (Foldable.toList (GameState.events after))
+                (Foldable.toList (TurnRegisters.events (GameState.turn after)))
         Spec.assertEqWith
           s
           "CR 608.2f both halves departed, and the two departures carry one EventGroup"
@@ -444,7 +451,7 @@ spec s registry = Spec.describe s "Meld" $ do
         -- about a log that never advances the counter.
         Spec.assertBool
           s
-          (Set.size (Set.fromList (fmap LoggedEvent.group (Foldable.toList (GameState.events after)))) > 1)
+          (Set.size (Set.fromList (fmap LoggedEvent.group (Foldable.toList (TurnRegisters.events (GameState.turn after))))) > 1)
           "the log carries more than one EventGroup"
         -- And the batch still melds: the slot the one move bound is what CR
         -- 701.42a's opcode reads (CR 400.7j).
@@ -527,12 +534,29 @@ spec s registry = Spec.describe s "Meld" $ do
     let (eggId, g1) = S.addPermanent egg S.alice (S.landsInPlay island 4)
         (gId, g2) = S.addPermanent garrison S.alice g1
         (staged, weaveId) = S.handOne mirrorweave g2
-        ready = staged {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        ready =
+          staged
+            { GameState.turn =
+                (GameState.turn staged)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         woven = S.runPure (aimedAt eggId) ready (S.cast S.alice weaveId >> Stack.resolveTop >> Engine.settleForPriority)
         sacrificed = S.runPure S.identityAnswer woven (Event.sacrifice (pure ()) S.alice gId >> Engine.settleForPriority)
         placed = S.runPure S.identityAnswer sacrificed (Stack.resolveTop >> Engine.settleForPriority)
         endStep = Phase.Ending EndingStep.EndStep
-        atEnd = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (placed {GameState.phase = endStep})
+        atEnd =
+          Event.recordEvent
+            (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
+            ( placed
+                { GameState.turn =
+                    (GameState.turn placed)
+                      { TurnRegisters.phase = endStep
+                      }
+                }
+            )
         after = S.runPure S.identityAnswer atEnd (Engine.settleForPriority >> Engine.priorityLoop)
         garrisonName = S.nameOf (Printing.card garrison)
         eggName = S.nameOf (Printing.card egg)
@@ -541,7 +565,7 @@ spec s registry = Spec.describe s "Meld" $ do
     Spec.assertEqWith s "it is still in the graveyard" (filter (== garrisonName) (graveyardNames after)) [garrisonName]
     -- The preconditions, AFTER the assertion so none absorbs a mutation.
     Spec.assertEqWith s "setup: Mirrorweave made the Garrison a Biolume Egg" (Projection.namesOf gId woven) (Set.singleton eggName)
-    Spec.assertEqWith s "setup: the sacrifice trigger reached the stack" (length (GameState.stack sacrificed)) 1
+    Spec.assertEqWith s "setup: the sacrifice trigger reached the stack" (length (TurnRegisters.stack (GameState.turn sacrificed))) 1
     Spec.assertEqWith s "setup: the delayed entry fired and was spent" (Seq.length (GameState.delayedTriggers after)) 0
 
   -- The Graf Rats pair end to end: "At the beginning of combat on your turn, if
@@ -556,7 +580,15 @@ spec s registry = Spec.describe s "Meld" $ do
     let (ratsId, g1) = S.addPermanent rats S.alice (Setup.emptyGame S.bothPlayers)
         (scavId, g2) = S.addPermanent scavengers S.alice g1
         (pikerId, g3) = S.addPermanent piker S.alice g2
-        atCombat = g3 {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        atCombat =
+          g3
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         after = S.runPure S.identityAnswer atCombat (Engine.runStep >> Engine.priorityLoop)
         hostName = CardName.MkCardName (Text.pack "Chittering Host")
         hosts = filter (\oid -> fmap S.nameOf (Game.cardOf oid after) == Just hostName) (Game.zoneMembers Zone.Battlefield S.alice after)
@@ -816,7 +848,7 @@ spec s registry = Spec.describe s "Meld" $ do
         Spec.assertEqWith s "CR 713.8 and Meren saw exactly one creature die" (S.playerCounterOf PlayerCounterKind.Experience S.alice after) 1
         -- The proxy behind that count, kept AFTER it: one trigger reached the
         -- stack, so the 1 above is not two triggers of which one went unresolved.
-        Spec.assertEqWith s "one death trigger reached the stack" (length (GameState.stack settled)) 1
+        Spec.assertEqWith s "one death trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         Spec.assertEqWith s "the melded permanent itself is gone" (Game.lookupObject meldedId dead) Nothing
         Spec.assertEqWith s "setup: alice held no experience counters before it died" (S.playerCounterOf PlayerCounterKind.Experience S.alice board) 0
         Spec.assertEqWith s "setup: Meren was on the battlefield to see it" (fmap Object.zone (Game.lookupObject merenId after)) (Just Zone.Battlefield)
@@ -882,7 +914,7 @@ spec s registry = Spec.describe s "Meld" $ do
         -- The proxies, all after the two behaviours: three triggers reached the
         -- stack (one death, two arrivals), and both cards really were in the
         -- graveyard for them to find.
-        Spec.assertEqWith s "three triggers reached the stack" (length (GameState.stack settled)) 3
+        Spec.assertEqWith s "three triggers reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 3
         Spec.assertEqWith s "setup: both cards were in the graveyard when they resolved" (List.sort (graveyardNames settled)) bothNames
         Spec.assertEqWith s "setup: exile was empty once the meld had consumed the pair" (exileNames settled) []
   -- CR 713.8e, both halves on ONE board: "if an effect needs to know the number
@@ -952,7 +984,19 @@ spec s registry = Spec.describe s "Meld" $ do
         (secondPiker, board) = S.addPermanent piker S.alice withOne
         dead victims = S.runPure S.identityAnswer board (Event.destroy (pure ()) Regenerability.Regenerable victims)
         atEndStep gs =
-          S.runPure S.identityAnswer (Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) S.alice)) (gs {GameState.phase = Phase.Ending EndingStep.EndStep})) (Engine.settleForPriority >> Engine.priorityLoop)
+          S.runPure
+            S.identityAnswer
+            ( Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) S.alice))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = Phase.Ending EndingStep.EndStep
+                          }
+                    }
+                )
+            )
+            (Engine.settleForPriority >> Engine.priorityLoop)
     case mMelded of
       Nothing -> Spec.assertFailure s "expected the melding ability to put one permanent onto the battlefield"
       Just meldedId -> do
@@ -1019,7 +1063,7 @@ spec s registry = Spec.describe s "Meld" $ do
         -- The proxies behind that, both AFTER it: the trigger really did fire,
         -- exactly once, and both cards really were in the graveyard for it to
         -- find -- so the exile above is the payload's work and not the funnel's.
-        Spec.assertEqWith s "one trigger reached the stack" (length (GameState.stack settled)) 1
+        Spec.assertEqWith s "one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
         Spec.assertEqWith s "setup: both cards were in the graveyard when it resolved" (List.sort (graveyardNames settled)) bothNames
         Spec.assertEqWith s "setup: exile was empty once the meld had consumed the pair" (exileNames settled) []
   -- CR 713.8c again, over Alchemy's "perpetually" -- the one stored effect that
@@ -1058,7 +1102,15 @@ spec s registry = Spec.describe s "Meld" $ do
     collector <- S.printingOf s registry "Pearl Collector"
     let (collectorId, base) = S.addPermanent collector S.alice (Setup.emptyGame S.bothPlayers)
         (mMelded, meldedBoard) = meldedThrough base battlements garrison mountain
-        board = (S.landsFor plains S.alice 3 meldedBoard) {GameState.priority = Just S.alice}
+        board =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.landsFor plains S.alice 3 meldedBoard)
+
     case (mMelded, Face.activatedAbilities (S.combinedFace collector)) of
       (Just meldedId, ability : _) -> do
         let byCard = S.runPure (aimedAt meldedId) board (do Activate.activateAbility S.alice collectorId ability; Stack.resolveTop)
@@ -1124,7 +1176,14 @@ spec s registry = Spec.describe s "Meld" $ do
         -- is itself a land that {2}{W}'s generic half can be paid from -- its own
         -- melding cost has a {T} in it. Applied to EVERY leg, so the boards still
         -- differ in the grant alone.
-        ready gs = gs {GameState.priority = Just S.alice, GameState.objects = fmap (\o -> o {Object.tapped = TapState.Untapped}) (GameState.objects gs)}
+        ready gs =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.priority = Just S.alice
+                  },
+              GameState.objects = fmap (\o -> o {Object.tapped = TapState.Untapped}) (GameState.objects gs)
+            }
         melds gs = case Projection.abilitiesOf battlementsId gs of
           [_, _, melding] ->
             let after = S.runPure (sparing battlementsId S.identityAnswer) (ready gs) (do Activate.activateAbility S.alice battlementsId melding; Stack.resolveTop)
@@ -1396,7 +1455,15 @@ spec s registry = Spec.describe s "Meld" $ do
     duplicant <- S.printingOf s registry "Duplicant"
     let (_, g1) = S.addPermanent rats S.alice (Setup.emptyGame S.bothPlayers)
         (_, g2) = S.addPermanent scavengers S.alice g1
-        atCombat = g2 {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        atCombat =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         meldedBoard = S.runPure S.identityAnswer atCombat (Engine.runStep >> Engine.priorityLoop)
         hostName = CardName.MkCardName (Text.pack "Chittering Host")
         hosts = filter (\oid -> fmap S.nameOf (Game.cardOf oid meldedBoard) == Just hostName) (Game.zoneMembers Zone.Battlefield S.alice meldedBoard)
@@ -1584,9 +1651,12 @@ graveyardNames gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) 
 readyFor :: Printing.Printing -> GameState.GameState -> GameState.GameState
 readyFor mountain gs =
   (S.landsFor mountain S.alice 5 gs)
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = S.alice,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn (S.landsFor mountain S.alice 5 gs))
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- CR 713.8a's arrangement pinned by INDEX, over a board whose Griptide aims at

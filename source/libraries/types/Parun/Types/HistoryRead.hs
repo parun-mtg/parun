@@ -3,14 +3,14 @@ module Parun.Types.HistoryRead where
 import qualified Data.Set as Set
 import qualified Parun.Types.PlayerAction as PlayerAction
 
--- | CR 733.3: which part of the turn's history -- GameState.events, or
--- GameState.activationsThisTurn -- a construct reads, as
+-- | CR 733.3: which part of the turn's history -- TurnRegisters.events, or
+-- TurnRegisters.activationsThisTurn -- a construct reads, as
 -- Parun.Engine.Interchangeable.Mentions classifies the effect DSL and
 -- Parun.Engine.Fragmented asks. Loop-local, so no codec.
 data HistoryRead
   = -- | Acts of these kinds taken (CR 603.2), Parun.Types.PlayerAction.
     Acts (Set.Set PlayerAction.PlayerAction)
-  | -- | Activations begun this turn, GameState.activationsThisTurn (CR 602.2).
+  | -- | Activations begun this turn, TurnRegisters.activationsThisTurn (CR 602.2).
     Activations
   | -- | Attackers declared (CR 508.1).
     Attacks
