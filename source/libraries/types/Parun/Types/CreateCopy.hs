@@ -3,6 +3,7 @@ module Parun.Types.CreateCopy where
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 
@@ -43,6 +44,10 @@ data CreateCopy ability = MkCreateCopy
     -- and is a rider, which is CR 707.9e's distinction rather than a spelling
     -- choice.
     exceptions :: [CopyException.CopyException ability],
+    -- | CR 111.2: who creates the copies, so who owns and controls them;
+    -- Parun.Types.Create's `creator`, defaulted and elided the same way.
+    -- Echocasting Symposium's "target player creates" is a PlayerRef.InSlot.
+    creator :: PlayerRef.PlayerRef,
     -- | CR 607.1: does a later ability of the source refer to this token? Files
     -- it in GameState.enteredWith for Filter.EnteredWithSource; opt-in, since a
     -- row keeps two otherwise identical mana sources from being interchangeable

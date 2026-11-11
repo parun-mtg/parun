@@ -406,9 +406,10 @@ lifeChanged tally =
 -- Bouncer) or not (Academy at Tolaria West). Free for raid: printed (Mardu
 -- Skullhunter) or not (Trynn, Champion of Freedom). Free for threshold:
 -- printed (Anurid Barkripper) or not (Illuminate History). Free for spell
--- mastery: printed (Calculated Dismissal).
+-- mastery: printed (Calculated Dismissal). Free for infusion: printed
+-- (Efflorescence).
 abilityWord :: Text.Text -> [Text.Text]
-abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"]
+abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"]
 
 -- | Whether the condition is the source's own status ("this creature is
 -- attacking"), as 'counted' reads it, after which the source is "it".
