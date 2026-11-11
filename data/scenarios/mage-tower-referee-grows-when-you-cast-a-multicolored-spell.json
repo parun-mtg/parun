@@ -1,0 +1,261 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Mage Tower Referee",
+            "label": "ref",
+            "ready": true
+          }
+        ],
+        "manaPool": "RRW",
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Boros Charm",
+            "label": "charm"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "bp",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Boros Charm",
+            "label": "bcharm"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2, 105.2b, 601.2i: Mage Tower Referee gets a +1/+1 counter when its controller casts a multicolored spell, not a monocolored one or an opponent's multicolored one",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$bolt",
+          "targets": [
+            "$bob"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Counters": {
+          "object": "$ref",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 17
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Cast": {
+          "object": "$charm",
+          "modes": [
+            0
+          ],
+          "targets": [
+            "$bob"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Counters": {
+          "object": "$ref",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 13
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1,
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "Cast": {
+          "object": "$bcharm",
+          "modes": [
+            0
+          ],
+          "targets": [
+            "$alice"
+          ],
+          "mana": [
+            "$bm",
+            "$bp"
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Counters": {
+          "object": "$ref",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 16
+        }
+      }
+    }
+  ]
+}
