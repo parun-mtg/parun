@@ -67,6 +67,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- "target nonblack creature", the target slot Doom Blade and the CR 115.1a cases share.
 nonblackCreature :: TargetSlot.TargetSlot
@@ -680,7 +681,7 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
             onStack = snd (Engine.runGamePure answer landed Engine.settleForPriority)
             after = S.settleSba (snd (Engine.runGamePure answer onStack Stack.resolveTop))
         Spec.assertEqWith s "Painter's Servant really did name red: the white Forge-Tender is red too" (Projection.colorsOf tenderId landed) $ Set.fromList [Color.Red, Color.White]
-        Spec.assertBool s (not (null (GameState.stack onStack))) "the emblem's landfall trigger really is on the stack"
+        Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the emblem's landfall trigger really is on the stack"
         Spec.assertEqWith s "and its 4 damage buried the 1/1 with protection from red" (Set.member tenderId (GameState.battlefield after)) False
         Spec.assertEqWith s "the emblem itself is colourless (CR 114.3), which is why" (fmap (`Projection.colorsOf` after) (Set.toList (GameState.command after))) [Set.empty]
 
@@ -718,7 +719,7 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
             answer = aimingAt (Recipient.ToCreature victimId)
             pinged = snd (Engine.runGamePure answer withVictim (Activate.activateAbility S.alice sorcererId ping))
         Spec.assertEqWith s "Painter's Servant really did name red: the blue Sorcerer is red too" (Projection.colorsOf sorcererId pinged) $ Set.fromList [Color.Blue, Color.Red]
-        case (filter (`Game.isAbility` pinged) (GameState.stack pinged), modeTargetSlot silence soleMode, modeTargetSlot stifle soleMode) of
+        case (filter (`Game.isAbility` pinged) (TurnRegisters.stack (GameState.turn pinged)), modeTargetSlot silence soleMode, modeTargetSlot stifle soleMode) of
           ([abilityId], Just filtered, Just unfiltered) -> do
             -- The pair, differing in exactly one thing: Stifle's slot is the
             -- same Pool.Abilities with no filter on it, so a vacuous negative --

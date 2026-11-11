@@ -114,6 +114,7 @@ import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.WordFamily as WordFamily
 import qualified Parun.Types.Zone as Zone
 
@@ -2418,7 +2419,14 @@ replaySpec s registry =
       Spec.assertBool s (recorded /= replayed) "and the replay is not the recorded game"
     -- The one that matters: a dropped concession replays to the OTHER winner.
     Spec.it s "#144 a concession lost to a desync silently flips the winner" $ do
-      let base = (Setup.emptyGame S.bothPlayers) {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice}
+      let base =
+            (Setup.emptyGame S.bothPlayers)
+              { GameState.turn =
+                  (GameState.turn (Setup.emptyGame S.bothPlayers))
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice
+                    }
+              }
           ((_, conceded), transcript) = Replay.record concedeAnswer base Engine.runStep
           -- One spurious entry ahead of the log is enough: decode rejects it,
           -- replay does not consume it, and every later prompt meets the same

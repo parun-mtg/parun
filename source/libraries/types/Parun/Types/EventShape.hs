@@ -5,7 +5,7 @@ import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.Zone as Zone
 
--- | Which recorded events a history count folds over. GameState.events is cleared
+-- | Which recorded events a history count folds over. TurnRegisters.events is cleared
 -- at the turn change (Parun.Engine.Engine), an engine choice made under CR 608.2i,
 -- so the log's extent IS the window -- "this turn" -- for every shape but
 -- SpellCast, which names its own (Parun.Types.CastWindow).
@@ -21,7 +21,7 @@ import qualified Parun.Types.Zone as Zone
 -- an object and the unit counted is an EVENT. Those questions are
 -- Parun.Types.Quantity arms instead -- CardsDiscardedThisTurn,
 -- PlayersDealtDamage, EnteredThisTurn, EnteredFrom and WasCastFrom among
--- them -- each of which reads GameState.events directly through a
+-- them -- each of which reads TurnRegisters.events directly through a
 -- Parun.Engine.Game accessor.
 data EventShape
   = -- | CR 700.4: "dies" is MovedBetween Battlefield Graveyard.

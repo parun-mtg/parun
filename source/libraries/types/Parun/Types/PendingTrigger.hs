@@ -50,7 +50,7 @@ data PendingTrigger = MkPendingTrigger
     -- by Parun.Engine.ManaAbility.isTriggeredManaAbility, CR 605.5a asking what
     -- added the mana rather than only what the ability watches. The group is
     -- CR 610.3b's "after that ability triggered", which Engine.triggeredSince
-    -- stamps on the stack object (GameState.stackedIn).
+    -- stamps on the stack object (TurnRegisters.stackedIn).
     firedBy :: Maybe LoggedEvent.LoggedEvent,
     -- | CR 113.2c: how many value-identical instances of `ability` the source
     -- bore as it triggered, 1 unless one printing or one granter repeats it

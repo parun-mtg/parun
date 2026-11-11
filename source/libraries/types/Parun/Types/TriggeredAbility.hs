@@ -34,7 +34,7 @@ data TriggeredAbility card ability = MkTriggeredAbility
     --
     -- Enforced at Parun.Engine.Event.withinTriggerLimit, off the turn-scoped log
     -- for the per-turn rider, off Parun.Types.GameState.triggeredThisGame for
-    -- the per-game one and off GameState.instructionsTakenThisTurn for CR
+    -- the per-game one and off TurnRegisters.instructionsTakenThisTurn for CR
     -- 603.2h's.
     limit :: TriggerLimit.TriggerLimit,
     -- | CR 113.6b: the zones this ability states it functions in, overriding

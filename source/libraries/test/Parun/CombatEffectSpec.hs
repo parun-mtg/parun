@@ -56,6 +56,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The helpers below are duplicated from Parun.CombatSpec rather than hoisted into
@@ -65,7 +66,7 @@ import qualified Parun.Types.Zone as Zone
 -- from Combat.declaredAttackers -- CR 506.4 removal ends one and leaves the
 -- other standing.
 attackersOf :: GameState.GameState -> [ObjectId.ObjectId]
-attackersOf gs = Map.keys (Combat.Type.attackers (GameState.combat gs))
+attackersOf gs = Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 tapStateOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe TapState.TapState
 tapStateOf oid gs = fmap Object.tapped (Game.lookupObject oid gs)
@@ -113,8 +114,11 @@ bothAttackable :: [Printing.Printing] -> [Printing.Printing] -> (GameState.GameS
 bothAttackable mine theirs =
   let (gs, ours, _, _) = S.threePlayerCombat mine theirs []
    in ( gs
-          { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-            GameState.combat = (GameState.combat gs) {Combat.Type.defenders = [S.bob, S.carol]}
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                  TurnRegisters.combat = (TurnRegisters.combat (GameState.turn gs)) {Combat.Type.defenders = [S.bob, S.carol]}
+                }
           },
         ours
       )
@@ -860,7 +864,13 @@ combatLegalitySpec s registry = Spec.describe s "CombatLegality" $ do
          in Spec.assertBool s (not (Combat.canAttack S.alice oid tapped)) "may not attack"
   Spec.it s "a land may not attack" $ do
     mountain <- S.printingOf s registry "Mountain"
-    let gs = (S.landsInPlay mountain 1) {GameState.activePlayer = S.alice}
+    let gs =
+          (S.landsInPlay mountain 1)
+            { GameState.turn =
+                (GameState.turn (S.landsInPlay mountain 1))
+                  { TurnRegisters.activePlayer = S.alice
+                  }
+            }
     case Game.zoneMembers Zone.Battlefield S.alice gs of
       [] -> Spec.assertFailure s "fixture should have one Mountain"
       oid : _ -> Spec.assertBool s (not (Combat.canAttack S.alice oid gs)) "may not attack"
@@ -905,52 +915,81 @@ combatLegalitySpec s registry = Spec.describe s "CombatLegality" $ do
           [] -> gs
           oid : _ ->
             gs
-              { GameState.combat =
-                  Combat.Type.MkCombat
-                    { Combat.Type.attackers = Map.singleton oid (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.blockers = Map.empty,
-                      Combat.Type.struckFirst = Nothing,
-                      -- CR 802.2a: the seat each attack names, which is what a
-                      -- declaration would have recorded.
-                      Combat.Type.attackedUnder = Map.singleton oid S.bob,
-                      Combat.Type.attackedControlledBy = Map.empty,
-                      Combat.Type.joinedUnder = Map.singleton oid S.alice,
-                      Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
-                      Combat.Type.declaredAttackedBy = Map.singleton S.alice (Set.singleton (AttackTarget.OfPlayer S.bob)),
-                      -- Empty, because this board stands after the declare attackers
-                      -- step ended: CR 500.1 scopes this half to the step, and
-                      -- Combat.clearAttackedThisStep empties it as one ends.
-                      Combat.Type.declaredAttackedThisStep = Set.empty,
-                      -- CR 508.1a / 509.1a: this board is hand-built rather
-                      -- than declared, so nothing was declared on it.
-                      Combat.Type.declaredAttackers = Set.empty,
-                      Combat.Type.declaredBlockers = Set.empty,
-                      Combat.Type.blockersDeclared = True,
-                      Combat.Type.attackingNothing = Set.empty,
-                      Combat.Type.blockingNothing = Set.empty,
-                      Combat.Type.removedDefending = Map.empty,
-                      Combat.Type.defenders = [S.bob],
-                      Combat.Type.barred = [],
-                      Combat.Type.bands = [],
-                      Combat.Type.pileBlocks = Nothing,
-                      Combat.Type.blockedBy = Map.empty
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.combat =
+                        Combat.Type.MkCombat
+                          { Combat.Type.attackers = Map.singleton oid (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.blockers = Map.empty,
+                            Combat.Type.struckFirst = Nothing,
+                            -- CR 802.2a: the seat each attack names, which is what a
+                            -- declaration would have recorded.
+                            Combat.Type.attackedUnder = Map.singleton oid S.bob,
+                            Combat.Type.attackedControlledBy = Map.empty,
+                            Combat.Type.joinedUnder = Map.singleton oid S.alice,
+                            Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
+                            Combat.Type.declaredAttackedBy = Map.singleton S.alice (Set.singleton (AttackTarget.OfPlayer S.bob)),
+                            -- Empty, because this board stands after the declare attackers
+                            -- step ended: CR 500.1 scopes this half to the step, and
+                            -- Combat.clearAttackedThisStep empties it as one ends.
+                            Combat.Type.declaredAttackedThisStep = Set.empty,
+                            -- CR 508.1a / 509.1a: this board is hand-built rather
+                            -- than declared, so nothing was declared on it.
+                            Combat.Type.declaredAttackers = Set.empty,
+                            Combat.Type.declaredBlockers = Set.empty,
+                            Combat.Type.blockersDeclared = True,
+                            Combat.Type.attackingNothing = Set.empty,
+                            Combat.Type.blockingNothing = Set.empty,
+                            Combat.Type.removedDefending = Map.empty,
+                            Combat.Type.defenders = [S.bob],
+                            Combat.Type.barred = [],
+                            Combat.Type.bands = [],
+                            Combat.Type.pileBlocks = Nothing,
+                            Combat.Type.blockedBy = Map.empty
+                          }
                     }
               }
-    Spec.assertEqWith s "starts empty" (Combat.Type.attackers (GameState.combat gs)) Map.empty
-    Spec.assertEqWith s "clears" (Combat.Type.attackers (GameState.combat (Combat.clearCombat busy))) Map.empty
+    Spec.assertEqWith s "starts empty" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs))) Map.empty
+    Spec.assertEqWith s "clears" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn (Combat.clearCombat busy)))) Map.empty
     -- CR 511.3 on the two CR 508.1a / 509.1a records too, which is what scopes
     -- Filter.DeclaredAttackerThisCombat to THIS combat rather than the turn:
     -- CR 506.8c's second combat phase asks the question from empty.
     Spec.assertEqWith
       s
       "CR 511.3 clears the declared-attacker record"
-      (Combat.Type.declaredAttackers (GameState.combat (Combat.clearCombat busy {GameState.combat = (GameState.combat busy) {Combat.Type.declaredAttackers = Set.fromList mine}})))
+      ( Combat.Type.declaredAttackers
+          ( TurnRegisters.combat
+              ( GameState.turn
+                  ( Combat.clearCombat
+                      busy
+                        { GameState.turn =
+                            (GameState.turn busy)
+                              { TurnRegisters.combat = (TurnRegisters.combat (GameState.turn busy)) {Combat.Type.declaredAttackers = Set.fromList mine}
+                              }
+                        }
+                  )
+              )
+          )
+      )
       Set.empty
     Spec.assertEqWith
       s
       "CR 511.3 clears the declared-blocker record"
-      (Combat.Type.declaredBlockers (GameState.combat (Combat.clearCombat busy {GameState.combat = (GameState.combat busy) {Combat.Type.declaredBlockers = Set.fromList mine}})))
+      ( Combat.Type.declaredBlockers
+          ( TurnRegisters.combat
+              ( GameState.turn
+                  ( Combat.clearCombat
+                      busy
+                        { GameState.turn =
+                            (GameState.turn busy)
+                              { TurnRegisters.combat = (TurnRegisters.combat (GameState.turn busy)) {Combat.Type.declaredBlockers = Set.fromList mine}
+                              }
+                        }
+                  )
+              )
+          )
+      )
       Set.empty
     -- CR 506.8c: the CR 511.3 reset re-arms CR 506.8b's boundary, so a CR 500.8
     -- second combat phase gets its own window rather than inheriting this one's.
@@ -996,8 +1035,8 @@ runToFirstStrikeDone :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState 
 runToFirstStrikeDone answer gs0 =
   let go n g =
         if n <= (0 :: Int)
-          || Maybe.isJust (Combat.Type.struckFirst (GameState.combat g))
-          || not (S.inCombatPhase (GameState.phase g))
+          || Maybe.isJust (Combat.Type.struckFirst (TurnRegisters.combat (GameState.turn g)))
+          || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn g)))
           then g
           else go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
    in go 24 gs0
@@ -1138,8 +1177,8 @@ runToEndOfCombatWith ::
 runToEndOfCombatWith answer gs0 =
   let go n g s =
         if n <= (0 :: Int)
-          || GameState.phase g == Phase.Combat CombatStep.EndOfCombat
-          || not (S.inCombatPhase (GameState.phase g))
+          || TurnRegisters.phase (GameState.turn g) == Phase.Combat CombatStep.EndOfCombat
+          || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn g)))
           then g
           else
             let ((_, g1), s1) = State.runState (Engine.runGame answer g Engine.runStep) s
@@ -1173,14 +1212,14 @@ effectRemovalSpec s registry = Spec.describe s "EffectRemoval" $ do
         let atEnd = runToEndOfCombatWith (mazeAnswer mazeId ability attacker) gs
             quiet = runToEndOfCombat S.aggressiveAnswer gs
             legal = fmap (\theSlot -> Target.legalRecipients StackObjectKind.Spell Nothing S.noSource theSlot atEnd) (removalTargetSlot ability)
-        Spec.assertEqWith s "the leg really reached the end of combat step, where the record still reads live (CR 511.3)" (GameState.phase atEnd) (Phase.Combat CombatStep.EndOfCombat)
+        Spec.assertEqWith s "the leg really reached the end of combat step, where the record still reads live (CR 511.3)" (TurnRegisters.phase (GameState.turn atEnd)) (Phase.Combat CombatStep.EndOfCombat)
         Spec.assertEqWith s "the ability really was activated: its {T} component was paid" (tapStateOf mazeId atEnd) (Just TapState.Tapped)
-        Spec.assertBool s (Map.notMember attacker (Combat.Type.attackers (GameState.combat atEnd))) "CR 506.4: the Piker stopped being an attacking creature"
+        Spec.assertBool s (Map.notMember attacker (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atEnd)))) "CR 506.4: the Piker stopped being an attacking creature"
         -- The discriminating assertion: with the removal missing, the Piker
         -- stays in the record and deals its 2.
         Spec.assertEqWith s "CR 510.1: so bob takes nothing" (S.lifeOf S.bob atEnd) (Just 20)
         Spec.assertEqWith s "and the card's own target filter no longer finds it" (fmap (Set.member (Recipient.ToCreature attacker)) legal) (Just False)
-        Spec.assertBool s (Map.member attacker (Combat.Type.attackers (GameState.combat quiet))) "control leg: unactivated, the Piker is still attacking"
+        Spec.assertBool s (Map.member attacker (Combat.Type.attackers (TurnRegisters.combat (GameState.turn quiet)))) "control leg: unactivated, the Piker is still attacking"
         Spec.assertEqWith s "and bob takes its 2" (S.lifeOf S.bob quiet) (Just 18)
       _ -> Spec.assertFailure s "fixture should give bob a Labyrinth with two abilities and alice one Piker"
 
@@ -1294,7 +1333,7 @@ typeChangeRemovalSpec s registry = Spec.describe s "TypeChangeRemoval" $ do
             -- The control leg: the same board and the same block, with alice
             -- never casting. The 2/1 Piker and the 1/1 Forest then trade.
             traded = runToEndOfCombat (blockOnly land) atBlockers
-        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the block is declared before the kill" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
+        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the block is declared before the kill" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
         Spec.assertBool s (not (S.onBattlefield plane atEnd)) "the Doom Blade really did kill Living Plane"
         Spec.assertBool s (not (Projection.isCreatureOf land atEnd)) "CR 611.3b: so the Forest stopped being a creature"
         Spec.assertBool s (S.onBattlefield land atEnd) "and is still on the battlefield"
@@ -1369,7 +1408,15 @@ creaturePlaneswalkerBoard jace elves coating march plains waxWane =
       (_, gs4) = S.addHandCard waxWane S.alice gs3
    in case (mine, theirs, Face.activatedAbilities (S.combinedFace coating)) of
         ([atJace, atBob], [jaceId], coat : _) ->
-          let ready = (S.addCounter CounterKind.Loyalty 5 jaceId gs4) {GameState.priority = Just S.alice}
+          let ready =
+                Game.overTurn
+                  ( \registers ->
+                      registers
+                        { TurnRegisters.priority = Just S.alice
+                        }
+                  )
+                  (S.addCounter CounterKind.Loyalty 5 jaceId gs4)
+
               coated =
                 S.runPure (aimAtObject jaceId) ready $ do
                   Activate.activateAbility S.alice coatingId coat
@@ -1550,12 +1597,12 @@ attackerCountSpec s registry = Spec.describe s "AttackerCount" $ do
         Spec.assertEqWith
           s
           "CR 508.1b: two attackers were announced at bob and one at Jace"
-          (fmap (\oid -> Map.lookup oid (Combat.Type.attackers (GameState.combat declared))) [first, second, atJace])
+          (fmap (\oid -> Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn declared)))) [first, second, atJace])
           [Just (AttackTarget.OfPlayer S.bob), Just (AttackTarget.OfPlayer S.bob), Just (AttackTarget.OfPlaneswalker jaceId)]
         Spec.assertEqWith
           s
           "control: all three were announced at Jace"
-          (fmap (\oid -> Map.lookup oid (Combat.Type.attackers (GameState.combat atWalker))) [first, second, atJace])
+          (fmap (\oid -> Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atWalker)))) [first, second, atJace])
           [Just (AttackTarget.OfPlaneswalker jaceId), Just (AttackTarget.OfPlaneswalker jaceId), Just (AttackTarget.OfPlaneswalker jaceId)]
       _ -> Spec.assertFailure s "fixture should have three attackers, a Jace and the spell"
 

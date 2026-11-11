@@ -82,6 +82,7 @@ import Parun.Types.Recipient (Recipient)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.While as While
 
@@ -139,7 +140,7 @@ arm resolving targets controller source duration gs = case duration of
   -- their own turn survives that turn's cleanup, which is the whole difference
   -- between this arm and the one above.
   Duration.UntilEndOfYourNextTurn ->
-    Just (Expiry.AtEndOfTurnOf (AfterTurn.MkAfterTurn controller (GameState.turnNumber gs)))
+    Just (Expiry.AtEndOfTurnOf (AfterTurn.MkAfterTurn controller (TurnRegisters.turnNumber (GameState.turn gs))))
   -- CR 611.2a: the arm above's window with the seat SAMPLED from a reference
   -- instead of taken from CR 109.5's "you". The turn number is sampled the same
   -- way and for the same reason, so the two arms share dropAtCleanup's reading
@@ -151,7 +152,7 @@ arm resolving targets controller source duration gs = case duration of
   -- alternative is arming against some other seat.
   Duration.UntilEndOfNextTurnOf ref ->
     fmap
-      (\pid -> Expiry.AtEndOfTurnOf (AfterTurn.MkAfterTurn pid (GameState.turnNumber gs)))
+      (\pid -> Expiry.AtEndOfTurnOf (AfterTurn.MkAfterTurn pid (TurnRegisters.turnNumber (GameState.turn gs))))
       (seatOf reading targets controller gs ref)
   -- CR 611.2a: the same seat and the same turn number as the arm above, under an
   -- arm that also states a BEGINNING. Sampled through seatOf for that arm's
@@ -166,10 +167,10 @@ arm resolving targets controller source duration gs = case duration of
     PlayerRef.HolderOfBound Holder.Controller Hop.Itself slot
       | Just oid <- Map.lookup slot (Binding.objectsIn targets),
         Maybe.isJust (Game.lookupObject oid gs) ->
-          Just (Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn oid (GameState.turnNumber gs)))
+          Just (Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn oid (TurnRegisters.turnNumber (GameState.turn gs))))
     _ ->
       fmap
-        (\pid -> Expiry.DuringTurnOf (AfterTurn.MkAfterTurn pid (GameState.turnNumber gs)))
+        (\pid -> Expiry.DuringTurnOf (AfterTurn.MkAfterTurn pid (TurnRegisters.turnNumber (GameState.turn gs))))
         (seatOf reading targets controller gs ref)
   -- CR 611.2a / 502.3: the arm above's seat, sampled the same way, with the
   -- untap step for the window. No turn is sampled: no player receives priority
@@ -180,7 +181,7 @@ arm resolving targets controller source duration gs = case duration of
   -- as UntilYourNextTurn takes it. Never Nothing -- a controller is always a
   -- seat, so this window always begins.
   Duration.DuringYourNextTurn ->
-    Just (Expiry.DuringTurnOf (AfterTurn.MkAfterTurn controller (GameState.turnNumber gs)))
+    Just (Expiry.DuringTurnOf (AfterTurn.MkAfterTurn controller (TurnRegisters.turnNumber (GameState.turn gs))))
   -- CR 611.2a / 500.7: the extra turn this resolution created, named by its
   -- creation stamp as Onset.FromThatExtraTurn names it (Turn.thatExtraTurn).
   -- Nothing where no such turn is pending: the window cannot begin, so per CR
@@ -209,7 +210,7 @@ arm resolving targets controller source duration gs = case duration of
   -- phase that ends it is one of the controller's LATER turns and never the
   -- current one's.
   Duration.UntilEndOfCombatOnYourNextTurn ->
-    Just (Expiry.AtEndOfCombatOn (AfterTurn.MkAfterTurn controller (GameState.turnNumber gs)))
+    Just (Expiry.AtEndOfCombatOn (AfterTurn.MkAfterTurn controller (TurnRegisters.turnNumber (GameState.turn gs))))
   -- CR 116.2c: nothing about the game's clock is baked in, because no window of
   -- the turn ends this -- the PRICE is carried through unchanged so the offer
   -- below can quote it and the payment charge it. The SEAT is baked, as
@@ -339,14 +340,14 @@ begun :: GameState -> Expiry -> Bool
 begun gs expiry = case expiry of
   Expiry.DuringTurnOf afterTurn ->
     Turn.isActive gs (AfterTurn.player afterTurn)
-      && GameState.turnNumber gs > AfterTurn.turn afterTurn
+      && TurnRegisters.turnNumber (GameState.turn gs) > AfterTurn.turn afterTurn
   -- CR 502.3: open while that player's untap step is under way. A skipped untap
   -- step (CR 500.11) never is, so the window waits for the next one that runs.
-  Expiry.DuringUntapStepOf pid -> Turn.isActive gs pid && GameState.phase gs == untapStep
+  Expiry.DuringUntapStepOf pid -> Turn.isActive gs pid && TurnRegisters.phase (GameState.turn gs) == untapStep
   -- Read live until pinned: open on a turn that is its window.
   Expiry.DuringTurnOfControllerOf afterObjectTurn -> windowReached gs afterObjectTurn
   -- CR 500.7: open exactly while the extra turn it names is the one under way.
-  Expiry.DuringExtraTurn stamp -> GameState.extraTurnUnderWay gs == Just stamp
+  Expiry.DuringExtraTurn stamp -> TurnRegisters.extraTurnUnderWay (GameState.turn gs) == Just stamp
   Expiry.AtCleanup -> True
   Expiry.Never -> True
   Expiry.Perpetual -> True
@@ -517,7 +518,7 @@ endsAt gs moment source expiry = case expiry of
     namedTurnEnds at afterTurn =
       ( moment == at
           && Turn.isActive gs (AfterTurn.player afterTurn)
-          && GameState.turnNumber gs > AfterTurn.turn afterTurn
+          && TurnRegisters.turnNumber (GameState.turn gs) > AfterTurn.turn afterTurn
       )
         || departedTurnOf (AfterTurn.player afterTurn)
 
@@ -640,7 +641,7 @@ clearedSaddles objects =
 -- CR 611.2a: a duration a spell or ability states lasts as long as it says, so
 -- an until-your-next-turn duration ends as that player's turn begins.
 --
--- Takes the player EXPLICITLY rather than reading GameState.activePlayer,
+-- Takes the player EXPLICITLY rather than reading TurnRegisters.activePlayer,
 -- because CR 800.4m needs this to fire for a seat whose turn does not begin: a
 -- departed player's durations last until their turn WOULD have begun. Engine's
 -- turn handoff walks the seating order and calls this at every departed seat it
@@ -687,7 +688,7 @@ pinAfterDeclareAttackers gs =
 windowReached :: GameState -> AfterObjectTurn.AfterObjectTurn -> Bool
 windowReached gs afterObjectTurn =
   let oid = AfterObjectTurn.object afterObjectTurn
-   in GameState.turnNumber gs > AfterObjectTurn.turn afterObjectTurn
+   in TurnRegisters.turnNumber (GameState.turn gs) > AfterObjectTurn.turn afterObjectTurn
         && Set.member oid (GameState.battlefield gs)
         && maybe False (Turn.isActive gs) (View.controllerOf oid gs)
 

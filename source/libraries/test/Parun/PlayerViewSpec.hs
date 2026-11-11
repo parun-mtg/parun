@@ -101,6 +101,7 @@ import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -193,7 +194,14 @@ spec s registry = Spec.describe s "PlayerView" $ do
         (oid, g2) = Game.freshObjectId g1
         (ts, g3) = Game.freshTimestamp g2
         source = ActivatedAbilitySource.MkActivatedAbilitySource {ActivatedAbilitySource.source = held, ActivatedAbilitySource.ability = ability, ActivatedAbilitySource.delayed = Map.empty, ActivatedAbilitySource.acquisition = Acquisition.Own}
-        gs = g3 {GameState.objects = Map.insert oid (Object.newSettled S.bob (Source.OfAbility source) Zone.Stack ts) (GameState.objects g3), GameState.stack = [oid]}
+        gs =
+          g3
+            { GameState.objects = Map.insert oid (Object.newSettled S.bob (Source.OfAbility source) Zone.Stack ts) (GameState.objects g3),
+              GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.stack = [oid]
+                  }
+            }
         abilityFor pid = fmap ObjectView.ability (PlayerView.Type.stack (PlayerView.viewFor pid gs))
         nameFor pid = let view = PlayerView.viewFor pid gs in Render.named view oid
     Spec.assertEqWith s "alice is not told the hand card" (abilityFor S.alice) [Just (AbilityView.MkAbilityView Nothing (StackedAbility.Activated ability))]
@@ -209,7 +217,15 @@ spec s registry = Spec.describe s "PlayerView" $ do
       [_, second, _] -> pure second
       _ -> Spec.assertFailure s "Ajani Goldmane has not three activated abilities"
     let (walker, placed) = S.addPermanent ajani S.alice (Setup.emptyGame S.bothPlayers)
-        staged = (S.addCounter CounterKind.Loyalty 4 walker placed) {GameState.priority = Just S.alice}
+        staged =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.addCounter CounterKind.Loyalty 4 walker placed)
+
         gs = S.runPure S.identityAnswer staged (Activate.activateAbility S.alice walker minus)
         stackFor pid = let view = PlayerView.viewFor pid gs in fmap (Render.describe view) (PlayerView.Type.stack view)
     Spec.assertEqWith s "bob reads its text" (stackFor S.bob) [Text.pack "Ajani Goldmane's ability \"[\8722\&1]: Put a +1/+1 counter on each creature you control and they gain vigilance until end of turn.\""]
@@ -232,7 +248,18 @@ spec s registry = Spec.describe s "PlayerView" $ do
     card <- S.cardOf s registry "Prodigal Sorcerer"
     ability <- maybe (Spec.assertFailure s "Prodigal Sorcerer has no activated ability") pure (Maybe.listToMaybe (concatMap Face.activatedAbilities (NonEmpty.toList (Card.faces card))))
     let (source, placed) = S.addPermanent sorcerer S.alice (Setup.emptyGame S.bothPlayers)
-        gs = snd (Engine.runGamePure (aimedAt (== Recipient.ToPlayer S.bob)) placed {GameState.priority = Just S.alice} (Activate.activateAbility S.alice source ability))
+        gs =
+          snd
+            ( Engine.runGamePure
+                (aimedAt (== Recipient.ToPlayer S.bob))
+                placed
+                  { GameState.turn =
+                      (GameState.turn placed)
+                        { TurnRegisters.priority = Just S.alice
+                        }
+                  }
+                (Activate.activateAbility S.alice source ability)
+            )
         view = PlayerView.viewFor S.bob gs
     Spec.assertEqWith s "bob is told the target" (fmap ObjectView.targets (PlayerView.Type.stack view)) [[Recipient.ToPlayer S.bob]]
     Spec.assertBool s (Text.pack "Stack, top first: Prodigal Sorcerer's ability \"{T}: Prodigal Sorcerer deals 1 damage to any target.\" targeting Player 2" `elem` Render.board True view) "bob's board names it"
@@ -264,7 +291,15 @@ spec s registry = Spec.describe s "PlayerView" $ do
     let foretold card =
           let (cardId, g1) = S.addHandCard card S.alice (S.landsInPlay mountain 4)
               (_, g2) = S.addPermanent devourer S.alice g1
-              gs = g2 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+              gs =
+                g2
+                  { GameState.turn =
+                      (GameState.turn g2)
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
            in S.runPure (foretelling cardId) gs Engine.priorityLoop
         exiled pid gs = foldMap SeatView.exile (seatOf S.alice (PlayerView.viewFor pid gs))
         reduced = Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])
@@ -301,12 +336,20 @@ spec s registry = Spec.describe s "PlayerView" $ do
     let (_, g1) = S.addPermanent claw S.alice (Setup.emptyGame S.bothPlayers)
         (_, g2) = S.addPermanent mountain S.alice g1
         (spell, g3) = S.addHandCard goblin S.alice g2
-        board = g3 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        board =
+          g3
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         answer :: Asked.Asked GameState.GameState r -> State.State [(PlayerId.PlayerId, Maybe PlayerId.PlayerId, [Text.Text])] r
         answer question = case Asked.prompt question of
           prompt@(Prompt.ChooseOptional _ pid _ _ _ _) -> do
             let gs = Asked.game question
-            State.modify' (<> [(pid, GameState.priority gs, take 1 (Render.board True (PlayerView.viewFor pid gs)))])
+            State.modify' (<> [(pid, TurnRegisters.priority (GameState.turn gs), take 1 (Render.board True (PlayerView.viewFor pid gs)))])
             pure (S.identityAnswer prompt)
           prompt -> pure (S.identityAnswer prompt)
         asked = State.execState (Engine.runGameAsked answer board (S.cast S.alice spell >> Engine.priorityLoop)) []
@@ -321,11 +364,18 @@ spec s registry = Spec.describe s "PlayerView" $ do
         (_, g2) = S.addPermanent mountain S.alice g1
         (_, g3) = S.addPermanent goblin S.bob g2
         (spell, g4) = S.addHandCard goblin S.alice g3
-        board = g4 {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain}
+        board =
+          g4
+            { GameState.turn =
+                (GameState.turn g4)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain
+                  }
+            }
         answer :: Asked.Asked GameState.GameState r -> State.State [(PlayerId.PlayerId, Maybe PlayerId.PlayerId)] r
         answer question = case Asked.prompt question of
           prompt@(Prompt.ChooseTargets _ pid _ _) -> do
-            State.modify' (<> [(pid, GameState.priority (Asked.game question))])
+            State.modify' (<> [(pid, TurnRegisters.priority (GameState.turn (Asked.game question)))])
             pure (S.identityAnswer prompt)
           prompt -> pure (S.castAnswer prompt)
         asked script = State.execState (Engine.runGameAsked answer board script) []
@@ -357,7 +407,13 @@ spec s registry = Spec.describe s "PlayerView" $ do
                       Looked.audience = Set.singleton S.alice
                     }
             }
-        gs = placed {GameState.events = GameState.events placed Seq.|> look}
+        gs =
+          placed
+            { GameState.turn =
+                (GameState.turn placed)
+                  { TurnRegisters.events = TurnRegisters.events (GameState.turn placed) Seq.|> look
+                  }
+            }
     Spec.assertEqWith s "alice witnessed it" (length (PlayerView.Type.witnessed (PlayerView.viewFor S.alice gs))) 1
     Spec.assertEqWith s "bob did not" (length (PlayerView.Type.witnessed (PlayerView.viewFor S.bob gs))) 0
     let lastTurn = placed {GameState.eventsLastTurn = Seq.singleton look}

@@ -225,6 +225,7 @@ import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Voted as Voted
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -262,7 +263,7 @@ bindObjects resolving mSlot named = case (mSlot, named) of
 
 -- CR 111.3: the values the creating effect defines become the token's text, so a
 -- computed power or toughness is settled here and stamped as a literal. Left as a
--- quantity it would be re-read on every projection, and GameState.events is
+-- quantity it would be re-read on every projection, and TurnRegisters.events is
 -- cleared at the turn handoff -- the token would have no P/T next turn and die to
 -- a state-based action. P/T is the whole of it: the only printed characteristics
 -- a Face holds as a Quantity.
@@ -506,7 +507,10 @@ happenedBetween before after =
       objectTallyless = Map.map (\obj -> obj {Object.bindings = tallyless (Object.bindings obj), Object.controlClock = Map.empty, Object.exposed = False})
       comparable gs =
         gs
-          { GameState.events = Seq.empty,
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.events = Seq.empty
+                },
             GameState.boardAfterEvent = Map.empty,
             GameState.boardBeforeEvent = Map.empty,
             GameState.battlefieldWhenTriggered = Map.empty,
@@ -534,7 +538,7 @@ happenedBetween before after =
             GameState.stackArchive = objectTallyless (GameState.stackArchive gs),
             GameState.detachedBindings = Map.filter (not . Map.null) (fmap tallyless (GameState.detachedBindings gs))
           }
-   in Seq.length (GameState.events after) > Seq.length (GameState.events before)
+   in Seq.length (TurnRegisters.events (GameState.turn after)) > Seq.length (TurnRegisters.events (GameState.turn before))
         || comparable before /= comparable after
 
 -- CR 603.12: does this instruction create a REFLEXIVE triggered ability? The arm
@@ -2335,7 +2339,7 @@ recordCounteredWith source acquisition logged gs =
         GameEvent.CountersRemoved change
           | CounterChange.before change > CounterChange.after change -> [(CounterChange.object change, CounterLinked.RemovedWith (CounterChange.kind change))]
         _ -> []
-      filed = concatMap moves (Seq.drop logged (GameState.events gs))
+      filed = concatMap moves (Seq.drop logged (TurnRegisters.events (GameState.turn gs)))
    in gs {GameState.counteredWith = foldr (\(oid, moved) -> Map.insertWith Set.union oid (Set.singleton (link moved))) (GameState.counteredWith gs) filed}
 
 -- CR 607.2a's link, filed as the instruction that made it finishes: every card
@@ -3868,7 +3872,7 @@ enteredBeside oid gs = case Game.entryGroup oid gs of
   Just group ->
     Set.delete oid . Set.fromList $
       [ ZoneChange.object zc
-      | logged <- Foldable.toList (GameState.events gs),
+      | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)),
         LoggedEvent.group logged == group,
         Just zc <- [Game.enteredBattlefieldChange (LoggedEvent.event logged)]
       ]
@@ -3963,7 +3967,7 @@ bindObjectsSlot holder slot targets = overHolderBindings holder (Map.insert slot
 sacrificedBetween :: GameState -> GameState -> [ObjectId]
 sacrificedBetween before after =
   [ PermanentWasSacrificed.permanent sacrificed
-  | logged <- Foldable.toList (Seq.drop (Seq.length (GameState.events before)) (GameState.events after)),
+  | logged <- Foldable.toList (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn before))) (TurnRegisters.events (GameState.turn after))),
     GameEvent.PermanentSacrificed sacrificed <- [LoggedEvent.event logged]
   ]
 

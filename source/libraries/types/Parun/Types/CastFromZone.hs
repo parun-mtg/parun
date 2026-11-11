@@ -30,7 +30,7 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- scenarios Liliana's minus 3 casts a Hill Giant Maskwood Nexus makes a Zombie
 -- and Mystic Forge stops offering Ugin once Painter's Servant names green.
 -- The LIMIT is the permission's own, which is what makes the whole record the
--- key Parun.Types.GameState.castPermissionsUsedThisTurn spends: two Assemble the
+-- key Parun.Types.TurnRegisters.castPermissionsUsedThisTurn spends: two Assemble the
 -- Players grant two budgets, and the source object beside this value is what
 -- tells them apart. The VERB rides in the same key, so a Play permission's one
 -- budget is spent by a land play or a cast alike (Serra Paragon).

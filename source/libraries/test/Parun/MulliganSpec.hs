@@ -50,6 +50,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Revealed as Revealed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
 
@@ -1007,7 +1008,7 @@ spec s registry =
               | otherwise -> MulliganDecision.Keep
             _ -> S.identityAnswer p
           after = run3 answer (libraryGame3 mountain 20)
-          declarations = [(d, Visibility.witnessed S.bob logged) | logged <- foldr (:) [] (GameState.events after), GameEvent.MulliganDeclared d <- [LoggedEvent.event logged]]
+          declarations = [(d, Visibility.witnessed S.bob logged) | logged <- foldr (:) [] (TurnRegisters.events (GameState.turn after)), GameEvent.MulliganDeclared d <- [LoggedEvent.event logged]]
           declaredBy pid decision n = (MulliganDeclared.MkMulliganDeclared pid decision n, Visibility.Type.Visible)
       Spec.assertEqWith
         s

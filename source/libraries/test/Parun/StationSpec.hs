@@ -53,6 +53,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 122.1's charge counter, taken from the ENGINE rather than respelled here:
 -- CR 122.1 makes counters of the same name interchangeable, so the string
@@ -82,9 +83,12 @@ board frigate crew =
    in ( frigateId,
         crewIds,
         gs1
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
       )
 
@@ -138,7 +142,15 @@ stationAbilitySpec s registry = Spec.describe s "StationAbility" $ do
     blindSpot <- S.printingOf s registry "Blind-Spot Giant"
     let (frigateId, gs0) = S.addPermanent frigate S.alice S.threePlayerGame
         (_, gs1) = S.addPermanent blindSpot S.carol gs0
-        gs = gs1 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        gs =
+          gs1
+            { GameState.turn =
+                (GameState.turn gs1)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         (mineId, _, mine) = board frigate [blindSpot]
     Spec.assertBool s (not (stationable frigateId gs)) "carol's Giant is not alice's to tap"
     -- The same printing under alice's control on an otherwise identical board, so
@@ -151,7 +163,13 @@ stationAbilitySpec s registry = Spec.describe s "StationAbility" $ do
     frigate <- S.printingOf s registry "Lumen-Class Frigate"
     blindSpot <- S.printingOf s registry "Blind-Spot Giant"
     let (frigateId, _, gs) = board frigate [blindSpot]
-        bobsTurn = gs {GameState.activePlayer = S.bob}
+        bobsTurn =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            }
     Spec.assertBool s (stationable frigateId gs) "offered on alice's own main phase"
     Spec.assertBool s (not (stationable frigateId bobsTurn)) "not offered on bob's turn"
   -- CR 722.4: the station ability is not one of the striations, so no threshold
@@ -192,7 +210,13 @@ striationSpec s registry = Spec.describe s "Striation" $ do
     let (frigateId, gs0) = S.addPermanent frigate S.alice S.threePlayerGame
         (mineId, gs1) = S.addPermanent hillGiant S.alice gs0
         (bobsId, gs2) = S.addPermanent hillGiant S.bob gs1
-        gs = gs2 {GameState.priority = Just S.alice}
+        gs =
+          gs2
+            { GameState.turn =
+                (GameState.turn gs2)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         below = withCharge 1 frigateId gs
         above = withCharge 2 frigateId gs
     Spec.assertEqWith s "alice's Hill Giant is 3/3 at one charge counter" (sizeOf mineId below) (Just 3, Just 3)

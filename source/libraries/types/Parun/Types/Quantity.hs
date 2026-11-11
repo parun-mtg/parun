@@ -307,7 +307,7 @@ data Quantity
     -- GameEvent.ActivatedAbilityResolved and TriggeredAbilityResolved log and
     -- counting the resolution asking -- or, at AbilityAct.Activated, how many
     -- times it has been activated this turn (CR 602.2), off
-    -- GameState.activationsThisTurn, counting the activation resolving and any
+    -- TurnRegisters.activationsThisTurn, counting the activation resolving and any
     -- still on the stack (Dragon Whelp).
     --
     -- Aimed at the ability's own object on the stack, which a card reaches
@@ -322,7 +322,7 @@ data Quantity
     -- keeping the original's Source.
     TimesThisTurn AbilityAct.AbilityAct
   | -- | CR 602.2 / 608.2i: how many of the turn's activations by that player
-    -- match, read off GameState.activationsThisTurn -- The Chain Veil's "if you
+    -- match, read off TurnRegisters.activationsThisTurn -- The Chain Veil's "if you
     -- didn't activate a loyalty ability of a planeswalker this turn".
     ActivationsThisTurn ActivationsThisTurn.ActivationsThisTurn
   | -- | CR 700.4 \/ 608.2i: how many permanents, of any player, were put into a
@@ -357,7 +357,7 @@ data Quantity
     -- 2014-05-29).
     DraftNotes DraftNoteTally.DraftNoteTally
   | -- | CR 400.7 / 608.2i: 1 if the object this quantity is evaluated against
-    -- entered the battlefield this turn, else 0, read off GameState.events.
+    -- entered the battlefield this turn, else 0, read off TurnRegisters.events.
     EnteredThisTurn
   | -- | CR 615.5: how much damage the source's own prevention effect has stopped, read off GameState.damagePreventedBy (Sacred Boon).
     DamagePreventedThisWay

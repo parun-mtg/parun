@@ -175,7 +175,7 @@ data LastKnown = MkLastKnown
     acquisition :: !Acquisition.Acquisition,
     -- | CR 508.1k: was it attacking as it left -- the same membership
     -- Parun.Engine.Filter.View's `attacking` reports, through the one classifier
-    -- Game.isAttacking, read off GameState.combat before the object ceased.
+    -- Game.isAttacking, read off TurnRegisters.combat before the object ceased.
     --
     -- Not a characteristic either (CR 109.3's list has no combat status), and not
     -- recoverable from anything above, for `blocking`'s reason turned to the other
@@ -198,7 +198,7 @@ data LastKnown = MkLastKnown
     -- Piker whose Siege was stolen is the proof.
     attackTarget :: !(Maybe AttackTarget.AttackTarget),
     -- | CR 509.1g: was it blocking as it left -- the same membership
-    -- Parun.Engine.Filter.View's `blocking` reports, read off GameState.combat
+    -- Parun.Engine.Filter.View's `blocking` reports, read off TurnRegisters.combat
     -- before the object ceased.
     --
     -- Not a characteristic either (CR 109.3's list has no combat status), and not

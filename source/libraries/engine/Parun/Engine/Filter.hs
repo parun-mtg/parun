@@ -247,7 +247,7 @@ data View = MkView
     playerIdentity :: Maybe PlayerId.PlayerId,
     -- CR 508.1k: is this candidate an attacking creature right now? Not a
     -- characteristic (CR 109.3 says so in as many words), so it is read from
-    -- GameState.combat rather than from a projection, or for an object that has
+    -- TurnRegisters.combat rather than from a projection, or for an object that has
     -- left off CR 608.2h's record of it (Parun.Engine.Count.lastKnownView). False
     -- for every candidate with no combat status to read: a printed card off the
     -- battlefield, a player, a cast's snapshot -- the vacuous posture power and
@@ -258,7 +258,7 @@ data View = MkView
     -- is False.
     attackingAlone :: Set.Set AloneAmong.AloneAmong,
     -- CR 508.1b: WHICH PLAYER is this candidate attacking? Read from
-    -- GameState.combat like `attacking` above and off the same map, but off its
+    -- TurnRegisters.combat like `attacking` above and off the same map, but off its
     -- VALUE rather than its keys: Combat.attackers records what each attacker was
     -- announced as attacking.
     --
@@ -291,7 +291,7 @@ data View = MkView
     -- planeswalker, and for a battle mid-repair with no designation (CR 310.11).
     attackingBattleProtector :: Maybe PlayerId.PlayerId,
     -- CR 508.3b: was this candidate DECLARED ATTACKED this COMBAT PHASE? Read
-    -- from GameState.combat like `attacking`, off Combat.declaredAttacked -- the
+    -- from TurnRegisters.combat like `attacking`, off Combat.declaredAttacked -- the
     -- half of the record `declaredAttackerThisCombat` below reads the other half
     -- of. A LOOK-BACK read within the phase, so CR 506.4's removal from combat
     -- leaves it standing.
@@ -303,13 +303,13 @@ data View = MkView
     -- PlayerId and no board.
     declaredAttackedThisCombat :: Bool,
     -- CR 509.1g: is this candidate a blocking creature right now? Read from
-    -- GameState.combat alongside `attacking` -- but from the OTHER map:
+    -- TurnRegisters.combat alongside `attacking` -- but from the OTHER map:
     -- Combat.blockers is keyed by attacker, and a blocking creature is a MEMBER
     -- of some attacker's set.
     blocking :: Bool,
     -- CR 509.1h: is this candidate a blocked or an unblocked creature right
     -- now, or neither -- not attacking, or blockers not yet declared? Read from
-    -- GameState.combat like the two above, and off the same map `blocking`
+    -- TurnRegisters.combat like the two above, and off the same map `blocking`
     -- reads -- but from its KEYS, which is Parun.Engine.Combat.isBlocked's
     -- question and never `blocking`'s.
     blockStatus :: Maybe BlockStatus.BlockStatus,
@@ -335,10 +335,10 @@ data View = MkView
     declaredThisTurn :: Set.Set BlockRole.BlockRole,
     -- CR 508.1a-d: could this candidate have been declared as an attacker in
     -- one of this turn's declare attackers steps? Membership of
-    -- GameState.couldAttackThisTurn.
+    -- TurnRegisters.couldAttackThisTurn.
     couldAttackThisTurn :: Bool,
     -- CR 508.1a: was this candidate DECLARED as an attacker this COMBAT PHASE?
-    -- Read from GameState.combat like `attacking`, and off a different field of
+    -- Read from TurnRegisters.combat like `attacking`, and off a different field of
     -- it: CR 506.4 removal ends the attacking and leaves the
     -- declaration standing, and CR 508.1k writes `attacking` only after CR
     -- 508.1j's payment while this is written before it.
@@ -935,7 +935,7 @@ playerView pid =
       -- from here, this view being built from a PlayerId alone and holding no
       -- combat record to read. False is therefore the DEFAULT and not the answer,
       -- exactly as `dealtDamageThisTurn` below is: Parun.Engine.Count.playerView
-      -- overwrites it from GameState.combat.
+      -- overwrites it from TurnRegisters.combat.
       declaredAttackedThisCombat = False,
       -- CR 509.1a: only a creature can block, either.
       blocking = False,

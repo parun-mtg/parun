@@ -57,6 +57,7 @@ import qualified Parun.Types.ShownCards as ShownCards
 import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
 
@@ -114,7 +115,7 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
     top <- maybe (Spec.assertFailure s "no top") pure (Map.lookup (Label.MkLabel (Text.pack "top")) (Staged.objects built))
     let plain = Staged.state built
         controlled = plain {GameState.control = S.turnControl S.alice S.bob}
-        lastLogged gs = case Seq.viewr (GameState.events (S.runPure S.identityAnswer gs (Event.look S.bob top))) of
+        lastLogged gs = case Seq.viewr (TurnRegisters.events (GameState.turn (S.runPure S.identityAnswer gs (Event.look S.bob top)))) of
           _ Seq.:> logged -> pure logged
           Seq.EmptyR -> Spec.assertFailure s "no event logged"
     uncontrolledLook <- lastLogged plain
@@ -130,7 +131,7 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
     let plain = Staged.state built
         controlled = plain {GameState.control = S.turnControl S.alice S.bob}
         ballot = Ballot.MkBallot S.bob (BallotChoice.ForWord (SlotName.MkSlotName (Text.pack "truth")))
-        lastLogged gs = case Seq.viewr (GameState.events (S.runPure S.identityAnswer gs (Resolve.logBallot True ballot))) of
+        lastLogged gs = case Seq.viewr (TurnRegisters.events (GameState.turn (S.runPure S.identityAnswer gs (Resolve.logBallot True ballot)))) of
           _ Seq.:> logged -> pure logged
           Seq.EmptyR -> Spec.assertFailure s "no event logged"
     uncontrolledVote <- lastLogged plain
@@ -149,7 +150,7 @@ spec s registry = Spec.describe s "Parun.Engine.Visibility" $ do
   Spec.it s "an open ballot is witnessed by every player, in range or not" $ do
     built <- S.buildBoardOrFail s registry (S.board (S.playerSetup S.alice NonEmpty.:| [S.playerSetup S.bob, S.playerSetup S.carol, S.playerSetup S.dave]) S.alice S.precombatMain)
     let ballot = Ballot.MkBallot S.alice (BallotChoice.ForWord (SlotName.MkSlotName (Text.pack "truth")))
-    logged <- case Seq.viewr (GameState.events (S.runPure S.identityAnswer (S.withRange 1 (Staged.state built)) (Resolve.logBallot False ballot))) of
+    logged <- case Seq.viewr (TurnRegisters.events (GameState.turn (S.runPure S.identityAnswer (S.withRange 1 (Staged.state built)) (Resolve.logBallot False ballot)))) of
       _ Seq.:> entry -> pure entry
       Seq.EmptyR -> Spec.assertFailure s "no event logged"
     Spec.assertEqWith s "carol, out of alice's range, witnesses her open ballot" (Visibility.witnessed S.carol logged) Visibility.Type.Visible
@@ -173,7 +174,15 @@ twoBeholdsSpec s registry =
         (dragonId, withDragon) = S.addHandCard dragon S.alice withVictim
         (firstId, withFirst) = S.addHandCard exhale S.alice withDragon
         (secondId, staged) = S.addHandCard exhale S.alice withFirst
-        ready = staged {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        ready =
+          staged
+            { GameState.turn =
+                (GameState.turn staged)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         -- CR 601.2b's announcement, filtered out of the costs offered: the behold
         -- is the only component either option carries.
         beholding :: Prompt.Prompt r -> r
@@ -186,9 +195,9 @@ twoBeholdsSpec s registry =
         secondResolved = S.runPure beholding cast Stack.resolveTop
         bothResolved = S.runPure beholding secondResolved Stack.resolveTop
     Spec.assertEqWith s "CR 701.20a with the first Exhale still waiting, bob sees the Dragon card" (Visibility.sees S.bob dragonId secondResolved) Visibility.Type.Visible
-    Spec.assertEqWith s "one Exhale is left on the stack" (length (GameState.stack secondResolved)) 1
+    Spec.assertEqWith s "one Exhale is left on the stack" (length (TurnRegisters.stack (GameState.turn secondResolved))) 1
     Spec.assertEqWith s "CR 701.20a and once it resolves too, he does not" (Visibility.sees S.bob dragonId bothResolved) Visibility.Type.Obscured
-    Spec.assertEqWith s "off the same board: both were cast, and both resolved" (GameState.stack bothResolved) []
+    Spec.assertEqWith s "off the same board: both were cast, and both resolved" (TurnRegisters.stack (GameState.turn bothResolved)) []
 
 -- CR 701.20a: a card whose reveal causes an ability to trigger is revealed from
 -- the reveal, not from that ability's placement. Vision Skeins {1}{U} Instant,
@@ -219,7 +228,15 @@ miracleBeforePlacementSpec s registry = do
             stocked = List.foldl' (\g owner -> snd (S.addLibraryCard piker owner g)) withPikers [S.alice, S.alice, S.alice, S.bob, S.bob, S.bob]
             -- Added last, so on top.
             (_, withWrath) = S.addLibraryCard wrath S.bob stocked
-            ready = withWrath {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+            ready =
+              withWrath
+                { GameState.turn =
+                    (GameState.turn withWrath)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                }
             isWrath g oid = fmap S.nameOf (Game.cardOf oid g) == Just (S.printingName wrath)
             -- At each of alice's target prompts, what she sees of bob's Wrath.
             answer :: Asked.Asked GameState.GameState r -> State.State [Visibility.Type.Visibility] r
@@ -240,11 +257,11 @@ miracleBeforePlacementSpec s registry = do
   Spec.it s "CR 701.20a a miracle card is revealed while an earlier-placed trigger chooses its targets" $ do
     ((_, after), seen) <- board True
     Spec.assertEqWith s "CR 701.20a at both of alice's target prompts, she sees bob's revealed Wrath" seen [Visibility.Type.Visible, Visibility.Type.Visible]
-    Spec.assertEqWith s "CR 603.3b both emblem triggers went under bob's miracle trigger" (length (GameState.stack after)) 3
+    Spec.assertEqWith s "CR 603.3b both emblem triggers went under bob's miracle trigger" (length (TurnRegisters.stack (GameState.turn after))) 3
   Spec.it s "CR 400.2 the same Wrath unrevealed is hidden from alice at those prompts" $ do
     ((_, after), seen) <- board False
     Spec.assertEqWith s "CR 400.2 at both of alice's target prompts, bob's Wrath is hidden from her" seen [Visibility.Type.Obscured, Visibility.Type.Obscured]
-    Spec.assertEqWith s "off the same board: only the two emblem triggers were put on the stack" (length (GameState.stack after)) 2
+    Spec.assertEqWith s "off the same board: only the two emblem triggers were put on the stack" (length (TurnRegisters.stack (GameState.turn after))) 2
 
 -- CR 701.20d's shuffle, read inside the resolution that revealed the card --
 -- the window CR 701.20a keeps open while the spell resolves. No printing reads

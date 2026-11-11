@@ -46,6 +46,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 702.170a / 702.170f: every plot cost `pid` may plot this object for from
@@ -195,5 +196,5 @@ stamp :: ObjectId -> GameState -> GameState
 stamp newId gs =
   gs
     { GameState.objects =
-        Map.adjust (\o -> o {Object.plotted = Just (GameState.turnNumber gs)}) newId (GameState.objects gs)
+        Map.adjust (\o -> o {Object.plotted = Just (TurnRegisters.turnNumber (GameState.turn gs))}) newId (GameState.objects gs)
     }

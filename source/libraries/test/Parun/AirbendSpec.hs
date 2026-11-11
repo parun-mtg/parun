@@ -40,6 +40,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Aim a target slot at this permanent, PINNED rather than searched: an answerer
@@ -86,7 +87,14 @@ airbent victim spell gs =
 -- cast it" case asked there passes for the timing rather than for the
 -- permission.
 mainPhaseOf :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
-mainPhaseOf pid gs = gs {GameState.activePlayer = pid, GameState.phase = Phase.PrecombatMain}
+mainPhaseOf pid gs =
+  gs
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = pid,
+            TurnRegisters.phase = Phase.PrecombatMain
+          }
+    }
 
 -- The one card in bob's exile, which is the incarnation rule 701.65a's second
 -- sentence is about (CR 400.7).

@@ -426,7 +426,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 704.5a paying the last 2 life is legal and loses the game | `check:other-GameState.players` `check:other-Player.status`
 - CR 734.1 a nested window's mana abilities are the payer's to keep | `move:ActivateManaAbility`
 - CR 734.1 a refused assisted cast asks the helper too, and each keeps only their own | `check:prompt-order`
-- CR 734.1 an activator who keeps the mana abilities keeps both lands tapped and both mana floating | `check:other-GameState.activatedThisTurn`
+- CR 734.1 an activator who keeps the mana abilities keeps both lands tapped and both mana floating | `check:other-TurnRegisters.activatedThisTurn`
 
 ### `CountSpec`
 
@@ -704,7 +704,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`
 - CR 800.4j the active player having left does not stop the turn: priority starts at the next seat | `check:other-Engine.priorityHolder`
 - CR 800.4j/703.4i the declare-attackers guard is load-bearing at two seats, where the game loop cannot reach this state | `check:combat` `check:other-Projection.controls`
-- CR 800.4k a departed player's turn does not begin | `check:other-GameState.turnNumber` `check:other-GameState.turnOrder`
+- CR 800.4k a departed player's turn does not begin | `check:other-TurnRegisters.turnNumber` `check:other-GameState.turnOrder`
 - M5.6a gate: a three-player game survives a concede, and the departed seat still ends its durations | `board:player-effect`
 - M5.6d gate: attacking the monarch takes the crown and frees Palace Jailer's prisoner; attacking the other opponent does neither | `board:exiled-until-monarch`
 - a priority round whose only action is Pass leaves it alone | `check:other-GameState.lastChoice`
@@ -713,7 +713,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - playing lands fills the battlefield | `board:matchup`
 - the conceding player departs as Conceded, not Lost | `check:other-GameState.players` `check:other-Player.status`
 - the next step runs the rebuilt turn 1's untap step | `board:stack`
-- the seat walk terminates when every seat has departed | `check:other-GameState.turnNumber`
+- the seat walk terminates when every seat has departed | `check:other-TurnRegisters.turnNumber`
 - the step the restart fired in does not advance past turn 1's untap step | `board:stack`
 
 ### `GoadSpec`
@@ -1027,7 +1027,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger` `move:name-departed-object`
 - CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`
 - CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`
-- CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-GameState.remaining`
+- CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`
 - CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`
 - CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-GameState.replacements`
 - CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
@@ -1237,20 +1237,20 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:intermediate-state` `check:player-effects`
 - CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`
 - CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`
-- CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-GameState.remaining` `check:other-Turn.expandExtraPhase`
-- CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-GameState.remaining`
+- CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`
+- CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`
 - CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`
 - CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`
 - CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn | `check:intermediate-state`
-- CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-GameState.remaining`
+- CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`
 - CR 725.1d ending the turn during combat expires that phase's effects | `check:step` `check:intermediate-state`
 - CR 725.1d ending the turn skips straight to the cleanup step | `check:step`
 - CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`
 - CR 725.2d ending the combat phase skips straight to the next phase | `check:step`
 - CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`
 - CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`
-- advance on an empty schedule hands off the turn | `check:other-GameState.remaining` `check:other-GameState.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`
-- advance pops the schedule head into the current phase | `check:other-GameState.remaining`
+- advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`
+- advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`
 
 ### `UntapRestrictionSpec`
 

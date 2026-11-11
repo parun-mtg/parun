@@ -19,6 +19,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import Parun.Types.TurnMarker (TurnMarker)
 import qualified Parun.Types.TurnMarker as TurnMarker
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | CR 807.2 / 807.4b: a Grand Melee game's options over this game's seating
 -- (GameState.turnOrder) -- CR 807.2a's range of 1, CR 807.2b's attack left
@@ -47,7 +48,7 @@ handOut :: GameState -> GameState
 handOut gs
   | not (GameSettings.grandMelee (GameState.settings gs)) = gs
   | otherwise =
-      let seats = case List.break (== GameState.activePlayer gs) (Game.stillPlayingInOrder gs) of
+      let seats = case List.break (== TurnRegisters.activePlayer (GameState.turn gs)) (Game.stillPlayingInOrder gs) of
             (before, after) -> after <> before
           holders = take (Natural.toIntSaturating (markersFor (Natural.length seats))) [pid | (i, pid) <- zip [0 :: Int ..] seats, mod i 4 == 0]
           marker n pid =
@@ -65,8 +66,8 @@ handOut gs
 markersFor :: Natural -> Natural
 markersFor players = max 1 (div players 4)
 
--- | CR 807.5a: whether a player gets priority for the stack of the turn
--- GameState's fields hold -- its marker (the active player's), or the
+-- | CR 807.5a: whether a player gets priority for the stack of
+-- GameState.turn -- its marker (the active player's), or the
 -- controller of an object on that stack, is within their range of
 -- influence. Everyone outside the variant.
 eligible :: GameState -> PlayerId -> Bool
@@ -74,8 +75,8 @@ eligible gs pid =
   not (GameSettings.grandMelee (GameState.settings gs))
     -- CR 800.4j: a departed holder's marker stays at their seat until their
     -- turn ends (CR 807.4c).
-    || Game.wasInRangeOf pid (GameState.activePlayer gs) gs
-    || any (\controller -> Game.inRangeOf pid controller gs) (Maybe.mapMaybe (`View.controllerOf` gs) (GameState.stack gs))
+    || Game.wasInRangeOf pid (TurnRegisters.activePlayer (GameState.turn gs)) gs
+    || any (\controller -> Game.inRangeOf pid controller gs) (Maybe.mapMaybe (`View.controllerOf` gs) (TurnRegisters.stack (GameState.turn gs)))
 
 -- Every other seat, departed ones included, nearest `pid`'s left first.
 seatsLeftOf :: PlayerId -> GameState -> [PlayerId]

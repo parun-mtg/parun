@@ -24,6 +24,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Iron Apprentice {1} Artifact Creature -- Construct 0/0 (Kamigawa: Neon
@@ -138,7 +139,7 @@ putCountersFromSpec s registry = Spec.describe s "CR 122.8 putting the counters 
     -- 122.1b). Either kind missing is a different triple.
     Spec.assertEqWith s "the Piker is a 5/4 with flying" (bodyOf takerId after) (Just 5, Just 4, True)
     Spec.assertEqWith s "which is the Apprentice's whole tally, kind for kind" (pairOn takerId after) (Map.fromList [(CounterKind.PlusOnePlusOne, 3), (CounterKind.Keyword Keyword.Flying, 2)])
-    Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
     Spec.assertEqWith s "and the Apprentice is off the battlefield" (Set.member apprenticeId (GameState.battlefield after)) False
   -- The same board differing in exactly ONE thing: the flying counters are gone
   -- and nothing else moves. Without this pair the case above would pass on an
@@ -158,7 +159,7 @@ putCountersFromSpec s registry = Spec.describe s "CR 122.8 putting the counters 
     built@(apprenticeId, takerId, before) <- board (const id)
     Spec.assertEqWith s "no counters on it at all" (pairOn apprenticeId before) Map.empty
     let (settled, after) = diesFrom 0 built
-    Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+    Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
     Spec.assertEqWith s "the Piker is the plain 2/1 it started as" (bodyOf takerId after) (Just 2, Just 1, False)
     Spec.assertEqWith s "and the Apprentice is off the battlefield just the same" (Set.member apprenticeId (GameState.battlefield after)) False
 
@@ -241,7 +242,7 @@ resourcefulDefenseSpec s registry = Spec.describe s "CR 122.8 putting the counte
     Spec.assertEqWith s "the target Piker is a 5/4 with flying" (bodyOf takerId after) (Just 5, Just 4, True)
     Spec.assertEqWith s "which is the departed Piker's whole tally, kind for kind" (pairOn takerId after) (Map.fromList [(CounterKind.PlusOnePlusOne, 3), (CounterKind.Keyword Keyword.Flying, 2)])
     Spec.assertEqWith s "and the Piker that was NOT named is untouched, so the counters went to the target rather than to every permanent" (bodyOf decoyId after) (Just 2, Just 1, False)
-    Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
     Spec.assertEqWith s "and the departed Piker is off the battlefield" (Set.member victimId (GameState.battlefield after)) False
   -- CR 603.6c's condition is not CR 700.4's: a LAND returned to its owner's HAND
   -- left the battlefield too. Two things this case alone drives -- CR 400.2's
@@ -256,7 +257,7 @@ resourcefulDefenseSpec s registry = Spec.describe s "CR 122.8 putting the counte
     let (settled, after) = settleAnd takerId (S.runPure S.identityAnswer before (Event.changeZone (pure ()) victimId Zone.Hand))
     Spec.assertEqWith s "the target Piker is a 5/4 with flying just the same" (bodyOf takerId after) (Just 5, Just 4, True)
     Spec.assertEqWith s "which is the Swamp's whole tally, kind for kind" (pairOn takerId after) (Map.fromList [(CounterKind.PlusOnePlusOne, 3), (CounterKind.Keyword Keyword.Flying, 2)])
-    Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
     Spec.assertEqWith s "and the Swamp is in alice's hand" (Set.member victimId (GameState.battlefield after)) False
   -- CR 603.4's "otherwise it does nothing", on a board differing from the first
   -- case in exactly ONE thing: the Piker leaves the same way, from the same
@@ -266,7 +267,7 @@ resourcefulDefenseSpec s registry = Spec.describe s "CR 122.8 putting the counte
     (victimId, _, takerId, _, before) <- board
     Spec.assertEqWith s "no counters on it at all" (pairOn victimId before) Map.empty
     let (settled, after) = settleAnd takerId (S.settleSba (S.markDamage victimId 4 before))
-    Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+    Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
     Spec.assertEqWith s "the target Piker is the plain 2/1 it started as" (bodyOf takerId after) (Just 2, Just 1, False)
     Spec.assertEqWith s "and the Piker is off the battlefield just the same" (Set.member victimId (GameState.battlefield after)) False
 
@@ -334,7 +335,7 @@ selflessPoliceCaptainSpec s registry = Spec.describe s "CR 122.8 putting only th
     -- is what the two groups above assert and what this one denies.
     Spec.assertEqWith s "the Piker is a 5/4 that does NOT fly" (bodyOf takerId after) (Just 5, Just 4, False)
     Spec.assertEqWith s "and holds the +1/+1 counters alone, the flying ones left behind" (pairOn takerId after) (Map.singleton CounterKind.PlusOnePlusOne 3)
-    Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
     Spec.assertEqWith s "and the Captain is off the battlefield" (Set.member captainId (GameState.battlefield after)) False
   -- The same board differing in exactly ONE thing: the Captain bore the named
   -- kind and nothing else, so the narrowing has nothing to drop. Without this leg
@@ -355,7 +356,7 @@ selflessPoliceCaptainSpec s registry = Spec.describe s "CR 122.8 putting only th
     let (settled, after) = diesFrom 1 built
     Spec.assertEqWith s "the Piker is the plain 2/1 it started as, with no flying" (bodyOf takerId after) (Just 2, Just 1, False)
     Spec.assertEqWith s "and bears no counters at all" (pairOn takerId after) Map.empty
-    Spec.assertEqWith s "the trigger reached the stack all the same -- the card writes no intervening if" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack all the same -- the card writes no intervening if" (length (TurnRegisters.stack (GameState.turn settled))) 1
 
 -- Deepglow Skate {4}{U} Creature -- Fish 3/3 and Aetheric Amplifier {3}
 -- Artifact (name, cost, type line, power, toughness and oracle text checked
@@ -400,7 +401,7 @@ doubleEachTargetSpec s registry = Spec.describe s "CR 701.10e doubling each kind
     Spec.assertEqWith s "the Piker holds six +1/+1 counters and four flying counters" (pairOn pikerId after) (Map.fromList [(CounterKind.PlusOnePlusOne, 6), (CounterKind.Keyword Keyword.Flying, 4)])
     Spec.assertEqWith s "bob's Jace holds ten loyalty counters" (pairOn jaceId after) (Map.singleton CounterKind.Loyalty 10)
     Spec.assertEqWith s "the untargeted Piker keeps its one counter" (pairOn decoyId after) (Map.singleton CounterKind.PlusOnePlusOne 1)
-    Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
 
 -- `aiming` for a slot taking any number: as many as `chosen`, the offered set
 -- filtered to it.

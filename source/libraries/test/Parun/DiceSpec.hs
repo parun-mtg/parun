@@ -131,6 +131,7 @@ import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.ThrowResult as ThrowResult
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -173,7 +174,7 @@ offeredSides board =
           pure (rollAnswer 13 p)
         _ -> pure (rollAnswer 13 p)
       go n gs =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result gs) || not (S.inCombatPhase (GameState.phase gs))
+        if n <= (0 :: Int) || Maybe.isJust (GameState.result gs) || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn gs)))
           then pure gs
           else do
             (_, next) <- Engine.runGame logging gs Engine.runStep
@@ -275,8 +276,8 @@ resultsTableSpec s registry = Spec.describe s "ResultsTable" $ do
   -- transcribed as four abilities would put four there.
   Spec.it s "CR 706.3b the roll and its table are one ability" $ do
     (_, board) <- tableBoard s registry
-    Spec.assertEqWith s "CR 706.3b: one ability on the stack, not one per striation" (length (GameState.stack (placeTable 9 board))) 1
-    Spec.assertEqWith s "and it is gone after one resolution" (length (GameState.stack (runTable 9 board))) 0
+    Spec.assertEqWith s "CR 706.3b: one ability on the stack, not one per striation" (length (TurnRegisters.stack (GameState.turn (placeTable 9 board)))) 1
+    Spec.assertEqWith s "and it is gone after one resolution" (length (TurnRegisters.stack (GameState.turn (runTable 9 board)))) 0
   -- The fixture pin, in its own case so it cannot stand in for a striation
   -- above: the library really is the six cards in the order those assertions
   -- index, and CR 701.22a moves no card OUT of it, which is what makes "the top
@@ -503,7 +504,7 @@ guideCombat rolls board =
               pure 20
         _ -> pure (S.attackTo S.bob p)
       go n gs =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result gs) || not (S.inCombatPhase (GameState.phase gs))
+        if n <= (0 :: Int) || Maybe.isJust (GameState.result gs) || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn gs)))
           then pure gs
           else do
             (_, next) <- Engine.runGame answering gs Engine.runStep
@@ -935,7 +936,7 @@ nightShiftRun rolls rerolls shifts index spell board =
   let drain :: Int -> Game.Type.Game ()
       drain n = do
         gs <- State.get
-        Monad.unless (n <= 0 || null (GameState.stack gs)) (Stack.resolveTop >> drain (n - 1))
+        Monad.unless (n <= 0 || null (TurnRegisters.stack (GameState.turn gs))) (Stack.resolveTop >> drain (n - 1))
       script = S.cast S.alice spell >> Stack.resolveTop >> Engine.placePendingTriggers [] >> drain 8
       ((_, after), (_, _, _, shown)) = State.runState (Engine.runGame (nightShiftAnswer index) board script) (rolls, rerolls, shifts, [])
    in (after, reverse shown)
@@ -1009,12 +1010,12 @@ delinaRun rolls again board =
           pure (if null left then OptionalDecision.Declines else again)
         _ -> pure (S.attackTo S.bob p)
       go stop n gs =
-        if n <= (0 :: Int) || stop gs || not (S.inCombatPhase (GameState.phase gs))
+        if n <= (0 :: Int) || stop gs || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn gs)))
           then pure gs
           else do
             (_, next) <- Engine.runGame answer gs Engine.runStep
             go stop (n - 1) next
-      atBlockers = State.evalState (go (\gs -> GameState.phase gs == Phase.Combat CombatStep.DeclareBlockers) 8 board) (rolls, 0)
+      atBlockers = State.evalState (go (\gs -> TurnRegisters.phase (GameState.turn gs) == Phase.Combat CombatStep.DeclareBlockers) 8 board) (rolls, 0)
       (after, (_, asked)) = State.runState (go (const False) 24 board) (rolls, 0)
    in (atBlockers, after, asked)
 
@@ -1024,7 +1025,7 @@ delinaSpec s registry = Spec.describe s "Delina" $ do
         delina <- S.printingOf s registry "Delina, Wild Mage"
         let (board, _, _) = S.combatBoardOf [delina] []
         pure (delinaRun rolls again board)
-      attackingBob gs = fmap (\oid -> (fmap Object.tapped (Game.lookupObject oid gs), Map.lookup oid (Combat.Type.attackers (GameState.combat gs)))) (S.tokensOf gs)
+      attackingBob gs = fmap (\oid -> (fmap Object.tapped (Game.lookupObject oid gs), Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs))))) (S.tokensOf gs)
       tappedAtBob n = replicate n (Just TapState.Tapped, Just (AttackTarget.OfPlayer S.bob))
   -- Each script carries one roll past where the gate should stop the loop, so
   -- an ungated ask is answered yes and shows up as an extra token.

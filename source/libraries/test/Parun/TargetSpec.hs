@@ -150,6 +150,7 @@ import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The one target slot a single-slot card or ability declares, read out of the
@@ -460,7 +461,17 @@ pentarchPaladinSpec s registry = Spec.describe s "Pentarch Paladin" $ do
     red <- paladinBoard Color.Red
     case red of
       Just (paladinId, pikerId, _, murderId, activated) -> do
-        let murdered = S.runPure (aimAtCreature paladinId) (activated {GameState.priority = Just S.bob}) (S.cast S.bob murderId Monad.>> Stack.resolveTop)
+        let murdered =
+              S.runPure
+                (aimAtCreature paladinId)
+                ( activated
+                    { GameState.turn =
+                        (GameState.turn activated)
+                          { TurnRegisters.priority = Just S.bob
+                          }
+                    }
+                )
+                (S.cast S.bob murderId Monad.>> Stack.resolveTop)
             resolved = resolve murdered
         Spec.assertBool s (not (S.onBattlefield pikerId resolved)) "the Piker is destroyed by the dead Paladin's ability"
         Spec.assertBool s (not (S.onBattlefield paladinId murdered)) "because the Paladin had already left before it resolved"
@@ -480,7 +491,17 @@ pentarchPaladinSpec s registry = Spec.describe s "Pentarch Paladin" $ do
       (Just (_, firstId, _, _, activated), copying : _) -> do
         let (secondId, g0) = S.addPermanent piker S.bob activated
             (engineId, g1) = S.addPermanent engine S.alice (S.landsFor plains S.alice 2 g0)
-            copied = S.runPure S.identityAnswer (g1 {GameState.priority = Just S.alice}) (Activate.activateAbility S.alice engineId copying)
+            copied =
+              S.runPure
+                S.identityAnswer
+                ( g1
+                    { GameState.turn =
+                        (GameState.turn g1)
+                          { TurnRegisters.priority = Just S.alice
+                          }
+                    }
+                )
+                (Activate.activateAbility S.alice engineId copying)
             retargeted = S.runPure (aimAtCreature secondId) copied Stack.resolveTop
             copyResolved = resolve retargeted
             bothResolved = resolve copyResolved
@@ -510,7 +531,14 @@ fromTheRubbleSpec s registry =
         (pikerId, g1) = S.addGraveyardCard piker S.alice g0
         (_, g2) = S.addGraveyardCard giant S.alice g1
         endOfTurn chosen =
-          let chose = g2 {GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own chosen}) rubbleId (GameState.objects g2), GameState.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]}
+          let chose =
+                g2
+                  { GameState.objects = Map.adjust (\o -> o {Object.chosenSubtype = Map.singleton Acquisition.Own chosen}) rubbleId (GameState.objects g2),
+                    GameState.turn =
+                      (GameState.turn g2)
+                        { TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
+                        }
+                  }
               afterMain = S.runPure (aimAtCreature pikerId) chose Engine.runStep
            in S.runPure (aimAtCreature pikerId) afterMain Engine.runStep
         onBattlefield name = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack name)) S.alice
@@ -733,7 +761,13 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
           let base = S.landsInPlay mountain 1
               withGuard = maybe base (\g -> snd (S.addPermanent g S.bob base)) guard
               (ready, boltId) = S.handOne bolt withGuard
-              board = ready {GameState.priority = Just S.alice}
+              board =
+                ready
+                  { GameState.turn =
+                      (GameState.turn ready)
+                        { TurnRegisters.priority = Just S.alice
+                        }
+                  }
            in S.runPure prefersBob board (S.cast S.alice boltId >> Stack.resolveTop)
         unguarded = castAt Nothing
         masked = castAt (Just ivoryMask)
@@ -764,7 +798,16 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
         (_, bothMasked) = S.addPermanent ivoryMask S.alice oneMask
         castableIn board =
           let (ready, boltId) = S.handOne bolt board
-           in S.castable S.alice boltId (ready {GameState.priority = Just S.alice})
+           in S.castable
+                S.alice
+                boltId
+                ( ready
+                    { GameState.turn =
+                        (GameState.turn ready)
+                          { TurnRegisters.priority = Just S.alice
+                          }
+                    }
+                )
     -- The control twin, one step at a time: with only bob masked, alice is still
     -- a candidate and the Bolt is castable, so it is the SECOND Mask that empties
     -- the slot rather than anything else about the board.
@@ -1104,7 +1147,14 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
     swamp <- S.printingOf s registry "Swamp"
     let (knightId, g1) = S.addPermanent knight S.bob (S.landsInPlay swamp 1)
         (spearId, g2) = S.addPermanent spear S.alice g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        board =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         stripped = case Activatable.abilitiesFor spearId board of
           lose : _ -> S.runPure S.identityAnswer board (Activate.activateAbility S.alice spearId lose >> Stack.resolveTop)
           [] -> board
@@ -1397,8 +1447,28 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
             (rayId, board) = S.addHandCard rayOfCommand S.bob (S.landsFor island S.bob 4 board2)
             -- One activation, two futures: only the stolen row casts the Ray in
             -- response, so the boards differ in that and nothing else.
-            activated = S.runPure (aimAtOffered nemesisId) (board {GameState.priority = Just S.carol}) (Activate.activateAbility S.carol recluseId ability)
-            stolen = S.runPure (aimAtOffered recluseId) (activated {GameState.priority = Just S.bob}) (S.cast S.bob rayId Monad.>> Stack.resolveTop)
+            activated =
+              S.runPure
+                (aimAtOffered nemesisId)
+                ( board
+                    { GameState.turn =
+                        (GameState.turn board)
+                          { TurnRegisters.priority = Just S.carol
+                          }
+                    }
+                )
+                (Activate.activateAbility S.carol recluseId ability)
+            stolen =
+              S.runPure
+                (aimAtOffered recluseId)
+                ( activated
+                    { GameState.turn =
+                        (GameState.turn activated)
+                          { TurnRegisters.priority = Just S.bob
+                          }
+                    }
+                )
+                (S.cast S.bob rayId Monad.>> Stack.resolveTop)
             resolve gs = S.runPure S.identityAnswer gs Stack.resolveTop
         Spec.assertEqWith
           s
@@ -1519,14 +1589,34 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
             atAlice p = case p of
               Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.alice))) sets
               _ -> S.identityAnswer p
-            pinging = S.runPure atAlice (withIslands {GameState.priority = Just S.bob}) (Activate.activateAbility S.bob srcId ping)
+            pinging =
+              S.runPure
+                atAlice
+                ( withIslands
+                    { GameState.turn =
+                        (GameState.turn withIslands)
+                          { TurnRegisters.priority = Just S.bob
+                          }
+                    }
+                )
+                (Activate.activateAbility S.bob srcId ping)
             takeNewest :: Prompt.Prompt r -> r
             takeNewest p = case p of
               Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, legal) -> maybe Set.empty Set.singleton (Set.lookupMax legal)) sets
               _ -> S.identityAnswer p
-            countering = S.runPure takeNewest (pinging {GameState.priority = Just S.alice}) (Activate.activateAbility S.alice adricId ultimateSacrifice)
+            countering =
+              S.runPure
+                takeNewest
+                ( pinging
+                    { GameState.turn =
+                        (GameState.turn pinging)
+                          { TurnRegisters.priority = Just S.alice
+                          }
+                    }
+                )
+                (Activate.activateAbility S.alice adricId ultimateSacrifice)
             after = S.runPure S.identityAnswer (S.runPure S.identityAnswer countering Stack.resolveTop) Stack.resolveTop
-        case GameState.stack pinging of
+        case TurnRegisters.stack (GameState.turn pinging) of
           [pingId] -> do
             -- The discriminating pair, stated first: countering the ping is the
             -- only way alice's life stays 20. An ability that had been offered
@@ -1539,7 +1629,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
             -- this and the two below hold under both readings. They are here to
             -- stop a green that came from the activation never happening.
             Spec.assertEqWith s "the ping is no longer an object at all" (Game.lookupObject pingId after) Nothing
-            Spec.assertEqWith s "the stack is empty" (GameState.stack after) []
+            Spec.assertEqWith s "the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
             Spec.assertEqWith s "Adric is in alice's graveyard: the sacrifice was paid" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
             -- Legibility, and last so it can absorb no mutation the assertions
             -- above should catch: the pool the announcement was made against held
@@ -1650,7 +1740,13 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
     let (wretchId, g1) = S.addPermanent wretch S.alice (S.landsInPlay swamp 1)
         (mineId, g2) = S.addGraveyardCard piker S.alice g1
         (theirsId, g3) = S.addGraveyardCard piker S.bob g2
-        board = g3 {GameState.priority = Just S.alice}
+        board =
+          g3
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
     case Face.activatedAbilities (S.combinedFace wretch) of
       [ability] -> do
         let exiling oid = S.runPure (aimAtCard oid) (S.runPure (aimAtCard oid) board (Activate.activateAbility S.alice wretchId ability)) Stack.resolveTop
@@ -1820,13 +1916,13 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
         resolve g = S.runPure (aimAtCardShuffling hisId) g Stack.resolveTop
         shuffledIn = resolve placed
         fizzled = resolve (S.runPure S.identityAnswer placed (Event.changeZone (pure ()) hisId Zone.Hand))
-    Spec.assertEqWith s "the enters trigger went on the stack" (length (GameState.stack placed)) 1
+    Spec.assertEqWith s "the enters trigger went on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
     Spec.assertEqWith s "untouched, bob's library grew to three" (length (Game.zoneMembers Zone.Library S.bob shuffledIn)) 3
     Spec.assertEqWith s "taken to his hand in response, his library is the two it started with, in their original order -- not even shuffled" (Game.zoneMembers Zone.Library S.bob fizzled) [hisTopId, hisDeeperId]
     Spec.assertEqWith s "with the card itself in his hand" (length (Game.zoneMembers Zone.Hand S.bob fizzled)) 1
     Spec.assertEqWith s "with exile empty when the trigger resolved (the card was shuffled in)" (Set.size (GameState.exile shuffledIn)) 0
     Spec.assertEqWith s "and empty when it fizzled too (the card was taken to hand)" (Set.size (GameState.exile fizzled)) 0
-    Spec.assertEqWith s "with the ability off the stack" (length (GameState.stack fizzled)) 0
+    Spec.assertEqWith s "with the ability off the stack" (length (TurnRegisters.stack (GameState.turn fizzled))) 0
 
   -- CR 601.2c: "the player announces their choice of an appropriate object or
   -- player for each target the spell requires." ONE announcement over every
@@ -1880,14 +1976,14 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
       (slotNamed "cards")
       (Set.fromList (fmap Recipient.ToObject [hisId, hisOtherId, hersId]))
     Spec.assertEqWith s "and the player slot every player" (slotNamed "player") (Set.fromList (fmap Recipient.ToPlayer [S.alice, S.bob, S.carol]))
-    Spec.assertEqWith s "naming bob and a card in BOB's graveyard, the spell is cast" (length (GameState.stack castAtBob)) 1
+    Spec.assertEqWith s "naming bob and a card in BOB's graveyard, the spell is cast" (length (TurnRegisters.stack (GameState.turn castAtBob))) 1
     Spec.assertBool s (notElem hisId (Game.zoneMembers Zone.Graveyard S.bob atBob)) "and on resolution his card leaves his graveyard"
     Spec.assertEqWith s "arriving in HIS library (CR 400.3), which was empty" (length (Game.zoneMembers Zone.Library S.bob atBob)) 1
     Spec.assertEqWith s "leaving his other card behind, unnamed" (Game.zoneMembers Zone.Graveyard S.bob atBob) [hisOtherId]
     Spec.assertEqWith s "with carol's graveyard untouched" (Game.zoneMembers Zone.Graveyard S.carol atBob) [hersId]
     Spec.assertEqWith s "naming TWO of his cards, both leave the graveyard" (Game.zoneMembers Zone.Graveyard S.bob atBoth) []
     Spec.assertEqWith s "and both arrive in his library" (length (Game.zoneMembers Zone.Library S.bob atBoth)) 2
-    Spec.assertEqWith s "naming bob and a card in CAROL's graveyard, the cast is reversed (CR 601.2)" (length (GameState.stack castAtCarol)) 0
+    Spec.assertEqWith s "naming bob and a card in CAROL's graveyard, the cast is reversed (CR 601.2)" (length (TurnRegisters.stack (GameState.turn castAtCarol))) 0
     Spec.assertBool s (elem dwellId (Game.zoneMembers Zone.Hand S.alice castAtCarol)) "and the spell is back in alice's hand"
 
   -- The same narrowing on the FLOOR rather than the ceiling, which is CR 601.2c's
@@ -1971,7 +2067,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
         slotNamed name = Map.findWithDefault Set.empty (SlotName.MkSlotName (Text.pack name)) offered
     -- The behaviour first: naming the Piker in both slots is not an announcement
     -- the rule allows, so CR 601.2e returns the game to before the proposal.
-    Spec.assertEqWith s "naming the Piker in BOTH slots, the cast is reversed (CR 601.2e)" (length (GameState.stack castAtSelf)) 0
+    Spec.assertEqWith s "naming the Piker in BOTH slots, the cast is reversed (CR 601.2e)" (length (TurnRegisters.stack (GameState.turn castAtSelf))) 0
     Spec.assertEqWith s "so the Piker was never dealt its own two damage" (S.damageOf dealerId atSelf) (Just 0)
     Spec.assertBool s (elem hammerId (Game.zoneMembers Zone.Hand S.alice castAtSelf)) "and the spell is back in alice's hand"
     Spec.assertEqWith s "naming bob's Rats instead, the Piker's two damage is marked on them" (S.damageOf ratsId atRats) (Just 2)
@@ -2058,7 +2154,14 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
               ManaUnit.sourceChoices = Nothing,
               ManaUnit.sourceLastExiled = Nothing
             }
-        funded = (Setup.emptyGame S.bothPlayers) {GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana (replicate 5 white)), GameState.priority = Just S.alice}
+        funded =
+          (Setup.emptyGame S.bothPlayers)
+            { GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana (replicate 5 white)),
+              GameState.turn =
+                (GameState.turn (Setup.emptyGame S.bothPlayers))
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         (defenseId, alone) = S.addPermanent defense S.alice funded
         (_, together) = S.addPermanent piker S.alice alone
         activates gs = any (\action -> case action of A.Activate oid _ -> oid == defenseId; _ -> False) (Action.legalActions S.alice gs)
@@ -2115,7 +2218,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
     Spec.assertEqWith s "naming the Wall for occurrence 1 instead, both Pikers' two damage reaches it" (S.damageOf wallId atWall) (Just 4)
     -- The proxies after: a cast that never happened would leave the Wall
     -- unharmed too.
-    Spec.assertEqWith s "the reversed cast left nothing on the stack" (length (GameState.stack castAtSelf)) 0
+    Spec.assertEqWith s "the reversed cast left nothing on the stack" (length (TurnRegisters.stack (GameState.turn castAtSelf))) 0
     Spec.assertBool s (elem refrainId (Game.zoneMembers Zone.Hand S.alice castAtSelf)) "and the spell is back in alice's hand"
     -- The union posture, last and for the case above's reason: occurrence 1's
     -- victim slot is still OFFERED its own dealer at CR 601.2c, so the first
@@ -2190,7 +2293,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
     Spec.assertBool s (not (onBattlefield atCheap cheapId)) "and the Rats with it"
     -- The proxies after: a cast that never happened would leave both creatures
     -- standing too.
-    Spec.assertEqWith s "the reversed cast left nothing on the stack" (length (GameState.stack castAtDear)) 0
+    Spec.assertEqWith s "the reversed cast left nothing on the stack" (length (TurnRegisters.stack (GameState.turn castAtDear))) 0
     Spec.assertBool s (elem refrainId (Game.zoneMembers Zone.Hand S.alice castAtDear)) "and the spell is back in alice's hand"
     -- The widening, last and for the case above's reason: occurrence 1's victim
     -- slot is still OFFERED the dearer creature at CR 601.2c, measured against
@@ -2404,7 +2507,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
     Spec.assertEqWith s "CR 608.2b the giver was stolen in response: no counter crosses" (fmap (`counters` stolen) [giverId, mineId]) [3, 0]
     -- CR 601.2e, behind the behaviour: the announcement was not one the rule
     -- allows, so the game returned to before the spell was proposed.
-    Spec.assertEqWith s "the cast is reversed" (length (GameState.stack castAtTheirs)) 0
+    Spec.assertEqWith s "the cast is reversed" (length (TurnRegisters.stack (GameState.turn castAtTheirs))) 0
     Spec.assertBool s (elem spellId (Game.zoneMembers Zone.Hand S.alice castAtTheirs)) "and the spell is back in alice's hand"
     -- The union posture, last, and the trap this atom had to avoid: the offer is
     -- made before either target is chosen, so the `to` slot is still offered every
@@ -2500,7 +2603,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
         resolvedWithCards = S.runPure (aimingDwellShuffling [hisId, hisOtherId]) cast Stack.resolveTop
         resolvedWithout = S.runPure (aimingDwellShuffling [hisId, hisOtherId]) exiled Stack.resolveTop
         arrivalsIn pid seeded gs = filter (`notElem` seeded) (Game.zoneMembers Zone.Library pid gs)
-    Spec.assertEqWith s "the spell is on the stack" (length (GameState.stack cast)) 1
+    Spec.assertEqWith s "the spell is on the stack" (length (TurnRegisters.stack (GameState.turn cast))) 1
     Spec.assertEqWith s "the control: his graveyard loses exactly the two named cards" (Game.zoneMembers Zone.Graveyard S.bob resolvedWithCards) []
     Spec.assertEqWith s "and his library gains exactly two" (length (arrivalsIn S.bob [hisTopId, hisDeeperId] resolvedWithCards)) 2
     Spec.assertEqWith s "with carol's graveyard card untouched, so it was HIS graveyard the cards came from" (Game.zoneMembers Zone.Graveyard S.carol resolvedWithCards) [hersId]
@@ -2513,7 +2616,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
       [hisDeeperId, hisTopId]
     Spec.assertEqWith s "alice's library is not shuffled, so the library is the one the spell NAMED and not the controller's" (Game.zoneMembers Zone.Library S.alice resolvedWithout) [herTopId, herDeeperId]
     Spec.assertEqWith s "and carol's is not either, so it is one library and not every library" (Game.zoneMembers Zone.Library S.carol resolvedWithout) [carolTopId, carolDeeperId]
-    Spec.assertEqWith s "with the spell off the stack" (length (GameState.stack resolvedWithout)) 0
+    Spec.assertEqWith s "with the spell off the stack" (length (TurnRegisters.stack (GameState.turn resolvedWithout))) 0
 
   -- CR 122.1: "A counter is a marker placed on an object or player ...". Razorfin
   -- Abolisher's slot asks whether the candidate has one AT ALL, with no kind to
@@ -2641,7 +2744,14 @@ razorfinBoard s registry = do
           (_, g3) = S.addPermanent island S.alice g2
           (giantId, g4) = S.addPermanent giant S.bob g3
           (pikerId, g5) = S.addPermanent piker S.bob g4
-          board = (S.addCounter CounterKind.Stun 1 giantId g5) {GameState.priority = Just S.alice}
+          board =
+            Game.overTurn
+              ( \registers ->
+                  registers
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              )
+              (S.addCounter CounterKind.Stun 1 giantId g5)
        in Just (board, ability, giantId, pikerId)
 
 -- Activate `ability` off `srcId` aimed at `oid`, and resolve it. One answerer
@@ -2721,8 +2831,8 @@ celestineSpec s registry = Spec.describe s "EnclosingAmount (CR 202.3)" $ do
         let (pikerId, wolvesId, boltId, atTwo) = celestineGraveyard piker wolves bolt 2
             (_, _, _, atFour) = celestineGraveyard piker wolves bolt 4
             legal = Target.legalRecipients StackObjectKind.Spell (Just S.alice) S.noSource theSlot
-        Spec.assertEqWith s "the fixture planted 2 life gained" (Game.lifeChangedIn LifeDirection.Gained (GameState.events atTwo) S.alice) 2
-        Spec.assertEqWith s "and 4 on the other board" (Game.lifeChangedIn LifeDirection.Gained (GameState.events atFour) S.alice) 4
+        Spec.assertEqWith s "the fixture planted 2 life gained" (Game.lifeChangedIn LifeDirection.Gained (TurnRegisters.events (GameState.turn atTwo)) S.alice) 2
+        Spec.assertEqWith s "and 4 on the other board" (Game.lifeChangedIn LifeDirection.Gained (TurnRegisters.events (GameState.turn atFour)) S.alice) 4
         Spec.assertBool s (Set.member (Recipient.ToObject pikerId) (legal atTwo)) "mana value 2 is within a bound of 2"
         Spec.assertBool s (not (Set.member (Recipient.ToObject wolvesId) (legal atTwo))) "mana value 4 is not"
         Spec.assertBool s (Set.member (Recipient.ToObject wolvesId) (legal atFour)) "and at 4 gained it is -- the bound moved"
@@ -2740,7 +2850,7 @@ celestineSpec s registry = Spec.describe s "EnclosingAmount (CR 202.3)" $ do
       Nothing -> Spec.assertFailure s "Celestine should declare one triggered ability with one target slot"
       Just theSlot -> do
         let (pikerId, wolvesId, _, atZero) = celestineGraveyard piker wolves bolt 0
-        Spec.assertEqWith s "the fixture planted no life gained" (Game.lifeChangedIn LifeDirection.Gained (GameState.events atZero) S.alice) 0
+        Spec.assertEqWith s "the fixture planted no life gained" (Game.lifeChangedIn LifeDirection.Gained (TurnRegisters.events (GameState.turn atZero)) S.alice) 0
         Spec.assertEqWith s "and the slot admits nothing at all" (Target.legalRecipients StackObjectKind.Spell (Just S.alice) S.noSource theSlot atZero) Set.empty
         -- The same two cards ARE offered once the bound reaches them, so the empty
         -- set above is the bound talking and not an empty graveyard.
@@ -2843,7 +2953,7 @@ warsingerSpec s registry =
         -- what the slot ADMITTED against it.
         Spec.it s "CR 603.3d the slot admits only the card the event's amount reaches" $ do
           (_, pikerId, _, placed, _) <- board
-          case GameState.stack placed of
+          case TurnRegisters.stack (GameState.turn placed) of
             [abilityId] -> do
               let bindings = maybe Map.empty Object.bindings (Game.lookupObject abilityId placed)
               Spec.assertEqWith s "the graveyard card the event's 2 reaches is the one target chosen" (Map.lookup (SlotName.MkSlotName (Text.pack "target")) (Binding.targetsOf bindings)) (Just (Set.singleton (Recipient.ToObject pikerId)))
@@ -2973,10 +3083,10 @@ borrowedExhumationSpec s registry = Spec.describe s "EnclosingAmount (CR 202.3)"
     Spec.assertEqWith s "CR 601.2h so the casting was not reversed: all three Swamps paid {2}{B}" (S.tappedCount S.alice atBob) 3
     Spec.assertEqWith s "with the mana value 4 card in the same graveyard left behind, unoffered" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Russet Wolves")) S.bob atBob) 0
     Spec.assertEqWith s "and his card gone from his graveyard (CR 400.7: a new object arrived)" (Game.zoneMembers Zone.Graveyard S.bob atBob) [hisBigId]
-    Spec.assertEqWith s "CR 601.2e naming bob and a card in CAROL's graveyard, the joint check rejects and the whole cast is reversed" (length (GameState.stack castAtCarol)) 0
+    Spec.assertEqWith s "CR 601.2e naming bob and a card in CAROL's graveyard, the joint check rejects and the whole cast is reversed" (length (TurnRegisters.stack (GameState.turn castAtCarol))) 0
     Spec.assertEqWith s "so carol's card stayed in her graveyard" (Game.zoneMembers Zone.Graveyard S.carol castAtCarol) [hersId]
     Spec.assertBool s (elem spellId (Game.zoneMembers Zone.Hand S.alice castAtCarol)) "and the spell is back in alice's hand"
-    Spec.assertEqWith s "where naming his own card put it on the stack" (length (GameState.stack castAtBob)) 1
+    Spec.assertEqWith s "where naming his own card put it on the stack" (length (TurnRegisters.stack (GameState.turn castAtBob))) 1
   -- The same announcement under bob's Kopala, Warden of Waves, whose tax reads
   -- the spell's targets: CR 601.2f's payability gate then prices every aiming
   -- (Parun.Engine.Cast.castAimable) and joint-checks each. That check is asked
@@ -3085,13 +3195,13 @@ itzquinthSpec s registry = Spec.describe s "Announcing a trigger's targets (CR 6
     -- CR 603.3d's own removal, on the board where no coherent announcement
     -- exists: Itzquinth is the only creature, so it fills each slot alone and
     -- neither slot's candidate leaves the other one anything.
-    Spec.assertEqWith s "with no second creature, the reflexive ability is removed from the stack (CR 603.3d)" (length (GameState.stack ceased)) 0
+    Spec.assertEqWith s "with no second creature, the reflexive ability is removed from the stack (CR 603.3d)" (length (TurnRegisters.stack (GameState.turn ceased))) 0
     Spec.assertEqWith s "so it never dealt itself its own two damage" (S.damageOf aloneId ceased) (Just 0)
     -- The proxies last. The payment happened on BOTH boards, so the removal above
     -- is the announcement and not a gate that skipped the reflexive entirely.
     Spec.assertEqWith s "alice paid {2} on the board with the Wall" (S.tappedCount S.alice placed) 2
     Spec.assertEqWith s "and on the board without it" (S.tappedCount S.alice ceased) 2
-    Spec.assertEqWith s "the reflexive ability really reached the stack when a coherent answer existed" (length (GameState.stack placed)) 1
+    Spec.assertEqWith s "the reflexive ability really reached the stack when a coherent answer existed" (length (TurnRegisters.stack (GameState.turn placed))) 1
     Spec.assertEqWith s "and alice was asked twice for it: the incoherent answer was refused and the announcement asked again" asks 2
 
   -- The same board, and an interpreter that answers OUTSIDE the offer with a value
@@ -3112,7 +3222,7 @@ itzquinthSpec s registry = Spec.describe s "Announcing a trigger's targets (CR 6
         placed = S.runPure S.identityAnswer together Engine.settleForPriority
         ((_, ceased), asks) = State.runState (Engine.runGame (answeringItzquinthAfresh dinoId) placed (Stack.resolveTop >> Engine.settleForPriority)) 0
     -- The gameplay-level assertions first.
-    Spec.assertEqWith s "the reflexive ability is removed from the stack rather than announced forever" (length (GameState.stack ceased)) 0
+    Spec.assertEqWith s "the reflexive ability is removed from the stack rather than announced forever" (length (TurnRegisters.stack (GameState.turn ceased))) 0
     Spec.assertEqWith s "so the Wall took no damage" (S.damageOf wallId ceased) (Just 0)
     Spec.assertEqWith s "and neither did Itzquinth" (S.damageOf dinoId ceased) (Just 0)
     -- The proxies last. The payment happened, so the removal is the announcement
@@ -3176,7 +3286,7 @@ ravenousRatsSpec s registry = Spec.describe s "A trigger's announced count (CR 6
     Spec.assertEqWith s "and carol, named only by the refused two-target answer, still holds her card" (S.handSize S.carol after) 1
     -- The proxies last. The trigger really resolved, so the hands above are the
     -- announcement and not an ability removed from the stack before it ran.
-    Spec.assertEqWith s "the ability resolved rather than being removed from the stack" (GameState.stack after) []
+    Spec.assertEqWith s "the ability resolved rather than being removed from the stack" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "and alice was asked twice: the over-counted answer was refused and the announcement asked again" asks 2
 
 -- CR 603.3d's announcement for Ravenous Rats from an interpreter that ignores the
@@ -3227,7 +3337,7 @@ redirectBioshiftSpec s registry =
             let bobCast = S.runPure (aimingAs S.bob (Recipient.ToObject spell)) responded (S.cast S.bob redirectId)
                 redirected = S.runPure (aimingSlots S.bob (Map.insert from (Recipient.ToCreature guardId) aimed)) bobCast (Stack.resolveTop >> Engine.settleForPriority)
                 targets = maybe Map.empty (flip Map.restrictKeys (Map.keysSet aimed) . Binding.targetsOf . Object.bindings) (Game.lookupObject spell redirected)
-            pure (aimed, targets, length (GameState.stack redirected))
+            pure (aimed, targets, length (TurnRegisters.stack (GameState.turn redirected)))
    in Spec.describe s "Redirect over Bioshift (CR 115.7d)" $ do
         Spec.it s "CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward" $ do
           (aimed, targets, depth) <- run True
@@ -3370,7 +3480,7 @@ deflectFealty s registry twice = do
       cast = S.runPure (aimFealty twice giantId) board (S.cast S.alice fealtyId)
   case topOfStack cast of
     Nothing -> Spec.assertFailure s "Twisted Fealty never reached the stack" >> pure 0
-    Just spell -> pure (length (GameState.stack (S.runPure (aimingAs S.bob (Recipient.ToObject spell)) cast (S.cast S.bob deflectionId))))
+    Just spell -> pure (length (TurnRegisters.stack (GameState.turn (S.runPure (aimingAs S.bob (Recipient.ToObject spell)) cast (S.cast S.bob deflectionId)))))
 
 -- Answer every target prompt put to `who` by FILTERING each slot's offered set
 -- down to the one recipient `aimed` names for it.
@@ -3387,4 +3497,4 @@ aimingAs who recipient p = case p of
   _ -> S.identityAnswer p
 
 topOfStack :: GameState.GameState -> Maybe ObjectId.ObjectId
-topOfStack = Maybe.listToMaybe . GameState.stack
+topOfStack = Maybe.listToMaybe . (TurnRegisters.stack . GameState.turn)

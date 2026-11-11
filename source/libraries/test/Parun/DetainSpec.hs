@@ -53,6 +53,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- Aim the Arrester's one target slot at this permanent, PINNED rather than
 -- searched: an answerer that picked whatever was legal would find the other twin
@@ -108,18 +109,21 @@ arrested arrester printing =
 bobAttacks :: GameState.GameState -> GameState.GameState
 bobAttacks gs =
   gs
-    { GameState.activePlayer = S.bob,
-      GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]},
-      GameState.remaining =
-        Seq.fromList
-          [ Phase.Combat CombatStep.DeclareBlockers,
-            Phase.Combat CombatStep.CombatDamage,
-            Phase.Combat CombatStep.EndOfCombat,
-            Phase.PostcombatMain,
-            Phase.Ending EndingStep.EndStep,
-            Phase.Ending EndingStep.Cleanup
-          ]
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.bob,
+            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.alice]},
+            TurnRegisters.remaining =
+              Seq.fromList
+                [ Phase.Combat CombatStep.DeclareBlockers,
+                  Phase.Combat CombatStep.CombatDamage,
+                  Phase.Combat CombatStep.EndOfCombat,
+                  Phase.PostcombatMain,
+                  Phase.Ending EndingStep.EndStep,
+                  Phase.Ending EndingStep.Cleanup
+                ]
+          }
     }
 
 -- The permanents an activation action names, of either shape: CR 602.2's ordinary
@@ -135,7 +139,7 @@ activatableIds =
     )
 
 declaredAttackers :: GameState.GameState -> [ObjectId.ObjectId]
-declaredAttackers gs = Map.keys (Combat.Type.attackers (GameState.combat gs))
+declaredAttackers gs = Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Detain" $ do
@@ -215,12 +219,12 @@ durationSpec s registry = Spec.describe s "Duration" $ do
         bobs = hand resolved
         carols = hand bobs
         alices = hand carols
-    Spec.assertEqWith s "alice detained on her own turn" (GameState.activePlayer resolved) S.alice
-    Spec.assertEqWith s "one handoff reaches bob" (GameState.activePlayer bobs) S.bob
+    Spec.assertEqWith s "alice detained on her own turn" (TurnRegisters.activePlayer (GameState.turn resolved)) S.alice
+    Spec.assertEqWith s "one handoff reaches bob" (TurnRegisters.activePlayer (GameState.turn bobs)) S.bob
     Spec.assertBool s (not (Combat.canBlock S.bob victim bobs)) "still detained on bob's turn"
-    Spec.assertEqWith s "two reach carol" (GameState.activePlayer carols) S.carol
+    Spec.assertEqWith s "two reach carol" (TurnRegisters.activePlayer (GameState.turn carols)) S.carol
     Spec.assertBool s (not (Combat.canBlock S.bob victim carols)) "still detained on carol's turn"
-    Spec.assertEqWith s "three come back to alice" (GameState.activePlayer alices) S.alice
+    Spec.assertEqWith s "three come back to alice" (TurnRegisters.activePlayer (GameState.turn alices)) S.alice
     Spec.assertBool s (Combat.canBlock S.bob victim alices) "and the detain has ended"
     -- The twin blocks at every one of those points, so no assertion above can be
     -- passing because the board stopped being able to block at all.

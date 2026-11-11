@@ -119,6 +119,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -387,7 +388,13 @@ manaSpec s registry = Spec.describe s "Mana" $ do
     island <- S.printingOf s registry "Island"
     let (zhaoId, g1) = S.addPermanent zhao S.alice (S.landsInPlay island 7)
         (towerId, g2) = S.addPermanent reliquaryTower S.alice g1
-        gs = g2 {GameState.priority = Just S.alice}
+        gs =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         ability = case Face.activatedAbilities (S.combinedFace zhao) of
           ab : _ -> Just ab
           [] -> Nothing
@@ -968,7 +975,7 @@ upwellingSpec s registry = Spec.describe s "Upwelling" $ do
     let spent = S.runPure S.identityAnswer afterStep (S.cast S.alice unsummonId)
     Spec.assertEqWith s "the retained {U} paid for it" (poolSize S.alice spent) 0
     Spec.assertEqWith s "and nothing new was tapped" (S.tappedCount S.alice spent) 2
-    Spec.assertEqWith s "Unsummon is on the stack" (length (GameState.stack spent)) 1
+    Spec.assertEqWith s "Unsummon is on the stack" (length (TurnRegisters.stack (GameState.turn spent))) 1
 
 -- CR 500.5 / 106.4 again, one granularity up. Omnath, Locus of Mana ({2}{G}
 -- Legendary Creature -- Elemental) says "You don't lose unspent green mana as
@@ -1107,7 +1114,15 @@ priorityWindowBoard :: Printing.Printing -> Printing.Printing -> (ObjectId.Objec
 priorityWindowBoard omnath forest =
   let (omnathId, g1) = S.addPermanent omnath S.alice (Setup.emptyGame S.bothPlayers)
       board = foldr (\_ gs -> snd (S.addPermanent forest S.alice gs)) g1 [1 :: Int, 2, 3]
-   in (omnathId, board {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( omnathId,
+        board
+          { GameState.turn =
+              (GameState.turn board)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- CR 605.3a's two windows, gated by the "activate only ..." rider CR 602.5 makes
 -- a prohibition. Synthetic Ember Spring is the producer -- "{T}: Add {R}.
@@ -1148,14 +1163,20 @@ riderWindowSpec s registry = Spec.describe s "CR 605.3a a printed rider gates bo
     spring <- S.printingOf s registry "Synthetic Ember Spring"
     bolt <- S.printingOf s registry "Lightning Bolt"
     let (inUpkeep, boltId) = springBoard spring bolt
-        inMain = inUpkeep {GameState.phase = Phase.PrecombatMain}
+        inMain =
+          inUpkeep
+            { GameState.turn =
+                (GameState.turn inUpkeep)
+                  { TurnRegisters.phase = Phase.PrecombatMain
+                  }
+            }
         afterCast gs = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice boltId))
         inHand gs = elem boltId (Game.zoneMembers Zone.Hand S.alice gs)
     Spec.assertBool s (not (inHand (afterCast inUpkeep))) "CR 601.2a inside the window the Bolt is cast, leaving her hand"
     Spec.assertBool s (inHand (afterCast inMain)) "CR 601.2h outside it the payment fails and the Bolt stays in her hand"
     Spec.assertEqWith s "the Spring paid inside the window" (S.tappedCount S.alice (afterCast inUpkeep)) 1
     Spec.assertEqWith s "and paid nothing outside it" (S.tappedCount S.alice (afterCast inMain)) 0
-    Spec.assertEqWith s "nothing reached the stack outside it" (length (GameState.stack (afterCast inMain))) 0
+    Spec.assertEqWith s "nothing reached the stack outside it" (length (TurnRegisters.stack (GameState.turn (afterCast inMain)))) 0
     -- The OFFER, asked of the same two boards: a cast the payment window cannot
     -- pay for is one the gate does not offer either. Both windows read
     -- Cost.manaActivations, so a divergence here would be a divergence in one
@@ -1168,7 +1189,14 @@ riderWindowSpec s registry = Spec.describe s "CR 605.3a a printed rider gates bo
 springBoard :: Printing.Printing -> Printing.Printing -> (GameState.GameState, ObjectId.ObjectId)
 springBoard spring bolt =
   let (gs, oid) = S.boltInHand spring bolt 1 (Phase.Beginning BeginningStep.Upkeep)
-   in (gs {GameState.remaining = Seq.empty}, oid)
+   in ( gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.remaining = Seq.empty
+                }
+          },
+        oid
+      )
 
 -- CR 102.1's axis with no CR 500.1 window beside it:
 -- ActivationRestriction.DuringTurn, the arm a rider naming a turn and no phase
@@ -1207,7 +1235,7 @@ laviniaTurnRiderSpec s registry = Spec.describe s "CR 102.1 a rider naming a tur
         activated active =
           let (wretchId, gs) = laviniaBoard lavinia wretch piker active
            in S.runPure S.identityAnswer gs (Activate.activateAbility S.alice wretchId ability)
-        onStack active = length (GameState.stack (activated active))
+        onStack active = length (TurnRegisters.stack (GameState.turn (activated active)))
         paid active = S.tappedCount S.alice (activated active)
         gate active =
           let (wretchId, gs) = laviniaBoard lavinia wretch piker active
@@ -1232,7 +1260,16 @@ laviniaBoard lavinia wretch piker active =
   let (_, g1) = S.addPermanent lavinia S.alice S.threePlayerGame
       (wretchId, g2) = S.addPermanent wretch S.alice g1
       (_, g3) = S.addGraveyardCard piker S.bob g2
-   in (wretchId, g3 {GameState.activePlayer = active, GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( wretchId,
+        g3
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.activePlayer = active,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- CR 602.5's board condition on the MANA path, which nothing in `data/cards/`
 -- reached before Nimbus Maze: "{T}: Add {W}. Activate only if you control an
@@ -1260,7 +1297,16 @@ nimbusMazeSpec s registry = Spec.describe s "Nimbus Maze" $ do
     swamp <- S.printingOf s registry "Swamp"
     let board other =
           let (otherId, withOther) = S.addPermanent other S.alice (S.landsInPlay maze 1)
-           in S.handOne luminesce ((S.tapObject otherId withOther) {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+           in S.handOne
+                luminesce
+                ( (S.tapObject otherId withOther)
+                    { GameState.turn =
+                        (GameState.turn (S.tapObject otherId withOther))
+                          { TurnRegisters.phase = Phase.PrecombatMain,
+                            TurnRegisters.remaining = Seq.empty
+                          }
+                    }
+                )
         stillInHand other =
           let (gs, oid) = board other
            in elem oid (Game.zoneMembers Zone.Hand S.alice (snd (Engine.runGamePure paysWithWhite gs (S.cast S.alice oid))))
@@ -1407,7 +1453,7 @@ ancientTombSpec s registry = Spec.describe s "Ancient Tomb" $ do
         after = S.runPure S.identityAnswer board (S.tapForMana tombId)
     Spec.assertEqWith s "the yield is two colorless and nothing else" (tappedFor S.identityAnswer tombId board) [ManaType.Colorless, ManaType.Colorless]
     Spec.assertBool s (elem tombId (Mana.manaSources Cost.manaActivations S.alice board)) "and it is a mana source"
-    Spec.assertEqWith s "the activation used no stack (CR 605.3b)" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "the activation used no stack (CR 605.3b)" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "while the damage was still dealt" (S.lifeOf S.alice after) (Just 18)
 
 -- CR 118.3 on a source offering SEVERAL yields, one of which adds more than one
@@ -1507,7 +1553,14 @@ palladiumMyrSpec s registry = Spec.describe s "Palladium Myr" $ do
         -- CR 303.1 (the enchantment) and CR 302.1 (the creature) name the same
         -- window -- a main phase of your own turn, stack empty -- so it has to be
         -- open for either to be offered at all.
-        gs = g5 {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        gs =
+          g5
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
         offered = Action.legalActions S.alice gs
     Spec.assertBool s (elem (Action.Type.Cast planeId (S.printingName livingPlane) Facing.FaceUp) offered) "{2}{G}{G} is offered"
     Spec.assertBool s (not (any (S.isCastOf towershellId) offered)) "{3}{G}{G} is not"
@@ -1907,7 +1960,17 @@ priestOfYawgmothSpec s registry = Spec.describe s "Priest of Yawgmoth" $ do
     nighthawk <- S.printingOf s registry "Vampire Nighthawk"
     (_, _, crucibleId, thumbOnly, both) <- artifacts
     let holding gs =
-          let (board, oid) = S.handOne nighthawk (gs {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+          let (board, oid) =
+                S.handOne
+                  nighthawk
+                  ( gs
+                      { GameState.turn =
+                          (GameState.turn gs)
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.remaining = Seq.empty
+                            }
+                      }
+                  )
            in S.castable S.alice oid board
         resolved = castFrom (sacrificing crucibleId) both nighthawk
     Spec.assertBool s (holding both) "{1}{B}{B} is offered beside a mana-value-3 artifact"
@@ -2003,7 +2066,17 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
     divination <- S.printingOf s registry "Divination"
     (_, _, _, gs) <- board
     let holding printing =
-          let (held, oid) = S.handOne printing (gs {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+          let (held, oid) =
+                S.handOne
+                  printing
+                  ( gs
+                      { GameState.turn =
+                          (GameState.turn gs)
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.remaining = Seq.empty
+                            }
+                      }
+                  )
            in S.castable S.alice oid held
     Spec.assertBool s (holding carp) "{4}{U} off the Stag's eight"
     Spec.assertBool s (not (holding divination)) "and {2}{U} not, it being no creature spell"
@@ -2019,7 +2092,17 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
     divination <- S.printingOf s registry "Divination"
     let wide = alicePermanents (chain : concatMap (replicate 5) creatures)
         holding printing =
-          let (held, oid) = S.handOne printing (wide {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+          let (held, oid) =
+                S.handOne
+                  printing
+                  ( wide
+                      { GameState.turn =
+                          (GameState.turn wide)
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.remaining = Seq.empty
+                            }
+                      }
+                  )
            in S.castable S.alice oid held
     Spec.assertBool s (holding brontodon) "{6}{G}{G} is offered"
     Spec.assertBool s (holding progenitus) "{W}{W}{U}{U}{B}{B}{R}{R}{G}{G}, every colour twice, is offered"
@@ -2037,7 +2120,18 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
     kobolds <- S.printingOf s registry "Crimson Kobolds"
     progenitus <- S.printingOf s registry "Progenitus"
     let holding n =
-          let (held, oid) = S.handOne progenitus ((alicePermanents (chain : myr : replicate n kobolds)) {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+          let (held, oid) =
+                S.handOne
+                  progenitus
+                  ( Game.overTurn
+                      ( \registers ->
+                          registers
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.remaining = Seq.empty
+                            }
+                      )
+                      (alicePermanents (chain : myr : replicate n kobolds))
+                  )
            in S.castable S.alice oid held
     Spec.assertBool s (holding 8) "the Myr's three for one colour, two Kobolds for each of the others"
     Spec.assertBool s (not (holding 7)) "and seven Kobolds leave a colour short"
@@ -2051,7 +2145,18 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
     rivals <- traverse (S.printingOf s registry) ["Food Chain", "Blood Pet", "Ashnod's Altar"]
     progenitus <- S.printingOf s registry "Progenitus"
     Foldable.for_ rivals $ \rival -> do
-      let (held, oid) = S.handOne progenitus ((alicePermanents (chain : rival : concatMap (replicate 5) creatures)) {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+      let (held, oid) =
+            S.handOne
+              progenitus
+              ( Game.overTurn
+                  ( \registers ->
+                      registers
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.remaining = Seq.empty
+                        }
+                  )
+                  (alicePermanents (chain : rival : concatMap (replicate 5) creatures))
+              )
       Spec.assertBool s (S.castable S.alice oid held) "Progenitus is offered"
 
   -- A CONTESTED creature Food Chain must still take: Blood Pet's mana value
@@ -2065,7 +2170,18 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
     kobolds <- S.printingOf s registry "Crimson Kobolds"
     progenitus <- S.printingOf s registry "Progenitus"
     let holding n =
-          let (held, oid) = S.handOne progenitus ((alicePermanents (chain : myr : pet : replicate n kobolds)) {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+          let (held, oid) =
+                S.handOne
+                  progenitus
+                  ( Game.overTurn
+                      ( \registers ->
+                          registers
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.remaining = Seq.empty
+                            }
+                      )
+                      (alicePermanents (chain : myr : pet : replicate n kobolds))
+                  )
            in S.castable S.alice oid held
     Spec.assertBool s (holding 6) "the Myr's three, the Pet's two, and two Kobolds for each of three colours"
     Spec.assertBool s (not (holding 5)) "and five Kobolds leave a colour short"
@@ -2565,7 +2681,14 @@ transmograntAltarSpec s registry = Spec.describe s "Transmogrant Altar" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
     let (altarId, g1) = S.addPermanent altar S.alice (Setup.emptyGame S.bothPlayers)
         (birdsId, g2) = S.addPermanent birds S.alice g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+        board =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.empty
+                  }
+            }
         after = snd (State.evalState (Engine.runGame (takesAltarOnce altarId birdsId) board Engine.priorityLoop) (0 :: Int))
     Spec.assertEqWith s "CR 601.2g the Birds pays the {B} first, so the Altar's three colorless reach her pool" (poolTypes S.alice after) [ManaType.Colorless, ManaType.Colorless, ManaType.Colorless]
     Spec.assertEqWith s "CR 601.2h and the same Birds is then what the sacrifice took" (S.creaturesInPlay S.alice after) 0
@@ -2594,7 +2717,14 @@ transmograntAltarSpec s registry = Spec.describe s "Transmogrant Altar" $ do
         (_, g3) = S.addPermanent piker S.alice g2
         (plainsId, g4) = S.addPermanent plains S.alice g3
         (_, g5) = S.addLibraryCard piker S.alice g4
-        board = g5 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+        board =
+          g5
+            { GameState.turn =
+                (GameState.turn g5)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.empty
+                  }
+            }
         after = snd (State.evalState (Engine.runGame (takesAltarOnce altarId starId) board Engine.priorityLoop) (0 :: Int))
         asked = snd (State.execState (Engine.runGame (recordsSources altarId starId) board Engine.priorityLoop) (0 :: Int, []))
     Spec.assertEqWith s "CR 602.2b the Star's any-colour mana pays the {B}, so the Altar's three colorless reach her pool" (poolTypes S.alice after) [ManaType.Colorless, ManaType.Colorless, ManaType.Colorless]
@@ -2610,7 +2740,14 @@ transmograntAltarSpec s registry = Spec.describe s "Transmogrant Altar" $ do
     birds <- S.printingOf s registry "Birds of Paradise"
     let (altarId, g1) = S.addPermanent altar S.alice (Setup.emptyGame S.bothPlayers)
         (birdsId, g2) = S.addPermanent birds S.alice g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+        board =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.empty
+                  }
+            }
         asked = snd (State.execState (Engine.runGame (recordsSources altarId birdsId) board Engine.priorityLoop) (0 :: Int, []))
     Spec.assertEqWith s "one window, and the Birds is the only source its {B} may come from" asked [[birdsId]]
 
@@ -2938,7 +3075,16 @@ altarSupplyBoard altar piker swamp spell =
       (g4, held) = case spell of
         Nothing -> (g3, Nothing)
         Just printing -> let (g3a, oid) = S.handOne printing g3 in (g3a, Just oid)
-   in (altarId, g4 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}, held)
+   in ( altarId,
+        g4
+          { GameState.turn =
+              (GameState.turn g4)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          },
+        held
+      )
 
 -- alice, active, in her precombat main phase, with an empty pool: one Swamp, one
 -- Transmogrant Altar, one Coal Golem and one Goblin Piker. Two mana-eating routes
@@ -2950,7 +3096,13 @@ altarChainBoard altar golem piker swamp =
       (_, g2) = S.addPermanent golem S.alice g1
       (_, g3) = S.addPermanent piker S.alice g2
       (_, g4) = S.addPermanent swamp S.alice g3
-   in g4 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+   in g4
+        { GameState.turn =
+            (GameState.turn g4)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.remaining = Seq.empty
+              }
+        }
 
 -- Activates the ALTAR and nothing else, pays its {B} off the Birds, and asks the
 -- Birds for black. Never the Birds at priority: floating the {B} before the
@@ -3030,7 +3182,13 @@ grinningIgnusSpec s registry = Spec.describe s "Grinning Ignus" $ do
     ignus <- S.printingOf s registry "Grinning Ignus"
     mountain <- S.printingOf s registry "Mountain"
     let (ignusId, inMain) = ignusBoard ignus mountain
-        inUpkeep = inMain {GameState.phase = Phase.Beginning BeginningStep.Upkeep}
+        inUpkeep =
+          inMain
+            { GameState.turn =
+                (GameState.turn inMain)
+                  { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep
+                  }
+            }
         offers gs = filter (== Action.Type.ActivateManaAbility ignusId) (Action.legalActions S.alice gs)
     Spec.assertEqWith s "in her precombat main phase CR 605.3a offers it" (length (offers inMain)) 1
     Spec.assertEqWith s "in her upkeep CR 307.5 leaves nothing to offer" (length (offers inUpkeep)) 0
@@ -3057,7 +3215,17 @@ grinningIgnusSpec s registry = Spec.describe s "Grinning Ignus" $ do
     let (_, alone) = S.addPermanent ignus S.alice (Setup.emptyGame S.bothPlayers)
         withLand = snd (S.addPermanent mountain S.alice alone)
         holding gs =
-          let (board, oid) = S.handOne splitter (gs {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+          let (board, oid) =
+                S.handOne
+                  splitter
+                  ( gs
+                      { GameState.turn =
+                          (GameState.turn gs)
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.remaining = Seq.empty
+                            }
+                      }
+                  )
            in S.castable S.alice oid board
     Spec.assertBool s (not (holding alone)) "CR 605.3c the {R} it would add is not there to pay the {R} it costs"
     Spec.assertBool s (holding withLand) "and a Mountain is what makes the same {1} castable"
@@ -3093,7 +3261,15 @@ ignusBoard :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, Game
 ignusBoard ignus mountain =
   let (ignusId, g1) = S.addPermanent ignus S.alice (Setup.emptyGame S.bothPlayers)
       (_, g2) = S.addPermanent mountain S.alice g1
-   in (ignusId, g2 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( ignusId,
+        g2
+          { GameState.turn =
+              (GameState.turn g2)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- CR 118.13a on a MANA ability's own activation cost. A mana ability is an
 -- activated ability (CR 605.1a) and CR 602.2b sends its activation cost through
@@ -3459,7 +3635,15 @@ golemBoard golem mountain reducer =
       g3 = case reducer of
         Nothing -> g2
         Just printing -> snd (S.addPermanent printing S.alice g2)
-   in (golemId, g3 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( golemId,
+        g3
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- alice, active, in her precombat main phase: three Mountains, one Brothers of
 -- Fire, and the Suppression Field or not. Returns the first Mountain and the
@@ -3472,7 +3656,16 @@ suppressionFieldBoard brothers mountain field =
       g4 = case field of
         Nothing -> g3
         Just printing -> snd (S.addPermanent printing S.alice g3)
-   in (mountainId, brothersId, g4 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( mountainId,
+        brothersId,
+        g4
+          { GameState.turn =
+              (GameState.turn g4)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- alice, active, in her precombat main phase: one Brothers of Fire, two
 -- Mountains, and Zirda or not. Returns the Brothers -- one ability that is no
@@ -3484,7 +3677,15 @@ brothersBoard brothers mountain zirda =
       g3 = case zirda of
         Nothing -> g2
         Just printing -> snd (S.addPermanent printing S.alice g2)
-   in (brothersId, g3 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( brothersId,
+        g3
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- alice, active, in her precombat main phase: one Transmogrant Altar, one Goblin
 -- Piker for the printed sacrifice, one `blackSource` for the {B} -- a Swamp
@@ -3498,7 +3699,15 @@ altarDroughtBoard altar piker blackSource drought =
       g4 = case drought of
         Nothing -> g3
         Just printing -> snd (S.addPermanent printing S.alice g3)
-   in (altarId, g4 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty})
+   in ( altarId,
+        g4
+          { GameState.turn =
+              (GameState.turn g4)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- Activates ONE named source, at ONE priority prompt, and answers the payment
 -- window with whatever it offers. Once-only for takesAltarOnce's reason: an
@@ -3553,16 +3762,16 @@ wildGrowthSpec s registry = Spec.describe s "Wild Growth" $ do
         settled = resolveDown (S.runPure S.identityAnswer after Engine.settleForPriority)
     Spec.assertEqWith s "CR 106.12a bob's pool holds the land's {G} and the Aura's additional one" (poolTypes S.bob after) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
     Spec.assertEqWith s "CR 106.4 alice, who controls the Aura, is given none of it" (poolTypes S.alice after) []
-    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "CR 605.4a and settling for priority does not place a second copy of it to resolve" (poolTypes S.bob settled) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
-    Spec.assertEqWith s "nor leave anything of it on the stack" (length (GameState.stack settled)) 0
+    Spec.assertEqWith s "nor leave anything of it on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 0
     Spec.assertEqWith s "the control: the unenchanted Forest on the same board adds one" (poolTypes S.alice unenchanted) [ManaType.Colored Color.Green]
     Spec.assertEqWith s "and bob, whose land was not the one tapped, gets nothing there" (poolTypes S.bob unenchanted) []
   Spec.it s "CR 106.12 a tap that is not for mana leaves the Aura silent" $ do
     (_, bobForest, _, board) <- wildGrowthBoard s registry
     let after = S.runPure S.identityAnswer board (Event.tap bobForest >> Engine.settleForPriority)
     Spec.assertEqWith s "CR 106.12 nothing was tapped FOR MANA, so no mana was added" (poolTypes S.bob after) []
-    Spec.assertEqWith s "nor did an ordinary triggered ability go on the stack" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "nor did an ordinary triggered ability go on the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "and the land really is tapped, so the boards differ in nothing else" (fmap Object.tapped (Game.lookupObject bobForest after)) (Just TapState.Tapped)
 
 -- CR 106.12a read by a BYSTANDER rather than off an attachment link, on the
@@ -3590,9 +3799,9 @@ autumnWillowSpec s registry = Spec.describe s "Autumn Willow, Harmony" $ do
     Spec.assertEqWith s "the Filter: her Forest is no creature, so tapping it adds one and only one" (poolTypes S.alice forest) [ManaType.Colored Color.Green]
     Spec.assertEqWith s "the PlayerRelation: bob's land creature is not one SHE tapped, so his pool holds only its own {G}" (poolTypes S.bob theirs) [ManaType.Colored Color.Green]
     Spec.assertEqWith s "and alice, whose Willow watched it, is given nothing there" (poolTypes S.alice theirs) []
-    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (GameState.stack arbor)) 0
+    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (TurnRegisters.stack (GameState.turn arbor))) 0
     Spec.assertEqWith s "CR 605.4a and settling for priority does not place a second copy of it to resolve" (poolTypes S.alice settled) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
-    Spec.assertEqWith s "nor leave anything of it on the stack" (length (GameState.stack settled)) 0
+    Spec.assertEqWith s "nor leave anything of it on the stack" (length (TurnRegisters.stack (GameState.turn settled))) 0
 
 -- alice holds a Forest, a Dryad Arbor and an Autumn Willow, Harmony; bob holds a
 -- Dryad Arbor of his own. Returns alice's Arbor, her Forest, bob's Arbor and the
@@ -3654,7 +3863,7 @@ gauntletOfPowerSpec s registry = Spec.describe s "Gauntlet of Power" $ do
     -- the tapped land, is bob -- not alice, who controls the Gauntlet.
     Spec.assertEqWith s "the PlayerRelation: bob's basic Forest fires it too, and the additional mana is HIS" (poolTypes S.bob theirs) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
     Spec.assertEqWith s "and alice, whose Gauntlet watched it, is given none of it" (poolTypes S.alice theirs) []
-    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (GameState.stack forest)) 0
+    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (TurnRegisters.stack (GameState.turn forest))) 0
     Spec.assertEqWith s "CR 605.4a and settling for priority does not place a second copy of it to resolve" (poolTypes S.alice settled) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
 
 -- alice CASTS a Gauntlet of Power off five Plains and names green at CR 614.1c's
@@ -3735,7 +3944,7 @@ cagedSunSpec s registry = Spec.describe s "Caged Sun" $ do
         -- added, which is not the one Caged Sun named.
         other = resolveDown (S.runPure (colourAnswer Color.Green) (S.runPure (colourAnswer Color.Green) (S.runPure (colourAnswer Color.Green) entered Engine.settleForPriority) Stack.resolveTop) Engine.settleForPriority)
     Spec.assertEqWith s "CR 605.1b alice's pool holds the Vestige's black and Caged Sun's additional one" (poolTypes S.alice settled) [ManaType.Colored Color.Black, ManaType.Colored Color.Black]
-    Spec.assertEqWith s "CR 605.5a Caged Sun's trigger went ON the stack, the resolving ability being no mana ability" (length (GameState.stack waiting)) 1
+    Spec.assertEqWith s "CR 605.5a Caged Sun's trigger went ON the stack, the resolving ability being no mana ability" (length (TurnRegisters.stack (GameState.turn waiting))) 1
     Spec.assertEqWith s "the specification: a Vestige adding green, not the chosen colour, leaves its one mana alone" (poolTypes S.alice other) [ManaType.Colored Color.Green]
     Spec.assertEqWith s "the fixture: the Vestige is on the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Crumbling Vestige") S.alice settled) 1
 
@@ -3789,7 +3998,7 @@ colourAnswer colour p = case p of
 resolveDown :: GameState.GameState -> GameState.GameState
 resolveDown =
   let go n gs =
-        if n <= 0 || null (GameState.stack gs)
+        if n <= 0 || null (TurnRegisters.stack (GameState.turn gs))
           then gs
           else go (n - 1) (S.runPure S.identityAnswer gs Stack.resolveTop)
    in go (8 :: Int)
@@ -4047,7 +4256,7 @@ tyvarSpec s registry = Spec.describe s "Tyvar the Bellicose" $ do
     Spec.assertEqWith s "the amount: one Llanowar Elf made one mana, so one counter" (S.counterOf CounterKind.PlusOnePlusOne elves one) 1
     Spec.assertEqWith s "the Filter: alice's Forest is no creature, so Tyvar granted it nothing" (S.counterOf CounterKind.PlusOnePlusOne forest land) 0
     Spec.assertEqWith s "the PlayerRelation: bob's Elf is no creature ALICE controls, so it gets nothing" (S.counterOf CounterKind.PlusOnePlusOne theirElves theirs) 0
-    Spec.assertEqWith s "CR 605.5a the granted trigger went ON the stack, being no mana ability" (length (GameState.stack waiting)) 1
+    Spec.assertEqWith s "CR 605.5a the granted trigger went ON the stack, being no mana ability" (length (TurnRegisters.stack (GameState.turn waiting))) 1
     Spec.assertEqWith s "and the Myr's own {C}{C} reached alice's pool" (poolTypes S.alice settled) [ManaType.Colorless, ManaType.Colorless]
   -- The printed rider, spent by Event.withinTriggerLimit over CR 603.3b's log.
   -- The Myr is untapped between the two activations through Event.untap, the
@@ -4111,7 +4320,16 @@ rhysticCaveSpec s registry =
         cave <- S.printingOf s registry "Rhystic Cave"
         let lands = S.landsFor island S.carol 1 (S.landsFor island S.bob 1 (S.landsFor island S.alice aliceIslands S.threePlayerGame))
             (caveId, gs) = S.addPermanent cave S.alice lands
-        pure (caveId, gs {GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice})
+        pure
+          ( caveId,
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              }
+          )
       -- CR 605.3a's priority window: the activation Engine.priorityLoop makes
       -- for Action.ActivateManaAbility.
       tapCave who = do
@@ -4271,12 +4489,19 @@ spectralSearchlightSpec s registry = Spec.describe s "Spectral Searchlight" $ do
     searchlight <- S.printingOf s registry "Spectral Searchlight"
     elves <- S.printingOf s registry "Llanowar Elves"
     let (elvesId, g1) = S.addHandCard elves S.alice S.threePlayerGame
-        bare = g1 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+        bare =
+          g1
+            { GameState.turn =
+                (GameState.turn g1)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.empty
+                  }
+            }
         (searchlightId, board) = S.addPermanent searchlight S.alice bare
         offers g = length (filter (S.isCastOf elvesId) (Action.legalActions S.alice g))
         cast = S.runPure (searchlightAnswer S.alice (const Color.Green) (Just searchlightId)) board (S.cast S.alice elvesId)
     Spec.assertEqWith s "CR 605.3a the Elves are castable with the Searchlight and not without it" (fmap offers [board, bare]) [1, 0]
-    Spec.assertEqWith s "CR 601.2h and alice pays for them by choosing herself and green" (fmap (`Projection.controllerOf` cast) (GameState.stack cast)) [Just S.alice]
+    Spec.assertEqWith s "CR 601.2h and alice pays for them by choosing herself and green" (fmap (`Projection.controllerOf` cast) (TurnRegisters.stack (GameState.turn cast))) [Just S.alice]
 
 -- Chooses `chosen` when a player is asked for, answers a yield prompt with the
 -- option adding the colour `colourFor` gives the seat ASKED, and taps `source`
@@ -4316,7 +4541,14 @@ almsEngineSpec s registry = Spec.describe s "Synthetic Alms Engine" $ do
     meekstone <- S.printingOf s registry "Meekstone"
     let (engineId, g1) = S.addPermanent engine S.alice S.threePlayerGame
         (stoneId, g2) = S.addHandCard meekstone S.alice g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+        board =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.empty
+                  }
+            }
         withOwn = Mana.addMana S.alice [unitOf ManaType.Colorless] board
         offers g = length (filter (S.isCastOf stoneId) (Action.legalActions S.alice g))
         tapped = S.runPure S.identityAnswer board (S.tapForMana engineId)
@@ -4422,14 +4654,21 @@ yurlokSpec s registry = Spec.describe s "Yurlok of Scorch Thrash" $ do
         (forestId, g2) = S.addPermanent forest S.alice g1
         (devilId, g3) = S.addHandCard devil S.alice g2
         (blastId, g4) = S.addHandCard blast S.bob g3
-        board = g4 {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+        board =
+          g4
+            { GameState.turn =
+                (GameState.turn g4)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = Seq.empty
+                  }
+            }
         castByAlice = S.runPure (tapsYurlok yurlokId forestId) board (S.cast S.alice devilId)
         after = S.runPure (tapsYurlok yurlokId forestId) castByAlice (S.cast S.bob blastId)
     -- CR 112.2 off the stack objects rather than the two hand ids: CR 601.2a
     -- moves the card and parun mints the spell its own object, so "the player who
     -- put it on the stack" is the question, and paying for it is what put it
     -- there.
-    Spec.assertEqWith s "CR 106.4 bob pays for his own instant out of the {B}{R}{G} the Yurlok put in HIS pool while alice was paying for hers" (fmap (\oid -> Projection.controllerOf oid after) (GameState.stack after)) [Just S.bob, Just S.alice]
+    Spec.assertEqWith s "CR 106.4 bob pays for his own instant out of the {B}{R}{G} the Yurlok put in HIS pool while alice was paying for hers" (fmap (\oid -> Projection.controllerOf oid after) (TurnRegisters.stack (GameState.turn after))) [Just S.bob, Just S.alice]
     Spec.assertEqWith s "CR 106.4 and carol, who spent none of hers, is still holding the same three" (poolTypes S.carol after) [ManaType.Colored Color.Black, ManaType.Colored Color.Red, ManaType.Colored Color.Green]
   -- CR 500.5 / 119.3, the middle line at GAMEPLAY level: Engine.runStep runs the
   -- whole upkeep step -- its priority round and CR 703.4q's end-of-step pool
@@ -4454,7 +4693,14 @@ yurlokSpec s registry = Spec.describe s "Yurlok of Scorch Thrash" $ do
         floated gs =
           Mana.addMana S.carol [unitOf (ManaType.Colored Color.Green), retainedGreen, retainedGreen] $
             Mana.addMana S.alice [unitOf (ManaType.Colored Color.Black), unitOf (ManaType.Colored Color.Red), unitOf (ManaType.Colored Color.Green)] gs
-        upkeep gs = (floated gs) {GameState.phase = Phase.Beginning BeginningStep.Upkeep, GameState.priority = Just (GameState.activePlayer gs)}
+        upkeep gs =
+          (floated gs)
+            { GameState.turn =
+                (GameState.turn (floated gs))
+                  { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                    TurnRegisters.priority = Just (TurnRegisters.activePlayer (GameState.turn gs))
+                  }
+            }
         ran gs = S.runPure S.identityAnswer (upkeep gs) Engine.runStep
         charged = ran withYurlok
         uncharged = ran S.threePlayerGame
@@ -4574,10 +4820,13 @@ cabalCoffersBoard coffers swamp forest bloodletter swamps =
    in ( coffersId,
         spell,
         gs3
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.PrecombatMain,
-            GameState.priority = Just S.alice,
-            GameState.remaining = Seq.empty
+          { GameState.turn =
+              (GameState.turn gs3)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.remaining = Seq.empty
+                }
           }
       )
 
@@ -4672,7 +4921,18 @@ manaCacheSpec s registry = Spec.describe s "Mana Cache" $ do
         (tappedForest, withTapped) = S.addPermanent forest S.bob lands
         stocked = List.foldl' (\g pid -> List.foldl' (\g2 _ -> snd (S.addLibraryCard piker pid g2)) g [1 .. (5 :: Int)]) (S.tapObject tappedForest withTapped) [S.alice, S.bob, S.carol]
         endStep = Phase.Ending EndingStep.EndStep
-        began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.bob)) (stocked {GameState.phase = endStep, GameState.activePlayer = S.bob, GameState.remaining = Seq.empty})
+        began =
+          Event.recordEvent
+            (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.bob))
+            ( stocked
+                { GameState.turn =
+                    (GameState.turn stocked)
+                      { TurnRegisters.phase = endStep,
+                        TurnRegisters.activePlayer = S.bob,
+                        TurnRegisters.remaining = Seq.empty
+                      }
+                }
+            )
         settled = S.runPure S.identityAnswer began Engine.settleForPriority
         after = S.runPure S.identityAnswer settled Engine.priorityLoop
     Spec.assertEqWith s "two: bob's untapped Forests, not alice's four or carol's one" (S.counterOf charge cacheId after) 2
@@ -4683,7 +4943,16 @@ manaCacheSpec s registry = Spec.describe s "Mana Cache" $ do
 cacheBoard :: Printing.Printing -> CounterKind.CounterKind Keyword.Keyword -> PlayerId.PlayerId -> Phase.Phase -> (ObjectId.ObjectId, GameState.GameState)
 cacheBoard printing kind active phase =
   let (oid, gs) = S.addPermanent printing S.alice S.threePlayerGame
-   in (oid, (S.addCounter kind 3 oid gs) {GameState.activePlayer = active, GameState.phase = phase, GameState.remaining = Seq.empty})
+   in ( oid,
+        (S.addCounter kind 3 oid gs)
+          { GameState.turn =
+              (GameState.turn (S.addCounter kind 3 oid gs))
+                { TurnRegisters.activePlayer = active,
+                  TurnRegisters.phase = phase,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
+      )
 
 -- CR 106.6 / 107.4b: Jegantha, the Wellspring's "can't be spent to pay generic
 -- mana costs", asked of Mana.spend, which Parun.Engine.Cost's payment window

@@ -51,6 +51,7 @@ import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 116.2h: what the special action costs -- "may pay {2} and exile that card
@@ -218,7 +219,7 @@ becomeForetold reduction newId gs =
   gs
     { GameState.objects =
         Map.adjust
-          (\o -> o {Object.foretold = Just (GameState.turnNumber gs), Object.foretellCostReduction = reduction})
+          (\o -> o {Object.foretold = Just (TurnRegisters.turnNumber (GameState.turn gs)), Object.foretellCostReduction = reduction})
           newId
           (GameState.objects gs)
     }

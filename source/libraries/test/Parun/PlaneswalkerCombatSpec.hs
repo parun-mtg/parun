@@ -51,6 +51,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 506.4d: "A permanent that's both a blocking creature and a planeswalker
 -- that's being attacked is removed from combat if it stops being both a creature
@@ -111,11 +112,11 @@ creaturePlaneswalkerCombatSpec s registry = Spec.describe s "CreaturePlaneswalke
         Spec.assertEqWith s "a 3/3, his mana value" (S.powerToughnessOf jaceId gs) (Just (3, 3))
         let atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) (attackJaceAndBob atJace atBob) gs
             atEnd = runToEndOfCombat (blockAndWane jaceId atBob marchId) atBlockers
-            attackers = Combat.Type.attackers (GameState.combat atEnd)
-        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the block is declared before the kill" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
-        Spec.assertEqWith s "one attacker really was announced at the planeswalker (CR 508.1b)" (Map.lookup atJace (Combat.Type.attackers (GameState.combat atBlockers))) (Just (AttackTarget.OfPlaneswalker jaceId))
-        Spec.assertEqWith s "and the other at bob" (Map.lookup atBob (Combat.Type.attackers (GameState.combat atBlockers))) (Just (AttackTarget.OfPlayer S.bob))
-        Spec.assertEqWith s "the leg reached the end of combat step, where the record still reads live (CR 511.3)" (GameState.phase atEnd) (Phase.Combat CombatStep.EndOfCombat)
+            attackers = Combat.Type.attackers (TurnRegisters.combat (GameState.turn atEnd))
+        Spec.assertEqWith s "the leg hands over at the declare blockers step, so the block is declared before the kill" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
+        Spec.assertEqWith s "one attacker really was announced at the planeswalker (CR 508.1b)" (Map.lookup atJace (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers)))) (Just (AttackTarget.OfPlaneswalker jaceId))
+        Spec.assertEqWith s "and the other at bob" (Map.lookup atBob (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers)))) (Just (AttackTarget.OfPlayer S.bob))
+        Spec.assertEqWith s "the leg reached the end of combat step, where the record still reads live (CR 511.3)" (TurnRegisters.phase (GameState.turn atEnd)) (Phase.Combat CombatStep.EndOfCombat)
         Spec.assertBool s (not (S.onBattlefield marchId atEnd)) "the Wane really did destroy March of the Machines"
         Spec.assertBool s (not (Projection.isCreatureOf jaceId atEnd)) "CR 611.3b: so Jace stopped being a creature"
         Spec.assertBool s (Projection.isPlaneswalkerOf jaceId atEnd) "and is still a planeswalker"
@@ -162,7 +163,7 @@ creaturePlaneswalkerCombatSpec s registry = Spec.describe s "CreaturePlaneswalke
         -- above reads 4 because only the first of those two ever lands.
         Spec.assertEqWith s "and both attackers' 1 came off his loyalty" (S.counterOf CounterKind.Loyalty jaceId atEnd) 3
         Spec.assertBool s (S.onBattlefield jaceId atEnd) "CR 704.5g and CR 704.5i: 2 marked on a 3-toughness creature and 3 loyalty left, so neither is lethal"
-        Spec.assertEqWith s "and he is being attacked all along (CR 508.1b)" (Map.lookup atJace (Combat.Type.attackers (GameState.combat atEnd))) (Just (AttackTarget.OfPlaneswalker jaceId))
+        Spec.assertEqWith s "and he is being attacked all along (CR 508.1b)" (Map.lookup atJace (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atEnd)))) (Just (AttackTarget.OfPlaneswalker jaceId))
 
 -- CR 508.4: "If a creature is put onto the battlefield attacking, its controller
 -- chooses which defending player ... it's attacking ... Such creatures are
@@ -182,9 +183,9 @@ putOntoBattlefieldAttackingSpec s registry = Spec.describe s "PutOntoBattlefield
         -- the record.
         atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) S.aggressiveAnswer gs
         tokens = S.tokensOf atBlockers
-        attackers = Combat.Type.attackers (GameState.combat atBlockers)
+        attackers = Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers))
         sicknessOf oid = fmap Object.sickness (Game.lookupObject oid atBlockers)
-    Spec.assertEqWith s "the fixture reached the declare blockers step" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
+    Spec.assertEqWith s "the fixture reached the declare blockers step" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
     Spec.assertEqWith s "the trigger fired once: two tokens" (length tokens) 2
     mapM_ (\oid -> Spec.assertEqWith s "tapped" (tapStateOf oid atBlockers) (Just TapState.Tapped)) tokens
     mapM_ (\oid -> Spec.assertEqWith s "attacking bob" (Map.lookup oid attackers) (Just (AttackTarget.OfPlayer S.bob))) tokens
@@ -213,7 +214,7 @@ putOntoBattlefieldAttackingSpec s registry = Spec.describe s "PutOntoBattlefield
     let (gs, mine, _) = S.combatBoardOf [garrison, garrison] []
         atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) S.aggressiveAnswer gs
         tokens = S.tokensOf atBlockers
-        attackers = Combat.Type.attackers (GameState.combat atBlockers)
+        attackers = Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers))
     Spec.assertEqWith s "each Garrison's trigger fired once: four tokens" (length tokens) 4
     Spec.assertEqWith s "all six creatures are attacking" (Map.size attackers) 6
     Spec.assertEqWith s "but only the two Garrisons were DECLARED" (S.attackerDeclarationsOf atBlockers) mine
@@ -304,7 +305,7 @@ planeswalkerAttackSpec s registry = Spec.describe s "AttackingAPlaneswalker" $ d
         -- pins.
         Spec.assertBool
           s
-          (Map.member thePiker (Combat.Type.attackers (GameState.combat atSecond)))
+          (Map.member thePiker (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atSecond))))
           "CR 506.4c: the Piker remains an attacking creature"
         -- "It assigns no combat damage" is a claim about ASSIGNMENT, so it is
         -- asserted on the CR 608.2i damage log and not only on bob's life total:
@@ -330,7 +331,7 @@ runCombatLogging ::
   (GameState.GameState, [Map.Map Recipient.Recipient Natural])
 runCombatLogging answer gs0 =
   let go n g =
-        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || not (S.inCombatPhase (GameState.phase g))
+        if n <= (0 :: Int) || Maybe.isJust (GameState.result g) || not (S.inCombatPhase (TurnRegisters.phase (GameState.turn g)))
           then pure g
           else do
             (_, next) <- Engine.runGame answer g Engine.runStep
@@ -544,11 +545,11 @@ trampleOverPlaneswalkersSpec s registry = Spec.describe s "TrampleOverPlaneswalk
     -- The premises, after the gameplay assertions so neither can absorb a
     -- mutation of them.
     Spec.assertBool s (not (Set.member jaceId (GameState.battlefield after))) "the two first strikers buried carol's Jace"
-    Spec.assertEqWith s "CR 802.2 both opponents defend, bob first" (Combat.Type.defenders (GameState.combat declared)) [S.bob, S.carol]
+    Spec.assertEqWith s "CR 802.2 both opponents defend, bob first" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn declared))) [S.bob, S.carol]
     Spec.assertEqWith
       s
       "and Thrasta really was announced at carol's Jace"
-      (Map.lookup thrastaId (Combat.Type.attackers (GameState.combat declared)))
+      (Map.lookup thrastaId (Combat.Type.attackers (TurnRegisters.combat (GameState.turn declared))))
       (Just (AttackTarget.OfPlaneswalker jaceId))
     Spec.assertEqWith s "which carol controls" (Projection.controllerOf jaceId declared) (Just S.carol)
 
@@ -816,11 +817,11 @@ splitDefenderSpec s registry = Spec.describe s "SplitDefendingPlayer" $ do
     -- The premises, after the gameplay assertion so neither can absorb a
     -- mutation of it: two defending players with bob at the head, and the Wraith
     -- really attacking carol's Jace.
-    Spec.assertEqWith s "CR 802.2 both opponents defend, bob first" (Combat.Type.defenders (GameState.combat gs)) [S.bob, S.carol]
+    Spec.assertEqWith s "CR 802.2 both opponents defend, bob first" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn gs))) [S.bob, S.carol]
     Spec.assertEqWith
       s
       "and the Wraith is attacking carol's Jace"
-      (Map.lookup wraith (Combat.Type.attackers (GameState.combat gs)))
+      (Map.lookup wraith (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs))))
       (Just (AttackTarget.OfPlaneswalker jaceId))
     Spec.assertEqWith s "which carol controls" (Projection.controllerOf jaceId gs) (Just S.carol)
   Spec.it s "CR 702.14c and the same board with the lands swapped stops that block" $ do
@@ -846,8 +847,8 @@ splitDefenderSpec s registry = Spec.describe s "SplitDefendingPlayer" $ do
     -- The premises, after the gameplay assertions so neither can absorb a
     -- mutation of them.
     Spec.assertBool s (not (S.onBattlefield jaceId gs)) "CR 704.5i: the Bolt's 3 took all of Jace's loyalty"
-    Spec.assertBool s (Map.member attacker (Combat.Type.attackers (GameState.combat gs))) "CR 506.4c: still an attacking creature"
-    Spec.assertEqWith s "CR 802.2 both opponents defend, bob first" (Combat.Type.defenders (GameState.combat gs)) [S.bob, S.carol]
+    Spec.assertBool s (Map.member attacker (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))) "CR 506.4c: still an attacking creature"
+    Spec.assertEqWith s "CR 802.2 both opponents defend, bob first" (Combat.Type.defenders (TurnRegisters.combat (GameState.turn gs))) [S.bob, S.carol]
     Spec.assertEqWith s "CR 802.4b: the Piker is on carol's list alone" (fmap (\d -> Combat.attackersOn d gs) [S.bob, S.carol]) [[], [attacker]]
   Spec.it s "CR 802.4a the same two blocks judge the same way while the planeswalker is still attacked" $ do
     -- The pair, differing in whether the Bolt was cast: the removal changes
@@ -885,10 +886,15 @@ removedJaceBlockBoard s registry bolted = do
       let (boltId, gs1) = S.addHandCard bolt S.alice gs0
           staged = S.addCounter CounterKind.Loyalty 3 jaceId gs1
           settled =
-            (S.runPure S.identityAnswer staged (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat)))
-              { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-                GameState.priority = Just S.alice
-              }
+            Game.overTurn
+              ( \registers ->
+                  registers
+                    { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              )
+              (S.runPure S.identityAnswer staged (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat)))
+
           declared = S.runPure attackThePlaneswalker settled (Combat.declareAttackers S.manaPerformer S.alice)
           burned = S.settleSba (S.runPure (aimedAtObject jaceId) declared (do S.cast S.alice boltId; Stack.resolveTop))
       pure (if bolted then burned else declared, attacker, bobs, carols, jaceId)
@@ -1005,7 +1011,7 @@ soulSnareSpec s registry = Spec.describe s "SoulSnare" $ do
         Spec.assertEqWith
           s
           "CR 508.1b: the Piker really was announced at Jace and not at bob"
-          (Map.lookup pikerId (Combat.Type.attackers (GameState.combat bystander)))
+          (Map.lookup pikerId (Combat.Type.attackers (TurnRegisters.combat (GameState.turn bystander))))
           (Just (AttackTarget.OfPlaneswalker jaceId))
         -- The two seats the pair tells apart: CR 508.1b's controller is bob, CR
         -- 108.3's owner is carol, and the Confiscate is what separates them.
@@ -1045,7 +1051,7 @@ towershellSpec s registry = Spec.describe s "MeanderingTowershell" $ do
     -- CR 508.8's FIRST clause is historical (CR 508.1k), so the two steps stay
     -- even though the attacker is gone -- the same fact TurnSpec's Ray of
     -- Command case pins, reached here by the card exiling itself.
-    Spec.assertEqWith s "the declare blockers step was reached anyway" (GameState.phase atBlockers) (Phase.Combat CombatStep.DeclareBlockers)
+    Spec.assertEqWith s "the declare blockers step was reached anyway" (TurnRegisters.phase (GameState.turn atBlockers)) (Phase.Combat CombatStep.DeclareBlockers)
     Spec.assertEqWith s "and one delayed ability is waiting" (length (GameState.delayedTriggers atBlockers)) 1
     -- CR 506.4: the exiled Towershell left the battlefield, so it is no longer a
     -- live combat participant and deals no combat damage. The stale entry stays
@@ -1080,7 +1086,7 @@ towershellSpec s registry = Spec.describe s "MeanderingTowershell" $ do
     Spec.assertEqWith
       s
       "it entered attacking the planeswalker (CR 508.4)"
-      (Map.elems (Combat.Type.attackers (GameState.combat atReturn)))
+      (Map.elems (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atReturn))))
       [AttackTarget.OfPlaneswalker jaceId]
     Spec.assertBool s (not (Set.member jaceId (GameState.battlefield after))) "a 5/9 buried a 3-loyalty Jace"
     Spec.assertEqWith s "and bob took none of it" (S.lifeOf S.bob after) (Just 20)
@@ -1118,7 +1124,7 @@ runToTurnStep turn phase answer gs0 =
   let go n g =
         if n <= (0 :: Int)
           || Maybe.isJust (GameState.result g)
-          || (GameState.turnNumber g == turn && GameState.phase g == phase)
+          || (TurnRegisters.turnNumber (GameState.turn g) == turn && TurnRegisters.phase (GameState.turn g) == phase)
           then g
           else go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
    in go 64 gs0
@@ -1183,7 +1189,7 @@ planeswalkerBattleSpec s registry = Spec.describe s "PlaneswalkerBattleInCombat"
             (spell, gs) = S.addHandCard theft S.alice gs1
             atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) (announceAt (AttackTarget.OfPlaneswalker jaceId) elf) gs
             atEnd = runToEndOfCombat (castAt spell [luxiorId, jaceId]) atBlockers
-        Spec.assertEqWith s "CR 508.1b: the Elf really was announced at the planeswalker" (Map.lookup elf (Combat.Type.attackers (GameState.combat atBlockers))) (Just (AttackTarget.OfPlaneswalker jaceId))
+        Spec.assertEqWith s "CR 508.1b: the Elf really was announced at the planeswalker" (Map.lookup elf (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers)))) (Just (AttackTarget.OfPlaneswalker jaceId))
         -- GAMEPLAY FIRST: without CR 506.4e the Elf attacks nothing and the
         -- defense stays at 5.
         Spec.assertEqWith s "CR 506.4e / 310.6: the Elf's 1 came off his defense" (S.counterOf CounterKind.Defense jaceId atEnd) 4
@@ -1191,7 +1197,7 @@ planeswalkerBattleSpec s registry = Spec.describe s "PlaneswalkerBattleInCombat"
         Spec.assertBool s (not (Projection.isPlaneswalkerOf jaceId atEnd)) "CR 613.1d: so he is no planeswalker"
         Spec.assertBool s (Projection.isBattleOf jaceId atEnd) "but still a battle"
         Spec.assertEqWith s "and his loyalty is untouched" (S.counterOf CounterKind.Loyalty jaceId atEnd) 5
-        Spec.assertEqWith s "the leg reached the end of combat step" (GameState.phase atEnd) (Phase.Combat CombatStep.EndOfCombat)
+        Spec.assertEqWith s "the leg reached the end of combat step" (TurnRegisters.phase (GameState.turn atEnd)) (Phase.Combat CombatStep.EndOfCombat)
   Spec.it s "CR 506.4e whole cards: attacked as a battle, it stops being one and is still a planeswalker that's being attacked" $ do
     lift <- S.printingOf s registry "Synthetic Lift the Siege"
     plains <- S.printingOf s registry "Plains"
@@ -1205,7 +1211,7 @@ planeswalkerBattleSpec s registry = Spec.describe s "PlaneswalkerBattleInCombat"
             (spell, gs) = S.addHandCard lift S.alice gs2
             atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) (announceAt (AttackTarget.OfBattle jaceId) elf) gs
             atEnd = runToEndOfCombat (castAt spell [jaceId]) atBlockers
-        Spec.assertEqWith s "CR 508.1b: the Elf really was announced at the battle" (Map.lookup elf (Combat.Type.attackers (GameState.combat atBlockers))) (Just (AttackTarget.OfBattle jaceId))
+        Spec.assertEqWith s "CR 508.1b: the Elf really was announced at the battle" (Map.lookup elf (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers)))) (Just (AttackTarget.OfBattle jaceId))
         -- GAMEPLAY FIRST: without CR 506.4e the Elf attacks nothing and the
         -- loyalty stays at 5.
         Spec.assertEqWith s "CR 506.4e / 306.8: the Elf's 1 came off his loyalty, his protector controlling him" (S.counterOf CounterKind.Loyalty jaceId atEnd) 4
@@ -1269,7 +1275,15 @@ planeswalkerBattleBoardWith besiegeFirst s registry = do
       (besiegeId, gs5) = S.addHandCard besiege S.alice gs4
   pure $ case (theirs, Face.activatedAbilities (S.combinedFace coating)) of
     ([jaceId], coat : _) ->
-      let ready = (S.addCounter CounterKind.Loyalty 5 jaceId gs5) {GameState.priority = Just S.alice}
+      let ready =
+            Game.overTurn
+              ( \registers ->
+                  registers
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              )
+              (S.addCounter CounterKind.Loyalty 5 jaceId gs5)
+
           made =
             S.runPure (targetingOnly [jaceId]) ready $ do
               Activate.activateAbility S.alice coatingId coat

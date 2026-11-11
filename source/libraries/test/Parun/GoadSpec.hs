@@ -63,6 +63,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- Aim the Homunculus's one target slot at this permanent and answer its "may"
 -- with `decision`, both PINNED rather than searched: an answerer that picked
@@ -133,22 +134,25 @@ goadedBoard homunculus jace piker centaur decision =
 attacking :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 attacking defender gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-      GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [defender]},
-      GameState.remaining =
-        Seq.fromList
-          [ Phase.Combat CombatStep.DeclareBlockers,
-            Phase.Combat CombatStep.CombatDamage,
-            Phase.Combat CombatStep.EndOfCombat,
-            Phase.PostcombatMain,
-            Phase.Ending EndingStep.EndStep,
-            Phase.Ending EndingStep.Cleanup
-          ]
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defender]},
+            TurnRegisters.remaining =
+              Seq.fromList
+                [ Phase.Combat CombatStep.DeclareBlockers,
+                  Phase.Combat CombatStep.CombatDamage,
+                  Phase.Combat CombatStep.EndOfCombat,
+                  Phase.PostcombatMain,
+                  Phase.Ending EndingStep.EndStep,
+                  Phase.Ending EndingStep.Cleanup
+                ]
+          }
     }
 
 announced :: GameState.GameState -> ObjectId.ObjectId -> Maybe AttackTarget.AttackTarget
-announced gs oid = Map.lookup oid (Combat.Type.attackers (GameState.combat gs))
+announced gs oid = Map.lookup oid (Combat.Type.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Goad" $ do

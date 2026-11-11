@@ -60,6 +60,7 @@ import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The names of the cards in one player's copy of a zone, in that zone's order.
@@ -297,7 +298,7 @@ angelicSleuthSpec s registry = Spec.describe s "AngelicSleuth" $ do
     let before = S.addCounter CounterKind.PlusOnePlusOne 2 victimId built
     Spec.assertEqWith s "the Piker carries two +1/+1 counters" (S.counterOf CounterKind.PlusOnePlusOne victimId before) 2
     let (settled, after) = killAndResolve victimId before
-    Spec.assertEqWith s "the trigger reached the stack" (length (GameState.stack settled)) 1
+    Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
     Spec.assertEqWith s "alice investigated: one Clue token" (fmap (`S.soleFaceName` after) (S.tokensOf after)) [CardName.MkCardName (Text.pack "Clue Token")]
     Spec.assertEqWith s "and the Piker is off the battlefield" (S.onBattlefield victimId after) False
     Spec.assertBool s (Set.member sleuthId (GameState.battlefield after)) "and the Sleuth itself is untouched"
@@ -307,7 +308,7 @@ angelicSleuthSpec s registry = Spec.describe s "AngelicSleuth" $ do
     (_, victimId, _, before) <- board
     Spec.assertEqWith s "no counters on it at all" (S.counterOf CounterKind.PlusOnePlusOne victimId before) 0
     let (settled, after) = killAndResolve victimId before
-    Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+    Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
     Spec.assertEqWith s "no Clue" (S.tokensOf after) []
   -- "Another": the Sleuth carries the same two counters and dies the same
   -- lethal way, and Filter.Not IsSource is what keeps its own departure from
@@ -318,7 +319,7 @@ angelicSleuthSpec s registry = Spec.describe s "AngelicSleuth" $ do
     let before = S.addCounter CounterKind.PlusOnePlusOne 2 sleuthId built
     Spec.assertEqWith s "the Sleuth carries two +1/+1 counters" (S.counterOf CounterKind.PlusOnePlusOne sleuthId before) 2
     let (settled, after) = killAndResolve sleuthId before
-    Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+    Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
     Spec.assertEqWith s "no Clue" (S.tokensOf after) []
   -- "You control": bob's Piker carries the same counters and dies the same
   -- way, and Filter.HeldBy Holder.Controller You is what keeps an opponent's permanent
@@ -328,7 +329,7 @@ angelicSleuthSpec s registry = Spec.describe s "AngelicSleuth" $ do
     let before = S.addCounter CounterKind.PlusOnePlusOne 2 opponentId built
     Spec.assertEqWith s "bob's Piker carries two +1/+1 counters" (S.counterOf CounterKind.PlusOnePlusOne opponentId before) 2
     let (settled, after) = killAndResolve opponentId before
-    Spec.assertEqWith s "nothing reached the stack" (GameState.stack settled) []
+    Spec.assertEqWith s "nothing reached the stack" (TurnRegisters.stack (GameState.turn settled)) []
     Spec.assertEqWith s "no Clue" (S.tokensOf after) []
 
 -- CR 701.60b read as a number, proved by Repeat Offender {1}{B} Creature -- Human
@@ -408,9 +409,12 @@ jugglerBoard s registry = do
       (jugglerId, g5) = S.entersWithTrigger juggler S.alice g4
       gs =
         g5
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
   pure (jugglerId, pikerId, bruteId, wallId, gs)
 
@@ -460,7 +464,7 @@ neighborhoodWatchSpec s registry =
           let after = resolveDown (takingTargets 1 [pikerId]) gs
           Spec.assertEqWith s "the Watch drew one card" (handSize gs, handSize after) (0, 1)
           Spec.assertEqWith s "because the Piker became suspected" (suspectedOf pikerId after) (Just True)
-          Spec.assertEqWith s "and the stack is empty" (GameState.stack after) []
+          Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
         -- The same board with the target declined (CR 115.6): nothing becomes
         -- suspected, so nothing triggers.
         Spec.it s "CR 603.2 with nothing suspected the Watch draws nothing" $ do
@@ -486,7 +490,16 @@ neighborhoodWatchSpec s registry =
           juggler <- S.printingOf s registry "Rune-Brand Juggler"
           let (wallId, g1) = S.addPermanent wall S.bob (S.landsInPlay swamp 4)
               (_, g2) = S.entersWithTrigger juggler S.bob g1
-          gs <- watching g2 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+          gs <-
+            watching
+              g2
+                { GameState.turn =
+                    (GameState.turn g2)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                }
           let after = resolveDown (takingTargets 1 [wallId]) gs
           Spec.assertEqWith s "the Watch drew one card" (handSize gs, handSize after) (0, 1)
           Spec.assertEqWith s "because bob's Wall became suspected" (suspectedOf wallId after, Projection.controllerOf wallId after) (Just True, Just S.bob)
@@ -611,7 +624,15 @@ libraryRevealSpec s registry = Spec.describe s "LibraryReveal" $ do
         let (aven, gs1) = S.addPermanent windreader S.alice (S.landsInPlay island 2)
             (_, gs2) = S.addLibraryCard piker S.alice gs1
             (_, gs3) = S.addLibraryCard giant S.bob gs2
-            ready = gs3 {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+            ready =
+              gs3
+                { GameState.turn =
+                    (GameState.turn gs3)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                }
             aimed :: PlayerId.PlayerId -> Prompt.Prompt r -> r
             aimed pid p = case p of
               Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer pid) sets
@@ -832,7 +853,14 @@ wildEvocationSpec s registry =
         let upkeep = Phase.Beginning BeginningStep.Upkeep
          in Event.recordEvent
               (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.bob))
-              (gs {GameState.phase = upkeep, GameState.activePlayer = S.bob})
+              ( gs
+                  { GameState.turn =
+                      (GameState.turn gs)
+                        { TurnRegisters.phase = upkeep,
+                          TurnRegisters.activePlayer = S.bob
+                        }
+                  }
+              )
       runBobsUpkeep :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
       runBobsUpkeep answer gs =
         let began = atBobsUpkeep gs
@@ -967,7 +995,7 @@ wildEvocationSpec s registry =
           Spec.assertEqWith s "and it really did resolve" (S.countOnBattlefieldByName (named "Goblin Piker") S.bob after) 1
           Spec.assertEqWith s "the other two are still in hand" (bobsHand after) ["Bog Wraith", "Bird Maiden"]
           Spec.assertEqWith s "bob showed the card he cast" (revealed after) [(S.bob, ["Goblin Piker"])]
-          Spec.assertEqWith s "stack empty: the trigger and the spell both resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger and the spell both resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
           Spec.assertEqWith s "and nobody was asked whether to cast" (offersUnder 0 gs) 0
         -- The same board, one different roll: the cast is of the card the reveal
         -- NAMED rather than of whatever the hand happens to hold. Without this
@@ -1022,7 +1050,7 @@ wildEvocationSpec s registry =
               after = runBobsUpkeep (rolling 0) gs
           Spec.assertEqWith s "the Plummet is still in bob's hand" (bobsHand after) ["Plummet", "Goblin Piker", "Bird Maiden"]
           Spec.assertEqWith s "bob still showed it, though (CR 701.20a)" (revealed after) [(S.bob, ["Plummet"])]
-          Spec.assertEqWith s "stack empty: the trigger resolved and did nothing" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger resolved and did nothing" (length (TurnRegisters.stack (GameState.turn after))) 0
           Spec.assertEqWith s "and no question was put on the wire" (offersUnder 0 gs) 0
         -- CR 118.8c, and the pair below it. Magmatic Insight's mandatory
         -- additional cost is "discard a land card": an action involving cards
@@ -1047,7 +1075,7 @@ wildEvocationSpec s registry =
           Spec.assertEqWith s "and declining left the Insight in hand with the land undiscarded" (bobsHand after) ["Magmatic Insight", "Forest", "Goblin Piker"]
           Spec.assertEqWith s "so nothing was discarded and nothing resolved" (bobsGraveyard after) []
           Spec.assertEqWith s "bob still showed the card (CR 701.20a runs before the offer)" (revealed after) [(S.bob, ["Magmatic Insight"])]
-          Spec.assertEqWith s "stack empty: the trigger resolved and the cast was declined" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger resolved and the cast was declined" (length (TurnRegisters.stack (GameState.turn after))) 0
           Spec.assertEqWith s "and no card was drawn, so the library is untouched" (length (Game.zoneMembers Zone.Library S.bob after)) 1
         -- The discriminating negative, one Filter apart. Cathartic Reunion's cost
         -- is "discard two cards" -- the same component, the same hidden zone, but
@@ -1068,7 +1096,7 @@ wildEvocationSpec s registry =
           Spec.assertEqWith s "nobody was asked: this cast is still an instruction" (offersUnder 0 gs) 0
           Spec.assertEqWith s "the two discards joined the Reunion in the graveyard (CR 608.2n)" (List.sort (bobsGraveyard after)) ["Bird Maiden", "Cathartic Reunion", "Goblin Piker"]
           Spec.assertEqWith s "and the three drawn cards are what bob holds, so he did not deck himself (CR 704.5b)" (List.sort (bobsHand after)) ["Bog Wraith", "Lightning Bolt", "Plummet"]
-          Spec.assertEqWith s "stack empty: the trigger and the Reunion both resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger and the Reunion both resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- The payability witness for the first leg: the SAME board, the offer
         -- taken. Without it "bob was asked" would be consistent with an excuse
         -- gated on the cost being unpayable, which is a different rule (CR 601.3,
@@ -1085,7 +1113,7 @@ wildEvocationSpec s registry =
           Spec.assertEqWith s "the Forest was discarded to pay the cost, and the Insight resolved after it" (List.sort (bobsGraveyard after)) ["Forest", "Magmatic Insight"]
           Spec.assertEqWith s "bob drew two, so the spell really resolved" (List.sort (bobsHand after)) ["Bog Wraith", "Goblin Piker", "Lightning Bolt"]
           Spec.assertEqWith s "and nothing was put onto the battlefield as a land" (S.countOnBattlefieldByName (named "Forest") S.bob after) 0
-          Spec.assertEqWith s "stack empty: the trigger and the Insight both resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger and the Insight both resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- CR 118.8's "or applied to a spell ... from another effect": Synthetic
         -- Curator's Levy (alice's) makes every spell cost an additional "Discard
         -- a creature card", a stated quality in bob's hand. The Piker prints no
@@ -1112,7 +1140,7 @@ wildEvocationSpec s registry =
           let after = runBobsUpkeep (rolling 0) (board evocation [])
           Spec.assertEqWith s "nothing was revealed" (revealed after) []
           Spec.assertEqWith s "bob's hand is still empty" (bobsHand after) []
-          Spec.assertEqWith s "stack empty: the trigger resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- CR 709.3a / 716.3a: the offer is evaluated PER HALF, so a prohibition
         -- that stops one half leaves the other on offer. Void Winnower forbids
         -- bob casting a spell with an even mana value; Embereth Shieldbreaker's
@@ -1145,7 +1173,7 @@ wildEvocationSpec s registry =
           Spec.assertEqWith s "the front half was never cast, so no creature entered" (S.countOnBattlefieldByName (named "Embereth Shieldbreaker") S.bob after) 0
           Spec.assertEqWith s "bob's other two cards never moved" (bobsHand after) ["Goblin Piker", "Bird Maiden"]
           Spec.assertEqWith s "one surviving half is one outcome, so nothing was asked" (offersUnder 0 gs) 0
-          Spec.assertEqWith s "stack empty: the trigger and the spell both resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "stack empty: the trigger and the spell both resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- The same board minus the Winnower, which is the pair that proves the
         -- gate above is doing the choosing rather than the fan-out always taking
         -- the last half: both halves are castable here, so CR 709.3's choice is
@@ -1173,7 +1201,7 @@ wildEvocationSpec s registry =
             ([Set.singleton (named "Embereth Shieldbreaker")], [])
           Spec.assertEqWith s "exactly one half-choice, carrying both halves in printed order" (halvesOffered gs) [[named "Embereth Shieldbreaker", named "Battle Display"]]
           Spec.assertEqWith s "and that is the only question: CR 608.2g's may is not asked of a mandatory offer" (offersUnder 0 gs) 1
-          Spec.assertEqWith s "stack empty in both legs" (length (GameState.stack adventureLeg), length (GameState.stack creatureLeg)) (0, 0)
+          Spec.assertEqWith s "stack empty in both legs" (length (TurnRegisters.stack (GameState.turn adventureLeg)), length (TurnRegisters.stack (GameState.turn creatureLeg))) (0, 0)
         -- CR 118.9a, which the pair above never had to ask: this offer CARRIES
         -- an alternative cost ("without paying its mana cost"), and a spell takes
         -- only one, so rule 702.162a's converted cast is not on offer beside it.
@@ -1191,7 +1219,7 @@ wildEvocationSpec s registry =
           let gs = board evocation [ratchet]
               after = runBobsUpkeep (choosingHalf (named "Ratchet, Rescue Racer")) gs
           Spec.assertEqWith s "the FRONT face is the permanent, though the back was asked for" (zoneOf Zone.Battlefield after) ["Ratchet, Field Medic"]
-          Spec.assertEqWith s "and it really was cast: bob's hand is empty and the stack is clear" (bobsHand after, length (GameState.stack after)) ([], 0)
+          Spec.assertEqWith s "and it really was cast: bob's hand is empty and the stack is clear" (bobsHand after, length (TurnRegisters.stack (GameState.turn after))) ([], 0)
           Spec.assertEqWith s "one option is no CR 709.3 choice, so no half was offered at all" (halvesOffered gs) []
           Spec.assertEqWith s "and CR 608.2g's instruction asked nothing either" (offersUnder 0 gs) 0
         -- CR 702.102a: "if a player casts a split card with fuse FROM THEIR HAND,

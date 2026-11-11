@@ -96,6 +96,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Zone as Zone
 
@@ -259,7 +260,13 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
         (creature, g1) = S.addPermanent pikerPrinting S.alice base
         (aura, g2) = S.addPermanent unholyStrength S.alice g1
         (coatingId, g3) = S.addPermanent coating S.alice (S.attach aura creature g2)
-        ready = g3 {GameState.priority = Just S.alice}
+        ready =
+          g3
+            { GameState.turn =
+                (GameState.turn g3)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         activated = S.runPure (aimObject aura) ready (Activate.activateAbility S.alice coatingId (theAbility coating))
         coated = S.runPure (aimObject aura) activated Stack.resolveTop
         (withSpell, spellId) = S.handOne animator coated
@@ -885,9 +892,12 @@ surgeBoard mountain splitter surge firebolt artifacts =
       addBolt (ids, g) _ = let (oid, g4) = S.addHandCard firebolt S.alice g in (ids <> [oid], g4)
       (bolts, g3) = List.foldl' addBolt ([], g2) [1 :: Int, 2]
    in ( g3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         surgeId,
         bolts,
@@ -948,9 +958,12 @@ specimenBoard island pikerPrinting gatherSpecimens bobsHand =
       addOne (ids, g) p = let (oid, g3) = S.addHandCard p S.bob g in (ids <> [oid], g3)
       (bobs, g4) = List.foldl' addOne ([], g2) bobsHand
    in ( g4
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g4)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         gatherId,
         bobs,
@@ -971,9 +984,12 @@ threeSeatSpecimenBoard island gatherSpecimens creature =
       (bobGather, g2) = S.addHandCard gatherSpecimens S.bob g1
       (carols, g3) = S.addHandCard creature S.carol g2
    in ( g3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         aliceGather,
         bobGather,
@@ -1129,9 +1145,12 @@ kismetBoard land pikerPrinting kismet spell =
       (_, g2) = S.addPermanent kismet S.bob g1
       (spellId, g3) = S.addHandCard spell S.alice g2
    in ( g3
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn g3)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         pikerId,
         spellId
@@ -1243,9 +1262,12 @@ scavengerBoard forest piker mountain scavenger aliceCreatures aliceLands bobCrea
         List.foldl' (bury piker S.bob) (List.foldl' (bury mountain S.alice) (List.foldl' (bury piker S.alice) base (replicate aliceCreatures ())) (replicate aliceLands ())) (replicate bobCreatures ())
       (gs, held) = S.handOne scavenger buried
    in ( gs
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         held
       )
@@ -1286,7 +1308,15 @@ undergrowthScavengerSpec s registry =
       rise <- S.printingOf s registry "Rise of the Dark Realms"
       let buried = snd (S.addGraveyardCard scavenger S.alice (snd (S.addGraveyardCard scavenger S.alice (S.landsInPlay swamp 9))))
           (gs, held) = S.handOne rise buried
-          ready = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+          ready =
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
+              }
           after = S.runPure S.identityAnswer ready (S.cast S.alice held >> Stack.resolveTop >> Engine.settleForPriority)
       Spec.assertEqWith s "both Scavengers entered" (onBattlefieldNamed "Undergrowth Scavenger" after) 2
       Spec.assertEqWith s "no origin is left recorded" (GameState.enteredFrom after) Map.empty
@@ -1304,7 +1334,18 @@ fixedEntryCostSpec s registry =
       forest <- S.printingOf s registry "Forest"
       lake <- S.printingOf s registry "Lake of the Dead"
       let (lakeId, gs) = S.addHandCard lake S.alice (S.landsInPlay forest 1)
-          after = S.runPure S.identityAnswer gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice} (Cast.playLand (pure ()) False S.alice lakeId Nothing)
+          after =
+            S.runPure
+              S.identityAnswer
+              gs
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                }
+              (Cast.playLand (pure ()) False S.alice lakeId Nothing)
       Spec.assertEqWith s "no Lake of the Dead entered" (onBattlefieldNamed "Lake of the Dead" after) 0
       Spec.assertEqWith s "it is in alice's graveyard" (graveyardNames S.alice after) [CardName.MkCardName (Text.pack "Lake of the Dead")]
       Spec.assertEqWith s "and the Forest is untouched" (onBattlefieldNamed "Forest" after) 1
@@ -1380,9 +1421,12 @@ riotBoard mountain mountains forest forests hand =
       addOne (ids, g) p = let (oid, g1) = S.addHandCard p S.alice g in (ids <> [oid], g1)
       (held, gs) = List.foldl' addOne ([], withForests) hand
    in ( gs
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           },
         held
       )

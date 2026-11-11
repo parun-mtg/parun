@@ -67,6 +67,7 @@ import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
 import qualified System.Directory as Directory
 
@@ -202,7 +203,15 @@ spec s registry = Spec.describe s "Scenario" $ do
         script = S.turn 1 [S.on S.precombatMain S.alice (S.attack [])]
     built <- S.buildBoardOrFail s registry setup
     let priority = do
-          State.modify' (\gs -> gs {GameState.priority = Just S.alice})
+          State.modify'
+            ( \gs ->
+                gs
+                  { GameState.turn =
+                      (GameState.turn gs)
+                        { TurnRegisters.priority = Just S.alice
+                        }
+                  }
+            )
           Engine.priorityLoop
     case Scenario.rehearse script built priority of
       Left (ScenarioFailure.MkUnreachedEntries _ _ entries) ->

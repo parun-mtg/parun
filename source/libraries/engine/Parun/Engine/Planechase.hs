@@ -64,6 +64,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 
 -- | CR 901.3: this player's planar deck, top first; under CR 901.15c, the
@@ -266,7 +267,7 @@ rollsThisTurn pid gs =
   let rolled logged = case LoggedEvent.event logged of
         GameEvent.PlanarDieRolled r -> PlanarDieRolled.roller r == pid
         _ -> False
-   in Natural.length (filter rolled (Foldable.toList (GameState.events gs)))
+   in Natural.length (filter rolled (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- | CR 901.9: {1} for each earlier roll this turn, so the first is free.
 rollCost :: PlayerId -> GameState -> Cost Keyword

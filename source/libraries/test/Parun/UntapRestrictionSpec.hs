@@ -66,6 +66,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- The untap step's turn-based actions, run for whoever the game state says is
 -- active (CR 502.3). The one door both untap prohibitions are read through --
@@ -168,7 +169,16 @@ telekinesisBoard s registry hunter = do
       (hunterId, g3) = S.addPermanent elvishHunter S.alice (S.landsFor forest S.alice 2 cast)
       activate g ab = S.runPure (aimAt giantId) g (Activate.activateAbility S.alice hunterId ab >> Stack.resolveTop)
       aimed = if hunter then foldr (flip activate) g3 (take 1 (Face.activatedAbilities (S.combinedFace elvishHunter))) else cast
-  pure (giantId, pikerId, aimed {GameState.activePlayer = S.bob})
+  pure
+    ( giantId,
+      pikerId,
+      aimed
+        { GameState.turn =
+            (GameState.turn aimed)
+              { TurnRegisters.activePlayer = S.bob
+              }
+        }
+    )
 
 -- aimAt for a slot over Pool.Creatures, which offers Recipient.ToCreature: the
 -- OFFERED recipient naming the object is picked, never a hand-built one.
@@ -236,7 +246,15 @@ oneShotSpec s registry = Spec.describe s "OneShot" $ do
   -- step alice takes the Giant, and her step is the second one it skips.
   Spec.it s "CR 502.3 a control change between the steps: the new controller's untap step is the second one skipped" $ do
     (giantId, _, gs) <- telekinesisBoard s registry False
-    let stolen = (S.giveControl giantId S.alice (untapStep gs)) {GameState.activePlayer = S.alice}
+    let stolen =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.activePlayer = S.alice
+                  }
+            )
+            (S.giveControl giantId S.alice (untapStep gs))
+
         aliceOnce = untapStep stolen
     Spec.assertBool s (Game.isTapped giantId aliceOnce) "still tapped after alice's first untap step"
     Spec.assertBool s (not (Game.isTapped giantId (untapStep aliceOnce))) "and untapped by her next"
@@ -417,8 +435,20 @@ existenceSpec s registry = Spec.describe s "Existence" $ do
         (_, withPiker) = S.addPermanent piker S.alice base
         (fromHand, handId) = S.handOne clachan withPiker
         (fieldId, played) = S.addPermanent clachan S.alice withPiker
-        inHand = fromHand {GameState.priority = Just S.alice}
-        onField = played {GameState.priority = Just S.alice}
+        inHand =
+          fromHand
+            { GameState.turn =
+                (GameState.turn fromHand)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
+        onField =
+          played
+            { GameState.turn =
+                (GameState.turn played)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
     Spec.assertBool s (any (activateOf handId) (Action.legalActions S.alice inHand)) "the hand's Clachan offers its reinforce ability"
     Spec.assertBool s (not (any (activateOf fieldId) (Action.legalActions S.alice onField))) "the battlefield's Clachan offers no activation"
     -- CR 113.6m, said of the list rather than of the offer: the mana ability is

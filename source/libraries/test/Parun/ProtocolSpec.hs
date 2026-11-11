@@ -118,6 +118,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.WordFamily as WordFamily
@@ -137,7 +138,7 @@ spec s registry = Spec.describe s "Protocol" $ do
           pure answer
         played = do
           (_, gs) <- Engine.runGameAsked (Answerer.unwrap checking) (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
-          Driver.drive [] checking 100000 (pure . (>= 10) . GameState.turnNumber) gs
+          Driver.drive [] checking 100000 (pure . (>= 10) . (TurnRegisters.turnNumber . GameState.turn)) gs
         checks = State.execState played []
     Spec.assertBool s (Set.fromList (fmap Text.pack ["Concede", "DeclareMulligan", "ChooseAction", "ChooseManaSource", "ChooseDiscard"]) `Set.isSubsetOf` Set.fromList (fmap fst checks)) "reached"
     Spec.assertEqWith s "all survive" [kind | (kind, False) <- checks] []
@@ -523,7 +524,7 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "a hidden card reaches no line sent to the other seat" $ do
     gs <- started s registry
-    let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging client) chance) 10000 (pure . (>= 5) . GameState.turnNumber) gs) []
+    let logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging client) chance) 10000 (pure . (>= 5) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
         sent = linesWithState logged
         to pid = [(at, line) | (at, line) <- sent, fmap (Question.seat . Request.question) (requestOf line) == Just pid]
         leaks (at, line) =
@@ -539,7 +540,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertBool s (Maybe.isNothing (Protocol.questionOf S.threePlayerGame (Prompt.RollDie 6))) "die"
   Spec.it s "a reply that cannot be read is asked again with the problem" $ do
     gs <- started s registry
-    let garbled = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging once) chance) 10000 (pure . (>= 3) . GameState.turnNumber) gs) []
+    let garbled = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging once) chance) 10000 (pure . (>= 3) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
         problems = fmap (fmap Request.problem . requestOf . snd) (linesWithState garbled)
     case problems of
       first : second : _ -> do
@@ -549,7 +550,7 @@ spec s registry = Spec.describe s "Protocol" $ do
 
   Spec.it s "an answer naming what the prompt does not offer is asked again" $ do
     gs <- started s registry
-    let strayed = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stray) chance) 10000 (pure . (>= 3) . GameState.turnNumber) gs) []
+    let strayed = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stray) chance) 10000 (pure . (>= 3) . (TurnRegisters.turnNumber . GameState.turn)) gs) []
         discards = [Request.problem request | Just request <- fmap (requestOf . snd) (linesWithState strayed), Question.kind (Request.question request) == Text.pack "ChooseDiscard"]
     case discards of
       first : second : _ -> do
@@ -564,7 +565,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     let (_, g1) = S.addPermanent forest S.alice gs
         (_, g2) = S.addPermanent forest S.alice g1
         board = snd (S.addHandCard bears S.alice g2)
-        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stopsOnce) chance) 10000 (pure . (>= 4) . GameState.turnNumber) board) []
+        logged = State.execState (Driver.drive [observer] (Protocol.over trusting (exchanging stopsOnce) chance) 10000 (pure . (>= 4) . (TurnRegisters.turnNumber . GameState.turn)) board) []
         sent = fmap snd (linesWithState logged)
         afterStop = drop 1 (dropWhile (not . List.isInfixOf "\"kind\":\"ChooseManaSource\"") sent)
         undone = [PlayerView.undone view | Just request <- fmap requestOf afterStop, Question.seat (Request.question request) == S.alice, Question.kind (Request.question request) == Text.pack "ChooseAction", Just view <- [Request.view request]]
@@ -613,8 +614,8 @@ spec s registry = Spec.describe s "Protocol" $ do
             (sent, after) = declaring replies gs
             refused = Just (Text.pack "the declaration of blockers is illegal: Balduvian Barbarians can't block Wind Drake")
         Spec.assertEqWith s "problems" (problemsOf "DeclareBlockers" sent) [Nothing, refused, refused]
-        Spec.assertEqWith s "the drake and the Piker attack" (Map.keys (Combat.Type.attackers (GameState.combat after))) [flier, walker]
-        Spec.assertEqWith s "and are unblocked" (Combat.Type.blockers (GameState.combat after)) Map.empty
+        Spec.assertEqWith s "the drake and the Piker attack" (Map.keys (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after)))) [flier, walker]
+        Spec.assertEqWith s "and are unblocked" (Combat.Type.blockers (TurnRegisters.combat (GameState.turn after))) Map.empty
       _ -> Spec.assertFailure s "fixture should have two attackers and one blocker"
 
   Spec.it s "CR 508.1c an illegal attack is refused, and asked again however often it is repeated" $ do
@@ -628,7 +629,7 @@ spec s registry = Spec.describe s "Protocol" $ do
             (sent, after) = declaring [attacks [construct], attacks [construct], attacks []] gs
             refused = Just (Text.pack "the declaration of attackers is illegal")
         Spec.assertEqWith s "problems" (problemsOf "DeclareAttackers" sent) [Nothing, refused, refused]
-        Spec.assertEqWith s "nothing attacks" (Combat.Type.attackers (GameState.combat after)) Map.empty
+        Spec.assertEqWith s "nothing attacks" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) Map.empty
       _ -> Spec.assertFailure s "fixture should have two creatures"
 
 -- Declares attackers then blockers over the line, answering each line sent

@@ -75,6 +75,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -354,7 +355,17 @@ stockLibrary printing pid k gs = List.foldl' (\g _ -> snd (S.addLibraryCard prin
 settleAtAlicesUpkeep :: GameState.GameState -> GameState.GameState
 settleAtAlicesUpkeep gs =
   let upkeep = Phase.Beginning BeginningStep.Upkeep
-      began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (gs {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+      began =
+        Event.recordEvent
+          (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.phase = upkeep,
+                      TurnRegisters.activePlayer = S.alice
+                    }
+              }
+          )
    in snd (Engine.runGamePure S.identityAnswer began Engine.settleForPriority)
 
 -- Who drew, in the order they drew, read off the turn-scoped event log. CR
@@ -426,7 +437,13 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
         -- turn back. Cast.castSpell gates neither timing nor priority, but
         -- the fixture is a legal board regardless: Vision Skeins is an
         -- INSTANT, which alice may cast on bob's turn.
-        gs = gs0 {GameState.activePlayer = S.bob}
+        gs =
+          gs0
+            { GameState.turn =
+                (GameState.turn gs0)
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            }
         cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spellId))
         after = snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop)
     Spec.assertEqWith
@@ -446,7 +463,7 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
         withLibs = stockLibrary piker S.bob 1 (stockLibrary piker S.alice 1 board)
         onStack = settleAtAlicesUpkeep withLibs
         after = snd (Engine.runGamePure S.identityAnswer onStack Stack.resolveTop)
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the upkeep trigger really reached the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the upkeep trigger really reached the stack"
     Spec.assertEqWith s "bob drew" (S.handSize S.bob after) 1
     Spec.assertEqWith s "alice, who controls it, did not" (S.handSize S.alice after) 0
     Spec.assertEqWith s "and alice's library is untouched" (length (Game.zoneMembers Zone.Library S.alice after)) 1
@@ -957,8 +974,11 @@ spoutsBoard island spouts mine stolen =
    in ( -- handOne parks its state in a precombat main phase; this board is
         -- mid-combat, the way Parun.MassEffectSpec's trumpetBoard restores it.
         withCard
-          { GameState.phase = GameState.phase gs0,
-            GameState.priority = GameState.priority gs0
+          { GameState.turn =
+              (GameState.turn withCard)
+                { TurnRegisters.phase = TurnRegisters.phase (GameState.turn gs0),
+                  TurnRegisters.priority = TurnRegisters.priority (GameState.turn gs0)
+                }
           },
         spell,
         ours,
@@ -1201,10 +1221,13 @@ mirrorBoard mirror aliceLife bobLife carolLife =
       at pid n = Map.adjust (\pl -> pl {Player.life = n}) pid
    in ( mirrorId,
         gs1
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.Beginning BeginningStep.Upkeep,
-            GameState.priority = Just S.alice,
-            GameState.remaining = Seq.drop 1 (GameState.remaining gs1),
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn gs1))
+                },
             GameState.players = at S.alice aliceLife (at S.bob bobLife (at S.carol carolLife (GameState.players gs1)))
           }
       )
@@ -1224,10 +1247,13 @@ soulConduitBoard conduit island aliceLife bobLife carolLife =
       at pid n = Map.adjust (\pl -> pl {Player.life = n}) pid
    in ( conduitId,
         gs1
-          { GameState.activePlayer = S.alice,
-            GameState.phase = Phase.Beginning BeginningStep.Upkeep,
-            GameState.priority = Just S.alice,
-            GameState.remaining = Seq.drop 1 (GameState.remaining gs1),
+          { GameState.turn =
+              (GameState.turn gs1)
+                { TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                  TurnRegisters.priority = Just S.alice,
+                  TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn gs1))
+                },
             GameState.players = at S.alice aliceLife (at S.bob bobLife (at S.carol carolLife (GameState.players gs1)))
           }
       )
@@ -1450,7 +1476,7 @@ setLifeTotalSpec s registry =
   let -- Cast, then settle-and-resolve until the stack runs dry: the spell, then
       -- CR 603.6a's entry trigger, then whatever the life change itself
       -- triggered. Deliberately NOT Engine.priorityLoop, which advances the turn
-      -- and clears GameState.events out from under lifeGains and lifeLosses. Six
+      -- and clears TurnRegisters.events out from under lifeGains and lifeLosses. Six
       -- passes is more than the deepest case needs, and settling or resolving an
       -- empty stack is a no-op.
       castAndTrigger :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
@@ -1740,7 +1766,7 @@ redistributeLifeTotalsSpec s registry =
   let -- setLifeTotalSpec's driver: cast, then settle-and-resolve until the stack
       -- runs dry, so the spell and everything its life changes triggered all
       -- resolve. Deliberately NOT Engine.priorityLoop, which advances the turn
-      -- and clears GameState.events out from under lifeGains and lifeLosses.
+      -- and clears TurnRegisters.events out from under lifeGains and lifeLosses.
       castAndTrigger :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
       castAndTrigger answer spellId gs =
         let step board = S.runPure answer (S.runPure answer board Engine.settleForPriority) Stack.resolveTop
@@ -2075,7 +2101,14 @@ elkinLairSpec s registry =
         let began =
               Event.recordEvent
                 (GameEvent.StepBegan (StepBegan.MkStepBegan step S.bob))
-                (gs {GameState.phase = step, GameState.activePlayer = S.bob})
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = step,
+                            TurnRegisters.activePlayer = S.bob
+                          }
+                    }
+                )
          in S.runPure answer began Engine.settleForPriority
       endStep = Phase.Ending EndingStep.EndStep
       -- Pinned by INDEX into the offer rather than read off the prompt's fields:
@@ -2099,7 +2132,7 @@ elkinLairSpec s registry =
           Spec.assertEqWith s "the LAST card of bob's hand is in exile" (namesIn Zone.Exile S.bob after) [named "Bird Maiden"]
           Spec.assertEqWith s "and the two randomness passed over stay in hand" (namesIn Zone.Hand S.bob after) [named "Goblin Piker", named "Bog Wraith"]
           Spec.assertEqWith s "CR 603.2's \"that player\" is bob: alice's own card is untouched" (namesIn Zone.Hand S.alice after) [named "Lightning Bolt"]
-          Spec.assertEqWith s "and the trigger resolved" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "and the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- The other half of the pair: the same board, the same everything, one
         -- different answer.
         Spec.it s "CR 400.7 the same board with a different roll exiles a different card" $ do
@@ -2147,7 +2180,18 @@ castTheCardSpec s registry =
         let lands = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) (Setup.emptyGame S.bothPlayers) alicesLands
             withBobs = List.foldl' (\g q -> snd (S.addHandCard q S.bob g)) lands [piker, bolt]
             (theftId, gs) = S.addHandCard theft S.alice withBobs
-            cast = S.runPure atBobAnswer gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice} (S.cast S.alice theftId)
+            cast =
+              S.runPure
+                atBobAnswer
+                gs
+                  { GameState.turn =
+                      (GameState.turn gs)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
+                (S.cast S.alice theftId)
          in S.runPure atBobAnswer cast Stack.resolveTop
    in Spec.describe s "CastTheCard" $ do
         -- CR 725.1e: Time Stop skips alice's end step, so the delayed trigger
@@ -2165,9 +2209,22 @@ castTheCardSpec s registry =
                       stopped = S.runPure atBobAnswer holding (S.cast S.alice stopId)
                       bobsTurn = fst (TurnSpec.runTurn atBobAnswer stopped)
                       step = Phase.Ending EndingStep.EndStep
-                      ending = S.runPure atBobAnswer (Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan step S.bob)) bobsTurn {GameState.phase = step, GameState.activePlayer = S.bob}) Engine.settleForPriority
-                  Spec.assertEqWith s "nothing triggered at bob's end step" (length (GameState.stack ending)) 0
-                  Spec.assertEqWith s "the trigger was still waiting when bob's turn began" (length (GameState.delayedTriggers bobsTurn), GameState.activePlayer bobsTurn) (1, S.bob)
+                      ending =
+                        S.runPure
+                          atBobAnswer
+                          ( Event.recordEvent
+                              (GameEvent.StepBegan (StepBegan.MkStepBegan step S.bob))
+                              bobsTurn
+                                { GameState.turn =
+                                    (GameState.turn bobsTurn)
+                                      { TurnRegisters.phase = step,
+                                        TurnRegisters.activePlayer = S.bob
+                                      }
+                                }
+                          )
+                          Engine.settleForPriority
+                  Spec.assertEqWith s "nothing triggered at bob's end step" (length (TurnRegisters.stack (GameState.turn ending))) 0
+                  Spec.assertEqWith s "the trigger was still waiting when bob's turn began" (length (GameState.delayedTriggers bobsTurn), TurnRegisters.activePlayer (GameState.turn bobsTurn)) (1, S.bob)
                 _ -> Spec.assertFailure s "Psychic Theft should exile exactly one card"
             _ -> Spec.assertFailure s "six printings"
 
@@ -2188,7 +2245,16 @@ castTheCardSpec s registry =
 nextUpkeepSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 nextUpkeepSpec s registry =
   let -- alice in her main phase with priority, the rest of her turn scheduled.
-      mainPhase gs = gs {GameState.phase = Phase.PrecombatMain, GameState.remaining = S.phasesAfter Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+      mainPhase gs =
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
+          }
       stock printing pid g = List.foldl' (\h _ -> snd (S.addLibraryCard printing pid h)) g [1 :: Int .. 4]
       -- Whole steps, stopping BEFORE the first state `stop` holds of.
       runUntil :: (forall r. Prompt.Prompt r -> r) -> (GameState.GameState -> Bool) -> GameState.GameState -> GameState.GameState
@@ -2199,10 +2265,10 @@ nextUpkeepSpec s registry =
                 else go (n - 1) (snd (Engine.runGamePure answer g Engine.runStep))
          in go 64
       -- The rest of alice's turn and all of bob's, passing throughout.
-      untilAlicesNextTurn g0 = runUntil S.identityAnswer (\g -> GameState.activePlayer g == S.alice && GameState.turnNumber g > GameState.turnNumber g0) g0
+      untilAlicesNextTurn g0 = runUntil S.identityAnswer (\g -> TurnRegisters.activePlayer (GameState.turn g) == S.alice && TurnRegisters.turnNumber (GameState.turn g) > TurnRegisters.turnNumber (GameState.turn g0)) g0
       -- Then alice's turn up to and including the step `target`.
       through :: (forall r. Prompt.Prompt r -> r) -> Phase.Phase -> GameState.GameState -> GameState.GameState
-      through answer target g = snd (Engine.runGamePure answer (runUntil answer (\h -> GameState.phase h == target) g) Engine.runStep)
+      through answer target g = snd (Engine.runGamePure answer (runUntil answer (\h -> TurnRegisters.phase (GameState.turn h) == target) g) Engine.runStep)
       -- Casts `boltId` at bob whenever alice is offered it, and passes otherwise.
       castingBolt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
       castingBolt boltId p = case p of
@@ -2297,7 +2363,17 @@ discardedThisWaySpec s registry = Spec.describe s "CR 701.9a discarded this way"
             withRedirect = maybe withRift (\p -> snd (S.addPermanent p S.bob withRift)) redirecting
             (_, withGiant) = S.addGraveyardCard giant S.alice withRedirect
             (_, withHand) = S.addHandCard heldCard S.alice withGiant
-            begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice)) (withHand {GameState.phase = upkeep, GameState.activePlayer = S.alice})
+            begun =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
+                ( withHand
+                    { GameState.turn =
+                        (GameState.turn withHand)
+                          { TurnRegisters.phase = upkeep,
+                            TurnRegisters.activePlayer = S.alice
+                          }
+                    }
+                )
             onStack = S.runPure S.identityAnswer begun Engine.settleForPriority
         pure onStack
       -- The one seat that pays 5 life, if any.
@@ -2311,7 +2387,7 @@ discardedThisWaySpec s registry = Spec.describe s "CR 701.9a discarded this way"
       battlefieldNames gs = List.sort (fmap (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Set.toList (GameState.battlefield gs)))
   Spec.it s "CR 701.9a Aether Rift returns the creature card it discarded when nobody pays" $ do
     onStack <- riftBoard Nothing "Goblin Piker"
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the upkeep trigger really reached the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the upkeep trigger really reached the stack"
     let ((_, after), transcript) = Replay.record (paysFor Nothing) onStack Stack.resolveTop
     Spec.assertEqWith s "the discarded Piker is on the battlefield beside the Rift" (battlefieldNames after) [named "Aether Rift", named "Goblin Piker"]
     Spec.assertEqWith s "and the Hill Giant already there stays in the graveyard" (namesIn Zone.Graveyard S.alice after) [named "Hill Giant"]
@@ -2360,12 +2436,12 @@ discardedThisWaySpec s registry = Spec.describe s "CR 701.9a discarded this way"
         pure (resolved, S.runPure atBobAnswer resolved Stack.resolveTop)
   Spec.it s "CR 701.9a Cragganwick Cremator deals the discarded creature card's power" $ do
     (onStack, after) <- cremate "Goblin Piker"
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the enters trigger really reached the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the enters trigger really reached the stack"
     Spec.assertEqWith s "bob took the Piker's 2" (S.lifeOf S.bob after) (Just 18)
     Spec.assertEqWith s "the Piker is in alice's graveyard" (namesIn Zone.Graveyard S.alice after) [named "Goblin Piker"]
   Spec.it s "CR 701.9a Cragganwick Cremator deals nothing for a noncreature card" $ do
     (onStack, after) <- cremate "Lightning Bolt"
-    Spec.assertBool s (not (null (GameState.stack onStack))) "the enters trigger really reached the stack"
+    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "the enters trigger really reached the stack"
     Spec.assertEqWith s "bob took nothing" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "the Bolt is in alice's graveyard" (namesIn Zone.Graveyard S.alice after) [named "Lightning Bolt"]
 

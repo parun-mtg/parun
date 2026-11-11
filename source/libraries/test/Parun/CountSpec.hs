@@ -70,6 +70,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -454,12 +455,20 @@ approachSpec s registry =
             stocked = List.foldl' (\g _ -> snd (S.addLibraryCard plains S.alice g)) withLands [1 .. (8 :: Int)]
             (_, withSight) = S.addPermanent sight S.alice stocked
          in mainOf S.alice withSight
-      mainOf pid gs = gs {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = pid, GameState.priority = Just pid}
+      mainOf pid gs =
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = pid,
+                  TurnRegisters.priority = Just pid
+                }
+          }
       castAndResolve pid oid gs = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (S.cast pid oid)) Engine.priorityLoop
       -- One real turn handoff, then the main phase of whoever it reached.
       nextTurn gs =
         let handed = S.runPure S.identityAnswer gs Engine.handoffTurn
-         in mainOf (GameState.activePlayer handed) handed
+         in mainOf (TurnRegisters.activePlayer (GameState.turn handed)) handed
       -- 1-based, from the top: where each Approach sits in that library. By
       -- name, since CR 400.7 gives the card a new id as it moves.
       approachesIn pid gs =
@@ -478,7 +487,7 @@ approachSpec s registry =
               (second, g2) = S.addLibraryCard approach S.alice turnOne
               turnFour = nextTurn (nextTurn (nextTurn g2))
               after = castAndResolve S.alice second turnFour
-          Spec.assertEqWith s "it is alice's turn again" (GameState.activePlayer turnFour) S.alice
+          Spec.assertEqWith s "it is alice's turn again" (TurnRegisters.activePlayer (GameState.turn turnFour)) S.alice
           Spec.assertBool s (S.castable S.alice second turnFour) "Future Sight offers the top card"
           Spec.assertEqWith s "nobody has won" (GameState.result after) Nothing
           Spec.assertEqWith s "it went seventh from the top, above the first at eighth" (approachesIn S.alice after) [7, 8 :: Int]
@@ -513,9 +522,12 @@ tobiasSpec s registry =
         let (tid, gs) = S.addPermanent tobias S.alice S.threePlayerGame
          in ( tid,
               gs
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             )
       -- Lethal damage and a run of the priority loop, which settles CR 704.5g
@@ -612,9 +624,12 @@ charnelTallySpec s registry =
               a1,
               b1,
               gs2
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn gs2)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             )
       -- Tobias' helper, and for its reason: one route to every death here, so
@@ -687,9 +702,12 @@ tyranidInvasionSpec s registry =
       board forest =
         let withLands = List.foldl' (\g _ -> snd (S.addPermanent forest S.alice g)) S.threePlayerGame [1 .. (4 :: Int)]
          in withLands
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withLands)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castInvasion invasion gs =
         let (oid, gs1) = S.addHandCard invasion S.alice gs
@@ -706,7 +724,7 @@ tyranidInvasionSpec s registry =
           let base = S.departs Departure.Type.Conceded S.carol (board forest)
               after = castInvasion invasion base
           Spec.assertEqWith s "one opponent left, so one token" (length (S.tokensOf after)) 1
-          Spec.assertEqWith s "the spell resolved" (GameState.stack after) []
+          Spec.assertEqWith s "the spell resolved" (TurnRegisters.stack (GameState.turn after)) []
 
 -- CR 110.2 compared against CR 109.5's "you": the first Filter that RE-FRAMES the
 -- perspective, asking a question about a candidate player's own board rather than
@@ -744,9 +762,12 @@ oreskosExplorerSpec s registry =
         let withLands = S.landsFor island S.carol carolLands (S.landsFor forest S.bob 4 (S.landsFor plains S.alice 2 S.threePlayerGame))
             withLibrary = List.foldl' (\g p -> snd (S.addLibraryCard p S.alice g)) withLands [plains, plains, plains, forest]
          in withLibrary
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn withLibrary)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
       castExplorer explorer gs =
         let (oid, gs1) = S.addHandCard explorer S.alice gs
@@ -766,7 +787,7 @@ oreskosExplorerSpec s registry =
           Spec.assertEqWith s "bob and carol are both ahead, so two cards found" (inHand after) 2
           Spec.assertEqWith s "both were Plains, revealed" (S.revealsOf after) [(S.alice, plainsName), (S.alice, plainsName)]
           Spec.assertEqWith s "and the Forest and the third Plains stayed behind" (length (Game.zoneMembers Zone.Library S.alice after)) 2
-          Spec.assertEqWith s "everything resolved" (GameState.stack after) []
+          Spec.assertEqWith s "everything resolved" (TurnRegisters.stack (GameState.turn after)) []
         -- The discriminating case. Carol's board is the only difference, and CR
         -- 110.2's comparison is STRICT, so a seat level with alice is not one that
         -- controls more lands than she does.
@@ -779,7 +800,7 @@ oreskosExplorerSpec s registry =
           Spec.assertEqWith s "only bob is ahead, so one card found" (inHand after) 1
           Spec.assertEqWith s "and it was a Plains, revealed" (S.revealsOf after) [(S.alice, plainsName)]
           Spec.assertEqWith s "three cards left in the library" (length (Game.zoneMembers Zone.Library S.alice after)) 3
-          Spec.assertEqWith s "everything resolved" (GameState.stack after) []
+          Spec.assertEqWith s "everything resolved" (TurnRegisters.stack (GameState.turn after)) []
 
 -- Finds as many matching cards as the search allows, off the head of the offered
 -- list. It reads the engine's own cap, which is the number under test, rather
@@ -822,7 +843,16 @@ surveyorsScopeSpec s registry =
         let withLands = S.landsFor swamp S.carol carolLands (S.landsFor island S.bob 4 (S.landsFor plains S.alice 2 S.threePlayerGame))
             withLibrary = List.foldl' (\g p -> snd (S.addLibraryCard p S.alice g)) withLands [forest, forest, forest, wilds]
             (scopeId, withScope) = S.addPermanent scope S.alice withLibrary
-        pure (scopeId, withScope {GameState.priority = Just S.alice}, Face.activatedAbilities (S.combinedFace scope))
+        pure
+          ( scopeId,
+            withScope
+              { GameState.turn =
+                  (GameState.turn withScope)
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              },
+            Face.activatedAbilities (S.combinedFace scope)
+          )
       fire scopeId ability gs = S.runPure findsWhatItCan gs (do Activate.activateAbility S.alice scopeId ability; Stack.resolveTop)
       forests = S.countOnBattlefieldByName forestName S.alice
       inLibrary gs = length (Game.zoneMembers Zone.Library S.alice gs)
@@ -837,7 +867,7 @@ surveyorsScopeSpec s registry =
               let after = fire scopeId ability ready
               Spec.assertEqWith s "only bob is two ahead, so one Forest found" (forests after) 1
               Spec.assertEqWith s "the Wilds and two Forests stayed behind" (inLibrary after) 3
-              Spec.assertEqWith s "everything resolved" (GameState.stack after) []
+              Spec.assertEqWith s "everything resolved" (TurnRegisters.stack (GameState.turn after)) []
         Spec.it s "CR 110.2 two seats each two lands ahead fetch two" $ do
           (scopeId, ready, abilities) <- board 4
           case abilities of
@@ -889,7 +919,16 @@ keeningStoneSpec s registry =
                 . stock S.addGraveyardCard piker S.alice 2
                 . stock S.addLibraryCard piker S.alice 10
                 $ stock S.addLibraryCard piker S.bob 10 withStone
-        pure (stoneId, staged {GameState.priority = Just S.alice}, Face.activatedAbilities (S.combinedFace stone))
+        pure
+          ( stoneId,
+            staged
+              { GameState.turn =
+                  (GameState.turn staged)
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              },
+            Face.activatedAbilities (S.combinedFace stone)
+          )
       fire stoneId ability target gs = S.runPure (aimedAtPlayer target) gs (do Activate.activateAbility S.alice stoneId ability; Stack.resolveTop)
    in Spec.describe s "Keening Stone" $ do
         Spec.it s "CR 113.7 X counts the graveyard of the ABILITY's target, not of its source's bindings" $ do
@@ -961,7 +1000,17 @@ priceOfKnowledgeSpec s registry =
           )
       upkeepOf pid gs =
         let upkeep = Phase.Beginning BeginningStep.Upkeep
-            began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+            began =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = upkeep,
+                            TurnRegisters.activePlayer = pid
+                          }
+                    }
+                )
             settled = S.runPure S.identityAnswer began Engine.settleForPriority
          in S.runPure S.identityAnswer settled Engine.priorityLoop
       lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
@@ -1013,7 +1062,17 @@ ebonyOwlNetsukeSpec s registry =
           )
       upkeepOf pid gs =
         let upkeep = Phase.Beginning BeginningStep.Upkeep
-            began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid)) (gs {GameState.phase = upkeep, GameState.activePlayer = pid})
+            began =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep pid))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = upkeep,
+                            TurnRegisters.activePlayer = pid
+                          }
+                    }
+                )
             settled = S.runPure S.identityAnswer began Engine.settleForPriority
          in S.runPure S.identityAnswer settled Engine.priorityLoop
       lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
@@ -1069,7 +1128,7 @@ ownershipLedgerSpec s registry =
          in case Projection.abilitiesOf ledgerId withLedger of
               [ability] -> Right (S.lifeOf S.alice (S.runPure S.identityAnswer withLedger (do Activate.activateAbility S.alice ledgerId ability; Stack.resolveTop)))
               other -> Left (length other)
-      owners gs = fmap (\oid -> fmap Object.owner (Game.lookupObject oid gs)) (GameState.stack gs)
+      owners gs = fmap (\oid -> fmap Object.owner (Game.lookupObject oid gs)) (TurnRegisters.stack (GameState.turn gs))
    in Spec.describe s "Synthetic Ownership Ledger" $ do
         -- The other road, on the board that adds a SECOND Renewed Faith to alice's
         -- own hand: she casts bob's and lets it resolve, then casts hers and
@@ -1113,7 +1172,17 @@ leftBattlefieldSpec s registry =
       -- As Raphael's (data/scenarios/count): the step's event recorded beside
       -- the phase.
       endStepOf gs =
-        let began = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)) (gs {GameState.phase = endStep, GameState.activePlayer = S.alice})
+        let began =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = endStep,
+                            TurnRegisters.activePlayer = S.alice
+                          }
+                    }
+                )
             settled = S.runPure S.identityAnswer began Engine.settleForPriority
          in S.runPure S.identityAnswer settled Engine.priorityLoop
       bounce oid gs = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) oid Zone.Hand)
@@ -1126,7 +1195,15 @@ leftBattlefieldSpec s registry =
             (theirMountain, withMountain) = S.addPermanent mountain S.bob withTheirs
             (_, withCarols) = S.addPermanent hillGiant S.carol withMountain
             stocked = library mountain S.carol 5 (library mountain S.bob 5 (library mountain S.alice 5 withCarols))
-            ready = stocked {GameState.phase = Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+            ready =
+              stocked
+                { GameState.turn =
+                    (GameState.turn stocked)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                }
         pure (watcherId, theirGiant, theirMountain, ready)
    in Spec.describe s "left the battlefield this turn" $ do
         Spec.it s "CR 603.6c Insatiable Skittermaw counts a nonland permanent bounced or leaving the game with its owner, and not a land" $ do

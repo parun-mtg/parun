@@ -159,6 +159,7 @@ import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
@@ -593,7 +594,7 @@ fileBoards :: GameState -> GameState
 fileBoards gs =
   let filed = GameState.boardAfterEvent gs
       open group = GameState.eventGroupDepth gs > 0 && group == GameState.nextEventGroup gs
-      unfiled = Seq.takeWhileR (\logged -> Map.notMember (LoggedEvent.group logged) filed) (Seq.drop (Natural.toIntSaturating (GameState.scannedThrough gs)) (GameState.events gs))
+      unfiled = Seq.takeWhileR (\logged -> Map.notMember (LoggedEvent.group logged) filed) (Seq.drop (Natural.toIntSaturating (TurnRegisters.scannedThrough (GameState.turn gs))) (TurnRegisters.events (GameState.turn gs)))
       groups = filter (not . open) (fmap LoggedEvent.group (Foldable.toList unfiled))
       board = gs {GameState.boardAfterEvent = Map.empty, GameState.boardBeforeEvent = Map.empty, GameState.boardAtControlSample = Nothing}
    in if null groups then gs else gs {GameState.boardAfterEvent = List.foldl' (\m group -> Map.insert group board m) filed groups}
@@ -2060,7 +2061,7 @@ eventTriggersGiven scope standing events gs =
       -- spell" is borne by an object that is on nobody's battlefield and in
       -- nobody's graveyard, so no source above can reach it.
       --
-      -- Scoped to the CAST EVENT rather than computed once over GameState.stack,
+      -- Scoped to the CAST EVENT rather than computed once over TurnRegisters.stack,
       -- which is `cycledCard`'s shape. Not for want of a controller: CR 405.4's
       -- caster is stamped into Object.enteredUnder by changeZoneCasting, and
       -- Projection.defaultControllerOf reads it back, so a standing scan would
@@ -2421,7 +2422,7 @@ eventTriggersGiven scope standing events gs =
 -- proves it.
 --
 -- Per GROUP and never per scan: several groups can share one CR 117.5 scan
--- (GameState.scannedThrough is not bumped until the scan ends), and CR 704.3
+-- (TurnRegisters.scannedThrough is not bumped until the scan ends), and CR 704.3
 -- makes each state-based-action pass its own single event.
 -- Parun.ZoneTriggerSpec's "CR 704.3 two death groups in one trigger scan are two
 -- trigger events" is what tells the two readings apart. Shared by
@@ -3359,7 +3360,7 @@ delayedArmed gs entry = case DelayedTrigger.window entry of
   -- EQUALITY, not a floor: the printed onset names ONE turn, and once that turn
   -- is over its event is impossible (CR 603.7a), so the window has an upper end
   -- and not merely a lower one.
-  TurnWindow.OnTurn n -> n == GameState.turnNumber gs
+  TurnWindow.OnTurn n -> n == TurnRegisters.turnNumber (GameState.turn gs)
 
 -- CR 603.12: is this delayed entry REFLEXIVE? The exception to delayedPending's
 -- matching below, and the ONE place the reflexive form differs from an ordinary

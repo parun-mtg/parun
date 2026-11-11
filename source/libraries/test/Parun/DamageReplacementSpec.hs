@@ -69,6 +69,7 @@ import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 615.7's shield over SEVERAL recipients at once, whose producer is Divine
@@ -600,7 +601,13 @@ ajaniSteadfastSpec s registry = Spec.describe s "Ajani Steadfast (CR 114.4, CR 6
         jacePrinting <- S.printingOf s registry "Jace Beleren"
         karnPrinting <- S.printingOf s registry "Karn Liberated"
         pikerPrinting <- S.printingOf s registry "Goblin Piker"
-        let base = (Setup.emptyGame S.bothPlayers) {GameState.phase = Phase.PrecombatMain}
+        let base =
+              (Setup.emptyGame S.bothPlayers)
+                { GameState.turn =
+                    (GameState.turn (Setup.emptyGame S.bothPlayers))
+                      { TurnRegisters.phase = Phase.PrecombatMain
+                      }
+                }
             (ajani, g1) = S.addPermanent ajaniPrinting S.alice base
             (jace, g2) = S.addPermanent jacePrinting S.alice g1
             (karn, g3) = S.addPermanent karnPrinting S.bob g2
@@ -659,7 +666,15 @@ ajaniSteadfastSpec s registry = Spec.describe s "Ajani Steadfast (CR 114.4, CR 6
     mountain <- S.printingOf s registry "Mountain"
     ajaniPrinting <- S.printingOf s registry "Ajani Steadfast"
     char <- S.printingOf s registry "Char"
-    let base = (S.landsFor mountain S.alice 3 (Setup.emptyGame S.bothPlayers)) {GameState.phase = Phase.PrecombatMain}
+    let base =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.phase = Phase.PrecombatMain
+                  }
+            )
+            (S.landsFor mountain S.alice 3 (Setup.emptyGame S.bothPlayers))
+
         (ajani, g1) = S.addPermanent ajaniPrinting S.alice base
         (charId, unarmed) = S.addHandCard char S.alice (atLife S.alice 9 (S.addCounter CounterKind.Loyalty 7 ajani g1))
         armed = loyaltyAbility 2 S.identityAnswer ajaniPrinting ajani unarmed
@@ -770,9 +785,12 @@ jaredCarthalionSpec s registry = Spec.describe s "Jared Carthalion, True Heir (C
           ( jared,
             bolts,
             g2
-              { GameState.phase = Phase.PrecombatMain,
-                GameState.activePlayer = S.alice,
-                GameState.priority = Just S.alice
+              { GameState.turn =
+                  (GameState.turn g2)
+                    { TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.priority = Just S.alice
+                    }
               }
           )
   -- THE PROVING TEST. One board, two monarchs, and nothing else differs.
@@ -825,7 +843,16 @@ glitteringLionSpec s registry = Spec.describe s "Glittering Lion (CR 613.1f)" $ 
         let base = S.landsFor plains S.bob 3 (S.landsInPlay plains 3)
             (lion, g1) = S.addPermanent lionPrinting S.alice base
             (attacker, g2) = S.addPermanent pikerPrinting S.bob g1
-        pure (lion, attacker, g2 {GameState.priority = Just S.alice})
+        pure
+          ( lion,
+            attacker,
+            g2
+              { GameState.turn =
+                  (GameState.turn g2)
+                    { TurnRegisters.priority = Just S.alice
+                    }
+              }
+          )
       -- The Piker's 2, as noncombat damage: the printed pattern names no kind, so
       -- either kind would do, and this is the funnel the Capridor cases above use.
       hits attacker lion = [DamageEvent.MkDamageEvent attacker (Recipient.ToCreature lion) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat]
@@ -866,7 +893,14 @@ glitteringLionSpec s registry = Spec.describe s "Glittering Lion (CR 613.1f)" $ 
   -- graveyard assertion below is what says so.
   Spec.it s "CR 602.1b bob activates alice's Lion, and his Piker's 2 then kills it" $ do
     (lion, attacker, g) <- board
-    let offered = g {GameState.priority = Just S.bob, GameState.phase = Phase.PrecombatMain}
+    let offered =
+          g
+            { GameState.turn =
+                (GameState.turn g)
+                  { TurnRegisters.priority = Just S.bob,
+                    TurnRegisters.phase = Phase.PrecombatMain
+                  }
+            }
         offers = Maybe.mapMaybe (\a -> case a of Action.Activate o ab | o == lion -> Just ab; _ -> Nothing) (Action.legalActions S.bob offered)
         step gs ability = S.runPure S.identityAnswer (S.runPure S.identityAnswer gs (Activate.activateAbility S.bob lion ability)) Stack.resolveTop
         resolved = List.foldl' step offered offers
@@ -1095,14 +1129,14 @@ phantomTigerSpec s registry = Spec.describe s "Phantom Tiger (CR 615.12)" $ do
     -- boundary gathered. The two life-and-damage assertions behind it are the
     -- vacuity guards, and the control below is what shows a real prevention
     -- still fires it and still reaches bob.
-    Spec.assertEqWith s "no trigger was gathered: CR 615.13 wants some of the damage prevented, and none was" (length (GameState.stack punkDealt)) 0
+    Spec.assertEqWith s "no trigger was gathered: CR 615.13 wants some of the damage prevented, and none was" (length (TurnRegisters.stack (GameState.turn punkDealt))) 0
     Spec.assertEqWith s "so bob takes nothing" (S.lifeOf S.bob punkAfter) (Just 20)
     Spec.assertEqWith s "and the whole 4 is marked on the Vindicator instead" (S.damageOf vindicator punkAfter) (Just 4)
     -- THE CONTROL, differing in Spider-Punk alone: the same 4 off the same card,
     -- and the trigger fires and lands.
     Spec.assertEqWith s "without Spider-Punk the prevented 4 reaches bob" (S.lifeOf S.bob controlAfter) (Just 16)
     Spec.assertEqWith s "CR 615.6: and none of it is marked on the Vindicator" (S.damageOf controlVindicator controlAfter) (Just 0)
-    Spec.assertEqWith s "one trigger was gathered" (length (GameState.stack controlDealt)) 1
+    Spec.assertEqWith s "one trigger was gathered" (length (TurnRegisters.stack (GameState.turn controlDealt))) 1
 
 -- The players asked to decide something while a damage batch settles, in the
 -- order they were asked. Both batch-level questions count: CR 616.1's "which
@@ -1678,7 +1712,7 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
     Spec.assertEqWith s "and no damage event happened at all" (amounts after) []
     -- The discriminating half: the prevention alone would leave the Squire a
     -- 1/1. What makes it a 4/4 is CR 615.13's trigger reading the amount.
-    Spec.assertEqWith s "exactly one trigger was gathered" (length (GameState.stack dealt)) 1
+    Spec.assertEqWith s "exactly one trigger was gathered" (length (TurnRegisters.stack (GameState.turn dealt))) 1
     Spec.assertEqWith s "and it put 3 +1/+1 counters on the Squire" (fmap (\oid -> countersOn CounterKind.PlusOnePlusOne oid after) squire) (Just 3)
     Spec.assertEqWith s "so the 1/1 is now a 4/4" (squire >>= \oid -> S.powerToughnessOf oid after) (Just (4, 4))
   -- The BASELINE that makes the case above discriminate: the same board with the
@@ -1699,7 +1733,7 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
     Spec.assertEqWith s "setup: no shield was installed" (length (GameState.replacements g2)) 0
     Spec.assertEqWith s "alice takes all 3" (S.lifeOf S.alice after) (Just 17)
     Spec.assertEqWith s "and the damage event happened" (amounts after) [3]
-    Spec.assertEqWith s "nothing triggered" (length (GameState.stack dealt)) 0
+    Spec.assertEqWith s "nothing triggered" (length (TurnRegisters.stack (GameState.turn dealt))) 0
     Spec.assertEqWith s "so the Squire is still a 1/1" (S.powerToughnessOf squire after) (Just (1, 1))
   -- CR 615.13's own arithmetic: "each time a prevention effect is applied to ONE
   -- OR MORE SIMULTANEOUS damage events". One shield across a batch of two is one
@@ -1720,7 +1754,7 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
         batch = [hit first (Recipient.ToPlayer S.alice) 3, hit second (Recipient.ToPlayer S.alice) 2]
         (dealt, after) = strikeAndSettle shielded batch
     Spec.assertEqWith s "both events were prevented whole" (amounts after) []
-    Spec.assertEqWith s "ONE trigger, not one per event" (length (GameState.stack dealt)) 1
+    Spec.assertEqWith s "ONE trigger, not one per event" (length (TurnRegisters.stack (GameState.turn dealt))) 1
     Spec.assertEqWith s "carrying the TOTAL prevented" (fmap (\oid -> countersOn CounterKind.PlusOnePlusOne oid after) squire) (Just 5)
   -- The recipient half of the condition. Selfless Squire says "damage that would
   -- be dealt to YOU", so a prevention that covers a CREATURE is silence -- and
@@ -1743,11 +1777,11 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
         (creatureDealt, creatureAfter) = strikeAndSettle onCreature [hit attacker (Recipient.ToCreature victim) 3]
         (playerDealt, playerAfter) = strikeAndSettle onAlice [hit attacker (Recipient.ToPlayer S.alice) 3]
     Spec.assertEqWith s "the creature's 3 was prevented" (S.damageOf victim creatureAfter) (Just 0)
-    Spec.assertEqWith s "but nothing triggered" (length (GameState.stack creatureDealt)) 0
+    Spec.assertEqWith s "but nothing triggered" (length (TurnRegisters.stack (GameState.turn creatureDealt))) 0
     Spec.assertEqWith s "so the Squire stays a 1/1" (S.powerToughnessOf squire creatureAfter) (Just (1, 1))
     -- The same shield, aimed one recipient over, is the discriminating twin.
     Spec.assertEqWith s "alice's 3 was prevented too" (S.lifeOf S.alice playerAfter) (Just 20)
-    Spec.assertEqWith s "and THAT fired the Squire" (length (GameState.stack playerDealt)) 1
+    Spec.assertEqWith s "and THAT fired the Squire" (length (TurnRegisters.stack (GameState.turn playerDealt))) 1
     Spec.assertEqWith s "for 3 counters, off a prevention its own ability had nothing to do with" (S.powerToughnessOf squire playerAfter) (Just (4, 4))
   -- CR 109.5's relation, read alongside CR 615.13's amount: Selfless Squire's
   -- condition says "damage that would be dealt to YOU", and alice is its only
@@ -1787,7 +1821,7 @@ selflessSquireSpec s registry = Spec.describe s "Selfless Squire (CR 615.13)" $ 
       "one prevention was recorded, holding each player's share"
       (fmap DamagePrevented.amounts (preventionsRecorded after))
       [Map.singleton attacker (Map.fromList [(Recipient.ToPlayer S.alice, 2), (Recipient.ToPlayer S.bob, 4)])]
-    Spec.assertEqWith s "exactly one trigger was gathered" (length (GameState.stack dealt)) 1
+    Spec.assertEqWith s "exactly one trigger was gathered" (length (TurnRegisters.stack (GameState.turn dealt))) 1
     -- The discriminating assertion: alice's OWN 2, never the application's 6.
     -- An eventBindings that does not re-ask the relation sums the whole record
     -- and puts 6 counters on instead.
@@ -1868,7 +1902,7 @@ phyrexianVindicatorSpec s registry = Spec.describe s "Phyrexian Vindicator (CR 6
     -- somebody else, and bob's life is the only place that shows.
     Spec.assertEqWith s "bob took the 4 the Vindicator's own prevention stopped" (S.lifeOf S.bob after) (Just 16)
     Spec.assertEqWith s "and the Vindicator itself took none of it (CR 615.6)" (S.damageOf vindicator after) (Just 0)
-    Spec.assertEqWith s "exactly one trigger was gathered" (length (GameState.stack dealt)) 1
+    Spec.assertEqWith s "exactly one trigger was gathered" (length (TurnRegisters.stack (GameState.turn dealt))) 1
   -- THE DISCRIMINATOR. One shielded Vindicator, one 4-damage event, and a CR
   -- 616.1 choice answered both ways. Rule 122.1c's pair is minted onto the
   -- permanent by the rules rather than printed on its card, so the damage it
@@ -1891,8 +1925,8 @@ phyrexianVindicatorSpec s registry = Spec.describe s "Phyrexian Vindicator (CR 6
     Spec.assertEqWith s "the counter's prevention leaves bob untouched" (S.lifeOf S.bob mintedAfter) (Just 20)
     Spec.assertEqWith s "the printed one deals him the same 4" (S.lifeOf S.bob printedAfter) (Just 16)
     Spec.assertEqWith s "both prevented the whole 4 off the Vindicator" (fmap (S.damageOf vindicator) [mintedAfter, printedAfter]) [Just 0, Just 0]
-    Spec.assertEqWith s "nothing triggered off the counter's prevention" (length (GameState.stack mintedDealt)) 0
-    Spec.assertEqWith s "and the printed one triggered once" (length (GameState.stack printedDealt)) 1
+    Spec.assertEqWith s "nothing triggered off the counter's prevention" (length (TurnRegisters.stack (GameState.turn mintedDealt))) 0
+    Spec.assertEqWith s "and the printed one triggered once" (length (TurnRegisters.stack (GameState.turn printedDealt))) 1
     -- CR 122.1c removes a counter as it prevents, which is what pins WHICH
     -- prevention each branch actually applied.
     Spec.assertEqWith s "the counter was spent on the minted branch" (countersOn CounterKind.Shield vindicator mintedAfter) 0
@@ -1965,7 +1999,7 @@ samiteMinistrationSpec s registry = Spec.describe s "Samite Ministration (CR 615
         (dealt, after) = strikeAndSettleWith (nameDamageSource piker) shielded [DamageEvent.MkDamageEvent piker (Recipient.ToPlayer S.alice) 3 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat]
     Spec.assertEqWith s "setup: the shield names the Piker" (shieldedSource shielded) (Just piker)
     Spec.assertEqWith s "the 3 was prevented and came back as life" (S.lifeOf S.alice after) (Just 23)
-    Spec.assertEqWith s "one trigger was gathered" (length (GameState.stack dealt)) 1
+    Spec.assertEqWith s "one trigger was gathered" (length (TurnRegisters.stack (GameState.turn dealt))) 1
 
 -- CR 615.8's shield, the one between CR 615.3's unbounded prevention and CR
 -- 615.7's counted one -- Deflecting Palm ({R}{W} Instant, "The next time a
@@ -2017,7 +2051,7 @@ deflectingPalmSpec s registry = Spec.describe s "Deflecting Palm (CR 615.8 / 615
     Spec.assertEqWith s "CR 615.8 the Spider's whole first 7 was prevented, bob's 2 got through, and the Spider's next 4 was dealt normally" (S.lifeOf S.alice after) (Just 14)
     Spec.assertEqWith s "CR 615.5 / 108.4 the 7 came back once, at the controller of the source the shield NAMED" (S.lifeOf S.carol after) (Just 13)
     Spec.assertEqWith s "CR 609.7a and never at the other source's controller" (S.lifeOf S.bob after) (Just 20)
-    Spec.assertEqWith s "nothing went on the stack to respond to" (length (GameState.stack firstBatch)) 0
+    Spec.assertEqWith s "nothing went on the stack to respond to" (length (TurnRegisters.stack (GameState.turn firstBatch))) 0
     Spec.assertEqWith s "and the shield is gone once it has prevented an instance" (GameState.replacements firstBatch) []
 
 -- CR 615.5's additional effect on CR 615.8's shield, read for its AMOUNT --
@@ -2047,7 +2081,7 @@ reverseDamageSpec s registry = Spec.describe s "Reverse Damage (CR 615.8 / 615.5
     Spec.assertEqWith s "setup: the shield names carol's Spider" (shieldedSource shielded) (Just spider)
     Spec.assertEqWith s "CR 615.5 the prevented 7 came back as life, and bob's 2 was dealt" (S.lifeOf S.alice firstBatch) (Just 25)
     Spec.assertEqWith s "CR 615.8 the Spider's next 4 was dealt normally, with no second gain" (S.lifeOf S.alice after) (Just 21)
-    Spec.assertEqWith s "nothing went on the stack" (length (GameState.stack firstBatch)) 0
+    Spec.assertEqWith s "nothing went on the stack" (length (TurnRegisters.stack (GameState.turn firstBatch))) 0
 
 -- CR 615.13's trigger on the same shield -- New Way Forward ({2}{U}{R}{W}
 -- Instant, "... prevent that damage. When damage is prevented this way, New Way
@@ -2076,7 +2110,7 @@ newWayForwardSpec s registry = Spec.describe s "New Way Forward (CR 615.8 / 615.
     Spec.assertEqWith s "CR 615.13 the 7 came back at carol once the trigger resolved" (S.lifeOf S.carol after) (Just 13)
     Spec.assertEqWith s "and alice drew 7" (S.handSize S.alice after - S.handSize S.alice firstBatch) 7
     Spec.assertEqWith s "CR 609.7a never at the other source's controller" (S.lifeOf S.bob after) (Just 20)
-    Spec.assertEqWith s "CR 603.3 the trigger waited on the stack, carol untouched before it resolved" (length (GameState.stack firstBatch), S.lifeOf S.carol firstBatch) (1, Just 20)
+    Spec.assertEqWith s "CR 603.3 the trigger waited on the stack, carol untouched before it resolved" (length (TurnRegisters.stack (GameState.turn firstBatch)), S.lifeOf S.carol firstBatch) (1, Just 20)
 
 -- Intervention Pact ({0} Instant, white color indicator): Reverse Damage's
 -- shield plus Pact of the Titan's "At the beginning of your next upkeep, pay
@@ -2279,9 +2313,12 @@ caromSpec s registry = Spec.describe s "Carom (CR 614.9, CR 615.7)" $ do
             (_, g5) = S.addLibraryCard plains S.alice g4
             ready =
               g5
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn g5)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             redirected = S.runPure (aimFromTo victim haven) ready (S.cast S.alice caromId Monad.>> Stack.resolveTop)
         pure (victim, haven, attacker, ready, redirected)
@@ -2350,9 +2387,12 @@ captainsManeuverSpec s registry = Spec.describe s "Captain's Maneuver (CR 614.9,
             (maneuverId, g2) = S.addHandCard maneuver S.alice g1
             ready =
               g2
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn g2)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             redirected = S.runPure aimAliceToBobAtTwo ready (S.cast S.alice maneuverId Monad.>> Stack.resolveTop)
         pure (attacker, redirected)
@@ -2411,9 +2451,12 @@ harmsWaySpec s registry = Spec.describe s "Harm's Way (CR 614.9, CR 615.7, CR 60
             (harmsWayId, g4) = S.addHandCard harmsWay S.alice g3
             ready =
               g4
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
+                { GameState.turn =
+                    (GameState.turn g4)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
                 }
             redirected = S.runPure (aimAtBobChoosing omega) ready (S.cast S.alice harmsWayId Monad.>> Stack.resolveTop)
         pure (mine, alpha, omega, ready, redirected)
@@ -2467,9 +2510,12 @@ harmsWaySpec s registry = Spec.describe s "Harm's Way (CR 614.9, CR 615.7, CR 60
         stocked = List.foldl' (\g _ -> snd (S.addLibraryCard piker S.alice g)) g3 [1 .. (5 :: Int)]
         ready =
           stocked
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn stocked)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         redirected = S.runPure (aimAndChoose raptorId omega) ready (S.cast S.alice harmsWayId Monad.>> Stack.resolveTop)
         struck = S.runPure S.identityAnswer redirected (Damage.applyDamage (pure ()) [hit omega (Recipient.ToCreature raptorId) 3] Monad.>> Engine.settleForPriority)
@@ -2676,7 +2722,7 @@ lavaBurstSpec s registry = Spec.describe s "Lava Burst (CR 615.12, CR 614.9)" $ 
         -- include "a spell on the stack", and CR 400.7 already made the card and
         -- the spell two objects, so the hand id names neither.
         cast_ = S.runPure (aimObjectWithX 3 victim) g5 (S.cast S.alice burstId)
-        spellId = case GameState.stack cast_ of
+        spellId = case TurnRegisters.stack (GameState.turn cast_) of
           oid : _ -> oid
           [] -> burstId
         arm oid src gs =
@@ -2700,7 +2746,7 @@ lavaBurstSpec s registry = Spec.describe s "Lava Burst (CR 615.12, CR 614.9)" $ 
     -- The proxies, after the behaviour: two rows exist, and alice was asked for
     -- each and answered the two different sources.
     Spec.assertEqWith s "setup: both redirection rows watch what alice chose" (redirectSources armed) [Just decoy, Just spellId]
-    Spec.assertEqWith s "setup: Lava Burst resolved out of hand" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "setup: Lava Burst resolved out of hand" (length (TurnRegisters.stack (GameState.turn resolved))) 0
 
 -- CR 122.1h: a finality counter's replacement effect, gameplay-level.
 --
@@ -2807,7 +2853,15 @@ aimingAt victim p = case p of
 -- in play and the Cultist sacrifices itself, both through `identityAnswer`.
 shieldWith :: ObjectId.ObjectId -> ObjectId.ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> GameState.GameState -> GameState.GameState
 shieldWith cultistId victim ability gs =
-  S.runPure (aimingAt victim) gs {GameState.priority = Just S.alice} (Activate.activateAbility S.alice cultistId ability Monad.>> Stack.resolveTop)
+  S.runPure
+    (aimingAt victim)
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.priority = Just S.alice
+            }
+      }
+    (Activate.activateAbility S.alice cultistId ability Monad.>> Stack.resolveTop)
 
 -- CR 614.1a's "instead" with an ACTION rather than an amount or a destination:
 -- Kill-Suit Cultist's "{B}, Sacrifice this creature: The next time damage would
@@ -2845,7 +2899,17 @@ cryogenicStasisSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry 
 cryogenicStasisSpec s registry = Spec.describe s "Cryogenic Stasis (CR 122.1d)" $ do
   -- alice is the active player, so CR 502.3's turn-based action is asked about
   -- the permanents she controls.
-  let untapStep gs = S.runPure S.identityAnswer (gs {GameState.activePlayer = S.alice}) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
+  let untapStep gs =
+        S.runPure
+          S.identityAnswer
+          ( gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.activePlayer = S.alice
+                    }
+              }
+          )
+          (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
   Spec.it s "CR 122.1d a stun counter replaces the untap step's untap and is spent doing it" $ do
     island <- S.printingOf s registry "Island"
     pikerPrinting <- S.printingOf s registry "Goblin Piker"

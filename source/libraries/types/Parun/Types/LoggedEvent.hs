@@ -9,7 +9,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 --
 -- A record rather than a pair, because the log is scanned by two watermarks at
 -- different cadences and every reader has to say which half it means.
--- Parun.Types.GameState.events is the log itself, and carries why it stays flat.
+-- Parun.Types.TurnRegisters.events is the log itself, and carries why it stays flat.
 data LoggedEvent = MkLoggedEvent
   { group :: EventGroup.EventGroup,
     event :: GameEvent.GameEvent

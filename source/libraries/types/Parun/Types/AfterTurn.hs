@@ -7,7 +7,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- it names, and the turn the duration began on.
 
 -- Both are SAMPLED at arming time (Parun.Engine.Expiry.arm) and never rewritten
--- afterwards. `turn` is GameState.turnNumber as the effect was stored, and the
+-- afterwards. `turn` is TurnRegisters.turnNumber as the effect was stored, and the
 -- effect ends at the end of the first turn of `player` numbered ABOVE it --
 -- which is what makes the reading correct when the duration begins during that
 -- player's OWN turn, the one case that separates "until the end of your next

@@ -95,6 +95,7 @@ import Parun.Types.Timestamp (Timestamp)
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Zone as Zone
 
@@ -479,13 +480,13 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.attacking = Game.isAttacking oid gs,
       -- CR 506.5 / 506.6: the same map, holding this attacker and no other, or
       -- no other attacking the player this one attacks.
-      Filter.attackingAlone = attackingAloneAmong oid (Combat.attackers (GameState.combat gs)),
+      Filter.attackingAlone = attackingAloneAmong oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs))),
       -- CR 508.1b: the same map's VALUE, kept only when it names a player. A
       -- creature attacking a planeswalker or a battle answers Nothing here and
       -- True above, which is CR 509.1a's and CR 802.4a's own three-way split --
       -- deliberately NOT Parun.Engine.Defender.playerOfAttacker, which answers CR
       -- 508.5 and would fold all three into one player.
-      Filter.attackingPlayer = case Map.lookup oid (Combat.attackers (GameState.combat gs)) of
+      Filter.attackingPlayer = case Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs))) of
         Just (AttackTarget.OfPlayer pid) -> Just pid
         _ -> Nothing,
       -- CR 508.1b: the SAME map's value, kept only when it names a planeswalker,
@@ -549,14 +550,14 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- makes it safe here: `viewUpTo` already calls it for the candidate's own
       -- controller from INSIDE the CR 613 layer fold, so asking it for one more
       -- object re-enters nothing that `peers` guards against.
-      Filter.attackingPlaneswalkerController = case Map.lookup oid (Combat.attackers (GameState.combat gs)) of
+      Filter.attackingPlaneswalkerController = case Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs))) of
         Just (AttackTarget.OfPlaneswalker pw)
-          | Set.notMember oid (Combat.attackingNothing (GameState.combat gs)),
+          | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member pw (GameState.battlefield gs),
             Maybe.maybe
               (List.any (\defending -> controllerOf pw gs == Just defending) (Defender.defendingPlayers gs))
               (\seat -> controllerOf pw gs == Just seat)
-              (Map.lookup oid (Combat.attackedUnder (GameState.combat gs))),
+              (Map.lookup oid (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs)))),
             any (Set.member CardType.Planeswalker . Filter.cardTypes) (peers pw) ->
               controllerOf pw gs
         -- CR 506.4e: a battle announcement whose permanent stopped being a
@@ -565,7 +566,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
         -- regression fence: mutating it away leaves the suite green, as no test
         -- puts Soul Snare on that board.
         Just target@(AttackTarget.OfBattle pw)
-          | Set.notMember oid (Combat.attackingNothing (GameState.combat gs)),
+          | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member pw (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
             attackedProtectorHeld oid pw gs,
@@ -619,9 +620,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- Combat.attackingNothing leads here as it does above, and for the same
       -- reason: it is the only conjunct that remembers a removal rather
       -- than re-deriving it.
-      Filter.attackingBattleProtector = case Map.lookup oid (Combat.attackers (GameState.combat gs)) of
+      Filter.attackingBattleProtector = case Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs))) of
         Just target@(AttackTarget.OfBattle battle)
-          | Set.notMember oid (Combat.attackingNothing (GameState.combat gs)),
+          | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
             attackedProtectorHeld oid battle gs,
@@ -632,7 +633,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
         -- being attacked. Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat
         -- is the board.
         Just target@(AttackTarget.OfPlaneswalker battle)
-          | Set.notMember oid (Combat.attackingNothing (GameState.combat gs)),
+          | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
             List.any (\defending -> Battle.protectorOf battle gs == Just defending) (Defender.defendingPlayers gs),
@@ -650,15 +651,15 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- put onto the battlefield attacking afterwards). An effect saying it
       -- becomes unblocked deletes the key (Combat.removeUnblocking).
       Filter.blockStatus =
-        let c = GameState.combat gs
+        let c = TurnRegisters.combat (GameState.turn gs)
          in if Map.member oid (Combat.blockers c)
               then Just BlockStatus.Blocked
               else
                 if Map.member oid (Combat.attackers c) && Combat.blockersDeclared c
                   then Just BlockStatus.Unblocked
                   else Nothing,
-      Filter.blockers = Map.findWithDefault Set.empty oid (Combat.blockers (GameState.combat gs)),
-      Filter.blocked = Map.keysSet (Map.filter (Set.member oid) (Combat.blockers (GameState.combat gs))),
+      Filter.blockers = Map.findWithDefault Set.empty oid (Combat.blockers (TurnRegisters.combat (GameState.turn gs))),
+      Filter.blocked = Map.keysSet (Map.filter (Set.member oid) (Combat.blockers (TurnRegisters.combat (GameState.turn gs)))),
       -- CR 608.2i: what this object did this turn and this combat, off the
       -- turn's log and the combat record. Each reader is shared with
       -- Count.lastKnownView, which asks it of an id that has ceased.
@@ -910,7 +911,7 @@ attackingAloneAmong oid attackers = case Map.lookup oid attackers of
 -- where nothing was recorded, as there.
 attackedControllerHeld :: ObjectId -> AttackTarget.AttackTarget -> GameState -> Bool
 attackedControllerHeld attacker target gs =
-  let c = GameState.combat gs
+  let c = TurnRegisters.combat (GameState.turn gs)
       held record attacked = maybe True (\seat -> controllerOf attacked gs == Just seat) (Map.lookup attacker (record c))
    in case target of
         AttackTarget.OfPlayer _ -> True
@@ -929,7 +930,7 @@ attackedProtectorHeld attacker battle gs =
   maybe
     (List.any (\defending -> Battle.protectorOf battle gs == Just defending) (Defender.defendingPlayers gs))
     (\seat -> Battle.protectorOf battle gs == Just seat)
-    (Map.lookup attacker (Combat.attackedUnder (GameState.combat gs)))
+    (Map.lookup attacker (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs))))
 
 -- CR 122.1: the counters on an object right now, and none for an id naming nothing.
 countersOf :: ObjectId -> GameState -> Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural

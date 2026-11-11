@@ -22,7 +22,7 @@ data PlayerView = MkPlayerView
     priority :: Maybe PlayerId.PlayerId,
     seats :: [SeatView.SeatView],
     battlefield :: [ObjectView.ObjectView],
-    -- | Top first, as GameState.stack.
+    -- | Top first, as TurnRegisters.stack.
     stack :: [ObjectView.ObjectView],
     -- | CR 807.5: each parked Grand Melee turn's stack, top first, by its
     -- marker's number (GameState.parkedTurns).

@@ -14,7 +14,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 --
 -- The attacker is CR 508.1's declaring player, the same id
 -- GameEvent.AttackersDeclared carries for the same declaration -- read off the
--- event rather than off GameState.activePlayer for that event's reason: under
+-- event rather than off TurnRegisters.activePlayer for that event's reason: under
 -- the shared team turns option each player on the active team is an attacking
 -- player (CR 805.10a), and the rule asks who declared.
 data BecameAttacked = MkBecameAttacked

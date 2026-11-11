@@ -72,6 +72,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The face this permanent is showing, by name (CR 709.4a). What "transformed"
@@ -119,10 +120,13 @@ tovolarBoard tovolar wolf wolves =
 upkeep :: GameState.GameState -> GameState.GameState
 upkeep gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Beginning BeginningStep.Upkeep,
-      GameState.priority = Just S.alice,
-      GameState.remaining = Seq.drop 1 (GameState.remaining gs)
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+            TurnRegisters.priority = Just S.alice,
+            TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn gs))
+          }
     }
 
 -- How many spells the previous turn's active player cast during that turn, set
@@ -245,7 +249,7 @@ entrySpec s registry = Spec.describe s "EntersTransformed" $ do
     Spec.assertEqWith s "it is night when the spell resolves" (GameState.daytime board) (Just Daytime.Night)
     Spec.assertEqWith s "neither face is on the battlefield" (conjurerFaces entered) []
     Spec.assertEqWith s "the card is in alice's graveyard" (cardsIn Zone.Graveyard conjurer entered) 1
-    Spec.assertEqWith s "and the stack is empty" (GameState.stack entered) []
+    Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn entered)) []
   -- The control: by day the same card enters front face up, so the case above
   -- turns on the back face and not on the card failing to resolve.
   Spec.it s "CR 712.10 by day that spell enters front face up" $ do
@@ -269,7 +273,7 @@ entrySpec s registry = Spec.describe s "EntersTransformed" $ do
         (majorId, withMajor) = S.addHandCard doubleMajor S.alice withConjurer
         board = untapStep (afterCasting 0 (settle withMajor))
         cast1 = S.runPure S.castAnswer board (S.cast S.alice spellId)
-    case Maybe.listToMaybe (GameState.stack cast1) of
+    case Maybe.listToMaybe (TurnRegisters.stack (GameState.turn cast1)) of
       Nothing -> Spec.assertFailure s "the spell never reached the stack"
       Just conjurerSpell -> do
         let cast2 = S.runPure (pinTarget (Recipient.ToObject conjurerSpell)) cast1 (S.cast S.alice majorId)
@@ -277,7 +281,7 @@ entrySpec s registry = Spec.describe s "EntersTransformed" $ do
         Spec.assertEqWith s "it is night when the spells resolve" (GameState.daytime board) (Just Daytime.Night)
         Spec.assertEqWith s "neither the copy nor the original is on the battlefield" (conjurerFaces after) []
         Spec.assertEqWith s "the card is in alice's graveyard" (cardsIn Zone.Graveyard conjurer after) 1
-        Spec.assertEqWith s "and the stack is empty" (GameState.stack after) []
+        Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
   -- Off the stack road CR 701.27j is silent and CR 304.4 answers: Exhume puts
   -- the card onto the battlefield at night, daybound makes it an instant as it
   -- enters, and an instant that would enter remains in its previous zone.
@@ -294,7 +298,7 @@ entrySpec s registry = Spec.describe s "EntersTransformed" $ do
     Spec.assertEqWith s "it is night when Exhume resolves" (GameState.daytime board) (Just Daytime.Night)
     Spec.assertEqWith s "neither face is on the battlefield" (conjurerFaces after) []
     Spec.assertEqWith s "the same object is still in alice's graveyard (CR 400.7)" (fmap Object.zone (Game.lookupObject buriedId after)) (Just Zone.Graveyard)
-    Spec.assertEqWith s "and Exhume resolved" (GameState.stack after) []
+    Spec.assertEqWith s "and Exhume resolved" (TurnRegisters.stack (GameState.turn after)) []
 
 conjurerFront :: CardName.CardName
 conjurerFront = CardName.MkCardName (Text.pack "Synthetic Dusklit Conjurer")
@@ -464,7 +468,7 @@ anyNumberBoard tovolar ranger wolf =
 afterOneCast :: GameState.GameState -> GameState.GameState
 afterOneCast gs =
   let cast = GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice S.noSource S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty)
-   in gs {GameState.eventsLastTurn = GameState.events (S.withEvents [cast] gs)}
+   in gs {GameState.eventsLastTurn = TurnRegisters.events (GameState.turn (S.withEvents [cast] gs))}
 
 -- Names every permanent offered. Pinned rather than left to S.identityAnswer,
 -- whose fallback happens to answer the same way: the assertion is about what the
@@ -550,4 +554,4 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
         handed = Engine.beginTurnOf S.bob cast
     Spec.assertEqWith s "nothing was on the books before the turn ended" (GameState.spellsCastLastTurn gs) 0
     Spec.assertEqWith s "one spell rode across the handoff" (GameState.spellsCastLastTurn handed) 1
-    Spec.assertEqWith s "and the log it was folded from is gone" (Seq.null (GameState.events handed)) True
+    Spec.assertEqWith s "and the log it was folded from is gone" (Seq.null (TurnRegisters.events (GameState.turn handed))) True

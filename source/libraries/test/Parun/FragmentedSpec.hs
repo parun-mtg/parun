@@ -81,6 +81,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
 
@@ -316,10 +317,13 @@ loopBoard tapper rouser reader otherTapped =
 inMain :: GameState.GameState -> GameState.GameState
 inMain gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.remaining = Seq.empty,
-      GameState.activePlayer = S.alice,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.remaining = Seq.empty,
+            TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- Run one priority loop on the board and answer whether the tapper's
@@ -480,7 +484,7 @@ paying :: ObjectId.ObjectId -> Maybe ObjectId.ObjectId -> Asked.Asked GameState.
 paying freedId islandId asked = case Asked.prompt asked of
   Prompt.ChooseAction _ pid actions | pid == S.alice -> do
     (script, source, attempted, made) <- State.get
-    let stacked = not (null (GameState.stack (Asked.game asked)))
+    let stacked = not (null (TurnRegisters.stack (GameState.turn (Asked.game asked))))
         recorded = if attempted then made <> [((Maybe.isJust source && source == islandId, stacked), undoneFor (Asked.game asked))] else made
     case (script, untapping freedId actions) of
       (next : rest, Just action) | not stacked -> do
@@ -518,7 +522,7 @@ tappingFor birdsId freedId asked = case Asked.prompt asked of
   Prompt.ChooseAction _ pid actions | pid == S.alice -> do
     (script, colour, tapped, made) <- State.get
     let g = Asked.game asked
-        stacked = not (null (GameState.stack g))
+        stacked = not (null (TurnRegisters.stack (GameState.turn g)))
         pooled = not (null (Mana.Type.unwrap (Game.poolOf S.alice g)))
         tap = List.find (== Action.ActivateManaAbility birdsId) actions
         recorded = if tapped then made <> [(pooled, undoneFor g)] else made
@@ -578,7 +582,7 @@ aiming :: ObjectId.ObjectId -> ObjectId.ObjectId -> ObjectId.ObjectId -> Asked.A
 aiming alices bobs other asked = case Asked.prompt asked of
   Prompt.ChooseAction _ pid actions -> do
     (script, aim, attempted, alicesLap, made) <- State.get
-    let stacked = not (null (GameState.stack (Asked.game asked)))
+    let stacked = not (null (TurnRegisters.stack (GameState.turn (Asked.game asked))))
         activation oid = List.find (activates oid) actions
         open remaining recorded = case (remaining, activation alices) of
           (next : rest, Just action) -> do
@@ -634,7 +638,7 @@ spearing :: ObjectId.ObjectId -> ObjectId.ObjectId -> ObjectId.ObjectId -> Asked
 spearing spearId birdsId rouserId asked = case Asked.prompt asked of
   Prompt.ChooseAction _ pid actions -> do
     (left, attempted, alicesLap, made) <- State.get
-    let stacked = not (null (GameState.stack (Asked.game asked)))
+    let stacked = not (null (TurnRegisters.stack (GameState.turn (Asked.game asked))))
         open recorded = case List.find (losesFrom spearId) actions of
           Just action | left > 0 -> do
             State.put (left - 1, True, alicesLap, recorded)
@@ -706,7 +710,7 @@ lapping :: ObjectId.ObjectId -> ObjectId.ObjectId -> Recipient.Recipient -> Aske
 lapping tapperId rouserId aim asked = case Asked.prompt asked of
   Prompt.ChooseAction _ pid actions -> do
     (left, attempted, alicesLap, made) <- State.get
-    let stacked = not (null (GameState.stack (Asked.game asked)))
+    let stacked = not (null (TurnRegisters.stack (GameState.turn (Asked.game asked))))
         open recorded = case List.find (activates tapperId) actions of
           Just action | left > 0 -> do
             State.put (left - 1, True, alicesLap, recorded)
@@ -778,7 +782,7 @@ blinking :: Asked.Asked GameState.GameState r -> State.State Blinking r
 blinking asked = case Asked.prompt asked of
   Prompt.ChooseAction _ pid actions | pid == S.alice -> do
     (left, attempted, made) <- State.get
-    let stacked = not (null (GameState.stack (Asked.game asked)))
+    let stacked = not (null (TurnRegisters.stack (GameState.turn (Asked.game asked))))
         cast = List.find casts actions
         bounce = List.find bounces actions
         recorded = if attempted then made <> [(stacked, undoneFor (Asked.game asked))] else made

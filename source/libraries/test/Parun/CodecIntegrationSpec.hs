@@ -19,6 +19,7 @@ import qualified Parun.Codec.GameState as GameState.Codec
 import qualified Parun.Codec.PlayerControl as PlayerControl.Codec
 import qualified Parun.Codec.PlayerId as PlayerId.Codec
 import qualified Parun.Codec.Printing as Printing.Codec
+import qualified Parun.Codec.TurnRegisters as TurnRegisters.Codec
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -76,6 +77,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -353,7 +355,7 @@ gameStateRoundTripSpec s registry corpus = do
                 }
          in roundTrips "a spent per-game rider" gs {GameState.triggeredThisGame = Seq.singleton spent}
 
-  -- GameState.instructionsTakenThisTurn: CR 603.2h's spent "Do this only once
+  -- TurnRegisters.instructionsTakenThisTurn: CR 603.2h's spent "Do this only once
   -- each turn", carrying a record for the reason the case above does.
   Spec.it s "a taken once-each-turn instruction round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -368,7 +370,14 @@ gameStateRoundTripSpec s registry corpus = do
                   AbilityTriggered.controller = S.alice,
                   AbilityTriggered.ability = ability
                 }
-         in roundTrips "a taken instruction" gs {GameState.instructionsTakenThisTurn = Seq.singleton taken}
+         in roundTrips
+              "a taken instruction"
+              gs
+                { GameState.turn =
+                    (GameState.turn gs)
+                      { TurnRegisters.instructionsTakenThisTurn = Seq.singleton taken
+                      }
+                }
 
   -- GameState.castsBeforeThisTurn, CR 601.2i's casts of earlier turns, the
   -- other record the handoff keeps. Built through a real cast and handoff, so
@@ -427,11 +436,18 @@ gameStateRoundTripSpec s registry corpus = do
     let board = S.oneMountainState mountain Phase.PrecombatMain
     roundTrips "a held board" board {GameState.heldBoards = [board]}
 
-  -- GameState.permanentsAsTurnBegan, CR 500.12's record.
+  -- TurnRegisters.permanentsAsTurnBegan, CR 500.12's record.
   Spec.it s "the permanents as the turn began round trip" $ do
     mountain <- S.printingOf s registry "Mountain"
     let board = S.oneMountainState mountain Phase.PrecombatMain
-    roundTrips "the permanents as the turn began" board {GameState.permanentsAsTurnBegan = Just (Map.mapMaybeWithKey (\oid _ -> Event.lastKnownRecord board oid) (GameState.objects board))}
+    roundTrips
+      "the permanents as the turn began"
+      board
+        { GameState.turn =
+            (GameState.turn board)
+              { TurnRegisters.permanentsAsTurnBegan = Just (Map.mapMaybeWithKey (\oid _ -> Event.lastKnownRecord board oid) (GameState.objects board))
+              }
+        }
 
   Spec.it s "a non-empty stack round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -490,6 +506,11 @@ gameStateRoundTripSpec s registry corpus = do
       "a plain board writes only the required keys and the ones it moved"
       (fmap (fmap (Text.unpack . String.unwrap . Pair.name)) (Common.asObject (Codec.encode c plain)))
       (Right plainBoardKeys)
+    Spec.assertEqWith
+      s
+      "and its turn writes only the required keys and the one it moved"
+      (fmap (fmap (Text.unpack . String.unwrap . Pair.name)) (Common.asObject (Codec.encode TurnRegisters.Codec.codec (GameState.turn plain))))
+      (Right plainTurnKeys)
     Spec.assertEqWith
       s
       "monarch is absent while nobody is the monarch"
@@ -609,15 +630,10 @@ plainBoardKeys =
   [ "settings",
     "objects",
     "hand",
+    "turn",
     "players",
-    "combat",
     "nextEventGroup",
     "turnOrder",
-    "activePlayer",
-    "phase",
-    "remaining",
-    "priority",
-    "turnNumber",
     "turnsBegun",
     "nextObjectId",
     "printings",
@@ -625,3 +641,7 @@ plainBoardKeys =
     "nextTimestamp",
     "lastChoice"
   ]
+
+-- The keys of plainBoardKeys' `turn`, its required fields and the one it moved.
+plainTurnKeys :: [String]
+plainTurnKeys = ["activePlayer", "phase", "remaining", "priority", "combat", "turnNumber"]

@@ -109,21 +109,21 @@ perspectiveFree (TurnScope.PlayersTurn ref) = case ref of
 
 -- | CR 805.4a / 805.9: is this player an active player -- the active player, or
 -- under the shared team turns option a member of the active team? In Grand
--- Melee, of the turn GameState's fields hold, an anchor read
+-- Melee, of GameState.turn, an anchor read
 -- (docs/decisions.md, "Which turn a Grand Melee read of the active player
 -- means"); hasTurnRunning is the relation read.
 isActive :: GameState -> PlayerId -> Bool
-isActive gs = sharesTurn gs (GameState.activePlayer gs)
+isActive gs = sharesTurn gs (TurnRegisters.activePlayer (GameState.turn gs))
 
--- | CR 807.4b: every running turn's active player and step, the turn
--- GameState's fields hold first, then each parked Grand Melee turn by marker
+-- | CR 807.4b: every running turn's active player and step,
+-- GameState.turn first, then each parked Grand Melee turn by marker
 -- number; that one turn outside Grand Melee.
 runningTurns :: GameState -> [(PlayerId, Phase)]
 runningTurns gs =
-  [(GameState.activePlayer gs, GameState.phase gs) | null (GameState.turnMarkers gs) || Maybe.isJust (workedMarker gs)]
+  [(TurnRegisters.activePlayer (GameState.turn gs), TurnRegisters.phase (GameState.turn gs)) | null (GameState.turnMarkers gs) || Maybe.isJust (workedMarker gs)]
     <> fmap (\r -> (TurnRegisters.activePlayer r, TurnRegisters.phase r)) (Map.elems (GameState.parkedTurns gs))
 
--- | CR 807.4b: the Grand Melee marker whose turn GameState's fields hold --
+-- | CR 807.4b: the Grand Melee marker whose turn is GameState.turn --
 -- the one under way that is not parked. Nothing outside the variant, and once
 -- that turn has ended and before another is worked.
 workedMarker :: GameState -> Maybe Natural
@@ -176,7 +176,7 @@ thatExtraTurn source controller gs =
 -- does not choose the order its members act in (#4014).
 activePlayers :: GameState -> [PlayerId]
 activePlayers gs =
-  let (before, from) = break (== GameState.activePlayer gs) (GameState.turnOrder gs)
+  let (before, from) = break (== TurnRegisters.activePlayer (GameState.turn gs)) (GameState.turnOrder gs)
    in filter (isActive gs) (from <> before)
 
 -- | CR 102.1 / 805.4a / 802.2: the players holding a role the turn hands out --
@@ -185,7 +185,7 @@ activePlayers gs =
 roleHolders :: TurnRole.TurnRole -> GameState -> [PlayerId]
 roleHolders role gs = case role of
   TurnRole.Active -> activePlayers gs
-  TurnRole.Defending -> let combat = GameState.combat gs in Combat.defenders combat <> Combat.barred combat
+  TurnRole.Defending -> let combat = TurnRegisters.combat (GameState.turn gs) in Combat.defenders combat <> Combat.barred combat
 
 firstPhase :: Phase
 firstPhase = Phase.Beginning BeginningStep.Untap
@@ -232,9 +232,9 @@ grantsPriority phase = case phase of
 -- of what has already happened this turn, not a description of the moment.
 sorcerySpeedWindow :: PlayerId -> GameState -> Bool
 sorcerySpeedWindow pid gs =
-  isMainPhase (GameState.phase gs)
+  isMainPhase (TurnRegisters.phase (GameState.turn gs))
     && isActive gs pid
-    && null (GameState.stack gs)
+    && null (TurnRegisters.stack (GameState.turn gs))
 
 isMainPhase :: Phase -> Bool
 isMainPhase phase = case phase of
@@ -255,7 +255,7 @@ isMainPhase phase = case phase of
 -- begin it; priority is implicit in both for sorcerySpeedWindow's reason.
 declareBlockersWindow :: PlayerId -> GameState -> Bool
 declareBlockersWindow pid gs =
-  GameState.phase gs == Phase.Combat CombatStep.DeclareBlockers
+  TurnRegisters.phase (GameState.turn gs) == Phase.Combat CombatStep.DeclareBlockers
     && isActive gs pid
 
 -- CR 500: the final step of the phase this one belongs to -- the step whose end
@@ -471,7 +471,7 @@ combatAndMainPhase = foldMap expandExtraPhase [ExtraPhase.ExtraCombat, ExtraPhas
 -- told apart.
 attackedThisStep :: PlayerId -> GameState -> Bool
 attackedThisStep pid gs =
-  Set.member (AttackTarget.OfPlayer pid) (Combat.declaredAttackedThisStep (GameState.combat gs))
+  Set.member (AttackTarget.OfPlayer pid) (Combat.declaredAttackedThisStep (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 506.8b: is the game past the point "only during combat after blockers are
 -- declared" names? Shared by CastingRestriction.AfterBlockersDeclared and
@@ -484,7 +484,7 @@ attackedThisStep pid gs =
 -- Engine.endPhase for a phase the game leaves with or without its last step, and
 -- Parun.Engine.Resolve's CR 725.2d arm for one an effect ends part-way through.
 afterBlockersDeclared :: GameState -> Bool
-afterBlockersDeclared = Combat.blockersDeclared . GameState.combat
+afterBlockersDeclared = Combat.blockersDeclared . (TurnRegisters.combat . GameState.turn)
 
 -- CR 506.8c: is the game inside a combat phase and short of `target`? Panic's
 -- "during combat before blockers are declared" (CR 506.8b) and, through CR
@@ -518,11 +518,11 @@ duringCombatBefore target phase = case phase of
 -- "during combat" names the FIRST combat phase, so a later combat's beginning
 -- step is past the point although it precedes the step named. The same question
 -- answers CR 506.8e: a skipped step or phase records no beginning (CR 500.11),
--- but the next one to begin does and is past the point. GameState.events is
+-- but the next one to begin does and is past the point. TurnRegisters.events is
 -- cleared at the turn handoff, so it holds this turn's beginnings and no other.
 beforeStep :: Phase -> GameState -> Bool
-beforeStep target gs = all (< target) (GameState.phase gs : began)
+beforeStep target gs = all (< target) (TurnRegisters.phase (GameState.turn gs) : began)
   where
     began = do
-      GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (GameState.events gs))
+      GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       pure phase

@@ -167,7 +167,7 @@ data ActivationRestriction
     --
     -- PER TURN, so TimesEver above is not it: the two sentences differ only
     -- in the period, and this one resets at every turn handoff. Its memory is
-    -- Parun.Types.GameState.activatedThisTurn rather than an object field for
+    -- Parun.Types.TurnRegisters.activatedThisTurn rather than an object field for
     -- exactly that reason -- Parun.Engine.Engine.beginTurnOf clears it beside the
     -- event log and CR 121.1's draw tally, and a stamp on the object would need a
     -- sweep of every zone to say the same thing.

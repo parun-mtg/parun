@@ -51,6 +51,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- Pays what a resolving spell or ability offers `who`, and declines elsewhere,
@@ -175,9 +176,12 @@ bishopBoard s registry = do
       gs =
         Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan combat S.alice)) $
           g4
-            { GameState.phase = combat,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn g4)
+                  { TurnRegisters.phase = combat,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
   pure (bishopId, pikerId, ratsId, wallId, gs)
 
@@ -520,7 +524,14 @@ blightBoard s registry pid = do
       begun =
         Event.recordEvent
           (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          (g5 {GameState.phase = endStep, GameState.activePlayer = S.alice})
+          ( g5
+              { GameState.turn =
+                  (GameState.turn g5)
+                    { TurnRegisters.phase = endStep,
+                      TurnRegisters.activePlayer = S.alice
+                    }
+              }
+          )
   pure (pikerId, ratsId, wallId, gnarlbarkId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
 
 -- Answers Prompt.ChooseBlight with a named creature, deferring everything else to
@@ -693,7 +704,7 @@ blightSimultaneitySpec s registry =
                     | CountersPlaced.kind change == CounterKind.MinusOneMinusOne -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
-              (Foldable.toList (GameState.events gs))
+              (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
           )
       -- alice's Synthetic Wilting Census and her High Perfect Morcant entering
       -- with its CR 603.6a trigger settled onto the stack, plus ONE Wall of Stone
@@ -722,7 +733,7 @@ blightSimultaneitySpec s registry =
       -- 117.5 scan after it. Resolving the top alone would leave the card undrawn.
       resolveEverything gs =
         let settled = S.runPure S.identityAnswer gs Engine.settleForPriority
-         in if null (GameState.stack settled)
+         in if null (TurnRegisters.stack (GameState.turn settled))
               then settled
               else resolveEverything (S.runPure S.identityAnswer settled Stack.resolveTop)
    in Spec.describe s "BlightSimultaneity" $ do
@@ -809,7 +820,7 @@ perCreatureCountersSpec s registry =
                     | CountersPlaced.kind change == CounterKind.MinusOneMinusOne -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
-              (Foldable.toList (GameState.events gs))
+              (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
           )
       -- alice's Wickersmith's Tools and her High Perfect Morcant entering with its
       -- CR 603.6a trigger settled onto the stack, plus ONE Wall of Stone for each
@@ -831,7 +842,7 @@ perCreatureCountersSpec s registry =
       -- reach the stack at the CR 117.5 scan after it.
       resolveEverything gs =
         let settled = S.runPure S.identityAnswer gs Engine.settleForPriority
-         in if null (GameState.stack settled)
+         in if null (TurnRegisters.stack (GameState.turn settled))
               then settled
               else resolveEverything (S.runPure S.identityAnswer settled Stack.resolveTop)
    in Spec.describe s "PerCreatureCounters" $ do
@@ -874,7 +885,13 @@ perCreatureCountersSpec s registry =
               (dissidentId, g2) = S.addPermanent dissident S.alice g1
               (wallId, g3) = S.addPermanent wall S.alice g2
               (_, g4) = S.addGraveyardCard swamp S.bob g3
-              board = g4 {GameState.priority = Just S.alice}
+              board =
+                g4
+                  { GameState.turn =
+                      (GameState.turn g4)
+                        { TurnRegisters.priority = Just S.alice
+                        }
+                  }
           activated <- case Projection.abilitiesOf dissidentId board of
             _ : exile : _ -> do
               Spec.assertBool s (Activatable.activatable S.alice dissidentId exile board) "the blight 2 ability is activatable"
@@ -936,14 +953,14 @@ sweptCountersSpec s registry =
                     | CountersPlaced.kind change == CounterKind.MinusOneMinusOne -> Just (LoggedEvent.group logged)
                   _ -> Nothing
               )
-              (Foldable.toList (GameState.events gs))
+              (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
           )
       -- Settle and resolve until the stack is empty, blightSimultaneitySpec's
       -- copy: the placements happen as one thing resolves, and the watchers' own
       -- triggers only reach the stack at the CR 117.5 scan after it.
       resolveEverything gs =
         let settled = S.runPure S.identityAnswer gs Engine.settleForPriority
-         in if null (GameState.stack settled)
+         in if null (TurnRegisters.stack (GameState.turn settled))
               then settled
               else resolveEverything (S.runPure S.identityAnswer settled Stack.resolveTop)
    in Spec.describe s "SweptCounters" $ do
@@ -1139,7 +1156,16 @@ dissidentOnBoard swamp dissident piker wall pid =
       (wallId, g3) = S.addPermanent wall pid g2
       (_, g4) = S.addLibraryCard swamp S.alice g3
       (_, g5) = S.addLibraryCard swamp S.alice g4
-   in (dissidentId, pikerId, wallId, g5 {GameState.priority = Just S.alice})
+   in ( dissidentId,
+        pikerId,
+        wallId,
+        g5
+          { GameState.turn =
+              (GameState.turn g5)
+                { TurnRegisters.priority = Just S.alice
+                }
+          }
+      )
 
 -- alice activates the Dissident's FIRST projected ability -- "{T}, Blight 1:
 -- Surveil 1" -- naming `wanted` for the blight, and the stack is left alone. The
@@ -1221,7 +1247,13 @@ supportSpec s registry = Spec.describe s "Support" $ do
         (pikerId, g2) = S.addPermanent piker S.bob g1
         (ratsId, g3) = S.addPermanent rats S.bob g2
         (wallId, g4) = S.addPermanent wall S.bob g3
-        board = g4 {GameState.priority = Just S.alice}
+        board =
+          g4
+            { GameState.turn =
+                (GameState.turn g4)
+                  { TurnRegisters.priority = Just S.alice
+                  }
+            }
         answer :: Prompt.Prompt r -> r
         answer = takingTargets 2 [auxId, pikerId, ratsId]
     case Activatable.abilitiesFor auxId board of

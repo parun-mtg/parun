@@ -44,6 +44,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -247,9 +248,12 @@ ornateBoard s registry names withTayam = do
       fixture = S.fixtureRegistry reference
   pure
     ( withSpell
-        { GameState.activePlayer = S.alice,
-          GameState.phase = Phase.PrecombatMain,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn withSpell)
+              { TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.priority = Just S.alice
+              }
         },
       pikerId,
       fixture

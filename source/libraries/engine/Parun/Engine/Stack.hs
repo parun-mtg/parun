@@ -70,6 +70,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.Zone as Zone
 
@@ -77,7 +78,7 @@ import qualified Parun.Types.Zone as Zone
 -- the control its resolution held (CR 724.2).
 resolveTopWith :: Game Result -> Game ()
 resolveTopWith runSubgame = do
-  top <- State.gets GameState.stack
+  top <- State.gets (TurnRegisters.stack . GameState.turn)
   Foldable.for_ (take 1 top) (State.modify' . beginResolutionControl)
   resolveOneWith runSubgame
   State.modify' endResolutionControl
@@ -144,22 +145,50 @@ outlivesResolution stack =
 resolveOneWith :: Game Result -> Game ()
 resolveOneWith runSubgame = do
   gs <- State.get
-  case GameState.stack gs of
+  case TurnRegisters.stack (GameState.turn gs) of
     [] -> pure ()
     oid : rest -> case Game.lookupObject oid gs of
       -- A stack id that does not resolve is a bug elsewhere; drop it rather
       -- than wedging the loop.
-      Nothing -> State.put gs {GameState.stack = rest}
+      Nothing ->
+        State.put
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.stack = rest
+                  }
+            }
       Just obj -> case Object.source obj of
         Source.OfCard printingId -> resolveCardBacked runSubgame oid rest printingId
         -- A token is never on the stack (created onto the battlefield, never
         -- cast), and neither is a melded permanent: CR 701.42a puts the two cards
         -- onto the battlefield directly rather than announcing anything.
-        Source.OfMeld _ -> State.put gs {GameState.stack = rest}
+        Source.OfMeld _ ->
+          State.put
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.stack = rest
+                    }
+              }
         -- Nor is a merged permanent: CR 731.2 merges an object INTO a permanent
         -- already on the battlefield.
-        Source.OfMerge _ -> State.put gs {GameState.stack = rest}
-        Source.OfToken _ -> State.put gs {GameState.stack = rest}
+        Source.OfMerge _ ->
+          State.put
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.stack = rest
+                    }
+              }
+        Source.OfToken _ ->
+          State.put
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.stack = rest
+                    }
+              }
         Source.OfAbility ActivatedAbilitySource.MkActivatedAbilitySource {ActivatedAbilitySource.source = srcId, ActivatedAbilitySource.ability = ability} -> do
           -- CR 601.3's offer is NOT made here. It belongs to the Search effect
           -- itself (Resolve's Effect.Search arm), so it sees the state the player
@@ -202,7 +231,14 @@ resolveOneWith runSubgame = do
                     afterMadness (TriggeredAbility.condition ability) srcId gs
         -- CR 114.1: an emblem is never on the stack (created into the command
         -- zone, never cast). Drop it, like a token.
-        Source.OfEmblem _ -> State.put gs {GameState.stack = rest}
+        Source.OfEmblem _ ->
+          State.put
+            gs
+              { GameState.turn =
+                  (GameState.turn gs)
+                    { TurnRegisters.stack = rest
+                    }
+              }
         Source.OfSpellCopy printingId -> resolveCardBacked runSubgame oid rest printingId
         -- CR 723.3c calls the cast copy a SPELL in as many words -- "that
         -- permanent loses the prepared designation at the time the spell becomes
@@ -582,7 +618,14 @@ resolveCardBacked runSubgame oid rest printingId = do
                           -- seeded into the new incarnation rather than written
                           -- after the move (see Event.changeZoneAttaching).
                           entersAs (enchantedBy oid gs1) Facing.FaceUp
-    _ -> State.put gs {GameState.stack = rest}
+    _ ->
+      State.put
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.stack = rest
+                }
+          }
 
 -- CR 400.7b: "effects from static abilities that grant an ability to a permanent
 -- spell that functions on the battlefield continue to apply to the permanent

@@ -148,6 +148,7 @@ import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.Teams as Teams
 import Parun.Types.Timestamp (Timestamp)
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.VariableChoice as VariableChoice
 import qualified Parun.Types.Zone as Zone
@@ -569,7 +570,7 @@ storedSource active = RowSource.MkRowSource (Just (ActivePlayerEffect.source act
 -- per-seat map Engine.beginTurnOf folds and this one seat's count are the same
 -- fold.
 castsThisTurn :: PlayerId -> GameState -> Natural
-castsThisTurn pid gs = Map.findWithDefault 0 pid (Game.castsPerPlayer (GameState.events gs))
+castsThisTurn pid gs = Map.findWithDefault 0 pid (Game.castsPerPlayer (TurnRegisters.events (GameState.turn gs)))
 
 -- CR 601.3: a player can begin to cast a spell only if no rule or effect
 -- prohibits it. The prohibit half. Cast.permitsCastWhileSearching is not the
@@ -1921,7 +1922,7 @@ targetQuestions pid gs r =
 -- in a turn the scope admits, is there no activation by `pid` earlier this turn
 -- matching the criteria? Reduced or not, and whether or not the effect asking
 -- existed yet (Tezzeret, Betrayer of Flesh's ruling). Asked of
--- GameState.activationsThisTurn's snapshots rather than the live board
+-- TurnRegisters.activationsThisTurn's snapshots rather than the live board
 -- (Count.pastView), with the criteria Parun.Types.CostModifier carries
 -- (Count.activationMeets); `source` is the asking effect's own permanent, which
 -- Filter.IsSource reads.
@@ -1933,8 +1934,8 @@ firstActivation pid source criterion criteria aimedAt gs scope =
           && matchesSnapshot (ObjectSnapshot.controller (PastActivation.source past)) criterion (PastActivation.source past)
           && Count.activationMeets criteria past
           && maybe True (\f -> any (matchesSnapshot (Just (targetPerspective pid source gs)) f) (PastActivation.targets past)) aimedAt
-   in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (GameState.activePlayer gs) pid
-        && not (any admits (GameState.activationsThisTurn gs))
+   in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
+        && not (any admits (TurnRegisters.activationsThisTurn (GameState.turn gs)))
 
 -- Shadow in the Warp's "the FIRST creature spell you cast each turn",
 -- firstActivation's twin over CR 601.2i's casts: in a turn the scope admits, did
@@ -1950,7 +1951,7 @@ firstCast pid source criterion oid gs scope =
       admits cast =
         SpellWasCast.player cast == pid
           && maybe False (\view -> Filter.matches (contextFor (Just pid) source gs) view criterion) (Count.snapshotView (Projection.viewWithLastKnownAnywhere gs) gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))
-   in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (GameState.activePlayer gs) pid
+   in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
         && not (any admits earlier)
 
 -- CR 118.9 through CR 602.2b: the costs `pid` may pay RATHER THAN the
@@ -2547,7 +2548,7 @@ castPermissionsFrom pid zone oid gs =
    in fmap (Bifunctor.first RowSource.object) (filter allows (Maybe.mapMaybe grantOf (applying pid gs)))
 
 -- CR 601.3: has this permission a use left this turn? Unlimited always; a
--- once-each-turn one only while GameState.castPermissionsUsedThisTurn does not
+-- once-each-turn one only while TurnRegisters.castPermissionsUsedThisTurn does not
 -- already record it under the object that granted it, and a once-each-of-your-
 -- turns one only on `pid`'s own turn as well, its team's under CR 805.4a.
 --
@@ -2559,7 +2560,7 @@ unspentPermission :: PlayerId -> Maybe ObjectId -> CastFromZone.CastFromZone -> 
 unspentPermission pid source grant gs =
   let unspent = case source of
         Nothing -> True
-        Just sid -> Set.notMember grant (Map.findWithDefault Set.empty sid (GameState.castPermissionsUsedThisTurn gs))
+        Just sid -> Set.notMember grant (Map.findWithDefault Set.empty sid (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs)))
    in case CastFromZone.limit grant of
         PermissionLimit.Unlimited -> True
         PermissionLimit.OnceEachTurn -> unspent
@@ -2650,7 +2651,13 @@ permissionSpent option = case option of
 spendCastPermission :: Maybe (ObjectId, CastFromZone.CastFromZone) -> GameState -> GameState
 spendCastPermission spent gs = case spent of
   Nothing -> gs
-  Just (sid, grant) -> gs {GameState.castPermissionsUsedThisTurn = Map.insertWith Set.union sid (Set.singleton grant) (GameState.castPermissionsUsedThisTurn gs)}
+  Just (sid, grant) ->
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.castPermissionsUsedThisTurn = Map.insertWith Set.union sid (Set.singleton grant) (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs))
+            }
+      }
 
 -- CR 305.1 / 601.3: the Play-verb permissions (Parun.Types.PermissionVerb) that
 -- let `pid` play the land `oid` out of `zone` -- castPermissionsFrom's rows

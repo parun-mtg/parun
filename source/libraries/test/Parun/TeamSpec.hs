@@ -96,6 +96,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -118,18 +119,21 @@ spec s registry = Spec.describe s "Teams" $ do
     let (mine, staged) = S.addPermanent piker S.alice (twoTeams S.fourPlayerGame)
         board =
           staged
-            { GameState.activePlayer = S.alice,
-              GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-              GameState.remaining =
-                Seq.fromList
-                  [ Phase.Combat CombatStep.DeclareAttackers,
-                    Phase.Combat CombatStep.DeclareBlockers,
-                    Phase.Combat CombatStep.CombatDamage,
-                    Phase.Combat CombatStep.EndOfCombat,
-                    Phase.PostcombatMain,
-                    Phase.Ending EndingStep.EndStep,
-                    Phase.Ending EndingStep.Cleanup
-                  ]
+            { GameState.turn =
+                (GameState.turn staged)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                    TurnRegisters.remaining =
+                      Seq.fromList
+                        [ Phase.Combat CombatStep.DeclareAttackers,
+                          Phase.Combat CombatStep.DeclareBlockers,
+                          Phase.Combat CombatStep.CombatDamage,
+                          Phase.Combat CombatStep.EndOfCombat,
+                          Phase.PostcombatMain,
+                          Phase.Ending EndingStep.EndStep,
+                          Phase.Ending EndingStep.Cleanup
+                        ]
+                  }
             }
         settled = S.runPure S.identityAnswer board (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat))
     Spec.assertBool
@@ -145,7 +149,7 @@ spec s registry = Spec.describe s "Teams" $ do
     Spec.assertEqWith
       s
       "CR 802.2 the defending players are the other team"
-      (Combat.Type.defenders (GameState.combat settled))
+      (Combat.Type.defenders (TurnRegisters.combat (GameState.turn settled)))
       [S.carol, S.dave]
   -- CR 702.11c through Parun.Engine.PlayerEffect.inScope's PlayerScope.Related Opponent,
   -- which is the reader neither the PlayerRef nor the target-slot case above
@@ -222,14 +226,14 @@ spec s registry = Spec.describe s "Teams" $ do
         seats = S.alice NonEmpty.:| [S.bob, S.carol, S.dave, erin, frank]
         board = S.inTeams [[S.alice, S.bob, S.carol], [S.dave, erin, frank]] (Setup.emptyGame seats)
         (started, drawnFrom) = startWith forest board
-    Spec.assertEqWith s "CR 808.4 erin goes first, turn order to her left" (GameState.activePlayer started, GameState.turnOrder started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
+    Spec.assertEqWith s "CR 808.4 erin goes first, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.turnOrder started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
     Spec.assertEqWith s "the draw was among the center seats" drawnFrom [[S.bob, erin]]
   -- CR 808.4's even case, on a team that wraps the turn order: dave and alice
   -- sit together, alice on dave's left, so alice is left of their midpoint.
   Spec.it s "CR 808.4 an even team's player left of its midpoint goes first" $ do
     forest <- S.printingOf s registry "Forest"
     let (started, drawnFrom) = startWith forest (daveAliceTeams S.fourPlayerGame)
-    Spec.assertEqWith s "CR 808.4 carol goes first, turn order to her left" (GameState.activePlayer started, GameState.turnOrder started) (S.carol, [S.carol, S.dave, S.alice, S.bob])
+    Spec.assertEqWith s "CR 808.4 carol goes first, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.turnOrder started) (S.carol, [S.carol, S.dave, S.alice, S.bob])
     Spec.assertEqWith s "the draw was among alice and carol" drawnFrom [[S.alice, S.carol]]
   -- CR 810 and CR 811 keep CR 103.1's determination. Each board is paired with
   -- the same teams without the variant, which CR 808.4 rotates.
@@ -264,7 +268,7 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
           then []
           else
             let next = fst (TurnSpec.runTurn S.identityAnswer gs)
-             in GameState.activePlayer next : takers (n - 1) next
+             in TurnRegisters.activePlayer (GameState.turn next) : takers (n - 1) next
   -- CR 805.4: the turn passes team to team, so bob's seat is passed over after
   -- alice's turn and dave's after carol's.
   Spec.it s "CR 805.4 each team takes turns rather than each player" $ do
@@ -282,9 +286,12 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
               (held, staged) = S.addHandCard bolt S.bob lands
               board =
                 staged
-                  { GameState.phase = Phase.PrecombatMain,
-                    GameState.activePlayer = S.alice,
-                    GameState.priority = Just S.bob
+                  { GameState.turn =
+                      (GameState.turn staged)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.bob
+                        }
                   }
               cast = S.runPure S.castAnswer board (S.cast S.bob held)
            in GameState.spellsCastLastTurn (Engine.beginTurnOf S.carol cast)
@@ -304,8 +311,14 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
               began =
                 S.withEvents
                   [GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice)]
-                  placed {GameState.phase = endStep, GameState.activePlayer = S.alice}
-           in length (GameState.stack (snd (Engine.runGamePure S.identityAnswer began (Engine.placePendingTriggers []))))
+                  placed
+                    { GameState.turn =
+                        (GameState.turn placed)
+                          { TurnRegisters.phase = endStep,
+                            TurnRegisters.activePlayer = S.alice
+                          }
+                    }
+           in length (TurnRegisters.stack (GameState.turn (snd (Engine.runGamePure S.identityAnswer began (Engine.placePendingTriggers [])))))
     Spec.assertEqWith s "one trigger with the option" (run sharedTurns) 1
     Spec.assertEqWith s "and one without" (run id) 1
   -- CR 702.179d / 805.4: alice and bob are both active players, so one opponent's
@@ -327,9 +340,12 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
                     1
                     S.alice
                     staged
-                      { GameState.phase = Phase.PrecombatMain,
-                        GameState.activePlayer = S.alice,
-                        GameState.priority = Just S.alice
+                      { GameState.turn =
+                          (GameState.turn staged)
+                            { TurnRegisters.phase = Phase.PrecombatMain,
+                              TurnRegisters.activePlayer = S.alice,
+                              TurnRegisters.priority = Just S.alice
+                            }
                       }
               cast = S.runPure atCarol board (S.cast S.alice held)
               after = S.runPure atCarol cast Engine.priorityLoop
@@ -357,9 +373,12 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
               (_, staged) = S.addHandCard bolt S.bob lands
               board =
                 staged
-                  { GameState.phase = Phase.PrecombatMain,
-                    GameState.activePlayer = S.alice,
-                    GameState.priority = Just S.alice
+                  { GameState.turn =
+                      (GameState.turn staged)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.priority = Just S.alice
+                        }
                   }
               ((_, after), (asked, _)) = State.runState (Engine.runGame bobCastsOnce board Engine.priorityLoop) ([], False)
            in (asked, S.lifeOf S.carol after)
@@ -407,7 +426,7 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
               sourceOf oid = case fmap Object.source (Game.lookupObject oid placed) of
                 Just (Source.OfTrigger triggered) -> Just (TriggeredAbilitySource.source triggered)
                 _ -> Nothing
-           in (asked, fmap sourceOf (GameState.stack placed), (first, second, daves, bobs))
+           in (asked, fmap sourceOf (TurnRegisters.stack (GameState.turn placed)), (first, second, daves, bobs))
         (sharedAsked, sharedStack, (a1, a2, d, b)) = run sharedTurns
         (aloneAsked, aloneStack, _) = run id
     Spec.assertEqWith s "CR 805.7 dave's trigger sits between alice's, under bob's" sharedStack (fmap Just [b, a2, d, a1])
@@ -426,8 +445,11 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
           let teamed = option (S.inTeams [[S.dave, S.alice], [S.bob, S.carol]] S.fourPlayerGame)
               board =
                 teamed
-                  { GameState.phase = Phase.PrecombatMain,
-                    GameState.activePlayer = S.alice,
+                  { GameState.turn =
+                      (GameState.turn teamed)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.alice
+                        },
                     GameState.players = Map.adjust (\player -> player {Player.status = Status.Departed Departure.Lost}) S.alice (GameState.players teamed)
                   }
            in State.execState (Engine.runGame asking board Engine.priorityLoop) []
@@ -461,9 +483,12 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
               (mine, staged) = S.addPermanent piker S.alice teamed {GameState.settings = (GameState.settings teamed) {GameSettings.attackOption = Just option}}
               board =
                 staged
-                  { GameState.activePlayer = S.alice,
-                    GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-                    GameState.remaining = Seq.fromList (drop 5 Turn.allPhases)
+                  { GameState.turn =
+                      (GameState.turn staged)
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+                          TurnRegisters.remaining = Seq.fromList (drop 5 Turn.allPhases)
+                        }
                   }
               settled = S.runPure S.identityAnswer board (Engine.runTurnBasedActions (Phase.Combat CombatStep.BeginningOfCombat))
            in fmap (\pid -> Combat.legalAttackDeclarationAs S.alice [(mine, AttackTarget.OfPlayer pid)] settled) [S.bob, S.carol]
@@ -519,7 +544,10 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
               (_, staged) = S.addPermanent piker S.bob (atCombat teamed)
               board =
                 staged
-                  { GameState.priority = Just S.bob,
+                  { GameState.turn =
+                      (GameState.turn staged)
+                        { TurnRegisters.priority = Just S.bob
+                        },
                     GameState.players = Map.adjust (\player -> player {Player.status = Status.Departed Departure.Lost}) S.alice (GameState.players staged)
                   }
               ((_, after), asked) = State.runState (Engine.runGame asking board S.combatGame) []
@@ -542,7 +570,18 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
         (bobs, g2) = S.addPermanent piker S.bob g1
         withLands = List.foldl' (\g _ -> snd (S.addPermanent island S.carol g)) g2 [1 .. (10 :: Int)]
         (brineId, g3) = S.addHandCard brine S.carol withLands
-        board = (S.tapObject bobs (S.tapObject alices g3)) {GameState.phase = Phase.PrecombatMain, GameState.remaining = S.phasesAfter Phase.PrecombatMain, GameState.activePlayer = S.alice, GameState.priority = Just S.alice}
+        board =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.tapObject bobs (S.tapObject alices g3))
+
         down = S.runPure S.identityAnswer board (Cast.castSpell S.manaPerformer S.carol brineId (S.printingName brine) (Facing.faceDown FaceDownReason.Morphed) >> Stack.resolveTop)
         tapped oid gs = fmap Object.tapped (Game.lookupObject oid gs) == Just TapState.Tapped
         -- The rest of the current turn and carol's, then the untap step of
@@ -572,7 +611,16 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
           let (_, withPiker) = S.addPermanent piker S.alice (stockedWith island sharedTurns)
               (slaver, placed) = S.addPermanent mindslaver S.carol withPiker
               lands = List.foldl' (\g _ -> snd (S.addPermanent mountain S.carol g)) placed [1 .. (4 :: Int)]
-              board = lands {GameState.phase = Phase.PrecombatMain, GameState.remaining = S.phasesAfter Phase.PrecombatMain, GameState.activePlayer = S.carol, GameState.priority = Just S.carol}
+              board =
+                lands
+                  { GameState.turn =
+                      (GameState.turn lands)
+                        { TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain,
+                          TurnRegisters.activePlayer = S.carol,
+                          TurnRegisters.priority = Just S.carol
+                        }
+                  }
               armed =
                 if activating
                   then S.runPure (PreventionSpec.aimPlayer S.bob) board (Activate.activateAbility S.carol slaver (ActivateSpec.theAbility mindslaver) >> Stack.resolveTop)
@@ -628,10 +676,13 @@ departNaming named leaving board =
 atCombat :: GameState.GameState -> GameState.GameState
 atCombat gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.Combat CombatStep.BeginningOfCombat,
-      GameState.priority = Just S.alice,
-      GameState.remaining = S.phasesAfter (Phase.Combat CombatStep.BeginningOfCombat)
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
+            TurnRegisters.priority = Just S.alice,
+            TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.BeginningOfCombat)
+          }
     }
 
 -- Setup.newGame over `board`, twenty Forests a seat, answering every

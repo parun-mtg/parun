@@ -60,6 +60,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -366,7 +367,7 @@ apnapDelayedSpec s registry =
               GameEvent.LifeGained _ -> Just (LoggedEvent.group logged)
               _ -> Nothing
           )
-          (Foldable.toList (GameState.events gs))
+          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       -- `first` casts a Cure, then `second` does, then both resolve: the stack
       -- being last-in-first-out, `second` arms first. alice is the active player
       -- either way, and the Peacemaker is already placed with its Moved event
@@ -511,7 +512,7 @@ oneSeatDelayedSpec s registry =
               GameEvent.LifeGained _ -> Just (LoggedEvent.group logged)
               _ -> Nothing
           )
-          (Foldable.toList (GameState.events gs))
+          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       -- alice casts the Cure and then the Toll off three Swamps, with a Centaur
       -- Peacemaker already placed and its Moved event recorded, so the CR 603.6a
       -- scan runs at the next settle. The stack is last-in-first-out (CR 405.2 /
@@ -598,14 +599,14 @@ communalVigilSpec s registry =
               GameEvent.LifeGained _ -> Just (LoggedEvent.group logged)
               _ -> Nothing
           )
-          (Foldable.toList (GameState.events gs))
+          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       -- Settle and resolve until the stack is empty: the Peacemaker's entry
       -- trigger gains the life, and the Vigil's own trigger only reaches the
       -- stack at the CR 117.5 scan after it. Resolving the top alone would leave
       -- the card undrawn.
       resolveEverything gs =
         let settled = S.runPure S.identityAnswer gs Engine.settleForPriority
-         in if null (GameState.stack settled)
+         in if null (TurnRegisters.stack (GameState.turn settled))
               then settled
               else resolveEverything (S.runPure S.identityAnswer settled Stack.resolveTop)
       -- alice's Vigil already on the battlefield and `gainer` entering with its
@@ -708,7 +709,7 @@ lifelinkGainEventsSpec s registry =
   let groupsOf pick gs =
         Maybe.mapMaybe
           (\logged -> if pick (LoggedEvent.event logged) then Just (LoggedEvent.group logged) else Nothing)
-          (Foldable.toList (GameState.events gs))
+          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       gainGroups =
         groupsOf
           ( \event -> case event of
@@ -729,14 +730,14 @@ lifelinkGainEventsSpec s registry =
                     Just (DamageEvent.target ev, DamageEvent.amount ev)
               _ -> Nothing
           )
-          (Foldable.toList (GameState.events gs))
+          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       gainAmounts gs =
         Maybe.mapMaybe
           ( \logged -> case LoggedEvent.event logged of
               GameEvent.LifeGained change -> Just (LifeChange.amount change)
               _ -> Nothing
           )
-          (Foldable.toList (GameState.events gs))
+          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
       -- alice attacks with `mine` into an empty board, the Vigil and the
       -- Pridemate out and six Plains in her library, so the Vigil can draw for
       -- every reading without CR 104.3c deciding a case for it. The Pridemate
@@ -859,7 +860,7 @@ forthEorlingasSpec s registry =
                       GameEvent.DamageDealt ev | DamageEvent.kind ev == DamageKind.Combat -> Just (LoggedEvent.group logged)
                       _ -> Nothing
                   )
-                  (Foldable.toList (GameState.events gs))
+                  (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               )
           )
       -- Run whole steps until `done` holds of the board, bounded so a bug cannot
@@ -883,10 +884,13 @@ forthEorlingasSpec s registry =
             (spellId, withSpell) = S.addHandCard spell S.alice stocked
             gs =
               withSpell
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice,
-                  GameState.remaining = Seq.drop 1 (Seq.dropWhileL (/= Phase.PrecombatMain) (GameState.remaining withSpell))
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice,
+                        TurnRegisters.remaining = Seq.drop 1 (Seq.dropWhileL (/= Phase.PrecombatMain) (TurnRegisters.remaining (GameState.turn withSpell)))
+                      }
                 }
         pure (resolveAll (snd (Engine.runGamePure (choosingX x) gs (S.cast S.alice spellId))))
       -- From a board sitting at some turn's declare attackers step: the Knights
@@ -920,9 +924,9 @@ forthEorlingasSpec s registry =
         -- before the stack resolves.
         Spec.it s "CR 603.2c two Knights connecting in one step are one trigger event, so the entry fires once" $ do
           gs <- armed 2
-          let (placed, after) = connecting (runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . GameState.phase) gs)
+          let (placed, after) = connecting (runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . (TurnRegisters.phase . GameState.turn)) gs)
           Spec.assertEqWith s "alice became the monarch" (GameState.monarch after) (Just S.alice)
-          Spec.assertEqWith s "one trigger on the stack for the batch, not one per Knight" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "one trigger on the stack for the batch, not one per Knight" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "both Knights connected, for four" (S.lifeOf S.bob after) (Just 16)
           Spec.assertEqWith s "CR 510.2: the two damage events were one event group" (length (combatDamageGroups placed)) 1
           Spec.assertEqWith s "and CR 603.7b's stated duration kept the entry armed" (Seq.length (GameState.delayedTriggers after)) 1
@@ -933,7 +937,7 @@ forthEorlingasSpec s registry =
         -- position among the offered attackers.
         Spec.it s "CR 603.2c two Knights connecting with two players in one step are still one trigger event" $ do
           gs <- armedAmong S.threePlayers 2
-          let ready = runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . GameState.phase) gs
+          let ready = runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . (TurnRegisters.phase . GameState.turn)) gs
           case knights ready of
             [first, _] -> do
               let split :: Prompt.Prompt r -> r
@@ -943,7 +947,7 @@ forthEorlingasSpec s registry =
                        in Maybe.fromMaybe (NonEmpty.head options) (List.find (== AttackTarget.OfPlayer who) (NonEmpty.toList options))
                     _ -> S.aggressiveAnswer p
                   (placed, after) = connectingWith split ready
-              Spec.assertEqWith s "one trigger on the stack for the step, not one per damaged player" (length (GameState.stack placed)) 1
+              Spec.assertEqWith s "one trigger on the stack for the step, not one per damaged player" (length (TurnRegisters.stack (GameState.turn placed))) 1
               Spec.assertEqWith s "alice became the monarch" (GameState.monarch after) (Just S.alice)
               Spec.assertEqWith s "CR 508.1b each Knight connected with its own player, for two each" (S.lifeOf S.bob after, S.lifeOf S.carol after) (Just 18, Just 18)
             other -> Spec.assertFailure s ("expected exactly two Knight tokens, got " <> show (length other))
@@ -951,9 +955,9 @@ forthEorlingasSpec s registry =
         -- way, so a fixed count of one passes here and fails above.
         Spec.it s "CR 603.2c a lone Knight connecting is one trigger event as well" $ do
           gs <- armed 1
-          let (placed, after) = connecting (runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . GameState.phase) gs)
+          let (placed, after) = connecting (runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . (TurnRegisters.phase . GameState.turn)) gs)
           Spec.assertEqWith s "alice became the monarch" (GameState.monarch after) (Just S.alice)
-          Spec.assertEqWith s "one trigger on the stack" (length (GameState.stack placed)) 1
+          Spec.assertEqWith s "one trigger on the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "the one Knight connected, for two" (S.lifeOf S.bob after) (Just 18)
         -- The control that separates "once per event GROUP" from a collapse
         -- coarser than the group -- once per scan, the wrong-direction fix the
@@ -970,7 +974,7 @@ forthEorlingasSpec s registry =
           let hit knight = GameEvent.DamageDealt (DamageEvent.MkDamageEvent knight (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Combat)
               staged = S.withEvents (fmap hit (knights gs)) gs
               placed = S.runPure S.identityAnswer staged Engine.settleForPriority
-          Spec.assertEqWith s "one trigger per group, so two" (length (GameState.stack placed)) 2
+          Spec.assertEqWith s "one trigger per group, so two" (length (TurnRegisters.stack (GameState.turn placed))) 2
           Spec.assertEqWith s "two damage events, in two event groups" (length (combatDamageGroups staged)) 2
         -- "This turn", differing from the proving case in exactly one thing:
         -- which turn's combat the Knights attack in. The turn that armed the
@@ -979,12 +983,12 @@ forthEorlingasSpec s registry =
         -- CR 514.2's cleanup having ended the entry's duration.
         Spec.it s "CR 603.7b / 514.2 the same Knights connecting on alice's next turn crown nobody" $ do
           gs <- armed 2
-          let later = runUntil (\g -> S.runPure passive g Engine.runStep) (\g -> GameState.turnNumber g == 3 && GameState.phase g == declareAttackers) gs
+          let later = runUntil (\g -> S.runPure passive g Engine.runStep) (\g -> TurnRegisters.turnNumber (GameState.turn g) == 3 && TurnRegisters.phase (GameState.turn g) == declareAttackers) gs
               (placed, after) = connecting later
           Spec.assertEqWith s "nobody became the monarch" (GameState.monarch after) Nothing
-          Spec.assertEqWith s "nothing triggered off the batch" (length (GameState.stack placed)) 0
+          Spec.assertEqWith s "nothing triggered off the batch" (length (TurnRegisters.stack (GameState.turn placed))) 0
           Spec.assertEqWith s "though both Knights connected, for four" (S.lifeOf S.bob after) (Just 16)
-          Spec.assertEqWith s "it is alice's next turn" (GameState.turnNumber later, GameState.activePlayer later) (3, S.alice)
+          Spec.assertEqWith s "it is alice's next turn" (TurnRegisters.turnNumber (GameState.turn later), TurnRegisters.activePlayer (GameState.turn later)) (3, S.alice)
           Spec.assertEqWith s "the entry is gone, not masked" (Seq.length (GameState.delayedTriggers later)) 0
           Spec.assertEqWith s "bob took no damage before it" (S.lifeOf S.bob later) (Just 20)
 

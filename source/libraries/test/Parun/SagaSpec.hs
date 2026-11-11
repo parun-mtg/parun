@@ -50,6 +50,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -144,7 +145,7 @@ advanceSpec s registry = Spec.describe s "The precombat main phase" $ do
         gs = precombatMainOf S.alice withCounter
         after = S.runPure S.identityAnswer gs Engine.runStep
     Spec.assertEqWith s "the step put the second lore counter on" (S.counterOf CounterKind.Lore oid after) 2
-    Spec.assertEqWith s "and the step really was the precombat main phase" (GameState.phase gs) Phase.PrecombatMain
+    Spec.assertEqWith s "and the step really was the precombat main phase" (TurnRegisters.phase (GameState.turn gs)) Phase.PrecombatMain
   Spec.it s "CR 715.3c and it fires the chapter that counter crossed, not the ones below it" $ do
     benalia <- S.printingOf s registry "History of Benalia"
     let (oid, base) = S.addPermanent benalia S.alice (Setup.emptyGame S.bothPlayers)
@@ -299,16 +300,19 @@ chaptersOnStackFrom oid gs =
   let from sid = case fmap Object.source (Game.lookupObject sid gs) of
         Just (Source.OfTrigger triggered) | TriggeredAbilitySource.source triggered == oid -> Saga.chapterOf (TriggeredAbilitySource.ability triggered)
         _ -> Nothing
-   in Maybe.mapMaybe from (GameState.stack gs)
+   in Maybe.mapMaybe from (TurnRegisters.stack (GameState.turn gs))
 
 -- A board sitting in `pid`'s precombat main phase, which is the moment CR 505.4
 -- names.
 precombatMainOf :: PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 precombatMainOf pid gs =
   gs
-    { GameState.phase = Phase.PrecombatMain,
-      GameState.activePlayer = pid,
-      GameState.priority = Just pid
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.activePlayer = pid,
+            TurnRegisters.priority = Just pid
+          }
     }
 
 -- Two finished Sagas on one settle pass: bob's Summon: Choco/Mog under alice's

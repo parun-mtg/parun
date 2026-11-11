@@ -71,6 +71,7 @@ import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- CR 704.5a (life <= 0), CR 704.5b (drawing from an empty library), CR 704.5c
@@ -806,7 +807,7 @@ checkOnce instead boards = do
       -- same pre-pass state, and the Moved events this pass itself appends carry
       -- no damage. The record is never removed.
       watermark :: Natural
-      watermark = Natural.length (GameState.events gs)
+      watermark = Natural.length (TurnRegisters.events (GameState.turn gs))
       -- CR 704.5j, from the SAME pre-pass state as every classification above.
       -- Deliberately NOT filtered against the buries below: see
       -- chooseLegendVictims for why a member that is dying anyway must stay on
@@ -1138,7 +1139,13 @@ checkOnce instead boards = do
       vanishing = filter isVanishing (Map.keys (GameState.objects departed))
       vanished = List.foldl' (flip Game.deleteObject) departed vanishing
       outcome = Departure.outcomeAfterLeaving leaving departed
-      drained = vanished {GameState.damageScannedThrough = watermark}
+      drained =
+        vanished
+          { GameState.turn =
+              (GameState.turn vanished)
+                { TurnRegisters.damageScannedThrough = watermark
+                }
+          }
       -- CR 704.5q's removal is a REMOVAL (rule 122.3 uses the word), so it goes
       -- through Event.removeCountersPure, CR 122's funnel, and records the same
       -- GameEvent.CountersRemoved every other removal does -- Protean Hydra's

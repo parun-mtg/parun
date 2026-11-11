@@ -6,6 +6,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | CR 733.3: a game state as Parun.Engine.Fragmented.digest leaves it for
 -- comparison, its object ids and timestamps renumbered by rank (CR 400.7).
@@ -23,10 +24,10 @@ data StateDigest = MkStateDigest
     -- | The rank `canonical` gives each object id `unwrap` holds, so a
     -- choice made in this state can be compared under the same renaming.
     objectRanks :: Map.Map Natural.Natural Int,
-    -- | The dropped GameState.events, carried uncompared so a recurrence can
+    -- | The dropped TurnRegisters.events, carried uncompared so a recurrence can
     -- ask which of them the loop wrote.
     events :: Seq.Seq LoggedEvent.LoggedEvent,
-    -- | The dropped GameState.activationsThisTurn, carried the same way.
+    -- | The dropped TurnRegisters.activationsThisTurn, carried the same way.
     activations :: Seq.Seq PastActivation.PastActivation
   }
   deriving (Show)
@@ -39,10 +40,10 @@ instance Ord StateDigest where
     compare (cheap (unwrap x)) (cheap (unwrap y)) <> compare (canonical x) (canonical y)
     where
       cheap gs =
-        ( ( GameState.priority gs,
-            GameState.passed gs,
-            length (GameState.stack gs),
-            GameState.phase gs
+        ( ( TurnRegisters.priority (GameState.turn gs),
+            TurnRegisters.passed (GameState.turn gs),
+            length (TurnRegisters.stack (GameState.turn gs)),
+            TurnRegisters.phase (GameState.turn gs)
           ),
           ( Map.size (GameState.objects gs),
             length (GameState.battlefield gs),

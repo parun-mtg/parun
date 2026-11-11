@@ -116,6 +116,7 @@ import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.While as While
 import qualified Parun.Types.Zone as Zone
@@ -523,7 +524,14 @@ chromaticSpec s registry = Spec.describe s "Chromatic Sphere and Chromatic Star"
 -- the printing is the only difference between the two boards.
 chromaticBoard :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
 chromaticBoard artifact forest =
-  let base = (Setup.emptyGame S.bothPlayers) {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+  let base =
+        (Setup.emptyGame S.bothPlayers)
+          { GameState.turn =
+              (GameState.turn (Setup.emptyGame S.bothPlayers))
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
       (artifactId, g1) = S.addPermanent artifact S.alice base
       (_, g2) = S.addPermanent forest S.alice g1
       stocked = foldr (\p gs -> snd (S.addLibraryCard p S.alice gs)) g2 (replicate 3 forest)
@@ -608,7 +616,14 @@ millikinSpec s registry = Spec.describe s "Millikin" $ do
 -- through one of the two.
 millikinBoard :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
 millikinBoard millikin solRing =
-  let base = (Setup.emptyGame S.bothPlayers) {GameState.phase = Phase.PrecombatMain, GameState.remaining = Seq.empty}
+  let base =
+        (Setup.emptyGame S.bothPlayers)
+          { GameState.turn =
+              (GameState.turn (Setup.emptyGame S.bothPlayers))
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.remaining = Seq.empty
+                }
+          }
       (millikinId, g1) = S.addPermanent millikin S.alice base
       (solRingId, g2) = S.addPermanent solRing S.alice g1
       stocked = foldr (\p gs -> snd (S.addLibraryCard p S.alice gs)) g2 (replicate 3 solRing)
@@ -636,7 +651,7 @@ burningTreeSpec s registry = Spec.describe s "Burning-Tree Emissary" $ do
     bte <- S.printingOf s registry "Burning-Tree Emissary"
     let (_, after) = burningTreeResolved bte S.alice
     Spec.assertEqWith s "alice's pool is {R} then {G}, in printed order (CR 608.2c)" (poolUnits after) [plainRed, plainGreen]
-    Spec.assertEqWith s "the stack is empty again" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn after))) 0
 
   -- CR 109.5: "add {R}{G}" says "you", which for a triggered ability is the
   -- controller of the object when it triggered -- not the same seat as the active
@@ -721,7 +736,7 @@ stadiumVendorsSpec s registry =
           Spec.assertEqWith s "and her pool is {R}{R}, one CR 105.4 choice covering both" (poolOf S.alice after) [plainRed, plainRed]
           Spec.assertEqWith s "neither opponent got anything" (poolOf S.bob after, poolOf S.carol after) ([], [])
           Spec.assertEqWith s "every seat still in the game was offered, the chooser included" (List.sort offer) (List.sort [S.alice, S.bob, S.carol])
-          Spec.assertEqWith s "the stack is empty again" (length (GameState.stack after)) 0
+          Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn after))) 0
 
         -- The pair's other leg, differing in EXACTLY one thing: which player
         -- alice names. carol answers the colour prompt, which is what "they
@@ -774,7 +789,7 @@ shizukoSpec s registry = Spec.describe s "Shizuko, Caller of Autumn" $ do
     Spec.assertEqWith s "carol got {G}{G}{G}" (poolOf S.carol after) [retainedGreen, retainedGreen, retainedGreen]
     Spec.assertEqWith s "alice, who controls Shizuko, got nothing" (poolOf S.alice after) []
     Spec.assertEqWith s "and neither did bob" (poolOf S.bob after) []
-    Spec.assertEqWith s "the stack is empty again" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn after))) 0
 
   -- The other half of the pair, differing in ONE thing: whose upkeep it is. Under
   -- CR 603.2b's @Relative AnyPlayer@ scope the same ability fires on the controller's own
@@ -802,7 +817,7 @@ shizukoSpec s registry = Spec.describe s "Shizuko, Caller of Autumn" $ do
 
 -- One Shizuko on the battlefield under ALICE's control, with @upkeep@'s upkeep
 -- beginning (CR 500.1: a step belongs to exactly one turn, so the event names one
--- seat and GameState.activePlayer agrees with it), that trigger placed and
+-- seat and TurnRegisters.activePlayer agrees with it), that trigger placed and
 -- resolved. Three seats, no land and no other mana source anywhere, so the only
 -- mana on the board is what the trigger added.
 shizukoUpkeep :: Printing.Printing -> PlayerId.PlayerId -> GameState.GameState
@@ -811,7 +826,13 @@ shizukoUpkeep shizuko upkeep =
       began =
         S.withEvents
           [GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Beginning BeginningStep.Upkeep) upkeep)]
-          board {GameState.activePlayer = upkeep, GameState.phase = Phase.Beginning BeginningStep.Upkeep}
+          board
+            { GameState.turn =
+                (GameState.turn board)
+                  { TurnRegisters.activePlayer = upkeep,
+                    TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep
+                  }
+            }
       placed = snd (Engine.runGamePure S.identityAnswer began (Engine.placePendingTriggers []))
    in snd (Engine.runGamePure S.identityAnswer placed Stack.resolveTop)
 
@@ -821,9 +842,12 @@ shizukoUpkeep shizuko upkeep =
 carolMain :: GameState.GameState -> GameState.GameState
 carolMain gs =
   gs
-    { GameState.activePlayer = S.carol,
-      GameState.phase = Phase.PrecombatMain,
-      GameState.priority = Just S.carol
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.carol,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just S.carol
+          }
     }
 
 -- The units of one player's pool, poolUnits generalised over the seat -- three
@@ -845,7 +869,13 @@ poolOf pid gs = case Game.poolOf pid gs of
 -- red in the same pool is lost at the first step end.
 avatarRokuSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 avatarRokuSpec s registry =
-  let withPriority gs = gs {GameState.priority = Just S.alice}
+  let withPriority gs =
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.priority = Just S.alice
+                }
+          }
       -- Declares attackers and blockers and PASSES on every action (identityAnswer
       -- answers Prompt.ChooseAction with Pass, and aggressiveAnswer defers to it),
       -- so nothing is spent and each moment's pool is read clean.
@@ -881,7 +911,7 @@ avatarRokuSpec s registry =
                   blockers = withPriority (S.runToStep (Phase.Combat CombatStep.DeclareBlockers) passing staged)
                   after = S.runPure (castingOnly spell) blockers Engine.runStep
               Spec.assertEqWith s "the six retained {R} are there when the step begins" (poolOf S.alice blockers) (replicate 6 retainedRed)
-              Spec.assertEqWith s "the game jumped to the cleanup step" (GameState.phase after) (Phase.Ending EndingStep.Cleanup)
+              Spec.assertEqWith s "the game jumped to the cleanup step" (TurnRegisters.phase (GameState.turn after)) (Phase.Ending EndingStep.Cleanup)
               Spec.assertBool s (not (any (isActivationOf rokuId) (Action.legalActions S.alice (withPriority after)))) "and alice may no longer activate Roku off it"
               Spec.assertEqWith s "the pool says the same thing" (poolOf S.alice after) []
             Nothing -> Spec.assertFailure s "fixture should give alice a Roku and bob a Piker"
@@ -1036,9 +1066,12 @@ tappedAtUpkeep printing =
   let (oid, board) = S.addPermanent printing S.alice (Setup.emptyGame S.bothPlayers)
       upkeep =
         board
-          { GameState.phase = Phase.Beginning BeginningStep.Upkeep,
-            GameState.priority = Just (GameState.activePlayer board),
-            GameState.remaining = Seq.drop 1 (GameState.remaining board)
+          { GameState.turn =
+              (GameState.turn board)
+                { TurnRegisters.phase = Phase.Beginning BeginningStep.Upkeep,
+                  TurnRegisters.priority = Just (TurnRegisters.activePlayer (GameState.turn board)),
+                  TurnRegisters.remaining = Seq.drop 1 (TurnRegisters.remaining (GameState.turn board))
+                }
           }
    in S.runPure S.identityAnswer upkeep (S.tapForMana oid)
 
@@ -1047,9 +1080,12 @@ tappedAtUpkeep printing =
 aliceMain :: GameState.GameState -> GameState.GameState
 aliceMain gs =
   gs
-    { GameState.activePlayer = S.alice,
-      GameState.phase = Phase.PrecombatMain,
-      GameState.priority = Just S.alice
+    { GameState.turn =
+        (GameState.turn gs)
+          { TurnRegisters.activePlayer = S.alice,
+            TurnRegisters.phase = Phase.PrecombatMain,
+            TurnRegisters.priority = Just S.alice
+          }
     }
 
 -- plainOf's colourless twin, differing in EXACTLY one field: what the Spring's
@@ -1300,7 +1336,14 @@ generatorServantSpec s registry = Spec.describe s "Generator Servant" $ do
         (threeId, g4) = S.addPermanent mountain S.alice g3
         (slowId, g5) = S.addHandCard piker S.alice g4
         (hastyId, g6) = S.addHandCard piker S.alice g5
-        board = g6 {GameState.phase = Phase.PrecombatMain, GameState.remaining = S.phasesAfter Phase.PrecombatMain}
+        board =
+          g6
+            { GameState.turn =
+                (GameState.turn g6)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
+                  }
+            }
         resolved gs = S.runPure S.identityAnswer gs Stack.resolveTop
         -- The slow Piker FIRST and off the Mountains alone, so no Servant mana
         -- is floating when it is paid for; the Servant is tapped only inside the
@@ -1336,7 +1379,14 @@ pyromancersGogglesSpec s registry = Spec.describe s "Pyromancer's Goggles" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (gogglesId, g1) = S.addPermanent goggles S.alice (Setup.emptyGame S.bothPlayers)
         (mountainId, g2) = S.addPermanent mountain S.alice g1
-        board = g2 {GameState.phase = Phase.PrecombatMain, GameState.remaining = S.phasesAfter Phase.PrecombatMain}
+        board =
+          g2
+            { GameState.turn =
+                (GameState.turn g2)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
+                  }
+            }
         castOff printing sources =
           let (cardId, inHand) = S.addHandCard printing S.alice board
               cast_ = S.runPure (gogglesAnswer sources) inHand (S.cast S.alice cardId)
@@ -1354,7 +1404,7 @@ pyromancersGogglesSpec s registry = Spec.describe s "Pyromancer's Goggles" $ do
 drained :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
 drained answer =
   let go fuel gs
-        | fuel <= 0 || null (GameState.stack gs) = gs
+        | fuel <= 0 || null (TurnRegisters.stack (GameState.turn gs)) = gs
         | otherwise = go (fuel - 1 :: Int) (S.runPure answer (S.runPure answer gs Stack.resolveTop) (Engine.placePendingTriggers []))
    in go 10
 
@@ -1497,7 +1547,7 @@ quirionSpec s registry = Spec.describe s "Quirion Sentinel" $ do
     spy <- S.printingOf s registry "Merfolk Spy"
     let placed = snd (quirionPlaced quirion spy)
     Spec.assertEqWith s "answering red adds red" (poolUnits (quirionResolved (ManaType.Colored Color.Red) placed)) [plainColor Color.Red]
-    Spec.assertEqWith s "the stack is empty again" (length (GameState.stack (quirionResolved (ManaType.Colored Color.Red) placed))) 0
+    Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn (quirionResolved (ManaType.Colored Color.Red) placed)))) 0
 
   -- Gameplay level: the added mana is ordinary mana, and WHICH colour it is
   -- decides what it pays for. Merfolk Spy costs {U} and the two boards share
@@ -2241,13 +2291,16 @@ inCombat :: ObjectId.ObjectId -> Maybe ObjectId.ObjectId -> GameState.GameState 
 inCombat attacker blocker gs =
   let blocking = maybe Set.empty Set.singleton blocker
    in gs
-        { GameState.combat =
-            Combat.emptyCombat
-              { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.alice),
-                Combat.Type.declaredAttackers = Set.singleton attacker,
-                Combat.Type.blockers = Map.singleton attacker blocking,
-                Combat.Type.declaredBlockers = blocking,
-                Combat.Type.blockersDeclared = True
+        { GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.combat =
+                  Combat.emptyCombat
+                    { Combat.Type.attackers = Map.singleton attacker (AttackTarget.OfPlayer S.alice),
+                      Combat.Type.declaredAttackers = Set.singleton attacker,
+                      Combat.Type.blockers = Map.singleton attacker blocking,
+                      Combat.Type.declaredBlockers = blocking,
+                      Combat.Type.blockersDeclared = True
+                    }
               }
         }
 
@@ -2431,9 +2484,12 @@ peeperBoard s registry = do
   pure
     ( roomId,
       withRoom
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn withRoom)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 

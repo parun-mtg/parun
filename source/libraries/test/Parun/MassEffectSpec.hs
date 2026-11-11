@@ -67,6 +67,7 @@ import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The names of the cards in one player's copy of a zone, in that zone's order.
@@ -325,7 +326,14 @@ portOfKarfellSpec s registry =
             (portId, withPort) = S.addPermanent port S.alice withHero
             withGraves = List.foldl' (\g (printing, pid) -> snd (S.addGraveyardCard printing pid g)) withPort buried
             withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) withGraves stock
-         in (portId, withStock {GameState.priority = Just S.alice})
+         in ( portId,
+              withStock
+                { GameState.turn =
+                    (GameState.turn withStock)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
+            )
       -- The ability that mills and returns, told from the mana ability by the
       -- sacrifice its cost carries -- never by position in the list, which no
       -- rule fixes.
@@ -529,7 +537,14 @@ graspingTentaclesSpec s registry =
             withGraves = List.foldl' (\g (printing, pid) -> snd (S.addGraveyardCard printing pid g)) mana buried
             withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.bob g)) withGraves stock
             (withSpell, spell) = S.handOne tentacles withStock
-         in (spell, withSpell {GameState.priority = Just S.alice})
+         in ( spell,
+              withSpell
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
+            )
       -- Cast and resolve, keeping the RESPONSES beside the board so the same call
       -- answers both "what came back" and "was anybody asked".
       run :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> (GameState.GameState, [Response.Response])
@@ -668,7 +683,14 @@ midnightTillingSpec s registry =
             (_, withTheirs) = S.addGraveyardCard sentry S.bob withDecoy
             withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) withTheirs stock
             (withSpell, spellId) = S.handOne tilling withStock
-         in (spellId, withSpell {GameState.priority = Just S.alice})
+         in ( spellId,
+              withSpell
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
+            )
       named = Just . CardName.MkCardName . Text.pack
       -- The candidates in the order the prompt offers them, which is
       -- Resolve.graveyardCardsOf's ascending ObjectId -- and, the mill having
@@ -768,7 +790,14 @@ communeWithTheGodsSpec s registry =
         let mana = S.landsFor forest S.alice 2 S.threePlayerGame
             withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) mana stock
             (withSpell, spellId) = S.handOne commune withStock
-         in (spellId, withSpell {GameState.priority = Just S.alice})
+         in ( spellId,
+              withSpell
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
+            )
       named = Just . CardName.MkCardName . Text.pack
       -- The candidates in the order the prompt offers them: the group's own mint
       -- order, which for a reveal of the top five is the library's, top first (CR
@@ -872,11 +901,15 @@ fallOfTheThranSpec s registry =
         let (oid, base) = S.addPermanent thran S.alice S.threePlayerGame
             withGraves = List.foldl' (\g (printing, pid) -> snd (S.addGraveyardCard printing pid g)) base buried
          in ( oid,
-              (S.addCounter CounterKind.Lore 1 oid withGraves)
-                { GameState.phase = Phase.PrecombatMain,
-                  GameState.activePlayer = S.alice,
-                  GameState.priority = Just S.alice
-                }
+              Game.overTurn
+                ( \registers ->
+                    registers
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.activePlayer = S.alice,
+                        TurnRegisters.priority = Just S.alice
+                      }
+                )
+                (S.addCounter CounterKind.Lore 1 oid withGraves)
             )
       named = Just . CardName.MkCardName . Text.pack
       nth n offered = Maybe.fromMaybe (NonEmpty.head offered) (Maybe.listToMaybe (drop n (NonEmpty.toList offered)))
@@ -1024,7 +1057,14 @@ ancestralMemoriesSpec s registry =
         let mana = S.landsFor island S.alice 5 S.threePlayerGame
             withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) mana stock
             (withSpell, spellId) = S.handOne memories withStock
-         in (spellId, withSpell {GameState.priority = Just S.alice})
+         in ( spellId,
+              withSpell
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
+            )
       named = Just . CardName.MkCardName . Text.pack
       nth n offered = Maybe.fromMaybe (NonEmpty.head offered) (Maybe.listToMaybe (drop n (NonEmpty.toList offered)))
       -- One index per ask, taken in order, and the SIZE of each offer recorded
@@ -1152,7 +1192,14 @@ openTheWaySpec s registry =
             withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) mana stock
             withDecoy = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.bob g)) withStock decoy
             (withSpell, spellId) = S.handOne openTheWay withDecoy
-         in (spellId, withSpell {GameState.priority = Just S.alice})
+         in ( spellId,
+              withSpell
+                { GameState.turn =
+                    (GameState.turn withSpell)
+                      { TurnRegisters.priority = Just S.alice
+                      }
+                }
+            )
       named = Just . CardName.MkCardName . Text.pack
       -- Announces this X, and rotates whatever batch the bottoming offers.
       answering :: Natural -> Prompt.Prompt r -> r
@@ -1660,7 +1707,7 @@ timetwisterSpec s registry = Spec.describe s "Timetwister" $ do
       -- show two counters rather than one left on the stack.
       settle gs =
         let placed = S.runPure S.identityAnswer gs Engine.settleForPriority
-         in if null (GameState.stack placed) then placed else settle (S.runPure S.identityAnswer placed Stack.resolveTop)
+         in if null (TurnRegisters.stack (GameState.turn placed)) then placed else settle (S.runPure S.identityAnswer placed Stack.resolveTop)
       -- alice: hand 1 (beside the spell), graveyard 1, library 9. bob: hand 2,
       -- graveyard 3, library 8, and the Seeker. carol: hand 0, graveyard 2,
       -- library 10.
@@ -1714,7 +1761,7 @@ timetwisterSpec s registry = Spec.describe s "Timetwister" $ do
       "bob's library reads Forest, Goblin Piker, Forest from the top"
       (namesIn Zone.Library S.bob after)
       (fmap Just [S.printingName forest, S.printingName piker, S.printingName forest])
-    Spec.assertEqWith s "and the stack is empty" (length (GameState.stack after)) 0
+    Spec.assertEqWith s "and the stack is empty" (length (TurnRegisters.stack (GameState.turn after))) 0
 
 -- Winds of Change {R} Sorcery, "Each player shuffles the cards from their hand
 -- into their library, then draws that many cards." Molten Psyche {1}{R}{R}

@@ -25,6 +25,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Seating" $ do
@@ -102,7 +103,7 @@ spec s registry = Spec.describe s "Seating" $ do
     -- Who takes the turn after `gs0`'s, at most forty steps on.
     nextTurn gs0 =
       let go budget gs
-            | budget <= (0 :: Int) || GameState.turnNumber gs /= GameState.turnNumber gs0 = GameState.activePlayer gs
+            | budget <= (0 :: Int) || TurnRegisters.turnNumber (GameState.turn gs) /= TurnRegisters.turnNumber (GameState.turn gs0) = TurnRegisters.activePlayer (GameState.turn gs)
             | otherwise = go (budget - 1) (S.runPure S.identityAnswer gs Engine.runStep)
        in go 40 gs0
     team = TeamId.MkTeamId

@@ -119,6 +119,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The two doors, by the names CR 709.4a gives them, plus the joined name CR
@@ -161,9 +162,12 @@ setUp s registry = do
     ( roomId,
       wallId,
       filled
-        { GameState.phase = Phase.PrecombatMain,
-          GameState.activePlayer = S.alice,
-          GameState.priority = Just S.alice
+        { GameState.turn =
+            (GameState.turn filled)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
         }
     )
 
@@ -187,7 +191,13 @@ beginEndStep :: GameState.GameState -> GameState.GameState
 beginEndStep gs =
   Event.recordEvent
     (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Ending EndingStep.EndStep) S.alice))
-    (gs {GameState.phase = Phase.Ending EndingStep.EndStep})
+    ( gs
+        { GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.phase = Phase.Ending EndingStep.EndStep
+              }
+        }
+    )
 
 -- The Room permanent on the battlefield: the one permanent that is not a land
 -- and not bob's wall. Found by having a card name rather than followed by id,
@@ -784,9 +794,27 @@ spec s registry = Spec.describe s "Room" $ do
   Spec.it s "CR 116.2m the unlock is offered only at sorcery speed" $ do
     (roomId, _, gs) <- setUp s registry
     let after = castDoor furnaceName roomId gs
-        onStack = after {GameState.stack = [roomId]}
-        inCombat = after {GameState.phase = Phase.Combat CombatStep.BeginningOfCombat}
-        bobsTurn = after {GameState.activePlayer = S.bob}
+        onStack =
+          after
+            { GameState.turn =
+                (GameState.turn after)
+                  { TurnRegisters.stack = [roomId]
+                  }
+            }
+        inCombat =
+          after
+            { GameState.turn =
+                (GameState.turn after)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat
+                  }
+            }
+        bobsTurn =
+          after
+            { GameState.turn =
+                (GameState.turn after)
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            }
     Spec.assertBool s (not (null (unlocksOffered after))) "the control: a main phase with an empty stack offers the unlock"
     Spec.assertEqWith s "not with a nonempty stack" (unlocksOffered onStack) []
     Spec.assertEqWith s "not outside a main phase" (unlocksOffered inCombat) []
@@ -1016,9 +1044,12 @@ spec s registry = Spec.describe s "Room" $ do
         (boltId, withBolt) = S.addHandCard bolt S.alice withRoom
         board =
           withBolt
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn withBolt)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         after = castDoor corridorName roomId board
     case namedOnBattlefield corridorName after of
@@ -1141,9 +1172,12 @@ spec s registry = Spec.describe s "Room" $ do
         (corridorId, withCorridor) = S.addHandCard corridor S.alice withRoom
         board =
           withCorridor
-            { GameState.phase = Phase.PrecombatMain,
-              GameState.activePlayer = S.alice,
-              GameState.priority = Just S.alice
+            { GameState.turn =
+                (GameState.turn withCorridor)
+                  { TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.priority = Just S.alice
+                  }
             }
         copiedFurnace = castDoor furnaceName roomId board
         opened = resolveAll (settle (snd (Engine.runGamePure S.identityAnswer copiedFurnace (Room.unlock S.manaPerformer S.alice shapeId furnaceName))))

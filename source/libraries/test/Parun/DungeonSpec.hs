@@ -57,6 +57,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -158,7 +159,7 @@ resolveAll :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameSta
 resolveAll answer =
   let go n gs
         | n <= 0 = gs
-        | null (GameState.stack gs) = gs
+        | null (TurnRegisters.stack (GameState.turn gs)) = gs
         | otherwise = go (n - 1) (S.runPure answer gs (Stack.resolveTop >> Engine.settleForPriority))
    in go (20 :: Int)
 
@@ -327,12 +328,18 @@ spec s registry = Spec.describe s "Parun.Engine.Dungeon" $ do
           Prompt.ChooseScry {} -> ([marker], [])
           _ -> paying p
         activated = S.runPure answering gs (Activate.activateAbility S.alice doorId (ventureAbility door))
-        onBobsTurn = activated {GameState.activePlayer = S.bob}
+        onBobsTurn =
+          activated
+            { GameState.turn =
+                (GameState.turn activated)
+                  { TurnRegisters.activePlayer = S.bob
+                  }
+            }
         resolved = resolveAll answering (S.runPure answering onBobsTurn Engine.settleForPriority)
         libraryOf = Game.zoneMembers Zone.Library S.alice
         -- By name: a card scried is put back as a new object (CR 701.20e).
         bottomName = fmap (\oid -> fmap S.nameOf (Game.cardOf oid resolved)) (take 1 (reverse (libraryOf resolved)))
-    Spec.assertEqWith s "bob is the active player" (GameState.activePlayer resolved) S.bob
+    Spec.assertEqWith s "bob is the active player" (TurnRegisters.activePlayer (GameState.turn resolved)) S.bob
     Spec.assertEqWith s "alice scried her Mountain to the bottom" bottomName [Just (S.printingName mountain)]
 
   -- CR 309.5a: "if there are multiple arrows pointing away from the room the
@@ -439,15 +446,18 @@ spec s registry = Spec.describe s "Parun.Engine.Dungeon" $ do
         -- ran CR 703.4h's turn-based action.
         staged =
           finished
-            { GameState.phase = Phase.Combat CombatStep.DeclareAttackers,
-              GameState.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-              GameState.remaining =
-                Seq.fromList
-                  [ Phase.Combat CombatStep.DeclareBlockers,
-                    Phase.Combat CombatStep.CombatDamage,
-                    Phase.Combat CombatStep.EndOfCombat,
-                    Phase.PostcombatMain
-                  ]
+            { GameState.turn =
+                (GameState.turn finished)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
+                    TurnRegisters.remaining =
+                      Seq.fromList
+                        [ Phase.Combat CombatStep.DeclareBlockers,
+                          Phase.Combat CombatStep.CombatDamage,
+                          Phase.Combat CombatStep.EndOfCombat,
+                          Phase.PostcombatMain
+                        ]
+                  }
             }
         after = S.runCombat (S.attackTo S.bob) staged
     -- The gameplay-level assertion, and FIRST, so no fence below can absorb a

@@ -60,6 +60,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnResume as TurnResume
 import qualified Parun.Types.Zone as Zone
 
@@ -246,16 +247,39 @@ blankGame settings order active =
       GameState.command = mempty,
       GameState.ante = mempty,
       GameState.sideDecks = Map.empty,
-      GameState.stack = [],
-      GameState.stackedIn = Map.empty,
+      GameState.turn =
+        TurnRegisters.MkTurnRegisters
+          { TurnRegisters.stack = [],
+            TurnRegisters.stackedIn = Map.empty,
+            TurnRegisters.combat = Combat.emptyCombat,
+            TurnRegisters.events = Seq.empty,
+            TurnRegisters.scannedThrough = 0,
+            TurnRegisters.damageScannedThrough = 0,
+            TurnRegisters.activePlayer = active,
+            TurnRegisters.phase = Turn.firstPhase,
+            TurnRegisters.remaining = Turn.laterPhases,
+            TurnRegisters.priority = Nothing,
+            TurnRegisters.passed = Set.empty,
+            TurnRegisters.turnNumber = 1,
+            TurnRegisters.permanentsAsTurnBegan = Nothing,
+            TurnRegisters.endTurnSignal = EndTurnSignal.Running,
+            TurnRegisters.drawsThisTurn = mempty,
+            TurnRegisters.couldAttackThisTurn = mempty,
+            TurnRegisters.activatedThisTurn = mempty,
+            TurnRegisters.activationsThisTurn = mempty,
+            TurnRegisters.castPermissionsUsedThisTurn = mempty,
+            TurnRegisters.rollModifiersUsedThisTurn = mempty,
+            TurnRegisters.instructionsTakenThisTurn = mempty,
+            TurnRegisters.turnResume = TurnResume.AtStepStart,
+            TurnRegisters.turnAnchor = Nothing,
+            TurnRegisters.extraTurnUnderWay = Nothing
+          },
       GameState.players = Map.empty,
       -- CR 730.4: nobody is nested inside another game here.
       GameState.outsideObjects = Map.empty,
       GameState.broughtIn = Seq.empty,
       GameState.departedCards = Map.empty,
       GameState.manaPool = Map.empty,
-      GameState.combat = Combat.emptyCombat,
-      GameState.events = Seq.empty,
       GameState.nextEventGroup = EventGroup.first,
       GameState.eventGroupDepth = 0,
       GameState.enteringTogether = Nothing,
@@ -264,14 +288,12 @@ blankGame settings order active =
       GameState.causing = Nothing,
       GameState.lastKnown = Map.empty,
       GameState.stackArchive = Map.empty,
-      GameState.scannedThrough = 0,
       GameState.boardAfterEvent = Map.empty,
       GameState.boardBeforeEvent = Map.empty,
       GameState.battlefieldWhenTriggered = Map.empty,
       GameState.controlSample = Map.empty,
       GameState.boardAtControlSample = Nothing,
       GameState.heldBoards = [],
-      GameState.damageScannedThrough = 0,
       GameState.delayedTriggers = Seq.empty,
       GameState.continuousEffects = [],
       GameState.copyEffects = [],
@@ -299,17 +321,9 @@ blankGame settings order active =
       GameState.attackRequirements = [],
       GameState.ignoredAbilities = [],
       GameState.turnOrder = order,
-      GameState.activePlayer = active,
-      GameState.phase = Turn.firstPhase,
-      GameState.remaining = Turn.laterPhases,
-      GameState.priority = Nothing,
-      GameState.passed = Set.empty,
-      GameState.turnNumber = 1,
       GameState.turnsBegun = Turn.firstTurnBegun settings order active,
-      GameState.permanentsAsTurnBegan = Nothing,
       GameState.result = Nothing,
       GameState.restartSignal = RestartSignal.Playing,
-      GameState.endTurnSignal = EndTurnSignal.Running,
       GameState.nextObjectId = ObjectId.MkObjectId 0,
       GameState.printings = Map.empty,
       GameState.printingIds = Map.empty,
@@ -327,7 +341,6 @@ blankGame settings order active =
       GameState.fellShort = 0,
       GameState.landsPlayed = mempty,
       GameState.cardsPlayed = mempty,
-      GameState.drawsThisTurn = mempty,
       GameState.keptFaceDown = Nothing,
       GameState.announcedTops = Nothing,
       GameState.actionTops = Nothing,
@@ -335,12 +348,6 @@ blankGame settings order active =
       GameState.repeatPicks = Nothing,
       GameState.revealedTops = mempty,
       GameState.departedThisTurn = mempty,
-      GameState.couldAttackThisTurn = mempty,
-      GameState.activatedThisTurn = mempty,
-      GameState.activationsThisTurn = mempty,
-      GameState.castPermissionsUsedThisTurn = mempty,
-      GameState.rollModifiersUsedThisTurn = mempty,
-      GameState.instructionsTakenThisTurn = mempty,
       GameState.triggeredThisGame = mempty,
       GameState.pendingControl = Map.empty,
       GameState.control = Map.empty,
@@ -365,7 +372,6 @@ blankGame settings order active =
       GameState.extraTurns = [],
       GameState.turnMarkers = [],
       GameState.parkedTurns = Map.empty,
-      GameState.turnResume = TurnResume.AtStepStart,
       -- CR 100.6a: parun models no match around this game, so the match it
       -- belongs to has had no subgame yet.
       GameState.subgamesThisMatch = 0,
@@ -373,8 +379,6 @@ blankGame settings order active =
       -- numbers each later one.
       GameState.gamesThisMatch = 1,
       GameState.gameNumber = 1,
-      GameState.turnAnchor = Nothing,
-      GameState.extraTurnUnderWay = Nothing,
       GameState.throwing = Nothing,
       GameState.rethrowRequested = False,
       GameState.undone = Map.empty
@@ -544,7 +548,16 @@ newGame perform matchup = do
   -- still supersedes it below. Ahead of createDeck, whose CR 904.13b shared
   -- total reads the teams.
   Monad.forM_ (Archenemy.sole (NonEmpty.toList matchup)) $ \archenemy ->
-    State.modify' (\g -> (Archenemy.setUp archenemy g) {GameState.turnOrder = rotateTo archenemy (GameState.turnOrder g), GameState.activePlayer = archenemy})
+    State.modify'
+      ( \g ->
+          (Archenemy.setUp archenemy g)
+            { GameState.turnOrder = rotateTo archenemy (GameState.turnOrder g),
+              GameState.turn =
+                (GameState.turn (Archenemy.setUp archenemy g))
+                  { TurnRegisters.activePlayer = archenemy
+                  }
+            }
+      )
   -- CR 806.3 / 807.3, once CR 904.2's teams are known.
   randomSeating
   -- CR 103.3: build and shuffle every library before any opening hand is drawn,
@@ -586,7 +599,7 @@ newGame perform matchup = do
   Mulligan.openingHands perform seated
   -- CR 103.7: in a Planechase game the starting player sets the starting plane,
   -- after every opening hand is kept (CR 901.5).
-  starting <- State.gets GameState.activePlayer
+  starting <- State.gets (TurnRegisters.activePlayer . GameState.turn)
   planechase <- State.gets Planechase.isPlanechase
   Monad.when planechase (Planechase.setStartingPlane starting)
 
@@ -797,8 +810,11 @@ startGameFromCards perform exemptions = do
         -- CR 728.2 / 730.2: every card is rebuilt above, a seated player's ante
         -- card among the library cards, so no other old ante id survives.
         GameState.ante = Map.keysSet strandedAnte,
-        GameState.stack = [],
-        GameState.stackedIn = Map.empty
+        GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.stack = [],
+              TurnRegisters.stackedIn = Map.empty
+            }
       }
   -- CR 728.1 / 103.2e / 315.2: the new game places its conspiracies again,
   -- before decks are shuffled, so CR 702.106a turns each hidden agenda face
@@ -833,7 +849,7 @@ startGameFromCards perform exemptions = do
   Mulligan.openingHands perform seated
   -- CR 103.7, newGame's step: the new game's starting player sets a starting
   -- plane after the opening hands.
-  starting <- State.gets GameState.activePlayer
+  starting <- State.gets (TurnRegisters.activePlayer . GameState.turn)
   planechase <- State.gets Planechase.isPlanechase
   Monad.when planechase (Planechase.setStartingPlane starting)
 
@@ -898,7 +914,7 @@ drawStickerSheets seated = Monad.forM_ seated $ \pid -> do
 -- CR 904.2) are final.
 countFirstTurn :: Game ()
 countFirstTurn =
-  State.modify' (\g -> g {GameState.turnsBegun = Turn.firstTurnBegun (GameState.settings g) (GameState.turnOrder g) (GameState.activePlayer g)})
+  State.modify' (\g -> g {GameState.turnsBegun = Turn.firstTurnBegun (GameState.settings g) (GameState.turnOrder g) (TurnRegisters.activePlayer (GameState.turn g))})
 
 -- CR 103.1c: rotate the turn order to begin with the player whose command zone
 -- holds a card naming them the starting player, superseding CR 103.1's
@@ -916,7 +932,16 @@ claimStartingPlayer = do
   let claims pid = any (maybe False Face.claimsStartingPlayer . (`Game.faceOf` gs)) (Game.zoneMembers Zone.Command pid gs)
   starter <- Game.drawAmong Prompt.RandomFirstPlayer (filter claims (Game.stillPlayingInOrder gs))
   Monad.forM_ starter $ \pid ->
-    State.modify' (\g -> g {GameState.turnOrder = rotateTo pid (GameState.turnOrder g), GameState.activePlayer = pid})
+    State.modify'
+      ( \g ->
+          g
+            { GameState.turnOrder = rotateTo pid (GameState.turnOrder g),
+              GameState.turn =
+                (GameState.turn g)
+                  { TurnRegisters.activePlayer = pid
+                  }
+            }
+      )
 
 -- CR 806.3 / 807.3: a Free-for-All or Grand Melee game, which is any game on
 -- no teams (every other variant has them, CR 808.1, 809.1, 810.1, 811.1),
@@ -946,7 +971,16 @@ randomEmperorFirst = do
   let emperors = GameSettings.emperors (GameState.settings gs)
   drawn <- Game.drawAmong Prompt.RandomFirstPlayer (filter (Emperors.isEmperor emperors) (GameState.turnOrder gs))
   Monad.forM_ drawn $ \starter ->
-    State.modify' (\g -> g {GameState.turnOrder = rotateTo starter (GameState.turnOrder g), GameState.activePlayer = starter})
+    State.modify'
+      ( \g ->
+          g
+            { GameState.turnOrder = rotateTo starter (GameState.turnOrder g),
+              GameState.turn =
+                (GameState.turn g)
+                  { TurnRegisters.activePlayer = starter
+                  }
+            }
+      )
 
 -- CR 808.4: in a Team vs. Team game a randomly chosen team's starting seat goes
 -- first, turn order to the left. Team vs. Team is a game between teams that is
@@ -969,7 +1003,16 @@ randomTeamFirst = do
   Monad.when teamVsTeam $ do
     drawn <- Game.drawAmong Prompt.RandomFirstPlayer (teamStarters (GameSettings.teams settings) order)
     Monad.forM_ drawn $ \starter ->
-      State.modify' (\g -> g {GameState.turnOrder = rotateTo starter (GameState.turnOrder g), GameState.activePlayer = starter})
+      State.modify'
+        ( \g ->
+            g
+              { GameState.turnOrder = rotateTo starter (GameState.turnOrder g),
+                GameState.turn =
+                  (GameState.turn g)
+                    { TurnRegisters.activePlayer = starter
+                    }
+              }
+        )
 
 -- CR 808.4: each team's starting seat, in turn order. A team's seats run left
 -- from its first seat after a non-teammate (Seating.openings), wrapping the turn
@@ -1115,12 +1158,19 @@ restartGame perform exempt starter = do
         -- Serra Avenger's ruling: the restarted game's turns are counted
         -- afresh, which blankGame does.
         first = Maybe.fromMaybe starter (Maybe.listToMaybe order)
-     in (blankGame (GameState.settings gs) order first)
-          { -- CR 728.1 restarts "following the procedures set forth in rule
+     in ( Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.stack = TurnRegisters.stack (GameState.turn gs),
+                    TurnRegisters.stackedIn = TurnRegisters.stackedIn (GameState.turn gs)
+                  }
+            )
+            (blankGame (GameState.settings gs) order first) -- CR 728.1 restarts "following the procedures set forth in rule
             -- 103" for the same players with the same decks, and nothing in
             -- rule 728 turns an option off. CR 728.7 confirms the direction by
             -- naming an option the restarted game is still using.
-            GameState.settings = GameState.settings gs,
+        )
+          { GameState.settings = GameState.settings gs,
             -- CR 728.2: every card, startGameFromCards funnels them into the
             -- new libraries from here.
             GameState.objects = GameState.objects gs,
@@ -1133,8 +1183,6 @@ restartGame perform exempt starter = do
             GameState.command = GameState.command gs,
             GameState.ante = GameState.ante gs,
             GameState.sideDecks = GameState.sideDecks gs,
-            GameState.stack = GameState.stack gs,
-            GameState.stackedIn = GameState.stackedIn gs,
             -- CR 728.1 restarts the game, and a card outside it is still
             -- outside it.
             GameState.outsideObjects = GameState.outsideObjects gs,
@@ -1263,7 +1311,7 @@ subgameStateFrom starter parent =
       -- INSIDE the subgame is a separate concern, handled by funnelBack's
       -- `recovered` pass.
       order = rotateTo starter (Game.stillPlayingInOrder parent)
-      firstPlayer = Maybe.fromMaybe (GameState.activePlayer parent) (Maybe.listToMaybe order)
+      firstPlayer = Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn parent)) (Maybe.listToMaybe order)
       -- CR 730.4: "all objects in the main game and all cards outside the main
       -- game are considered outside the subgame (except those specifically
       -- brought into the subgame)". The exception is `movedObjects` -- CR

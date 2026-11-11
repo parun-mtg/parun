@@ -29,6 +29,7 @@ import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.ShownCards as ShownCards
 import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.Teams as Teams
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility
 import qualified Parun.Types.Voted as Voted
 import qualified Parun.Types.Zone as Zone
@@ -54,8 +55,8 @@ revealedNow oid gs =
       live window = case window of
         RevealWindow.WhileOnStack sid -> Game.zoneOf sid gs == Just Zone.Stack -- CR 701.20a
         RevealWindow.UntilPriority -> True -- CR 701.20a, until Engine.performSettle closes it
-        RevealWindow.UntilFirstTurn -> GameState.turnNumber gs == 1 && not (any begun (GameState.events gs)) -- CR 103.6b
-        RevealWindow.DuringUpkeep turn -> GameState.turnNumber gs == turn && GameState.phase gs == Phase.Beginning BeginningStep.Upkeep -- CR 702.57b
+        RevealWindow.UntilFirstTurn -> TurnRegisters.turnNumber (GameState.turn gs) == 1 && not (any begun (TurnRegisters.events (GameState.turn gs))) -- CR 103.6b
+        RevealWindow.DuringUpkeep turn -> TurnRegisters.turnNumber (GameState.turn gs) == turn && TurnRegisters.phase (GameState.turn gs) == Phase.Beginning BeginningStep.Upkeep -- CR 702.57b
    in visibleIf (any (any live . Object.revealed) (Game.lookupObject oid gs))
 
 -- | Whether a player saw what a logged event showed: everyone sees a reveal

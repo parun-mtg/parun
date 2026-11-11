@@ -92,7 +92,7 @@ crossed before after n = before < n && n <= after
 --
 -- "The turn it entered the battlefield" is read off the EVENT LOG rather than off
 -- a field on the object, the route Parun.Engine.Quantity's EnteredThisTurn arm
--- takes: Parun.Engine.Engine.beginTurnOf clears GameState.events at the turn
+-- takes: Parun.Engine.Engine.beginTurnOf clears TurnRegisters.events at the turn
 -- handoff, so the log's extent IS the current turn (CR 608.2i, and see
 -- Parun.Types.EventShape). CR 400.7's fresh id per zone change is what makes that
 -- exact rather than approximate -- a Saga that flickered is a new object whose
@@ -268,7 +268,7 @@ advancing controllerOf pid pcs gs =
 -- and is not the source of the old one's chapter ability.
 --
 -- The unscanned events arrive as an ARGUMENT rather than being read off
--- GameState.scannedThrough here, because Parun.Engine.Event owns that watermark and
+-- TurnRegisters.scannedThrough here, because Parun.Engine.Event owns that watermark and
 -- this module sits below it in the import graph. Parun.Engine.Sba, which has both,
 -- is what joins them.
 awaitingChapter :: Map ObjectId PC.ProjectedCharacteristics -> [GameEvent] -> GameState -> ObjectId -> Bool

@@ -116,6 +116,7 @@ import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.Zone as Zone
 
@@ -235,11 +236,11 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   -- read off starts the first turn empty, though the hands above are full.
   Spec.it s "CR 103.8 the opening hands are not draws made this turn" $ do
     gs <- setupState s registry
-    Spec.assertEqWith s "no draws counted" (GameState.drawsThisTurn gs) Map.empty
+    Spec.assertEqWith s "no draws counted" (TurnRegisters.drawsThisTurn (GameState.turn gs)) Map.empty
 
   Spec.it s "active player is first in turn order" $ do
     gs <- setupState s registry
-    Spec.assertEqWith s "active" (GameState.activePlayer gs) S.alice
+    Spec.assertEqWith s "active" (TurnRegisters.activePlayer (GameState.turn gs)) S.alice
 
   Spec.it s "runMatchPure derives the players from the matchup (#24)" $ do
     matchup <- S.shortRedRed (S.printingOf s registry)
@@ -271,7 +272,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   Spec.it s "CR 800.5/806.3/103.1 emptyGame seats every player in the order given, starting player first" $ do
     let gs = Setup.emptyGame S.threePlayers
     Spec.assertEqWith s "seating order" (GameState.turnOrder gs) [S.alice, S.bob, S.carol]
-    Spec.assertEqWith s "the starting player is active" (GameState.activePlayer gs) S.alice
+    Spec.assertEqWith s "the starting player is active" (TurnRegisters.activePlayer (GameState.turn gs)) S.alice
     Spec.assertEqWith s "three seats in the players map" (Map.size (GameState.players gs)) 3
 
   Spec.it s "CR 800.1 a three-player game has three players still in it at the start" $
@@ -605,10 +606,17 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
   Spec.it s "CR 100.6a/728.1: a restart keeps the match's subgame tally and still resets the game's own turn count" $ do
     mountain <- S.printingOf s registry "Mountain"
     let g0 = addMany mountain 8 S.bob (addMany mountain 8 S.alice (Setup.emptyGame S.bothPlayers))
-        played = g0 {GameState.subgamesThisMatch = 2, GameState.turnNumber = 5}
+        played =
+          g0
+            { GameState.subgamesThisMatch = 2,
+              GameState.turn =
+                (GameState.turn g0)
+                  { TurnRegisters.turnNumber = 5
+                  }
+            }
         after = snd (Engine.runGamePure S.identityAnswer played (Setup.restartGame S.performer Set.empty S.alice))
     Spec.assertEqWith s "CR 100.6a: the two subgames are still this match's" (GameState.subgamesThisMatch after) 2
-    Spec.assertEqWith s "CR 728.1: while the restarted game is back on turn 1" (GameState.turnNumber after) 1
+    Spec.assertEqWith s "CR 728.1: while the restarted game is back on turn 1" (TurnRegisters.turnNumber (GameState.turn after)) 1
 
   Spec.it s "CR 728.1a: the starting player is the restart's controller, at the head of the turn order" $ do
     -- Two restarts of the same board, controlled by different players: the
@@ -617,9 +625,9 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
     let g0 = addMany mountain 8 S.bob (addMany mountain 8 S.alice (Setup.emptyGame S.bothPlayers))
         byBob = snd (Engine.runGamePure S.identityAnswer g0 (Setup.restartGame S.performer Set.empty S.bob))
         byAlice = snd (Engine.runGamePure S.identityAnswer g0 (Setup.restartGame S.performer Set.empty S.alice))
-    Spec.assertEqWith s "bob restarted: bob is the new active player" (GameState.activePlayer byBob) S.bob
+    Spec.assertEqWith s "bob restarted: bob is the new active player" (TurnRegisters.activePlayer (GameState.turn byBob)) S.bob
     Spec.assertEqWith s "bob restarted: bob heads the turn order" (Maybe.listToMaybe (GameState.turnOrder byBob)) (Just S.bob)
-    Spec.assertEqWith s "alice restarted: alice is the new active player" (GameState.activePlayer byAlice) S.alice
+    Spec.assertEqWith s "alice restarted: alice is the new active player" (TurnRegisters.activePlayer (GameState.turn byAlice)) S.alice
     Spec.assertEqWith s "alice restarted: alice heads the turn order" (Maybe.listToMaybe (GameState.turnOrder byAlice)) (Just S.alice)
 
   Spec.it s "CR 728.2: every owned card returns to its owner (library or hand), regardless of prior zone" $ do
@@ -658,10 +666,10 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
         g1 = S.addPlayerCounter PlayerCounterKind.Poison 3 S.bob g0
         g2 = g1 {GameState.players = Map.adjust (\p -> p {Player.life = 5}) S.bob (GameState.players g1)}
         after = snd (Engine.runGamePure S.identityAnswer g2 (Setup.restartGame S.performer Set.empty S.bob))
-    Spec.assertEqWith s "phase is the first turn's untap step" (GameState.phase after) Turn.firstPhase
-    Spec.assertEqWith s "no player holds priority" (GameState.priority after) Nothing
-    Spec.assertEqWith s "it is turn 1" (GameState.turnNumber after) 1
-    Spec.assertEqWith s "the stack is empty" (GameState.stack after) []
+    Spec.assertEqWith s "phase is the first turn's untap step" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
+    Spec.assertEqWith s "no player holds priority" (TurnRegisters.priority (GameState.turn after)) Nothing
+    Spec.assertEqWith s "it is turn 1" (TurnRegisters.turnNumber (GameState.turn after)) 1
+    Spec.assertEqWith s "the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "alice is back to 20 life" (S.lifeOf S.alice after) (Just 20)
     Spec.assertEqWith s "bob is back to 20 life" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "CR 103.4/728.1: bob's life reset to 20" (S.lifeOf S.bob after) (Just 20)
@@ -717,8 +725,8 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
         after = snd (Engine.runGamePure S.identityAnswer g1 (Setup.restartGame S.performer Set.empty S.alice))
         libSizeOf pid = length (Game.zoneMembers Zone.Library pid after)
     Spec.assertEqWith s "two seats in the rebuilt order, in their seating order" (GameState.turnOrder after) [S.alice, S.carol]
-    Spec.assertEqWith s "alice starts it (CR 728.1a)" (GameState.activePlayer after) S.alice
-    Spec.assertBool s (List.elem (GameState.activePlayer after) (GameState.turnOrder after)) "the active player is one of the rebuilt seats (totality)"
+    Spec.assertEqWith s "alice starts it (CR 728.1a)" (TurnRegisters.activePlayer (GameState.turn after)) S.alice
+    Spec.assertBool s (List.elem (TurnRegisters.activePlayer (GameState.turn after)) (GameState.turnOrder after)) "the active player is one of the rebuilt seats (totality)"
     Spec.assertEqWith s "bob has no library" (libSizeOf S.bob) 0
     Spec.assertEqWith s "bob drew no opening hand" (S.handSize S.bob after) 0
     Spec.assertEqWith s "alice drew hers" (S.handSize S.alice after) 7
@@ -764,9 +772,12 @@ meldedBoard base battlements garrison mountain =
       (_, g2) = S.addPermanent garrison S.alice g1
       board =
         (S.landsFor mountain S.alice 5 g2)
-          { GameState.phase = Phase.PrecombatMain,
-            GameState.activePlayer = S.alice,
-            GameState.priority = Just S.alice
+          { GameState.turn =
+              (GameState.turn (S.landsFor mountain S.alice 5 g2))
+                { TurnRegisters.phase = Phase.PrecombatMain,
+                  TurnRegisters.activePlayer = S.alice,
+                  TurnRegisters.priority = Just S.alice
+                }
           }
    in case Projection.abilitiesOf battlementsId board of
         [_, _, melding] ->
@@ -828,7 +839,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "every subgame object is one of the 2 library cards" (all (`elem` toLib) (Map.keys (GameState.objects sub))) True
     Spec.assertEqWith s "the subgame battlefield is empty (nothing but the library entered)" (Set.null (GameState.battlefield sub)) True
     Spec.assertEqWith s "the subgame nextObjectId is inherited from the parent" (GameState.nextObjectId sub) (GameState.nextObjectId g2)
-    Spec.assertEqWith s "the subgame is a fresh game at turn 1" (GameState.turnNumber sub) 1
+    Spec.assertEqWith s "the subgame is a fresh game at turn 1" (TurnRegisters.turnNumber (GameState.turn sub)) 1
 
   Spec.it s "CR 730.5: funnelBack returns every owned subgame card to its owner's library, ids do not collide" $ do
     -- Parent: alice and bob each own 3 cards on the battlefield plus 2 in their
@@ -987,7 +998,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         sub0 = Setup.subgameStateFrom S.alice parent
         (broughtInId, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice elfId sub0
         after = Setup.applyCrossings crossedSub parent
-        leftEvents = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LeftTheGame.object l); _ -> Nothing) (Foldable.toList (GameState.events after))
+        leftEvents = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
     -- The fixture's own preconditions, so the assertions below cannot pass for
     -- want of a board: the elf really was in the main game, and the subgame
     -- really did take it.
@@ -1091,7 +1102,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "CR 603.6c: and Super Shredder saw no permanent leave" (plusOnes shredderId) 0
     Spec.assertEqWith s "CR 730.4a: Rakshasa Vizier saw no card put into exile" (plusOnes vizierId) 0
     -- The fixture's preconditions.
-    Spec.assertEqWith s "it is alice's turn, which the Skimmer's scope asks" (GameState.activePlayer parent) S.alice
+    Spec.assertEqWith s "it is alice's turn, which the Skimmer's scope asks" (TurnRegisters.activePlayer (GameState.turn parent)) S.alice
     Spec.assertEqWith s "the Thragtusk started in alice's main-game graveyard" (Game.zoneMembers Zone.Graveyard S.alice parent) [tusk]
     Spec.assertEqWith s "and her hand started empty" (S.handSize S.alice parent) 0
     Spec.assertEqWith s "the subgame's wish reached it (CR 730.4)" (Maybe.isJust broughtInId) True
@@ -1113,7 +1124,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         (_, crossed1) = Event.bringInFrom OutsideDestination.Hand S.alice earlyCrosser sub0
         (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice lateCrosser crossed1
         after = Setup.applyCrossings crossedSub parent
-        left = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LoggedEvent.group logged, LeftTheGame.object l); _ -> Nothing) (Foldable.toList (GameState.events after))
+        left = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LoggedEvent.group logged, LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
         -- CR 603.10's "objects that exist immediately after an event", as
         -- Event.recordEvent sampled it for each of the two groups.
         sampledAt eventGroup = Map.keysSet (Map.findWithDefault Map.empty eventGroup (GameState.battlefieldWhenTriggered after))
@@ -1174,7 +1185,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         sub0 = Setup.subgameStateFrom S.alice parent
         (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice outerId sub0
         after = Setup.applyCrossings crossedSub parent
-        leftEvents = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LeftTheGame.object l); _ -> Nothing) (Foldable.toList (GameState.events after))
+        leftEvents = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
     Spec.assertEqWith s "the subgame really did inherit the outer entry (CR 730.6)" (Map.member outerId (GameState.outsideObjects sub0)) True
     Spec.assertEqWith s "CR 730.6: this game hands the crossing to the frame above it" (Foldable.toList (GameState.broughtIn after)) [outerId]
     Spec.assertEqWith s "CR 730.4a: and stops offering the card it can no longer supply" (Map.member outerId (GameState.outsideObjects after)) False
@@ -1257,7 +1268,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     let g0 = S.departs Departure.Type.Conceded S.bob (Setup.emptyGame S.threePlayers)
         sub = Setup.subgameStateFrom S.carol g0
     Spec.assertEqWith s "two seats, rotated to the starter" (GameState.turnOrder sub) [S.carol, S.alice]
-    Spec.assertEqWith s "carol goes first" (GameState.activePlayer sub) S.carol
+    Spec.assertEqWith s "carol goes first" (TurnRegisters.activePlayer (GameState.turn sub)) S.carol
     Spec.assertEqWith s "CR 800.1: a two-seat subgame is not a multiplayer game, so no free mulligan" (Mulligan.freeMulligans sub) 0
 
 -- CR 100.2d's supplementary decks of nontraditional cards across the two
@@ -1274,7 +1285,17 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
     board <- supplementaryBoard s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromSet (const 1) (Set.singleton academy))}) (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromSet (const 1) (Set.singleton tazeem))})
     let started = S.runPure S.identityAnswer board (Planechase.setStartingPlane S.alice)
         (karnId, withKarn) = S.addPermanent karn S.bob started
-        before = (S.addCounter CounterKind.Loyalty 14 karnId withKarn) {GameState.activePlayer = S.bob, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+        before =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.bob
+                  }
+            )
+            (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
+
         after = snd (Engine.runGamePure karnAnswer before Engine.priorityLoop)
     Spec.assertEqWith s "the old game's plane is alice's Academy" (cardNames (Planechase.faceUp before) before) ["Academy at Tolaria West"]
     Spec.assertEqWith s "CR 103.7 the new game's starting plane is bob's Tazeem" (cardNames (Planechase.faceUp after) after) ["Tazeem"]
@@ -1305,7 +1326,17 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
     board <- supplementaryBoardWith communalPlanes s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.singleton academy 1)}) (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.singleton tazeem 1)})
     let started = S.runPure S.identityAnswer board (Planechase.setStartingPlane S.alice)
         (karnId, withKarn) = S.addPermanent karn S.bob started
-        before = (S.addCounter CounterKind.Loyalty 14 karnId withKarn) {GameState.activePlayer = S.bob, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+        before =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.bob
+                  }
+            )
+            (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
+
         after = snd (Engine.runGamePure karnAnswer before Engine.priorityLoop)
     Spec.assertEqWith s "the old game turned up alice's Academy" (cardNames (Planechase.faceUp before) before) ["Academy at Tolaria West"]
     Spec.assertEqWith s "CR 103.7 one plane is face up and the other in the communal deck" (length (Planechase.faceUp after), length (Planechase.deckOf S.bob after)) (1, 1)
@@ -1319,7 +1350,17 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
     board <- supplementaryBoard s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Scheme (Map.fromList [(look, 1), (soil, 1)])}) id
     let set = turnUp "The Very Soil Shall Shake" board
         (karnId, withKarn) = S.addPermanent karn S.bob set
-        before = (S.addCounter CounterKind.Loyalty 14 karnId withKarn) {GameState.activePlayer = S.bob, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.bob}
+        before =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.activePlayer = S.bob,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.bob
+                  }
+            )
+            (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
+
         schemeIds = Set.fromList (Archenemy.faceUp before <> Archenemy.deckOf S.alice before)
         ((_, after), shuffles) = State.runState (Engine.runGame (recordShuffles karnAnswer) before Engine.priorityLoop) []
     Spec.assertEqWith s "the old game had Very Soil face up" (cardNames (Archenemy.faceUp before) before) ["The Very Soil Shall Shake"]
@@ -1397,7 +1438,17 @@ sideboardConspiracySpec s registry = Spec.describe s "conspiracies from the side
     karn <- S.printingOf s registry "Karn Liberated"
     board <- conspiracyBoard s registry
     let (karnId, withKarn) = S.addPermanent karn S.alice board
-        before = (S.addCounter CounterKind.Loyalty 14 karnId withKarn) {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+        before =
+          Game.overTurn
+            ( \registers ->
+                registers
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            )
+            (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
+
         run taking = State.runState (Engine.runGameAsked (conspiring taking karnAnswer) before Engine.priorityLoop) []
         ((_, taken), offers) = run True
         ((_, declined), _) = run False
@@ -1498,7 +1549,15 @@ withShahrazad s registry gs = do
   plains <- S.printingOf s registry "Plains"
   shahrazad <- S.printingOf s registry "Shahrazad"
   let (_, inHand) = S.addHandCard shahrazad S.alice (S.landsFor plains S.alice 2 gs)
-  pure inHand {GameState.activePlayer = S.alice, GameState.phase = Phase.PrecombatMain, GameState.priority = Just S.alice}
+  pure
+    inHand
+      { GameState.turn =
+          (GameState.turn inHand)
+            { TurnRegisters.activePlayer = S.alice,
+              TurnRegisters.phase = Phase.PrecombatMain,
+              TurnRegisters.priority = Just S.alice
+            }
+      }
 
 -- Move alice's scheme of this name from her scheme deck to face up, where CR
 -- 701.32b's set in motion puts it.

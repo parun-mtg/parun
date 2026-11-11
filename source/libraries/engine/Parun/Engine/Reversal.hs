@@ -32,6 +32,7 @@ import Parun.Types.Object (Object)
 import qualified Parun.Types.Object as Object
 import Parun.Types.Player (Player)
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 734.1: `closed` with the announcement undone -- "the entire action is
 -- reversed and any payments already made are canceled", while the mana
@@ -69,15 +70,15 @@ withoutAnnouncement before entry closed = do
   command <- setOf GameState.command
   ante <- setOf GameState.ante
   sideDecks <- mapWith pilesOf (GameState.sideDecks before) (GameState.sideDecks entry) (GameState.sideDecks closed)
-  stack <- listOf GameState.stack
-  stackedIn <- mapOf GameState.stackedIn
+  stack <- listOf (TurnRegisters.stack . GameState.turn)
+  stackedIn <- mapOf (TurnRegisters.stackedIn . GameState.turn)
   players <- mapWith playerWith (GameState.players before) (GameState.players entry) (GameState.players closed)
   outsideObjects <- mapOf GameState.outsideObjects
   broughtIn <- seqOf GameState.broughtIn
   departedCards <- mapOf GameState.departedCards
   manaPool <- pools (GameState.manaPool before) (GameState.manaPool entry) (GameState.manaPool closed)
-  combat <- one GameState.combat
-  events <- Event.restampLifeChanges <$> eventsOf GameState.events
+  combat <- one (TurnRegisters.combat . GameState.turn)
+  events <- Event.restampLifeChanges <$> eventsOf (TurnRegisters.events . GameState.turn)
   nextEventGroup <- newest GameState.nextEventGroup
   eventGroupDepth <- one GameState.eventGroupDepth
   enteringTogether <- one GameState.enteringTogether
@@ -86,7 +87,7 @@ withoutAnnouncement before entry closed = do
   causing <- one GameState.causing
   lastKnown <- mapOf GameState.lastKnown
   stackArchive <- mapOf GameState.stackArchive
-  scannedThrough <- one GameState.scannedThrough
+  scannedThrough <- one (TurnRegisters.scannedThrough . GameState.turn)
   battlefieldWhenTriggered <- mapOfMaps GameState.battlefieldWhenTriggered
   boardAfterEvent <- mapOf GameState.boardAfterEvent
   boardBeforeEvent <- mapOf GameState.boardBeforeEvent
@@ -94,7 +95,7 @@ withoutAnnouncement before entry closed = do
   -- A sample, retaken at every check either side ran.
   boardAtControlSample <- newest GameState.boardAtControlSample
   heldBoards <- one GameState.heldBoards
-  damageScannedThrough <- one GameState.damageScannedThrough
+  damageScannedThrough <- one (TurnRegisters.damageScannedThrough . GameState.turn)
   delayedTriggers <- seqOf GameState.delayedTriggers
   continuousEffects <- listOf GameState.continuousEffects
   copyEffects <- listOf GameState.copyEffects
@@ -122,17 +123,17 @@ withoutAnnouncement before entry closed = do
   evasions <- listOf GameState.evasions
   ignoredAbilities <- listOf GameState.ignoredAbilities
   turnOrder <- one GameState.turnOrder
-  activePlayer <- one GameState.activePlayer
-  phase <- one GameState.phase
-  remaining <- one GameState.remaining
-  priority <- one GameState.priority
-  passed <- one GameState.passed
-  turnNumber <- one GameState.turnNumber
+  activePlayer <- one (TurnRegisters.activePlayer . GameState.turn)
+  phase <- one (TurnRegisters.phase . GameState.turn)
+  remaining <- one (TurnRegisters.remaining . GameState.turn)
+  priority <- one (TurnRegisters.priority . GameState.turn)
+  passed <- one (TurnRegisters.passed . GameState.turn)
+  turnNumber <- one (TurnRegisters.turnNumber . GameState.turn)
   turnsBegun <- mapOf GameState.turnsBegun
-  permanentsAsTurnBegan <- one GameState.permanentsAsTurnBegan
+  permanentsAsTurnBegan <- one (TurnRegisters.permanentsAsTurnBegan . GameState.turn)
   result <- one GameState.result
   restartSignal <- one GameState.restartSignal
-  endTurnSignal <- one GameState.endTurnSignal
+  endTurnSignal <- one (TurnRegisters.endTurnSignal . GameState.turn)
   nextObjectId <- newest GameState.nextObjectId
   printings <- newest GameState.printings
   printingIds <- newest GameState.printingIds
@@ -152,7 +153,7 @@ withoutAnnouncement before entry closed = do
   fellShort <- newest GameState.fellShort
   landsPlayed <- mapOf GameState.landsPlayed
   cardsPlayed <- mapOf GameState.cardsPlayed
-  drawsThisTurn <- mapOf GameState.drawsThisTurn
+  drawsThisTurn <- mapOf (TurnRegisters.drawsThisTurn . GameState.turn)
   keptFaceDown <- one GameState.keptFaceDown
   announcedTops <- one GameState.announcedTops
   actionTops <- one GameState.actionTops
@@ -160,14 +161,14 @@ withoutAnnouncement before entry closed = do
   repeatPicks <- one GameState.repeatPicks
   revealedTops <- mapOf GameState.revealedTops
   departedThisTurn <- setOf GameState.departedThisTurn
-  couldAttackThisTurn <- setOf GameState.couldAttackThisTurn
-  activatedThisTurn <- mapOfMaps GameState.activatedThisTurn
+  couldAttackThisTurn <- setOf (TurnRegisters.couldAttackThisTurn . GameState.turn)
+  activatedThisTurn <- mapOfMaps (TurnRegisters.activatedThisTurn . GameState.turn)
   -- An append-only log, `events`' shape: the announcement's own activation
   -- goes and the window's mana abilities stand.
-  activationsThisTurn <- eventsOf GameState.activationsThisTurn
-  castPermissionsUsedThisTurn <- mapOfSets GameState.castPermissionsUsedThisTurn
-  rollModifiersUsedThisTurn <- mapOfSets GameState.rollModifiersUsedThisTurn
-  instructionsTakenThisTurn <- seqOf GameState.instructionsTakenThisTurn
+  activationsThisTurn <- eventsOf (TurnRegisters.activationsThisTurn . GameState.turn)
+  castPermissionsUsedThisTurn <- mapOfSets (TurnRegisters.castPermissionsUsedThisTurn . GameState.turn)
+  rollModifiersUsedThisTurn <- mapOfSets (TurnRegisters.rollModifiersUsedThisTurn . GameState.turn)
+  instructionsTakenThisTurn <- seqOf (TurnRegisters.instructionsTakenThisTurn . GameState.turn)
   triggeredThisGame <- seqOf GameState.triggeredThisGame
   pendingControl <- mapOf GameState.pendingControl
   control <- mapOf GameState.control
@@ -196,15 +197,15 @@ withoutAnnouncement before entry closed = do
   -- announcement spans.
   turnMarkers <- one GameState.turnMarkers
   parkedTurns <- one GameState.parkedTurns
-  turnResume <- one GameState.turnResume
+  turnResume <- one (TurnRegisters.turnResume . GameState.turn)
   -- CR 100.6a: a monotone tally, so the closed window's value is the newest --
   -- nextTimestamp's treatment. Nothing a CR 734.1 reversal undoes can reach it.
   subgamesThisMatch <- newest GameState.subgamesThisMatch
   -- CR 728.1 / 730.1a: the same, and the game the window was in.
   gamesThisMatch <- newest GameState.gamesThisMatch
   gameNumber <- one GameState.gameNumber
-  turnAnchor <- one GameState.turnAnchor
-  extraTurnUnderWay <- one GameState.extraTurnUnderWay
+  turnAnchor <- one (TurnRegisters.turnAnchor . GameState.turn)
+  extraTurnUnderWay <- one (TurnRegisters.extraTurnUnderWay . GameState.turn)
   throwing <- one GameState.throwing
   rethrowRequested <- one GameState.rethrowRequested
   -- Written only once a reversal is over, which no announcement spans.
@@ -222,15 +223,38 @@ withoutAnnouncement before entry closed = do
         GameState.command = command,
         GameState.ante = ante,
         GameState.sideDecks = sideDecks,
-        GameState.stack = stack,
-        GameState.stackedIn = stackedIn,
+        GameState.turn =
+          TurnRegisters.MkTurnRegisters
+            { TurnRegisters.stack = stack,
+              TurnRegisters.stackedIn = stackedIn,
+              TurnRegisters.combat = combat,
+              TurnRegisters.events = events,
+              TurnRegisters.scannedThrough = scannedThrough,
+              TurnRegisters.damageScannedThrough = damageScannedThrough,
+              TurnRegisters.activePlayer = activePlayer,
+              TurnRegisters.phase = phase,
+              TurnRegisters.remaining = remaining,
+              TurnRegisters.priority = priority,
+              TurnRegisters.passed = passed,
+              TurnRegisters.turnNumber = turnNumber,
+              TurnRegisters.permanentsAsTurnBegan = permanentsAsTurnBegan,
+              TurnRegisters.endTurnSignal = endTurnSignal,
+              TurnRegisters.drawsThisTurn = drawsThisTurn,
+              TurnRegisters.couldAttackThisTurn = couldAttackThisTurn,
+              TurnRegisters.activatedThisTurn = activatedThisTurn,
+              TurnRegisters.activationsThisTurn = activationsThisTurn,
+              TurnRegisters.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,
+              TurnRegisters.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
+              TurnRegisters.instructionsTakenThisTurn = instructionsTakenThisTurn,
+              TurnRegisters.turnResume = turnResume,
+              TurnRegisters.turnAnchor = turnAnchor,
+              TurnRegisters.extraTurnUnderWay = extraTurnUnderWay
+            },
         GameState.players = players,
         GameState.outsideObjects = outsideObjects,
         GameState.broughtIn = broughtIn,
         GameState.departedCards = departedCards,
         GameState.manaPool = manaPool,
-        GameState.combat = combat,
-        GameState.events = events,
         GameState.nextEventGroup = nextEventGroup,
         GameState.eventGroupDepth = eventGroupDepth,
         GameState.enteringTogether = enteringTogether,
@@ -239,14 +263,12 @@ withoutAnnouncement before entry closed = do
         GameState.causing = causing,
         GameState.lastKnown = lastKnown,
         GameState.stackArchive = stackArchive,
-        GameState.scannedThrough = scannedThrough,
         GameState.battlefieldWhenTriggered = battlefieldWhenTriggered,
         GameState.boardAfterEvent = boardAfterEvent,
         GameState.boardBeforeEvent = boardBeforeEvent,
         GameState.controlSample = controlSample,
         GameState.boardAtControlSample = boardAtControlSample,
         GameState.heldBoards = heldBoards,
-        GameState.damageScannedThrough = damageScannedThrough,
         GameState.delayedTriggers = delayedTriggers,
         GameState.continuousEffects = continuousEffects,
         GameState.copyEffects = copyEffects,
@@ -274,17 +296,9 @@ withoutAnnouncement before entry closed = do
         GameState.evasions = evasions,
         GameState.ignoredAbilities = ignoredAbilities,
         GameState.turnOrder = turnOrder,
-        GameState.activePlayer = activePlayer,
-        GameState.phase = phase,
-        GameState.remaining = remaining,
-        GameState.priority = priority,
-        GameState.passed = passed,
-        GameState.turnNumber = turnNumber,
         GameState.turnsBegun = turnsBegun,
-        GameState.permanentsAsTurnBegan = permanentsAsTurnBegan,
         GameState.result = result,
         GameState.restartSignal = restartSignal,
-        GameState.endTurnSignal = endTurnSignal,
         GameState.nextObjectId = nextObjectId,
         GameState.printings = printings,
         GameState.printingIds = printingIds,
@@ -302,7 +316,6 @@ withoutAnnouncement before entry closed = do
         GameState.fellShort = fellShort,
         GameState.landsPlayed = landsPlayed,
         GameState.cardsPlayed = cardsPlayed,
-        GameState.drawsThisTurn = drawsThisTurn,
         GameState.keptFaceDown = keptFaceDown,
         GameState.announcedTops = announcedTops,
         GameState.actionTops = actionTops,
@@ -310,12 +323,6 @@ withoutAnnouncement before entry closed = do
         GameState.repeatPicks = repeatPicks,
         GameState.revealedTops = revealedTops,
         GameState.departedThisTurn = departedThisTurn,
-        GameState.couldAttackThisTurn = couldAttackThisTurn,
-        GameState.activatedThisTurn = activatedThisTurn,
-        GameState.activationsThisTurn = activationsThisTurn,
-        GameState.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,
-        GameState.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
-        GameState.instructionsTakenThisTurn = instructionsTakenThisTurn,
         GameState.triggeredThisGame = triggeredThisGame,
         GameState.pendingControl = pendingControl,
         GameState.control = control,
@@ -339,12 +346,9 @@ withoutAnnouncement before entry closed = do
         GameState.extraTurns = extraTurns,
         GameState.turnMarkers = turnMarkers,
         GameState.parkedTurns = parkedTurns,
-        GameState.turnResume = turnResume,
         GameState.subgamesThisMatch = subgamesThisMatch,
         GameState.gamesThisMatch = gamesThisMatch,
         GameState.gameNumber = gameNumber,
-        GameState.turnAnchor = turnAnchor,
-        GameState.extraTurnUnderWay = extraTurnUnderWay,
         GameState.throwing = throwing,
         GameState.rethrowRequested = rethrowRequested,
         GameState.undone = undone
@@ -395,7 +399,7 @@ withoutAnnouncement before entry closed = do
     -- the two lengths. A kept life gain or loss can become its player's first by
     -- the cut, so `withoutAnnouncement` restamps what this keeps.
     --
-    -- GameState.scannedThrough and GameState.damageScannedThrough are the two
+    -- TurnRegisters.scannedThrough and TurnRegisters.damageScannedThrough are the two
     -- fields that index this log by position, and both sit at or before
     -- `before`'s length: the CR 117.5 scan moves them at a priority boundary and
     -- during a resolution, and Parun.Engine.Cost.applyManaTriggers deliberately

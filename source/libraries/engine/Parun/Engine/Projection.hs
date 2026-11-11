@@ -2309,7 +2309,7 @@ printedTriggeredAbility :: ObjectId -> GameState -> TriggeredAbility Card.Type.C
 printedTriggeredAbility = printedAbility rewriteTriggeredAbility PC.triggeredAbilities
 
 -- printedAbility for CR 602.5b's counted riders (Object.activatedOnce,
--- GameState.activatedThisTurn). data/scenarios' mild-mannered-librarian-* and
+-- TurnRegisters.activatedThisTurn). data/scenarios' mild-mannered-librarian-* and
 -- skinshifter-* text-change pairs prove it, spent before the change and after.
 printedActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 printedActivatedAbility = printedAbility rewriteActivatedAbility PC.activatedAbilities
@@ -4086,12 +4086,12 @@ filterReads f = case f of
   -- Reads nothing, for IsAttacking's reason and off the same record.
   Filter.Type.IsBlocking -> Set.empty
   Filter.Type.HasBlockStatus _ -> Set.empty
-  -- Reads nothing: no Modification writes GameState.events.
+  -- Reads nothing: no Modification writes TurnRegisters.events.
   Filter.Type.DeclaredThisTurn _ -> Set.empty
-  -- Reads nothing: no Modification writes GameState.couldAttackThisTurn.
+  -- Reads nothing: no Modification writes TurnRegisters.couldAttackThisTurn.
   Filter.Type.CouldAttackThisTurn -> Set.empty
   -- Reads nothing, for IsAttacking's reason and off the same record: no
-  -- Modification writes GameState.combat.
+  -- Modification writes TurnRegisters.combat.
   Filter.Type.DeclaredAttackerThisCombat -> Set.empty
   Filter.Type.DeclaredBlockerThisCombat -> Set.empty
   Filter.Type.LeftLibraryThisTurn _ -> Set.empty

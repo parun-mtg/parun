@@ -114,6 +114,7 @@ import qualified Parun.Types.TargetedSubject as TargetedSubject
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -1035,7 +1036,7 @@ admittedPreventedSources context gs f = Map.filterWithKey admits . DamagePrevent
 admittedAttackers :: GameState -> ObjectId -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> PlayerId -> Seq.Seq ObjectId
 admittedAttackers gs bearer you f attacker = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
   where
-    combat = GameState.combat gs
+    combat = TurnRegisters.combat (GameState.turn gs)
     admits oid = Map.lookup oid (Combat.joinedUnder combat) == Just attacker && admitsAttacker gs bearer you f oid
 
 -- Whether the Filter admits this declared attacker, viewed through
@@ -1321,7 +1322,7 @@ leavesBindings gs bearerBecame t event
 attackedBy :: GameState -> ObjectId -> PlayerId -> AttackedTrigger.AttackedTrigger -> BecameAttacked.BecameAttacked -> Seq.Seq ObjectId
 attackedBy gs bearer you t (BecameAttacked.MkBecameAttacked attacker target) = Seq.fromList (filter admits (Set.toList (Combat.declaredAttackers combat)))
   where
-    combat = GameState.combat gs
+    combat = TurnRegisters.combat (GameState.turn gs)
     admits oid =
       Map.lookup oid (Combat.attackers combat) == Just target
         && (Maybe.isNothing (AttackedTrigger.attacker t) || Map.lookup oid (Combat.joinedUnder combat) == Just attacker)

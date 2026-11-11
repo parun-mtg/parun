@@ -43,6 +43,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The two names the card prints (CR 721.2). The first is the card's own name
@@ -162,7 +163,7 @@ spec s registry = Spec.describe s "Omen" $ do
     -- rather than a fizzle: an Omen that never resolved would leave no token and
     -- would pass the two assertions above by being still on the stack.
     Spec.assertEqWith s "the Soldier token is on the battlefield" (length (filter (\o -> Set.member soldierName (Projection.namesOf o resolved)) (Set.toList (GameState.battlefield resolved)))) 1
-    Spec.assertEqWith s "and the stack is empty" (length (GameState.stack resolved)) 0
+    Spec.assertEqWith s "and the stack is empty" (length (TurnRegisters.stack (GameState.turn resolved))) 0
   -- CR 616.1e: rule 721.3d's rewrite is a replacement effect (CR 614.1a), so a row
   -- another OBJECT contributes to the same CR 608.2n move races it. Rest in Peace
   -- ({1}{W} Enchantment, "When this enchantment enters, exile all graveyards. / If

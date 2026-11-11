@@ -61,6 +61,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 -- The two names the card prints (CR 716.2). The first is the card's own name
@@ -195,7 +196,7 @@ spec s registry = Spec.describe s "Adventure" $ do
     let board = snd (S.addPermanent thalia S.alice (snd (S.addPermanent bonesplitter S.alice (S.landsInPlay mountain 2))))
         (gs, oid) = S.handOne shieldbreaker board
         cast = snd (Engine.runGamePure S.identityAnswer gs (Cast.castSpell S.manaPerformer S.alice oid battleDisplayName Facing.FaceUp))
-    Spec.assertEqWith s "the Adventure is on the stack" (length (GameState.stack cast)) 1
+    Spec.assertEqWith s "the Adventure is on the stack" (length (TurnRegisters.stack (GameState.turn cast))) 1
     Spec.assertEqWith s "both Mountains paid {R} plus Thalia's {1}" (S.tappedCount S.alice cast) 2
   -- CR 716.3d: "Instead of putting a spell that was cast as an Adventure into
   -- its owner's graveyard as it resolves, its controller exiles it."

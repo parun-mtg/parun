@@ -193,6 +193,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Threshold as Threshold
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
@@ -3733,7 +3734,7 @@ supplyManaSourcesGiven capacity = Mana.supplySourcesGiven (stackedManaActivation
 -- CR 307.5's empty-stack conjunct is the only window that move closes, and
 -- ActivationRestriction.needsEmptyStack is what reports it. Asked of the RIDER
 -- and not of the board: this runs one step ahead of the move, so the live
--- GameState.stack is the wrong stack to read -- an empty one here says nothing
+-- TurnRegisters.stack is the wrong stack to read -- an empty one here says nothing
 -- about the payment, and reading it counted Grinning Ignus's "{R}, Return this
 -- creature to its owner's hand: Add {C}{C}{R}. Activate only as a sorcery" as a
 -- supply for a cast whose own proposal had already closed its window, so the cast
@@ -4901,7 +4902,7 @@ composeReversal before windows keeps = case NonEmpty.nonEmpty windows of
 -- reveal, logged inside Parun.Engine.Activate's announcement) is not what the
 -- rule's "revealed from a library" protects. `nextEventGroup` rides at
 -- `since`'s value, since a carried-over entry may already hold a group
--- `snapshot`'s own counter would otherwise repeat -- GameState.events' groups
+-- `snapshot`'s own counter would otherwise repeat -- TurnRegisters.events' groups
 -- are non-decreasing along the log. Each kept entry's card stays exposed
 -- (Event.expose), its id having reached a seat.
 --
@@ -4917,11 +4918,14 @@ keepingLibraryActions since snapshot =
         Nothing -> held
       inLibraryOf gs oid = any (Foldable.elem oid) (GameState.library gs)
       revealedFromLibrary logged = any (\oid -> inLibraryOf snapshot oid && inLibraryOf since oid) (shownCard logged)
-      kept = Seq.filter revealedFromLibrary (Seq.drop (Seq.length (GameState.events snapshot)) (GameState.events since))
+      kept = Seq.filter revealedFromLibrary (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn snapshot))) (TurnRegisters.events (GameState.turn since)))
       restored =
         snapshot
           { GameState.library = Map.mapWithKey keep (GameState.library snapshot),
-            GameState.events = GameState.events snapshot <> kept,
+            GameState.turn =
+              (GameState.turn snapshot)
+                { TurnRegisters.events = TurnRegisters.events (GameState.turn snapshot) <> kept
+                },
             GameState.nextEventGroup = GameState.nextEventGroup since
           }
    in Foldable.foldl' (\g logged -> maybe g (`Event.expose` g) (shownCard logged)) restored kept
@@ -5547,7 +5551,7 @@ libraryMembershipChanged opened closed =
 revealsLibraryCard :: GameState -> GameState -> Bool
 revealsLibraryCard opened closed =
   let inLibrary oid = any (Foldable.elem oid) (GameState.library closed)
-   in any (any inLibrary . shownCard) (Seq.drop (Seq.length (GameState.events opened)) (GameState.events closed))
+   in any (any inLibrary . shownCard) (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn opened))) (TurnRegisters.events (GameState.turn closed)))
 
 -- CR 734.1: did the log gain a shuffle (CR 701.24a), its "caused a library to
 -- be shuffled"?
@@ -5556,7 +5560,7 @@ shuffledLibrary opened closed =
   let shuffle logged = case LoggedEvent.event logged of
         GameEvent.PlayerActed acted -> PlayerActed.action acted == PlayerAction.Shuffle
         _ -> False
-   in any shuffle (Seq.drop (Seq.length (GameState.events opened)) (GameState.events closed))
+   in any shuffle (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn opened))) (TurnRegisters.events (GameState.turn closed)))
 
 -- Event.shownCard off the log: CR 734.1's last sentence keeps a reveal and a
 -- look standing alike.
@@ -6685,7 +6689,7 @@ applyManaTriggers :: ManaAbilityPerformer.ManaAbilityPerformer -> [GameEvent.Gam
 applyManaTriggers perform events = do
   Monad.mapM_ (State.modify' . Event.recordEvent) events
   gs <- State.get
-  let recorded = Foldable.toList (Seq.drop (Seq.length (GameState.events gs) - length events) (GameState.events gs))
+  let recorded = Foldable.toList (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn gs)) - length events) (TurnRegisters.events (GameState.turn gs)))
       isMana p = ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p)
       watches = ManaAbility.mayBeTriggeredManaAbility . DelayedTrigger.ability
       store = GameState.delayedTriggers gs
