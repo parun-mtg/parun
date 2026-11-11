@@ -34,6 +34,7 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.Ante as Ante
 import qualified Parun.Types.AnyNumberDiscard as AnyNumberDiscard
 import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
+import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.AsCopy as AsCopy
@@ -115,6 +116,7 @@ import qualified Parun.Types.ControlPlayer as ControlPlayer
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
@@ -198,7 +200,11 @@ import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntersWith as EntersWith
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
+import qualified Parun.Types.EntryAttack as EntryAttack
+import qualified Parun.Types.EntryBlock as EntryBlock
+import qualified Parun.Types.EntryController as EntryController
 import qualified Parun.Types.EntryFlip as EntryFlip
+import qualified Parun.Types.EntryHost as EntryHost
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryPrice as EntryPrice
 import qualified Parun.Types.EntryR as EntryR
@@ -225,6 +231,7 @@ import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
+import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Fight as Fight
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FlipCoin as FlipCoin
@@ -349,6 +356,7 @@ import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
+import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
@@ -440,6 +448,7 @@ import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.UntapR as UntapR
 import qualified Parun.Types.UntapRestriction as UntapRestriction
@@ -3360,3 +3369,152 @@ damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource what
     <*> traverse (damageRecipient c) whichRecipient
     <*> traverse (damageObject c) whichSource
     <*> traverse (damageSlot c) boundRecipient
+
+-- | One visitor per kind of child a copy or entry payload holds: a copy's
+-- "enter as a copy" rewrite (CR 707.5, 614.1c), its CR 707.9 exceptions, an
+-- entry's riders (CR 614.1c) and a face-down listing (CR 708.2).
+data CopyChildren ability effect f = MkCopyChildren
+  { -- | A Filter a field holds: the objects a copy may copy, a chosen host
+    -- (CR 303.4f).
+    copyFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | A Quantity a field holds: a counter amount (CR 614.1c).
+    copyQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | The kind of counter a row places (CR 122.1).
+    copyCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword),
+    -- | A keyword a copy gains (CR 707.9a).
+    copyKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | A subtype a copy exception names (CR 707.9b).
+    copySubtype :: Subtype.Subtype -> f Subtype.Subtype,
+    -- | A colour a copy exception names (CR 707.9b).
+    copyColor :: Color.Color -> f Color.Color,
+    -- | A quoted ability a copy gains (CR 707.9a) or a listing grants.
+    copyAbility :: ability -> f ability,
+    -- | An effect a copy's "when you do" holds (CR 707.9g).
+    copyEffect :: effect -> f effect,
+    -- | A copy clause's condition (CR 707.9f).
+    copyCondition :: Condition.Condition -> f Condition.Condition,
+    -- | How long a copy lasts.
+    copyDuration :: Duration.Duration -> f Duration.Duration,
+    -- | A slot an entry reads: what it attacks or blocks, its host.
+    copySlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The player an entry puts it under (CR 110.2a).
+    copyPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef,
+    -- | A characteristic an entry sets (CR 611.2e), whole.
+    copyModification :: Modification.Modification ability -> f (Modification.Modification ability),
+    -- | A face-down listing's type line (CR 708.2), whole.
+    copyTypeLine :: TypeLine.TypeLine -> f TypeLine.TypeLine,
+    -- | A face-down listing's power.
+    copyPower :: Power.Power -> f Power.Power,
+    -- | A face-down listing's toughness.
+    copyToughness :: Toughness.Toughness -> f Toughness.Toughness,
+    -- | A keyword a face-down listing grants.
+    copyListedKeyword :: Keyword.Keyword -> f Keyword.Keyword
+  }
+
+-- | A copy rewrite's children (CR 707.5). Whether it enters tapped, what it
+-- copies among, who receives it and whether it is optional are left as they
+-- are.
+asCopyChildren :: (Applicative f) => CopyChildren ability effect f -> AsCopy.AsCopy ability effect -> f (AsCopy.AsCopy ability effect)
+asCopyChildren c (AsCopy.MkAsCopy eligible clauses tapped whenYouDo among duration recipient optional) =
+  AsCopy.MkAsCopy
+    <$> copyFilter c eligible
+    <*> traverse (copyClauseChildren c) clauses
+    <*> pure tapped
+    <*> traverse (copyEffect c) whenYouDo
+    <*> pure among
+    <*> traverse (copyDuration c) duration
+    <*> pure recipient
+    <*> pure optional
+
+-- | One clause of a copy's exceptions: its condition (CR 707.9f), its
+-- exceptions and its counters (CR 707.9e).
+copyClauseChildren :: (Applicative f) => CopyChildren ability effect f -> CopyClause.CopyClause ability -> f (CopyClause.CopyClause ability)
+copyClauseChildren c (CopyClause.MkCopyClause condition exceptions counters) =
+  CopyClause.MkCopyClause
+    <$> traverse (copyCondition c) condition
+    <*> traverse (copyExceptionChildren c) exceptions
+    <*> traverse (withCountersChildren c) counters
+
+-- | A CR 707.9 exception's children. A power and toughness, card types,
+-- supertypes and a name are left as they are.
+copyExceptionChildren :: (Applicative f) => CopyChildren ability effect f -> CopyException.CopyException ability -> f (CopyException.CopyException ability)
+copyExceptionChildren c exception = case exception of
+  CopyException.SetPowerToughness _ -> pure exception
+  CopyException.GainKeywords keywords -> CopyException.GainKeywords <$> traverseSet (copyKeyword c) keywords
+  CopyException.GainThisAbility -> pure exception
+  CopyException.CardTypes {} -> pure exception
+  CopyException.AddSubtypes subtypes -> CopyException.AddSubtypes <$> traverseSet (copySubtype c) subtypes
+  CopyException.AddSupertypes _ -> pure exception
+  CopyException.SetCreatureSubtypes subtypes -> CopyException.SetCreatureSubtypes <$> traverseSet (copySubtype c) subtypes
+  CopyException.RemoveSupertypes _ -> pure exception
+  CopyException.SetName _ -> pure exception
+  CopyException.SetColors colors -> CopyException.SetColors <$> traverseSet (copyColor c) colors
+  CopyException.NoManaCost -> pure exception
+  CopyException.GainAbility ability -> CopyException.GainAbility <$> copyAbility c ability
+  CopyException.DontCopyColors -> pure exception
+
+-- | A counter row's children (CR 614.1c): each kind and its amount.
+withCountersChildren :: (Applicative f) => CopyChildren ability effect f -> WithCounters.WithCounters -> f WithCounters.WithCounters
+withCountersChildren c (WithCounters.MkWithCounters counters) = WithCounters.MkWithCounters <$> traverseCounters c counters
+
+-- | Each kind of counter in a row and its amount. Two kinds a walk maps onto
+-- one merge into one amount, their sum (CR 208.2), rather than keeping an
+-- arbitrary survivor: counters with the same name are interchangeable (CR
+-- 122.1), so the two rows are one tally. The sum stays unevaluated, so a Count
+-- in it is still read against the board the entry happens on.
+traverseCounters :: (Applicative f) => CopyChildren ability effect f -> Map.Map (CounterKind.CounterKind Keyword.Keyword) Quantity.Quantity -> f (Map.Map (CounterKind.CounterKind Keyword.Keyword) Quantity.Quantity)
+traverseCounters c =
+  fmap (Map.fromListWith (\greater lesser -> Quantity.Arithmetic (Arithmetic.Plus (Plus.MkPlus lesser greater))))
+    . traverse (\(kind, amount) -> (,) <$> copyCounterKind c kind <*> copyQuantity c amount)
+    . Map.toList
+
+-- | An entry's riders (CR 614.1c). Whether it enters tapped or transformed,
+-- exiled face down or noted are left as they are.
+entryRidersChildren :: (Applicative f) => CopyChildren ability effect f -> EntryRiders.EntryRiders Quantity.Quantity ability -> f (EntryRiders.EntryRiders Quantity.Quantity ability)
+entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking transformed counters under exiledFaceDown attachedTo faceDown noted characteristics) =
+  EntryRiders.MkEntryRiders tapped
+    <$> traverse attack attacking
+    <*> traverse block blocking
+    <*> pure transformed
+    <*> traverseCounters c counters
+    <*> controller under
+    <*> pure exiledFaceDown
+    <*> traverse host attachedTo
+    <*> traverse (faceDownStateChildren c) faceDown
+    <*> pure noted
+    <*> traverse (copyModification c) characteristics
+  where
+    attack a = case a of
+      EntryAttack.Chosen -> pure a
+      EntryAttack.SameAs name -> EntryAttack.SameAs <$> copySlot c name
+      EntryAttack.UnderPlayer name -> EntryAttack.UnderPlayer <$> copySlot c name
+    block b = case b of
+      EntryBlock.Chosen -> pure b
+      EntryBlock.Specified name -> EntryBlock.Specified <$> copySlot c name
+    controller u = case u of
+      EntryController.Instructed who -> EntryController.Instructed <$> copyPlayer c who
+      EntryController.Owner -> pure u
+    host h = case h of
+      EntryHost.Specified name -> EntryHost.Specified <$> copySlot c name
+      EntryHost.Chosen filter_ -> EntryHost.Chosen <$> copyFilter c filter_
+
+-- | A face-down state's listing (CR 708.2). Why it is face down and the events
+-- turning it up are left as they are.
+faceDownStateChildren :: (Applicative f) => CopyChildren ability effect f -> FaceDownState.FaceDownState ability -> f (FaceDownState.FaceDownState ability)
+faceDownStateChildren c (FaceDownState.MkFaceDownState reason listed turnsUpBefore) =
+  FaceDownState.MkFaceDownState reason <$> faceDownChildren c listed <*> pure turnsUpBefore
+
+-- | A face-down listing's children (CR 708.2).
+faceDownChildren :: (Applicative f) => CopyChildren ability effect f -> FaceDownCharacteristics.FaceDownCharacteristics ability -> f (FaceDownCharacteristics.FaceDownCharacteristics ability)
+faceDownChildren c (FaceDownCharacteristics.MkFaceDownCharacteristics typeLine power toughness keywords abilities) =
+  FaceDownCharacteristics.MkFaceDownCharacteristics
+    <$> copyTypeLine c typeLine
+    <*> traverse (copyPower c) power
+    <*> traverse (copyToughness c) toughness
+    <*> traverseSet (copyListedKeyword c) keywords
+    <*> traverse (copyAbility c) abilities
+
+-- | A characteristic-defining power and toughness's two Quantities (CR 208.2a).
+characteristicPTChildren :: (Applicative f) => (Quantity.Quantity -> f Quantity.Quantity) -> CharacteristicPT.CharacteristicPT -> f CharacteristicPT.CharacteristicPT
+characteristicPTChildren visit (CharacteristicPT.MkCharacteristicPT power toughness) =
+  CharacteristicPT.MkCharacteristicPT <$> visit power <*> visit toughness
