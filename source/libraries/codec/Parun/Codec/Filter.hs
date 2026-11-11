@@ -219,12 +219,12 @@ ownsBound keywordCodec =
       <*> Fields.required "filter" (codec keywordCodec) (\(_, _, f) -> f)
 
 -- | Who put the counters, related to the perspective, and their kind.
-countersPutThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (PlayerRelation.PlayerRelation, CounterKind.CounterKind keyword)
+countersPutThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (PlayerRelation.PlayerRelation, Maybe (CounterKind.CounterKind keyword))
 countersPutThisTurn keywordCodec =
   Fields.object $
     (,)
       <$> Fields.required "putter" PlayerRelation.codec fst
-      <*> Fields.required "kind" (CounterKind.codec keywordCodec) snd
+      <*> Fields.defaulted "kind" Nothing (Common.maybe (CounterKind.codec keywordCodec)) snd
 
 -- | Which of the candidate's players, and how it relates to the perspective.
 heldBy :: Codec.Codec (Holder.Holder, PlayerRelation.PlayerRelation)

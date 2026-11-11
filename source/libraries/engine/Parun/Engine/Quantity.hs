@@ -1577,9 +1577,10 @@ bakePlayerRef players objects ref = case ref of
 -- Resolve.hasRead asks it "does this card read X?" for the lint that pairs a
 -- read against the cost's {X} (CR 107.3, CR 107.3a, CR 118.4), and "does it
 -- read the mana spent on X?" for whether the payer is asked which mana that was
--- (Parun.Engine.Cost.recordXShares). Vitalizing Cascade's "X plus 3" is the
--- card that needs the recursion for X, Soul Burn's limit inside an AtMost the
--- one for the mana.
+-- (Parun.Engine.Cost.recordXShares), and "does it read the total mana spent?"
+-- for the same lint's spell whose X only that total reads (Molten Note).
+-- Vitalizing Cascade's "X plus 3" is the card that needs the recursion for X,
+-- Soul Burn's limit inside an AtMost the one for the mana.
 --
 -- Every nested quantity is asked through Parun.Engine.Children: an operand,
 -- a Greatest's per-member number, a payload aimed at another object. Only
@@ -1588,7 +1589,7 @@ hasRead :: StaticRead.StaticRead -> Quantity -> Bool
 hasRead wanted quantity = case quantity of
   Quantity.InSlot slot -> wanted == StaticRead.ReadsX && slot == Binding.variableX
   Quantity.ManaSpent part -> case part of
-    ManaSpent.Total -> False
+    ManaSpent.Total -> wanted == StaticRead.ReadsManaSpent
     ManaSpent.OfTypeOnX _ -> wanted == StaticRead.ReadsManaSpentOnX
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
 

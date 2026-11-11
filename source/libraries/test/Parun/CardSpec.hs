@@ -765,7 +765,7 @@ objectRefPositions =
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
-        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] False), [plantedRef "cc"]),
+        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] (PlayerRef.Relative PlayerRelation.You) False), [plantedRef "cc"]),
         ("become-copy", Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.OfObject (plantedRef "bc-original")) (plantedRef "bc-subject") Nothing [] False), [plantedRef "bc-original", plantedRef "bc-subject"]),
         ("copy-spell", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs") CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier []), [plantedRef "cs"]),
         -- CR 707.10d names a SECOND ref, the candidates', which the sweep must
@@ -863,6 +863,7 @@ playerRefPositions =
         ("increase-speed", Effect.IncreaseSpeed (playerQuantity "is"), [plantedPlayer "is"]),
         ("decrease-speed", Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease (plantedPlayer "ds") one 0), [plantedPlayer "ds"]),
         ("create", Effect.Create (Create.MkCreate one () EntryRiders.defaultValue Nothing (plantedPlayer "cr") False), [plantedPlayer "cr"]),
+        ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy one (plantedRef "cp") EntryRiders.defaultValue Nothing [] (plantedPlayer "ccp") False), [plantedPlayer "ccp"]),
         ("create-emblem", Effect.CreateEmblem (CreateEmblem.MkCreateEmblem () (plantedPlayer "ce")), [plantedPlayer "ce"]),
         ("skip-phase", Effect.SkipPhase SkipPhase.MkSkipPhase {SkipPhase.player = plantedPlayer "sn", SkipPhase.selector = SkipWindow.PartOfTurn PhaseSelector.CombatPhase, SkipPhase.uses = Uses.Once, SkipPhase.duration = Duration.Indefinite, SkipPhase.count = SkipPhase.defaultCount}, [plantedPlayer "sn"]),
         ("gain-player-counters", Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters (plantedPlayer "gp") PlayerCounterKind.Rad one), [plantedPlayer "gp"]),
@@ -1405,7 +1406,7 @@ ownCounts effect = case effect of
   -- is card data like Create's. The riders are skipped for the reason Create's
   -- arm above skips its own: a rider count is a Quantity, and effectFilters below
   -- is where a Filter under one is swept.
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ _ _ _ _) -> quantityCounts quantity
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ _ _ _ _ _) -> quantityCounts quantity
   -- The DURATION's own Counts, ModifyTarget's arm above; the refs' Filters are
   -- effectFilters' business below.
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationCounts duration
@@ -6191,7 +6192,7 @@ effectFilters effect = case effect of
   -- An EachMatching ref's Filter is card text like RequireBlock's below, and the
   -- count's and the riders' Filters are as much card text as Create's. The
   -- exceptions frame themselves, BecomeCopy's arm below.
-  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders _ exceptions _) -> frame Unframed (quantityFilters quantity <> riderFilters riders) <> frame SourceHostFramed (objectRefFilters ref) <> concatMap copyExceptionFilters exceptions
+  Effect.CreateCopy (CreateCopy.MkCreateCopy quantity ref riders _ exceptions _ _) -> frame Unframed (quantityFilters quantity <> riderFilters riders) <> frame SourceHostFramed (objectRefFilters ref) <> concatMap copyExceptionFilters exceptions
   -- BOTH refs, RequireBlock's arm below: each EachMatching Filter is card text.
   -- The exceptions beside them carry Filters through a KEYWORD, and frame them
   -- themselves (copyExceptionFilters) -- EntryRewrite's AsCopy arm takes the same
@@ -7734,9 +7735,14 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- and never declared, is an offender whatever the spell costs say.
         turnedUpReadsX c = any (\t -> Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (TriggeredAbility.modal t)) || modalReadsAnnouncedX (TriggeredAbility.modal t)) (turnedUpTriggers c)
         turnUpDeclaresX c = any declaresVariable (turnUpCostsOf c)
+        -- CR 601.2h's reader of a declared X: the spell's own "amount of mana
+        -- spent to cast this spell", which X's mana is part of (Molten Note).
+        -- It answers only for a spell declaring X, since the total is read
+        -- whether or not there is one.
+        spellReadsSpent c = Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
         offends f =
           let spellDeclaresX = any declaresVariable (spellCostsOf f)
-           in (readsX f /= (spellDeclaresX || turnUpDeclaresX f))
+           in ((readsX f || (spellDeclaresX && spellReadsSpent f)) /= (spellDeclaresX || turnUpDeclaresX f))
                 || (not spellDeclaresX && turnUpDeclaresX f /= turnedUpReadsX f)
         offenders = filter (anyFace offends . Printing.card) ps
     Spec.assertEqWith s "X read iff X declared" (fmap (S.nameOf . Printing.card) offenders) []
