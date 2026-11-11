@@ -73,7 +73,6 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
-import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype.Type
@@ -883,13 +882,25 @@ rewritePayGate pairs gate =
 -- so no board today tells the two readings apart. The slot's computed COUNT is
 -- a Quantity on the same footing and is descended into beside it.
 rewriteTargetSlot :: [(TextWord.TextWord, TextWord.TextWord)] -> TargetSlot.TargetSlot -> TargetSlot.TargetSlot
-rewriteTargetSlot pairs slot =
-  slot
-    { TargetSlot.filter = fmap (Filter.rewrite pairs) (TargetSlot.filter slot),
-      TargetSlot.asCast = fmap (Filter.rewrite pairs) (TargetSlot.asCast slot),
-      TargetSlot.amount = fmap (rewriteQuantity pairs) (TargetSlot.amount slot),
-      TargetSlot.count = SlotCount.mapQuantity (rewriteQuantity pairs) (TargetSlot.count slot),
-      TargetSlot.divided = fmap (rewriteQuantity pairs) (TargetSlot.divided slot)
+rewriteTargetSlot pairs = Identity.runIdentity . Children.targetSlotChildren (permissionRewrites pairs)
+
+-- Parun.Engine.Children's target slot, casting permission and activation
+-- restriction traversal at Identity. A pool's zones, a chooser, a per-player
+-- slot, a turn scope and a history read hold no word Parun.Types.ChangeText's
+-- pairs swap, so they stay as they are.
+permissionRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.PermissionChildren Identity.Identity
+permissionRewrites pairs =
+  Children.MkPermissionChildren
+    { Children.permissionFilter = Identity.Identity . Filter.rewrite pairs,
+      Children.permissionQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.permissionPlayer = pure,
+      Children.permissionZones = pure,
+      Children.permissionSlot = pure,
+      Children.permissionCondition = Identity.Identity . rewriteCondition pairs,
+      Children.permissionCost = Identity.Identity . Filter.rewriteComponent pairs,
+      Children.permissionTurn = pure,
+      Children.permissionMana = Identity.Identity . rewriteManaSpecification pairs,
+      Children.permissionLooksBack = const (pure ())
     }
 
 -- CR 612.1 over a counter trigger's holder: the Filter, where there is one.
@@ -908,13 +919,10 @@ rewriteTriggerCondition pairs =
           Children.triggerMana = Identity.Identity . rewriteManaSpecification pairs
         }
 
--- CR 612.1 through a casting permission's one condition.
+-- CR 612.1 through a casting permission's condition and the costs a graveyard
+-- cast pays on top (CR 118.8).
 rewriteCastingPermission :: [(TextWord.TextWord, TextWord.TextWord)] -> CastingPermission.CastingPermission -> CastingPermission.CastingPermission
-rewriteCastingPermission pairs permission = case permission of
-  CastingPermission.CastAsThoughItHadFlash condition additional -> CastingPermission.CastAsThoughItHadFlash (fmap (rewriteCondition pairs) condition) additional
-  CastingPermission.CastFromGraveyard family additional -> CastingPermission.CastFromGraveyard family (fmap (Filter.rewriteComponent pairs) additional)
-  CastingPermission.PlayFromGraveyard -> permission
-  CastingPermission.CastFromLibraryWhileSearching -> permission
+rewriteCastingPermission pairs = Identity.runIdentity . Children.castingPermissionChildren (permissionRewrites pairs)
 
 -- CR 612.1 through Condition's predicate vocabulary: its Quantities and nested
 -- conditions. A phase window's turn scope names a seat structurally and holds
@@ -930,28 +938,12 @@ rewriteCondition pairs =
         }
 
 -- CR 612.1 through ONE clause of an activated ability's CR 602.5 "activate only
--- ..." rider, which is printed text like the rest of the ability.
---
--- Exhaustive rather than a wildcard, so a new arm carrying a Condition or a
--- Filter must break this build. Only the board condition and SpendOnly's
--- printed colour hold a word -- every other arm names a phase, a turn, the
--- combat record, or a count of activations, and CR 612.1's swap finds nothing
--- in one to act on.
+-- ..." rider, which is printed text like the rest of the ability. Only the
+-- board condition and SpendOnly's printed colour hold a word -- every other arm
+-- names a phase, a turn, the combat record, or a count of activations, and CR
+-- 612.1's swap finds nothing in one to act on.
 rewriteRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> ActivationRestriction.ActivationRestriction -> ActivationRestriction.ActivationRestriction
-rewriteRestriction pairs restriction = case restriction of
-  ActivationRestriction.OnlyIf condition -> ActivationRestriction.OnlyIf (rewriteCondition pairs condition)
-  ActivationRestriction.SorcerySpeed -> restriction
-  ActivationRestriction.DuringPhase _ -> restriction
-  ActivationRestriction.DuringTurn _ -> restriction
-  ActivationRestriction.AttackedThisStep -> restriction
-  ActivationRestriction.AfterBlockersDeclared -> restriction
-  ActivationRestriction.DuringCombatBefore _ -> restriction
-  ActivationRestriction.BeforeStep _ -> restriction
-  ActivationRestriction.TimesEver _ -> restriction
-  ActivationRestriction.TimesEachTurn _ -> restriction
-  ActivationRestriction.DuringThrow -> restriction
-  ActivationRestriction.InstantSpeed -> restriction
-  ActivationRestriction.SpendOnly specified -> ActivationRestriction.SpendOnly (rewriteManaSpecification pairs specified)
+rewriteRestriction pairs = Identity.runIdentity . Children.activationRestrictionChildren (permissionRewrites pairs)
 
 -- CR 612.2 over a printed colour of mana (Crimson Hellkite's "Spend only red
 -- mana"); a regression fence, no test changing its text.
