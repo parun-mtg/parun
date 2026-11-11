@@ -22,7 +22,7 @@ import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.EffectZone as EffectZone
 import Parun.Engine.Event.Binding (batchBindings, batchPartition, countersMovedOn, eventBindingsOver)
-import Parun.Engine.Event.Match (additionalEntryTriggers, additionalTriggers, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
+import Parun.Engine.Event.Match (additionalEntryTriggers, additionalTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -2307,7 +2307,7 @@ eventTriggersGiven scope standing events gs =
             -- pending trigger carries.
             -- CR 801.7: and the event happened within the controller's range,
             -- or anywhere for a planar bearer (CR 801.18).
-            fires (cond, _) = matchesTriggerGiven bindings board gs oid (controllerFor cond) cond event && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
+            fires (cond, _) = matchesTriggerGiven bindings board (gameAfter (LoggedEvent.group logged) gs) gs oid (controllerFor cond) cond event && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
             -- CR 400.7d: an ability of a permanent may read what costs were
             -- paid for the spell it was, so the bearer's record rides on every
             -- ability it triggers (Binding.paidCostRecord).
@@ -2334,7 +2334,7 @@ eventTriggersGiven scope standing events gs =
             -- Each paired with which of CR 603.2d's instances it is.
             pends (cond, ab) =
               let perPlayer = stepCopies gs oid (controllerFor cond) cond event ab (pend (cond, ab))
-                  occurrences = maybe perPlayer (\n -> concat (List.genericReplicate n perPlayer)) (counterOccurrences (\c -> matchesTriggerGiven bindings board gs oid (controllerFor cond) c event) cond event)
+                  occurrences = maybe perPlayer (\n -> concat (List.genericReplicate n perPlayer)) (counterOccurrences (\c -> matchesTriggerGiven bindings board (gameAfter (LoggedEvent.group logged) gs) gs oid (controllerFor cond) c event) cond event)
                in [(extra, trigger) | extra <- [0 .. additional cond], trigger <- occurrences]
             -- CR 603.2c's key, for `oncePerBatch` below: which ability of which
             -- bearer this pending trigger came from, or Nothing when the condition
@@ -2486,7 +2486,7 @@ inherentTriggers held events gs =
             perspective = case source of
               TriggerSource.OfObject oid -> Plane.rangePerspective oid you gs
               TriggerSource.Sourceless -> Just you
-            fires event = matchesTriggerGiven Map.empty board gs bearer you cond event && eventWithinRange board gs perspective event
+            fires event = matchesTriggerGiven Map.empty board (gameAfter (LoggedEvent.group (NonEmpty.head block)) gs) gs bearer you cond event && eventWithinRange board gs perspective event
             frozen = case source of
               TriggerSource.OfObject oid -> delayedAsTriggered board oid gs
               TriggerSource.Sourceless -> Map.empty
@@ -3436,7 +3436,7 @@ delayedMatches grouped gs =
                 filter
                   ( \logged ->
                       let board = battlefieldAt (LoggedEvent.group logged) gs
-                       in matchesTriggerGiven (DelayedTrigger.bindings entry) board gs (DelayedTrigger.source entry) (DelayedTrigger.controller entry) cond (LoggedEvent.event logged)
+                       in matchesTriggerGiven (DelayedTrigger.bindings entry) board (gameAfter (LoggedEvent.group logged) gs) gs (DelayedTrigger.source entry) (DelayedTrigger.controller entry) cond (LoggedEvent.event logged)
                             -- CR 801.7, as eventTriggers asks it; a fence for a planar source,
                             -- since no plane in `data/cards/` arms a delayed trigger.
                             && eventWithinRange board gs (Plane.rangePerspective (DelayedTrigger.source entry) (DelayedTrigger.controller entry) gs) (LoggedEvent.event logged)
@@ -3749,11 +3749,11 @@ interveningHolds live pending =
             cond
 
 -- CR 603.4's "when the trigger event occurs": the board `fileBoards` filed
--- under the event's group (GameState.boardAfterEvent). An ability no event fired
--- (a reflexive one), and an event none is filed for yet, is answered by `live`.
+-- under the event's group (`gameAfter`). An ability no event fired (a reflexive
+-- one) is answered by `live`.
 boardWhenTriggered :: GameState -> PendingTrigger -> GameState
 boardWhenTriggered live pending = case PendingTrigger.firedBy pending of
-  Just logged -> Map.findWithDefault live (LoggedEvent.group logged) (GameState.boardAfterEvent live)
+  Just logged -> gameAfter (LoggedEvent.group logged) live
   Nothing -> live
 
 -- CR 801.16: the players a triggered ability's placement names as in a loop

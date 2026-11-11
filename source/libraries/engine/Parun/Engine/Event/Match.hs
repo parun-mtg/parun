@@ -204,8 +204,8 @@ declarationsOf bearer gs =
 -- CR 508.1k has already made it attacking, so an Equipment CR 704.5n has
 -- unattached since still equips it (data/scenarios's
 -- super-soldier-serum-fires-though-the-attack-toll-knocks-it-off-its-host).
-attacks :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigger -> GameEvent -> Bool
-attacks context board gs bearer you trigger event = case (trigger, event) of
+attacks :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> GameState -> ObjectId -> PlayerId -> AttackTrigger.AttackTrigger -> GameEvent -> Bool
+attacks context board atEvent gs bearer you trigger event = case (trigger, event) of
   (AttackTrigger.Attacker t, GameEvent.AttackerDeclared d) ->
     let attacker = AttackerDeclared.attacker d
      in admittedAt context board gs attacker (AttackerTrigger.creature t)
@@ -218,9 +218,12 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
             -- counted per object, so CR 400.7's new object attacks for the
             -- first time again.
             TriggerFrequency.FirstTimeEachTurn -> declarationsOf attacker gs <= 1
-          -- Asked of the live board as triggers are collected, never re-checked
-          -- as TriggeredAbility.intervening would be (CR 603.4).
-          && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) context gs bearer) (AttackerTrigger.while t)
+          -- Asked of the game the event left (CR 603.2), never re-checked as
+          -- TriggeredAbility.intervening would be (CR 603.4). That it is not the
+          -- live game is a regression fence here and in the Declaration arm: no
+          -- scenario has a state-based action change the answer between the
+          -- declaration and the gather.
+          && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) context atEvent bearer) (AttackerTrigger.while t)
   -- CR 508.3b's "is attacked" is once per TARGET: Event.Trigger.batchScoped
   -- collapses the declaration's group. CR 508.3e's "[a player] attacks" is
   -- once per event, each one attacking player and target. Either way only
@@ -265,8 +268,8 @@ attacks context board gs bearer you trigger event = case (trigger, event) of
                 Nothing -> True
                 Just count -> reachesFloor count [stampedPower d | d <- declared, admitsAttacker gs bearer you (AttackCount.filter count) (AttackerDeclared.attacker d)]
            in length (filter qualifies (declarationsBy attacker gs)) <= 1
-      -- As the Attacker arm's: asked of the live board, never re-checked (CR 603.4).
-      && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) context gs bearer) (DeclarationTrigger.while t)
+      -- As the Attacker arm's: asked of the game the event left, never re-checked (CR 603.4).
+      && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) context atEvent bearer) (DeclarationTrigger.while t)
   -- CR 508.3f / 509.1h: the event alone answers it. Combat.blockers would
   -- answer for the board at scan time, and rule 509.1h's last sentence keeps
   -- an attacker whose blockers all left combat blocked. The attacker is read
@@ -850,16 +853,22 @@ additionalEntryTriggers gs you zc
 -- 701.31's planeswalking move no permanent, so the after board answers.
 additionalTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> Natural
 additionalTriggers gs you bearer group looksBack =
-  let after = Map.findWithDefault gs group (GameState.boardAfterEvent gs)
+  let after = gameAfter group gs
       before = if looksBack then Maybe.maybeToList (Map.lookup group (GameState.boardBeforeEvent gs)) else []
    in case filter (Set.member bearer . GameState.battlefield) (before <> [after]) of
         board : _ -> PlayerEffect.additionalTriggers you bearer board
         [] -> 0
 
--- The game filed immediately after `entrant` entered the battlefield
--- (GameState.boardAfterEvent), or the live game for an entry none is filed for.
+-- The game filed immediately after `entrant` entered the battlefield, or the
+-- live game for an entry none is filed for.
 atEntry :: GameState -> ObjectId -> GameState
-atEntry gs entrant = maybe gs (\group -> Map.findWithDefault gs group (GameState.boardAfterEvent gs)) (Game.entryGroup entrant gs)
+atEntry gs entrant = maybe gs (`gameAfter` gs) (Game.entryGroup entrant gs)
+
+-- The game Event.Trigger.fileBoards filed immediately after the events of
+-- `group` (GameState.boardAfterEvent), or `live` for a group none is filed for
+-- yet.
+gameAfter :: EventGroup.EventGroup -> GameState -> GameState
+gameAfter group live = Map.findWithDefault live group (GameState.boardAfterEvent live)
 
 -- CR 603.2: can any trigger condition read this event? The one exhaustive answer
 -- about events in trigger matching: a new GameEvent constructor stops the build
@@ -953,14 +962,17 @@ anyTriggerReads event = case event of
 --
 -- `board` is CR 603.10's first sentence: the battlefield immediately after the
 -- event (Event.Trigger.battlefieldAt), for an arm that must not read the live one.
-matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTriggerGiven bindings board gs bearer you cond event =
-  anyTriggerReads event && armMatches bindings board gs bearer you cond event
+-- `atEvent` is the whole game filed then (`gameAfter`), for a
+-- trigger condition's "while" (CR 603.2): CR 704.3's state-based actions run
+-- between the event and the gather, so the live game is too late.
+matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+matchesTriggerGiven bindings board atEvent gs bearer you cond event =
+  anyTriggerReads event && armMatches bindings board atEvent gs bearer you cond event
 
 -- The arm for this condition, which reads the event it watches and falls through
 -- on the rest. Past anyTriggerReads, so only matchesTriggerGiven calls it.
-armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-armMatches bindings board gs bearer you cond event = case cond of
+armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+armMatches bindings board atEvent gs bearer you cond event = case cond of
   TriggerCondition.Enters t -> enters bearerContext board gs bearer you t event
   -- CR 603.2b: this step began, on a turn the scope admits, and -- for a card
   -- that counts main phases rather than naming one -- at CR 505.1b's ordinal.
@@ -1166,7 +1178,7 @@ armMatches bindings board gs bearer you cond event = case cond of
     _ -> False
   -- CR 508.3, as a function of Parun.Types.AttackTrigger's arity and fields:
   -- attacks.
-  TriggerCondition.Attacks t -> attacks bearerContext board gs bearer you t event
+  TriggerCondition.Attacks t -> attacks bearerContext board atEvent gs bearer you t event
   -- CR 509.3, as a function of Parun.Types.BlockTrigger's fields: blocks.
   TriggerCondition.Blocks t -> blocks bearerContext board gs t event
   TriggerCondition.Leaves t -> leaves bindings bearerContext gs bearer you t event
@@ -1183,6 +1195,7 @@ armMatches bindings board gs bearer you cond event = case cond of
     matchesTriggerGiven
       bindings
       board
+      atEvent
       gs
       bearer
       you
@@ -1510,9 +1523,12 @@ armMatches bindings board gs bearer you cond event = case cond of
               ActingPermanent.Self -> spell == bearer
               ActingPermanent.Matching f -> Filter.matches bearerContext (Projection.viewOfSpell controller spell gs) f
             -- Social Snub's "while you control a creature", asked of the
-            -- live board as triggers are collected and never re-checked, as
+            -- game the cast left (CR 601.2i) and never re-checked, as
             -- AttackerTrigger.while is (CR 603.4 is for an "if").
-            && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere gs) bearerContext gs bearer) while_
+            -- data/scenarios's
+            -- social-snub-copies-itself-though-its-only-creature-dies-before-the-trigger-is-put
+            -- proves it.
+            && maybe True (Condition.holds (Projection.viewWithLastKnownAnywhere atEvent) bearerContext atEvent bearer) while_
         ordinalOf caster spell = case subject of
           ActingPermanent.Self -> Just 1
           ActingPermanent.Matching f -> castOrdinal bearerContext f fromZone caster spell gs
@@ -1935,7 +1951,7 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- the SAME event fire the ability once here, which is also the right answer --
   -- CR 603.2 matches an event against "a triggered ability's trigger event", and
   -- the ability is one ability.
-  TriggerCondition.AnyOf conditions -> any (\c -> matchesTriggerGiven bindings board gs bearer you c event) conditions
+  TriggerCondition.AnyOf conditions -> any (\c -> matchesTriggerGiven bindings board atEvent gs bearer you c event) conditions
   -- CR 609.1: the narrowed condition, on an event a spell or ability's effect
   -- caused, that spell or ability's controller related to CR 109.5's "you" the
   -- way a Discarder discard relates the discarder. The controller is the one the
@@ -1943,7 +1959,7 @@ armMatches bindings board gs bearer you cond event = case cond of
   -- control cannot reach back.
   TriggerCondition.CausedBy narrowed ->
     maybe False (PlayerRelation.holds (Game.teams gs) (CausedBy.controller narrowed) you) (causeOf event)
-      && matchesTriggerGiven bindings board gs bearer you (CausedBy.condition narrowed) event
+      && matchesTriggerGiven bindings board atEvent gs bearer you (CausedBy.condition narrowed) event
   -- CR 603.3b's second class, the one condition in this type whose event is
   -- another ability triggering: "whenever the final chapter ability of a Saga you
   -- control triggers".
