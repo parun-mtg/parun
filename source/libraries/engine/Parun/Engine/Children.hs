@@ -3205,61 +3205,168 @@ chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser 
     <*> howManyChildren (refQuantity c) count
     <*> pure zone
 
--- | One visitor per kind of child a combat rule holds: a restriction on
--- declaring attackers or blockers (CR 508.1c, 509.1b) and a cost to attack or
--- block (CR 508.1h, 509.1d).
-data CombatChildren f = MkCombatChildren
-  { -- | The creatures a rule applies to.
-    combatAffected :: Affected.Affected -> f Affected.Affected,
-    -- | A Filter a field holds: the creatures on the other side, the company.
-    combatFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+-- | One visitor per kind of child a rule-affecting row holds (CR 613.11): a
+-- restriction on declaring attackers or blockers (CR 508.1c, 509.1b), a cost to
+-- attack or block (CR 508.1h, 509.1d), and the other rows of a RuleAbilities.
+data RuleChildren f = MkRuleChildren
+  { -- | The objects a rule applies to.
+    ruleAffected :: Affected.Affected -> f Affected.Affected,
+    -- | A Filter a field holds: the creatures on the other side, the company,
+    -- the attachers, the aimers.
+    ruleFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
     -- | The gate a rule applies under, whole.
-    combatCondition :: Condition.Condition -> f Condition.Condition,
+    ruleCondition :: Condition.Condition -> f Condition.Condition,
     -- | A Quantity a field holds: a counted share, a block amount.
-    combatQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    ruleQuantity :: Quantity.Quantity -> f Quantity.Quantity,
     -- | A taxed creature's fixed share, whole.
-    combatCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword)
+    ruleCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
+    -- | The kind of counter a counter restriction names (CR 122.1), whole.
+    ruleCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword)
   }
+
+-- | A RuleAbilities' children (CR 613.11), row by row.
+ruleAbilitiesChildren :: (Applicative f) => RuleChildren f -> RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities
+ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions crewRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions) =
+  RuleAbilities.MkRuleAbilities
+    <$> traverse (activationProhibitionChildren c) activationProhibitions
+    <*> traverse (attachRestrictionChildren c) attachRestrictions
+    <*> traverse (attackCostChildren c) attackCosts
+    <*> traverse (rulePermissionChildren c) rulePermissions
+    <*> traverse (attackRequirementChildren c) attackRequirements
+    <*> traverse (blockCostChildren c) blockCosts
+    <*> traverse (blockPermissionChildren c) blockPermissions
+    <*> traverse (blockRequirementChildren c) blockRequirements
+    <*> traverse (combatRestrictionChildren c) combatRestrictions
+    <*> traverse (counterRestrictionChildren c) counterRestrictions
+    <*> traverse (crewRestrictionChildren c) crewRestrictions
+    <*> traverse (entryRestrictionChildren c) entryRestrictions
+    <*> traverse (sacrificeRestrictionChildren c) sacrificeRestrictions
+    <*> traverse (targetRestrictionChildren c) targetRestrictions
+    <*> traverse (untapRestrictionChildren c) untapRestrictions
+
+-- | An activation prohibition's children (CR 602.5). Its ability kind,
+-- prohibited costs and ability name are left as they are.
+activationProhibitionChildren :: (Applicative f) => RuleChildren f -> ActivationProhibition.ActivationProhibition -> f ActivationProhibition.ActivationProhibition
+activationProhibitionChildren c (ActivationProhibition.MkActivationProhibition affected kind costs name) =
+  ActivationProhibition.MkActivationProhibition <$> ruleAffected c affected <*> pure kind <*> pure costs <*> pure name
+
+-- | An attach restriction's children.
+attachRestrictionChildren :: (Applicative f) => RuleChildren f -> AttachRestriction.AttachRestriction -> f AttachRestriction.AttachRestriction
+attachRestrictionChildren c (AttachRestriction.MkAttachRestriction affected attachers) =
+  AttachRestriction.MkAttachRestriction <$> ruleAffected c affected <*> ruleFilter c attachers
+
+-- | A rule permission's children. The rule it waives is left as it is.
+rulePermissionChildren :: (Applicative f) => RuleChildren f -> RulePermission.RulePermission -> f RulePermission.RulePermission
+rulePermissionChildren c (RulePermission.MkRulePermission affected while waives) =
+  RulePermission.MkRulePermission <$> ruleAffected c affected <*> traverse (ruleCondition c) while <*> pure waives
+
+-- | An attack requirement's children (CR 508.1d). The defender it names and
+-- its arity are left as they are.
+attackRequirementChildren :: (Applicative f) => RuleChildren f -> AttackRequirement.AttackRequirement -> f AttackRequirement.AttackRequirement
+attackRequirementChildren c (AttackRequirement.MkAttackRequirement subject object_ while arity) =
+  AttackRequirement.MkAttackRequirement <$> ruleAffected c subject <*> pure object_ <*> traverse (ruleCondition c) while <*> pure arity
+
+-- | A block permission's children.
+blockPermissionChildren :: (Applicative f) => RuleChildren f -> BlockPermission.BlockPermission -> f BlockPermission.BlockPermission
+blockPermissionChildren c (BlockPermission.MkBlockPermission affected additional while) =
+  BlockPermission.MkBlockPermission <$> ruleAffected c affected <*> traverse (ruleQuantity c) additional <*> traverse (ruleCondition c) while
+
+-- | A block requirement's children (CR 509.1c). Its arity is left as it is.
+blockRequirementChildren :: (Applicative f) => RuleChildren f -> BlockRequirement.BlockRequirement -> f BlockRequirement.BlockRequirement
+blockRequirementChildren c (BlockRequirement.MkBlockRequirement subject attacker while arity) =
+  BlockRequirement.MkBlockRequirement <$> traverse (ruleAffected c) subject <*> traverse (ruleAffected c) attacker <*> traverse (ruleCondition c) while <*> pure arity
+
+-- | A counter restriction's children (CR 122.1).
+counterRestrictionChildren :: (Applicative f) => RuleChildren f -> CounterRestriction.CounterRestriction -> f CounterRestriction.CounterRestriction
+counterRestrictionChildren c (CounterRestriction.MkCounterRestriction affected kind) =
+  CounterRestriction.MkCounterRestriction <$> ruleAffected c affected <*> traverse (ruleCounterKind c) kind
+
+-- | A crew restriction's children (CR 702.122).
+crewRestrictionChildren :: (Applicative f) => RuleChildren f -> CrewRestriction.CrewRestriction -> f CrewRestriction.CrewRestriction
+crewRestrictionChildren c (CrewRestriction.MkCrewRestriction affected) =
+  CrewRestriction.MkCrewRestriction <$> ruleAffected c affected
+
+-- | An entry restriction's children. Its origin zones are left as they are.
+entryRestrictionChildren :: (Applicative f) => RuleChildren f -> EntryRestriction.EntryRestriction -> f EntryRestriction.EntryRestriction
+entryRestrictionChildren c (EntryRestriction.MkEntryRestriction affected origins) =
+  EntryRestriction.MkEntryRestriction <$> ruleAffected c affected <*> pure origins
+
+-- | A sacrifice restriction's children (CR 701.21).
+sacrificeRestrictionChildren :: (Applicative f) => RuleChildren f -> SacrificeRestriction.SacrificeRestriction -> f SacrificeRestriction.SacrificeRestriction
+sacrificeRestrictionChildren c (SacrificeRestriction.MkSacrificeRestriction affected) =
+  SacrificeRestriction.MkSacrificeRestriction <$> ruleAffected c affected
+
+-- | A target restriction's children. Its stack object kind is left as it is.
+targetRestrictionChildren :: (Applicative f) => RuleChildren f -> TargetRestriction.TargetRestriction Affected.Affected -> f (TargetRestriction.TargetRestriction Affected.Affected)
+targetRestrictionChildren c (TargetRestriction.MkTargetRestriction affected kind aimers) =
+  TargetRestriction.MkTargetRestriction <$> ruleAffected c affected <*> pure kind <*> ruleFilter c aimers
+
+-- | An untap restriction's children (CR 502.3). What it holds back is left as
+-- it is.
+untapRestrictionChildren :: (Applicative f) => RuleChildren f -> UntapRestriction.UntapRestriction -> f UntapRestriction.UntapRestriction
+untapRestrictionChildren c (UntapRestriction.MkUntapRestriction affected hold while) =
+  UntapRestriction.MkUntapRestriction <$> ruleAffected c affected <*> pure hold <*> traverse (ruleCondition c) while
+
+-- | One visitor per kind of child an Affected holds.
+data AffectedChildren f = MkAffectedChildren
+  { -- | A frozen id set (CR 611.2c), whole.
+    affectedObjects :: Set.Set ObjectId.ObjectId -> f (Set.Set ObjectId.ObjectId),
+    -- | The Filter a matching arm holds.
+    affectedFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
+    -- | How long a permission's card stays covered (CR 611.3d), whole.
+    affectedDuration :: Duration.Duration -> f Duration.Duration
+  }
+
+-- | An Affected's children.
+affectedChildren :: (Applicative f) => AffectedChildren f -> Affected.Affected -> f Affected.Affected
+affectedChildren c affected = case affected of
+  Affected.TheseObjects objects -> Affected.TheseObjects <$> affectedObjects c objects
+  Affected.Matching filter_ -> Affected.Matching <$> affectedFilter c filter_
+  Affected.MatchingAnywhere filter_ -> Affected.MatchingAnywhere <$> affectedFilter c filter_
+  Affected.MatchingOffBattlefield filter_ -> Affected.MatchingOffBattlefield <$> affectedFilter c filter_
+  Affected.Attached -> pure affected
+  Affected.AttachedPlayerControls filter_ -> Affected.AttachedPlayerControls <$> affectedFilter c filter_
+  Affected.PlayedThisWay duration -> Affected.PlayedThisWay <$> affectedDuration c duration
 
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
 -- comparison, company count and defenders are left as they are.
-combatRestrictionChildren :: (Applicative f) => CombatChildren f -> CombatRestriction.CombatRestriction -> f CombatRestriction.CombatRestriction
+combatRestrictionChildren :: (Applicative f) => RuleChildren f -> CombatRestriction.CombatRestriction -> f CombatRestriction.CombatRestriction
 combatRestrictionChildren c restriction = case restriction of
   CombatRestriction.CantAttack x -> CombatRestriction.CantAttack <$> affectedUnlessChildren x
   CombatRestriction.CantBlock x -> CombatRestriction.CantBlock <$> affectedUnlessChildren x
   CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers unless name) ->
-    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> combatAffected c affected <*> combatFilter c blockers <*> traverse (combatCondition c) unless <*> pure name)
+    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> ruleAffected c affected <*> ruleFilter c blockers <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures affected attackers unless name) ->
-    fmap CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures <$> combatAffected c affected <*> combatFilter c attackers <*> traverse (combatCondition c) unless <*> pure name)
+    fmap CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures <$> ruleAffected c affected <*> ruleFilter c attackers <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer affected defenders kinds unless name) ->
-    fmap CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer <$> combatAffected c affected <*> pure defenders <*> pure kinds <*> traverse (combatCondition c) unless <*> pure name)
+    fmap CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer <$> ruleAffected c affected <*> pure defenders <*> pure kinds <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantAttackAlone x -> CombatRestriction.CantAttackAlone <$> aloneUnlessChildren x
   CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless limit defenders unless) ->
-    fmap CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless limit defenders <$> traverse (combatCondition c) unless)
+    fmap CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless limit defenders <$> traverse (ruleCondition c) unless)
   CombatRestriction.CantBlockAlone x -> CombatRestriction.CantBlockAlone <$> aloneUnlessChildren x
   CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless limit comparison attackers unless) ->
-    fmap CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless limit comparison <$> traverse (combatAffected c) attackers <*> traverse (combatCondition c) unless)
+    fmap CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless limit comparison <$> traverse (ruleAffected c) attackers <*> traverse (ruleCondition c) unless)
   where
     affectedUnlessChildren (AffectedUnless.MkAffectedUnless affected unless name amount) =
-      AffectedUnless.MkAffectedUnless <$> combatAffected c affected <*> traverse (combatCondition c) unless <*> pure name <*> traverse (combatQuantity c) amount
+      AffectedUnless.MkAffectedUnless <$> ruleAffected c affected <*> traverse (ruleCondition c) unless <*> pure name <*> traverse (ruleQuantity c) amount
     aloneUnlessChildren (AloneUnless.MkAloneUnless affected alongside others unless name) =
-      AloneUnless.MkAloneUnless <$> combatAffected c affected <*> traverse (combatFilter c) alongside <*> pure others <*> traverse (combatCondition c) unless <*> pure name
+      AloneUnless.MkAloneUnless <$> ruleAffected c affected <*> traverse (ruleFilter c) alongside <*> pure others <*> traverse (ruleCondition c) unless <*> pure name
 
 -- | A cost to attack's children (CR 508.1h). Its scope is left as it is.
-attackCostChildren :: (Applicative f) => CombatChildren f -> AttackCost.AttackCost -> f AttackCost.AttackCost
+attackCostChildren :: (Applicative f) => RuleChildren f -> AttackCost.AttackCost -> f AttackCost.AttackCost
 attackCostChildren c (AttackCost.MkAttackCost subject perAttacker scope_ while) =
-  AttackCost.MkAttackCost <$> combatAffected c subject <*> perCreatureChildren c perAttacker <*> pure scope_ <*> traverse (combatCondition c) while
+  AttackCost.MkAttackCost <$> ruleAffected c subject <*> perCreatureChildren c perAttacker <*> pure scope_ <*> traverse (ruleCondition c) while
 
 -- | A cost to block's children (CR 509.1d).
-blockCostChildren :: (Applicative f) => CombatChildren f -> BlockCost.BlockCost -> f BlockCost.BlockCost
+blockCostChildren :: (Applicative f) => RuleChildren f -> BlockCost.BlockCost -> f BlockCost.BlockCost
 blockCostChildren c (BlockCost.MkBlockCost subject perBlocker attackers while) =
-  BlockCost.MkBlockCost <$> combatAffected c subject <*> perCreatureChildren c perBlocker <*> traverse (combatFilter c) attackers <*> traverse (combatCondition c) while
+  BlockCost.MkBlockCost <$> ruleAffected c subject <*> perCreatureChildren c perBlocker <*> traverse (ruleFilter c) attackers <*> traverse (ruleCondition c) while
 
 -- | One taxed creature's share of a cost to attack or block (CR 508.1h, 509.1d).
-perCreatureChildren :: (Applicative f) => CombatChildren f -> PerCreature.PerCreature -> f PerCreature.PerCreature
+perCreatureChildren :: (Applicative f) => RuleChildren f -> PerCreature.PerCreature -> f PerCreature.PerCreature
 perCreatureChildren c share = case share of
-  PerCreature.Fixed cost -> PerCreature.Fixed <$> combatCost c cost
-  PerCreature.Counted quantity -> PerCreature.Counted <$> combatQuantity c quantity
+  PerCreature.Fixed cost -> PerCreature.Fixed <$> ruleCost c cost
+  PerCreature.Counted quantity -> PerCreature.Counted <$> ruleQuantity c quantity
 
 -- | One visitor per kind of child a mana payload holds: an addition (CR
 -- 106.1), its spending restriction and rider (CR 106.6), and a clause spending
