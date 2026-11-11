@@ -694,12 +694,15 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- rather than a 0/1: rule 702.191a's "the amount of mana spent to cast that
         -- spell". Zero for a spell cast for no mana, which is an ordinary answer.
         Quantity.ManaSpent part -> case part of
-          ManaSpent.Total -> fmap (toInteger . Filter.manaSpentAmount) mView
+          ManaSpent.Total -> fmap (toInteger . length . Mana.unwrap . Filter.manaSpent) mView
           -- CR 107.3 / 601.2h: Soul Burn's "the amount of {B} spent on X", off
           -- the mana the payer spent on X (Object.manaSpentOnX), 0 where none
           -- was. A unit counts by the type it IS, not one a spend-as-though
           -- clause let it pay as (CR 609.4b).
           ManaSpent.OfTypeOnX manaType -> fmap (toInteger . length . filter ((== manaType) . ManaUnit.manaType) . Mana.unwrap . Filter.manaSpentOnX) mView
+          -- CR 601.2h / 106.1a: Converge's count, a SET of colours so two mana of
+          -- one colour count once and colourless (CR 106.1b) counts none.
+          ManaSpent.Colors -> fmap (toInteger . Set.size . ManaSymbolText.colorsOf . Filter.manaSpent) mView
         -- CR 111.6's status as a 0/1, WasForetold's arm in every respect. Filter.token
         -- rather than Game.isToken: reading the object directly answers False for an
         -- id naming nothing, which is the whole case this arm exists for; see #1102.
@@ -1591,6 +1594,7 @@ hasRead wanted quantity = case quantity of
   Quantity.ManaSpent part -> case part of
     ManaSpent.Total -> wanted == StaticRead.ReadsManaSpent
     ManaSpent.OfTypeOnX _ -> wanted == StaticRead.ReadsManaSpentOnX
+    ManaSpent.Colors -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
 
 -- CR 800.4i: does this per-player quantity tally actions players took, so that a

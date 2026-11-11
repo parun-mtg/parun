@@ -10,10 +10,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "Total" ManaSpent.Total,
-      Arm.payload "OfTypeOnX" ManaType.codec ManaSpent.OfTypeOnX (\x -> case x of ManaSpent.OfTypeOnX y -> Just y; _ -> Nothing)
+      Arm.payload "OfTypeOnX" ManaType.codec ManaSpent.OfTypeOnX (\x -> case x of ManaSpent.OfTypeOnX y -> Just y; _ -> Nothing),
+      Arm.nullary "Colors" ManaSpent.Colors
     ]
 
 tagOf :: ManaSpent.ManaSpent -> String
 tagOf x = case x of
   ManaSpent.Total {} -> "Total"
   ManaSpent.OfTypeOnX {} -> "OfTypeOnX"
+  ManaSpent.Colors {} -> "Colors"

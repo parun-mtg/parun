@@ -11,4 +11,7 @@ data ManaSpent
   | -- | CR 107.3 / 601.2h: the mana of that type spent on X -- Soul Burn's "the
     -- amount of {B} spent on X" (Parun.Types.Object.manaSpentOnX).
     OfTypeOnX ManaType.ManaType
+  | -- | CR 601.2h / 106.1a: how many of the five colors the mana spent includes --
+    -- Converge's "the number of colors of mana spent to cast this spell".
+    Colors
   deriving (Eq, Ord, Show)

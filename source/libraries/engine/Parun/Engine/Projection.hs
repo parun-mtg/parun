@@ -103,9 +103,7 @@ import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
-import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modification as Modification
@@ -5820,7 +5818,7 @@ phyrexianLifePaidOf oid gs = maybe 0 Object.phyrexianLifePaid (Game.lookupObject
 colorsSpentOf :: ObjectId -> GameState -> Set Color.Color
 colorsSpentOf oid gs = case Game.lookupObject oid gs of
   Nothing -> Set.empty
-  Just obj -> Set.fromList (Maybe.mapMaybe (ManaSymbolText.colorOfManaType . ManaUnit.manaType) (Mana.unwrap (Object.manaSpent obj)))
+  Just obj -> ManaSymbolText.colorsOf (Object.manaSpent obj)
 
 -- CR 122.1c: the pair of effects one or more shield counters create.
 --

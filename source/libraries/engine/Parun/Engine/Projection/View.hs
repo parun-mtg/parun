@@ -312,7 +312,7 @@ viewOfCardLapsed lapsed face =
           Filter.manaSpentTagColors = Map.empty,
           -- CR 202.1a's mana cost is paid for a SPELL -- `manaSpentTagColors` above,
           -- same sentence.
-          Filter.manaSpentAmount = 0,
+          Filter.manaSpent = Mana.MkMana [],
           Filter.manaSpentOnX = Mana.MkMana [],
           -- CR 602.1 / 605.1a off the PRINTED face, through the roster every view
           -- builder reads (Keyword.activatedAbilitiesOf): the printed abilities
@@ -865,9 +865,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
           | object <- Maybe.maybeToList (Game.lookupObject oid gs),
             unit <- Mana.unwrap (Object.manaSpent object)
           ],
-      -- CR 601.2h off the same record one field over: how many units were spent,
-      -- for rule 702.191a's increment.
-      Filter.manaSpentAmount = maybe 0 (Natural.length . Mana.unwrap . Object.manaSpent) (Game.lookupObject oid gs),
+      -- CR 601.2h: the same record, unclassified.
+      Filter.manaSpent = maybe (Mana.MkMana []) Object.manaSpent (Game.lookupObject oid gs),
       -- CR 107.3 / 601.2h off the record the payment wrote beside it.
       Filter.manaSpentOnX = Maybe.fromMaybe (Mana.MkMana []) (Game.lookupObject oid gs >>= Object.manaSpentOnX),
       -- CR 602.1 / 605.1a off the PROJECTION like `keywords`: abilities are
