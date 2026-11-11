@@ -514,7 +514,7 @@ rewriteObjectRef pairs ref = case ref of
   -- cr-612-2-a-sleighted-disorder-burns-each-player-who-controls-a-green-creature.
   ObjectRef.Players p -> ObjectRef.Players p {PlayersWho.who = fmap (Filter.rewrite pairs) (PlayersWho.who p)}
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary p c) -> ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary p (rewriteQuantity pairs c))
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil p f c) -> ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil p (Filter.rewrite pairs f) (rewriteQuantity pairs c))
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil p f w c) -> ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil p (Filter.rewrite pairs f) (rewriteQuantity pairs w) (rewriteQuantity pairs c))
   -- Names a POSITION and a seat, and neither is a subtype word, so CR 612.1 has
   -- nothing to swap: the arms above reach one only through a Filter or a
   -- Quantity, and this one carries neither.

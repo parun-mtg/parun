@@ -7,9 +7,12 @@ import qualified Parun.Types.Quantity as Quantity
 
 -- | The top of a library (CR 401.2, CR 121.1) walked down to and INCLUDING the
 -- card whose match ENDS the walk, named by whose library, by what a match is,
--- and by how many matches it takes: Treasure Hunt's "reveal cards from the top
--- of your library until you reveal a nonland card" is one match, Open the Way's
--- "until you reveal X land cards" is X of them.
+-- by what each match adds to the tally, and by the tally that ends it: Treasure
+-- Hunt's "reveal cards from the top of your library until you reveal a nonland
+-- card" is one match weighing 1, Open the Way's "until you reveal X land cards"
+-- is X of them, and Improvisation Capstone's "until you exile cards with total
+-- mana value 4 or greater" is every card weighing its mana value (CR 202.3)
+-- until the sum reaches 4.
 --
 -- Parun.Types.TopOfLibrary carries the same `player` and `count` and no Filter,
 -- and that Filter is the whole difference between them: both name a prefix of
@@ -27,6 +30,9 @@ import qualified Parun.Types.Quantity as Quantity
 data TopOfLibraryUntil = MkTopOfLibraryUntil
   { player :: PlayerRef.PlayerRef,
     filter :: Filter.Filter Keyword.Keyword,
+    -- | What one match adds to the tally, read against that card's projection;
+    -- an unevaluable or negative weight adds nothing (CR 107.2, 107.1b).
+    weight :: Quantity.Quantity,
     count :: Quantity.Quantity
   }
   deriving (Eq, Ord, Show)

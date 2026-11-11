@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -25,6 +26,7 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibraryUntil" $ do
       ( TopOfLibraryUntil.MkTopOfLibraryUntil
           { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibraryUntil.filter = Filter.Not (Filter.HasCardType CardType.Land),
+            TopOfLibraryUntil.weight = Quantity.Literal 1,
             TopOfLibraryUntil.count = Quantity.Literal 1
           }
       )
@@ -38,10 +40,25 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibraryUntil" $ do
       ( TopOfLibraryUntil.MkTopOfLibraryUntil
           { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibraryUntil.filter = Filter.HasCardType CardType.Land,
+            TopOfLibraryUntil.weight = Quantity.Literal 1,
             TopOfLibraryUntil.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
+  -- Improvisation Capstone's "until you exile cards with total mana value 4 or
+  -- greater": every card matches and weighs its mana value.
+  Spec.it s "MkTopOfLibraryUntil carries the weight Improvisation Capstone needs" $
+    Common.assertCodec
+      s
+      TopOfLibraryUntil.codec
+      ( TopOfLibraryUntil.MkTopOfLibraryUntil
+          { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
+            TopOfLibraryUntil.filter = Filter.And [],
+            TopOfLibraryUntil.weight = Quantity.Measure Measure.ManaValue,
+            TopOfLibraryUntil.count = Quantity.Literal 4
+          }
+      )
+      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"And\",\"value\":[]},\"weight\":{\"type\":\"Measure\",\"value\":\"ManaValue\"},\"count\":{\"type\":\"Literal\",\"value\":4}} "
   -- The filter is what a MATCH is, so a ref without one names a walk that never
   -- stops: a decode failure rather than a library taken whole.
   Spec.it s "a walk with no filter is rejected" $
