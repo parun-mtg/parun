@@ -150,6 +150,28 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       problems <- problemsOf s "disagree" registry "3 Wax // Goblin Piker\n"
       Spec.assertEqWith s "the one line" problems [DeckList.HalvesDisagree 1 (CardName.MkCardName (Text.pack "Wax // Goblin Piker"))]
 
+  -- A prepare spell reprinting a real card leaves that name to the real card
+  -- (Parun.Registry.index), so the halves' lookups disagree; the joined name
+  -- still names the one card whose faces carry both (CR 723.2c), as a set list
+  -- writes it (data/decks/sets/sos/all.txt).
+  Spec.it s "CR 723.2c a preparation card's joined name resolves when its prepare spell names a real card" $ do
+    bolt <- S.committedJson "lightning-bolt.json"
+    emeritus <- S.committedJson "emeritus-of-conflict-lightning-bolt.json"
+    S.withCorpusDir "prepared" [("lightning-bolt.json", bolt), ("emeritus-of-conflict-lightning-bolt.json", emeritus)] $ \root -> do
+      registry <- Registry.fileRegistry root
+      joined <- deckOf s "joined" registry "1 Emeritus of Conflict // Lightning Bolt\n"
+      Spec.assertEqWith s "the preparation card" (entriesOf (Deck.cards joined)) [(Text.pack "Emeritus of Conflict", 1)]
+      alone <- deckOf s "alone" registry "1 Lightning Bolt\n"
+      Spec.assertEqWith s "the spell's name alone is the real card" (entriesOf (Deck.cards alone)) [(Text.pack "Lightning Bolt", 1)]
+
+  -- A shared prepare spell's name is no card's (Parun.Registry.index), so only
+  -- the half naming the card resolves; it still carries both.
+  Spec.it s "CR 723.2c a joined name whose prepare spell is shared resolves to its own card"
+    . withPool "shared-prepare"
+    $ \registry -> do
+      deck <- deckOf s "shared-prepare" registry "1 Blossom-Blessed Angel // Seed Suture\n"
+      Spec.assertEqWith s "the angel" (entriesOf (Deck.cards deck)) [(Text.pack "Blossom-Blessed Angel", 1)]
+
   -- CR 100.4: a sideboard is a group of cards beside the deck rather than part
   -- of it, which is why Parun.Types.Deck keeps the two apart. Distinct cards on
   -- the two sides, so a parser that put everything in one field could not pass.
@@ -190,8 +212,7 @@ spec s = Spec.describe s "Parun.DeckList" $ do
   -- `parun deck` something a person can hand back. A split card renders in the
   -- printed, spaced spelling, so the round trip is what pins that the parser
   -- accepts it (#679). A preparation card renders by its front face alone (CR
-  -- 723.4): its prepare spell Seed Suture is shared, so a joined name would
-  -- name no card.
+  -- 723.4).
   Spec.it s "a rendered deck parses back to the same deck"
     . withPool "round-trip"
     $ \registry -> do

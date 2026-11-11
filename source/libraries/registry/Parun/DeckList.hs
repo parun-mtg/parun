@@ -485,8 +485,12 @@ suffix (set, number) = Text.singleton '(' <> set <> Text.pack ") " <> number
 -- list writes both joined ("Wax // Wane"). The joined string is not a name a
 -- card has, so the registry rightly refuses it (#649); splitting it here is
 -- what lets a deck list say what players write without the lookup learning
--- about "//" again. Both halves are resolved and must agree, so a line naming
--- two cards is an error rather than a silent choice of the first.
+-- about "//" again. Each half is resolved, and the line names the card found
+-- for one of them whose faces carry every half, so a line naming two cards is
+-- an error rather than a silent choice of the first. Faces, not lookups, must
+-- agree: a prepare spell reprinting a real card leaves that name to the real
+-- card (Registry.index), yet "Emeritus of Conflict // Lightning Bolt" is the
+-- preparation card (CR 723.2c).
 --
 -- Splitting on "//" and trimming reconciles the two spellings in the tree at
 -- once: the printed, spaced "Wax // Wane" and Parun.Types.CardName.join's
@@ -494,12 +498,17 @@ suffix (set, number) = Text.singleton '(' <> set <> Text.pack ") " <> number
 -- examples use.
 resolve :: (Monad m) => Registry.Registry m -> Natural.Natural -> CardName.CardName -> m (Either InvalidCorpus.InvalidCorpus (Either Problem Card.Card))
 resolve registry number name = do
-  looked <- mapM (Registry.fetchCard registry) (halvesOf name)
-  pure . flip fmap (sequence looked) $ \found -> case sequence found of
-    Nothing -> Left (NoSuchCard number name)
-    Just (card NonEmpty.:| rest)
-      | all (== card) rest -> Right card
+  looked <- mapM (Registry.fetchCard registry) halves
+  pure . flip fmap (sequence looked) $ \found -> case List.find carriesEvery (Maybe.catMaybes (NonEmpty.toList found)) of
+    Just card -> Right card
+    Nothing
+      | any Maybe.isNothing found -> Left (NoSuchCard number name)
       | otherwise -> Left (HalvesDisagree number name)
+  where
+    halves = halvesOf name
+    carriesEvery card =
+      let faces = Set.fromList (fmap (Registry.slugFor . Face.name) (NonEmpty.toList (Card.faces card)))
+       in length halves == 1 || all ((`Set.member` faces) . Registry.slugFor) halves
 
 -- The names a written name joins, which for every name but a split card's is
 -- the one name itself.

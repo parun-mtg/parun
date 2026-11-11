@@ -23,8 +23,9 @@ pool, 245 missing.
 
 None is committed: decks are optional, so `data/decks/sets/sos/` holds only
 the set list. It writes each prepare card by MTGJSON's joined name
-(`Emeritus of Conflict // Lightning Bolt`), which resolves to the prepare card
-rather than the older card its spell face shares a name with.
+(`Emeritus of Conflict // Lightning Bolt`). Twelve of them name a prepare spell
+after an older card, whose lookup answers that card; the finish taught
+`Parun.DeckList.resolve` to take the card whose faces carry every half.
 
 ## How it went
 
