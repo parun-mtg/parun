@@ -18,22 +18,16 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Affected as Affected
-import qualified Parun.Types.AffectedUnless as AffectedUnless
-import qualified Parun.Types.AloneUnless as AloneUnless
 import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Arithmetic as Arithmetic
 import qualified Parun.Types.AsCopy as AsCopy
 import qualified Parun.Types.AttachRestriction as AttachRestriction
 import qualified Parun.Types.AttackCost as AttackCost
-import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
-import qualified Parun.Types.CantAttackPlayer as CantAttackPlayer
-import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
-import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
@@ -62,7 +56,6 @@ import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
-import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
@@ -77,7 +70,6 @@ import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PayGate as PayGate
-import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Plus as Plus
@@ -598,66 +590,33 @@ rewriteRuleAbilities pairs abilities =
           RuleAbilities.untapRestrictions = fmap (\x -> x {UntapRestriction.affected = affected (UntapRestriction.affected x), UntapRestriction.while = condition (UntapRestriction.while x)}) (RuleAbilities.untapRestrictions abilities)
         }
 
--- A CR 508.1h cost to attack under CR 612.1: who it taxes, what each share
--- costs and its gate. Its scope names no word. Parun.Engine.AttackCost.costsOn
--- applies it to the source's own costs.
+-- CR 612.1 through a combat rule: Parun.Engine.Children's traversal at
+-- Identity, every Affected, Filter, Condition, Quantity and Cost rewritten.
+-- Parun.Engine.AttackCost.costsOn and Parun.Engine.BlockCost.costsOn apply the
+-- costs to the source's own; Parun.Engine.CombatRestriction the restrictions.
+--
+-- Proved by the scenario
+-- cr-612-1-a-hacked-leviathan-can-t-attack-by-sacrificing-islands (a fixed
+-- share's Cost). The other children are regression fences: no test observes
+-- their rewrite.
 rewriteAttackCost :: [(TextWord.TextWord, TextWord.TextWord)] -> AttackCost.AttackCost -> AttackCost.AttackCost
-rewriteAttackCost pairs cost =
-  cost
-    { AttackCost.subject = rewriteAffected pairs (AttackCost.subject cost),
-      AttackCost.perAttacker = rewritePerCreature pairs (AttackCost.perAttacker cost),
-      AttackCost.while = fmap (rewriteCondition pairs) (AttackCost.while cost)
-    }
+rewriteAttackCost pairs = Identity.runIdentity . Children.attackCostChildren (combatRewrites pairs)
 
--- A CR 509.1d cost to block under CR 612.1, rewriteAttackCost's twin plus the
--- attackers it is owed against. Parun.Engine.BlockCost.costsOn applies it.
 rewriteBlockCost :: [(TextWord.TextWord, TextWord.TextWord)] -> BlockCost.BlockCost -> BlockCost.BlockCost
-rewriteBlockCost pairs cost =
-  cost
-    { BlockCost.subject = rewriteAffected pairs (BlockCost.subject cost),
-      BlockCost.perBlocker = rewritePerCreature pairs (BlockCost.perBlocker cost),
-      BlockCost.attackers = fmap (Filter.rewrite pairs) (BlockCost.attackers cost),
-      BlockCost.while = fmap (rewriteCondition pairs) (BlockCost.while cost)
-    }
+rewriteBlockCost pairs = Identity.runIdentity . Children.blockCostChildren (combatRewrites pairs)
 
--- One taxed creature's share under CR 612.1.
-rewritePerCreature :: [(TextWord.TextWord, TextWord.TextWord)] -> PerCreature.PerCreature -> PerCreature.PerCreature
-rewritePerCreature pairs share = case share of
-  PerCreature.Fixed cost -> PerCreature.Fixed (Filter.rewriteCost pairs cost)
-  PerCreature.Counted quantity -> PerCreature.Counted (rewriteQuantity pairs quantity)
-
--- One CR 508.1c / 509.1b restriction under CR 612.1: its subject, its gate, its
--- amount and the other side of the pair it describes, as Parun.Engine.CombatRestriction
--- rewrites them.
--- Exhaustive, so a new arm has to say where its words are.
 rewriteCombatRestriction :: [(TextWord.TextWord, TextWord.TextWord)] -> CombatRestriction.CombatRestriction -> CombatRestriction.CombatRestriction
-rewriteCombatRestriction pairs restriction =
-  let unlessOf :: Maybe Condition.Type.Condition -> Maybe Condition.Type.Condition
-      unlessOf = fmap (rewriteCondition pairs)
-      affectedUnless x = x {AffectedUnless.affected = rewriteAffected pairs (AffectedUnless.affected x), AffectedUnless.unless = unlessOf (AffectedUnless.unless x), AffectedUnless.amount = fmap (rewriteQuantity pairs) (AffectedUnless.amount x)}
-      aloneUnless x = x {AloneUnless.affected = rewriteAffected pairs (AloneUnless.affected x), AloneUnless.alongside = fmap (Filter.rewrite pairs) (AloneUnless.alongside x), AloneUnless.unless = unlessOf (AloneUnless.unless x)}
-   in case restriction of
-        CombatRestriction.CantAttack x -> CombatRestriction.CantAttack (affectedUnless x)
-        CombatRestriction.CantBlock x -> CombatRestriction.CantBlock (affectedUnless x)
-        CombatRestriction.CantAttackAlone x -> CombatRestriction.CantAttackAlone (aloneUnless x)
-        CombatRestriction.CantBlockAlone x -> CombatRestriction.CantBlockAlone (aloneUnless x)
-        CombatRestriction.CantBeBlockedBy x ->
-          CombatRestriction.CantBeBlockedBy
-            x
-              { CantBeBlockedBy.affected = rewriteAffected pairs (CantBeBlockedBy.affected x),
-                CantBeBlockedBy.blockers = Filter.rewrite pairs (CantBeBlockedBy.blockers x),
-                CantBeBlockedBy.unless = unlessOf (CantBeBlockedBy.unless x)
-              }
-        CombatRestriction.CantBlockCreatures x ->
-          CombatRestriction.CantBlockCreatures
-            x
-              { CantBlockCreatures.affected = rewriteAffected pairs (CantBlockCreatures.affected x),
-                CantBlockCreatures.attackers = Filter.rewrite pairs (CantBlockCreatures.attackers x),
-                CantBlockCreatures.unless = unlessOf (CantBlockCreatures.unless x)
-              }
-        CombatRestriction.CantAttackPlayer x -> CombatRestriction.CantAttackPlayer x {CantAttackPlayer.affected = rewriteAffected pairs (CantAttackPlayer.affected x), CantAttackPlayer.unless = unlessOf (CantAttackPlayer.unless x)}
-        CombatRestriction.CantAttackMoreThan x -> CombatRestriction.CantAttackMoreThan x {AttackLimitUnless.unless = unlessOf (AttackLimitUnless.unless x)}
-        CombatRestriction.CantBlockMoreThan x -> CombatRestriction.CantBlockMoreThan x {LimitUnless.attackers = fmap (rewriteAffected pairs) (LimitUnless.attackers x), LimitUnless.unless = unlessOf (LimitUnless.unless x)}
+rewriteCombatRestriction pairs = Identity.runIdentity . Children.combatRestrictionChildren (combatRewrites pairs)
+
+combatRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.CombatChildren Identity.Identity
+combatRewrites pairs =
+  Children.MkCombatChildren
+    { Children.combatAffected = Identity.Identity . rewriteAffected pairs,
+      Children.combatFilter = Identity.Identity . Filter.rewrite pairs,
+      Children.combatCondition = Identity.Identity . rewriteCondition pairs,
+      Children.combatQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.combatCost = Identity.Identity . Filter.rewriteCost pairs
+    }
 
 -- CR 612.2a's name half, gated on both words being creature types -- CR 612.2
 -- prohibits every other family. EVERY occurrence, since CR 111.4's derived name
