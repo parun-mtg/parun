@@ -35,6 +35,7 @@ import qualified Parun.Codec.CharacteristicPT as CharacteristicPT
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatRestriction as CombatRestriction
 import qualified Parun.Codec.CommanderDeckRule as CommanderDeckRule
+import qualified Parun.Codec.Copyability as Copyability
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.CostComponent as CostComponent
@@ -74,6 +75,7 @@ import qualified Parun.Codec.Vanguard as Vanguard
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.Copyability as Copyability.Type
 import qualified Parun.Types.Counterability as Counterability.Type
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Modal as Modal.Type
@@ -193,6 +195,8 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   -- CR 113.6g: Counterable is the absence of a card stating it can't be
   -- countered.
   counterability <- Fields.defaulted "counterability" Counterability.Type.Counterable Counterability.codec Face.counterability
+  -- CR 113.6g: Copyable is the absence of a card stating it can't be copied.
+  copyability <- Fields.defaulted "copyability" Copyability.Type.Copyable Copyability.codec Face.copyability
   -- CR 903.3a: False is the absence of a card stating it can be your
   -- commander.
   canBeYourCommander <- Fields.defaulted "canBeYourCommander" False Common.boolean Face.canBeYourCommander
@@ -262,6 +266,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.openingHandActions = openingHandActions,
         Face.specialActions = specialActions,
         Face.counterability = counterability,
+        Face.copyability = copyability,
         Face.canBeYourCommander = canBeYourCommander,
         Face.claimsStartingPlayer = claimsStartingPlayer,
         Face.anteOnly = anteOnly,

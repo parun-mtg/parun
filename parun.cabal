@@ -502,6 +502,8 @@ library codec
     Parun.Codec.ControlSlotsSpec
     Parun.Codec.Convoking
     Parun.Codec.ConvokingSpec
+    Parun.Codec.Copyability
+    Parun.Codec.CopyabilitySpec
     Parun.Codec.CopyClause
     Parun.Codec.CopyClauseSpec
     Parun.Codec.CopyCoverage
@@ -2830,6 +2832,7 @@ library types
     Parun.Types.ControlSlots
     Parun.Types.ControlWindow
     Parun.Types.Convoking
+    Parun.Types.Copyability
     Parun.Types.CopyClause
     Parun.Types.CopyCoverage
     Parun.Types.CopyDomain

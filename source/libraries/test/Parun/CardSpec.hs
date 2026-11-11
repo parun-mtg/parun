@@ -163,6 +163,7 @@ import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostChange as CostChange
@@ -557,7 +558,8 @@ vanillaFace name typeLine =
       Face.alternativeCosts = [],
       Face.costReductions = [],
       Face.enchant = [],
-      Face.counterability = Counterability.Counterable
+      Face.counterability = Counterability.Counterable,
+      Face.copyability = Copyability.Copyable
     }
 
 -- A spell's printed type line: one card type, plus whatever supertypes and
@@ -642,7 +644,8 @@ waneFace =
       -- half's Counterable as an answer -- or a record update that never looks at
       -- the right half at all, which is what merge2 did before fuse landed --
       -- leaves the combined view counterable.
-      Face.counterability = Counterability.CantBeCountered Nothing
+      Face.counterability = Counterability.CantBeCountered Nothing,
+      Face.copyability = Copyability.Copyable
     }
 
 cardSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
