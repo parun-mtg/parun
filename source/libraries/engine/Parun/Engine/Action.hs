@@ -122,9 +122,11 @@ playableLands pid gs =
       -- asked: Muldrotha's land row admits Zof Consumption as Zof Bloodbog.
       permitted oid mName = maybe False (\obj -> not (null (PlayerEffect.landPermissionsFrom pid (Object.zone obj) oid (Cast.asPlayed oid mName gs)))) (Game.lookupObject oid gs)
       fromPermitted = concatMap (\(zone, owner) -> Cast.pileCandidates zone owner gs) (PlayerEffect.playPermissionPiles pid gs)
-      -- Per card instead, because CR 716.3d's permission is state on ONE exiled
-      -- incarnation naming ONE player.
-      fromExile = filter (\oid -> Cast.permitsLandPlayFromExile pid oid gs) (Cast.zoneCandidates Zone.Exile pid gs)
+      -- Per card instead, because CR 716.3d's permission is state on ONE
+      -- incarnation naming ONE player: an exiled one, or a graveyard one
+      -- GrantPlayFromExile's zone wrote it on (Ark of Hunger's "Mill a card.
+      -- You may play that card this turn").
+      fromPermission = [oid | zone <- [Zone.Exile, Zone.Graveyard], oid <- Cast.zoneCandidates zone pid gs, Cast.permitsLandPlayUnderPermission pid oid gs]
       -- CR 702.187c: per card as well, the permission being the card's own
       -- costless mayhem and the discard that arms it this player's.
       fromMayhem = filter (\oid -> PlayerEffect.mayPlayByMayhem pid oid gs) (Game.zoneMembers Zone.Graveyard pid gs)
@@ -137,8 +139,8 @@ playableLands pid gs =
       buried = Projection.projectEach (Set.fromList graveyard) gs
       fromGraveyard = filter (\oid -> PlayerEffect.mayPlayFromOwnGraveyard buried pid oid gs) graveyard
       -- Every card here is open whichever land face it is played as.
-      open = Set.fromList (fromHand <> fromGranted <> fromExile <> fromMayhem <> fromGraveyard)
-   in concatMap playable (ListUtils.nubOrd (fromHand <> fromGranted <> fromPermitted <> fromExile <> fromMayhem <> fromGraveyard))
+      open = Set.fromList (fromHand <> fromGranted <> fromPermission <> fromMayhem <> fromGraveyard)
+   in concatMap playable (ListUtils.nubOrd (fromHand <> fromGranted <> fromPermitted <> fromPermission <> fromMayhem <> fromGraveyard))
 
 -- The cards in this player's hand whose text grants CR 116.2e's special
 -- action: Circling Vultures' "you may discard this card any time you could cast
