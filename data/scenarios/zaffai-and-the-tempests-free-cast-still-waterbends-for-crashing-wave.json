@@ -119,6 +119,12 @@
     {
       "do": {
         "Cast": {
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ],
           "mana": [
             "$island"
           ],
@@ -140,15 +146,13 @@
       "turn": 1
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseDistribution",
-          "with": [
-            [
-              "$bears",
-              3
-            ]
-          ]
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Stun"
+          },
+          "object": "$bears"
         }
       },
       "player": "alice",
