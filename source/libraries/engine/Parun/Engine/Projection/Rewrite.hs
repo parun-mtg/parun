@@ -557,49 +557,56 @@ rewriteHowMany pairs count = case count of
 -- every step descends into a strict subterm. Every FACE, since a card's printed
 -- subtypes, name and text are per-face (CR 712.6).
 rewriteCard :: [(TextWord.TextWord, TextWord.TextWord)] -> Card.Type.Card -> Card.Type.Card
-rewriteCard pairs card = card {Card.Type.faces = fmap (rewriteFace pairs) (Card.Type.faces card)}
+rewriteCard pairs = Identity.runIdentity . Children.cardChildren (Identity.Identity . rewriteFace pairs)
 
+-- One pair at a time: the name and type line first, together, since CR 612.2a
+-- changes a token's name only where the word is its creature type; then the
+-- rest through Parun.Engine.Children's traversal at Identity.
 rewriteFace :: [(TextWord.TextWord, TextWord.TextWord)] -> Face.Face Card.Type.Card -> Face.Face Card.Type.Card
 rewriteFace pairs face =
   let apply1 f (from, to) =
-        let pair = [(from, to)]
-            renamed = case swapSubtype (from, to) (Face.typeLine f) of
+        let renamed = case swapSubtype (from, to) (Face.typeLine f) of
               Just (old, new, typeLine) ->
                 f
                   { Face.typeLine = typeLine,
                     Face.name = rewriteTokenName old new (Face.name f)
                   }
               Nothing -> f
-         in renamed
-              { -- CR 612.2's colour word in the defining text ("a 1/1 black Rat
-                -- token"), which is where a token's colour comes from (CR 111.3).
-                Face.colorIndicator = Set.map (TextWord.Engine.colorAfter pair) (Face.colorIndicator renamed),
-                -- CR 702.14a's land-type word inside a landwalk. Map.mapKeysWith
-                -- (+), so two instances the rewrite collapses onto one keyword
-                -- stay two instances.
-                Face.keywords = Map.mapKeysWith (+) (Filter.rewriteKeyword pair) (Face.keywords renamed),
-                -- CR 208.2a's star, unevaluated as at layer 3.
-                Face.characteristicPT = fmap (rewriteCharacteristicPT pair) (Face.characteristicPT renamed),
-                -- CR 101.1's ceiling on X, whose Quantity can Count a criterion
-                -- naming a land type word. A regression fence: neither printing
-                -- pairs a bounded X with one -- both say "the greatest toughness
-                -- among creatures you control" -- so no test can falsify it.
-                Face.maximumX = fmap (rewriteQuantity pair) (Face.maximumX renamed),
-                Face.spell = rewriteModal pair (Face.spell renamed),
-                Face.activatedAbilities = fmap (rewriteActivatedAbility pair) (Face.activatedAbilities renamed),
-                -- CR 604.2's static ability, on the card a token or emblem is
-                -- defined with. A regression fence rather than a proved behaviour,
-                -- as Face.maximumX above is: a walk of every defined face in
-                -- data/cards for a replacementEffects key (2026-08-21) found none
-                -- at all, so no board can tell this line from its absence.
-                -- Parun.ReplacementSpec's Dragonstorm Globe case is what proves
-                -- rewritePrintedReplacement itself.
-                Face.replacementEffects = fmap (rewritePrintedReplacement pair) (Face.replacementEffects renamed),
-                Face.triggeredAbilities = fmap (rewriteTriggeredAbility pair) (Face.triggeredAbilities renamed),
-                Face.delayedAbilities = fmap (rewriteTriggeredAbility pair) (Face.delayedAbilities renamed),
-                Face.staticAbilities = fmap (rewriteStaticAbility pair) (Face.staticAbilities renamed)
-              }
+         in Identity.runIdentity (Children.faceChildren (faceRewrites [(from, to)]) renamed)
    in List.foldl' apply1 face pairs
+
+-- CR 612.1 over a face's children. Left as written, as before this walk was
+-- shared: its printed power and toughness, its rule-affecting rows, its costs
+-- and permissions.
+faceRewrites :: [(TextWord.TextWord, TextWord.TextWord)] -> Children.FaceChildren Card.Type.Card Identity.Identity
+faceRewrites pair =
+  Children.faceLeaves
+    { -- CR 702.14a's land-type word inside a landwalk. Two instances the
+      -- rewrite collapses onto one keyword stay two instances.
+      Children.faceKeyword = Identity.Identity . Filter.rewriteKeyword pair,
+      -- CR 612.2's colour word in the defining text ("a 1/1 black Rat
+      -- token"), which is where a token's colour comes from (CR 111.3).
+      Children.faceColor = Identity.Identity . TextWord.Engine.colorAfter pair,
+      -- CR 208.2a's star, unevaluated as at layer 3.
+      Children.faceCharacteristicPT = Identity.Identity . rewriteCharacteristicPT pair,
+      -- CR 101.1's ceiling on X, whose Quantity can Count a criterion
+      -- naming a land type word. A regression fence: neither printing
+      -- pairs a bounded X with one -- both say "the greatest toughness
+      -- among creatures you control" -- so no test can falsify it.
+      Children.faceQuantity = Identity.Identity . rewriteQuantity pair,
+      Children.faceModal = Identity.Identity . rewriteModal pair,
+      Children.faceActivated = Identity.Identity . rewriteActivatedAbility pair,
+      -- CR 604.2's static ability, on the card a token or emblem is
+      -- defined with. A regression fence rather than a proved behaviour,
+      -- as faceQuantity above is: a walk of every defined face in
+      -- data/cards for a replacementEffects key (2026-08-21) found none
+      -- at all, so no board can tell this line from its absence.
+      -- Parun.ReplacementSpec's Dragonstorm Globe case is what proves
+      -- rewritePrintedReplacement itself.
+      Children.faceReplacement = Identity.Identity . rewritePrintedReplacement pair,
+      Children.faceTriggered = Identity.Identity . rewriteTriggeredAbility pair,
+      Children.faceStatic = Identity.Identity . rewriteStaticAbility pair
+    }
 
 -- A whole static ability under CR 612.1, for the defined-card walk above. A
 -- permanent's own statics are reached piecemeal instead, being read per layer.
@@ -769,7 +776,7 @@ rewriteManaRider pairs rider = rider {ManaRider.condition = Filter.rewrite pairs
 -- ability's word usually is.
 --
 -- CR 101.1's ceiling on an activated ability's X and CR 107.3c's defined X are
--- Quantities, rewritten as Face.maximumX above is. A regression fence: no
+-- Quantities, rewritten as faceRewrites' faceQuantity is. A regression fence: no
 -- printing pairs a bounded or defined X on an activated ability with a Quantity
 -- naming a land type word, so no board can tell those positions from their
 -- absence.

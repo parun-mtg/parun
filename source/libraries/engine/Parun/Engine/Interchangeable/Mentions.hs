@@ -18,8 +18,9 @@
 -- TriggerCondition, Keyword, Cost, PlayerEffect, ReplacementEffect, Condition,
 -- Duration, and the ability records: ActivatedAbility, TriggeredAbility,
 -- StaticAbility, PlayerStaticAbility, PrintedReplacement, CostReduction,
--- AlternativeCost, GrantedAbility, and Modal with its Mode, Clause and
--- ModeSelection) is matched there instead, its leaf types discarded there.
+-- AlternativeCost, GrantedAbility, Modal with its Mode, Clause and
+-- ModeSelection, and Face and Card) is matched there instead, its leaf types
+-- discarded there.
 --
 -- A tree names an object in three ways: an ObjectId it holds outright, a slot
 -- it reads (slotNames), and a Filter atom (filterNames). A Card it holds is
@@ -505,8 +506,7 @@ cantBlockCreaturesNames asking x = case x of
 
 -- A printed card, every face of it, and the cards its faces create.
 cardNames :: (Monoid r) => Asking r -> Card.Card -> r
-cardNames asking x = case x of
-  Card.MkCard _layout faces -> foldMap (faceNames asking (cardNames asking)) faces
+cardNames asking = Const.getConst . Children.cardChildren (Const.Const . faceNames asking (cardNames asking))
 
 spendManaAsThoughNames :: (Monoid r) => Asking r -> SpendManaAsThough.SpendManaAsThough -> r
 spendManaAsThoughNames asking x = case x of
@@ -836,8 +836,51 @@ eventExpiryNames asking x = case x of
   EventExpiry.MkEventExpiry _controller durationEvent -> durationEventNames asking durationEvent
 
 faceNames :: (Monoid r) => Asking r -> (card -> r) -> Face.Face card -> r
-faceNames asking onCard x = case x of
-  Face.MkFace _name _oracleText _manaCost _typeLine power toughness _loyalty _defense _startingIntensity _vanguard _canBeYourCommander _claimsStartingPlayer _anteOnly _circlesTwo _deckLimit commanderDeckRules keywords _colorIndicator characteristicPT _characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms _dungeonEntryQuality castingPermissions castingRestrictions enchant counterability additionalCosts additionalCostChoices modeCosts _modeChooser maximumX _minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions crewRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts mulliganActions openingHandActions specialActions -> foldMap (powerNames asking) power <> foldMap (toughnessNames asking) toughness <> foldMap (commanderDeckRuleNames asking) commanderDeckRules <> foldMap (keywordNames asking) (Map.keys keywords) <> foldMap (characteristicPTNames asking) characteristicPT <> foldMap (staticAbilityNames asking (grantedAbilityNames asking onCard)) staticAbilities <> modalNames asking onCard (grantedAbilityNames asking onCard) spell <> foldMap (activatedAbilityNames asking onCard (grantedAbilityNames asking onCard)) activatedAbilities <> foldMap (printedReplacementNames asking onCard (grantedAbilityNames asking onCard) (effectNames asking onCard (grantedAbilityNames asking onCard))) replacementEffects <> foldMap (triggeredAbilityNames asking onCard (grantedAbilityNames asking onCard)) triggeredAbilities <> foldMap (triggeredAbilityNames asking onCard (grantedAbilityNames asking onCard)) delayedAbilities <> foldMap (dungeonRoomNames asking onCard) rooms <> foldMap (castingPermissionNames asking) castingPermissions <> foldMap (castingRestrictionNames asking) castingRestrictions <> foldMap (targetSlotNames asking) enchant <> counterabilityNames asking counterability <> foldMap (costComponentNames asking (keywordNames asking)) additionalCosts <> foldMap (costChoiceNames asking) additionalCostChoices <> foldMap (costNames asking (keywordNames asking)) modeCosts <> foldMap (quantityNames asking) maximumX <> foldMap (alternativeCostNames asking) alternativeCosts <> foldMap (costReductionNames asking) costReductions <> foldMap (playerStaticAbilityNames asking) playerAbilities <> foldMap (blockRequirementNames asking) blockRequirements <> foldMap (blockPermissionNames asking) blockPermissions <> foldMap (attackRequirementNames asking) attackRequirements <> foldMap (combatRestrictionNames asking) combatRestrictions <> foldMap (sacrificeRestrictionNames asking) sacrificeRestrictions <> foldMap (untapRestrictionNames asking) untapRestrictions <> foldMap (crewRestrictionNames asking) crewRestrictions <> foldMap (targetRestrictionNames asking (affectedNames asking)) targetRestrictions <> foldMap (rulePermissionNames asking) rulePermissions <> foldMap (attachRestrictionNames asking) attachRestrictions <> foldMap (entryRestrictionNames asking) entryRestrictions <> foldMap (counterRestrictionNames asking) counterRestrictions <> foldMap (activationProhibitionNames asking) activationProhibitions <> foldMap (attackCostNames asking) attackCosts <> foldMap (blockCostNames asking) blockCosts <> foldMap (handActionNames asking onCard) mulliganActions <> foldMap (handActionNames asking onCard) openingHandActions <> foldMap (specialActionNames asking) specialActions
+faceNames asking onCard =
+  Const.getConst
+    . Children.faceChildren
+      Children.MkFaceChildren
+        { Children.facePower = Const.Const . powerNames asking,
+          Children.faceToughness = Const.Const . toughnessNames asking,
+          Children.faceCommanderDeckRule = Const.Const . commanderDeckRuleNames asking,
+          Children.faceKeyword = Const.Const . keywordNames asking,
+          Children.faceColor = const (Const.Const mempty),
+          Children.faceCharacteristicPT = Const.Const . characteristicPTNames asking,
+          Children.faceStatic = Const.Const . staticAbilityNames asking (grantedAbilityNames asking onCard),
+          Children.faceModal = Const.Const . modalNames asking onCard (grantedAbilityNames asking onCard),
+          Children.faceActivated = Const.Const . activatedAbilityNames asking onCard (grantedAbilityNames asking onCard),
+          Children.faceReplacement = Const.Const . printedReplacementNames asking onCard (grantedAbilityNames asking onCard) (effectNames asking onCard (grantedAbilityNames asking onCard)),
+          Children.faceTriggered = Const.Const . triggeredAbilityNames asking onCard (grantedAbilityNames asking onCard),
+          Children.faceRoom = Const.Const . dungeonRoomNames asking onCard,
+          Children.faceCastingPermission = Const.Const . castingPermissionNames asking,
+          Children.faceCastingRestriction = Const.Const . castingRestrictionNames asking,
+          Children.faceTargetSlot = Const.Const . targetSlotNames asking,
+          Children.faceCounterability = Const.Const . counterabilityNames asking,
+          Children.faceCostComponent = Const.Const . costComponentNames asking (keywordNames asking),
+          Children.faceCostChoice = Const.Const . costChoiceNames asking,
+          Children.faceCost = Const.Const . costNames asking (keywordNames asking),
+          Children.faceQuantity = Const.Const . quantityNames asking,
+          Children.faceAlternativeCost = Const.Const . alternativeCostNames asking,
+          Children.faceCostReduction = Const.Const . costReductionNames asking,
+          Children.facePlayerStatic = Const.Const . playerStaticAbilityNames asking,
+          Children.faceBlockRequirement = Const.Const . blockRequirementNames asking,
+          Children.faceBlockPermission = Const.Const . blockPermissionNames asking,
+          Children.faceAttackRequirement = Const.Const . attackRequirementNames asking,
+          Children.faceCombatRestriction = Const.Const . combatRestrictionNames asking,
+          Children.faceSacrificeRestriction = Const.Const . sacrificeRestrictionNames asking,
+          Children.faceUntapRestriction = Const.Const . untapRestrictionNames asking,
+          Children.faceCrewRestriction = Const.Const . crewRestrictionNames asking,
+          Children.faceTargetRestriction = Const.Const . targetRestrictionNames asking (affectedNames asking),
+          Children.faceRulePermission = Const.Const . rulePermissionNames asking,
+          Children.faceAttachRestriction = Const.Const . attachRestrictionNames asking,
+          Children.faceEntryRestriction = Const.Const . entryRestrictionNames asking,
+          Children.faceCounterRestriction = Const.Const . counterRestrictionNames asking,
+          Children.faceActivationProhibition = Const.Const . activationProhibitionNames asking,
+          Children.faceAttackCost = Const.Const . attackCostNames asking,
+          Children.faceBlockCost = Const.Const . blockCostNames asking,
+          Children.faceHandAction = Const.Const . handActionNames asking onCard,
+          Children.faceSpecialAction = Const.Const . specialActionNames asking
+        }
 
 faceDownCharacteristicsNames :: (Monoid r) => Asking r -> (ability -> r) -> FaceDownCharacteristics.FaceDownCharacteristics ability -> r
 faceDownCharacteristicsNames asking onAbility x = case x of
