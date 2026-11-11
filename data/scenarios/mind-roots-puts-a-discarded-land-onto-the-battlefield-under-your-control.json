@@ -1,0 +1,108 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Mind Roots",
+            "label": "mind-roots",
+            "ready": true
+          }
+        ],
+        "manaPool": "BBG",
+        "name": "alice"
+      },
+      {
+        "hand": [
+          {
+            "card": "Plains",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 110.2a Mind Roots puts a land card the opponent discarded onto the battlefield tapped under its caster's control",
+  "final": [
+    {
+      "View": {
+        "is": "alice",
+        "object": "Plains",
+        "of": "Controller"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "Plains",
+        "tapped": true
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Grizzly Bears"
+        ],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "Bob's hand is exactly two cards, so the discard asks nothing. Grizzly Bears is the nonland discard the filter must refuse; the Plains is bob's, so alice controlling it proves CR 110.2a.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$mind-roots",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "Grizzly Bears"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "Plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
