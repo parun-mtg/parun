@@ -1,0 +1,348 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Resonating Lute",
+            "label": "lute"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ancestral Recall",
+            "label": "ar"
+          },
+          {
+            "card": "Storm Crow",
+            "label": "crow"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 106.6, 602.5b: Resonating Lute's lands tap for two mana of one colour spendable only on instant and sorcery spells, and it draws only with seven or more cards in hand",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "object": "$lute",
+          "ability": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $island",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Instant"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Sorcery"
+                      }
+                    ]
+                  }
+                },
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Instant"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Sorcery"
+                      }
+                    ]
+                  }
+                },
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Blue"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": {
+                "casts": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Instant"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Sorcery"
+                    }
+                  ]
+                }
+              },
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Blue"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": {
+                "casts": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Instant"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Sorcery"
+                    }
+                  ]
+                }
+              },
+              "rider": null,
+              "sourceChoices": null
+            }
+          ],
+          "player": "alice"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$crow"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$ar",
+          "targets": [
+            "$alice"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Blue"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": {
+                "casts": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Instant"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Sorcery"
+                    }
+                  ]
+                }
+              },
+              "rider": null,
+              "sourceChoices": null
+            }
+          ],
+          "player": "alice"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Island",
+          "count": 6
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$lute",
+          "ability": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Island",
+          "count": 7
+        }
+      }
+    }
+  ]
+}

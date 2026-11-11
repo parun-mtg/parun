@@ -1,0 +1,105 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Slumbering Trudge",
+      "oracleText": "This creature enters with a number of stun counters on it equal to three minus X. If X is 2 or less, it enters tapped. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "NonNegative",
+                      "value": {
+                        "type": "Plus",
+                        "value": {
+                          "left": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "right": {
+                            "type": "Negate",
+                            "value": {
+                              "type": "InSlot",
+                              "value": "X"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "kind": {
+                      "type": "Stun"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtMost",
+              "measured": {
+                "type": "InSlot",
+                "value": "X"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "typeLine": {
+        "subtypes": [
+          "Beast",
+          "Plant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

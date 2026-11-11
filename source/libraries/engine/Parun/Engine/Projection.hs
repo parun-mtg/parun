@@ -5770,10 +5770,18 @@ replacementsOfGiven pcs zone oid gs =
 -- gates a row wherever the row functions: replacementsAffecting's
 -- off-battlefield walks ask it of the ability face (abilityFaceOf), where
 -- replacementsOf asks it of the projection.
+--
+-- CR 107.3m: an entry replacement's clause reads the X announced for the spell
+-- that became this permanent (Slumbering Trudge's "If X is 2 or less"), proved by
+-- data/scenarios/slumbering-trudge-enters-with-three-minus-x-stun-counters-and-tapped-if-x-is-two-or-less.json.
 printedRowLives :: ObjectId -> GameState -> PrintedReplacement.PrintedReplacement card ability effect -> Bool
 printedRowLives oid gs pr = case PrintedReplacement.condition pr of
   Nothing -> True
-  Just cond -> Condition.holds (fullView gs) (sourceContext gs (controllerOf oid gs) oid) (boardAsEntering gs) oid cond
+  Just cond -> Condition.holds (fullView gs) (entryX (sourceContext gs (controllerOf oid gs) oid)) (boardAsEntering gs) oid cond
+  where
+    entryX context = case PrintedReplacement.effect pr of
+      ReplacementEffect.EntryR _ -> context {Filter.boundAmounts = Map.singleton Binding.variableX (Game.announcedXOf oid gs)}
+      _ -> context
 
 -- CR 113.6b: does this printed replacement row function from `zone`?
 -- functionsFromZone's twin for rows, with the same empty-set reading -- a row
