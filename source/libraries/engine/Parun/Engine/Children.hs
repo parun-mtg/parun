@@ -507,7 +507,7 @@ filterChildren children predicate = case predicate of
   Filter.DealtDamageThisTurn -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
   Filter.EnteredThisTurn _ -> pure predicate
-  Filter.CountersPutThisTurn relation kind -> fmap (Filter.CountersPutThisTurn relation) (counterKindChildren children kind)
+  Filter.CountersPutThisTurn relation kind -> fmap (Filter.CountersPutThisTurn relation) (traverse (counterKindChildren children) kind)
   Filter.ControlledSinceTurnBegan -> pure predicate
   Filter.AttachedTo f -> fmap Filter.AttachedTo (nest children f)
   Filter.BeforeMove f -> fmap Filter.BeforeMove (nest children f)
