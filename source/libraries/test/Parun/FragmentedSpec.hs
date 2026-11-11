@@ -81,6 +81,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Zone as Zone
@@ -387,7 +388,7 @@ flownUnder dragon wings =
             ContinuousEffect.modification = Modification.LoseKeyword Keyword.Flying,
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton dragonId)
           }
-      (wingsId, gs3) = S.addPermanent wings S.alice gs2 {GameState.continuousEffects = [loss]}
+      (wingsId, gs3) = S.addPermanent wings S.alice gs2 {GameState.stored = (GameState.stored gs2) {StoredEffects.continuousEffects = [loss]}}
    in (dragonId, S.attach wingsId dragonId gs3)
 
 -- alice, active in her precombat main phase with an empty stack and no mana,

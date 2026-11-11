@@ -214,6 +214,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StickerRef as StickerRef
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Tap as Tap
@@ -1617,7 +1618,7 @@ installDamageRow resolving targets slots controller source duration kind rewrite
         -- rather than off the row. `condition` is Nothing on every one of these
         -- carriers, so it contributes no third half.
         namedSlots = Map.keysSet (replacementRowSlots re) <> foldMap (Map.keysSet . PreventionRider.targets) rider
-     in g1 {GameState.replacements = active : GameState.replacements g1}
+     in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored g1)}}
 
 -- CR 601.2c / 608.2b: an InSlot names the players this resolution's slot holds,
 -- baked into Among as the row is installed; every other relation is CR 109.5's
@@ -1740,8 +1741,8 @@ damageSourceCandidates context gs filter_ =
    in filter (\oid -> Filter.matches context (viewOf oid) filter_) (Set.toAscList pool)
 
 -- CR 609.7a's third class, off the three carriers the sentence names: every
--- object on the stack, every row of GameState.replacements waiting to apply, and
--- every entry of GameState.delayedTriggers waiting to trigger. What each REFERS
+-- object on the stack, every row of StoredEffects.replacements waiting to apply, and
+-- every entry of StoredEffects.delayedTriggers waiting to trigger. What each REFERS
 -- TO is the object it names as its source plus the objects its bindings or slots
 -- hold -- Ghitu Fire-Eater's ability naming the creature its own cost
 -- sacrificed, a shield naming "that creature", a delayed trigger naming "it".
@@ -1780,8 +1781,8 @@ damageSourceCandidates context gs filter_ =
 referredToSources :: GameState -> [ObjectId]
 referredToSources gs =
   foldMap (\oid -> foldMap referentsOfObject (Game.lookupObject oid gs)) (Game.allStacks gs)
-    <> foldMap (\row -> ActiveReplacement.source row : (referentsOfReplacement (ActiveReplacement.effect row) <> foldMap Set.toList (ActiveReplacement.slots row))) (GameState.replacements gs)
-    <> foldMap (\entry -> DelayedTrigger.source entry : referentsOfBindings (DelayedTrigger.bindings entry)) (GameState.delayedTriggers gs)
+    <> foldMap (\row -> ActiveReplacement.source row : (referentsOfReplacement (ActiveReplacement.effect row) <> foldMap Set.toList (ActiveReplacement.slots row))) (StoredEffects.replacements (GameState.stored gs))
+    <> foldMap (\entry -> DelayedTrigger.source entry : referentsOfBindings (DelayedTrigger.bindings entry)) (StoredEffects.delayedTriggers (GameState.stored gs))
     -- CR 106.6a's spend triggers wait on the unspent units that carry them.
     <> foldMap (Maybe.mapMaybe (fmap SpendTrigger.source . ManaUnit.spendTrigger) . Mana.Type.unwrap) (GameState.manaPool gs)
 
@@ -3134,7 +3135,7 @@ rearmStackExile subject copied obj gs =
   let armed r = ActiveReplacement.source r == subject && ActiveReplacement.effect r == Keyword.castFromGraveyardExile
       keywords = Map.keysSet (PC.keywords copied)
       eligible = if Object.castFrom obj == Just Zone.Graveyard then keywords else Set.delete Keyword.Type.Aftermath keywords
-   in Cast.installCastFromGraveyard (Projection.defaultControllerOf obj) eligible (Object.castUsing obj) subject gs {GameState.replacements = filter (not . armed) (GameState.replacements gs)}
+   in Cast.installCastFromGraveyard (Projection.defaultControllerOf obj) eligible (Object.castUsing obj) subject gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . armed) (StoredEffects.replacements (GameState.stored gs))}}
 
 -- CR 702.128b: the marks a token has from being created by this resolving
 -- object, read off the keyword that minted it (ActivatedAbility.keyword).
@@ -4781,7 +4782,7 @@ installControl legal resolving controller source recipient duration ref gs =
                 sicken o = o {Object.sickness = Sickness.Sick}
                 moved = filter (\oid -> Projection.controllerOf oid gs /= Just recipient) targets
              in gs1
-                  { GameState.continuousEffects = eff : GameState.continuousEffects gs1,
+                  { GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)},
                     GameState.objects = foldr (Map.adjust sicken) (GameState.objects gs1) moved
                   }
 

@@ -18,7 +18,7 @@ import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Uses as Uses
 
 -- | CR 614.3 / 615.3: a floating, resolution-generated replacement effect, held in
--- GameState.replacements. The event-pipeline analog of ContinuousEffect: the
+-- StoredEffects.replacements. The event-pipeline analog of ContinuousEffect: the
 -- projection re-derives a permanent's static replacement abilities live, while
 -- these are stored because the object that made them may be long gone.
 --
@@ -79,7 +79,7 @@ data ActiveReplacement = MkActiveReplacement
     -- installed. CR 614.1: a replacement effect is not locked in ahead of time,
     -- so its applicability is asked as the event would happen --
     -- Parun.Engine.Replacement.collect drops a row whose clause is false, and the
-    -- row stays in GameState.replacements to be asked again.
+    -- row stays in StoredEffects.replacements to be asked again.
     --
     -- The SAME posture Parun.Types.PrintedReplacement.condition takes on a
     -- permanent's static ability, and asked against the same board -- CR

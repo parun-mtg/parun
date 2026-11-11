@@ -112,6 +112,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -400,31 +401,23 @@ everyCarrier source gs0 =
       choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
       replacement = ActiveReplacement.MkActiveReplacement ActiveReplacementSpec.effect source S.alice ts Expiry.AtCleanup Uses.Unlimited ReplacementOrigin.Other Nothing Nothing Map.empty choices
    in gs2
-        { GameState.copyEffects = [ActiveCopy.MkActiveCopy source ts Expiry.AtCleanup (CopyCoverage.These (Set.singleton source)) (Projection.project source gs2) Nothing],
-          GameState.replacements = [replacement],
-          GameState.blockRequirements = [ActiveBlockRequirement.MkActiveBlockRequirement source S.alice ts Expiry.AtCleanup creature Nothing RequirementArity.EachSubject],
-          GameState.attackRequirements = [ActiveAttackRequirement.MkActiveAttackRequirement source S.alice ts Expiry.AtCleanup creature Nothing],
-          GameState.objectProhibitions = [ActiveObjectProhibition.MkActiveObjectProhibition source S.alice ts Expiry.AtCleanup Prohibition.Block creature],
-          GameState.attackProhibitions = [ActiveAttackProhibition.MkActiveAttackProhibition source S.alice ts Expiry.AtCleanup creature Nothing],
-          GameState.evasions = [ActiveEvasion.MkActiveEvasion source S.alice ts Expiry.AtCleanup (Filter.HasCardType CardType.Creature) (Filter.HasCardType CardType.Creature)],
-          GameState.ignoredAbilities = [IgnoredAbility.MkIgnoredAbility S.bob source (AbilityName.MkAbilityName (Text.pack "mana")) Expiry.AtCleanup],
-          GameState.delayedTriggers = Seq.singleton DelayedTriggerSpec.entry {DelayedTrigger.source = source, DelayedTrigger.expiry = Just Expiry.AtCleanup}
+        { GameState.stored = (GameState.stored gs2) {StoredEffects.copyEffects = [ActiveCopy.MkActiveCopy source ts Expiry.AtCleanup (CopyCoverage.These (Set.singleton source)) (Projection.project source gs2) Nothing], StoredEffects.replacements = [replacement], StoredEffects.blockRequirements = [ActiveBlockRequirement.MkActiveBlockRequirement source S.alice ts Expiry.AtCleanup creature Nothing RequirementArity.EachSubject], StoredEffects.attackRequirements = [ActiveAttackRequirement.MkActiveAttackRequirement source S.alice ts Expiry.AtCleanup creature Nothing], StoredEffects.objectProhibitions = [ActiveObjectProhibition.MkActiveObjectProhibition source S.alice ts Expiry.AtCleanup Prohibition.Block creature], StoredEffects.attackProhibitions = [ActiveAttackProhibition.MkActiveAttackProhibition source S.alice ts Expiry.AtCleanup creature Nothing], StoredEffects.evasions = [ActiveEvasion.MkActiveEvasion source S.alice ts Expiry.AtCleanup (Filter.HasCardType CardType.Creature) (Filter.HasCardType CardType.Creature)], StoredEffects.ignoredAbilities = [IgnoredAbility.MkIgnoredAbility S.bob source (AbilityName.MkAbilityName (Text.pack "mana")) Expiry.AtCleanup], StoredEffects.delayedTriggers = Seq.singleton DelayedTriggerSpec.entry {DelayedTrigger.source = source, DelayedTrigger.expiry = Just Expiry.AtCleanup}}
         }
 
 -- How many rows each stored carrier holds, in GameState's order.
 carrierRows :: GameState.GameState -> [Int]
 carrierRows gs =
-  [ length (GameState.continuousEffects gs),
-    length (GameState.copyEffects gs),
-    length (GameState.replacements gs),
-    length (GameState.playerEffects gs),
-    length (GameState.blockRequirements gs),
-    length (GameState.attackRequirements gs),
-    length (GameState.objectProhibitions gs),
-    length (GameState.attackProhibitions gs),
-    length (GameState.evasions gs),
-    length (GameState.ignoredAbilities gs),
-    length (GameState.delayedTriggers gs)
+  [ length (StoredEffects.continuousEffects (GameState.stored gs)),
+    length (StoredEffects.copyEffects (GameState.stored gs)),
+    length (StoredEffects.replacements (GameState.stored gs)),
+    length (StoredEffects.playerEffects (GameState.stored gs)),
+    length (StoredEffects.blockRequirements (GameState.stored gs)),
+    length (StoredEffects.attackRequirements (GameState.stored gs)),
+    length (StoredEffects.objectProhibitions (GameState.stored gs)),
+    length (StoredEffects.attackProhibitions (GameState.stored gs)),
+    length (StoredEffects.evasions (GameState.stored gs)),
+    length (StoredEffects.ignoredAbilities (GameState.stored gs)),
+    length (StoredEffects.delayedTriggers (GameState.stored gs))
   ]
 
 -- CR 800.2: the options this game starts with. The seat count is the caller's,

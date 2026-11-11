@@ -66,6 +66,7 @@ import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TargetCount as TargetCount
@@ -978,9 +979,9 @@ checkOnce instead boards = do
   -- `foldr` this replaced applied them in, kept because CR 800.4a's fourth
   -- clause emits zone changes and CR 726.4 hands the crown along, so who goes
   -- first is observable.
-  queued <- State.gets (Seq.length . GameState.pendingReplacementEffects)
+  queued <- State.gets (Seq.length . (StoredEffects.pendingReplacementEffects . GameState.stored))
   departing <- Departure.losing (Just gs) True Departure.Type.Lost (List.reverse leaving)
-  insteads <- State.gets (Seq.drop queued . GameState.pendingReplacementEffects)
+  insteads <- State.gets (Seq.drop queued . (StoredEffects.pendingReplacementEffects . GameState.stored))
   -- CR 704.5b's window is "since the last time state-based actions were
   -- checked", so this check spends every attempt it saw by a player it leaves
   -- in the game: one a can't-lose effect kept in does not lose to it once that
@@ -991,7 +992,7 @@ checkOnce instead boards = do
       spent = Set.intersection (GameState.drewFromEmpty gs) (Set.fromList staying)
   State.modify' $ \g ->
     g
-      { GameState.pendingReplacementEffects = Seq.take queued (GameState.pendingReplacementEffects g),
+      { GameState.stored = (GameState.stored g) {StoredEffects.pendingReplacementEffects = Seq.take queued (StoredEffects.pendingReplacementEffects (GameState.stored g))},
         GameState.drewFromEmpty = Set.difference (GameState.drewFromEmpty g) spent
       }
   -- CR 614.1a: what replaced a loss happens INSTEAD of it, so inside this

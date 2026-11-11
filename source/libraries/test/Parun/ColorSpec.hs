@@ -65,6 +65,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -605,7 +606,7 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
     Spec.assertEqWith s "before: black, and 2/2 under Bad Moon" (Projection.colorsOf ratsId gs, Projection.powerOf ratsId gs) (Set.singleton Color.Black, Just 2)
     Spec.assertEqWith s "after: colourless" (Projection.colorsOf ratsId after) Set.empty
     Spec.assertEqWith s "after: out of Bad Moon's set, back to 1 power" (Projection.powerOf ratsId after) $ Just 1
-    Spec.assertEqWith s "CR 514.2 does not reach an Expiry.Never effect" (length (GameState.continuousEffects afterCleanup)) 1
+    Spec.assertEqWith s "CR 514.2 does not reach an Expiry.Never effect" (length (StoredEffects.continuousEffects (GameState.stored afterCleanup))) 1
     Spec.assertEqWith s "still colourless next turn" (Projection.colorsOf ratsId afterCleanup) Set.empty
 
   Spec.it s "Ersatz Gnomes' second ability makes a permanent colourless only until end of turn" $ do
@@ -630,7 +631,7 @@ spec s registry = Spec.describe s "Parun.Engine.Color" $ do
             afterCleanup = snd (Engine.runGamePure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup)))
         Spec.assertEqWith s "before: black, 2/2 under Bad Moon" (Projection.colorsOf ratsId gs, Projection.powerOf ratsId gs) (Set.singleton Color.Black, Just 2)
         Spec.assertEqWith s "after: colourless, 1/1" (Projection.colorsOf ratsId after, Projection.powerOf ratsId after) (Set.empty, Just 1)
-        Spec.assertEqWith s "CR 514.2 drops the effect at cleanup" (GameState.continuousEffects afterCleanup) []
+        Spec.assertEqWith s "CR 514.2 drops the effect at cleanup" (StoredEffects.continuousEffects (GameState.stored afterCleanup)) []
         Spec.assertEqWith s "black and 2/2 again" (Projection.colorsOf ratsId afterCleanup, Projection.powerOf ratsId afterCleanup) (Set.singleton Color.Black, Just 2)
 
   -- THE PROVING TEST for #1551, CR 114.3 / 114.5 read through CR 702.16b.

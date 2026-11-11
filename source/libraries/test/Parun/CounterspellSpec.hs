@@ -76,6 +76,7 @@ import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -1734,7 +1735,7 @@ artificialEvolutionSpec s registry = Spec.describe s "ArtificialEvolution" $ do
     (wolf, werewolf, _, shielded, after) <- moonmistShieldChain s registry Nothing
     Spec.assertEqWith s "the Wolf's and the Werewolf's 3s landed and the Piker's 2 did not" (fmap DamageEvent.source (S.damageEventsOf after)) [wolf, werewolf]
     Spec.assertEqWith s "so alice is on 14" (S.lifeOf S.alice after) (Just 14)
-    Spec.assertEqWith s "supporting: the Moonmist left one floating shield" (length (GameState.replacements shielded)) 1
+    Spec.assertEqWith s "supporting: the Moonmist left one floating shield" (length (StoredEffects.replacements (GameState.stored shielded))) 1
     Spec.assertEqWith s "supporting: alice started on 20" (S.lifeOf S.alice shielded) (Just 20)
 
   -- And the point: with Werewolf replaced by Goblin, the shield the SAME spell
@@ -1746,7 +1747,7 @@ artificialEvolutionSpec s registry = Spec.describe s "ArtificialEvolution" $ do
     (wolf, _, piker, shielded, after) <- moonmistShieldChain s registry (Just (Subtype.Werewolf, Subtype.Goblin))
     Spec.assertEqWith s "the Wolf's 3 and the Piker's 2 landed and the Werewolf's 3 did not" (fmap DamageEvent.source (S.damageEventsOf after)) [wolf, piker]
     Spec.assertEqWith s "so alice is on 15" (S.lifeOf S.alice after) (Just 15)
-    Spec.assertEqWith s "supporting: the Moonmist left one floating shield" (length (GameState.replacements shielded)) 1
+    Spec.assertEqWith s "supporting: the Moonmist left one floating shield" (length (StoredEffects.replacements (GameState.stored shielded))) 1
     Spec.assertEqWith s "supporting: alice started on 20" (S.lifeOf S.alice shielded) (Just 20)
 
 -- The one activated ability of a printing that declares exactly one -- Prodigal

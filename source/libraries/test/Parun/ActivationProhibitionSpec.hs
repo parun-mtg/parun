@@ -47,6 +47,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -168,7 +169,7 @@ unenchantedSpec s registry = Spec.describe s "Unenchanted" $ do
 -- its source has stopped saying it. Deadlock Trap's "{T}, Pay {E}: Tap target
 -- creature or planeswalker. Its activated abilities can't be activated this
 -- turn" (checked against Scryfall, 2026-09-05) is the pool's printing; the row
--- lands in GameState.objectProhibitions and
+-- lands in StoredEffects.objectProhibitions and
 -- Parun.Engine.ActivationProhibition.cantActivate is what reads it.
 --
 -- Every clause of the card is transcribed, the entry rewrite and the energy
@@ -198,7 +199,7 @@ storedSpec s registry = Spec.describe s "Stored" $ do
     Spec.assertBool s (elem returned offered) "the replayed Troll's regeneration is offered again"
     Spec.assertBool s (elem twin offered) "and so is the twin's, which the Trap never named"
     Spec.assertEqWith s "exactly one permanent arrived on the replay" (length arrivals) 1
-    Spec.assertEqWith s "and the stored row still names the Troll that left" (fmap ActiveObjectProhibition.affected (GameState.objectProhibitions final)) [RestrictedCreatures.Named victim]
+    Spec.assertEqWith s "and the stored row still names the Troll that left" (fmap ActiveObjectProhibition.affected (StoredEffects.objectProhibitions (GameState.stored final))) [RestrictedCreatures.Named victim]
 
 -- Aim the Trap's one target slot at this permanent, PINNED by filtering the
 -- offered set rather than built from the id: a hand-built recipient is a

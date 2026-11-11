@@ -61,6 +61,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Surveil as Surveil
 import qualified Parun.Types.TapState as TapState
@@ -303,5 +304,5 @@ amass settle pid source resolving kind n = do
                       ContinuousEffect.modification = Modification.CreatureSubtype ChangeMode.InAddition subtype,
                       ContinuousEffect.affected = Affected.TheseObjects (Set.singleton chosen)
                     }
-            State.put gs3 {GameState.continuousEffects = effect : GameState.continuousEffects gs3}
+            State.put gs3 {GameState.stored = (GameState.stored gs3) {StoredEffects.continuousEffects = effect : StoredEffects.continuousEffects (GameState.stored gs3)}}
       pure (Just chosen)

@@ -149,6 +149,7 @@ import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.StickerPut as StickerPut
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TappedToPay as TappedToPay
@@ -2952,7 +2953,7 @@ zonesTriggeredFrom cond =
         -- rule 702.55c states outright: only a card Effect.ExileHaunting put in
         -- exile is in GameState.haunting, so exile is the one zone it can trigger
         -- from, and standingOf's `inExile` serves it. A Bound subject's bearer
-        -- is a GameState.delayedTriggers entry, so its answer is never consulted.
+        -- is a StoredEffects.delayedTriggers entry, so its answer is never consulted.
         TriggerCondition.Leaves t -> case LeavesTrigger.permanent t of
           LeavingPermanent.Haunted -> Set.singleton Zone.Exile
           _ -> battlefield
@@ -3060,12 +3061,12 @@ zonesTriggeredFrom cond =
         -- CR 113.6's default: a Self subject's bearer stays on the battlefield. A
         -- Bound subject never actually consults it: its only carrier is a CR
         -- 603.7 delayed entry, which Event.delayedPending gathers out of
-        -- GameState.delayedTriggers rather than out of a zone. The default is
+        -- StoredEffects.delayedTriggers rather than out of a zone. The default is
         -- right anyway -- the event it matches happens on the battlefield.
         TriggerCondition.LosesControl _ -> battlefield
         -- Never consulted either, and for the same reason: CR 603.12 routes a
         -- reflexive through rule 603.7, so its only carrier is a delayed entry
-        -- Event.delayedPending gathers out of GameState.delayedTriggers. EMPTY rather
+        -- Event.delayedPending gathers out of StoredEffects.delayedTriggers. EMPTY rather
         -- than CR 113.6's default, which is the honest answer here where it is not for
         -- the arm above: a reflexive is created by a RESOLVING spell or ability and
         -- watches no zone at all, its source having been able to leave before it fires.
@@ -3605,7 +3606,7 @@ delayedPending grouped gs =
                       -- the end falls back to the earliest.
                       answer <- Game.choose (Prompt.ChooseDelayedTriggerEvent (Decide.deciderFor controller gs) controller (DelayedTrigger.source entry) candidates)
                       pure [Replacement.at (NonEmpty.toList block) answer (NonEmpty.head block)]
-      store = GameState.delayedTriggers gs
+      store = StoredEffects.delayedTriggers (GameState.stored gs)
       -- CR 603.2 plus CR 603.4: the event matched AND the intervening "if" held,
       -- which together are what "triggered" means. Per occurrence, since CR 603.4
       -- asks about the moment the event occurs. AFTER firedBy rather than inside
@@ -3846,7 +3847,7 @@ firesWithout gone pending gs =
             gs
               { GameState.battlefield = Set.difference (GameState.battlefield gs) gone,
                 GameState.command = Set.difference (GameState.command gs) gone,
-                GameState.continuousEffects = filter (\e -> Set.notMember (ContinuousEffect.source e) gone) (GameState.continuousEffects gs),
+                GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = filter (\e -> Set.notMember (ContinuousEffect.source e) gone) (StoredEffects.continuousEffects (GameState.stored gs))},
                 GameState.boardAfterEvent = Map.empty,
                 GameState.boardBeforeEvent = Map.empty,
                 GameState.battlefieldWhenTriggered = Map.empty

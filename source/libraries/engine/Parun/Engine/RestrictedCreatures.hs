@@ -16,6 +16,7 @@ import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- Which of `candidates` a stored row's subject covers. A Named row is the id the
 -- resolution froze; a Matching row is CR 611.2c's class, re-read against the
@@ -33,11 +34,11 @@ covered controller source affected candidates gs = case affected of
      in filter (\oid -> Filter.matches context (Projection.viewOfObject oid gs) f) candidates
 
 -- CR 611.2a / 613.11: the `candidates` a stored prohibition of this kind
--- covers right now (GameState.objectProhibitions). A row whose window has not
+-- covers right now (StoredEffects.objectProhibitions). A row whose window has not
 -- begun covers nothing yet (Expiry.begun): Exhaustion's "during their next
 -- untap step" is stored as the sorcery resolves.
 prohibited :: Prohibition.Prohibition -> [ObjectId] -> GameState -> Set.Set ObjectId
 prohibited what candidates gs =
   let live row = ActiveObjectProhibition.what row == what && Expiry.begun gs (ActiveObjectProhibition.expiry row)
       covers row = covered (ActiveObjectProhibition.controller row) (ActiveObjectProhibition.source row) (ActiveObjectProhibition.affected row) candidates gs
-   in Set.fromList (concatMap covers (filter live (GameState.objectProhibitions gs)))
+   in Set.fromList (concatMap covers (filter live (StoredEffects.objectProhibitions (GameState.stored gs))))

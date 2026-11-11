@@ -65,6 +65,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -663,7 +664,7 @@ carryGrants oid gs =
             ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
           }
       rows = fmap row (filter (\(_, _, modification) -> functionsOnBattlefield subtypes modification) (Projection.staticPartsOn oid gs))
-   in if null rows then gs else gs {GameState.continuousEffects = GameState.continuousEffects gs <> rows}
+   in if null rows then gs else gs {GameState.stored = (GameState.stored gs) {StoredEffects.continuousEffects = StoredEffects.continuousEffects (GameState.stored gs) <> rows}}
 
 -- CR 400.7d / 702.174a: the gift payments and promises a permanent carried from
 -- the spell it was, kept for the instances it has as it enters: its own, and the
@@ -785,7 +786,7 @@ armBecame oid obj gs1 arrivals = do
       gaveAway eff = case (ContinuousEffect.modification eff, ContinuousEffect.affected eff) of
         (Modification.SetController pid, Affected.TheseObjects oids) -> pid /= caster && Set.member oid oids
         _ -> False
-      keptSpell = not (any gaveAway (GameState.continuousEffects gs1))
+      keptSpell = not (any gaveAway (StoredEffects.continuousEffects (GameState.stored gs1)))
       hasted = if keptSpell && Set.member CardType.Creature (Projection.cardTypesOf oid gs1) then Keyword.castUsingHaste (Object.castUsing obj) else Nothing
   Foldable.for_ hasted $ \duration ->
     Foldable.for_ permanents (grantHaste duration caster)
@@ -819,4 +820,4 @@ grantHaste duration controller permanent =
                   ContinuousEffect.modification = Modification.GainKeyword Keyword.Type.Haste,
                   ContinuousEffect.affected = Affected.TheseObjects (Set.singleton permanent)
                 }
-         in g1 {GameState.continuousEffects = eff : GameState.continuousEffects g1}
+         in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}

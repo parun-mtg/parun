@@ -143,6 +143,7 @@ import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Superlative as Superlative
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -522,7 +523,7 @@ applying pid gs =
         )
       -- CR 611.2a: a row whose window has not begun applies to nobody yet --
       -- Sphinx's Decree's "during that player's next turn" (Expiry.begun).
-      stored = fmap storedOne (filter (Expiry.begun gs . ActivePlayerEffect.expiry) (GameState.playerEffects gs))
+      stored = fmap storedOne (filter (Expiry.begun gs . ActivePlayerEffect.expiry) (StoredEffects.playerEffects (GameState.stored gs)))
       -- CR 116.2d: a player who has paid to ignore a permanent's static ability
       -- sees no row that ability produced -- "the effect from that ability",
       -- matched by the name its face gives it, so a permanent's OTHER abilities
@@ -1006,7 +1007,7 @@ declarationRow effect pid gs =
         ActivePlayerEffect.effect active == effect
           && Expiry.begun gs (ActivePlayerEffect.expiry active)
           && applies pid (ActivePlayerEffect.controller active) gs (ActivePlayerEffect.scope active)
-   in Maybe.listToMaybe (List.sortOn (Ord.Down . ActivePlayerEffect.timestamp) (filter hands (GameState.playerEffects gs)))
+   in Maybe.listToMaybe (List.sortOn (Ord.Down . ActivePlayerEffect.timestamp) (filter hands (StoredEffects.playerEffects (GameState.stored gs))))
 
 -- CR 701.23 / Opposition Agent: the objects whose rows have `pid` exile each
 -- card they find while searching their own library, in timestamp order. Each is
@@ -2513,7 +2514,7 @@ castFromGrantOf effect = case effect of
 anyCastFromRow :: GameState -> Bool
 anyCastFromRow gs =
   any (\(_, _, _, _, effect) -> Maybe.isJust (castFromGrantOf effect)) (printedRows gs)
-    || any (Maybe.isJust . castFromGrantOf . ActivePlayerEffect.effect) (GameState.playerEffects gs)
+    || any (Maybe.isJust . castFromGrantOf . ActivePlayerEffect.effect) (StoredEffects.playerEffects (GameState.stored gs))
 
 -- The permissions mayCastFrom answers off: every CR 601.3 CastFrom row applying
 -- to `pid` that opens `zone` for `oid` and has a use left, paired with the object
@@ -5008,12 +5009,12 @@ spentGrants useOf pid oid gs =
         applies pid (ActivePlayerEffect.controller active) gs (ActivePlayerEffect.scope active)
           && Expiry.endsAt gs Expiry.Used (ActivePlayerEffect.source active) (ActivePlayerEffect.expiry active)
           && maybe False (\criterion -> matchesObjectFrom (storedSource active) criterion oid gs) (useOf (ActivePlayerEffect.effect active))
-   in filter spent (GameState.playerEffects gs)
+   in filter spent (StoredEffects.playerEffects (GameState.stored gs))
 
 -- Drop the rows spentByCast / spentByLandPlay named, once the play they were
 -- asked about has happened.
 consume :: [ActivePlayerEffect.ActivePlayerEffect] -> GameState -> GameState
-consume rows gs = gs {GameState.playerEffects = filter (`notElem` rows) (GameState.playerEffects gs)}
+consume rows gs = gs {GameState.stored = (GameState.stored gs) {StoredEffects.playerEffects = filter (`notElem` rows) (StoredEffects.playerEffects (GameState.stored gs))}}
 
 -- Every PlayerRef this effect holds, traversed rather than read: CR 400.1's zone
 -- references live inside the two permission payloads, and both a READER (the slot

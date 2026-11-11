@@ -8,7 +8,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 611.2a / 613.11: a stored, resolution-generated prohibition over the
--- permanents it names or a class of them, held in GameState.objectProhibitions and left by
+-- permanents it names or a class of them, held in StoredEffects.objectProhibitions and left by
 -- Parun.Types.Effect's Prohibit.
 --
 -- Read through Parun.Engine.RestrictedCreatures.prohibited, one

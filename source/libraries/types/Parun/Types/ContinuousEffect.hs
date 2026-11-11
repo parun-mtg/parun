@@ -7,7 +7,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Timestamp as Timestamp
 
--- | A stored continuous effect (CR 611.2), held in GameState.continuousEffects.
+-- | A stored continuous effect (CR 611.2), held in StoredEffects.continuousEffects.
 -- `timestamp` orders it within its layer (CR 613.7); `expiry` decides when a
 -- sweep drops it (Parun.Engine.Expiry; CR 514.2, 611.2a, 611.2b); `affected` is
 -- its fixed set (CR 611.2c). Static-ability effects are NOT stored here -- they

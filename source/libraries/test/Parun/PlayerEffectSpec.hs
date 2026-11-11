@@ -162,6 +162,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -2272,11 +2273,11 @@ theTenRingsSpec s registry =
       restoration <- S.printingOf s registry "Sea Gate Restoration"
       island <- S.printingOf s registry "Island"
       let (board, ringsId) = ringsAndRestoration False plains island tenRings restoration
-      Spec.assertEqWith s "one stored effect" (fmap ActivePlayerEffect.effect (GameState.playerEffects board)) [PlayerEffect.Type.NoMaximumHandSize]
+      Spec.assertEqWith s "one stored effect" (fmap ActivePlayerEffect.effect (StoredEffects.playerEffects (GameState.stored board))) [PlayerEffect.Type.NoMaximumHandSize]
       Spec.assertEqWith
         s
         "and it began before The Ten Rings entered"
-        (fmap (\stored -> Just (ActivePlayerEffect.timestamp stored) < fmap Object.timestamp (Game.lookupObject ringsId board)) (GameState.playerEffects board))
+        (fmap (\stored -> Just (ActivePlayerEffect.timestamp stored) < fmap Object.timestamp (Game.lookupObject ringsId board)) (StoredEffects.playerEffects (GameState.stored board)))
         [True]
 
     Spec.it s "CR 613.11 The Ten Rings entering after Sea Gate Restoration resolved sets the maximum to ten" $ do
@@ -2490,7 +2491,7 @@ addPlayerEffectAt source expiry scope effect controller gs =
             ActivePlayerEffect.ability = Nothing,
             ActivePlayerEffect.slots = mempty
           }
-   in gs1 {GameState.playerEffects = active : GameState.playerEffects gs1}
+   in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored gs1)}}
 
 -- A real permanent on the battlefield, so the effect's condition can
 -- genuinely hold rather than being false by construction. Loaded fresh
@@ -2535,13 +2536,13 @@ storedSpec s registry =
     Spec.it s "CR 514.2 the cleanup sweep drops an AtCleanup player effect" $
       let after = Expiry.dropAtCleanup silenced
        in do
-            Spec.assertEqWith s "one stored before" (length (GameState.playerEffects silenced)) 1
-            Spec.assertEqWith s "none after" (GameState.playerEffects after) []
+            Spec.assertEqWith s "one stored before" (length (StoredEffects.playerEffects (GameState.stored silenced))) 1
+            Spec.assertEqWith s "none after" (StoredEffects.playerEffects (GameState.stored after)) []
             Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced after)) "and bob may cast again"
 
     Spec.it s "CR 514.2 the cleanup sweep keeps a Never player effect" $
       let forever = S.addPlayerEffect Expiry.Type.Never (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.Opponent)) PlayerEffect.Type.CantCastSpells S.alice base
-       in Spec.assertEqWith s "survives" (length (GameState.playerEffects (Expiry.dropAtCleanup forever))) 1
+       in Spec.assertEqWith s "survives" (length ((StoredEffects.playerEffects . GameState.stored) (Expiry.dropAtCleanup forever))) 1
 
     -- THE DISCRIMINATING SHAPE: two entries, keyed to the two different
     -- players, on the SAME handoff. An indiscriminate sweep (one that
@@ -2557,7 +2558,7 @@ storedSpec s registry =
             Spec.assertEqWith
               s
               "the bob-keyed entry ended; the alice-keyed entry survives"
-              (fmap ActivePlayerEffect.expiry (GameState.playerEffects bobsTurn))
+              (fmap ActivePlayerEffect.expiry (StoredEffects.playerEffects (GameState.stored bobsTurn)))
               [Expiry.Type.AtTurnOf S.alice]
 
     -- The POSITIVE case: while the condition genuinely holds, the sweep
@@ -2570,7 +2571,7 @@ storedSpec s registry =
           (changed, swept) = Engine.runGamePure S.identityAnswer conditional Expiry.sweepConditional
       Spec.assertBool s (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced conditional) "still prohibited while the source stands"
       Spec.assertBool s (not changed) "the sweep reports no change"
-      Spec.assertEqWith s "still stored" (length (GameState.playerEffects swept)) 1
+      Spec.assertEqWith s "still stored" (length (StoredEffects.playerEffects (GameState.stored swept))) 1
       Spec.assertBool s (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced swept) "still prohibited after a no-op sweep"
 
     Spec.it s "CR 611.2b the conditional sweep deletes a player effect whose condition has failed" $ do
@@ -2579,7 +2580,7 @@ storedSpec s registry =
           gone = S.runPure S.identityAnswer conditional (Event.destroy (pure ()) Regenerability.Regenerable [srcId])
           (changed, swept) = Engine.runGamePure S.identityAnswer gone Expiry.sweepConditional
       Spec.assertBool s changed "the sweep reports a change"
-      Spec.assertEqWith s "deleted, not masked" (GameState.playerEffects swept) []
+      Spec.assertEqWith s "deleted, not masked" (StoredEffects.playerEffects (GameState.stored swept)) []
       Spec.assertBool s (not (PlayerEffect.prohibitsCasting S.bob anySpellId VariableChoice.Announced swept)) "no longer prohibited"
 
 -- The board is BOB's turn on purpose: the "only casting is stopped" ruling

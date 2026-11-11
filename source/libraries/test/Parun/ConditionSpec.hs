@@ -67,6 +67,7 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -298,7 +299,7 @@ foreignGraveyardCastSpec s registry =
           -- ALICE. Its other two conjuncts both hold, which leaves the caster the
           -- only one that can answer no, and its delayed ability is what an
           -- answer of yes would have armed.
-          Spec.assertEqWith s "CR 601.2a bob did not cast it, so his Amalgam armed nothing" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "CR 601.2a bob did not cast it, so his Amalgam armed nothing" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
           -- The board, recorded after the behaviour: the cast really happened and
           -- really was out of a pile that is not alice's, so the negatives above
           -- are the clauses' answers rather than a cast that never took place.

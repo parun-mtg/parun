@@ -139,6 +139,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
@@ -196,9 +197,9 @@ targetSpec s registry = Spec.describe s "Target" $ do
               (Map.singleton slot (Set.singleton (Recipient.ToObject myr)))
               (Map.singleton slot (Set.singleton (Recipient.ToObject myr)))
               (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot slot) (PlayerRef.Relative PlayerRelation.You)))
-    Spec.assertEqWith s "no control effect is stored for a departed controller" (GameState.continuousEffects after) []
+    Spec.assertEqWith s "no control effect is stored for a departed controller" (StoredEffects.continuousEffects (GameState.stored after)) []
     Spec.assertEqWith s "and the Myr's controller is unchanged" (Projection.controllerOf myr after) (Just S.carol)
-    Spec.assertEqWith s "the same call for a player still in the game DOES store one -- the guard is what did it" (length (GameState.continuousEffects control)) 1
+    Spec.assertEqWith s "the same call for a player still in the game DOES store one -- the guard is what did it" (length (StoredEffects.continuousEffects (GameState.stored control))) 1
     Spec.assertEqWith s "and takes control" (Projection.controllerOf myr control) (Just S.bob)
   Spec.it s "CR 608.2b a creature that left its zone is no longer legal" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -1657,9 +1658,9 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
               (Effect.ModifyTarget (ModifyTarget.MkModifyTarget Duration.UntilEndOfTurn m (ObjectRef.InSlot slot) Nothing))
         refused = store (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 3) Quantity.Star))
         stored = store (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 3) (Quantity.Literal 3)))
-    Spec.assertEqWith s "no effect is stored for an unevaluable quantity" (GameState.continuousEffects refused) []
+    Spec.assertEqWith s "no effect is stored for an unevaluable quantity" (StoredEffects.continuousEffects (GameState.stored refused)) []
     Spec.assertEqWith s "and the Piker is its printed 2/1" (Projection.powerOf pikerId refused, Projection.toughnessOf pikerId refused) (Just 2, Just 1)
-    Spec.assertEqWith s "the same call with two Literals DOES store one -- the refusal is what did it" (length (GameState.continuousEffects stored)) 1
+    Spec.assertEqWith s "the same call with two Literals DOES store one -- the refusal is what did it" (length (StoredEffects.continuousEffects (GameState.stored stored))) 1
     Spec.assertEqWith s "and pumps the Piker to 5/4" (Projection.powerOf pikerId stored, Projection.toughnessOf pikerId stored) (Just 5, Just 4)
   -- The OTHER half of the same freeze: a quantity that IS answerable, but only
   -- against the resolution's own slot bindings. Rush of Blood's X is
@@ -1693,7 +1694,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     Spec.assertEqWith
       s
       "and what was STORED is the frozen pair, not the raw AgainstSlot"
-      (fmap ContinuousEffect.modification (GameState.continuousEffects resolved))
+      (fmap ContinuousEffect.modification (StoredEffects.continuousEffects (GameState.stored resolved)))
       [Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 2) (Quantity.Literal 0))]
     Spec.assertEqWith s "the Piker is still its printed 2/1 while the spell is on the stack" (Projection.powerOf pikerId cast, Projection.toughnessOf pikerId cast) (Just 2, Just 1)
   -- Onward ({2}{R} Instant, the first half of Onward // Victory: "Target

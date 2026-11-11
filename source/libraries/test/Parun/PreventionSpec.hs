@@ -79,6 +79,7 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
@@ -160,7 +161,7 @@ shieldsLeft gs =
   let remaining re = case re of
         ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.PreventNext n) _) -> Just n
         _ -> Nothing
-   in Maybe.mapMaybe (remaining . ActiveReplacement.effect) (GameState.replacements gs)
+   in Maybe.mapMaybe (remaining . ActiveReplacement.effect) (StoredEffects.replacements (GameState.stored gs))
 
 -- The damage CR 615.5's rider dealt to `pid`, ONE ENTRY PER EVENT rather than
 -- summed. What tells CR 615.13's one application apart from one application per
@@ -335,7 +336,7 @@ aimPlayer pid p = case p of
 --
 --   1. The skip is created by an EFFECT. Nothing on the battlefield carries it --
 --      Fatigue is in a graveyard by the time the skip matters -- so it lives in
---      GameState.replacements, the floating store CR 614.3 describes as lasting
+--      StoredEffects.replacements, the floating store CR 614.3 describes as lasting
 --      "until they're used up".
 --   2. It is scoped to ONE player (PhasePattern.whosePhase), where Eon Hub's
 --      "players skip their upkeep steps" is symmetric.
@@ -566,19 +567,19 @@ mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
         once = strike shielded
         twice = strike once
         thrice = strike twice
-    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (GameState.replacements shielded)) 1
+    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (StoredEffects.replacements (GameState.stored shielded))) 1
     -- CR 615.6: a fully prevented event never happens, so nothing is marked and
     -- nothing is recorded.
     Spec.assertEqWith s "the first 3 is prevented whole" (S.damageOf victim once) (Just 0)
     Spec.assertEqWith s "and no damage event happened at all" (amounts once) []
-    Spec.assertEqWith s "the shield is still there, holding 1" (length (GameState.replacements once)) 1
+    Spec.assertEqWith s "the shield is still there, holding 1" (length (StoredEffects.replacements (GameState.stored once))) 1
     -- The partial case, which is what makes this a shield rather than a Fog: 1
     -- of the second 3 is prevented and the other 2 are dealt.
     Spec.assertEqWith s "1 of the second 3 is prevented, 2 are dealt" (S.damageOf victim twice) (Just 2)
     Spec.assertEqWith s "and the surviving event carries the reduced amount" (amounts twice) [2]
     -- CR 615.7: "once the shield has been reduced to 0, any remaining damage is
     -- dealt normally."
-    Spec.assertEqWith s "the spent shield is gone" (GameState.replacements twice) []
+    Spec.assertEqWith s "the spent shield is gone" (StoredEffects.replacements (GameState.stored twice)) []
     Spec.assertEqWith s "so the third 3 lands in full" (S.damageOf victim thrice) (Just 5)
   -- CR 615.7's "shielded permanent": a shield names ONE recipient, so a second
   -- creature is not covered by it and does not spend it. The discriminating twin
@@ -597,7 +598,7 @@ mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
         shielded = castAndResolve (aimCreature shieldedOne) g4 spellId
         after = S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [hit attacker (Recipient.ToCreature bystander) 3])
     Spec.assertEqWith s "the unshielded creature takes all of it" (S.damageOf bystander after) (Just 3)
-    Spec.assertEqWith s "and the shield was not spent on damage it does not cover" (length (GameState.replacements after)) 1
+    Spec.assertEqWith s "and the shield was not spent on damage it does not cover" (length (StoredEffects.replacements (GameState.stored after))) 1
   -- CR 615.7 by the POINT rather than by the event: "each 1 damage that would be
   -- dealt to the shielded permanent or player is prevented", so the shielded
   -- side may split the shield across the batch and not merely rank it. The same
@@ -618,7 +619,7 @@ mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
     -- THE gameplay assertion: both events happened, each cut by 2.
     Spec.assertEqWith s "2 off each: a 3 and a 1 are dealt" (amounts halved) [3, 1]
     Spec.assertEqWith s "and the shield still prevented exactly 4" (S.lifeOf S.bob halved) (Just 16)
-    Spec.assertEqWith s "and it is spent" (GameState.replacements halved) []
+    Spec.assertEqWith s "and it is spent" (StoredEffects.replacements (GameState.stored halved)) []
   -- The elision half, and the reason the prompt is gated rather than raised for
   -- every batch: a shield big enough to cover the whole batch prevents all of it
   -- in any order, so there is nothing to decide and nothing is asked.
@@ -639,7 +640,7 @@ mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
       "no AllocateDamage was raised: 4 covers 1 and 2 together"
     Spec.assertEqWith s "both events were prevented whole" (amounts after) []
     Spec.assertEqWith s "bob's life is untouched" (S.lifeOf S.bob after) (Just 20)
-    Spec.assertEqWith s "and 3 of the shield's 4 were spent, so 1 remains" (length (GameState.replacements after)) 1
+    Spec.assertEqWith s "and 3 of the shield's 4 were spent, so 1 remains" (length (StoredEffects.replacements (GameState.stored after))) 1
 
 -- Aim every target slot at `victim` and answer CR 609.7a's source choice with
 -- `src`. FILTERED, not built: the id is taken from the offered set, so an answer
@@ -804,7 +805,7 @@ auriokReplicaSpec s registry = Spec.describe s "Auriok Replica (CR 609.7a)" $ do
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "setup: exactly one permanent arrived from the resolution" (length (arrived shielded)) 1
     Spec.assertEqWith s "setup: CR 400.7 gave that permanent an id the spell did not have" (became shielded == spellId) False
-    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (GameState.replacements shielded)) 1
+    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (StoredEffects.replacements (GameState.stored shielded))) 1
     Spec.assertEqWith s "alice was asked which source, and answered the spell" (chosenSourcesIn (answersFor (chooseDamageSourceOf spellId) afterCast (Activate.activateAbility S.alice replicaId (theAbility replica) Monad.>> Stack.resolveTop Monad.>> Stack.resolveTop))) [spellId]
   -- CR 609.7a's THIRD class, which none of the three cases above reaches: "any
   -- object referred to by an object on the stack, by a replacement or prevention
@@ -859,7 +860,7 @@ auriokReplicaSpec s registry = Spec.describe s "Auriok Replica (CR 609.7a)" $ do
     Spec.assertEqWith s "and aiming the same shield at the Piker leaves that 2 landing in full" (S.lifeOf S.alice (after decoy)) (Just 18)
     -- The proxies, after the behaviour.
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject fireEater (after fireEater))) "setup: the cost really did remove the source, so the id names nothing"
-    Spec.assertEqWith s "setup: the shield is a floating replacement" (length (GameState.replacements (after fireEater))) 1
+    Spec.assertEqWith s "setup: the shield is a floating replacement" (length ((StoredEffects.replacements . GameState.stored) (after fireEater))) 1
     Spec.assertEqWith s "alice was OFFERED the departed source and answered it" (chosenSourcesIn (answersFor (choosePlayerAndSource S.alice fireEater) g3 act)) [fireEater]
 
   -- The SAME rule and the same exclusion, reached by CR 609.7a's OTHER
@@ -933,7 +934,7 @@ auriokReplicaSpec s registry = Spec.describe s "Auriok Replica (CR 609.7a)" $ do
     -- here -- and the 2 lands, so neither 20 above is "everything was prevented".
     Spec.assertEqWith s "aiming it at bob's Piker, which shields nothing that happens here, leaves the 2 landing" (S.lifeOf S.alice (after decoy)) (Just 18)
     -- The proxies, after the behaviour.
-    Spec.assertEqWith s "setup: the -2 armed a delayed trigger and it is still waiting" (length (GameState.delayedTriggers armed)) 1
+    Spec.assertEqWith s "setup: the -2 armed a delayed trigger and it is still waiting" (length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject abilityId armed)) "setup: CR 608.2m the -2's ability object has ceased, so only the entry still names it"
     Spec.assertBool s (abilityId /= gristId && abilityId /= fireEater) "setup: the id named is the ability object, not Grist and not the Fire-Eater"
     Spec.assertBool s (decoy /= replicaId && decoy /= fireEater) "setup: the id the twin names is bob's Piker"
@@ -996,7 +997,7 @@ packLeaderSpec s registry = Spec.describe s "Pack Leader (CR 611.2c)" $ do
         -- creature type on the other side of the table.
         Spec.assertEqWith s "bob's own Dog is not covered, the clause saying you control" (strikeFrom theirDog 6) (Just 6)
         -- The proxies, after the behaviour.
-        Spec.assertEqWith s "setup: the shield is one floating replacement" (length (GameState.replacements atBlockers)) 1
+        Spec.assertEqWith s "setup: the shield is one floating replacement" (length (StoredEffects.replacements (GameState.stored atBlockers))) 1
         Spec.assertEqWith s "setup: Pack Leader was declared as an attacker" (elem leaderId (S.attackerDeclarationsOf atBlockers)) True
         Spec.assertEqWith s "setup: the latecomer is on the battlefield and undamaged" (S.damageOf latecomer board) (Just 0)
       _ -> Spec.assertFailure s "fixture should have three creatures for alice and two for bob"
@@ -1101,8 +1102,8 @@ partingWardSpec s registry = Spec.describe s "Synthetic Parting Ward (CR 609.7a)
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "the answer recorded is the fallback, not the destroyed creature alice named" (chosenSourcesIn (answersFor (choosePlayerAndSource S.alice destroyed) armed rest)) [fireEater]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject destroyed armed)) "setup: the Ward really did destroy bob's creature, so the id names nothing"
-    Spec.assertEqWith s "setup: the Ward installed exactly one floating row" (length (GameState.replacements armed)) 1
-    Spec.assertEqWith s "setup: that row names no slot, so it captured none" (foldMap ActiveReplacement.slots (GameState.replacements armed)) Map.empty
+    Spec.assertEqWith s "setup: the Ward installed exactly one floating row" (length (StoredEffects.replacements (GameState.stored armed))) 1
+    Spec.assertEqWith s "setup: that row names no slot, so it captured none" (foldMap ActiveReplacement.slots (StoredEffects.replacements (GameState.stored armed))) Map.empty
     Spec.assertBool s (plainsId /= destroyed && plainsId /= fireEater) "setup: the id the twin names is a Plains and neither of the two creatures"
 
 -- CR 609.7a's third class read off what a resolution BAKED into a waiting row
@@ -1193,8 +1194,8 @@ healingGraceReferentSpec s registry = Spec.describe s "Healing Grace and Auriok 
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "alice was OFFERED the baked source and answered it" (chosenSourcesIn (answersFor (chooseDamageSourceOf fireEater) armed rest)) [fireEater]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject fireEater armed)) "setup: the cost really did remove the Fire-Eater, so the id names nothing"
-    Spec.assertEqWith s "setup: Healing Grace left exactly one floating row" (length (GameState.replacements armed)) 1
-    Spec.assertEqWith s "setup: that row captured no slot, so only its baked field can name the Fire-Eater" (foldMap ActiveReplacement.slots (GameState.replacements armed)) Map.empty
+    Spec.assertEqWith s "setup: Healing Grace left exactly one floating row" (length (StoredEffects.replacements (GameState.stored armed))) 1
+    Spec.assertEqWith s "setup: that row captured no slot, so only its baked field can name the Fire-Eater" (foldMap ActiveReplacement.slots (StoredEffects.replacements (GameState.stored armed))) Map.empty
     Spec.assertEqWith s "setup: that row really watches the departed source, so the Fire-Eater's own 2 on the Piker was prevented" (S.damageOf victim armed) (Just 0)
     Spec.assertBool s (plainsId /= fireEater && plainsId /= victim) "setup: the id the twin names is a Plains and neither creature"
 
@@ -1280,8 +1281,8 @@ galvanicBlastReferentSpec s registry = Spec.describe s "Galvanic Blast (CR 609.7
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "the answer recorded is the fallback, not the dead creature alice named" (chosenSourcesIn (answersFor (choosePlayerAndSource S.alice destroyed) armed rest)) [fireEater]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject destroyed armed)) "setup: the Blast's 2 really did kill bob's 2/1, so the id names nothing"
-    Spec.assertEqWith s "setup: metalcraft left exactly one floating row" (length (GameState.replacements armed)) 1
-    Spec.assertEqWith s "setup: that row names no slot, so it captured none" (foldMap ActiveReplacement.slots (GameState.replacements armed)) Map.empty
+    Spec.assertEqWith s "setup: metalcraft left exactly one floating row" (length (StoredEffects.replacements (GameState.stored armed))) 1
+    Spec.assertEqWith s "setup: that row names no slot, so it captured none" (foldMap ActiveReplacement.slots (StoredEffects.replacements (GameState.stored armed))) Map.empty
     Spec.assertBool s (landId /= destroyed && landId /= fireEater) "setup: the id the twin names is a land and neither creature"
 
 -- CR 609.7a's third class read off the SLOTS a waiting row captured rather than
@@ -1360,8 +1361,8 @@ communalBulwarkReferentSpec s registry = Spec.describe s "Synthetic Communal Bul
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "alice was OFFERED the captured source and answered it" (chosenSourcesIn (answersFor (aimAndChoose victim fireEater) armed rest)) [fireEater]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject fireEater armed)) "setup: the cost really did remove the Fire-Eater, so the id names nothing"
-    Spec.assertEqWith s "setup: the Bulwark left exactly one floating row, and the stack is empty" (length (GameState.replacements armed), TurnRegisters.stack (GameState.turn armed)) (1, [])
-    Spec.assertEqWith s "setup: that row captured the one slot its recipient names, holding the Fire-Eater" (foldMap (foldMap Set.toList . ActiveReplacement.slots) (GameState.replacements armed)) [fireEater]
+    Spec.assertEqWith s "setup: the Bulwark left exactly one floating row, and the stack is empty" (length (StoredEffects.replacements (GameState.stored armed)), TurnRegisters.stack (GameState.turn armed)) (1, [])
+    Spec.assertEqWith s "setup: that row captured the one slot its recipient names, holding the Fire-Eater" (foldMap (foldMap Set.toList . ActiveReplacement.slots) (StoredEffects.replacements (GameState.stored armed))) [fireEater]
     Spec.assertBool s (plainsId /= fireEater && plainsId /= victim) "setup: the id the twin names is a Plains and neither creature"
 
 -- CR 609.7a's third class off its LAST carrier, whose producers are Come Back
@@ -1433,8 +1434,8 @@ comeBackWrongSpec s registry = Spec.describe s "Come Back Wrong and Auriok Repli
     -- The proxies, after the behaviour.
     Spec.assertEqWith s "alice was OFFERED the departed source and answered it" (chosenSourcesIn (answersFor (chooseDamageSourceOf departed) armed rest)) [departed]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject departed armed)) "setup: CR 400.7 really did retire the battlefield id, so it names nothing"
-    Spec.assertEqWith s "setup: the resolution armed exactly one delayed trigger" (Seq.length (GameState.delayedTriggers armed)) 1
-    Spec.assertEqWith s "setup: no row is waiting and the stack is empty, so only that entry can name the id" (length (GameState.replacements armed), TurnRegisters.stack (GameState.turn armed)) (0, [])
+    Spec.assertEqWith s "setup: the resolution armed exactly one delayed trigger" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
+    Spec.assertEqWith s "setup: no row is waiting and the stack is empty, so only that entry can name the id" (length (StoredEffects.replacements (GameState.stored armed)), TurnRegisters.stack (GameState.turn armed)) (0, [])
     Spec.assertBool s (plainsId /= departed) "setup: the id the twin names is a Plains and not the departed creature"
 
 -- CR 615.5's ADDITIONAL EFFECT, whose producer is Test of Faith ({1}{W} Instant:
@@ -1492,7 +1493,7 @@ preventAllRows gs =
   let isPreventAll re = case re of
         ReplacementEffect.DamageR (DamageR.MkDamageR _ DamageRewrite.PreventAll _) -> True
         _ -> False
-   in length (filter (isPreventAll . ActiveReplacement.effect) (GameState.replacements gs))
+   in length (filter (isPreventAll . ActiveReplacement.effect) (StoredEffects.replacements (GameState.stored gs)))
 
 -- Attacks with everything and blocks with NOTHING, so an attack's damage reaches
 -- the defending player.
@@ -1655,7 +1656,7 @@ whippoorwillSpec s registry = Spec.describe s "Whippoorwill (CR 615.12)" $ do
     Spec.assertEqWith s "and the bystander that died beside it stays in the graveyard" (pikersIn Zone.Graveyard after) 1
     -- The preconditions those two rest on, read AFTER them so neither can absorb
     -- a mutation aimed at the condition.
-    Spec.assertEqWith s "setup: the activation armed exactly one delayed ability" (Seq.length (GameState.delayedTriggers aimed)) 1
+    Spec.assertEqWith s "setup: the activation armed exactly one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored aimed))) 1
     Spec.assertEqWith s "setup: both creatures really died" (Game.lookupObject named killed, Game.lookupObject bystander killed) (Nothing, Nothing)
     Spec.assertEqWith s "setup: exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn killed))) 1
   -- CR 700.4 read literally, which is the whole of why this condition is not
@@ -1692,7 +1693,7 @@ whippoorwillSpec s registry = Spec.describe s "Whippoorwill (CR 615.12)" $ do
     Spec.assertEqWith s "CR 514.2 the card stays in the graveyard, the entry having expired" (pikersIn Zone.Graveyard after, pikersIn Zone.Exile after) (1, 0)
     -- The preconditions, after it: the turn handed off and the store really emptied.
     Spec.assertEqWith s "setup: the turn really did hand off" (TurnRegisters.turnNumber (GameState.turn bobsTurn) /= TurnRegisters.turnNumber (GameState.turn aimed)) True
-    Spec.assertEqWith s "setup: no delayed entry survived the cleanup" (Seq.length (GameState.delayedTriggers bobsTurn)) 0
+    Spec.assertEqWith s "setup: no delayed entry survived the cleanup" (Seq.length (StoredEffects.delayedTriggers (GameState.stored bobsTurn))) 0
 
 -- Run a turn without a fight: nobody attacks and nobody blocks, so the only
 -- damage in these cases is the batch the assertion builds.

@@ -103,6 +103,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Staged as Staged
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
@@ -2565,7 +2566,7 @@ fugitiveDoctorSpec s registry = Spec.describe s "FugitiveDoctor" $ do
     Spec.assertEqWith s "the Clue was sacrificed" (clues after) 0
     -- CR 603.12a's second sentence, and CR 603.7b: one arming, one firing. A
     -- second would have wanted a second target and found none.
-    Spec.assertEqWith s "and the reflexive ability fired once, leaving the delayed store empty" (length (GameState.delayedTriggers after)) 0
+    Spec.assertEqWith s "and the reflexive ability fired once, leaving the delayed store empty" (length (StoredEffects.delayedTriggers (GameState.stored after))) 0
 
 -- Lier, Disciple of the Drowned {3}{U}{U} (data/cards/lier-disciple-of-the-drowned.json):
 -- "Spells can't be countered. Each instant and sorcery card in your graveyard

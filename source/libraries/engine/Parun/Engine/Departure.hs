@@ -61,6 +61,7 @@ import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.Zone as Zone
@@ -280,23 +281,23 @@ continuesAfterDeparture gs = length (GameState.turnOrder gs) > 2
 -- More things it deliberately does NOT touch, each because CR 800.4a
 -- does not reach them:
 --
---   * the rows already in GameState.continuousEffects and
---     GameState.playerEffects, and every row of
---     GameState.replacements that grants nobody control. CR
+--   * the rows already in StoredEffects.continuousEffects and
+--     StoredEffects.playerEffects, and every row of
+--     StoredEffects.replacements that grants nobody control. CR
 --     109.1's list of what an object is does not include a stored continuous
 --     effect, so the first clause does not end one just because its source left
 --     -- a departing player's Giant Growth on someone else's creature keeps its
 --     +3/+3 until cleanup. The effects this rule DOES end are the
 --     control-granting ones, CR 800.4a's SECOND clause and so controlEffectsEnd's
---     job -- which is where the control-on-entry rows of GameState.replacements
+--     job -- which is where the control-on-entry rows of StoredEffects.replacements
 --     are dropped (givesControlOnEntryTo), and only those.
 --
---     GameState.continuousEffects is the one of the three this function WRITES,
+--     StoredEffects.continuousEffects is the one of the three this function WRITES,
 --     and only ever by adding: Event.leaveTheGame turns a departing permanent's
 --     lingering static ability into a stored effect, which is CR 604.2's override
 --     rather than anything CR 800.4a ends.
 --
---   * GameState.delayedTriggers. A delayed triggered ability that has not
+--   * StoredEffects.delayedTriggers. A delayed triggered ability that has not
 --     triggered is not on the stack, so by CR 109.1 it is not an object either.
 --     It stays, it triggers, and CR 800.4d is what stops it reaching the stack;
 --     the filter is in Engine.apnapPlayers.
@@ -439,14 +440,17 @@ controlEffectsEnd pid gs =
   let heldBy decider = case decider of
         Decider.MkDecider d -> d == pid
    in gs
-        { GameState.continuousEffects = filter (not . Projection.givesControlTo pid) (GameState.continuousEffects gs),
+        { GameState.stored =
+            (GameState.stored gs)
+              { StoredEffects.continuousEffects = filter (not . Projection.givesControlTo pid) (StoredEffects.continuousEffects (GameState.stored gs)),
+                StoredEffects.replacements = filter (not . givesControlOnEntryTo pid) (StoredEffects.replacements (GameState.stored gs))
+              },
           -- Per ROW, not per player: CR 800.4a ends the departing player's own
           -- controlling effects, and a row underneath held by someone still
           -- playing is untouched (CR 724.1a then makes the topmost survivor the
           -- one that works). A stack with nothing left loses its key.
           GameState.control = Map.mapMaybe (NonEmpty.nonEmpty . NonEmpty.filter (not . heldBy . PlayerControl.decider)) (GameState.control gs),
-          GameState.pendingControl = Map.filter (not . heldBy . PlayerControl.decider) (GameState.pendingControl gs),
-          GameState.replacements = filter (not . givesControlOnEntryTo pid) (GameState.replacements gs)
+          GameState.pendingControl = Map.filter (not . heldBy . PlayerControl.decider) (GameState.pendingControl gs)
         }
 
 -- Is this floating row one of CR 800.4a's "effects which give that player

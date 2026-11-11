@@ -139,6 +139,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
@@ -265,7 +266,7 @@ passPriorityFrom gs pid =
 -- job, one paragraph down.
 --
 -- FOUR carriers, subtracted together. The printed static one is re-derived live,
--- and a resolution's stored rows (GameState.objectProhibitions) are read beside it,
+-- and a resolution's stored rows (StoredEffects.objectProhibitions) are read beside it,
 -- both through UntapRestriction.gathered; the other two are stored on the
 -- victim, and this is where each both applies and
 -- ENDS, CR 701.43b putting the expiry in the untap step it bites in. They are two
@@ -728,7 +729,7 @@ placePendingTriggers boards = do
         GameState.boardAfterEvent = Map.empty,
         GameState.boardBeforeEvent = Map.empty,
         GameState.battlefieldWhenTriggered = Map.empty,
-        GameState.delayedTriggers = surviving
+        GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = surviving}
       }
   -- CR 605.4a: a triggered mana ability "doesn't go on the stack ... it resolves
   -- immediately after the mana ability that triggered it". Dropped from the
@@ -820,7 +821,7 @@ reactions incoming = do
                 GameState.boardAfterEvent = Map.empty,
                 GameState.boardBeforeEvent = Map.empty,
                 GameState.battlefieldWhenTriggered = Map.empty,
-                GameState.delayedTriggers = surviving
+                GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = surviving}
               }
         )
       rest <- reactions (fresh <> fromDelayed)
@@ -2723,8 +2724,8 @@ startStep phase = do
   -- CR 614.10b: an action a skip put after it is the first thing that happens
   -- during the next step, phase or turn to actually occur, which begins here
   -- (Time Vault's ruling: "before anything else happens in the next turn").
-  skipped <- State.gets GameState.pendingSkipEffects
-  State.modify' (\gs -> gs {GameState.pendingSkipEffects = Seq.empty})
+  skipped <- State.gets (StoredEffects.pendingSkipEffects . GameState.stored)
+  State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingSkipEffects = Seq.empty}})
   Foldable.traverse_ (Resolve.runDamageRewriteEffect playSubgame . PendingSkipEffect.pending) skipped
   -- CR 702.30a's clock, advanced HERE and not in `runTurnBasedActions`: CR 503.1
   -- gives the upkeep step no turn-based actions, and this is bookkeeping rather

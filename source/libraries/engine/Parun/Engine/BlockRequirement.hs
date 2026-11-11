@@ -26,6 +26,7 @@ import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RuleAbilities as RuleAbilities
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- CR 509.1c: every requirement in force right now, INSTANTIATED against the
 -- (blocker, attacker) pairs the defending player may declare -- as a weight on
@@ -225,7 +226,7 @@ instances able candidates attackers gs =
       storedPairs active =
         let wanted = maybe attackers (\side -> RestrictedCreatures.covered (ActiveBlockRequirement.controller active) (ActiveBlockRequirement.source active) side attackers gs) (ActiveBlockRequirement.attacker active)
          in [(blocker, attacker) | attacker <- wanted, blocker <- storedBlockers active, able blocker attacker]
-      eachRows = filter ((== RequirementArity.EachSubject) . ActiveBlockRequirement.arity) (GameState.blockRequirements gs)
+      eachRows = filter ((== RequirementArity.EachSubject) . ActiveBlockRequirement.arity) (StoredEffects.blockRequirements (GameState.stored gs))
       storedEach = concatMap storedPairs (filter (Maybe.isJust . ActiveBlockRequirement.attacker) eachRows)
       storedBlockerGroups = concatMap (fmap (anyAttacker attackers) . storedBlockers) (filter (Maybe.isNothing . ActiveBlockRequirement.attacker) eachRows)
       -- The attackers `blocker` may legally block, as one group: a requirement
@@ -236,7 +237,7 @@ instances able candidates attackers gs =
           ( Map.fromListWith
               Set.union
               [ ((ActiveBlockRequirement.source active, ActiveBlockRequirement.timestamp active, attacker), Set.singleton pair)
-              | active <- GameState.blockRequirements gs,
+              | active <- StoredEffects.blockRequirements (GameState.stored gs),
                 ActiveBlockRequirement.arity active == RequirementArity.AnySubject,
                 pair@(_, attacker) <- storedPairs active
               ]

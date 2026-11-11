@@ -14,7 +14,7 @@ data PendingSkipEffect = MkPendingSkipEffect
   { pending :: PendingReplacementEffect.PendingReplacementEffect,
     extraTurns :: [ExtraTurn.ExtraTurn],
     turnMarkers :: [TurnMarker.TurnMarker],
-    -- | Each GameState.replacements row's timestamp, its CR 614.5 identity, so
+    -- | Each StoredEffects.replacements row's timestamp, its CR 614.5 identity, so
     -- a lap that spent or swept one (Meditate's skip) is no repeat.
     replacements :: Set.Set Timestamp.Timestamp
   }

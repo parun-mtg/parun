@@ -1984,6 +1984,7 @@ library engine
     Parun.Engine.Stack
     Parun.Engine.Star
     Parun.Engine.Sticker
+    Parun.Engine.Stored
     Parun.Engine.Subtype
     Parun.Engine.Summoning
     Parun.Engine.Suspend
@@ -3481,6 +3482,8 @@ library types
     Parun.Types.StickerPut
     Parun.Types.StickerRef
     Parun.Types.StickerSheet
+    Parun.Types.StoredEffects
+    Parun.Types.StoredKind
     Parun.Types.StoredResult
     Parun.Types.Subtype
     Parun.Types.SubtypeFamily

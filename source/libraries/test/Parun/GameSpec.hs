@@ -102,6 +102,7 @@ import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Teams as Teams
@@ -230,7 +231,7 @@ gameSpec s registry = Spec.describe s "Game" $ do
     Spec.assertEqWith s "zero" (GameState.nextTimestamp (Setup.emptyGame S.bothPlayers)) (Timestamp.MkTimestamp 0)
 
   Spec.it s "a fresh game has no continuous effects" $ do
-    Spec.assertEqWith s "empty" (GameState.continuousEffects (Setup.emptyGame S.bothPlayers)) []
+    Spec.assertEqWith s "empty" ((StoredEffects.continuousEffects . GameState.stored) (Setup.emptyGame S.bothPlayers)) []
 
   Spec.it s "a vanilla printing declares no static abilities" $ do
     piker <- S.printingOf s registry "Goblin Piker"
@@ -1827,9 +1828,9 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
     Spec.assertEqWith s "bob departed by conceding" (fmap Player.status (Map.lookup S.bob (GameState.players afterStep))) (Just (Status.Departed Departure.Type.Conceded))
     Spec.assertEqWith s "the game continues" (GameState.result afterStep) Nothing
     Spec.assertBool s (TurnRegisters.phase (GameState.turn afterStep) /= Phase.PrecombatMain) "the step ran to its end and advanced"
-    Spec.assertEqWith s "bob's effect did NOT end when he left" (length (GameState.playerEffects afterStep)) 1
+    Spec.assertEqWith s "bob's effect did NOT end when he left" (length (StoredEffects.playerEffects (GameState.stored afterStep))) 1
     Spec.assertEqWith s "carol takes the next turn, bob's seat is skipped" (TurnRegisters.activePlayer (GameState.turn afterHandoff)) S.carol
-    Spec.assertEqWith s "and bob's effect ended at bob's seat -- not never" (GameState.playerEffects afterHandoff) []
+    Spec.assertEqWith s "and bob's effect ended at bob's seat -- not never" (StoredEffects.playerEffects (GameState.stored afterHandoff)) []
 
   Spec.it s "CR 800.4a a player who departs paying a cost is not asked again" $ do
     -- Alice controls Greed and one Swamp at exactly 2 life. She activates

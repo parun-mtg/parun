@@ -183,12 +183,12 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 109.5 the You scope does not reach bob's graveyard | `check:other-PlayerEffect.mayCastFrom`
 - CR 305.1 / 614.1a a graveyard land turned away by its own sacrifice still spends the use | `check:helper-arrivedBetween` `check:helper-namesIn` `check:helper-pbBuried`
 - CR 400.1 the grant does not reach the copy in bob's graveyard | `check:other-PlayerEffect.mayCastFrom`
-- CR 514.2 the cleanup sweep drops an unused WhenUsed grant | `check:other-GameState.playerEffects` `check:other-Expiry.dropAtCleanup`
-- CR 514.2 the permission ends at cleanup | `check:other-GameState.playerEffects` `check:other-PlayerEffect.mayCastFrom`
+- CR 514.2 the cleanup sweep drops an unused WhenUsed grant | `check:other-StoredEffects.playerEffects` `check:other-Expiry.dropAtCleanup`
+- CR 514.2 the permission ends at cleanup | `check:other-StoredEffects.playerEffects` `check:other-PlayerEffect.mayCastFrom`
 - CR 601.2e a rejected cast leaves the grant standing | `board:player-effect`
 - CR 601.2e an announced X that leaves the spell even takes the cast back | `move:expect-rejected`
 - CR 601.3 / 118.8 the linked creature is cast by removing three counters | `board:exile-linked`
-- CR 611.2 resolving stores one MayPlayAsThoughItHadFlash grant expiring on use | `check:other-GameState.playerEffects` `check:other-ActivePlayerEffect.effect` `check:other-ActivePlayerEffect.expiry`
+- CR 611.2 resolving stores one MayPlayAsThoughItHadFlash grant expiring on use | `check:other-StoredEffects.playerEffects` `check:other-ActivePlayerEffect.effect` `check:other-ActivePlayerEffect.expiry`
 - CR 708.2a a face-down cast spends the grant off the face the gate read | `board:player-effect`
 
 ### `CastProhibitionSpec`
@@ -199,17 +199,17 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 201.4 a slug the registry answers to is not a card's name | `move:policingCardNames` `check:other-Registry.fetchCard`
 - CR 201.4a a real card the restriction forbids is refused and the chooser is asked again | `move:policingCardNames` `check:other-Interpreter.legalCardName`
 - CR 514.2 the hexproof outlives the cleanup of the turn it was cast in | `check:player-effects` `move:expect-rejected`
-- CR 514.2 the prohibition ends at cleanup | `check:other-GameState.playerEffects`
-- CR 514.2 the restriction ends at cleanup | `check:helper-offersCast` `check:other-GameState.playerEffects`
-- CR 601.2c the restriction lands on the targeted seat alone | `check:other-ActivePlayerEffect.scope` `check:other-GameState.playerEffects` `check:helper-offersCast`
+- CR 514.2 the prohibition ends at cleanup | `check:other-StoredEffects.playerEffects`
+- CR 514.2 the restriction ends at cleanup | `check:helper-offersCast` `check:other-StoredEffects.playerEffects`
+- CR 601.2c the restriction lands on the targeted seat alone | `check:other-ActivePlayerEffect.scope` `check:other-StoredEffects.playerEffects` `check:helper-offersCast`
 - CR 604.2 destroying the Chamber lifts both prohibitions | `board:object-chosennames`
 - CR 611.2a each opponent is barred during their own next turn and no other | `board:player-effect`
 - CR 611.2a it survives bob's turn and carol's turn, and ends as alice's next turn begins | `check:player-effects` `move:expect-rejected`
-- CR 611.2b a sweep with the Swamp still there changes nothing | `check:helper-conditionalSilenceCasts` `check:other-GameState.playerEffects` `check:other-Expiry.sweepConditional`
+- CR 611.2b a sweep with the Swamp still there changes nothing | `check:helper-conditionalSilenceCasts` `check:other-StoredEffects.playerEffects` `check:other-Expiry.sweepConditional`
 - CR 611.2b it is stored while the condition holds, and stops both opponents | `check:other-Expiry.While` `check:other-PlayerEffect.prohibitsCasting` `check:helper-conditionalSilenceCasts`
-- CR 611.2b unhacked, with no Swamp the duration never starts | `check:helper-conditionalSilenceCasts` `check:other-GameState.playerEffects`
-- CR 611.2b with no Swamp the duration never starts and nothing is stored | `check:other-Stack.resolveTop` `check:other-GameState.playerEffects` `check:helper-conditionalSilenceCasts`
-- CR 611.2c a spell with the name the resolution chose can't be cast, and its neighbour still can | `check:other-GameState.playerEffects`
+- CR 611.2b unhacked, with no Swamp the duration never starts | `check:helper-conditionalSilenceCasts` `check:other-StoredEffects.playerEffects`
+- CR 611.2b with no Swamp the duration never starts and nothing is stored | `check:other-Stack.resolveTop` `check:other-StoredEffects.playerEffects` `check:helper-conditionalSilenceCasts`
+- CR 611.2c a spell with the name the resolution chose can't be cast, and its neighbour still can | `check:other-StoredEffects.playerEffects`
 - CR 612.1/612.2 an Artificial Evolution on Liliana moves the -3 onto the new word | `check:player-effects` `move:expect-rejected`
 - CR 612.7 / 206.3a a Spy Kit host has the Arabian Nights names of cards the game has never seen, and City in a Bottle sweeps it | `board:object-attachedto`
 - CR 612.7 / 702.16e a Spy Kit host has the chosen name of a card in no zone, and its damage is prevented | `board:combat` `board:object-attachedto` `board:object-chosennames`
@@ -286,7 +286,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 113.1c Painter's Servant does not colour an ability on the stack | `board:object-chosencolor`
 - CR 114.3 a Koth emblem's damage lands through protection from the colour Painter's Servant named | `board:object-chosencolor`
 - CR 607.2d two Gauntlets of Power each pump the creatures of their OWN chosen colour | `board:object-chosencolor`
-- CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup | `check:other-GameState.continuousEffects`
+- CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup | `check:other-StoredEffects.continuousEffects`
 - CR 613.3 devoid beats an OLDER layer-5 'in addition' effect | `board:object-chosencolor`
 - CR 613.7a a granted devoid clears an OLDER 'in addition' colour | `move:other-addPermanent`
 
@@ -330,16 +330,16 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 509.1c a required blocker the restriction covers may decline after all | `board:objectprohibitions`
 - CR 509.1c a threshold blocking requirement bites only once the gate holds | `check:other-Combat.forcedBlockDeclaration` `move:expect-rejected`
 - CR 509.1c two requirements on ONE pair count twice | `check:other-Combat.forcedBlockDeclaration` `move:expect-rejected`
-- CR 514.2 the restriction ends at cleanup | `check:other-Combat.canBlock` `check:other-Expiry.dropAtCleanup` `check:other-GameState.objectProhibitions`
+- CR 514.2 the restriction ends at cleanup | `check:other-Combat.canBlock` `check:other-Expiry.dropAtCleanup` `check:other-StoredEffects.objectProhibitions`
 - CR 601.2c announcing X as one leaves the second creature blocking | `move:expect-rejected`
 - CR 611.2a and cannot attack once that turn has begun | `board:attackprohibitions`
-- CR 611.2a the restriction outlasts every other seat's turn and ends as alice's begins | `check:other-GameState.attackProhibitions` `move:expect-rejected`
+- CR 611.2a the restriction outlasts every other seat's turn and ends as alice's begins | `check:other-StoredEffects.attackProhibitions` `move:expect-rejected`
 - CR 611.2a the window names alice's next turn, so bob attacks with the creature on his | `board:attackprohibitions`
 - CR 702.10b a hasty creature and a sick one, in the same declaration | `check:helper-declaredAttackers`
 - CR 702.13b a COLOURLESS creature with intimidate may be blocked only by artifact creatures | `move:expect-rejected`
 - CR 702.16k True-Name Nemesis can't be blocked by the chosen player's creature, and can by another's | `board:object-chosenplayer`
 - CR 724.1 a controlled active player's choice of defender routes to their controller | `board:control`
-- CR 802.3a the announcement, not the creature, is what the row refuses | `check:other-GameState.attackProhibitions` `move:expect-rejected`
+- CR 802.3a the announcement, not the creature, is what the row refuses | `check:other-StoredEffects.attackProhibitions` `move:expect-rejected`
 
 ### `CommanderSpec`
 
@@ -461,7 +461,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 601.2f a noncreature card in the graveyard cannot pay it either | `check:helper-namesIn` `check:other-Replay.record` `check:other-Stack.resolveTop`
 - CR 612 the Evolution's own restriction reaches the player being asked | `check:prompt-payload`
 - CR 612.1 an Evolution on an Evolution rewrites the restriction itself | `check:prompt-payload`
-- CR 612.1 an evolved Moonmist's shield spares Goblins instead, so the Werewolf's damage is the prevented one | `check:events` `check:other-Damage.applyDamage` `check:other-GameState.replacements`
+- CR 612.1 an evolved Moonmist's shield spares Goblins instead, so the Werewolf's damage is the prevented one | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
 - CR 613.7 whole card: two Evolutions on the Turn to Frog spell compose | `check:text-changes`
 - CR 702.135b an evolved Ministrant plus a granted afterlife leaves two Elves and a Spirit | `move:OrderTriggers-departed-source`
 - CR 704.5g an indestructible creature survives lethal marked damage | `check:creature-count`
@@ -475,16 +475,16 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 ### `DamageReplacementSpec`
 
 - CR 120.4 one sentence naming alice twice deals her ONE event, of 6 | `check:events`
-- CR 614.9 a 1-damage event moves whole, and the row is spent by it | `check:events` `check:other-Damage.applyDamage` `check:other-GameState.replacements`
+- CR 614.9 a 1-damage event moves whole, and the row is spent by it | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
 - CR 614.9 guard: a destination that left the battlefield makes the effect do nothing | `check:helper-redirectRows`
-- CR 614.9 the redirection covers the creature the spell named and not the other | `check:other-Damage.applyDamage` `check:other-GameState.replacements`
+- CR 614.9 the redirection covers the creature the spell named and not the other | `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
 - CR 615.5 the prevented three come off as three +1/+1 counters | `check:helper-aimCreature` `check:helper-countersOn`
 - CR 615.7 NONcombat damage from that same creature is prevented | `check:helper-amounts` `check:helper-shieldsLeft`
 - CR 615.7 a simultaneous batch contends for the 2, and alice divides it | `check:event-log`
 - CR 615.7 combat damage from a creature the Beast's controller does NOT control is prevented | `check:helper-amounts` `check:helper-shieldsLeft`
 - CR 615.7 once spent, the next event stays whole | `check:other-Damage.applyDamage`
 - CR 615.7 one shield over you AND your permanents is a single shared pool | `check:event-log`
-- CR 615.7 the next 1 of a 3-damage event moves and the other 2 stay where they were aimed | `check:events` `check:other-Damage.applyDamage` `check:other-GameState.replacements`
+- CR 615.7 the next 1 of a 3-damage event moves and the other 2 stay where they were aimed | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
 - CR 615.7 the shield still prevents the Goblin Piker's 3 whole | `check:helper-amounts` `check:helper-shieldsLeft`
 - CR 615.7 without Spider-Punk the shield prevents the whole 3 | `check:helper-amounts` `check:helper-shieldsLeft`
 - CR 615.7's allocation lands on the events it was asked about, after the sort | `check:event-log`
@@ -537,7 +537,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 104.3a a conceding player leaves immediately, with Conceded as the reason | `check:helper-statusOf`
 - CR 726.4 the monarch departs on someone else's turn: the active player takes the crown | `check:helper-crownings`
 - CR 726.4 the monarch departs on their own turn: the next seat in turn order takes the crown | `check:helper-crownings`
-- CR 800.1 two seats: the same concede leaves the Song on the battlefield, so nothing is handed over | `check:card-types` `check:other-Departure.continuesAfterDeparture` `check:other-GameState.continuousEffects`
+- CR 800.1 two seats: the same concede leaves the Song on the battlefield, so nothing is handed over | `check:card-types` `check:other-Departure.continuesAfterDeparture` `check:other-StoredEffects.continuousEffects`
 - CR 800.1/104.2a two seats: the same departure ends the game instead of running CR 800.4a | `check:other-Departure.continuesAfterDeparture`
 - CR 800.4a/800.4m turnOrder is the SEATING roster: a departure does not shorten it | `check:other-GameState.turnOrder`
 
@@ -635,16 +635,16 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 ### `ExpirySpec`
 
 - CR 500.5 an end-of-combat retention effect expires BEFORE the pool empties | `board:combat` `board:player-effect`
-- CR 500.5a whole card: live throughout the end of combat step, gone once the phase ends | `check:other-GameState.continuousEffects`
-- CR 500.5a whole card: the animation outlives the step it was made in | `check:other-ContinuousEffect.expiry` `check:other-GameState.continuousEffects`
+- CR 500.5a whole card: live throughout the end of combat step, gone once the phase ends | `check:other-StoredEffects.continuousEffects`
+- CR 500.5a whole card: the animation outlives the step it was made in | `check:other-ContinuousEffect.expiry` `check:other-StoredEffects.continuousEffects`
 - CR 500.5a whole card: the permission ends as alice's next combat phase ends | `check:helper-permissionOn`
-- CR 604.2 an ordinary static ability does NOT linger past its permanent | `check:other-GameState.continuousEffects`
+- CR 604.2 an ordinary static ability does NOT linger past its permanent | `check:other-StoredEffects.continuousEffects`
 - CR 611.2a / 514.2 it ends as that turn ends, and no later turn of theirs can play the card | `move:expect-rejected`
 - CR 611.2a whole card: the animation outlives Titania's Song and ends at cleanup | `check:abilities`
-- CR 611.2b chapter I grants hexproof for the same duration, and it ends with the Saga | `check:other-GameState.continuousEffects`
-- CR 611.2b it ends when the crown moves to the third player | `check:other-GameState.continuousEffects`
+- CR 611.2b chapter I grants hexproof for the same duration, and it ends with the Saga | `check:other-StoredEffects.continuousEffects`
+- CR 611.2b it ends when the crown moves to the third player | `check:other-StoredEffects.continuousEffects`
 - CR 707.2a a copy of Titania's Song hands over its own effect | `check:continuous-effects`
-- Pearl Collector's perpetual lifelink survives the graveyard, where an indefinite grant does not | `check:other-GameState.continuousEffects`
+- Pearl Collector's perpetual lifelink survives the graveyard, where an indefinite grant does not | `check:other-StoredEffects.continuousEffects`
 
 ### `FaceDownSpec`
 
@@ -807,8 +807,8 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 
 ### `LifeTriggerSpec`
 
-- CR 101.4 arming the other way round changes nothing | `check:prompt-payload` `check:other-GameState.delayedTriggers`
-- CR 101.4 the active player is asked first even though the other seat armed first | `check:prompt-payload` `check:other-GameState.delayedTriggers` `check:events`
+- CR 101.4 arming the other way round changes nothing | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers`
+- CR 101.4 the active player is asked first even though the other seat armed first | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers` `check:events`
 - CR 101.4c the entry alice names first is asked first | `check:prompt-payload` `check:events`
 - CR 111.3 / 601.2b cast for X=2, it mints two 2/2 red Human Knights with trample and haste and arms one entry | `check:delayed-triggers`
 - CR 119.9 one lifelink source damaging two blockers at once is one life gain event | `check:events`
@@ -1029,17 +1029,17 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`
 - CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`
 - CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`
-- CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-GameState.replacements`
+- CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
 - CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
 
 ### `ProjectionSpec`
 
-- CR 113.6b a graveyard grant's protection still bars the artifact blocker | `check:other-GameState.continuousEffects` `check:other-GameState.command` `move:expect-rejected`
+- CR 113.6b a graveyard grant's protection still bars the artifact blocker | `check:other-StoredEffects.continuousEffects` `check:other-GameState.command` `move:expect-rejected`
 - CR 208.1/208.2b Imperial Recruiter's search offers the */* card and the 2-power creature, not the 3-power one | `check:prompt-offers` `check:shuffled-set`
-- CR 514.2 Turn to Frog wears off at cleanup and the Wraith is a Wraith again | `check:other-GameState.continuousEffects`
-- CR 514.2 an until-end-of-turn effect wears off at cleanup | `check:other-GameState.continuousEffects`
+- CR 514.2 Turn to Frog wears off at cleanup and the Wraith is a Wraith again | `check:other-StoredEffects.continuousEffects`
+- CR 514.2 an until-end-of-turn effect wears off at cleanup | `check:other-StoredEffects.continuousEffects`
 - CR 607.2d two Obelisks of Urd each pump the creatures of their OWN chosen type | `board:object-chosensubtype`
-- CR 611 Giant Growth stores a +3/+3 effect; the Piker is 5/4 | `check:other-GameState.continuousEffects`
+- CR 611 Giant Growth stores a +3/+3 effect; the Piker is 5/4 | `check:other-StoredEffects.continuousEffects`
 - CR 613.3 Turn to Frog beats a changeling's CDA: a Frog and nothing else | `check:subtype-member`
 - CR 702.73a changeling granted by a RESOLUTION makes the creature every creature type | `check:subtype-member`
 
@@ -1056,7 +1056,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 
 - CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid | `check:helper-lostLife` `check:helper-warriorOut` `check:other-Engine.priorityLoop`
 - CR 614.12a the copy choice is locked in BEFORE the enters event exists | `check:intermediate-state`
-- CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-GameState.replacements`
+- CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-StoredEffects.replacements`
 - CR 614.1c DECLINING with a Kithkin card in hand still enters tapped | `check:helper-revealsOf`
 - CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped | `check:events` `check:helper-revealsOf`
 - CR 614.1c one +1/+1 counter per creature card in EVERY graveyard | `check:other-S.addGraveyardCard`
@@ -1079,7 +1079,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
 - CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
 - CR 608.2b a Bolt whose only target died fizzles | `check:events`
-- CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-GameState.continuousEffects`
+- CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`
 - CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`
 - CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`
 - a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`
@@ -1217,7 +1217,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 603.6a two SelfEnters triggers emit in ascending ObjectId order | `check:helper-gathered` `check:other-PendingTrigger.source`
 - CR 603.6a whole cards: a second Soul Warden entering gains alice exactly 1 life | `check:intermediate-state`
 - CR 603.7 the token is sacrificed at the beginning of the next end step | `check:delayed-triggers`
-- CR 603.7b the delayed ability sacrifices the token at alice's end step | `check:helper-thopters` `check:other-GameState.delayedTriggers`
+- CR 603.7b the delayed ability sacrifices the token at alice's end step | `check:helper-thopters` `check:other-StoredEffects.delayedTriggers`
 - CR 603.7c one token already gone leaves the rest sacrificed | `check:delayed-triggers`
 - CR 603.7c placement-time's own chosen mode wins a collision with the captured environment | `check:other-Binding.fromChoices` `check:other-Binding.modesOf` `check:other-Object.bindings`
 - CR 603.8 a true state condition puts EXACTLY ONE instance on the stack | `check:helper-triggerIds`
@@ -1233,7 +1233,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 
 ### `TurnSpec`
 
-- CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-GameState.continuousEffects`
+- CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`
 - CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:intermediate-state` `check:player-effects`
 - CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`
 - CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`

@@ -32,6 +32,7 @@ import Parun.Types.Object (Object)
 import qualified Parun.Types.Object as Object
 import Parun.Types.Player (Player)
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- CR 734.1: `closed` with the announcement undone -- "the entire action is
@@ -96,18 +97,18 @@ withoutAnnouncement before entry closed = do
   boardAtControlSample <- newest GameState.boardAtControlSample
   heldBoards <- one GameState.heldBoards
   damageScannedThrough <- one (TurnRegisters.damageScannedThrough . GameState.turn)
-  delayedTriggers <- seqOf GameState.delayedTriggers
-  continuousEffects <- listOf GameState.continuousEffects
-  copyEffects <- listOf GameState.copyEffects
-  replacements <- listOf GameState.replacements
-  laterPayments <- listOf GameState.laterPayments
-  pendingPreventionRiders <- seqOf GameState.pendingPreventionRiders
-  pendingReplacementEffects <- seqOf GameState.pendingReplacementEffects
-  pendingSkipEffects <- seqOf GameState.pendingSkipEffects
+  delayedTriggers <- seqOf (StoredEffects.delayedTriggers . GameState.stored)
+  continuousEffects <- listOf (StoredEffects.continuousEffects . GameState.stored)
+  copyEffects <- listOf (StoredEffects.copyEffects . GameState.stored)
+  replacements <- listOf (StoredEffects.replacements . GameState.stored)
+  laterPayments <- listOf (StoredEffects.laterPayments . GameState.stored)
+  pendingPreventionRiders <- seqOf (StoredEffects.pendingPreventionRiders . GameState.stored)
+  pendingReplacementEffects <- seqOf (StoredEffects.pendingReplacementEffects . GameState.stored)
+  pendingSkipEffects <- seqOf (StoredEffects.pendingSkipEffects . GameState.stored)
   contested <- mapOf GameState.contested
   ambientAmounts <- mapOf GameState.ambientAmounts
   detachedBindings <- mapOfMaps GameState.detachedBindings
-  pendingEntryEffects <- seqOf GameState.pendingEntryEffects
+  pendingEntryEffects <- seqOf (StoredEffects.pendingEntryEffects . GameState.stored)
   enteringBeside <- setOf GameState.enteringBeside
   enteringSubjects <- mapOf GameState.enteringSubjects
   enteredFrom <- mapOf GameState.enteredFrom
@@ -115,13 +116,13 @@ withoutAnnouncement before entry closed = do
   refusedEntries <- one GameState.refusedEntries
   enteringCounters <- mapOfMapsOfMaps GameState.enteringCounters
   copyExceptionCounters <- mapOfMaps GameState.copyExceptionCounters
-  playerEffects <- listOf GameState.playerEffects
-  blockRequirements <- listOf GameState.blockRequirements
-  attackRequirements <- listOf GameState.attackRequirements
-  objectProhibitions <- listOf GameState.objectProhibitions
-  attackProhibitions <- listOf GameState.attackProhibitions
-  evasions <- listOf GameState.evasions
-  ignoredAbilities <- listOf GameState.ignoredAbilities
+  playerEffects <- listOf (StoredEffects.playerEffects . GameState.stored)
+  blockRequirements <- listOf (StoredEffects.blockRequirements . GameState.stored)
+  attackRequirements <- listOf (StoredEffects.attackRequirements . GameState.stored)
+  objectProhibitions <- listOf (StoredEffects.objectProhibitions . GameState.stored)
+  attackProhibitions <- listOf (StoredEffects.attackProhibitions . GameState.stored)
+  evasions <- listOf (StoredEffects.evasions . GameState.stored)
+  ignoredAbilities <- listOf (StoredEffects.ignoredAbilities . GameState.stored)
   turnOrder <- one GameState.turnOrder
   activePlayer <- one (TurnRegisters.activePlayer . GameState.turn)
   phase <- one (TurnRegisters.phase . GameState.turn)
@@ -269,18 +270,28 @@ withoutAnnouncement before entry closed = do
         GameState.controlSample = controlSample,
         GameState.boardAtControlSample = boardAtControlSample,
         GameState.heldBoards = heldBoards,
-        GameState.delayedTriggers = delayedTriggers,
-        GameState.continuousEffects = continuousEffects,
-        GameState.copyEffects = copyEffects,
-        GameState.replacements = replacements,
-        GameState.laterPayments = laterPayments,
-        GameState.pendingPreventionRiders = pendingPreventionRiders,
-        GameState.pendingReplacementEffects = pendingReplacementEffects,
-        GameState.pendingSkipEffects = pendingSkipEffects,
+        GameState.stored =
+          StoredEffects.MkStoredEffects
+            { StoredEffects.continuousEffects = continuousEffects,
+              StoredEffects.copyEffects = copyEffects,
+              StoredEffects.replacements = replacements,
+              StoredEffects.playerEffects = playerEffects,
+              StoredEffects.blockRequirements = blockRequirements,
+              StoredEffects.attackRequirements = attackRequirements,
+              StoredEffects.objectProhibitions = objectProhibitions,
+              StoredEffects.attackProhibitions = attackProhibitions,
+              StoredEffects.evasions = evasions,
+              StoredEffects.ignoredAbilities = ignoredAbilities,
+              StoredEffects.laterPayments = laterPayments,
+              StoredEffects.delayedTriggers = delayedTriggers,
+              StoredEffects.pendingPreventionRiders = pendingPreventionRiders,
+              StoredEffects.pendingReplacementEffects = pendingReplacementEffects,
+              StoredEffects.pendingSkipEffects = pendingSkipEffects,
+              StoredEffects.pendingEntryEffects = pendingEntryEffects
+            },
         GameState.contested = contested,
         GameState.ambientAmounts = ambientAmounts,
         GameState.detachedBindings = detachedBindings,
-        GameState.pendingEntryEffects = pendingEntryEffects,
         GameState.enteringBeside = enteringBeside,
         GameState.enteringSubjects = enteringSubjects,
         GameState.enteredFrom = enteredFrom,
@@ -288,13 +299,6 @@ withoutAnnouncement before entry closed = do
         GameState.refusedEntries = refusedEntries,
         GameState.enteringCounters = enteringCounters,
         GameState.copyExceptionCounters = copyExceptionCounters,
-        GameState.playerEffects = playerEffects,
-        GameState.blockRequirements = blockRequirements,
-        GameState.attackRequirements = attackRequirements,
-        GameState.objectProhibitions = objectProhibitions,
-        GameState.attackProhibitions = attackProhibitions,
-        GameState.evasions = evasions,
-        GameState.ignoredAbilities = ignoredAbilities,
         GameState.turnOrder = turnOrder,
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,

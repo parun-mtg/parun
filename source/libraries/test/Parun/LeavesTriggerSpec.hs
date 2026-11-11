@@ -106,6 +106,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -3711,7 +3712,7 @@ prizedAmalgamSpec s registry =
           raiseWith S.addPermanent amalgam skeleton swamp $ \raised -> do
             let after = throughEndStep raised
             Spec.assertEqWith s "CR 113.6m nothing triggered off the entry" (length (TurnRegisters.stack (GameState.turn raised))) 0
-            Spec.assertEqWith s "so nothing was armed to fire at the end step" (Seq.length (GameState.delayedTriggers after)) 0
+            Spec.assertEqWith s "so nothing was armed to fire at the end step" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
             Spec.assertEqWith s "and the one Amalgam is the untapped one that was already there" (amalgamTapStates after) [Just TapState.Untapped]
             Spec.assertEqWith s "off the same entry the leg above triggers on" (length (onBattlefieldNamed skeletonName raised)) 1
 
@@ -3866,7 +3867,7 @@ ivoryGargoyleSpec s registry =
           -- cannot absorb a mutation aimed at the exception.
           Spec.assertEqWith s "the creature really died first" (Game.lookupObject victim placed) Nothing
           let armed = resolveTop placed
-          Spec.assertEqWith s "resolving it armed exactly one delayed ability" (Seq.length (GameState.delayedTriggers armed)) 1
+          Spec.assertEqWith s "resolving it armed exactly one delayed ability" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
         -- The classification itself, isolated from the board: without the
         -- exception the delayed effect's stated graveyard origin would pin the
         -- ability there; with it, a self death exempts the pin away.
@@ -3893,7 +3894,7 @@ ivoryGargoyleSpec s registry =
           Spec.assertEqWith s "under a new id, the battlefield one being gone" (Game.lookupObject victim after) Nothing
           Spec.assertEqWith s "and the graveyard card it named is gone from the graveyard" (length (namedIn Zone.Graveyard after)) 0
           Spec.assertEqWith s "the board before the end step held none on the battlefield and one in the graveyard" (onBattlefield armed, length (namedIn Zone.Graveyard armed)) (0, 1)
-          Spec.assertEqWith s "and the entry really fired, leaving the store empty" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "and the entry really fired, leaving the store empty" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
           -- CR 614.10's other clause of the same trigger, installed as a
           -- floating replacement: "you skip your next draw step". Read as the
           -- ROW rather than by advancing to alice's next draw step, which is two
@@ -3902,7 +3903,7 @@ ivoryGargoyleSpec s registry =
           Spec.assertEqWith
             s
             "CR 614.10 and the skip of alice's next draw step is installed"
-            (fmap ActiveReplacement.effect (GameState.replacements after))
+            (fmap ActiveReplacement.effect (StoredEffects.replacements (GameState.stored after)))
             [ ReplacementEffect.PhaseR
                 PhaseR.MkPhaseR
                   { PhaseR.phases =
@@ -3936,8 +3937,8 @@ ivoryGargoyleSpec s registry =
           -- The preconditions, AFTER the assertion for the reason above. The
           -- middle one is what keeps the leg from passing for want of an exile.
           Spec.assertEqWith s "the card really left the graveyard for exile" (length (namedIn Zone.Graveyard armed), length (namedIn Zone.Graveyard exiled), length (namedIn Zone.Exile exiled)) (1, 0, 1)
-          Spec.assertEqWith s "the same one entry was armed on this board too" (Seq.length (GameState.delayedTriggers armed)) 1
-          Spec.assertEqWith s "and it still fired and was spent at the end step" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the same one entry was armed on this board too" (Seq.length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
+          Spec.assertEqWith s "and it still fired and was spent at the end step" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
 
 -- CR 603.10a's sacrifice family read off the bearer: Biolume Egg's "when you
 -- sacrifice this creature, return it to the battlefield transformed under its
@@ -3996,7 +3997,7 @@ biolumeEggSpec s registry =
           Spec.assertEqWith s "the sacrifice trigger reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertEqWith s "the Egg really left first" (Game.lookupObject eggId placed) Nothing
           Spec.assertEqWith s "and no Egg card is left in the graveyard" (length (named eggName Zone.Graveyard after)) 0
-          Spec.assertEqWith s "the delayed entry fired and was spent" (Seq.length (GameState.delayedTriggers after)) 0
+          Spec.assertEqWith s "the delayed entry fired and was spent" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 0
         Spec.it s "CR 400.7e the Egg sacrificed under Rest in Peace returns from exile" $ do
           (eggId, _, g) <- board
           restInPeace <- S.printingOf s registry "Rest in Peace"

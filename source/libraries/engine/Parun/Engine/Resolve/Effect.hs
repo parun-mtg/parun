@@ -119,6 +119,7 @@ import qualified Parun.Types.Response as Response
 import Parun.Types.Result (Result)
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import Parun.Types.SlotName (SlotName)
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -722,7 +723,7 @@ applyEffect :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipie
 applyEffect = applyEffectWith Common.noSubgame
 
 -- CR 615.5: run the additional effect of every prevention that has just been
--- applied. Drains GameState.pendingPreventionRiders, which Parun.Engine.Damage
+-- applied. Drains StoredEffects.pendingPreventionRiders, which Parun.Engine.Damage
 -- filled -- that module is below this one and cannot run a card's effects. Every
 -- caller runs it before the board can be observed and before the next
 -- state-based action check, and that ordering IS the rule: a 1/1 dealt 6 through
@@ -731,8 +732,8 @@ applyEffect = applyEffectWith Common.noSubgame
 -- fresh queue instead of being re-run here.
 runPreventionRiders :: Game Result -> Game ()
 runPreventionRiders runSubgame = do
-  queued <- State.gets GameState.pendingPreventionRiders
-  State.modify' (\gs -> gs {GameState.pendingPreventionRiders = Seq.empty})
+  queued <- State.gets (StoredEffects.pendingPreventionRiders . GameState.stored)
+  State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingPreventionRiders = Seq.empty}})
   Foldable.traverse_ (runPreventionRider runSubgame) queued
 
 -- One queued prevention's additional effect; nothing runs unless the prevention
@@ -772,7 +773,7 @@ runLaterPayment runSubgame payoff =
   Monad.void (runCarrying runSubgame (PreventionRider.source payoff) (PreventionRider.controller payoff) Map.empty (PreventionRider.targets payoff) (PreventionRider.effects payoff))
 
 -- CR 614.1c: run the effects of every as-enters rewrite that has applied and not
--- run yet. Drains GameState.pendingEntryEffects, which Parun.Engine.Event filled
+-- run yet. Drains StoredEffects.pendingEntryEffects, which Parun.Engine.Event filled
 -- -- runPreventionRiders above in every structural respect and for the same
 -- reason. Emptied before the effects run.
 --
@@ -784,8 +785,8 @@ runLaterPayment runSubgame payoff =
 -- play), before the SBA pass and the trigger scan.
 runEntryEffects :: Game Result -> Game ()
 runEntryEffects runSubgame = do
-  queued <- State.gets GameState.pendingEntryEffects
-  State.modify' (\gs -> gs {GameState.pendingEntryEffects = Seq.empty})
+  queued <- State.gets (StoredEffects.pendingEntryEffects . GameState.stored)
+  State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingEntryEffects = Seq.empty}})
   -- CR 603.4 / 614.12: the effects are part of the entry, so a board their own
   -- instructions file (Trigger.fileBoards) is dropped, the entry not yet over:
   -- its siblings are still held off the battlefield. The filing after the drain
@@ -823,7 +824,7 @@ runEntryEffect runSubgame pending = do
 
 -- CR 614.1a: run the effects a replacement put in an event's place -- Kill-Suit
 -- Cultist's destruction, Lich's Mirror's reset, Forbidden Crypt's loss. Drains
--- GameState.pendingReplacementEffects, which Parun.Engine.Event filled --
+-- StoredEffects.pendingReplacementEffects, which Parun.Engine.Event filled --
 -- runPreventionRiders above in every structural respect and for the same reason.
 -- Emptied before the effects run, so an effect whose own damage is replaced
 -- appends to a fresh queue instead of being re-run here.
@@ -836,12 +837,12 @@ runEntryEffect runSubgame pending = do
 -- 614.11a), after each resolved instruction and in every settle before
 -- priority; a loss a
 -- state-based action check meets runs inside that check instead (Sba.performStateBasedActions' `instead`, runDamageRewriteEffect).
--- The callers GameState.pendingReplacementEffects lists keep it empty at every
+-- The callers StoredEffects.pendingReplacementEffects lists keep it empty at every
 -- priority window.
 runReplacementEffects :: Game Result -> Game ()
 runReplacementEffects runSubgame = do
-  queued <- State.gets GameState.pendingReplacementEffects
-  State.modify' (\gs -> gs {GameState.pendingReplacementEffects = Seq.empty})
+  queued <- State.gets (StoredEffects.pendingReplacementEffects . GameState.stored)
+  State.modify' (\gs -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.pendingReplacementEffects = Seq.empty}})
   Foldable.traverse_ (runDamageRewriteEffect runSubgame) queued
 
 -- One replaced damage event's effects, in printed order.

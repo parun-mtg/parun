@@ -113,6 +113,7 @@ import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StickerSheet as StickerSheet
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -2247,7 +2248,7 @@ turnStoredCopies oid gs =
   let turn row = case ActiveCopy.turned row of
         Just turned | copyCovers gs oid row -> row {ActiveCopy.snapshot = turned, ActiveCopy.turned = Just (ActiveCopy.snapshot row)}
         _ -> row
-   in gs {GameState.copyEffects = fmap turn (GameState.copyEffects gs)}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = fmap turn (StoredEffects.copyEffects (GameState.stored gs))}}
 
 -- CR 710.2 over ONE object: set its flipped status, or leave the map exactly as
 -- it was. `flipsOver` below is the whole membership question, asked rather than
@@ -2322,7 +2323,7 @@ latestStoredCopy :: ObjectId -> GameState -> Maybe ActiveCopy.ActiveCopy
 latestStoredCopy oid gs =
   Maybe.listToMaybe
     . List.sortOn (Ord.Down . copyRowTimestamp gs)
-    $ filter (copyCovers gs oid) (GameState.copyEffects gs)
+    $ filter (copyCovers gs oid) (StoredEffects.copyEffects (GameState.stored gs))
 
 -- | Does this stored copy effect cover the object right now? A fixed set's
 -- member (CR 611.2c), or what the row's source is attached to while the source
@@ -2433,7 +2434,7 @@ supersedeStoredCopies oids gs =
           Just src -> Just row {ActiveCopy.covers = CopyCoverage.SourceHost (Map.union (Map.fromSet (const (Object.timestamp src)) (Set.filter (\oid -> copyCovers gs oid row) oids)) overtaken)}
           Nothing -> Just row
         CopyCoverage.Attachment host -> if Set.member host oids then Nothing else Just row
-   in gs {GameState.copyEffects = Maybe.mapMaybe overtake (GameState.copyEffects gs)}
+   in gs {GameState.stored = (GameState.stored gs) {StoredEffects.copyEffects = Maybe.mapMaybe overtake (StoredEffects.copyEffects (GameState.stored gs))}}
 
 -- | CR 710.1b / 707.3: do this object's COPIABLE values include a flip card's
 -- alternative half? Its copy snapshot's answer when it has one -- the flipped

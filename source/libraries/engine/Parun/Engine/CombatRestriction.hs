@@ -8,7 +8,7 @@
 -- and is read off the victim (Parun.Engine.Detain) rather than off any card's
 -- printed text, and CR 508.1c's "can't attack this turn" and CR 509.1b's "can't
 -- block this turn" are stored by the resolution that said them
--- (GameState.attackProhibitions, GameState.objectProhibitions). See `detained`,
+-- (StoredEffects.attackProhibitions, StoredEffects.objectProhibitions). See `detained`,
 -- `attackProhibited` and `blockProhibited`.
 --
 -- The only module that may CASE on Parun.Types.CombatRestriction.
@@ -87,6 +87,7 @@ import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.StaticAbility as StaticAbility
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
@@ -216,7 +217,7 @@ attackProhibited candidates gs =
 -- restriction and CR 802.3a's aimed one -- share one answer. Parun.CombatSpec's WindowAttackRestriction group is the proof.
 liveAttackProhibitions :: GameState -> [ActiveAttackProhibition.ActiveAttackProhibition]
 liveAttackProhibitions gs =
-  filter (Expiry.begun gs . ActiveAttackProhibition.expiry) (GameState.attackProhibitions gs)
+  filter (Expiry.begun gs . ActiveAttackProhibition.expiry) (StoredEffects.attackProhibitions (GameState.stored gs))
 
 -- Which of `candidates` a stored attack restriction covers, its
 -- Parun.Types.RestrictedCreatures read the way CR 611.2c says: a Named row is the
@@ -1224,7 +1225,7 @@ storedEvasions blockers attackers gs =
         let context = Projection.sourceContext gs (Just (ActiveEvasion.controller active)) (ActiveEvasion.source active)
             barredFrom attacker = filter (\blocker -> Filter.matches (Projection.pairwiseContext gs attacker) (Projection.viewOfObject blocker gs) (ActiveEvasion.blockers active)) blockers
          in [(blocker, attacker) | attacker <- filter (\oid -> Filter.matches context (Projection.viewOfObject oid gs) (ActiveEvasion.affected active)) attackers, blocker <- barredFrom attacker]
-   in Set.fromList (concatMap evading (GameState.evasions gs))
+   in Set.fromList (concatMap evading (StoredEffects.evasions (GameState.stored gs)))
 
 -- CR 509.1b: which (blocker, attacker) pairs a restriction written from the
 -- BLOCKER's side forbids -- Brassclaw Orcs' "can't block creatures with power 2

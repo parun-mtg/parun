@@ -186,6 +186,7 @@ import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -6692,12 +6693,12 @@ applyManaTriggers perform events = do
   let recorded = Foldable.toList (Seq.drop (Seq.length (TurnRegisters.events (GameState.turn gs)) - length events) (TurnRegisters.events (GameState.turn gs)))
       isMana p = ManaAbility.isTriggeredManaAbility (fmap LoggedEvent.event (PendingTrigger.firedBy p)) (PendingTrigger.ability p)
       watches = ManaAbility.mayBeTriggeredManaAbility . DelayedTrigger.ability
-      store = GameState.delayedTriggers gs
+      store = StoredEffects.delayedTriggers (GameState.stored gs)
   -- CR 605.1b holds of a delayed ability too (Molten Tide), so CR 603.7's store
   -- is scanned here, only its entries that could be mana abilities, and a
   -- one-shot entry is spent here rather than by the CR 117.5 gather.
-  (delayed, kept) <- Trigger.delayedPending recorded gs {GameState.delayedTriggers = Seq.filter watches store}
-  State.modify' (\g -> g {GameState.delayedTriggers = keepSurvivors watches kept store})
+  (delayed, kept) <- Trigger.delayedPending recorded gs {GameState.stored = (GameState.stored gs) {StoredEffects.delayedTriggers = Seq.filter watches store}}
+  State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = keepSurvivors watches kept store}})
   Monad.mapM_ (ManaAbilityPerformer.triggered perform) (filter isMana (Event.reactionTriggers recorded gs <> delayed))
 
 -- The store with its `watched` entries cut down to `kept`, an in-order

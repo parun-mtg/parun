@@ -1,6 +1,6 @@
 -- CR 116.2d: the SUPPRESSION side of the special action Parun.Engine.Ignore
 -- offers and takes payment for. That module records a row on
--- GameState.ignoredAbilities; this one is the single question every carrier of
+-- StoredEffects.ignoredAbilities; this one is the single question every carrier of
 -- an ignorable ability asks about those rows, so a carrier cannot read them a
 -- second way and drift.
 --
@@ -12,7 +12,7 @@
 -- player's payment that lets the creature attack, block and have its activated
 -- abilities activated again.
 --
--- Reads GameState.ignoredAbilities and nothing else about what was ignored:
+-- Reads StoredEffects.ignoredAbilities and nothing else about what was ignored:
 -- neither the cost nor the grant is visible here, and no consumer learns which
 -- card printed either.
 module Parun.Engine.IgnoredAbility where
@@ -24,6 +24,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.StoredEffects as StoredEffects
 
 -- CR 116.2d: has `pid` paid to ignore the ability `source` states under `name`?
 --
@@ -37,7 +38,7 @@ ignoredBy pid source name gs =
         IgnoredAbility.player ignored == pid
           && IgnoredAbility.source ignored == source
           && Just (IgnoredAbility.ability ignored) == name
-   in any matches (GameState.ignoredAbilities gs)
+   in any matches (StoredEffects.ignoredAbilities (GameState.stored gs))
 
 -- The same question about an OBJECT-aimed row, whose seat is Volrath's Curse's "that
 -- creature's controller" -- the one it offers the action to, read
@@ -52,7 +53,7 @@ ignoredBy pid source name gs =
 -- taken the action would otherwise pay a control projection per pair.
 ignoredForSubject :: ObjectId -> ObjectId -> Maybe AbilityName.AbilityName -> GameState -> Bool
 ignoredForSubject subject source name gs
-  | null (GameState.ignoredAbilities gs) = False
+  | null (StoredEffects.ignoredAbilities (GameState.stored gs)) = False
   | otherwise = case Projection.controllerOf subject gs of
       Nothing -> False
       Just pid -> ignoredBy pid source name gs

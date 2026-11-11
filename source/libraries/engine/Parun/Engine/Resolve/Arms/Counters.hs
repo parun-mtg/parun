@@ -132,6 +132,7 @@ import Parun.Types.Result (Result)
 import qualified Parun.Types.Sickness as Sickness
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.Tap as Tap
@@ -2029,7 +2030,7 @@ exchangeControl resolving source controller legal sides =
                           }
                       sicken o = o {Object.sickness = Sickness.Sick}
                    in gs1
-                        { GameState.continuousEffects = swap one second : swap two first : GameState.continuousEffects gs1,
+                        { GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = swap one second : swap two first : StoredEffects.continuousEffects (GameState.stored gs1)},
                           GameState.objects = foldr (Map.adjust sicken) (GameState.objects gs1) [one, two]
                         }
             _ -> gs

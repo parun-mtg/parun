@@ -127,6 +127,7 @@ import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticRead as StaticRead
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedToPay as TappedToPay
@@ -2903,7 +2904,7 @@ playLand settle offered pid oid mName = do
     -- CR 601.3: a land played under the card's own exile permission spends
     -- its budget, as a cast does.
     Monad.when (Maybe.isNothing permission) (State.modify' (spendPlayBudget (ownExilePermission offered pid oid before)))
-    State.modify' (\g -> g {GameState.continuousEffects = concatMap riders (filter (`Set.member` GameState.battlefield g) (Foldable.toList moved)) <> GameState.continuousEffects g})
+    State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = concatMap riders (filter (`Set.member` GameState.battlefield g) (Foldable.toList moved)) <> StoredEffects.continuousEffects (GameState.stored g)}})
     -- CR 305.1 / 400.7i: the card was played, under its pre-move id and the
     -- permanent's.
     State.modify' (\g -> g {GameState.cardsPlayed = foldr (`Map.insert` pid) (GameState.cardsPlayed g) (oid Seq.<| moved)})
@@ -3122,8 +3123,7 @@ followIntoSpell permission old new gs = case permission of
               entry {DelayedTrigger.bindings = fmap (Binding.renameObject old new) (DelayedTrigger.bindings entry)}
           | otherwise = entry
      in gs
-          { GameState.replacements = fmap follow (GameState.replacements gs),
-            GameState.delayedTriggers = fmap followDelayed (GameState.delayedTriggers gs)
+          { GameState.stored = (GameState.stored gs) {StoredEffects.replacements = fmap follow (StoredEffects.replacements (GameState.stored gs)), StoredEffects.delayedTriggers = fmap followDelayed (StoredEffects.delayedTriggers (GameState.stored gs))}
           }
 
 -- CR 611.2a / 611.2c: Savage Summoning's "the next creature spell you cast
@@ -3152,8 +3152,7 @@ bindUser spent spell gs =
         then gs
         else
           gs
-            { GameState.playerEffects = fmap bindPlayer (GameState.playerEffects gs),
-              GameState.replacements = fmap bindReplacement (GameState.replacements gs)
+            { GameState.stored = (GameState.stored gs) {StoredEffects.playerEffects = fmap bindPlayer (StoredEffects.playerEffects (GameState.stored gs)), StoredEffects.replacements = fmap bindReplacement (StoredEffects.replacements (GameState.stored gs))}
             }
 
 -- CR 601.2a / 106.6: the pooled units baked with this card as their source's
@@ -4247,7 +4246,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- effect that modifies the spell as it is cast, so it
                           -- is stored before the event below snapshots the spell.
                           -- Nothing past the convoke record rejects.
-                          State.modify' (\g -> g {GameState.continuousEffects = ridersUsed <> GameState.continuousEffects g})
+                          State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = ridersUsed <> StoredEffects.continuousEffects (GameState.stored g)}})
                           -- CR 702.33h: for each sticker kicker paid, the caster
                           -- gets {TK}, then may put a sticker on the spell, which
                           -- CR 123.3b allows only on a spell they own (Sticker.place).
@@ -4423,5 +4422,5 @@ installCastFromGraveyard caster keywords castFor spellId gs0 =
                   -- CR 608.2h, for every row's reason; no pattern here reads one.
                   ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf spellId gs) spellId gs
                 }
-         in gs1 {GameState.replacements = active : GameState.replacements gs1}
+         in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored gs1)}}
    in List.foldl' arm gs0 (Keyword.castFromGraveyardReplacementsOf keywords castFor)

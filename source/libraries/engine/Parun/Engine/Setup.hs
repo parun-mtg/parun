@@ -58,6 +58,7 @@ import qualified Parun.Types.RestartSignal as RestartSignal
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Status as Status
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -294,18 +295,28 @@ blankGame settings order active =
       GameState.controlSample = Map.empty,
       GameState.boardAtControlSample = Nothing,
       GameState.heldBoards = [],
-      GameState.delayedTriggers = Seq.empty,
-      GameState.continuousEffects = [],
-      GameState.copyEffects = [],
-      GameState.replacements = [],
-      GameState.laterPayments = [],
-      GameState.pendingPreventionRiders = Seq.empty,
-      GameState.pendingReplacementEffects = Seq.empty,
-      GameState.pendingSkipEffects = Seq.empty,
+      GameState.stored =
+        StoredEffects.MkStoredEffects
+          { StoredEffects.continuousEffects = [],
+            StoredEffects.copyEffects = [],
+            StoredEffects.replacements = [],
+            StoredEffects.playerEffects = [],
+            StoredEffects.blockRequirements = [],
+            StoredEffects.attackRequirements = [],
+            StoredEffects.objectProhibitions = [],
+            StoredEffects.attackProhibitions = [],
+            StoredEffects.evasions = [],
+            StoredEffects.ignoredAbilities = [],
+            StoredEffects.laterPayments = [],
+            StoredEffects.delayedTriggers = Seq.empty,
+            StoredEffects.pendingPreventionRiders = Seq.empty,
+            StoredEffects.pendingReplacementEffects = Seq.empty,
+            StoredEffects.pendingSkipEffects = Seq.empty,
+            StoredEffects.pendingEntryEffects = Seq.empty
+          },
       GameState.contested = Map.empty,
       GameState.ambientAmounts = Map.empty,
       GameState.detachedBindings = Map.empty,
-      GameState.pendingEntryEffects = Seq.empty,
       GameState.enteringBeside = Set.empty,
       GameState.enteringSubjects = Map.empty,
       GameState.enteredFrom = Map.empty,
@@ -313,13 +324,6 @@ blankGame settings order active =
       GameState.refusedEntries = Nothing,
       GameState.enteringCounters = Map.empty,
       GameState.copyExceptionCounters = Map.empty,
-      GameState.playerEffects = [],
-      GameState.blockRequirements = [],
-      GameState.objectProhibitions = [],
-      GameState.attackProhibitions = [],
-      GameState.evasions = [],
-      GameState.attackRequirements = [],
-      GameState.ignoredAbilities = [],
       GameState.turnOrder = order,
       GameState.turnsBegun = Turn.firstTurnBegun settings order active,
       GameState.result = Nothing,

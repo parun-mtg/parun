@@ -8,7 +8,7 @@ import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Timestamp as Timestamp
 
 -- | CR 509.1c / 613.11: a stored, resolution-generated BLOCKING REQUIREMENT,
--- held in GameState.blockRequirements. The block-axis analogue of
+-- held in StoredEffects.blockRequirements. The block-axis analogue of
 -- ActivePlayerEffect: the printed carrier (Parun.Types.BlockRequirement) is
 -- re-derived live from the battlefield, while these are stored because the
 -- object that made them may be long gone. CR 702.39a's provoke and Alluring

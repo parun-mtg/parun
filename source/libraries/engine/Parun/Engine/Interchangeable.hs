@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -- | Whether two objects are the same option -- the question a prompt has to
 -- answer before it may offer one of them in place of both.
 --
@@ -25,6 +27,7 @@ import qualified Parun.Engine.Interchangeable.Mentions as Mentions
 import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection.View
+import qualified Parun.Engine.Stored as Stored
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
@@ -80,6 +83,9 @@ import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StoredEffects as StoredEffects
+import Parun.Types.StoredKind (StoredKind)
+import qualified Parun.Types.StoredKind as StoredKind
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -192,6 +198,7 @@ objects pcs gs a b =
       -- Keyed by every permanent alike, so compared rather than searched. A
       -- CR 603.10 sample's attachers (BattlefieldCandidate.attached) are
       -- searched: a host's entry may name one of the two and not the other.
+      sameSample :: (Eq v) => Map.Map ObjectId v -> Bool
       sameSample m = Map.lookup a m == Map.lookup b m
       namesOne candidate = Set.member a (BattlefieldCandidate.attached candidate) == Set.member b (BattlefieldCandidate.attached candidate)
       -- CR 305.1's GameState.cardsPlayed is never cleared, so it keys every
@@ -319,7 +326,7 @@ representatives pcs gs candidates =
 --     event-group, scan-cursor, subgame and die-roll fields describe the GAME
 --     rather than any object.
 --
--- GameState.evasions is searched (namedByStored) although its rows name a
+-- StoredEffects.evasions is searched (namedByStored) although its rows name a
 -- class rather than an object (CR 611.2c): the class is a Filter, and
 -- filterNames answers for it.
 --
@@ -375,27 +382,35 @@ quiet gs =
 -- DamagePattern's recipient) and the delayed-trigger arm (Salt Road Skirmish,
 -- through its bindings); guardian-angel-a-creature-it-names-is-not-interchangeable
 -- proves the later payment's. The pending queues are regression fences: no board
--- in the suite reaches a mana-source window with one non-empty.
+-- in the suite reaches a mana-source window with one non-empty. They are
+-- searched by construction, since rowNames answers every kind of row.
 namedByStored :: ObjectId -> GameState -> Bool
 namedByStored oid gs =
   combatNames oid (TurnRegisters.combat (GameState.turn gs))
     || any (combatNames oid . TurnRegisters.combat) (GameState.parkedTurns gs)
-    || any (continuousNames oid gs) (GameState.continuousEffects gs)
-    || any (copyNames oid) (GameState.copyEffects gs)
-    || any (playerEffectRowNames oid) (GameState.playerEffects gs)
-    || any (blockRequirementNames oid) (GameState.blockRequirements gs)
-    || any (attackRequirementNames oid) (GameState.attackRequirements gs)
-    || any (objectProhibitionNames oid) (GameState.objectProhibitions gs)
-    || any (attackProhibitionNames oid) (GameState.attackProhibitions gs)
-    || any (evasionNames oid) (GameState.evasions gs)
-    || any (ignoredNames oid) (GameState.ignoredAbilities gs)
-    || any (Monoid.getAny . Mentions.activeReplacementNames (searched oid)) (GameState.replacements gs)
-    || any (Monoid.getAny . Mentions.delayedTriggerNames (searched oid)) (GameState.delayedTriggers gs)
-    || any (Monoid.getAny . Mentions.activeLaterPaymentNames (searched oid)) (GameState.laterPayments gs)
-    || any (Monoid.getAny . Mentions.preventionNames (searched oid)) (GameState.pendingPreventionRiders gs)
-    || any (Monoid.getAny . Mentions.pendingDamageEffectNames (searched oid)) (GameState.pendingReplacementEffects gs)
-    || any (Monoid.getAny . Mentions.pendingDamageEffectNames (searched oid) . PendingSkipEffect.pending) (GameState.pendingSkipEffects gs)
-    || any (Monoid.getAny . Mentions.pendingEntryEffectNames (searched oid)) (GameState.pendingEntryEffects gs)
+    || Monoid.getAny (Stored.foldRows (rowNames oid gs) (GameState.stored gs))
+
+-- Whether one stored row might name this object: namedByStored's question,
+-- asked of every Parun.Types.StoredKind in one exhaustive case, so a new kind
+-- of row is a build error here until it says how it is searched.
+rowNames :: ObjectId -> GameState -> StoredKind r -> r -> Monoid.Any
+rowNames oid gs kind row = case kind of
+  StoredKind.Continuous -> Monoid.Any (continuousNames oid gs row)
+  StoredKind.Copy -> Monoid.Any (copyNames oid row)
+  StoredKind.PlayerEffect -> Monoid.Any (playerEffectRowNames oid row)
+  StoredKind.BlockRequirement -> Monoid.Any (blockRequirementNames oid row)
+  StoredKind.AttackRequirement -> Monoid.Any (attackRequirementNames oid row)
+  StoredKind.ObjectProhibition -> Monoid.Any (objectProhibitionNames oid row)
+  StoredKind.AttackProhibition -> Monoid.Any (attackProhibitionNames oid row)
+  StoredKind.Evasion -> Monoid.Any (evasionNames oid row)
+  StoredKind.IgnoredAbility -> Monoid.Any (ignoredNames oid row)
+  StoredKind.Replacement -> Mentions.activeReplacementNames (searched oid) row
+  StoredKind.DelayedTrigger -> Mentions.delayedTriggerNames (searched oid) row
+  StoredKind.LaterPayment -> Mentions.activeLaterPaymentNames (searched oid) row
+  StoredKind.PendingPreventionRider -> Mentions.preventionNames (searched oid) row
+  StoredKind.PendingReplacementEffect -> Mentions.pendingDamageEffectNames (searched oid) row
+  StoredKind.PendingSkipEffect -> Mentions.pendingDamageEffectNames (searched oid) (PendingSkipEffect.pending row)
+  StoredKind.PendingEntryEffect -> Mentions.pendingEntryEffectNames (searched oid) row
 
 -- The question asked of a row that stores the environment its slots read --
 -- searched alongside the row's trees, so a slot read is answered there.
@@ -428,8 +443,8 @@ layeredBetween a b gs = case (Map.lookup a (GameState.objects gs), Map.lookup b 
     let lo = min (Object.timestamp x) (Object.timestamp y)
         hi = max (Object.timestamp x) (Object.timestamp y)
         between ts = lo < ts && ts < hi
-     in any (between . ContinuousEffect.timestamp) (GameState.continuousEffects gs)
-          || any (between . ActiveCopy.timestamp) (GameState.copyEffects gs)
+     in any (between . ContinuousEffect.timestamp) (StoredEffects.continuousEffects (GameState.stored gs))
+          || any (between . ActiveCopy.timestamp) (StoredEffects.copyEffects (GameState.stored gs))
   _ -> True
 
 -- Whether the combat in progress names this object, as an attacker, a blocker
@@ -611,7 +626,9 @@ affectedNames oid source gs affected = case affected of
 -- card's exiledWith row.
 namedByRelation :: ObjectId -> GameState -> Bool
 namedByRelation oid gs =
-  let relates names = any (\(key, value) -> key == oid || Set.member oid (names value)) . Map.toList
+  let relates :: (v -> Set.Set ObjectId) -> Map.Map ObjectId v -> Bool
+      relates names = any (\(key, value) -> key == oid || Set.member oid (names value)) . Map.toList
+      keyed :: Map.Map ObjectId v -> Bool
       keyed = Map.member oid
       parked = Map.elems (GameState.parkedTurns gs)
    in relates phasedOutNames (GameState.phasedOut gs)

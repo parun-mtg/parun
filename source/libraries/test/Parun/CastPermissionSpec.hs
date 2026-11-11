@@ -74,6 +74,7 @@ import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -527,8 +528,8 @@ yawgmothsWillSpec s registry =
           let after = willResolved willId gs
               ended = S.runPure S.identityAnswer after (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
           -- TWO, one per half of the card's first sentence.
-          Spec.assertEqWith s "both stored effects while they last" (length (GameState.playerEffects after)) 2
-          Spec.assertEqWith s "nothing stored afterwards" (GameState.playerEffects ended) []
+          Spec.assertEqWith s "both stored effects while they last" (length (StoredEffects.playerEffects (GameState.stored after))) 2
+          Spec.assertEqWith s "nothing stored afterwards" (StoredEffects.playerEffects (GameState.stored ended)) []
           Spec.assertBool s (not (PlayerEffect.mayCastFrom S.alice Zone.Graveyard hers ended)) "the permission is gone"
           Spec.assertBool s (not (S.castable S.alice hers ended)) "and the cast is refused again"
 
@@ -1147,9 +1148,9 @@ jaredSpec s registry =
           (jaredId, _, _, gs) <- board
           let after = etbResolved jaredId gs
           Spec.assertEqWith s "bob is the monarch" (GameState.monarch after) (Just S.bob)
-          Spec.assertEqWith s "one stored CR 611.2c effect" (fmap ActivePlayerEffect.effect (GameState.playerEffects after)) [PlayerEffect.Type.CantBecomeMonarch]
-          Spec.assertEqWith s "scoped to its controller" (fmap ActivePlayerEffect.scope (GameState.playerEffects after)) [AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)]
-          Spec.assertEqWith s "who is alice" (fmap ActivePlayerEffect.controller (GameState.playerEffects after)) [S.alice]
+          Spec.assertEqWith s "one stored CR 611.2c effect" (fmap ActivePlayerEffect.effect (StoredEffects.playerEffects (GameState.stored after))) [PlayerEffect.Type.CantBecomeMonarch]
+          Spec.assertEqWith s "scoped to its controller" (fmap ActivePlayerEffect.scope (StoredEffects.playerEffects (GameState.stored after))) [AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)]
+          Spec.assertEqWith s "who is alice" (fmap ActivePlayerEffect.controller (StoredEffects.playerEffects (GameState.stored after))) [S.alice]
           Spec.assertBool s (PlayerEffect.prohibitsBecomingMonarch S.alice after) "so alice can't become the monarch"
           Spec.assertBool s (not (PlayerEffect.prohibitsBecomingMonarch S.bob after)) "and bob still can"
 
@@ -1179,7 +1180,7 @@ jaredSpec s registry =
           (jaredId, jailerId, _, gs) <- board
           let restricted = etbResolved jaredId gs
               ended = S.runPure S.identityAnswer restricted (Engine.runTurnBasedActions (Phase.Ending EndingStep.Cleanup))
-          Spec.assertEqWith s "nothing stored" (GameState.playerEffects ended) []
+          Spec.assertEqWith s "nothing stored" (StoredEffects.playerEffects (GameState.stored ended)) []
           Spec.assertBool s (not (PlayerEffect.prohibitsBecomingMonarch S.alice ended)) "alice may be crowned again"
           Spec.assertEqWith s "so the Jailer's ETB now crowns her" (GameState.monarch (etbResolved jailerId ended)) (Just S.alice)
 
@@ -1524,7 +1525,7 @@ scoutsWarningSpec s registry =
       Spec.assertEqWith
         s
         "one stored grant, expiring on use"
-        (fmap (\a -> (ActivePlayerEffect.effect a, ActivePlayerEffect.expiry a)) (GameState.playerEffects after))
+        (fmap (\a -> (ActivePlayerEffect.effect a, ActivePlayerEffect.expiry a)) (StoredEffects.playerEffects (GameState.stored after)))
         [(PlayerEffect.Type.MayPlayAsThoughItHadFlash (Filter.Type.HasCardType CardType.Creature), Expiry.Type.WhenUsed Nothing)]
 
     -- WotC's own Scout's Warning / Quicken ruling: "until the turn ends or
@@ -1538,7 +1539,7 @@ scoutsWarningSpec s registry =
       dryadArbor <- S.printingOf s registry "Dryad Arbor"
       let (_, resolved) = scoutsWarningResolved plains warning dryadArbor
           played = S.runPure S.playLandAnswer resolved Engine.priorityLoop
-      Spec.assertEqWith s "the grant is gone" (GameState.playerEffects played) []
+      Spec.assertEqWith s "the grant is gone" (StoredEffects.playerEffects (GameState.stored played)) []
 
     -- The Filter side of that consumption: Mountain is a land and nothing
     -- else, so it does not match the grant's HasCardType Creature criterion
@@ -1550,7 +1551,7 @@ scoutsWarningSpec s registry =
       mountain <- S.printingOf s registry "Mountain"
       let (_, resolved) = scoutsWarningResolved plains warning mountain
           played = S.runPure S.playLandAnswer resolved Engine.priorityLoop
-      Spec.assertEqWith s "the grant survives" (length (GameState.playerEffects played)) 1
+      Spec.assertEqWith s "the grant survives" (length (StoredEffects.playerEffects (GameState.stored played))) 1
 
     -- CR 514.2 / 611.2a: the "or until the turn ends" half -- an UNUSED grant
     -- still ends at cleanup exactly as AtCleanup's does, so Scout's Warning
@@ -1560,8 +1561,8 @@ scoutsWarningSpec s registry =
       warning <- S.printingOf s registry "Scout's Warning"
       dryadArbor <- S.printingOf s registry "Dryad Arbor"
       let (_, resolved) = scoutsWarningResolved plains warning dryadArbor
-      Spec.assertEqWith s "one stored before" (length (GameState.playerEffects resolved)) 1
-      Spec.assertEqWith s "none after cleanup" (GameState.playerEffects (Expiry.dropAtCleanup resolved)) []
+      Spec.assertEqWith s "one stored before" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
+      Spec.assertEqWith s "none after cleanup" ((StoredEffects.playerEffects . GameState.stored) (Expiry.dropAtCleanup resolved)) []
 
     -- CR 601.2e / 734.1: a cast that is rejected -- here at CR 601.2h, the mana
     -- refused -- is returned to the moment before it was proposed, and the
@@ -1593,7 +1594,7 @@ scoutsWarningSpec s registry =
             Prompt.ChooseManaSource {} -> pure Nothing
             _ -> pure (S.identityAnswer p)
           ((_, after), (_, proposed)) = State.runState (Engine.runGame answerer funded Engine.priorityLoop) (False, False)
-      Spec.assertEqWith s "CR 601.2e the grant survives the rejected cast" (length (GameState.playerEffects after)) 1
+      Spec.assertEqWith s "CR 601.2e the grant survives the rejected cast" (length (StoredEffects.playerEffects (GameState.stored after))) 1
       Spec.assertBool s proposed "the Piker really was proposed"
       Spec.assertEqWith s "nothing was tapped for it" (S.tappedCount S.alice after) 1
       Spec.assertEqWith s "and it is back in hand" (fmap Object.zone (Game.lookupObject pikerId after)) (Just Zone.Hand)
@@ -1629,8 +1630,8 @@ scoutsWarningSpec s registry =
             Prompt.CastWhileSearching _ _ options -> Maybe.listToMaybe options
             _ -> S.identityAnswer p
           after = S.runPure castFirst resolved (Cast.castWhileSearching S.manaPerformer S.alice)
-      Spec.assertEqWith s "CR 611.2a the grant is spent by the search's own cast" (GameState.playerEffects after) []
-      Spec.assertEqWith s "the grant stood before it" (length (GameState.playerEffects resolved)) 1
+      Spec.assertEqWith s "CR 611.2a the grant is spent by the search's own cast" (StoredEffects.playerEffects (GameState.stored after)) []
+      Spec.assertEqWith s "the grant stood before it" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
       Spec.assertEqWith s "and the Wurm really was cast" (length (TurnRegisters.stack (GameState.turn after))) 1
 
     -- CR 708.2a: a face-down cast is a 2/2 creature spell, which is the face
@@ -1645,7 +1646,7 @@ scoutsWarningSpec s registry =
       let (giftId, resolved) = scoutsWarningResolved plains warning giftOfDoom
           funded = S.landsFor plains S.alice 3 resolved
           after = S.runPure S.identityAnswer funded (Cast.castSpell S.manaPerformer S.alice giftId (CardName.MkCardName (Text.pack "Gift of Doom")) (Facing.faceDown FaceDownReason.Morphed))
-      Spec.assertEqWith s "CR 708.2a the grant is spent by the face-down creature spell" (GameState.playerEffects after) []
+      Spec.assertEqWith s "CR 708.2a the grant is spent by the face-down creature spell" (StoredEffects.playerEffects (GameState.stored after)) []
       Spec.assertEqWith s "and the spell really is on the stack" (length (TurnRegisters.stack (GameState.turn after))) 1
 
 -- The first action any of `wanted` admits, in the order `wanted` lists them, or
