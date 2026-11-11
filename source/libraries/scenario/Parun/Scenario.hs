@@ -960,7 +960,7 @@ answerGeneric gs key kind index timed prompt = case Timed.entry timed of
     -- out of line with its prompt fails either way rather than passing on the
     -- engine's fallback.
     case (allowed, withinOffer prompt chosen, Answer.unoffered answer) of
-      (False, _, _) -> failWith (Failure.MkUnexpectedActionChoice key verb (kind <> Text.pack ": the rule refuses it"))
+      (False, _, _) -> failWith (Failure.MkUnexpectedActionChoice key verb (kind <> Text.pack ": the rule refuses it") [])
       (True, True, False) -> pure chosen
       (True, False, True) -> pure chosen
       (True, False, False) -> failWith (Failure.MkUnofferedAnswer key verb kind)
@@ -986,7 +986,7 @@ answerGeneric gs key kind index timed prompt = case Timed.entry timed of
     decodeAnswer verb answer =
       let resolve needs = case needs of
             Reply.Done a -> pure a
-            Reply.Failed problem -> failWith (Failure.MkUnexpectedActionChoice key verb (kind <> Text.pack ": " <> problem))
+            Reply.Failed problem -> failWith (Failure.MkUnexpectedActionChoice key verb (kind <> Text.pack ": " <> problem) [])
             Reply.NeedObject ref k -> resolveObject ref gs >>= resolve . k
             Reply.NeedPlayer label k -> resolvePlayer label >>= resolve . k
        in resolve (Reply.decode (Reply.shapeOf prompt) (Answer.with answer))
@@ -1364,7 +1364,7 @@ answerActionChoice key verb choices asked =
       gs = Asked.game asked
       kind = Prompt.kindOf prompt
       unexpected :: Run b
-      unexpected = failWith (Failure.MkUnexpectedActionChoice key verb kind)
+      unexpected = failWith (Failure.MkUnexpectedActionChoice key verb kind [])
    in case prompt of
         -- Slot by slot: this prompt takes the slots it offers, every one named.
         Prompt.Type.ChooseTargets _ _ _ offered
@@ -1457,14 +1457,19 @@ answerActionChoice key verb choices asked =
           _ -> unexpected
         Prompt.Type.ChooseManaSource _ _ _ candidates -> answerManaSource gs key verb choices kind candidates
         Prompt.Type.ChooseExtraManaSource _ _ candidates -> answerManaSource gs key verb choices kind candidates
-        Prompt.Type.ChooseManaYield _ _ _ candidates -> case Seq.viewl (Choices.manaYields choices) of
-          Seq.EmptyL -> unexpected
-          -- Recipient-blind: the yield is matched on its units alone.
-          wanted Seq.:< rest -> case filter ((== Mana.Type.unwrap wanted) . Mana.yieldUnits) (NonEmpty.toList candidates) of
-            [option] -> do
-              updateChoices (\current -> current {Choices.manaYields = rest})
-              pure option
-            _ -> unexpected
+        -- A miss names every yield offered, whole units and all: a unit's
+        -- production tags (an artifact's Artifact) are easy to leave out.
+        Prompt.Type.ChooseManaYield _ _ _ candidates ->
+          let offeredYields = fmap (Mana.Type.MkMana . Mana.yieldUnits) (NonEmpty.toList candidates)
+              unmatched = failWith (Failure.MkUnexpectedActionChoice key verb kind (fmap (Common.render . Codec.encode Codec.Mana.codec) offeredYields))
+           in case Seq.viewl (Choices.manaYields choices) of
+                Seq.EmptyL -> unmatched
+                -- Recipient-blind: the yield is matched on its units alone.
+                wanted Seq.:< rest -> case filter ((== Mana.Type.unwrap wanted) . Mana.yieldUnits) (NonEmpty.toList candidates) of
+                  [option] -> do
+                    updateChoices (\current -> current {Choices.manaYields = rest})
+                    pure option
+                  _ -> unmatched
         _ -> unexpected
 
 -- | CR 601.2b: whether a candidate cost is the one a move's `cost` and
@@ -1488,7 +1493,7 @@ reversed actor before after =
 
 answerManaSource :: GameState.GameState -> When.When -> Move.Move -> Choices.Choices -> Text.Text -> NonEmpty.NonEmpty ObjectId.ObjectId -> Run (Maybe ObjectId.ObjectId)
 answerManaSource gs key verb choices kind candidates = case Seq.viewl (Choices.manaSources choices) of
-  Seq.EmptyL -> failWith (Failure.MkUnexpectedActionChoice key verb kind)
+  Seq.EmptyL -> failWith (Failure.MkUnexpectedActionChoice key verb kind [])
   wanted Seq.:< rest -> do
     resolved <- traverse (resolveOffered gs key kind (NonEmpty.toList candidates)) wanted
     updateChoices (\current -> current {Choices.manaSources = rest})
@@ -2196,8 +2201,8 @@ render failure = case failure of
     renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " was not offered" <> renderOffers offers
   Failure.MkAmbiguousAction key verb offers ->
     renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " matched more than one offer" <> renderOffers offers
-  Failure.MkUnexpectedActionChoice key verb kind ->
-    renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " has no answer for the " <> kind <> Text.pack " prompt"
+  Failure.MkUnexpectedActionChoice key verb kind offers ->
+    renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " has no answer for the " <> kind <> Text.pack " prompt" <> renderOffers offers
   Failure.MkUnofferedAnswer key verb kind ->
     renderWhen key <> Text.pack ": " <> renderMove verb <> Text.pack " is not among what the " <> kind <> Text.pack " prompt offered; flag it unoffered if that is the point"
   Failure.MkOfferedAnswer key verb kind ->
