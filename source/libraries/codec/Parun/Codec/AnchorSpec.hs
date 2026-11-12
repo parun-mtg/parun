@@ -45,6 +45,12 @@ spec s = Spec.describe s "Parun.Codec.Anchor" $ do
       codec
       Anchor.YourCommander
       " {\"type\":\"YourCommander\"} "
+  Spec.it s "Host" $
+    Common.assertCodec
+      s
+      codec
+      Anchor.Host
+      " {\"type\":\"Host\"} "
 
 codec :: Codec.Codec (Anchor.Anchor (Filter.Type.Filter Keyword.Type.Keyword))
 codec = Anchor.codec (Filter.codec Keyword.codec)

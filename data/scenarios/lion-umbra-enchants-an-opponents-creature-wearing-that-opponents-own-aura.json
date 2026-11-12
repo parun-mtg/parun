@@ -1,0 +1,95 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest-1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lion Umbra",
+            "label": "lion-umbra",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bear",
+            "ready": true
+          },
+          {
+            "attached": "bear",
+            "card": "Hyena Umbra",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Lion Umbra enchants an opponent's creature wearing that opponent's own Aura in a three-player game",
+  "final": [
+    {
+      "Count": {
+        "card": "Lion Umbra",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$bear",
+        "power": 6,
+        "toughness": 6
+      }
+    },
+    {
+      "Keywords": {
+        "count": 1,
+        "keyword": {
+          "type": "Reach"
+        },
+        "object": "$bear"
+      }
+    }
+  ],
+  "note": "CR 700.9: bob's Hyena Umbra is controlled by the bear's controller, so the bear is modified though neither Aura's controller is alice.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest-1",
+            "$forest-2"
+          ],
+          "object": "$lion-umbra",
+          "targets": [
+            "$bear"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

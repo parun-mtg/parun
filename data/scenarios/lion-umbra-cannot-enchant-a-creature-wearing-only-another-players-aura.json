@@ -1,0 +1,125 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest-1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2",
+            "ready": true
+          },
+          {
+            "card": "Runeclaw Bear",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "countered",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lion Umbra",
+            "label": "lion-umbra",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bear",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "attached": "bear",
+            "card": "Hyena Umbra",
+            "ready": true
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Lion Umbra cannot enchant a creature wearing only another player's Aura in a three-player game",
+  "final": [
+    {
+      "Count": {
+        "card": "Lion Umbra",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$countered",
+        "power": 6,
+        "toughness": 6
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$bear",
+        "power": 3,
+        "toughness": 3
+      }
+    }
+  ],
+  "note": "CR 700.9: carol's Hyena Umbra on bob's bear does not make it modified, since the bear's controller does not control that Aura. Alice's countered bear keeps Lion Umbra castable, so the refused target reaches the engine.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$forest-1",
+            "$forest-2"
+          ],
+          "object": "$lion-umbra",
+          "targets": [
+            "$bear"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest-1",
+            "$forest-2"
+          ],
+          "object": "$lion-umbra",
+          "targets": [
+            "$countered"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
