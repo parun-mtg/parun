@@ -38,6 +38,7 @@ import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.Batching as Batching
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.BlockCount as BlockCount
@@ -294,10 +295,10 @@ import qualified Parun.Types.ZoneScope as ZoneScope
 -- stack (CR 113.6), and the graveyard reads go through the projection
 -- (Cost.costsFor, Cast.projectedKeywords).
 --
--- Not implemented: beyond the cast scan's triggered abilities, the keywords the
--- cast itself reads (Cost.spellKeywords) and the fields a layer-6 wipe takes
--- (Projection.wipedFace), what is read while the object is on the STACK stays
--- printed (#6529).
+-- On the STACK the reads are projected too: the cast scan's triggered abilities,
+-- the keywords the cast itself reads (Cost.spellKeywords), split second
+-- (SplitSecond.inForce), the fields a layer-6 wipe takes (Projection.wipedFace)
+-- and CR 205.4e's supertype (Cast.legendaryRestrictionOk).
 
 -- CR 702: everything one keyword mints, one arm per keyword; each roster below
 -- (triggeredAbilitiesOf, handAbilitiesOf, graveyardAbilitiesOf,
@@ -3221,9 +3222,10 @@ madnessCostFor manaCost payload = case payload of
   MadnessCost.Stated cost -> cost
   MadnessCost.OwnManaCost -> Cost.MkCost {Cost.mana = manaCost, Cost.components = []}
 
--- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a: the keyword a
--- Modification.GainKeywordAtManaCost names, carrying the [cost] it was priced
--- at. Parun.Engine.Projection supplies the receiving object's mana cost.
+-- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a / 702.196a:
+-- the keyword a Modification.GainKeywordAtManaCost names, carrying the [cost] it
+-- was priced at. Parun.Engine.Projection supplies the receiving object's mana
+-- cost, and grantedBy bakes a beam me up's unreturnable.
 withCost :: CostKeyword.CostKeyword -> Cost Keyword -> Keyword
 withCost keyword cost = case keyword of
   CostKeyword.Flashback -> Keyword.Flashback cost
@@ -3232,6 +3234,7 @@ withCost keyword cost = case keyword of
   CostKeyword.Encore -> Keyword.Encore cost
   CostKeyword.Disguise -> Keyword.Disguise cost
   CostKeyword.Blitz -> Keyword.Blitz cost
+  CostKeyword.BeamMeUp unreturnable -> Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp cost unreturnable)
 
 -- CR 702.102a: does this card's keyword set let both halves be cast as one fused
 -- split spell? Its one reader is Parun.Engine.Cast.fusedFaceOf, which asks it of
@@ -3322,13 +3325,13 @@ harmonizeCosts keywords =
         _ -> Nothing
    in Maybe.mapMaybe costOf (Set.toAscList keywords)
 
--- CR 702.196a: every beam me up cost this card has, flashbackCosts' shape and
+-- CR 702.196a: every beam me up ability this card has, flashbackCosts' shape and
 -- for its reason. The BARE payload: rule 702.196a's return of a creature rides
 -- in the candidate Parun.Engine.Cost.candidateCostsGiven assembles.
-beamMeUpCosts :: Set Keyword -> [Cost Keyword]
+beamMeUpCosts :: Set Keyword -> [BeamMeUp.BeamMeUp Keyword]
 beamMeUpCosts keywords =
   let costOf keyword = case keyword of
-        Keyword.BeamMeUp cost -> Just cost
+        Keyword.BeamMeUp beamMeUp -> Just beamMeUp
         _ -> Nothing
    in Maybe.mapMaybe costOf (Set.toAscList keywords)
 
@@ -4683,6 +4686,10 @@ grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe PlayerId -> [ObjectId] -> 
 grantedBy granter chosen you already keyword = case withChosenColors chosen keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
+  -- Scotty, Miracle Worker's "Scotty can't be beamed up to cast a spell this
+  -- way": its IsSource is the granter, not the card holding the keyword.
+  Keyword.BeamMeUp beamMeUp ->
+    Keyword.BeamMeUp beamMeUp {BeamMeUp.unreturnable = fmap spare (BeamMeUp.unreturnable beamMeUp)}
   baked -> baked
   where
     spare filter_ = case filter_ of
@@ -5103,6 +5110,14 @@ timesPaid designator paid = case designator of
     isOwn which = case which of
       KeywordInstance.Own _ -> True
       KeywordInstance.Granted {} -> False
+
+-- | Does an effect making an object lose `lost` take `keyword` away (CR
+-- 613.1f)? The keyword itself, and with banding every "bands with other"
+-- (CR 702.22b). data/scenarios' Synthetic Unbanding Ouphe scenario proves the
+-- second.
+removedWith :: Keyword -> Keyword -> Bool
+removedWith lost keyword =
+  keyword == lost || (lost == Keyword.Banding && familyOf keyword == Just KeywordFamily.BandsWithOther)
 
 -- CR 702: WHICH KEYWORD this is, with its payload dropped -- the classification
 -- Filter.HasKeywordFamily matches on, so that Flensing Raptor's "creature you

@@ -107,6 +107,7 @@ import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
@@ -171,6 +172,7 @@ import qualified Parun.Types.CostAddition as CostAddition
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostKeyword as CostKeyword
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CouldProduce as CouldProduce
@@ -3007,7 +3009,7 @@ keywordPayloadFilters keyword = case keyword of
   -- candidate Parun.Engine.Cost.candidateCostsGiven mints, retrace's position.
   Keyword.Disturb cost -> costFilters cost
   Keyword.Harmonize cost -> costFilters cost
-  Keyword.BeamMeUp cost -> costFilters cost
+  Keyword.BeamMeUp beamMeUp -> costFilters (BeamMeUp.cost beamMeUp) <> Maybe.maybeToList (BeamMeUp.unreturnable beamMeUp)
   -- CR 702.167a's payload is a Cost AND the [materials] criterion, which no
   -- other keyword's is: rule 702.167a writes the materials into the ability's
   -- cost, so both halves are the card's own words.
@@ -3518,8 +3520,16 @@ durationFilters duration =
 modificationFilters :: Projection.Modification -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 modificationFilters modification = case modification of
   Modification.GainKeyword keyword -> keywordFilters keyword
-  -- Payload-free, so there is no Filter to sweep -- see modificationCounts.
-  Modification.GainKeywordAtManaCost _ -> []
+  -- Payload-free but for a beam me up's unreturnable (Scotty, Miracle
+  -- Worker), the keyword's own Filter -- see modificationCounts.
+  Modification.GainKeywordAtManaCost keyword -> case keyword of
+    CostKeyword.Flashback -> []
+    CostKeyword.Scavenge -> []
+    CostKeyword.Embalm -> []
+    CostKeyword.Encore -> []
+    CostKeyword.Disguise -> []
+    CostKeyword.Blitz -> []
+    CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,
   -- GainKeyword above, LoseKeyword, SetCreatureSubtypesOfLastCardExiledWith and

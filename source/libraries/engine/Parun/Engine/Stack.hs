@@ -83,6 +83,9 @@ resolveTopWith runSubgame = do
   Foldable.for_ (take 1 top) (State.modify' . beginResolutionControl)
   resolveOneWith runSubgame
   State.modify' endResolutionControl
+  -- CR 400.11: what a search held out there for a later clause and no clause
+  -- brought in stays out there.
+  State.modify' Event.discardOutsideFinds
 
 -- CR 724.2: "you control the player while that spell is resolving" -- the rows
 -- waiting on `oid` take hold as it begins to resolve, in place, so CR 724.1a's

@@ -264,6 +264,12 @@ layer m = case m of
 applyModification :: (ObjectId -> ProjectedCharacteristics) -> Count.ViewOf -> ObjectId -> Timestamp -> GameState -> ObjectId -> Set CardType.CardType -> Affected.Affected -> Modification -> ProjectedCharacteristics -> ProjectedCharacteristics
 applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
   let context = SourceContext.sourceContext gs (controllerOf src gs) src
+      granting k =
+        let granter = Game.lookupObject src gs
+            chosen = Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors src gs)
+            stampedBy limit attacher = maybe False ((<= limit) . Object.timestamp) (Game.lookupObject attacher gs)
+            already = foldMap (\g -> filter (stampedBy (Object.timestamp g)) (Set.toList (Game.attachments oid gs))) granter
+         in pc {PC.keywords = Map.insertWith (+) (Keyword.grantedBy src chosen (controllerOf src gs) already k) 1 (PC.keywords pc)}
    in case m of
         -- CR 613.1f layer 6: a grant adds an ability, so two grants of the same
         -- keyword count twice. Keyword.grantedBy bakes the granter into CR
@@ -271,12 +277,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- color", and its controller and the attachments stamped no later than
         -- it into CR 702.16p's spare; Parun.AuraSpec's White Ward, Cho-Manno's
         -- Blessing and Benevolent Blessing cases prove them.
-        Modification.GainKeyword k ->
-          let granter = Game.lookupObject src gs
-              chosen = Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors src gs)
-              stampedBy limit attacher = maybe False ((<= limit) . Object.timestamp) (Game.lookupObject attacher gs)
-              already = foldMap (\g -> filter (stampedBy (Object.timestamp g)) (Set.toList (Game.attachments oid gs))) granter
-           in pc {PC.keywords = Map.insertWith (+) (Keyword.grantedBy src chosen (controllerOf src gs) already k) 1 (PC.keywords pc)}
+        Modification.GainKeyword k -> granting k
         -- CR 613.1f layer 6 / CR 202.1a: the same grant, with the keyword's
         -- [cost] read off the RECEIVING object rather than written on the granter
         -- -- "the scavenge cost is equal to its mana cost".
@@ -296,9 +297,11 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- CR 601.2a has put the spell on the stack. Parun.CastSpec's "CR 107.3a
         -- a granted flashback {X}{R} announces X rather than treating it as 0"
         -- proves it, with Lier granting Blaze its own {X}{R}.
+        --
+        -- Baked by `granting` as GainKeyword's is: Scotty, Miracle Worker's
+        -- Filter.IsSource names Scotty (Parun.Types.BeamMeUp's unreturnable).
         Modification.GainKeywordAtManaCost keyword ->
-          let cost = Cost.MkCost (PC.manaCost pc) []
-           in pc {PC.keywords = Map.insertWith (+) (Keyword.withCost keyword cost) 1 (PC.keywords pc)}
+          granting (Keyword.withCost keyword (Cost.MkCost (PC.manaCost pc) []))
         -- CR 613.1f layer 6 / CR 702.5c: an APPEND, since "if an Aura has
         -- multiple instances of enchant, all of them apply" -- the printed
         -- instances are in the seed and this adds to them, so
@@ -526,12 +529,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- decrement: the clause takes the ABILITY away, and the CR has no
         -- removal that spends one instance of one, so every grant standing at
         -- this point in the timestamp order goes together. A later grant puts it
-        -- back, which is CR 613.7 and not this arm.
-        --
-        -- Not implemented: CR 702.22b's "bands with other" abilities going with
-        -- banding (#7000).
+        -- back, which is CR 613.7 and not this arm. Keyword.removedWith adds
+        -- CR 702.22b's "bands with other" abilities to banding.
         Modification.LoseKeyword k ->
-          pc {PC.keywords = Map.delete k (PC.keywords pc)}
+          pc {PC.keywords = Map.filterWithKey (\held _ -> not (Keyword.removedWith k held)) (PC.keywords pc)}
         -- CR 613.1f layer 6, scoped to CR 702.14a's generic term rather than to
         -- one written instance: every key whose family matches goes, so
         -- Hammerheim takes forestwalk and swampwalk off a Stalker Hag together.

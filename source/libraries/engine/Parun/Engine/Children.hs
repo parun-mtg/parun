@@ -59,6 +59,7 @@ import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BecomesTapState as BecomesTapState
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
@@ -131,6 +132,7 @@ import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CostKeyword as CostKeyword
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostScale as CostScale
@@ -1904,7 +1906,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Warp cost -> fmap Keyword.Warp (keywordCost c cost)
   Keyword.Disturb cost -> fmap Keyword.Disturb (keywordCost c cost)
   Keyword.Harmonize cost -> fmap Keyword.Harmonize (keywordCost c cost)
-  Keyword.BeamMeUp cost -> fmap Keyword.BeamMeUp (keywordCost c cost)
+  Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp cost unreturnable) -> fmap Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp <$> keywordCost c cost <*> traverse (keywordFilter c) unreturnable)
 
 -- | A keyword's N (CR 702.21b, 702.181a, 702.189a): only a tally and a player
 -- count hold children.
@@ -3400,12 +3402,20 @@ modificationLeaves =
 
 -- | A Modification's children (CR 613.1). Its change modes, card types,
 -- supertypes, unfamilied subtypes, stored word change, names, controllers,
--- keyword families, cost keywords and combat damage markers are left as they
--- are.
+-- keyword families and combat damage markers are left as they are; a cost
+-- keyword's only child is a beam me up's unreturnable Filter.
 modificationChildren :: (Applicative f) => ModificationChildren ability f -> Modification.Modification ability -> f (Modification.Modification ability)
 modificationChildren c modification = case modification of
   Modification.GainKeyword gained -> Modification.GainKeyword <$> modificationKeyword c gained
-  Modification.GainKeywordAtManaCost _ -> pure modification
+  Modification.GainKeywordAtManaCost costKeyword ->
+    Modification.GainKeywordAtManaCost <$> case costKeyword of
+      CostKeyword.Flashback -> pure costKeyword
+      CostKeyword.Scavenge -> pure costKeyword
+      CostKeyword.Embalm -> pure costKeyword
+      CostKeyword.Encore -> pure costKeyword
+      CostKeyword.Disguise -> pure costKeyword
+      CostKeyword.Blitz -> pure costKeyword
+      CostKeyword.BeamMeUp unreturnable -> CostKeyword.BeamMeUp <$> traverse (modificationFilter c) unreturnable
   Modification.GainEnchant targetSlot -> Modification.GainEnchant <$> modificationTargetSlot c targetSlot
   Modification.LoseEnchant targetSlot -> Modification.LoseEnchant <$> modificationTargetSlot c targetSlot
   Modification.GainCastingPermission permission -> Modification.GainCastingPermission <$> modificationCastingPermission c permission

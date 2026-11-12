@@ -19,6 +19,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideObject as OutsideObject
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.Player as Player
@@ -116,6 +117,10 @@ data GameState = MkGameState
     -- | CR 400.11 / 707.13: objects in `objects` that are outside the game, in no
     -- zone's membership. Parun.Engine.Game.zoneOf answers Nothing for them.
     outsideCopies :: Set.Set ObjectId.ObjectId,
+    -- | CR 400.11 / 701.23j: the card outside the game each of those objects
+    -- stands for, where a search revealed it there and left it for a later
+    -- clause of the same resolution to bring in (Event.holdFound).
+    outsideFinds :: Map.Map ObjectId.ObjectId OutsideCard.OutsideCard,
     -- | CR 707.13: the card names each object's ability has chosen to copy by
     -- name. Keyed by id, so CR 400.7's new object remembers none.
     namedCopyChoices :: Map.Map ObjectId.ObjectId (Set.Set CardName.CardName),

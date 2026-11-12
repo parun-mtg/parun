@@ -1,0 +1,129 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Frontline Heroism",
+            "label": "heroism"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Moment of Triumph",
+            "label": "triumph"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "rival"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 707.10e Frontline Heroism's copy targets its one token unasked",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$bear",
+        "power": 4,
+        "toughness": 4
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Soldier Token",
+        "power": 3,
+        "toughness": 3
+      }
+    },
+    {
+      "Life": {
+        "life": 24,
+        "player": "alice"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Stack"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$rival",
+        "power": 2,
+        "toughness": 2
+      }
+    }
+  ],
+  "note": "One token is no choice, so nothing is asked and the copy targets it.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains"
+          ],
+          "object": "$triumph",
+          "targets": [
+            "$bear"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $heroism",
+            "Moment of Triumph"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Moment of Triumph#2",
+            "Moment of Triumph"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

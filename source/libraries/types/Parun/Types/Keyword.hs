@@ -2,6 +2,7 @@ module Parun.Types.Keyword where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Backup as Backup
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.CompanionCondition as CompanionCondition
@@ -951,7 +952,7 @@ data Keyword
     Harmonize (Cost.Cost Keyword)
   | -- | 702.196a: beam me up [cost] -- flashback's two static abilities, the
     -- graveyard cost also returning a creature you control to its owner's hand.
-    BeamMeUp (Cost.Cost Keyword)
+    BeamMeUp (BeamMeUp.BeamMeUp Keyword)
   deriving (Eq, Ord, Show)
 
 -- Devoid takes TWO routes, decided by where the instance came from. A PRINTED one

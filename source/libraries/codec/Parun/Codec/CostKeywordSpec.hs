@@ -4,6 +4,7 @@ import qualified Parun.Codec.CostKeyword as CostKeyword
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CostKeyword as CostKeyword
+import qualified Parun.Types.Filter as Filter
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CostKeyword" $ do
@@ -13,6 +14,18 @@ spec s = Spec.describe s "Parun.Codec.CostKeyword" $ do
       CostKeyword.codec
       CostKeyword.Scavenge
       " \"Scavenge\" "
-  Spec.it s "round trips every constructor" $ Common.assertEnumCodec s CostKeyword.codec
+  Spec.it s "BeamMeUp restricting no creature" $
+    Common.assertCodec
+      s
+      CostKeyword.codec
+      (CostKeyword.BeamMeUp Nothing)
+      " \"BeamMeUp\" "
+  -- Scotty, Miracle Worker's "Scotty can't be beamed up to cast a spell this way".
+  Spec.it s "BeamMeUp restricting its granter" $
+    Common.assertCodec
+      s
+      CostKeyword.codec
+      (CostKeyword.BeamMeUp (Just Filter.IsSource))
+      " {\"BeamMeUp\":{\"type\":\"IsSource\"}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s CostKeyword.codec

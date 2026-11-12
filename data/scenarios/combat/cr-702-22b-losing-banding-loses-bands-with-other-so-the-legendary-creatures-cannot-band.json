@@ -1,0 +1,127 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cathedral of Serra"
+          },
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru",
+            "ready": true
+          },
+          {
+            "card": "Happy Hogan, Dauntless Driver",
+            "label": "hogan",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Synthetic Unbanding Ouphe",
+            "label": "ouphe",
+            "ready": true
+          },
+          {
+            "card": "Wind Drake",
+            "label": "drake",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "Synthetic Unbanding Ouphe takes banding off Isamaru, which takes its \"bands with other\" too (CR 702.22b), so the two legendary creatures attack unbanded and blocking one leaves the other unblocked",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$ouphe",
+          "targets": [
+            "$isamaru"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$isamaru",
+          "$hogan"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$drake": [
+            "$hogan"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$isamaru",
+          "blockers": null
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "BandsWithOther",
+            "value": {
+              "type": "HasSupertype",
+              "value": "Legendary"
+            }
+          },
+          "object": "$isamaru"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

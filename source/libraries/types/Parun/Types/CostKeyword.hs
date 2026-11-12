@@ -1,5 +1,8 @@
 module Parun.Types.CostKeyword where
 
+import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.Keyword as Keyword
+
 -- | A rule-702 keyword whose whole payload is one [cost], named WITHOUT that
 -- cost: what Parun.Types.Modification's GainKeywordAtManaCost hands out, priced
 -- at the receiving card's own mana cost (CR 202.1a). One constructor per
@@ -17,4 +20,6 @@ data CostKeyword
     Disguise
   | -- | CR 702.152a (Henzie "Toolbox" Torre).
     Blitz
-  deriving (Bounded, Enum, Eq, Ord, Show)
+  | -- | CR 702.196a (Scotty, Miracle Worker), with Parun.Types.BeamMeUp's unreturnable.
+    BeamMeUp (Maybe (Filter.Filter Keyword.Keyword))
+  deriving (Eq, Ord, Show)

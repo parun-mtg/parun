@@ -344,6 +344,7 @@ blankGame match order active =
       GameState.result = Nothing,
       GameState.restartSignal = RestartSignal.Playing,
       GameState.outsideCopies = Set.empty,
+      GameState.outsideFinds = Map.empty,
       GameState.namedCopyChoices = Map.empty,
       GameState.notedCards = Map.empty,
       GameState.notedMana = Map.empty,

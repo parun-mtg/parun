@@ -56,34 +56,6 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "source": "$ruhan",
-      "do": {
-        "ChooseAttackTarget": "$carol"
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "Attack": [
-          "$ruhan"
-        ]
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "source": "$ruhan",
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "Attackers": {
           "attackers": {
@@ -93,5 +65,5 @@
       }
     }
   ],
-  "note": "The paired board, one thing different: randomness names bob, so declining and attacking carol are what is refused."
+  "note": "The paired board, one thing different: randomness names bob, so declining is refused and carol is never offered."
 }

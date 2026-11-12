@@ -1011,7 +1011,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         (elfId, g1) = S.addPermanent elf S.alice g0
         (bystanderId, parent) = S.addPermanent elf S.bob g1
         sub0 = Setup.subgameStateFrom S.alice parent
-        (broughtInId, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice elfId sub0
+        (broughtInId, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice elfId sub0
         after = Setup.applyCrossings crossedSub parent
         leftEvents = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
     -- The fixture's own preconditions, so the assertions below cannot pass for
@@ -1046,7 +1046,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     let (tusk, g1) = S.addPermanent thragtusk S.alice S.threePlayerGame
         parent = S.giveControl tusk S.carol g1
         sub0 = Setup.subgameStateFrom S.alice parent
-        (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice tusk sub0
+        (_, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice tusk sub0
         after = resolveTriggers (Setup.applyCrossings crossedSub parent)
     Spec.assertEqWith s "carol controls the creature alice owns" (Projection.controllerOf tusk parent) (Just S.carol)
     Spec.assertEqWith s "it is phased in, so the pair's one difference is genuinely absent here" (Map.member tusk (GameState.phasedOut parent)) False
@@ -1072,7 +1072,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     let (tusk, g1) = S.addPermanent thragtusk S.alice S.threePlayerGame
         parent = Phasing.phaseOut (PhasedOut.Directly S.carol) tusk (S.giveControl tusk S.carol g1)
         sub0 = Setup.subgameStateFrom S.alice parent
-        (broughtInId, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice tusk sub0
+        (broughtInId, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice tusk sub0
         after = resolveTriggers (Setup.applyCrossings crossedSub parent)
     Spec.assertEqWith s "it is phased out" (Phasing.isPhasedOut tusk parent) True
     Spec.assertEqWith s "and carol still controls it, so CR 702.26b is not answering by handing it back" (Projection.controllerOf tusk parent) (Just S.carol)
@@ -1108,7 +1108,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         -- Something for the Skimmer to draw.
         parent = snd (S.addLibraryCard mountain S.alice (snd (S.addLibraryCard mountain S.alice g3)))
         sub0 = Setup.subgameStateFrom S.alice parent
-        (broughtInId, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice tusk sub0
+        (broughtInId, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice tusk sub0
         after = resolveTriggers (Setup.applyCrossings crossedSub parent)
         plusOnes oid = maybe 0 (Map.findWithDefault 0 CounterKind.PlusOnePlusOne . Object.counters) (Game.lookupObject oid after)
     -- The gameplay-level claims, ahead of the proxies.
@@ -1136,8 +1136,8 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         (lateCrosser, g1) = S.addPermanent elf S.alice g0
         (earlyCrosser, parent) = S.addPermanent elf S.alice g1
         sub0 = Setup.subgameStateFrom S.alice parent
-        (_, crossed1) = Event.bringInFrom OutsideDestination.Hand S.alice earlyCrosser sub0
-        (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice lateCrosser crossed1
+        (_, crossed1) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice earlyCrosser sub0
+        (_, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice lateCrosser crossed1
         after = Setup.applyCrossings crossedSub parent
         left = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LoggedEvent.group logged, LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
         -- CR 603.10's "objects that exist immediately after an event", as
@@ -1170,8 +1170,8 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         (anthemId, g1) = S.addPermanent anthem S.alice g0
         (elfId, parent) = S.addPermanent elf S.alice g1
         sub0 = Setup.subgameStateFrom S.alice parent
-        (_, crossed1) = Event.bringInFrom OutsideDestination.Hand S.alice anthemId sub0
-        (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice elfId crossed1
+        (_, crossed1) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice anthemId sub0
+        (_, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice elfId crossed1
         after = Setup.applyCrossings crossedSub parent
         lastPower oid = fmap (PC.power . LastKnown.characteristics) (Map.lookup oid (Snapshots.lastKnown (GameState.snapshots after)))
     -- The discriminator: the anthem genuinely was pumping the elf in the main
@@ -1198,7 +1198,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
             { GameState.outsideObjects = Map.singleton outerId (OutsideObject.MkOutsideObject S.alice printingId Facing.FaceUp (ComponentCard.MkComponentCard printingId Nothing Nothing NonEmpty.:| []))
             }
         sub0 = Setup.subgameStateFrom S.alice parent
-        (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.alice outerId sub0
+        (_, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice outerId sub0
         after = Setup.applyCrossings crossedSub parent
         leftEvents = Maybe.mapMaybe (\logged -> case LoggedEvent.event logged of GameEvent.LeftTheGame l -> Just (LeftTheGame.object l); _ -> Nothing) (Foldable.toList (TurnRegisters.events (GameState.turn after)))
     Spec.assertEqWith s "the subgame really did inherit the outer entry (CR 730.6)" (Map.member outerId (GameState.outsideObjects sub0)) True
@@ -1220,7 +1220,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         sub0 = Setup.subgameStateFrom S.alice parent
         -- Inside the subgame: alice's wish brings one copy in, and she loses
         -- life doing it. Only the first of those may follow her out (CR 730.1b).
-        (_, spentSub) = Event.bringIn OutsideDestination.Hand S.alice printingId sub0
+        (_, spentSub) = Event.bringIn (Event.arrivalOf OutsideDestination.Hand) S.alice printingId sub0
         finalSub = spentSub {GameState.players = Map.adjust (\p -> p {Player.life = 5}) S.alice (GameState.players spentSub)}
         after = Setup.funnelBack finalSub parent
         poolOf pid gs = fmap Player.outsideTheGame (Map.lookup pid (GameState.players gs))
@@ -1242,8 +1242,8 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         stocked p = p {Player.outsideTheGame = Map.singleton printingId 2}
         parent = g1 {GameState.players = Map.map stocked (GameState.players g1)}
         sub0 = Setup.subgameStateFrom S.alice parent
-        (_, aliceSpent) = Event.bringIn OutsideDestination.Hand S.alice printingId sub0
-        (_, bobSpent) = Event.bringIn OutsideDestination.Hand S.bob printingId aliceSpent
+        (_, aliceSpent) = Event.bringIn (Event.arrivalOf OutsideDestination.Hand) S.alice printingId sub0
+        (_, bobSpent) = Event.bringIn (Event.arrivalOf OutsideDestination.Hand) S.bob printingId aliceSpent
         finalSub = S.departs Departure.Type.Lost S.bob bobSpent
         after = Setup.funnelBack finalSub parent
         poolOf pid gs = fmap Player.outsideTheGame (Map.lookup pid (GameState.players gs))
@@ -1264,7 +1264,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     let g0 = Setup.emptyGame S.threePlayers
         (bobsId, parent) = S.addPermanent elf S.bob g0
         sub0 = Setup.subgameStateFrom S.alice parent
-        (minted, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.bob bobsId sub0
+        (minted, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.bob bobsId sub0
         departedSub = S.departs Departure.Type.Lost S.bob crossedSub
         after = Setup.funnelBack departedSub (Setup.applyCrossings departedSub parent)
     Spec.assertEqWith s "the subgame really did mint him a copy" (Maybe.isJust minted) True

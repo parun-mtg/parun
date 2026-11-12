@@ -12,6 +12,7 @@ import qualified Parun.Oracle.Cost as Cost
 import qualified Parun.Oracle.Filter as Filter
 import qualified Parun.Oracle.Prose as Prose
 import qualified Parun.Types.Backup as Backup
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -311,7 +312,9 @@ printed self keyword = case keyword of
   Keyword.Warp c -> Cost.keyworded self (keywordWord self) (Text.pack "Warp") c
   Keyword.Disturb c -> Cost.keyworded self (keywordWord self) (Text.pack "Disturb") c
   Keyword.Harmonize c -> Cost.keyworded self (keywordWord self) (Text.pack "Harmonize") c
-  Keyword.BeamMeUp c -> Cost.keyworded self (keywordWord self) (Text.pack "Beam me up") c
+  -- An unreturnable is only ever granted (Scotty, Miracle Worker), never printed.
+  Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp c Nothing) -> Cost.keyworded self (keywordWord self) (Text.pack "Beam me up") c
+  Keyword.BeamMeUp _ -> []
 
 -- | A keyword family as Oracle text names every keyword of it, in lower case
 -- ("loses hexproof"), landwalk's as its abilities (Hammerheim, CR 702.14a),
@@ -564,7 +567,7 @@ costedKeywords =
     Keyword.Warp,
     Keyword.Disturb,
     Keyword.Harmonize,
-    Keyword.BeamMeUp
+    \c -> Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp c Nothing)
   ]
 
 -- | The keywords 'printed' answers for with a number and a cost, each as the

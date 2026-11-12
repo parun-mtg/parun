@@ -53,7 +53,6 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.Supertype as Supertype
 import Parun.Types.TargetSlot (TargetSlot)
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Toughness as Toughness
@@ -1811,21 +1810,9 @@ isInstant :: Face.Face Card.Card -> Bool
 isInstant f = Set.member CardType.Instant (TypeLine.types (Face.typeLine f))
 
 -- CR 307.1: a sorcery is cast only in a main phase of its controller's own
--- turn. The other half of the timing classification isInstant is, and the other
--- card type CR 205.4e's casting restriction names.
+-- turn. The other half of the timing classification isInstant is.
 isSorcery :: Face.Face Card.Card -> Bool
 isSorcery f = Set.member CardType.Sorcery (TypeLine.types (Face.typeLine f))
-
--- CR 205.4a: does the printed type line carry the "legendary" supertype? The
--- supertype half of the same closed-half classification isInstant is. Two rules
--- turn on it: CR 205.4d's legend rule (CR 704.5j, Parun.Engine.Sba) and CR
--- 205.4e's casting restriction (Parun.Engine.Cast).
---
--- PRINTED, and only ever asked of a face rather than of a permanent: CR
--- 704.5j's reading has to see a Clone's COPIED supertype, so Sba goes through
--- the projection instead of calling this.
-isLegendary :: Face.Face Card.Card -> Bool
-isLegendary f = Set.member Supertype.Legendary (TypeLine.supertypes (Face.typeLine f))
 
 -- | CR 110.4
 isPermanentType :: CardType.CardType -> Bool

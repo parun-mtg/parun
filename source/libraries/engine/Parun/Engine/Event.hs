@@ -1879,7 +1879,7 @@ bringInto payload source pid = do
           answer <- Game.choose (Prompt.ChooseFromOutsideTheGame (Decide.deciderFor pid gs0) pid candidates atLeast atMost)
           pure (settleOutside kept available atLeast atMost answer)
   picked <- maybe (pure chosen) (pickOutside source pid chosen) (FromOutsideTheGame.pick payload)
-  _ <- bringChosen arrival (FromOutsideTheGame.reveal payload) pid picked
+  _ <- bringChosen (arrivalOf arrival) (FromOutsideTheGame.reveal payload) pid picked
   Monad.when (arrivalShuffles arrival) (shuffleLibrary pid)
 
 -- CR 608.2d: the seat the pick's relation names, chosen by the player bringing
@@ -1985,12 +1985,13 @@ outsideOffer predicate source pid gs =
         OutsideCard.InAnotherGame _ -> 1
    in Map.fromList (fmap (\card -> (card, copiesOf card)) (eligible predicate source pid gs))
 
--- CR 400.11b: bring the chosen cards in where the destination says, showing each
--- (CR 701.20a) where `reveal` says the instruction prints one, and answer the
--- incarnations minted. Against the LIVE state, Parun.Engine.Dungeon.enter's care:
+-- CR 400.11b: bring the chosen cards in at the zone and end `arrival` names
+-- (`arrivalOf` reads it off an OutsideDestination), showing each (CR 701.20a)
+-- where `reveal` says the instruction prints one, and answer the incarnations
+-- minted. Against the LIVE state, Parun.Engine.Dungeon.enter's care:
 -- the prompt that chose them wrote its answer into the transcript, and minting
 -- off the state from before it would drop that.
-bringChosen :: OutsideDestination.OutsideDestination -> Bool -> PlayerId -> [OutsideCard.OutsideCard] -> Game [ObjectId]
+bringChosen :: (Zone.Zone, LibraryPosition.LibraryPosition) -> Bool -> PlayerId -> [OutsideCard.OutsideCard] -> Game [ObjectId]
 bringChosen arrival revealIt pid chosen = fmap concat . Monad.forM chosen $ \card -> case card of
   OutsideCard.InPool printingId -> do
     oid <- State.state (bringIn arrival pid printingId)
@@ -2007,6 +2008,55 @@ bringChosen arrival revealIt pid chosen = fmap concat . Monad.forM chosen $ \car
         pure (NonEmpty.toList oids)
   where
     showIt oid = Monad.when revealIt (reveal RevealCause.Ordinary pid oid)
+
+-- CR 400.11 / 701.23j: an object standing for a card a search found outside
+-- the game, for a later clause of the same resolution to choose among and move
+-- (CR 608.2c) -- Turtles Forever's "then reveal those cards". The card stays
+-- out there: the object is in no zone's membership (GameState.outsideCopies,
+-- `mintOutside`'s placement) and spends nothing, and GameState.outsideFinds
+-- names the card, which a move of the object brings in (`bringFound`).
+-- Nothing for a card in a game on hold that is no longer there.
+holdFound :: PlayerId -> OutsideCard.OutsideCard -> Game (Maybe ObjectId)
+holdFound pid card = do
+  gs <- State.get
+  let printed = case card of
+        OutsideCard.InPool printingId -> Just printingId
+        OutsideCard.InAnotherGame outerId -> OutsideObject.printing <$> Map.lookup outerId (GameState.outsideObjects gs)
+  Monad.forM printed $ \printingId -> do
+    let (oid, gs1) = Game.freshObjectId gs
+        (ts, gs2) = Game.freshTimestamp gs1
+        obj = Object.new pid (Source.OfCard printingId) Zone.Graveyard ts
+    State.put
+      gs2
+        { GameState.objects = Map.insert oid obj (GameState.objects gs2),
+          GameState.outsideCopies = Set.insert oid (GameState.outsideCopies gs2),
+          GameState.outsideFinds = Map.insert oid card (GameState.outsideFinds gs2)
+        }
+    pure oid
+
+-- CR 400.11b: a move of an object `holdFound` stands for brings its card in at
+-- the zone and end the move names, through `bringChosen`, the road every card
+-- from outside the game takes. Nothing leaves a zone, so no departure is
+-- logged: Volatile Rift's "put into your hand from your library" does not see
+-- it (Parun.OutsideTheGameSpec's Turtles Forever case).
+bringFound :: ObjectId -> OutsideCard.OutsideCard -> PlayerId -> Zone -> LibraryPosition.LibraryPosition -> Game (Seq.Seq ObjectId)
+bringFound oid card pid dest position = do
+  State.modify' (forgetFound oid)
+  Seq.fromList <$> bringChosen (dest, position) False pid [card]
+
+-- CR 400.11: the objects `holdFound` left that no clause brought in, discarded
+-- as the resolution ends, their cards still outside the game.
+discardOutsideFinds :: GameState.GameState -> GameState.GameState
+discardOutsideFinds gs = Foldable.foldl' (flip forgetFound) gs (Map.keys (GameState.outsideFinds gs))
+
+-- One `holdFound` object, gone.
+forgetFound :: ObjectId -> GameState.GameState -> GameState.GameState
+forgetFound oid gs =
+  gs
+    { GameState.objects = Map.delete oid (GameState.objects gs),
+      GameState.outsideCopies = Set.delete oid (GameState.outsideCopies gs),
+      GameState.outsideFinds = Map.delete oid (GameState.outsideFinds gs)
+    }
 
 -- CR 400.11c: the cards an answer to Prompt.ChooseFromOutsideTheGame brings in,
 -- FILTERED against what was offered. A name the offer did not hold, one past
@@ -2053,10 +2103,9 @@ arrivalShuffles destination = case destination of
 -- instead, since it is minted from nothing rather than spent from a pool. The
 -- SPEND is the whole of what it adds over `mintCard`, which Alchemy's conjure
 -- reaches with nothing to spend.
-bringIn :: OutsideDestination.OutsideDestination -> PlayerId -> PrintingId.PrintingId -> GameState.GameState -> (ObjectId, GameState.GameState)
-bringIn destination pid printingId gs =
-  let (zone, position) = arrivalOf destination
-      (oid, gs1) = mintCard pid Nothing printingId zone position TapState.Untapped gs
+bringIn :: (Zone.Zone, LibraryPosition.LibraryPosition) -> PlayerId -> PrintingId.PrintingId -> GameState.GameState -> (ObjectId, GameState.GameState)
+bringIn (zone, position) pid printingId gs =
+  let (oid, gs1) = mintCard pid Nothing printingId zone position TapState.Untapped gs
    in (oid, spendFromPool pid printingId gs1)
 
 -- CR 400.11b: take one copy of this printing out of the player's sideboard
@@ -2075,13 +2124,12 @@ spendFromPool pid printingId gs =
 -- `bringInFrom` then spends, since that half is pure. `arrangeComponents` asks
 -- only where there are two cards and the zone is one the rule names. The
 -- Raven's Warning's top of a library is the destination that reaches it.
-arrangeOutside :: OutsideDestination.OutsideDestination -> PlayerId -> ObjectId -> Game ()
-arrangeOutside arrival pid outerId = do
+arrangeOutside :: (Zone.Zone, LibraryPosition.LibraryPosition) -> PlayerId -> ObjectId -> Game ()
+arrangeOutside (zone, _) pid outerId = do
   gs <- State.get
   case Map.lookup outerId (GameState.outsideObjects gs) of
     Nothing -> pure ()
     Just entry -> do
-      let (zone, _) = arrivalOf arrival
       arranged <- arrangeComponents pid zone (Seq.fromList (fmap MergeComponent.OfCard (NonEmpty.toList (OutsideObject.cards entry))))
       case NonEmpty.nonEmpty (Maybe.mapMaybe Game.cardOfComponent (Foldable.toList arranged)) of
         Nothing -> pure ()
@@ -2104,12 +2152,11 @@ arrangeOutside arrival pid outerId = do
 -- Every card the entry lists arrives, in its order (CR 713.8, CR 731.3): a
 -- melded permanent is two cards in the zone the wish names, and CR 713.8c's
 -- "finds both cards" is the answer naming both new ids.
-bringInFrom :: OutsideDestination.OutsideDestination -> PlayerId -> ObjectId -> GameState.GameState -> (Maybe (NonEmpty.NonEmpty ObjectId), GameState.GameState)
-bringInFrom destination pid outerId gs = case Map.lookup outerId (GameState.outsideObjects gs) of
+bringInFrom :: (Zone.Zone, LibraryPosition.LibraryPosition) -> PlayerId -> ObjectId -> GameState.GameState -> (Maybe (NonEmpty.NonEmpty ObjectId), GameState.GameState)
+bringInFrom (zone, position) pid outerId gs = case Map.lookup outerId (GameState.outsideObjects gs) of
   Nothing -> (Nothing, gs)
   Just entry ->
-    let (zone, position) = arrivalOf destination
-        -- CR 108.3: each card keeps the identity it had out there, and the
+    let -- CR 108.3: each card keeps the identity it had out there, and the
         -- fresh one stands only where it had none.
         kept card obj = (Game.representComponent (MergeComponent.OfCard card) obj) {Object.identity = ComponentCard.identity card <|> Object.identity obj}
         mint card (oids, g) =
@@ -7838,6 +7885,9 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
     -- Replacement.choose writes Bookkeeping.lastChoice when two rows differ enough
     -- to be worth a prompt (Rest in Peace beside Leyline of the Void, or either
     -- beside Nexus of Fate).
+    -- CR 400.11b: a card a search left outside the game is brought in, not
+    -- moved (bringFound).
+    Just obj | Just card <- Map.lookup oid (GameState.outsideFinds gs) -> bringFound oid card (Object.owner obj) requestedDest requestedPosition
     Just obj | Game.tokenHasLeftTheBattlefield obj -> pure Seq.empty
     -- CR 400.7: put into the zone it is already in, the object does not
     -- change zones (alreadyIn). The empty answer is the arm above's: nothing

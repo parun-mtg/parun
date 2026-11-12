@@ -1,5 +1,6 @@
 {
   "description": "CR 608.2d the opponent randomness named is the one the requirement makes Ruhan attack",
+  "note": "Randomness names carol, so declining is refused and bob, the announcement that would disobey the requirement, is never offered: Ruhan attacks carol unasked.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
@@ -50,34 +51,6 @@
         "Attack": [
           "$ruhan"
         ]
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "source": "$ruhan",
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "Attack": [
-          "$ruhan"
-        ]
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "source": "$ruhan",
-      "do": {
-        "ChooseAttackTarget": "$carol"
       }
     },
     {

@@ -1727,6 +1727,31 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           _ -> False
         asked = answersFor (turtling False (turtlesFound board)) (turtlesState board) (S.cast S.alice (turtlesSpell board) >> Stack.resolveTop)
     Spec.assertEqWith s "CR 701.23j and her library's two, which the cards out there complete, were asked once" (length (filter searched asked)) 1
+  -- CR 400.11: a card the search revealed outside the game stays out there
+  -- until the later clause brings it in, so the move to her hand is no move
+  -- from her library. Volatile Rift ({R/G}{R/G} Enchantment, "Vivid --
+  -- Whenever a creature card is put into your hand from your library, it
+  -- perpetually gets +X/+0, where X is the number of colors among permanents
+  -- you control."; data/cards/, Oracle checked against Scryfall 2026-09-27)
+  -- beside turtlesBoard, bob taking the library's Anafenza and one card from
+  -- out there.
+  Spec.it s "CR 400.11 Turtles Forever's card from outside the game reaches her hand from no library" $ do
+    board <- turtlesBoard s registry
+    rift <- S.printingOf s registry "Volatile Rift"
+    let withRift = snd (S.addPermanent rift S.alice (turtlesState board))
+        answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.ChooseCardFromAmong _ _ _ pool | Just anafenza <- List.find (`elem` take 1 (turtlesFound board)) (NonEmpty.toList pool) -> anafenza
+          _ -> turtling True (turtlesFound board) p
+        resolved = resolveWish answer (turtlesSpell board) withRift
+        settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
+        resolveAll gs = if null (TurnRegisters.stack (GameState.turn gs)) then gs else resolveAll (S.runPure S.identityAnswer gs Stack.resolveTop)
+        after = resolveAll settled
+        handPT name gs = [S.powerToughnessOf oid gs | oid <- Game.zoneMembers Zone.Hand S.alice gs, fmap S.nameOf (Game.cardOf oid gs) == Just name]
+    Spec.assertEqWith s "CR 608.2c bob chose Anafenza and Ambassador Laquatus" (namesIn Zone.Hand S.alice resolved) (turtleNames ["Ambassador Laquatus", "Anafenza, the Foremost"])
+    Spec.assertEqWith s "CR 603.2 Volatile Rift triggered once, for the card from her library" (length (TurnRegisters.stack (GameState.turn settled))) 1
+    Spec.assertEqWith s "and Anafenza perpetually got +2/+0 for the Rift's two colors" (handPT (CardName.MkCardName (Text.pack "Anafenza, the Foremost")) after) [Just (6, 4)]
+    Spec.assertEqWith s "CR 400.11 while Ambassador Laquatus, brought in from outside the game, did not" (handPT (CardName.MkCardName (Text.pack "Ambassador Laquatus")) after) [Just (1, 3)]
 
 -- alice with a Forest and an Island, Research // Development in hand -- {G}{U}
 -- pays Research and nothing pays Development --

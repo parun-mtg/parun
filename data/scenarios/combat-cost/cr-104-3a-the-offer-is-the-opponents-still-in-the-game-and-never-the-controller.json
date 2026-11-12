@@ -60,15 +60,6 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "source": "$ruhan",
-      "do": {
-        "ChooseAttackTarget": "$carol"
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "Attackers": {
           "attackers": {

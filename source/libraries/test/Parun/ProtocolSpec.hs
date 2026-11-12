@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -- Covers Parun.Play.Protocol: a seat's decisions as lines out and answers back,
 -- and that nothing a seat may not see reaches its lines.
 module Parun.ProtocolSpec where
@@ -22,6 +24,7 @@ import qualified Parun.Codec.Keyword as Codec.Keyword
 import qualified Parun.Codec.Reply as Codec.Reply
 import qualified Parun.Codec.Request as Codec.Request
 import qualified Parun.Codec.SlotName as Codec.SlotName
+import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Driver as Driver
@@ -31,6 +34,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
+import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Subtype as Engine.Subtype
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -68,6 +72,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
@@ -444,6 +449,7 @@ spec s registry = Spec.describe s "Protocol" $ do
         free = Cost.Type.MkCost Nothing []
         among :: Prompt.Prompt r -> [R.Reply]
         among prompt = Maybe.fromMaybe [] (field "among" (Protocol.offerOf gs prompt) >>= arrayOf)
+        told :: Prompt.Prompt r -> [String] -> [Maybe R.Reply]
         told prompt = fmap (\key -> field key (Protocol.offerOf gs prompt))
         mode = ModeIndex.MkModeIndex
         modes = Prompt.ChooseModes alice S.alice o7 (Set.fromList [mode 0, mode 2]) (ModeSelection.ChooseExactlyWithRepeats 2)
@@ -654,6 +660,41 @@ spec s registry = Spec.describe s "Protocol" $ do
         Spec.assertEqWith s "problems" (problemsOf "DeclareAttackers" sent) [Nothing, refused, refused]
         Spec.assertEqWith s "each attacks where announced" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) (Map.fromList [(construct, AttackTarget.OfPlaneswalker jaceId), (bear, AttackTarget.OfPlayer S.bob)])
       _ -> Spec.assertFailure s "fixture should give alice two creatures and bob a Jace"
+
+  Spec.it s "CR 508.1b-d an announcement that would make the declaration illegal is never offered, so nothing is rewound" $ do
+    siren <- S.printingOf s registry "Alluring Siren"
+    jace <- S.printingOf s registry "Jace Beleren"
+    piker <- S.printingOf s registry "Goblin Piker"
+    centaur <- S.printingOf s registry "Windseeker Centaur"
+    case S.combatBoardOf [piker, centaur] [jace, siren] of
+      (gs, [lured, free], [jaceId, sirenId]) | ability : _ <- Face.activatedAbilities (S.combinedFace siren) -> do
+        let board = S.addCounter CounterKind.Loyalty 3 jaceId gs
+            ready = board {GameState.turn = (GameState.turn board) {TurnRegisters.priority = Just S.bob}}
+            -- Alluring Siren's "attacks you this turn if able" on the Piker.
+            activated = snd (Engine.runGamePure (aimingAt lured) (snd (Engine.runGamePure (aimingAt lured) ready (Activate.activateAbility S.bob sirenId ability))) Stack.resolveTop)
+            attacks = Protocol.encodeAnswer (Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [lured, free])
+            atJace = Protocol.encodeAnswer (Prompt.ChooseAttackTarget (Decider.MkDecider S.alice) S.alice free (AttackTarget.OfPlayer S.bob NonEmpty.:| [AttackTarget.OfPlaneswalker jaceId])) (AttackTarget.OfPlaneswalker jaceId)
+            noBlocks = Protocol.encodeAnswer (Prompt.DeclareBlockers (Decider.MkDecider S.bob) S.bob [] []) Map.empty
+            -- Every announcement asked is answered Jace, so a lured creature
+            -- offered Jace takes it and the declaration is rewound.
+            (sent, after) =
+              declaringByKind
+                [ ("DeclareAttackers", ([], attacks [lured, free])),
+                  ("ChooseAttackTarget", ([], atJace)),
+                  ("DeclareBlockers", ([], noBlocks))
+                ]
+                activated
+        Spec.assertBool s (not (Combat.legalAttackDeclarationAs S.alice [(lured, AttackTarget.OfPlaneswalker jaceId), (free, AttackTarget.OfPlaneswalker jaceId)] activated)) "CR 508.1d: the lured Piker at Jace is illegal"
+        Spec.assertEqWith s "the lured Piker attacks bob, the Centaur Jace" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) (Map.fromList [(lured, AttackTarget.OfPlayer S.bob), (free, AttackTarget.OfPlaneswalker jaceId)])
+        Spec.assertEqWith s "asked where to attack once, for the free Centaur" (problemsOf "ChooseAttackTarget" sent) [Nothing]
+        Spec.assertEqWith s "and the declaration once, never rewound" (problemsOf "DeclareAttackers" sent) [Nothing]
+      _ -> Spec.assertFailure s "fixture should give alice two creatures and bob a Jace and a Siren"
+
+-- CR 601.2c: aims every target at `oid`, answering the rest as identityAnswer.
+aimingAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
+aimingAt oid p = case p of
+  Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((==) (Just oid) . Recipient.objectOf) . snd) sets
+  _ -> S.identityAnswer p
 
 -- Declares attackers then blockers over the line, answering each line sent
 -- with the next of `replies`; the lines sent and the state after.

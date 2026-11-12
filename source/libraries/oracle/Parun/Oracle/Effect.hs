@@ -1102,7 +1102,16 @@ searched context s
         && Set.null (Search.differentIn s)
         && not (Search.exactly s)
         && not (Search.andOr s)
-    card f = do
+    card f =
+      described f <> case f of
+        -- Free: "card" after each description, with an article on the later
+        -- ones (Mystical Teachings) or without (Final Frontier).
+        Filter.Type.Or fs@(_ : _ : _) -> do
+          first : rest <- traverse described fs
+          articled <- [False, True]
+          [Prose.listing "or" (first : fmap (\d -> if articled then Prose.article d <> Text.pack " " <> d else d) rest)]
+        _ -> []
+    described f = do
       p <- Filter.phrase f (Target.keyword context)
       Filter.describe Filter.Singular Target.card (Filter.merge p (Filter.MkPhrase [] [Target.card] []))
 

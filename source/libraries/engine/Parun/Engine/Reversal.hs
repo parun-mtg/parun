@@ -146,6 +146,7 @@ withoutAnnouncement before entry closed = do
   lookedUp <- newest (Bookkeeping.lookedUp . GameState.bookkeeping)
   referenceNames <- newest (Bookkeeping.referenceNames . GameState.bookkeeping)
   outsideCopies <- setOf GameState.outsideCopies
+  outsideFinds <- mapOf GameState.outsideFinds
   namedCopyChoices <- mapOf GameState.namedCopyChoices
   notedCards <- mapOf GameState.notedCards
   notedMana <- mapOf GameState.notedMana
@@ -341,6 +342,7 @@ withoutAnnouncement before entry closed = do
         GameState.result = result,
         GameState.restartSignal = restartSignal,
         GameState.outsideCopies = outsideCopies,
+        GameState.outsideFinds = outsideFinds,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
         GameState.notedMana = notedMana,
