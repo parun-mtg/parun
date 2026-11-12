@@ -1,0 +1,168 @@
+{
+  "description": "CR 122.4 / 704.5r / 707.2: a permanent with nine dream counters that becomes a copy of Rasputin Dreamweaver has two removed as a state-based action",
+  "note": "The ruling of 2009-10-01. The Doppelganger keeps all nine until it copies the exiled Rasputin.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Dimir Doppelganger",
+            "label": "doppelganger",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "dream"
+                },
+                "value": 9
+              }
+            ]
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Rasputin Dreamweaver",
+            "label": "rasputin"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$doppelganger",
+          "kind": {
+            "type": "Named",
+            "value": "dream"
+          },
+          "count": 9
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$doppelganger",
+          "ability": 0,
+          "mana": [
+            "$i1",
+            "$i2",
+            "$s1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$doppelganger",
+          "names": [
+            "Rasputin Dreamweaver"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$doppelganger",
+          "kind": {
+            "type": "Named",
+            "value": "dream"
+          },
+          "count": 7
+        }
+      }
+    }
+  ]
+}

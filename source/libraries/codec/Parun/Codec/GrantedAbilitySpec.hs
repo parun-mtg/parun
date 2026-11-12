@@ -41,6 +41,7 @@ import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -130,7 +131,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
       ( GrantedAbility.Rules
           mempty
             { RuleAbilities.combatRestrictions =
-                [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.IsSource) (Filter.Measures (Measures.MkMeasures Measure.Power Comparison.AtMost (Operand.Literal 2))) Nothing Nothing)]
+                [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.IsSource) (Filter.Measures (Measures.MkMeasures Measure.Power Comparison.AtMost (Operand.Literal 2))) PairwiseFrame.Attacker Nothing Nothing)]
             }
       )
       " {\"type\":\"Rules\",\"value\":{\"combatRestrictions\":[{\"type\":\"CantBeBlockedBy\",\"value\":{\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"IsSource\"}},\"blockers\":{\"type\":\"Measures\",\"value\":{\"measure\":\"Power\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"Literal\",\"value\":2}}}}}]}} "

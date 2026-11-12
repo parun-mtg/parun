@@ -198,6 +198,7 @@ import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
@@ -390,6 +391,7 @@ expansionOf keyword = case keyword of
               CantBeBlockedBy.MkCantBeBlockedBy
                 { CantBeBlockedBy.affected = Affected.Matching Filter.IsSource,
                   CantBeBlockedBy.blockers = Protection.quality protection,
+                  CantBeBlockedBy.frame = PairwiseFrame.Attacker,
                   CantBeBlockedBy.unless = Nothing,
                   CantBeBlockedBy.name = Nothing
                 }
@@ -1810,6 +1812,7 @@ cycling cost searchFor =
                 Search.subject = Nothing,
                 Search.slot = Nothing,
                 Search.handSlot = Nothing,
+                Search.librarySlot = Nothing,
                 Search.differentIn = Set.empty,
                 Search.exactly = False,
                 Search.andOr = False
@@ -2002,6 +2005,7 @@ searchForSameManaValue cost filter_ destination =
               Search.subject = Nothing,
               Search.slot = Nothing,
               Search.handSlot = Nothing,
+              Search.librarySlot = Nothing,
               Search.differentIn = Set.empty,
               Search.exactly = False,
               Search.andOr = False
@@ -6831,6 +6835,7 @@ spiritToken =
               Face.entryRestrictions = [],
               Face.attackCosts = [],
               Face.blockCosts = [],
+              Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
               Face.specialActions = []
@@ -7070,6 +7075,7 @@ servoToken =
               Face.entryRestrictions = [],
               Face.attackCosts = [],
               Face.blockCosts = [],
+              Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
               Face.specialActions = []
@@ -7267,6 +7273,7 @@ tokenCard name typeLine colors stats abilities =
               Face.entryRestrictions = [],
               Face.attackCosts = [],
               Face.blockCosts = [],
+              Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
               Face.specialActions = []
@@ -7436,6 +7443,7 @@ partnerWith name =
               Search.subject = Nothing,
               Search.slot = Nothing,
               Search.handSlot = Nothing,
+              Search.librarySlot = Nothing,
               Search.differentIn = Set.empty,
               Search.exactly = False,
               Search.andOr = False

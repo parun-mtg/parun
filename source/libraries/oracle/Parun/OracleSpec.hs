@@ -36,6 +36,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -129,6 +130,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.OwnedZone as OwnedZone
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
@@ -885,6 +887,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Choose one or both \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.")) (Oracle.render (chosen (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2)) [destroying CardType.Artifact, destroying CardType.Land]))
     Spec.assertEq s (Just (Text.pack "Choose three. You may choose the same mode more than once.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactlyWithRepeats 3) [destroying CardType.Land, drawing]))
     Spec.assertEq s (Just (Text.pack "Choose up to four. You may choose the same mode more than once.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseBetweenWithRepeats (ChooseBetween.MkChooseBetween 0 4)) [destroying CardType.Land, drawing]))
+    -- CR 700.2i: each mode headed by its pawprints (CR 107.18), not a bullet.
+    Spec.assertEq s (Just (Text.pack "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \8212 Draw a card.\n{P}{P} \8212 Destroy target land.")) (Oracle.render (chosen (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2]))) [drawing, destroying CardType.Land]))
     let remembering memory = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList [destroying CardType.Artifact, drawing]) (ModeSelection.ChooseExactly 1) memory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
     Spec.assertEq s (Just (Text.pack "Choose one that hasn't been chosen this turn \8212\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (remembering ModeMemory.ThisTurn))
     let three = [destroying CardType.Artifact, destroying CardType.Land, drawing]
@@ -993,7 +997,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
 
   -- CR 701.23a: a search of your library for one card, and where it goes.
   Spec.it s "render prints a search of your library" $ do
-    let search f destination = Effect.Search (Search.MkSearch (PlayerRef.Relative PlayerRelation.You) (PlayerRef.Relative PlayerRelation.You) (Set.singleton Zone.Library) False (Just (Quantity.Literal 1)) f Seq.empty False destination Map.empty Nothing Nothing Nothing Set.empty False False)
+    let search f destination = Effect.Search (Search.MkSearch (PlayerRef.Relative PlayerRelation.You) (PlayerRef.Relative PlayerRelation.You) (Set.singleton Zone.Library) False (Just (Quantity.Literal 1)) f Seq.empty False destination Map.empty Nothing Nothing Nothing Nothing Set.empty False False)
         searching f destination = Oracle.abilities (spell [clause [search f destination]] [])
     Spec.assertEq s [[Text.pack "Search your library for a card, put that card into your hand, then shuffle.", Text.pack "Search your library for a card, put it into your hand, then shuffle."]] (searching (Filter.And []) SearchDestination.Hand)
     Spec.assertEq s [[Text.pack "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.", Text.pack "Search your library for an artifact or enchantment card, reveal it, then shuffle and put the card on top.", Text.pack "Search your library for an artifact card or enchantment card, reveal it, then shuffle and put that card on top.", Text.pack "Search your library for an artifact card or enchantment card, reveal it, then shuffle and put the card on top.", Text.pack "Search your library for an artifact card or an enchantment card, reveal it, then shuffle and put that card on top.", Text.pack "Search your library for an artifact card or an enchantment card, reveal it, then shuffle and put the card on top."]] (searching (Filter.Or [Filter.HasCardType CardType.Artifact, Filter.HasCardType CardType.Enchantment]) SearchDestination.RevealThenTop)
@@ -1045,7 +1049,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- CR 509.1b: a creature that can't be blocked, by any creature, by
   -- creatures of a description, or except by them.
   Spec.it s "render prints a creature that can't be blocked" $ do
-    let unblockable f = CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.IsSource) f Nothing Nothing)
+    let unblockable f = CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.IsSource) f PairwiseFrame.Attacker Nothing Nothing)
         combat rs = withFace (\f -> f {Face.combatRestrictions = rs})
     Spec.assertEq s (Just (Text.pack "Spark can't be blocked.")) (Oracle.render (combat [unblockable (Filter.And [])]))
     Spec.assertEq s [[Text.pack "Spark can't be blocked by Walls."]] (Oracle.abilities (combat [unblockable (Filter.HasSubtype Subtype.Wall)]))
@@ -1056,7 +1060,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- objects are one sentence.
   Spec.it s "render reads a static ability and a can't be blocked of its objects as one" $ do
     let enchanted = Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HasAttached Filter.IsSource])
-        aura changes = withFace (\f -> (typed [CardType.Enchantment] [Subtype.Aura] f) {Face.enchant = [TargetSlot.required Pool.Creatures Nothing], Face.staticAbilities = [static enchanted changes], Face.combatRestrictions = [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching (Filter.HasAttached Filter.IsSource)) (Filter.Not (Filter.HasKeyword Keyword.Flying)) Nothing Nothing)]})
+        aura changes = withFace (\f -> (typed [CardType.Enchantment] [Subtype.Aura] f) {Face.enchant = [TargetSlot.required Pool.Creatures Nothing], Face.staticAbilities = [static enchanted changes], Face.combatRestrictions = [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching (Filter.HasAttached Filter.IsSource)) (Filter.Not (Filter.HasKeyword Keyword.Flying)) PairwiseFrame.Attacker Nothing Nothing)]})
     Spec.assertEq s (Just (Text.pack "Enchant creature\nEnchanted creature gets +1/+1 and can't be blocked except by creatures with flying.")) (Oracle.render (aura [pt 1 1]))
     Spec.assertEq s [[Text.pack "Enchant creature"], [Text.pack "Enchanted creature can't be blocked except by creatures with flying and has shroud."]] (Oracle.abilities (aura [Modification.GainKeyword Keyword.Shroud]))
 

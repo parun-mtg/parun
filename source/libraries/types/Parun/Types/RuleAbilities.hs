@@ -9,6 +9,7 @@ import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.CombatRestriction as CombatRestriction
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
@@ -18,17 +19,17 @@ import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 
 -- | CR 613.11: the ability families whose continuous effects "affect game rules
--- rather than objects" -- the fifteen lists Parun.Types.Face carries beside its
+-- rather than objects" -- the sixteen lists Parun.Types.Face carries beside its
 -- keywords and its static abilities, and which no layer of CR 613 touches.
 --
--- ONE bundle rather than fifteen fields on Parun.Types.ProjectedCharacteristics,
--- because the fifteen share a single posture down to the line: each is seeded
+-- ONE bundle rather than sixteen fields on Parun.Types.ProjectedCharacteristics,
+-- because the sixteen share a single posture down to the line: each is seeded
 -- from the printed face, rewritten by no layer, and read by exactly one engine
 -- module outside the layer fold. Grouping them makes CR 702.140e's union one
--- `<>` and CR 707.2a's copy one field, so a sixteenth family cannot be added
+-- `<>` and CR 707.2a's copy one field, so a seventeenth family cannot be added
 -- to the record and left out of either; see #3373.
 --
--- Face keeps the fifteen apart because a card's JSON names each one; nothing
+-- Face keeps the sixteen apart because a card's JSON names each one; nothing
 -- here needs that, since every reader asks for one field by name.
 data RuleAbilities = MkRuleAbilities
   { -- | CR 602.5: "its activated abilities can't be activated" (Arrest).
@@ -70,13 +71,16 @@ data RuleAbilities = MkRuleAbilities
     -- doesn't untap during its controller's untap step" (Tsabo's Web), and "you
     -- may choose not to untap this artifact during your untap step" (Amber
     -- Prison).
-    untapRestrictions :: [UntapRestriction.UntapRestriction]
+    untapRestrictions :: [UntapRestriction.UntapRestriction],
+    -- | CR 122.4: "can't have more than seven dream counters on it" (Rasputin
+    -- Dreamweaver).
+    counterLimits :: [CounterLimit.CounterLimit]
   }
   deriving (Eq, Ord, Show)
 
 -- | CR 702.140e: a merged permanent has all abilities of each card representing
--- it, which for these fifteen families is concatenation. Field by field rather
--- than a derived instance, so a sixteenth field cannot be added without
+-- it, which for these sixteen families is concatenation. Field by field rather
+-- than a derived instance, so a seventeenth field cannot be added without
 -- -Werror naming this site.
 instance Semigroup RuleAbilities where
   left <> right =
@@ -95,7 +99,8 @@ instance Semigroup RuleAbilities where
         entryRestrictions = entryRestrictions left <> entryRestrictions right,
         sacrificeRestrictions = sacrificeRestrictions left <> sacrificeRestrictions right,
         targetRestrictions = targetRestrictions left <> targetRestrictions right,
-        untapRestrictions = untapRestrictions left <> untapRestrictions right
+        untapRestrictions = untapRestrictions left <> untapRestrictions right,
+        counterLimits = counterLimits left <> counterLimits right
       }
 
 -- | An object with no card behind it (an ability on the stack) has none of
@@ -118,5 +123,6 @@ instance Monoid RuleAbilities where
         entryRestrictions = [],
         sacrificeRestrictions = [],
         targetRestrictions = [],
-        untapRestrictions = []
+        untapRestrictions = [],
+        counterLimits = []
       }

@@ -17,6 +17,7 @@ import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.Filter as Filter
@@ -63,7 +64,8 @@ testRuleAbilities =
       RuleAbilities.entryRestrictions = [EntryRestriction.MkEntryRestriction Affected.Attached (Set.singleton Zone.Graveyard)],
       RuleAbilities.sacrificeRestrictions = [SacrificeRestriction.MkSacrificeRestriction Affected.Attached],
       RuleAbilities.targetRestrictions = [TargetRestriction.MkTargetRestriction Affected.Attached StackObjectKind.Spell (Filter.And [])],
-      RuleAbilities.untapRestrictions = [UntapRestriction.MkUntapRestriction Affected.Attached UntapHold.Forbidden Nothing]
+      RuleAbilities.untapRestrictions = [UntapRestriction.MkUntapRestriction Affected.Attached UntapHold.Forbidden Nothing],
+      RuleAbilities.counterLimits = [CounterLimit.MkCounterLimit CounterKind.Age 7]
     }
 
 testRuleAbilitiesJson :: String
@@ -82,11 +84,12 @@ testRuleAbilitiesJson =
     <> "\"entryRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"origins\":[\"Graveyard\"]}],"
     <> "\"sacrificeRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"targetRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":\"Spell\"}],"
-    <> "\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}]}"
+    <> "\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
+    <> "\"counterLimits\":[{\"atMost\":7,\"kind\":{\"type\":\"Age\"}}]}"
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.RuleAbilities" $ do
-  Spec.it s "MkRuleAbilities, every one of the fifteen lists populated" $
+  Spec.it s "MkRuleAbilities, every one of the sixteen lists populated" $
     Common.assertCodec s RuleAbilities.codec testRuleAbilities testRuleAbilitiesJson
   Spec.it s "an empty bundle omits every key" $
     Common.assertCodec s RuleAbilities.codec mempty " {} "

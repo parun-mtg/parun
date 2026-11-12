@@ -5,6 +5,7 @@ import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 
 -- | CR 509.1b's PAIRWISE restriction: which attackers are restricted, which
 -- blockers are barred from them, and that rule's "unless" gate.
@@ -17,6 +18,8 @@ import qualified Parun.Types.Keyword as Keyword
 data CantBeBlockedBy = MkCantBeBlockedBy
   { affected :: Affected.Affected,
     blockers :: Filter.Filter Keyword.Keyword,
+    -- | CR 109.5: the object 'blockers' is read from. Attacker unless written.
+    frame :: PairwiseFrame.PairwiseFrame,
     -- | Nothing is the unconditional restriction. Elided rather than written
     -- null.
     unless :: Maybe Condition.Condition,

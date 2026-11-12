@@ -132,6 +132,7 @@ import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Optionality as Optionality
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
@@ -544,7 +545,7 @@ combatRestriction affected n = case (Node.tag n, Node.args n) of
   where
     unless = AffectedUnless.MkAffectedUnless {AffectedUnless.affected = affected, AffectedUnless.unless = Nothing, AffectedUnless.name = Nothing, AffectedUnless.amount = Nothing}
     blockers f = conjoined (filter (/= Filter.HasCardType CardType.Creature) (conjuncts f))
-    unblockable f = CombatRestriction.CantBeBlockedBy CantBeBlockedBy.MkCantBeBlockedBy {CantBeBlockedBy.affected = affected, CantBeBlockedBy.blockers = f, CantBeBlockedBy.unless = Nothing, CantBeBlockedBy.name = Nothing}
+    unblockable f = CombatRestriction.CantBeBlockedBy CantBeBlockedBy.MkCantBeBlockedBy {CantBeBlockedBy.affected = affected, CantBeBlockedBy.blockers = f, CantBeBlockedBy.frame = PairwiseFrame.Attacker, CantBeBlockedBy.unless = Nothing, CantBeBlockedBy.name = Nothing}
 
 -- | A rule players follow: spells of a description cost more mana to cast
 -- (CR 601.2f).
@@ -1274,7 +1275,7 @@ effects context n = case Node.tag n of
       barred <- traverse (maybe (Node.untranslated n) pure . unblockable) rs
       pure [Effect.ForbidBeingBlocked ForbidBeingBlocked.MkForbidBeingBlocked {ForbidBeingBlocked.duration = duration, ForbidBeingBlocked.affected = Filter.IsBound bound, ForbidBeingBlocked.blockers = blockers} | blockers <- barred]
     unblockable r = case r of
-      CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ blockers Nothing Nothing) -> Just blockers
+      CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ blockers PairwiseFrame.Attacker Nothing Nothing) -> Just blockers
       _ -> Nothing
     modify ref changes until' = do
       duration <- Node.node until' >>= expiration
@@ -1384,6 +1385,7 @@ searchLibrary who steps = case steps of
               Search.subject = Nothing,
               Search.slot = Nothing,
               Search.handSlot = Nothing,
+              Search.librarySlot = Nothing,
               Search.differentIn = Set.empty,
               Search.exactly = False,
               Search.andOr = False

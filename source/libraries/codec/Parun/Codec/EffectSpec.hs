@@ -377,6 +377,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               Search.subject = Nothing,
               Search.slot = Nothing,
               Search.handSlot = Nothing,
+              Search.librarySlot = Nothing,
               Search.differentIn = Set.empty,
               Search.exactly = False,
               Search.andOr = False

@@ -80,6 +80,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -221,6 +222,7 @@ theRingEmblem temptations =
               Face.entryRestrictions = [],
               Face.attackCosts = [],
               Face.blockCosts = [],
+              Face.counterLimits = [],
               Face.mulliganActions = [],
               Face.openingHandActions = [],
               Face.specialActions = []
@@ -482,6 +484,7 @@ theRingCantBeBlockedByGreaterPower =
     CantBeBlockedBy.MkCantBeBlockedBy
       { CantBeBlockedBy.affected = Affected.Matching yourRingBearer,
         CantBeBlockedBy.blockers = Filter.Measures (Measures.MkMeasures Measure.Power Comparison.GreaterThan (Operand.OfSource Measure.Power)),
+        CantBeBlockedBy.frame = PairwiseFrame.Attacker,
         CantBeBlockedBy.unless = Nothing,
         -- CR 116.2d names an ability a face's own text grants a permission on, and
         -- rule 701.54c's sentence is the rulebook's rather than a card's, so there

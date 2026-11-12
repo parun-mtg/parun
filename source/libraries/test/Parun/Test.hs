@@ -175,6 +175,7 @@ import qualified Parun.Codec.ChooseBetweenSpec
 import qualified Parun.Codec.ChooseGroupSpec
 import qualified Parun.Codec.ChooseInsteadSpec
 import qualified Parun.Codec.ChooseNumberSpec
+import qualified Parun.Codec.ChoosePawprintsSpec
 import qualified Parun.Codec.ChoosePermanentsSpec
 import qualified Parun.Codec.ChoosePlayerAtRandomSpec
 import qualified Parun.Codec.ChoosePlayerSpec
@@ -253,6 +254,7 @@ import qualified Parun.Codec.CounterDestinationSpec
 import qualified Parun.Codec.CounterGroupingSpec
 import qualified Parun.Codec.CounterHolderSpec
 import qualified Parun.Codec.CounterKindSpec
+import qualified Parun.Codec.CounterLimitSpec
 import qualified Parun.Codec.CounterLinkSpec
 import qualified Parun.Codec.CounterLinkedSpec
 import qualified Parun.Codec.CounterLossRSpec
@@ -582,6 +584,7 @@ import qualified Parun.Codec.OutsidePickSpec
 import qualified Parun.Codec.OwnedZoneSpec
 import qualified Parun.Codec.PaidExpirySpec
 import qualified Parun.Codec.PairingSpec
+import qualified Parun.Codec.PairwiseFrameSpec
 import qualified Parun.Codec.ParityOperandSpec
 import qualified Parun.Codec.ParitySpec
 import qualified Parun.Codec.PartnerTextSpec
@@ -1219,6 +1222,7 @@ spec s registry corpus = do
   Parun.Codec.ChooseBetweenSpec.spec s
   Parun.Codec.ChooseInsteadSpec.spec s
   Parun.Codec.ChooseNumberSpec.spec s
+  Parun.Codec.ChoosePawprintsSpec.spec s
   Parun.Codec.ChooseGroupSpec.spec s
   Parun.Codec.ChoosePermanentsSpec.spec s
   Parun.Codec.ChoosePlayerAtRandomSpec.spec s
@@ -1307,6 +1311,7 @@ spec s registry corpus = do
   Parun.Codec.CounterTriggerSpec.spec s
   Parun.Codec.CountersPlacedSpec.spec s
   Parun.Codec.CounterProhibitionSpec.spec s
+  Parun.Codec.CounterLimitSpec.spec s
   Parun.Codec.CounterRestrictionSpec.spec s
   Parun.Codec.CounterRSpec.spec s
   Parun.Codec.CountersAreSpec.spec s
@@ -1629,6 +1634,7 @@ spec s registry corpus = do
   Parun.Codec.PaidExpirySpec.spec s
   Parun.Codec.UntilPaidSpec.spec s
   Parun.Codec.PairingSpec.spec s
+  Parun.Codec.PairwiseFrameSpec.spec s
   Parun.Codec.PartnerTextSpec.spec s
   Parun.Codec.PastActivationSpec.spec s
   Parun.Codec.PayBranchSpec.spec s

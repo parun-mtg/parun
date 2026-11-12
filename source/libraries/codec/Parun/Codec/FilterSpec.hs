@@ -34,6 +34,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
+import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
@@ -776,6 +777,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.IsPreparedSpell
       " {\"type\":\"IsPreparedSpell\"} "
+  -- Edgewall Innkeeper's "has an Adventure".
+  Spec.it s "HasInsetFrame" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasInsetFrame Layout.Adventure)
+      " {\"type\":\"HasInsetFrame\",\"value\":{\"type\":\"Adventure\"}} "
   Spec.it s "HasDesignation Renowned" $
     Common.assertCodec
       s

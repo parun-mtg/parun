@@ -40,6 +40,7 @@ import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.CostReduction as CostReduction
+import qualified Parun.Codec.CounterLimit as CounterLimit
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
 import qualified Parun.Codec.Counterability as Counterability
 import qualified Parun.Codec.DeckLimit as DeckLimit
@@ -165,6 +166,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   entryRestrictions <- Fields.defaulted "entryRestrictions" [] (Common.list EntryRestriction.codec) Face.entryRestrictions
   attackCosts <- Fields.defaulted "attackCosts" [] (Common.list AttackCost.codec) Face.attackCosts
   blockCosts <- Fields.defaulted "blockCosts" [] (Common.list BlockCost.codec) Face.blockCosts
+  counterLimits <- Fields.defaulted "counterLimits" [] (Common.list CounterLimit.codec) Face.counterLimits
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) Face.additionalCosts
   -- CR 118.8 / 601.2b: an additional cost whose payment offers the caster a
   -- choice, each option a whole Cost because an option can be mana
@@ -254,6 +256,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.entryRestrictions = entryRestrictions,
         Face.attackCosts = attackCosts,
         Face.blockCosts = blockCosts,
+        Face.counterLimits = counterLimits,
         Face.additionalCosts = additionalCosts,
         Face.additionalCostChoices = additionalCostChoices,
         Face.modeCosts = modeCosts,

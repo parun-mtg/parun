@@ -1,0 +1,45 @@
+{
+  "description": "CR 205.1b / 205.3j Synthetic Spark Banner makes alice's planeswalkers the planeswalker type chosen as it entered in addition to their own, and Deification's hexproof follows the gained type",
+  "note": "Deification names Gideon, so alice's Gideon has hexproof and her Jace does not. The Banner then names Gideon too: her Jace is a Jace Gideon and gains hexproof, her Gideon stays a Gideon, and bob's Jace, not hers, stays a Jace.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Plains", "label": "p1", "ready": true },
+          { "card": "Plains", "label": "p2", "ready": true },
+          { "card": "Plains", "label": "p3", "ready": true },
+          { "card": "Plains", "label": "p4", "ready": true },
+          { "card": "Gideon Jura", "label": "gideon", "ready": true, "counters": [{ "key": { "type": "Loyalty" }, "value": 6 }] },
+          { "card": "Jace Beleren", "label": "jace", "ready": true, "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] }
+        ],
+        "hand": [
+          { "card": "Deification", "label": "deification" },
+          { "card": "Synthetic Spark Banner", "label": "banner" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Jace Beleren", "label": "bobjace", "ready": true, "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$deification", "mana": ["$p1", "$p2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePlaneswalkerType", "with": "Gideon" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$gideon", "keyword": { "type": "Hexproof" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$jace", "keyword": { "type": "Hexproof" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$banner", "mana": ["$p3", "$p4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePlaneswalkerType", "with": "Gideon" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$jace", "subtypes": ["Jace", "Gideon"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$gideon", "subtypes": ["Gideon"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$bobjace", "subtypes": ["Jace"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$jace", "keyword": { "type": "Hexproof" }, "count": 1 } } }
+  ]
+}

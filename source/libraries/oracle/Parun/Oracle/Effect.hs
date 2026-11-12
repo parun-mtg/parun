@@ -26,6 +26,7 @@ import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinReading as CoinReading
@@ -158,14 +159,16 @@ modal context m = case (Foldable.toList (Modal.modes m), Modal.selection m) of
     | otherwise -> do
         heading <- choose (Modal.memory m) selection (length modes)
         bodies <- traverse (mode context {Target.breaks = [Text.pack " "]}) modes
-        [heading <> foldMap (Text.pack "\n\8226 " <>) bodies]
+        [heading <> mconcat (zipWith (\b body -> Text.pack "\n" <> b <> body) (bullets selection) bodies)]
   _ -> []
 
 -- | The instruction to choose modes (CR 700.2), given how many there are:
 -- "Choose one \8212", "Choose one or both \8212", "Choose three. You may
 -- choose the same mode more than once." (CR 700.2d), "Choose up to four. You
--- may choose the same mode more than once.", "Choose one that hasn't
--- been chosen \8212", "Choose one that hasn't been chosen this turn \8212".
+-- may choose the same mode more than once.", "Choose up to five {P} worth of
+-- modes. You may choose the same mode more than once." (CR 700.2i), "Choose
+-- one that hasn't been chosen \8212", "Choose one that hasn't been chosen this
+-- turn \8212".
 choose :: ModeMemory.ModeMemory -> ModeSelection.ModeSelection -> Int -> [Text.Text]
 choose memory selection count = case (memory, selection) of
   (ModeMemory.ObjectLifetime, ModeSelection.ChooseExactly n) -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack " that hasn't been chosen \8212"]
@@ -181,7 +184,15 @@ choose memory selection count = case (memory, selection) of
       | ChooseBetween.least b == 0 -> [Text.pack "Choose up to " <> Prose.cardinal (toInteger (ChooseBetween.most b)) <> Text.pack ". You may choose the same mode more than once."]
     ModeSelection.ChooseUpTo (Quantity.InSlot slot)
       | slot == Target.xSlot -> [Text.pack "Choose up to X \8212"]
+    ModeSelection.ChoosePawprintsWithRepeats cp -> [Text.pack "Choose up to " <> Prose.cardinal (toInteger (ChoosePawprints.most cp)) <> Text.pack " {P} worth of modes. You may choose the same mode more than once."]
     _ -> []
+
+-- | What precedes each mode, in printed order: a bullet, or under CR 700.2i
+-- the mode's pawprints (CR 107.18).
+bullets :: ModeSelection.ModeSelection -> [Text.Text]
+bullets selection = case selection of
+  ModeSelection.ChoosePawprintsWithRepeats cp -> fmap (\n -> Text.concat (List.genericReplicate n (Text.pack "{P}")) <> Text.pack " \8212 ") (Foldable.toList (ChoosePawprints.pawprints cp))
+  _ -> repeat (Text.pack "\8226 ")
 
 -- | The symbols a mode adds, when adding mana is all it does and it names no
 -- target.
@@ -1099,6 +1110,7 @@ searched context s
         && Maybe.isNothing (Search.subject s)
         && Maybe.isNothing (Search.slot s)
         && Maybe.isNothing (Search.handSlot s)
+        && Maybe.isNothing (Search.librarySlot s)
         && Set.null (Search.differentIn s)
         && not (Search.exactly s)
         && not (Search.andOr s)

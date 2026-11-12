@@ -28,6 +28,7 @@ import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -60,7 +61,7 @@ spec s = Spec.describe s "Parun.Codec.CombatRestriction" $ do
     Common.assertCodec
       s
       CombatRestriction.codec
-      (CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy Affected.Attached (Filter.Measures (Measures.MkMeasures Measure.Power Comparison.GreaterThan (Operand.OfSource Measure.Power))) Nothing Nothing))
+      (CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy Affected.Attached (Filter.Measures (Measures.MkMeasures Measure.Power Comparison.GreaterThan (Operand.OfSource Measure.Power))) PairwiseFrame.Attacker Nothing Nothing))
       " {\"type\":\"CantBeBlockedBy\",\"value\":{\"affected\":{\"type\":\"Attached\"},\"blockers\":{\"type\":\"Measures\",\"value\":{\"measure\":\"Power\",\"comparison\":\"GreaterThan\",\"operand\":{\"type\":\"OfSource\",\"value\":\"Power\"}}}}} "
   -- Its blocker-side mirror: "attackers" beside "affected".
   Spec.it s "CantBlockCreatures carries its Affected and its attackers" $

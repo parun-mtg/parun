@@ -73,22 +73,6 @@
                     }
                   },
                   {
-                    "type": "BindAmount",
-                    "value": {
-                      "quantity": {
-                        "type": "AgainstSlot",
-                        "value": {
-                          "quantity": {
-                            "type": "Measure",
-                            "value": "Toughness"
-                          },
-                          "slot": "target"
-                        }
-                      },
-                      "slot": "toughness"
-                    }
-                  },
-                  {
                     "type": "DealDamage",
                     "value": {
                       "parts": [
@@ -136,8 +120,14 @@
                               "value": "loyalty"
                             },
                             {
-                              "type": "InSlot",
-                              "value": "toughness"
+                              "type": "AgainstSlot",
+                              "value": {
+                                "quantity": {
+                                  "type": "Measure",
+                                  "value": "Toughness"
+                                },
+                                "slot": "target"
+                              }
                             }
                           ],
                           "quantity": {

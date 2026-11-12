@@ -58,6 +58,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -69,6 +70,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -94,8 +96,10 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -141,7 +145,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
           let members = if List.elem zone [Zone.Graveyard, Zone.Hand, Zone.Exile] then Game.cardsIn else Game.zoneMembers
               ids = concatMap (\pid -> members zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
-          aggregate quantityOf aggregation kept
+          pure (aggregate quantityOf aggregation kept)
         -- CR 608.2i: the event log. Views of the object that MOVED come from each
         -- event's stored snapshot (CR 608.2h last-known information), never from a
         -- live object -- a token has no printed card at all (CR 111.3) and an
@@ -172,7 +176,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
                 EventShape.AttackerDeclared -> []
               views = Maybe.mapMaybe (snapshotView viewOf gs shape) (earlier <> logged)
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
-           in aggregate quantityOf aggregation kept
+           in pure (aggregate quantityOf aggregation kept)
         -- CR 102.1: the players themselves. Candidates come from the same
         -- playersFor the zone arm indexes by, so CR 800.4a's departed seat is not
         -- one -- except where the per-member quantity tallies what players did:
@@ -211,7 +215,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
           -- that (#1577). The target road, which Parun.DamageSpec's Needle Drop case
           -- covers, is what pays for the builder.
           let kept = fmap ((,) Nothing) (Maybe.mapMaybe (\pid -> keep (bakePerspective viewOf context gs pid predicate) context (Just (playerView gs pid))) pids)
-          aggregate quantityOf aggregation kept
+          pure (aggregate quantityOf aggregation kept)
         -- CR 400.7j: the objects one of the surrounding announcement's slots names,
         -- wherever they wound up. The one scope whose candidates come from the
         -- resolution's bindings rather than from the board, which is what lets it
@@ -241,13 +245,13 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
                 BoundReading.AsBound -> bound
                 BoundReading.BeforeMove -> fmap (\oid -> Maybe.fromMaybe oid (departedAs gs oid)) bound
               kept = Maybe.mapMaybe (\oid -> if boundMember gs aggregation predicate oid then fmap ((,) (Just oid)) (keep predicate context (viewOf oid)) else Nothing) ids
-           in aggregate quantityOf aggregation kept
+           in pure (aggregate quantityOf aggregation kept)
         -- CR 500.12: the record of the board before this turn's untap step. Its
         -- members are objectless, as InHistory's are: some have since left.
         Scope.AsTurnBegan ->
           let views = Map.elems (Map.mapWithKey (\oid record -> lastKnownView viewOf oid gs record) (Maybe.fromMaybe Map.empty (TurnRegisters.permanentsAsTurnBegan (GameState.turn gs))))
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
-           in aggregate quantityOf aggregation kept
+           in pure (aggregate quantityOf aggregation kept)
         -- CR 401.2 / 404.1: each named library or graveyard, narrowed by
         -- POSITION before the Filter is asked -- the zone arm above answers "any
         -- matching card" instead. Order-insensitive like every Aggregation, so no
@@ -258,7 +262,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
           pids <- playersFor viewOf context gs ref
           let ids = foldMap (\pid -> Game.atPosition position (Filter.source context) zone pid gs) pids
               kept = Maybe.mapMaybe (\oid -> fmap ((,) (Just oid)) (keep predicate context (viewOf oid))) ids
-          aggregate quantityOf aggregation kept
+          pure (aggregate quantityOf aggregation kept)
 
 -- CR 400.7j / 701.9c: is this bound object one the fold asks the predicate of?
 -- One a later part of the effect can find, or a discard the predicate asks
@@ -545,22 +549,22 @@ keep predicate context mv = case mv of
 -- snapshot of a past event rather than of anything on the battlefield now --
 -- so Greatest and Total hand the reader both and let it answer from whichever
 -- it can.
-aggregate :: QuantityOf quantity -> Aggregation.Aggregation quantity -> [(Maybe ObjectId, Filter.View)] -> Maybe Integer
+aggregate :: QuantityOf quantity -> Aggregation.Aggregation quantity -> [(Maybe ObjectId, Filter.View)] -> Integer
 aggregate quantityOf aggregation members = case aggregation of
-  Aggregation.Members -> Just (toInteger (length members))
-  Aggregation.Distinct DistinctOf.CardTypes -> Just (toInteger (Set.size (Set.unions (fmap (Filter.cardTypes . snd) members))))
+  Aggregation.Members -> toInteger (length members)
+  Aggregation.Distinct DistinctOf.CardTypes -> toInteger (Set.size (Set.unions (fmap (Filter.cardTypes . snd) members)))
   -- CR 105.2c: a colorless member adds nothing.
-  Aggregation.Distinct DistinctOf.Colors -> Just (toInteger (Set.size (Set.unions (fmap (Filter.colors . snd) members))))
+  Aggregation.Distinct DistinctOf.Colors -> toInteger (Set.size (Set.unions (fmap (Filter.colors . snd) members)))
   -- CR 305.6: a land's other subtypes (Gate, Desert, Urza's) add nothing, and a
   -- land with two basic land types (Tundra) adds both.
-  Aggregation.Distinct DistinctOf.BasicLandTypes -> Just (toInteger (Set.size (Set.filter Subtype.isBasicLandType (Set.unions (fmap (Filter.subtypes . snd) members)))))
+  Aggregation.Distinct DistinctOf.BasicLandTypes -> toInteger (Set.size (Set.filter Subtype.isBasicLandType (Set.unions (fmap (Filter.subtypes . snd) members))))
   -- CR 202.3a: a member with no mana cost still has mana value 0.
-  Aggregation.Distinct DistinctOf.ManaValues -> Just (toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.manaValue . snd) members))))
+  Aggregation.Distinct DistinctOf.ManaValues -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.manaValue . snd) members)))
   -- CR 202.1b: a member with no mana cost adds nothing; {0} is a cost.
-  Aggregation.Distinct DistinctOf.ManaCosts -> Just (toInteger (Set.size (Set.fromList (Maybe.mapMaybe (fmap manaCostKey . Filter.manaCost . snd) members))))
-  Aggregation.Distinct DistinctOf.Powers -> Just (toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.power . snd) members))))
+  Aggregation.Distinct DistinctOf.ManaCosts -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (fmap manaCostKey . Filter.manaCost . snd) members)))
+  Aggregation.Distinct DistinctOf.Powers -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.power . snd) members)))
   -- CR 205.3j: a member's creature or other subtypes add nothing.
-  Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> Just (toInteger (Set.size (Set.filter Subtype.isPlaneswalkerType (Set.unions (fmap (Filter.subtypes . snd) members)))))
+  Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> toInteger (Set.size (Set.filter Subtype.isPlaneswalkerType (Set.unions (fmap (Filter.subtypes . snd) members))))
   -- The size of the largest group of members holding one value in common --
   -- not "pairwise sharing", which is not transitive (a Human Cleric, a Human
   -- Rogue and an Elf Rogue are no three sharing a type). A member joins a group
@@ -569,7 +573,7 @@ aggregate quantityOf aggregation members = case aggregation of
   -- type's through its projected subtypes (CR 702.73a). A member with no value
   -- (a colourless one, CR 105.2c) joins none, nor does a land type or other
   -- non-creature subtype (CR 205.3m). 0 over an empty set.
-  Aggregation.MostSharing trait -> Just $ case trait of
+  Aggregation.MostSharing trait -> case trait of
     Trait.CreatureType -> largestGroup (Set.filter Subtype.isCreatureType . Filter.subtypes)
     Trait.CardType among -> largestGroup (Filter.cardTypesAmong among)
     Trait.Color -> largestGroup Filter.colors
@@ -593,29 +597,22 @@ aggregate quantityOf aggregation members = case aggregation of
              in if Set.null (Set.intersection these used)
                   then max without (1 + best (Set.union these used) others)
                   else without
-     in Just (toInteger (best Set.empty multiple))
-  -- A member whose quantity cannot be determined makes the whole maximum Nothing
-  -- rather than being dropped, and an EMPTY matched set answers Nothing.
-  --
-  -- Not implemented: CR 107.2's 0 for both (Arni Brokenbrow's and In Search of
-  -- Greatness' rulings of 2021-02-05) (#6219). CR 208.2a is applied where it is
-  -- scoped, at the characteristic-defining ability that consumes this count.
-  -- Parun.CountSpec's Rootha, Mastering the Moment group is what proves the
-  -- objectless member really is read off its snapshot.
-  Aggregation.Greatest quantity -> do
-    values <- traverse (\(identity, view) -> quantityOf identity view quantity) members
-    case values of
-      [] -> Nothing
-      value : rest -> Just (Foldable.foldl' max value rest)
-  -- Undeterminable in the same direction as Greatest, and for the same reason:
-  -- a member whose quantity has no value makes the whole sum a sum over a set
-  -- the card never named. The EMPTY set differs -- 0, not Nothing -- because a
-  -- sum has an identity where a maximum has none, and "the total mana value of
-  -- cards you own in exile" with an empty exile is a number the card can use.
-  Aggregation.Total quantity -> do
-    values <- traverse (\(identity, view) -> quantityOf identity view quantity) members
-    pure (sum values)
+     in toInteger (best Set.empty multiple)
+  -- CR 107.2: a member whose quantity cannot be determined counts 0, and so does
+  -- the maximum over an EMPTY matched set (Arni Brokenbrow's and In Search of
+  -- Greatness' rulings of 2021-02-05). A real negative maximum stays negative.
+  -- data/scenarios/activate/arni-brokenbrow-boasts-alone-to-base-power-one.json
+  -- is the proof of the empty set. Parun.CountSpec's Rootha, Mastering the
+  -- Moment group is what proves the objectless member really is read off its
+  -- snapshot.
+  Aggregation.Greatest quantity -> case memberValues quantity of
+    [] -> 0
+    value : rest -> Foldable.foldl' max value rest
+  -- CR 107.2: a member whose quantity cannot be determined adds 0; the empty sum
+  -- is 0 too.
+  Aggregation.Total quantity -> sum (memberValues quantity)
   where
+    memberValues quantity = fmap (\(identity, view) -> Maybe.fromMaybe 0 (quantityOf identity view quantity)) members
     largestGroup :: (Ord a) => (Filter.View -> Set.Set a) -> Integer
     largestGroup valuesOf = Foldable.foldl' max 0 (Map.fromListWith (+) [(value, 1 :: Integer) | (_, view) <- members, value <- Set.toList (valuesOf view)])
 
@@ -1333,6 +1330,22 @@ abilityMeets criteria stamp named kind loyalty =
     && maybe True (== kind) (ActivationCriteria.whichKind criteria)
     && maybe True (== loyalty) (ActivationCriteria.whichLoyalty criteria)
 
+-- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame these copiable
+-- values carry (CR 716.2b / 721.2b / 723.2b), Filter.View's `insetFrames`.
+-- PC.alternativeSpell holds an Adventure or an Omen half, told apart by its spell
+-- type (CR 205.3k), which the glossary's "Adventurer Card" and "Omen Card" make
+-- the defining trait.
+insetFramesOf :: PC.ProjectedCharacteristics -> Set.Set Layout.Layout
+insetFramesOf pc =
+  Set.fromList
+    ( [ layout
+      | half <- Maybe.maybeToList (PC.alternativeSpell pc),
+        (spellType, layout) <- [(Subtype.Type.Adventure, Layout.Adventure), (Subtype.Type.Omen, Layout.Omen)],
+        Set.member spellType (TypeLine.subtypes (Face.typeLine half))
+      ]
+        <> [Layout.Preparation | Maybe.isJust (PC.prepare pc)]
+    )
+
 -- The Filter.View a recorded snapshot yields, shared by every arm of
 -- snapshotView above so that two shapes of event cannot disagree about what a
 -- snapshot says. The `controller`, the OWNER, the tokenhood flag and the counters
@@ -1550,6 +1563,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.prototyped = PC.prototyped snapshot,
       -- CR 723.3c's record is a field of an OBJECT -- `tributePaid` above.
       Filter.preparedSpell = False,
+      -- CR 716.2b / 721.2b / 723.2b: copiable values, which the snapshot carries.
+      Filter.insetFrames = insetFramesOf snapshot,
       -- CR 400.7d's mana record is a field of an OBJECT, which a
       -- ProjectedCharacteristics does not carry -- `designations` above, same
       -- sentence -- so a past event reports none.

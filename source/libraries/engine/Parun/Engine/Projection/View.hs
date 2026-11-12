@@ -311,6 +311,9 @@ viewOfCardLapsed lapsed face =
           Filter.prototyped = False,
           -- CR 723.3c casts a SPELL, and this builder describes a printed face.
           Filter.preparedSpell = False,
+          -- A Face is one set of characteristics, so the card's inset frame is
+          -- not in it; no printed card asks for one outside the game.
+          Filter.insetFrames = Set.empty,
           -- CR 601.2h pays the cost of a SPELL, and this builder describes a
           -- printed face.
           Filter.manaSpentTagColors = Map.empty,
@@ -560,7 +563,13 @@ viewOfCharacteristics peers oid pc controller counters gs =
               (List.any (\defending -> controllerOf pw gs == Just defending) (Defender.defendingPlayers gs))
               (\seat -> controllerOf pw gs == Just seat)
               (Map.lookup oid (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs)))),
-            any (Set.member CardType.Planeswalker . Filter.cardTypes) (peers pw) ->
+            any (Set.member CardType.Planeswalker . Filter.cardTypes) (peers pw),
+            -- CR 506.4e's second sentence, Parun.Engine.Combat.noteAttackingNothing's
+            -- walkerUnprotected asked live. A regression fence: no test reads this
+            -- field mid-resolution on that board.
+            Map.notMember oid (Combat.attackedControlledBy (TurnRegisters.combat (GameState.turn gs)))
+              || any (Set.member CardType.Battle . Filter.cardTypes) (peers pw)
+              || controllerOf pw gs == Battle.protectorOf pw gs ->
               controllerOf pw gs
         -- CR 506.4e: a battle announcement whose permanent stopped being a
         -- battle but is still a planeswalker its protector controls, the second
@@ -632,13 +641,12 @@ viewOfCharacteristics peers oid pc controller counters gs =
               Battle.protectorOf battle gs
         -- CR 506.4e: a planeswalker announcement whose permanent is a battle
         -- too, or stopped being a planeswalker but is still a battle, is a battle
-        -- being attacked. Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat
-        -- is the board.
+        -- being attacked, whether or not its protector defends.
+        -- Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat is the board.
         Just target@(AttackTarget.OfPlaneswalker battle)
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
-            List.any (\defending -> Battle.protectorOf battle gs == Just defending) (Defender.defendingPlayers gs),
             any (Set.member CardType.Battle . Filter.cardTypes) (peers battle) ->
               Battle.protectorOf battle gs
         _ -> Nothing,
@@ -851,6 +859,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.prototyped = PC.prototyped pc || any Object.prototyped (Game.lookupObject oid gs),
       -- CR 723.3c / 723.3d: read live off the object, `castUsing`'s posture.
       Filter.preparedSpell = any Object.castPrepared (Game.lookupObject oid gs),
+      -- CR 716.2b / 721.2b / 723.2b: copiable values, which `pc` carries.
+      Filter.insetFrames = Count.insetFramesOf pc,
       -- CR 400.7d / CR 107.4h: read live off the object like `castUsing`, and
       -- keyed by tag with CR 106.1a's colours beside it, which is the whole of what
       -- the vocabulary asks (see the field's own comment in Parun.Engine.Filter).
@@ -1066,7 +1076,7 @@ withoutExceptedAbility pc exception = case exception of
   CopyException.NoManaCost -> pc
   CopyException.DontCopyColors -> pc
 
--- withoutExceptedAbility's subtraction over each of the fifteen lists.
+-- withoutExceptedAbility's subtraction over each of the sixteen lists.
 withoutRuleAbilities :: RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities
 withoutRuleAbilities gone have =
   let less :: (Eq a) => (RuleAbilities.RuleAbilities -> [a]) -> [a]
@@ -1086,7 +1096,8 @@ withoutRuleAbilities gone have =
           RuleAbilities.entryRestrictions = less RuleAbilities.entryRestrictions,
           RuleAbilities.sacrificeRestrictions = less RuleAbilities.sacrificeRestrictions,
           RuleAbilities.targetRestrictions = less RuleAbilities.targetRestrictions,
-          RuleAbilities.untapRestrictions = less RuleAbilities.untapRestrictions
+          RuleAbilities.untapRestrictions = less RuleAbilities.untapRestrictions,
+          RuleAbilities.counterLimits = less RuleAbilities.counterLimits
         }
 
 -- The list without its last element equal to `x`, unchanged when none is.
@@ -1703,12 +1714,12 @@ copiableSpecialActionsOf carrier gs =
         -- The printed read reaches a copied Room too, for staticAbilitiesOf's reason.
         Nothing -> foldMap Face.specialActions (Game.faceOf oid gs)
 
--- CR 613.11: the fifteen rule-affecting ability families this object's copiable
+-- CR 613.11: the sixteen rule-affecting ability families this object's copiable
 -- rules text gives it -- its copy snapshot's when it has one, its printed face's
 -- otherwise. copiableSpecialActionsOf above in every respect, and split out for
 -- the same two structural reasons.
 --
--- THE reader for all fifteen gatherer modules (Parun.Engine.CombatRestriction and
+-- THE reader for all sixteen gatherer modules (Parun.Engine.CombatRestriction and
 -- its fourteen siblings), through Parun.Engine.Projection.ruleAbilitiesOf, which
 -- is what makes the two rules it settles settle once:
 -- CR 707.2a, so a permanent that became a copy of Silent Arbiter limits attackers
@@ -1733,7 +1744,7 @@ copiableRuleAbilitiesOf carrier gs =
         -- The printed read reaches a copied Room too, for staticAbilitiesOf's reason.
         Nothing -> foldMap ruleAbilitiesOfFace (Game.faceOf oid gs)
 
--- The fifteen lists a printed face declares. Its own function so that the seed
+-- The sixteen lists a printed face declares. Its own function so that the seed
 -- above and copiableRuleAbilitiesOf's fallback cannot drift on what a face
 -- contributes.
 ruleAbilitiesOfFace :: Face.Face Card.Type.Card -> RuleAbilities.RuleAbilities
@@ -1753,7 +1764,8 @@ ruleAbilitiesOfFace face =
       RuleAbilities.entryRestrictions = Face.entryRestrictions face,
       RuleAbilities.sacrificeRestrictions = Face.sacrificeRestrictions face,
       RuleAbilities.targetRestrictions = Face.targetRestrictions face,
-      RuleAbilities.untapRestrictions = Face.untapRestrictions face
+      RuleAbilities.untapRestrictions = Face.untapRestrictions face,
+      RuleAbilities.counterLimits = Face.counterLimits face
     }
 
 -- CR 208.2 / 604.3: the card's characteristic-defining P/T, with the printed star
@@ -1816,7 +1828,7 @@ noCharacteristics =
       PC.delayedAbilities = Map.empty,
       PC.enchant = [],
       PC.castingPermissions = [],
-      -- CR 613.11: no characteristics, so none of the fifteen families either.
+      -- CR 613.11: no characteristics, so none of the sixteen families either.
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
       PC.hasFullText = False,
@@ -1997,7 +2009,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 601.3: the printed permissions, in the seed for enchant's
               -- reason, so a granted one is not copiable.
               PC.castingPermissions = Face.castingPermissions face,
-              -- CR 613.11: the fifteen families CR 613.11 applies after the layer
+              -- CR 613.11: the sixteen families CR 613.11 applies after the layer
               -- system, off `face` for enchant's reason -- and copiable for
               -- enchant's reason too, which is what carries them to a copy and,
               -- through withMergedAbilities below, to a merged permanent's other
@@ -2187,7 +2199,7 @@ withMergedAbilities donor base =
       PC.delayedAbilities = Map.union (PC.delayedAbilities base) (PC.delayedAbilities donor),
       PC.enchant = PC.enchant base <> PC.enchant donor,
       PC.castingPermissions = PC.castingPermissions base <> PC.castingPermissions donor,
-      -- CR 613.11's fifteen families, whose Semigroup is the same concatenation
+      -- CR 613.11's sixteen families, whose Semigroup is the same concatenation
       -- the eight fields above are written out with; Parun.Types.RuleAbilities
       -- carries it so a new family cannot be added and left out here.
       PC.ruleAbilities = PC.ruleAbilities base <> PC.ruleAbilities donor,

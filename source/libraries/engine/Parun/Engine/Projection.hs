@@ -1873,15 +1873,17 @@ referenceQueries :: GameState -> Set (Filter.Type.Filter Keyword)
 referenceQueries gs = Set.fromList (Maybe.mapMaybe (referenceQuery . gModification) (gather gs))
 
 -- CR 613.1d: a ChosenSubtype with its source's choice written in, as the
--- family says.
+-- family says. A planeswalker type's add (CR 205.1b, 205.3j) is AddSubtype's.
 --
--- A chosen planeswalker type applied as a type change is not implemented
--- (#7008): it answers Nothing, and the modification changes nothing.
+-- A chosen planeswalker type SET, CR 205.1a's Replace mode, is not implemented
+-- (#7017): it answers Nothing, and the modification changes nothing.
 chosenSubtypeAs :: ChangeMode.ChangeMode -> SubtypeFamily.SubtypeFamily -> Subtype.Type.Subtype -> Maybe (Modification.Modification ability)
 chosenSubtypeAs mode family s = case family of
   SubtypeFamily.BasicLandType -> Just (Modification.LandSubtype mode s)
   SubtypeFamily.CreatureType -> Just (Modification.CreatureSubtype mode s)
-  SubtypeFamily.PlaneswalkerType -> Nothing
+  SubtypeFamily.PlaneswalkerType -> case mode of
+    ChangeMode.InAddition -> Just (Modification.AddSubtype s)
+    ChangeMode.Replace -> Nothing
 
 -- CR 305.7: does this modification SET a land's subtype, and so strip the land's
 -- rules text? Total, like removesAbilities: a new subtype-setting Modification
@@ -3152,7 +3154,7 @@ namedAbilityRemovalAfter gs =
           else \_ _ -> False
 
 -- CR 613.11 / 613.1f: the rule abilities layer-6 grants give `oid`, which each
--- of the fifteen gatherers (Parun.Engine.CombatRestriction and its siblings)
+-- of the sixteen gatherers (Parun.Engine.CombatRestriction and its siblings)
 -- reads next to the object's own (ruleAbilitiesOf): a stored grant's (Chomping
 -- Kavu's backup), and a static ability's, which the fold recorded on the
 -- receiver (Zurgo, Thunder's Decree) and only a whole-board projection reads
@@ -4252,6 +4254,8 @@ filterReads f = case f of
   -- CR 723.3c / 109.3: how a spell was cast is no characteristic, WasCastFrom's
   -- reason.
   Filter.Type.IsPreparedSpell -> Set.empty
+  -- CR 716.2b / 721.2b / 723.2b: a copiable value, IsPrototyped's reason.
+  Filter.Type.HasInsetFrame _ -> Set.empty
   -- Reads nothing: CR 701.54b keeps the ring-bearer designation off the copiable
   -- values, so no Modification writes Object.ringBearerFor.
   Filter.Type.IsRingBearer -> Set.empty
@@ -4449,6 +4453,7 @@ filterReadsPeers f = case f of
   Filter.Type.Paid _ -> False
   Filter.Type.IsPrototyped -> False
   Filter.Type.IsPreparedSpell -> False
+  Filter.Type.HasInsetFrame _ -> False
   Filter.Type.IsRingBearer -> False
   Filter.Type.IsPaired -> False
   Filter.Type.IsPairedWithSource -> False

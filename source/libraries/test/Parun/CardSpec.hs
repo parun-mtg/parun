@@ -182,6 +182,7 @@ import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
@@ -549,6 +550,7 @@ vanillaFace name typeLine =
       Face.entryRestrictions = [],
       Face.attackCosts = [],
       Face.blockCosts = [],
+      Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
       Face.specialActions = [],
@@ -849,7 +851,7 @@ playerRefPositions =
    in [ ("add-mana", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "am") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "am"]),
         ("add-mana-pooled", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "amp") (ManaProduction.Pooled (ManaCount.MkManaCount (plantedPlayer "amp-pool") ManaFilter.Any)) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "amp", plantedPlayer "amp-pool"]),
         ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "fb"]),
-        ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Set.empty False False), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
+        ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
         ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing), [plantedPlayer "dr"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
         ("scry", Effect.Scry (playerQuantity "sc"), [plantedPlayer "sc"]),
@@ -1486,6 +1488,7 @@ cardCounts =
           Children.faceActivationProhibition = Children.activationProhibitionChildren ruleCounts,
           Children.faceAttackCost = Children.attackCostChildren ruleCounts,
           Children.faceBlockCost = Children.blockCostChildren ruleCounts,
+          Children.faceCounterLimit = Children.counterLimitChildren ruleCounts,
           Children.faceHandAction = Const.Const . concatMap effectCounts . HandAction.effects
         }
 
@@ -1615,6 +1618,7 @@ selectionReadsX selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats _ -> False
   ModeSelection.ChooseInstead ci -> selectionReadsX (ChooseInstead.ordinary ci) || selectionReadsX (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo quantity -> Set.member Binding.variableX (QuantitySlot.slots quantity)
+  ModeSelection.ChoosePawprintsWithRepeats _ -> False
 
 -- CR 601.2c with CR 601.2b: does this slot's COUNT read the announced X?
 countReadsX :: SlotCount.SlotCount -> Bool
@@ -4332,7 +4336,7 @@ combatRestrictionFilters restriction = case restriction of
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless affected condition _ amount) -> affectedSet affected <> foldMap conditionFilters condition <> foldMap quantityFilters amount
   -- Three positions on the PAIRWISE arm: the attackers restricted, the blockers
   -- barred from them, and the gate.
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers condition _) -> affectedSet affected <> unframed [blockers] <> foldMap conditionFilters condition
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers _ condition _) -> affectedSet affected <> unframed [blockers] <> foldMap conditionFilters condition
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures affected attackers condition _) -> affectedSet affected <> unframed [attackers] <> foldMap conditionFilters condition
   -- Two on the attacking one: the creatures restricted and the gate. The
   -- players they may not attack are a PlayerScope and the announcements barred
@@ -4936,7 +4940,7 @@ effectFilters effect = case effect of
   -- THE one search-framed position. CR 701.3a from the candidate's side:
   -- Auratouched Mage's "an Aura card that could enchant it", where the host is
   -- fixed for the whole evaluation and the Aura varies per candidate.
-  Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ counters _ _ _ _ _ _) ->
+  Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ counters _ _ _ _ _ _ _) ->
     searchFramed (f : Foldable.toList descriptions)
       -- The entry counters' kinds and counts, riderFilters' first two halves.
       <> concatMap counterKindFilters (Map.keys counters)
@@ -5354,6 +5358,8 @@ ruleAbilitiesFilters rules =
         -- counters), which may be a whole Keyword carrying a Filter (CR 122.1b);
         -- see #2728. Nothing there is Solemnity's "counters" -- any kind at all.
         <> concatMap (concatMap counterKindFilters . Maybe.maybeToList . CounterRestriction.kind) (RuleAbilities.counterRestrictions rules)
+        -- CR 122.4's limited kind, for the same reason.
+        <> concatMap (counterKindFilters . CounterLimit.kind) (RuleAbilities.counterLimits rules)
         -- CR 602.2's activation prohibition. Its own KIND beside the affected
         -- set is CR 605.1a's classification, which holds no Filter at all --
         -- unlike the counter kind one line up. The affected set is
@@ -5581,6 +5587,7 @@ activatedAbilityFilters ability =
 --     `rulePermissions` (CR 702.3b / 302.6),
 --     `entryRestrictions` (CR 400.4a / 101.2),
 --     `counterRestrictions` (CR 122.6 / 101.2),
+--     `counterLimits` (CR 122.4, its kind alone),
 --     `activationProhibitions` (CR 602.2 / 101.2),
 --     `attackRequirements` (CR 508.1d), `blockRequirements`
 --     (CR 509.1c), `attackCosts` (CR 508.1h) and `blockCosts` (CR 509.1d) --

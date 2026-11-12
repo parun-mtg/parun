@@ -144,6 +144,7 @@ import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
@@ -650,6 +651,7 @@ filterChildren children predicate = case predicate of
   Filter.Paid designator -> fmap Filter.Paid (designatorChildren children designator)
   Filter.IsPrototyped -> pure predicate
   Filter.IsPreparedSpell -> pure predicate
+  Filter.HasInsetFrame _ -> pure predicate
   Filter.And fs -> fmap Filter.And (traverse (connective children) fs)
   Filter.Or fs -> fmap Filter.Or (traverse (connective children) fs)
   Filter.Not f -> fmap Filter.Not (connective children f)
@@ -978,7 +980,7 @@ effectChildren c effect = case effect of
   Effect.AddMana addition -> fmap Effect.AddMana (onManaAddition c addition)
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities who filter_) -> fmap Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities <$> onPlayer c who <*> onFilter c filter_)
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> fmap Effect.MoveMana (MoveMana.MkMoveMana <$> onPlayer c from <*> traverse (onPlayer c) to)
-  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot differentIn exactly andOr) ->
+  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot librarySlot differentIn exactly andOr) ->
     fmap
       Effect.Search
       ( Search.MkSearch
@@ -995,6 +997,7 @@ effectChildren c effect = case effect of
           <*> traverse (onSlot c) subject
           <*> traverse (onSlot c) named
           <*> traverse (onSlot c) handSlot
+          <*> traverse (onSlot c) librarySlot
           <*> pure differentIn
           <*> pure exactly
           <*> pure andOr
@@ -2756,6 +2759,7 @@ modeSelectionChildren c selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats _ -> pure selection
   ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> fmap ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead <$> modalInstead c condition <*> modeSelectionChildren c ordinary <*> modeSelectionChildren c instead)
   ModeSelection.ChooseUpTo quantity -> ModeSelection.ChooseUpTo <$> modalQuantity c quantity
+  ModeSelection.ChoosePawprintsWithRepeats _ -> pure selection
 
 -- | A mode's children. Slots a visitor renames together merge.
 modeChildren :: (Applicative f) => ModalChildren card ability f -> Mode.Mode card ability -> f (Mode.Mode card ability)
@@ -2861,6 +2865,8 @@ data FaceChildren card f = MkFaceChildren
     faceAttackCost :: AttackCost.AttackCost -> f AttackCost.AttackCost,
     -- | A cost to block (CR 509.1d), whole.
     faceBlockCost :: BlockCost.BlockCost -> f BlockCost.BlockCost,
+    -- | A limit on how many counters of a kind a permanent keeps (CR 122.4), whole.
+    faceCounterLimit :: CounterLimit.CounterLimit -> f CounterLimit.CounterLimit,
     -- | An action taken from a hand at the mulligan or the game's start (CR 103.6), whole.
     faceHandAction :: HandAction.HandAction card -> f (HandAction.HandAction card),
     -- | A special action (CR 116.2), whole.
@@ -2909,13 +2915,14 @@ faceLeaves =
       faceActivationProhibition = pure,
       faceAttackCost = pure,
       faceBlockCost = pure,
+      faceCounterLimit = pure,
       faceHandAction = pure,
       faceSpecialAction = pure
     }
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -2970,6 +2977,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> traverse (faceActivationProhibition c) activationProhibitions
     <*> traverse (faceAttackCost c) attackCosts
     <*> traverse (faceBlockCost c) blockCosts
+    <*> traverse (faceCounterLimit c) counterLimits
     <*> traverse (faceHandAction c) mulliganActions
     <*> traverse (faceHandAction c) openingHandActions
     <*> traverse (faceSpecialAction c) specialActions
@@ -3233,7 +3241,7 @@ data RuleChildren f = MkRuleChildren
     ruleQuantity :: Quantity.Quantity -> f Quantity.Quantity,
     -- | A taxed creature's fixed share, whole.
     ruleCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
-    -- | The kind of counter a counter restriction names (CR 122.1), whole.
+    -- | The kind of counter a counter restriction or limit names (CR 122.1), whole.
     ruleCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword)
   }
 
@@ -3251,7 +3259,7 @@ ruleLeaves =
 
 -- | A RuleAbilities' children (CR 613.11), row by row.
 ruleAbilitiesChildren :: (Applicative f) => RuleChildren f -> RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities
-ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions) =
+ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions counterLimits) =
   RuleAbilities.MkRuleAbilities
     <$> traverse (activationProhibitionChildren c) activationProhibitions
     <*> traverse (attachRestrictionChildren c) attachRestrictions
@@ -3268,6 +3276,7 @@ ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions at
     <*> traverse (sacrificeRestrictionChildren c) sacrificeRestrictions
     <*> traverse (targetRestrictionChildren c) targetRestrictions
     <*> traverse (untapRestrictionChildren c) untapRestrictions
+    <*> traverse (counterLimitChildren c) counterLimits
 
 -- | An activation prohibition's children (CR 602.5). Its ability kind,
 -- prohibited costs and ability name are left as they are.
@@ -3305,6 +3314,11 @@ blockRequirementChildren c (BlockRequirement.MkBlockRequirement subject attacker
 counterRestrictionChildren :: (Applicative f) => RuleChildren f -> CounterRestriction.CounterRestriction -> f CounterRestriction.CounterRestriction
 counterRestrictionChildren c (CounterRestriction.MkCounterRestriction affected kind) =
   CounterRestriction.MkCounterRestriction <$> ruleAffected c affected <*> traverse (ruleCounterKind c) kind
+
+-- | A counter limit's children (CR 122.4). Its N is left as it is.
+counterLimitChildren :: (Applicative f) => RuleChildren f -> CounterLimit.CounterLimit -> f CounterLimit.CounterLimit
+counterLimitChildren c (CounterLimit.MkCounterLimit kind atMost) =
+  CounterLimit.MkCounterLimit <$> ruleCounterKind c kind <*> pure atMost
 
 -- | A keyword cost restriction's children (CR 702.122d, 702.196b).
 keywordCostRestrictionChildren :: (Applicative f) => RuleChildren f -> KeywordCostRestriction.KeywordCostRestriction -> f KeywordCostRestriction.KeywordCostRestriction
@@ -3470,8 +3484,8 @@ combatRestrictionChildren :: (Applicative f) => RuleChildren f -> CombatRestrict
 combatRestrictionChildren c restriction = case restriction of
   CombatRestriction.CantAttack x -> CombatRestriction.CantAttack <$> affectedUnlessChildren x
   CombatRestriction.CantBlock x -> CombatRestriction.CantBlock <$> affectedUnlessChildren x
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers unless name) ->
-    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> ruleAffected c affected <*> ruleFilter c blockers <*> traverse (ruleCondition c) unless <*> pure name)
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers frame unless name) ->
+    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> ruleAffected c affected <*> ruleFilter c blockers <*> pure frame <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures affected attackers unless name) ->
     fmap CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures <$> ruleAffected c affected <*> ruleFilter c attackers <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer affected defenders kinds unless name) ->

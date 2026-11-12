@@ -1426,12 +1426,16 @@ answerActionChoice key verb choices asked =
                 Monad.when forced (updateChoices (\current -> current {Choices.targets = Nothing}))
                 pure counts
           _ -> unexpected
-        Prompt.Type.ChooseModes _ _ _ legal selection -> case Choices.modes choices of
-          Just modes
-            | Modal.selectionSatisfiedBy legal selection modes -> do
-                updateChoices (\current -> current {Choices.modes = Nothing})
-                pure modes
-          _ -> unexpected
+        Prompt.Type.ChooseModes _ _ _ legal selection -> do
+          undoing <- State.gets reversing
+          case Choices.modes choices of
+            Just modes
+              -- A refused move's unsatisfying modes go to the engine, whose
+              -- CR 601.2b gate (Modal.selectionSatisfiedBy) reverses it.
+              | Modal.selectionSatisfiedBy legal selection modes || Maybe.isJust undoing -> do
+                  updateChoices (\current -> current {Choices.modes = Nothing})
+                  pure modes
+            _ -> unexpected
         Prompt.Type.ChooseX _ _ _ _ minimumX maximumX -> do
           undoing <- State.gets reversing
           case Choices.x choices of
