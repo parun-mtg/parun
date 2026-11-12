@@ -33,7 +33,6 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -2539,7 +2538,7 @@ everyTriggerCondition =
     TriggerCondition.SpellCast SpellCast.self,
     -- And Social Snub's "while", a state that stamps nothing of its own.
     TriggerCondition.SpellCast SpellCast.self {SpellCast.while = Just (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0)))},
-    TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger (Filter.Type.And []) Nothing),
+    TriggerCondition.AbilityActivated (Filter.Type.And []),
     -- BOTH relations, for the SpellCast pair's reason just above: the arm cases
     -- on the relation, and one that stamped nothing under the other half would go
     -- unseen if only rule 702.21a's own Opponent were listed.
