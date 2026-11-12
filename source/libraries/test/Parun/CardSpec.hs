@@ -2575,7 +2575,7 @@ counterKindFilters kind = case kind of
 -- equip does would owe an arm here, and nothing but this comment says so.
 keywordFilters :: Keyword.Keyword -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 keywordFilters keyword = case keyword of
-  Keyword.Equip (Equip.MkEquip cost mQuality _) -> keywordFramed (costFilters cost) <> mintedTargetSlot (Maybe.maybeToList mQuality)
+  Keyword.Equip (Equip.MkEquip cost mQuality _ _) -> keywordFramed (costFilters cost) <> mintedTargetSlot (Maybe.maybeToList mQuality)
   _ -> keywordFramed (keywordPayloadFilters keyword)
 
 -- The Filter a mobilize or firebending N carries: a tally's, and nothing else.
@@ -2734,7 +2734,7 @@ keywordPayloadFilters keyword = case keyword of
   -- The COST HALF ONLY. CR 702.6c's quality is a card's Filter too, but it is
   -- not KeywordFramed and so is handed out by keywordFilters above rather than
   -- here; repeating it in this arm would report it twice.
-  Keyword.Equip (Equip.MkEquip cost _ _) -> costFilters cost
+  Keyword.Equip (Equip.MkEquip cost _ _ _) -> costFilters cost
   -- CR 702.67a's payload is equip's, and so is this: the "target land you
   -- control" filter its minted ability carries is the ENGINE's, never a card's.
   Keyword.Fortify cost -> costFilters cost

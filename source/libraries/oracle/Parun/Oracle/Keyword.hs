@@ -77,7 +77,15 @@ printed self keyword = case keyword of
   Keyword.Defender -> [Text.pack "Defender"]
   Keyword.DoubleStrike -> [Text.pack "Double strike"]
   Keyword.Equip e -> case (Equip.quality e, Equip.target e) of
-    (Nothing, EquipTarget.Creature) -> Cost.keyworded self (keywordWord self) (Text.pack "Equip") (Equip.cost e)
+    (Nothing, EquipTarget.Creature) -> do
+      text <- Cost.keyworded self (keywordWord self) (Text.pack "Equip") (Equip.cost e)
+      -- CR 602.5b: its own sentence, after "Equip {0}" (Leather Armor) or the
+      -- cost's (Shredder's Armor).
+      rider <- case Equip.timesEachTurn e of
+        Nothing -> [Text.empty]
+        Just 1 -> [Text.pack (if null (Cost.Type.components (Equip.cost e)) then ". " else " ") <> Text.pack "Activate only once each turn."]
+        Just _ -> []
+      [text <> rider]
     _ -> []
   Keyword.FirstStrike -> [Text.pack "First strike"]
   Keyword.Flash -> [Text.pack "Flash"]
@@ -514,7 +522,7 @@ numberedKeywords =
 -- from it: "Cycling {2}" (CR 702.29a).
 costedKeywords :: [Cost.Type.Cost Keyword.Keyword -> Keyword.Keyword]
 costedKeywords =
-  [ \c -> Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature},
+  [ \c -> Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature, Equip.timesEachTurn = Nothing},
     Keyword.MoreThanMeetsTheEye,
     \c -> Keyword.Ward Ward.MkWard {Ward.cost = NonEmpty.singleton c, Ward.perEach = Nothing},
     Keyword.CumulativeUpkeep,
