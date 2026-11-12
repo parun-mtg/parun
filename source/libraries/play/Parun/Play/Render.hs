@@ -465,6 +465,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.AbilityTriggered {} -> Nothing
   GameEvent.ActivatedAbilityResolved {} -> Nothing
   GameEvent.TriggeredAbilityResolved {} -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.BecameTarget {} -> Nothing
   GameEvent.PermanentActed {} -> Nothing
   GameEvent.PlayerActed a -> playerActed (PlayerActed.player a) (PlayerActed.action a)

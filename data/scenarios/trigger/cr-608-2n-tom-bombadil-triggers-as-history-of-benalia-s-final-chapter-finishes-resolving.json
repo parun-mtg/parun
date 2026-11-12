@@ -134,7 +134,7 @@
           "zone": "Library",
           "is": [
             "$under",
-            "$plains"
+            "Plains"
           ]
         }
       }
@@ -147,7 +147,7 @@
         "View": {
           "of": "Stack",
           "is": [
-            "trigger of $next"
+            "trigger of History of Benalia"
           ]
         }
       }

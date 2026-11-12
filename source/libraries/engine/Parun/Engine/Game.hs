@@ -3427,6 +3427,7 @@ castOf event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- CR 601.2i: the casts this turn's log holds before `spell`'s own, earliest
@@ -3559,6 +3560,7 @@ abilityResolved event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved activated -> Just (Source.OfAbility activated)
   GameEvent.TriggeredAbilityResolved triggered -> Just (Source.OfTrigger triggered)
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- The discarding player an event describes, if it is a discard (CR 701.9a).
@@ -3651,6 +3653,7 @@ discardOf event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- The permanent an event describes ENTERING THE BATTLEFIELD, if it is one. CR
@@ -3826,6 +3829,7 @@ movedChange event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- The RECIPIENT an event describes damage being dealt to, if it describes one --
@@ -3937,6 +3941,7 @@ damageDealt event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- The PLAYER an event describes being dealt damage, if it describes one. CR
@@ -4234,6 +4239,7 @@ lifeChangeOf direction event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
   where
     toward side (LifeChange.MkLifeChange pid amount _) = if side == direction then Just (pid, amount) else Nothing

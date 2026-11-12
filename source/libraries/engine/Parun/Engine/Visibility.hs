@@ -138,6 +138,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.CoinFlipped {} -> Visibility.Visible
   GameEvent.ActivatedAbilityResolved {} -> Visibility.Visible -- CR 602.2a: one from a hidden zone reveals its card
   GameEvent.TriggeredAbilityResolved {} -> Visibility.Visible
+  GameEvent.TriggeredAbilityFinished _ -> Visibility.Visible
   GameEvent.PermanentActed {} -> Visibility.Visible
   GameEvent.PlayerActed {} -> Visibility.Visible
   GameEvent.StickerPut {} -> Visibility.Visible

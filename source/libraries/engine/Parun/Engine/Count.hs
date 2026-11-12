@@ -906,6 +906,7 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   -- CR 713.8e's second half: every arrival AFTER the leading one, which is what
   -- makes a melded permanent two cards where the Moved arm above makes it one
   -- object. Read under the card shape alone -- answering it under MovedBetween

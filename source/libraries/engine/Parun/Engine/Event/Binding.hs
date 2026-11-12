@@ -1732,12 +1732,12 @@ eventBindingSlots cond = case cond of
   -- admits.
   TriggerCondition.AbilityActivated _ -> Set.fromList [Binding.activatedAbility, Binding.triggerPlayer]
   TriggerCondition.BecomesTargeted c -> fst (becomesTargetedSlots c)
-  -- CR 603.3b's second class names two things and binds both: CR 113.7's Saga,
+  -- CR 715.2d's watcher names two things and binds both: CR 113.7's Saga,
   -- which the chapter ability hangs on, under CR 400.7e's slot for the reason
   -- eventBindings' arm gives, and CR 603.3a's controller of that chapter ability
-  -- under the reserved player slot. Synthetic Chronicle Warden reads both;
-  -- Historian's Boon, the printed bearer, reads neither and is unaffected by the
-  -- slots being available.
+  -- under the reserved player slot. Synthetic Chronicle Warden reads both and
+  -- Narci, Fable Singer the Saga; Historian's Boon reads neither and is
+  -- unaffected by the slots being available.
   --
   -- Both guaranteed given a match: matchesTrigger's arm rejects
   -- TriggerSource.Sourceless, so the record it accepts always carries an
