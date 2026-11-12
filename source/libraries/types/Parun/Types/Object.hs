@@ -837,6 +837,11 @@ data Object = MkObject
     -- finds a Bolt cast under a granted flashback (CR 601.2h, Altar of the
     -- Lost).
     --
+    -- Beside it, CR 611.2f's keywords a one-shot PlayerEffect.NextSpell row
+    -- gives the spell spending it (Wand of the Worldsoul's convoke), which
+    -- begin to apply as it is put on the stack and so have to be here for CR
+    -- 601.2h's payment. A list, so two Dark Apostles' rows give two cascades.
+    --
     -- Only a GRANTED one: a printed permission projects off the face in every
     -- zone, and stamping it here would report two instances of one keyword (CR
     -- 113.2c). Cast.grantedCastKeyword is that test, and it is what makes this
@@ -845,7 +850,7 @@ data Object = MkObject
     -- NOT a copiable value (CR 707.2), and not per-permanent either: rule 400.7g
     -- carries the ability onto the STACK object, so newIncarnation below clears
     -- it and Parun.Engine.Event.changeZoneAttaching does not write it back.
-    castGrant :: Maybe Keyword.Keyword,
+    castGrants :: [Keyword.Keyword],
     -- | CR 701.35a: this permanent is DETAINED -- it "can't attack or block and
     -- its activated abilities can't be activated" -- until the next turn of each
     -- player named here.
@@ -1082,7 +1087,7 @@ new o s z t =
       castUsing = Nothing,
       -- CR 400.7g's carry ends with the spell: the rule names the object the
       -- card became ON THE STACK, and nothing writes it back.
-      castGrant = Nothing,
+      castGrants = [],
       -- CR 701.35a: the detained permanent that comes back is a new object, and
       -- nothing detained that one.
       detainedUntil = Set.empty,

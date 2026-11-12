@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wand of the Worldsoul",
+            "label": "wand",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p4",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          },
+          {
+            "card": "Juggernaut",
+            "label": "jug"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2a Wand of the Worldsoul's convoke is spent by the next spell, which leaves Juggernaut uncastable",
+  "final": [
+    {
+      "Count": {
+        "card": "Llanowar Elves",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Juggernaut",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "Llanowar Elves, cast off the Forest, is the next spell and spends the grant though it does not convoke; Juggernaut is then not offered, the four Goblin Pikers being no mana without convoke.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$wand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $elves",
+            "Cast $jug",
+            "ActivateManaAbility $forest"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest"
+          ],
+          "object": "$elves"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

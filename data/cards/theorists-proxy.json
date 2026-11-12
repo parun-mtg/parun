@@ -35,8 +35,10 @@
                           "effect": {
                             "type": "NextSpell",
                             "value": {
-                              "type": "And",
-                              "value": []
+                              "matching": {
+                                "type": "And",
+                                "value": []
+                              }
                             }
                           },
                           "players": {

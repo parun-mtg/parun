@@ -2230,7 +2230,7 @@ fireboltSpec s registry = Spec.describe s "Firebolt" $ do
 -- is derived from the card as it lies in the graveyard and the other is anchored
 -- to that object's id, and the move mints a new one either way -- so only the
 -- carry across it (Parun.Engine.Cast.keywordsBefore) can still arm rule 702.34a's
--- second static ability on the spell, and only Parun.Types.Object.castGrant can
+-- second static ability on the spell, and only Parun.Types.Object.castGrants can
 -- leave the spell the KEYWORD (the Altar of the Lost case below).
 --
 -- Viral Spawning {2}{G} Sorcery is the producer: "Create a 3/3 green Phyrexian

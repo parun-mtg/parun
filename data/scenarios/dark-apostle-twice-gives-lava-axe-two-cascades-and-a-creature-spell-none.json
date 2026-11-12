@@ -1,0 +1,323 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Dark Apostle",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Dark Apostle",
+            "label": "a2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m7",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m8",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m9",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m10",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m11",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m12",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m13",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Lava Axe",
+            "label": "axe"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears",
+            "label": "b1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "b2"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2f / 702.85c two Dark Apostles give Lava Axe two cascades and a creature spell none",
+  "final": [
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 2,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Life": {
+        "life": 15,
+        "player": "bob"
+      }
+    }
+  ],
+  "note": "Both Apostles' rows wait out Goblin Piker, a creature spell, and are spent by Lava Axe, which has two instances of cascade, each triggering separately: each casts a Grizzly Bears free.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ],
+          "object": "$a1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$m4",
+            "$m5",
+            "$m6",
+            null
+          ],
+          "object": "$a2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m7",
+            "$m8",
+            null
+          ],
+          "object": "$piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Cascade"
+          },
+          "object": "Goblin Piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m9",
+            "$m10",
+            "$m11",
+            "$m12",
+            "$m13"
+          ],
+          "object": "$axe",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "Lava Axe",
+          "Lava Axe"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 2,
+          "keyword": {
+            "type": "Cascade"
+          },
+          "object": "Lava Axe"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

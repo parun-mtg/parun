@@ -335,8 +335,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.NextSpell (Filter.And []))
-      " {\"type\":\"NextSpell\",\"value\":{\"type\":\"And\",\"value\":[]}} "
+      (PlayerEffect.NextSpell (Filter.And []) [])
+      " {\"type\":\"NextSpell\",\"value\":{\"matching\":{\"type\":\"And\",\"value\":[]}}} "
+  -- CR 611.2f / Wand of the Worldsoul: the keywords the next spell has.
+  Spec.it s "NextSpell, giving a keyword" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.NextSpell (Filter.And []) [Keyword.Convoke])
+      " {\"type\":\"NextSpell\",\"value\":{\"keywords\":[{\"type\":\"Convoke\"}],\"matching\":{\"type\":\"And\",\"value\":[]}}} "
   -- CR 115 / 101.2 / Autumn's Veil: a targeting restriction whose affected set
   -- is a Filter.
   Spec.it s "RestrictTargeting" $

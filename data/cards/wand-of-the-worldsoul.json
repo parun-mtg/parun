@@ -1,0 +1,127 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "White"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AffectPlayers",
+                        "value": {
+                          "duration": {
+                            "type": "UntilUsed"
+                          },
+                          "effect": {
+                            "type": "NextSpell",
+                            "value": {
+                              "keywords": [
+                                {
+                                  "type": "Convoke"
+                                }
+                              ],
+                              "matching": {
+                                "type": "And",
+                                "value": []
+                              }
+                            }
+                          },
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Wand of the Worldsoul",
+      "oracleText": "This artifact enters tapped.\n{T}: Add {W}.\n{T}: The next spell you cast this turn has convoke.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

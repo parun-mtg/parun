@@ -274,7 +274,7 @@ windowedCandidates timed pid oid name gs candidates =
       cardWindow = ownWindow || PlayerEffect.mayCastAsThoughItHadFlash pid oid gs
       windowed = timed && any CandidateCost.instantSpeed candidates
       flashOnly = timed && cardWindow && not ownWindow
-      flashNames candidate = PlayerEffect.flashNamesCandidate pid oid (Cost.variableChoice (CandidateCost.cost candidate)) (proposedFor oid (CandidateCost.keyword candidate) gs)
+      flashNames candidate = PlayerEffect.flashNamesCandidate pid oid (Cost.variableChoice (CandidateCost.cost candidate)) (proposedFor pid oid (CandidateCost.keyword candidate) gs)
       inWindow candidate
         | Keyword.sneakWindowed (CandidateCost.keyword candidate) = Turn.declareBlockersWindow pid gs
         | otherwise = (timed && CandidateCost.instantSpeed candidate) || ownWindow || (cardWindow && (not flashOnly || flashNames candidate))
@@ -978,7 +978,7 @@ announceOptionalCosts modes spending pid sid candidates offers gs =
       -- One more declaration, for the instance asked about or, for a cost
       -- asked once, the next of the object's own.
       declared keyword which paid = Map.insertWith Map.union keyword (Map.singleton (Maybe.fromMaybe (KeywordInstance.Own (Natural.length (Map.findWithDefault Map.empty keyword paid) + 1)) which) 1) paid
-      payable keyword which paid cost = any (\(castFor, (extra, candidate)) -> payableCost (Just modes) extra spending pid sid (stampPaidCosts (declared keyword which paid) sid (proposedFor sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
+      payable keyword which paid cost = any (\(castFor, (extra, candidate)) -> payableCost (Just modes) extra spending pid sid (stampPaidCosts (declared keyword which paid) sid (proposedFor pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
       choose keyword which limit = KickerDecision.unwrap <$> Game.choose (Prompt.ChooseKicker (Decide.deciderFor pid gs) pid sid keyword which limit)
       -- An instance asked nothing, its cost unpayable, still holds its place.
       answer keyword which limit cost paid = if payable keyword (Just which) paid cost then choose keyword (Just which) limit else pure 0
@@ -1116,13 +1116,19 @@ stampCastUsing castFor sid gs =
 -- computes -- and its neighbour for a reason: the two answer different questions
 -- about one announcement, `castUsing` which cost was paid and this which ability
 -- the spell still has. Parun.Engine.Projection.castGrantGathered turns it back
--- into a layer-6 grant.
-stampCastGrant :: Maybe Keyword -> ObjectId -> GameState -> GameState
-stampCastGrant granted sid gs =
+-- into a layer-6 grant. CR 611.2f's keywords join it (castGrantsOf).
+stampCastGrants :: [Keyword] -> ObjectId -> GameState -> GameState
+stampCastGrants granted sid gs =
   gs
     { GameState.objects =
-        Map.adjust (\o -> o {Object.castGrant = granted}) sid (GameState.objects gs)
+        Map.adjust (\o -> o {Object.castGrants = granted}) sid (GameState.objects gs)
     }
+
+-- What stampCastGrants writes: the granted keyword that allowed the cast (CR
+-- 400.7g), then each keyword the one-shot rows the cast spends give the spell
+-- (CR 611.2f), in the rows' order.
+castGrantsOf :: Maybe Keyword -> ObjectId -> [ActivePlayerEffect.ActivePlayerEffect] -> GameState -> [Keyword]
+castGrantsOf castFor sid spent gs = Maybe.maybeToList (grantedCastKeyword castFor sid gs) <> PlayerEffect.spellKeywordsOf spent
 
 -- CR 400.7g's premise, asked of the keyword CR 601.2b's announcement settled on:
 -- does it ALLOW the card to be cast, and was it GRANTED rather than printed?
@@ -1248,8 +1254,8 @@ castPrototyped castFor = case castFor of
 -- the game. Projection.bestowGathered and
 -- Projection.View.baseCharacteristics are what make the stamps visible on a card
 -- still lying in the zone it would be cast from.
-proposedFor :: ObjectId -> Maybe Keyword -> GameState -> GameState
-proposedFor oid castFor gs =
+proposedFor :: PlayerId -> ObjectId -> Maybe Keyword -> GameState -> GameState
+proposedFor pid oid castFor gs =
   let bestowedGs = if castBestowed castFor then stampBestowed oid gs else gs
       -- CR 702.140a's stamp joins the fold for the TARGET gate rather than for a
       -- characteristic: `targetable` reads it to decide whether rule 702.140a's
@@ -1268,7 +1274,10 @@ proposedFor oid castFor gs =
       -- lying in the zone it would be cast from -- castGrantGathered walks the
       -- STACK, rule 400.7g's own scope -- where the grant itself is still in
       -- force.
-      stampCastGrant (grantedCastKeyword castFor oid usingGs) oid usingGs
+      --
+      -- CR 611.2f's keywords join it for CR 601.2h's sake: a spell the next
+      -- spell's convoke makes payable is a castable one.
+      stampCastGrants (castGrantsOf castFor oid (PlayerEffect.spentByCast pid oid usingGs) usingGs) oid usingGs
 
 -- CR 601.3a asked of ONE candidate, through the board rule 702.103d says to judge
 -- it on: Aether Storm's "creature spells can't be cast" stops Nyxborn Rollicker's
@@ -1299,7 +1308,7 @@ proposedFor oid castFor gs =
 -- paying its mana cost" is no cast at all.
 candidateAllowed :: PlayerId -> ObjectId -> GameState -> CandidateCost.CandidateCost -> Bool
 candidateAllowed pid oid proposed candidate =
-  let board = proposedFor oid (CandidateCost.keyword candidate) proposed
+  let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
       choice = Cost.variableChoice (CandidateCost.cost candidate)
       fixedBelowFloor = case Game.faceOf oid board of
         Just face ->
@@ -1327,7 +1336,7 @@ candidateAllowed pid oid proposed candidate =
 -- proper (Cast.castProposed) against what the whole announcement chose.
 candidateFillable :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> CandidateCost.CandidateCost -> Bool
 candidateFillable pid oid name proposed candidate =
-  targetable (CandidateCost.keyword candidate) pid oid name (proposedFor oid (CandidateCost.keyword candidate) proposed)
+  targetable (CandidateCost.keyword candidate) pid oid name (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
 
 -- CR 601.3e / 719.3a: CR 601.3's zone permission asked of ONE candidate, on the
 -- board its own choice produces: Serra Paragon admits a graveyard Autonomous
@@ -1341,7 +1350,7 @@ candidateFillable pid oid name proposed candidate =
 -- membership: cardGatesOk asked that, and no stamp moves the card.
 candidateInZone :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> CandidateCost.CandidateCost -> Bool
 candidateInZone pid oid name proposed candidate =
-  let board = proposedFor oid (CandidateCost.keyword candidate) proposed
+  let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
    in case (Game.zoneOf oid board, proposedFace oid name board) of
         (Just zone, Just face) -> permittedFrom pid oid face board zone
         _ -> False
@@ -2038,7 +2047,7 @@ castableGiven shared pid oid name facing gs =
       -- the reduction and the spending of SOME permission the cast could be made
       -- under (Dawnhand Dissident's costs, Urianger Augurelt's reduction, Tinybones,
       -- Bauble Burglar's mana of any type).
-      extras candidate = maybe [([], [], ManaSpending.AsProduced, Nothing)] (\face -> permissionCostChoices pid oid face (proposedFor oid (CandidateCost.keyword candidate) proposed) (CandidateCost.keyword candidate)) (proposedFace oid name proposed)
+      extras candidate = maybe [([], [], ManaSpending.AsProduced, Nothing)] (\face -> permissionCostChoices pid oid face (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.keyword candidate)) (proposedFace oid name proposed)
       candidateOk candidate =
         candidateAllowed pid oid proposed candidate
           && candidateInZone pid oid name proposed candidate
@@ -2051,7 +2060,7 @@ castableGiven shared pid oid name facing gs =
         (Just _, Just face) -> case underAlternative (candidateAllowed pid oid proposed) face alternative candidate of
           Nothing -> False
           Just cost -> payableUnder candidate extra less wayGives cost
-      payableUnder candidate extra less wayGives cost = payable (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra cost)
+      payableUnder candidate extra less wayGives cost = payable (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra cost)
    in cardGatesOk pid oid name proposed
         && lookGateOk pid oid name gs proposed
         -- Gated HERE, upstream of Action.legalActions, because the engine never
@@ -2524,7 +2533,7 @@ castableWhenOffered spending pid oid name candidates proposed =
       ( \candidate ->
           candidateAllowed pid oid proposed candidate
             && candidateFillable pid oid name proposed candidate
-            && payableCost Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid (proposedFor oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
+            && payableCost Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
       )
       candidates
     && printedRestrictionsOk pid oid name proposed
@@ -2755,7 +2764,7 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- the announcement has succeeded, so a rejection spends nothing. Each
           -- candidate's own board, by CR 702.103d: Savage Summoning's next creature
           -- spell is not a bestowed Aura spell.
-          spent castFor = PlayerEffect.spentByCast pid oid (proposedFor oid castFor proposed)
+          spent castFor = PlayerEffect.spentByCast pid oid (proposedFor pid oid castFor proposed)
           -- CR 601.3: the permissions this cast can be made under, asked of the
           -- same PROPOSED state and for `spent`'s reason -- the ones the gate
           -- offered the cast under are the ones castProposed chooses among, and
@@ -2766,7 +2775,7 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- permission alone, CR 601.3: Thundermane Dragon's row leaves the timing
           -- as it is, so it admits nothing mid-resolution and gives no haste.
           searching = not timed && not offered
-          permissions castFor = (if searching then const [] else lookedWays looks) <$> candidateWays (\src -> not (null (Event.permissionRiders src proposed oid))) offered pid oid castFrom face (proposedFor oid castFor proposed) castFor
+          permissions castFor = (if searching then const [] else lookedWays looks) <$> candidateWays (\src -> not (null (Event.permissionRiders src proposed oid))) offered pid oid castFrom face (proposedFor pid oid castFor proposed) castFor
           -- CR 400.7h / 611.3d: what the permission a cast is made under gives
           -- the spell it becomes, asked of the same PROPOSED state -- the board
           -- that source was offering it on.
@@ -2829,7 +2838,7 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- proposal board candidateAllowed judged them on, and of a flash
           -- window where a window times the cast at all, the chosen candidate's.
           let refusedAt candidate permission manaValue =
-                let board = proposedFor oid (CandidateCost.keyword candidate) proposed
+                let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
                  in PlayerEffect.prohibitsAtManaValue pid oid manaValue board
                       || not (PlayerEffect.admitsAtManaValue pid permission oid manaValue board)
                       || (timed && flashRefusedAt pid oid name candidate manaValue board)
@@ -3041,7 +3050,7 @@ candidateWays rides offered pid oid zone face gs castFor =
         then Nothing
         -- CR 601.3e / 719.3a: the permissions naming the spell this
         -- candidate makes, read off the board its choice produces.
-        else Just (foldMap (\from -> castWays rides offered pid oid from face (proposedFor oid castFor gs) castFor) zone)
+        else Just (foldMap (\from -> castWays rides offered pid oid from face (proposedFor pid oid castFor gs) castFor) zone)
 
 -- CR 601.3 / 702.103d: `candidates` less any no way admits on its own board, where
 -- another's way does: with only Muldrotha's creature permission left, Nyxborn
@@ -3057,7 +3066,7 @@ candidatesWithWays pid oid name proposed candidates = case proposedFace oid name
   Just face ->
     let hasWay candidate =
           let castFor = CandidateCost.keyword candidate
-           in maybe True (not . null) (candidateWays (const False) False pid oid (Game.zoneOf oid proposed) face (proposedFor oid castFor proposed) castFor)
+           in maybe True (not . null) (candidateWays (const False) False pid oid (Game.zoneOf oid proposed) face (proposedFor pid oid castFor proposed) castFor)
      in if any hasWay candidates then filter hasWay candidates else candidates
 
 -- CR 118.8 / 601.2f / 118.14 / 118.9: the additional costs, the reductions, the
@@ -3654,7 +3663,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- Carried as the additional Cost itself rather than as a flag, entwine's
       -- reason: the candidate costs below and the CR 702.27a stamp read one value.
       let buybackAffordable extra =
-            any (\(castFor, (reduced, candidate)) -> payableCost (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedFor sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
+            any (\(castFor, (reduced, candidate)) -> payableCost (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedFor pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
       boughtBack <- case Keyword.buybackCost keywords of
         Nothing -> pure Nothing
         Just extra
@@ -3679,7 +3688,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- is offered, and where one is, the player answers.
       let withBoughtBack candidate = maybe candidate (Cost.plus candidate) boughtBack
           spliceAffordable extra =
-            any (\(castFor, (reduced, candidate)) -> payableCost (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedFor sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
+            any (\(castFor, (reduced, candidate)) -> payableCost (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedFor pid sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
           spliceOffers = filter (spliceAffordable . snd) (Maybe.mapMaybe (spliceOffer pid sid gs) (Game.zoneMembers Zone.Hand pid gs))
       spliced <- if null spliceOffers then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
       -- CR 702.47b: "you can't splice any one card onto the same spell more than
@@ -3703,7 +3712,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- (Modal.settle), so Widow's Bite naming both modes without teamwork,
           -- or one with it, has no candidate and rewinds below.
           settledFor candidate =
-            let proposed = stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)
+            let proposed = stampPaidCosts paid sid (proposedFor pid sid (CandidateCost.keyword candidate) gs)
                 context = Projection.sourceContext proposed (Just pid) sid
                 counting = Integer.toNaturalSaturating . Maybe.fromMaybe 0 . Quantity.evaluate (Projection.fullView proposed) context proposed sid
              in Modal.selectionSatisfiedBy legal (Modal.settle (Condition.holds (Projection.fullView proposed) context proposed sid) counting selection) chosenModes
@@ -3739,7 +3748,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           withFolded = fmap (\candidate -> (candidate {CandidateCost.cost = folded (CandidateCost.cost candidate)}, candidate)) candidateCosts
           payableUnder candidate (extra, less, wayGives, alternative) = case underAlternative allowed face alternative candidate of
             Nothing -> False
-            Just cost -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (folded cost))
+            Just cost -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedFor pid sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (folded cost))
           payableCandidates =
             [ shown
             | (shown, candidate) <- withFolded,
@@ -3826,8 +3835,12 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- Lost's mana is spendable "only to cast spells with flashback from
               -- a graveyard", and that question is asked of the spell as it is
               -- paid for.
+              --
+              -- CR 611.2f / 601.2a: so do the keywords the rows this cast
+              -- spends give it, which apply from the move on; the payment
+              -- below reads convoke off it, and CR 601.2i's event cascade.
               gsChosen <- State.get
-              State.modify' (stampCastGrant (grantedCastKeyword castFor sid gsChosen) sid)
+              State.modify' (stampCastGrants (castGrantsOf castFor sid (spent castFor) gsChosen) sid)
               -- CR 601.2b: a count the cost announces beside X -- March of
               -- Wretched Sorrow's "exile any number of black cards" -- is named
               -- here, ahead of X, and bound on the spell under its own slot, so

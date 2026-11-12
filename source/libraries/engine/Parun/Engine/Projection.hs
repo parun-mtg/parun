@@ -3823,9 +3823,11 @@ designationGathered gs =
 
 -- CR 400.7g / 613.1f: the ability an effect granted a card that ALLOWED it to be
 -- cast "continues to apply to the new object that card became after it moved to
--- the stack", emitted as a layer-6 grant on the spell itself.
+-- the stack", emitted as a layer-6 grant on the spell itself; and CR 611.2f's
+-- keywords the next spell has, one grant each, so two give two instances (CR
+-- 702.85c, Dark Apostle's ruling).
 --
--- Read off Object.castGrant on every projection, designationGathered above's
+-- Read off Object.castGrants on every projection, designationGathered above's
 -- posture: the grant that wrote it is anchored to the GRAVEYARD object's id and
 -- CR 400.7 mints a fresh one on the stack, so there is no stored effect left to
 -- reach the spell -- the stamp Parun.Engine.Cast.stampCastGrant makes at CR
@@ -3834,7 +3836,11 @@ designationGathered gs =
 --
 -- THE STACK only, which is rule 400.7g's own scope -- "the new object that card
 -- became after it MOVED TO THE STACK" -- and Object.newIncarnation clears the
--- field at the next move either way.
+-- field at the next move either way. Read off each object's zone rather than
+-- the stack's register, so the board Parun.Engine.Cost.asSpell prices a
+-- proposed cast on, which moves the card to the stack without stacking it,
+-- sees CR 611.2f's convoke too: data/scenarios' "Wand of the Worldsoul's
+-- convoke is spent by the next spell" proves the castability gate reads it.
 --
 -- CR 613.7b/613.7d: the timestamp here is the SPELL's, where rule 613.7 would
 -- order by the granting effect's. They differ only against a removal reaching
@@ -3842,20 +3848,20 @@ designationGathered gs =
 -- that (Scryfall, 2026-11-04).
 castGrantGathered :: GameState -> [Gathered]
 castGrantGathered gs =
-  let fromObject oid = case Game.lookupObject oid gs >>= (\obj -> fmap ((,) obj) (Object.castGrant obj)) of
-        Nothing -> []
-        Just (obj, keyword) ->
-          [ MkGathered
-              { gEffect = Nothing,
-                gSource = oid,
-                gAffected = Affected.TheseObjects (Set.singleton oid),
-                gLayer = Layer.Ability,
-                gLowest = Layer.Ability,
-                gTimestamp = Object.timestamp obj,
-                gModification = Modification.GainKeyword keyword
-              }
-          ]
-   in concatMap fromObject (Game.allStacks gs)
+  let fromObject oid obj =
+        [ MkGathered
+            { gEffect = Nothing,
+              gSource = oid,
+              gAffected = Affected.TheseObjects (Set.singleton oid),
+              gLayer = Layer.Ability,
+              gLowest = Layer.Ability,
+              gTimestamp = Object.timestamp obj,
+              gModification = Modification.GainKeyword keyword
+            }
+        | keyword <- Object.castGrants obj
+        ]
+      onStack oid obj rest = if Object.zone obj == Zone.Stack then fromObject oid obj <> rest else rest
+   in Map.foldrWithKey onStack [] (GameState.objects gs)
 
 -- CR 702.99a's static ability: "for as long as this card is encoded on that
 -- creature, that creature has" the trigger Keyword.cipherTrigger builds, emitted

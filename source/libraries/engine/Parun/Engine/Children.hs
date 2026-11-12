@@ -2061,6 +2061,8 @@ data PlayerEffectChildren f = MkPlayerEffectChildren
     playerManaRestriction :: ManaRestriction.ManaRestriction -> f ManaRestriction.ManaRestriction,
     -- | Which damage an effect matches (CR 120.1), whole.
     playerDamage :: DamagePattern.DamagePattern -> f DamagePattern.DamagePattern,
+    -- | A keyword an effect gives a spell (CR 611.2f), whole.
+    playerKeyword :: Keyword.Keyword -> f Keyword.Keyword,
     -- | The events the engine looks back over to apply the effect.
     playerLooksBack :: HistoryRead.HistoryRead -> f ()
   }
@@ -2082,6 +2084,7 @@ playerEffectLeaves =
       playerSpending = pure,
       playerManaRestriction = pure,
       playerDamage = pure,
+      playerKeyword = pure,
       playerLooksBack = const (pure ())
     }
 
@@ -2121,7 +2124,7 @@ playerEffectChildren c effect = case effect of
     fmap PlayerEffect.MayTapForMana (TapForMana.MkTapForMana <$> playerFilter c permanents <*> traverse (playerManaRestriction c) restriction)
   PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition countered counterers) ->
     fmap PlayerEffect.CantBeCountered (CounterProhibition.MkCounterProhibition <$> playerFilter c countered <*> playerFilter c counterers)
-  PlayerEffect.NextSpell filter_ -> PlayerEffect.NextSpell <$> playerFilter c filter_
+  PlayerEffect.NextSpell filter_ keywords -> PlayerEffect.NextSpell <$> playerFilter c filter_ <*> traverse (playerKeyword c) keywords
   PlayerEffect.RestrictTargeting (TargetRestriction.MkTargetRestriction affected kind aimers) ->
     fmap PlayerEffect.RestrictTargeting (TargetRestriction.MkTargetRestriction <$> playerFilter c affected <*> pure kind <*> playerFilter c aimers)
   PlayerEffect.TargetPastHexproof (HexproofExemption.MkHexproofExemption permanents players) ->

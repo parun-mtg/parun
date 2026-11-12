@@ -65,6 +65,12 @@ codec =
           (,)
             <$> Fields.required "matching" filterCodec fst
             <*> Fields.defaulted "onlyFirst" Nothing (Common.maybe TurnScope.codec) snd
+      -- The keywords absent are none: the next spell gains nothing (CR 611.2f).
+      nextSpell =
+        Fields.object $
+          (,)
+            <$> Fields.required "matching" filterCodec fst
+            <*> Fields.defaulted "keywords" [] (Common.list Keyword.codec) snd
       -- The quality absent is every spell and ability the scope's players control.
       targetingBan =
         Fields.object $
@@ -95,7 +101,7 @@ codec =
           Arm.payload "LoyaltyGrant" LoyaltyGrant.codec PlayerEffect.LoyaltyGrant (\x -> case x of PlayerEffect.LoyaltyGrant y -> Just y; _ -> Nothing),
           Arm.payload "MayTapForMana" TapForMana.codec PlayerEffect.MayTapForMana (\x -> case x of PlayerEffect.MayTapForMana y -> Just y; _ -> Nothing),
           Arm.payload "CantBeCountered" CounterProhibition.codec PlayerEffect.CantBeCountered (\x -> case x of PlayerEffect.CantBeCountered y -> Just y; _ -> Nothing),
-          Arm.payload "NextSpell" filterCodec PlayerEffect.NextSpell (\x -> case x of PlayerEffect.NextSpell y -> Just y; _ -> Nothing),
+          Arm.payload "NextSpell" nextSpell (uncurry PlayerEffect.NextSpell) (\x -> case x of PlayerEffect.NextSpell y z -> Just (y, z); _ -> Nothing),
           Arm.payload "RestrictTargeting" (TargetRestriction.codec filterCodec) PlayerEffect.RestrictTargeting (\x -> case x of PlayerEffect.RestrictTargeting y -> Just y; _ -> Nothing),
           Arm.payload "TargetPastHexproof" HexproofExemption.codec PlayerEffect.TargetPastHexproof (\x -> case x of PlayerEffect.TargetPastHexproof y -> Just y; _ -> Nothing),
           Arm.payload "DamageCantBePrevented" DamagePattern.codec PlayerEffect.DamageCantBePrevented (\x -> case x of PlayerEffect.DamageCantBePrevented y -> Just y; _ -> Nothing),

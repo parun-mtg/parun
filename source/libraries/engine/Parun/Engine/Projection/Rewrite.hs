@@ -190,7 +190,8 @@ rewritePlayerEffect pairs =
           Children.playerManaFilter = Identity.Identity . rewriteManaFilter pairs,
           Children.playerSpending = Identity.Identity . rewriteSpendManaAsThough pairs,
           Children.playerManaRestriction = Identity.Identity . rewriteManaRestriction pairs,
-          Children.playerDamage = Identity.Identity . rewriteDamagePattern pairs
+          Children.playerDamage = Identity.Identity . rewriteDamagePattern pairs,
+          Children.playerKeyword = Identity.Identity . Filter.rewriteKeyword pairs
         }
 
 -- CR 612.1 through a mana payload: Parun.Engine.Children's traversal at
