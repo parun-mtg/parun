@@ -454,4 +454,7 @@ data Modification ability
   | -- | Alchemy's "intensifies by N" (Static Discharge): add N to the object's
     -- intensity, which no CR rule names.
     Intensify Quantity.Quantity
+  | -- | Planeswalkerificate's "its toughness becomes its loyalty", in no CR rule
+    -- (docs/decisions.md, "What a toughness that is loyalty does").
+    LoyaltyIsToughness
   deriving (Eq, Ord, Show)

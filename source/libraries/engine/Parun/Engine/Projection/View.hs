@@ -341,7 +341,8 @@ viewOfCardLapsed lapsed face =
           -- a printed FACE with no controller and no board to grant it one.
           Filter.grantsStationToughness = False,
           -- CR 700.5a off the printed face, which no text change reaches.
-          Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face)
+          Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face),
+          Filter.loyaltyIsToughness = False
         }
 
 -- viewOfCard's activated-ability roster: the face's own list and rule 702's.
@@ -896,7 +897,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.grantsStationToughness = PC.grantsStationToughness pc,
       -- CR 700.5a off the copiable list `pc` carries, rewritten by layer 3 and
       -- emptied by no layer-6 removal (see the field's own comment).
-      Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities pc)
+      Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities pc),
+      Filter.loyaltyIsToughness = PC.loyaltyIsToughness pc
     }
 
 -- CR 506.5 / 506.6: the AloneAmong groups among which this attacker is alone
@@ -1849,6 +1851,7 @@ noCharacteristics =
       -- CR 702.184c: an ability on the stack grants nothing to its
       -- controller's station abilities of its own.
       PC.grantsStationToughness = False,
+      PC.loyaltyIsToughness = False,
       -- CR 601.2b / 601.2f: no card, so no printed costs either.
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],
@@ -2039,6 +2042,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 613.1's starting point, before layer 6 has run:
               -- applyModification's GrantsStationToughness arm is the only writer.
               PC.grantsStationToughness = False,
+              PC.loyaltyIsToughness = False,
               -- CR 707.2: the cast-time costs printed in the rules text, copiable
               -- with it, so a card carrying a copy stamp or a conjured
               -- duplicate's values is cast with them (Game.castingFaceOf).

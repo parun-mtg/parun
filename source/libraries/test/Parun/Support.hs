@@ -2017,7 +2017,8 @@ stubView table oid =
                 -- in the pool reads this stub through Quantity.StationMeasure.
                 Filter.grantsStationToughness = False,
                 -- CR 700.5a: the table registers no player abilities either.
-                Filter.devotionBonus = 0
+                Filter.devotionBonus = 0,
+                Filter.loyaltyIsToughness = False
               }
         [] -> Nothing
 

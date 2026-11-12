@@ -172,7 +172,8 @@ blackCreature =
       -- atom's own cases below say which view they want rather than inheriting it.
       Filter.activatedAbilityKinds = Set.empty,
       Filter.grantsStationToughness = False,
-      Filter.devotionBonus = 0
+      Filter.devotionBonus = 0,
+      Filter.loyaltyIsToughness = False
     }
 
 -- A colourless (devoid) creature with power 5, no controller recorded.
@@ -265,7 +266,8 @@ devoidBigCreature =
       Filter.manaSpentOnX = Mana.MkMana [],
       Filter.activatedAbilityKinds = Set.empty,
       Filter.grantsStationToughness = False,
-      Filter.devotionBonus = 0
+      Filter.devotionBonus = 0,
+      Filter.loyaltyIsToughness = False
     }
 
 -- A creature whose only ability is the given keyword -- the toxic N and landwalk

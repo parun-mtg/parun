@@ -111,6 +111,7 @@ testCharacteristics =
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
       PC.combatDamageOptions = Set.singleton CombatDamageOption.ToDefendingCreature,
       PC.grantsStationToughness = True,
+      PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
       PC.additionalCosts = [CostComponent.TapThis],
       PC.additionalCostChoices = [CostChoice.MkCostChoice (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis] NonEmpty.:| [Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []])],
@@ -180,6 +181,7 @@ testCharacteristicsJson =
     <> "\"combatDamageAmount\":\"EqualToToughness\","
     <> "\"combatDamageOptions\":[\"ToDefendingCreature\"],"
     <> "\"grantsStationToughness\":true,"
+    <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
     <> "\"additionalCostChoices\":[[{\"components\":[{\"type\":\"TapThis\"}],\"mana\":[]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],"
     <> "\"alternativeCosts\":[{\"cost\":{\"mana\":[]}}],"
@@ -238,6 +240,7 @@ minimalCharacteristics =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Set.empty,
       PC.grantsStationToughness = False,
+      PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],
       PC.alternativeCosts = [],

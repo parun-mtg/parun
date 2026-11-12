@@ -393,6 +393,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       (Modification.Intensify (Quantity.Literal 1))
       " {\"type\":\"Intensify\",\"value\":{\"type\":\"Literal\",\"value\":1}} "
+  -- Planeswalkerificate's "its toughness becomes its loyalty".
+  Spec.it s "LoyaltyIsToughness" $
+    Common.assertCodec
+      s
+      codec
+      Modification.LoyaltyIsToughness
+      " {\"type\":\"LoyaltyIsToughness\"} "
   -- layer 6, CR 613.1f: a whole quoted activated ability, Presence of Gond's
   -- "{T}: Create a 1/1 green Elf Warrior creature token" reduced to its cost.
   Spec.it s "GainAbility" $

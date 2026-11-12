@@ -894,7 +894,10 @@ data View = MkView
     -- layer strips, so an Altar of the Pantheon that lost its abilities still
     -- counts. No Filter atom consults it: it is here for
     -- Parun.Engine.Quantity's devotionOf.
-    devotionBonus :: Natural.Natural
+    devotionBonus :: Natural.Natural,
+    -- The projected mirror of ProjectedCharacteristics.loyaltyIsToughness, read
+    -- by Measure.Loyalty; False wherever no projection stands behind the view.
+    loyaltyIsToughness :: Bool
   }
 
 -- CR 400.7d / 107.4h: `manaSpentTagColors` of a mana-spent record, for the
@@ -1120,7 +1123,8 @@ playerView pid =
       -- from a bare PlayerId has no permanent behind it to grant this at all.
       grantsStationToughness = False,
       -- CR 109.1: a player has no abilities to raise anyone's devotion.
-      devotionBonus = 0
+      devotionBonus = 0,
+      loyaltyIsToughness = False
     }
 
 -- The perspective the match is relative to: who counts as "you" (CR 109.5), and
@@ -1891,11 +1895,18 @@ measureOf measure = case measure of
   Measure.ManaValue -> manaValue
   Measure.ColorCount -> Just . toInteger . Set.size . colors
   -- CR 306.5: only a planeswalker has loyalty, and CR 306.5c's counters are its
-  -- loyalty on the battlefield (Drain Life's target).
+  -- loyalty on the battlefield (Drain Life's target), its toughness under
+  -- Modification.LoyaltyIsToughness, as Projection.loyaltyOf answers.
   --
   -- A planeswalker card's printed loyalty off the battlefield (CR 306.5a) is not
   -- implemented (#5972).
-  Measure.Loyalty -> \view -> if Set.member CardType.Planeswalker (cardTypes view) then Just (toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view))) else Nothing
+  Measure.Loyalty -> \view ->
+    if Set.member CardType.Planeswalker (cardTypes view)
+      then
+        if loyaltyIsToughness view
+          then Just (maybe 0 (max 0) (toughness view))
+          else Just (toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view)))
+      else Nothing
 
 -- What a Measures atom's operand reads: a literal, the candidate's own view, or
 -- a number the Context carries, Nothing where the Context carries none.

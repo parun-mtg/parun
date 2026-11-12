@@ -13,7 +13,6 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Battle as Battle
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Commander as Commander
-import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Defender as Defender
 import qualified Parun.Engine.Event as Event
@@ -375,7 +374,7 @@ attackerAssignment gs announced contested (attacker, target) = case Projection.c
             defenderEntries = case attacked of
               Just recipient@(Recipient.ToPlaneswalker oid)
                 | overPlaneswalkers ->
-                    (recipient, Cost.loyaltyCountersOn oid gs)
+                    (recipient, Projection.loyaltyOn oid gs)
                       : fmap (\pid -> (Recipient.ToPlayer pid, 0)) (Maybe.maybeToList defending)
               _ -> fmap (\recipient -> (recipient, 0)) (Maybe.maybeToList attacked)
         -- Whether it is BLOCKED and WHO is blocking it are two questions, and the
@@ -939,7 +938,7 @@ excessThreshold gs source recipient = do
           ( filter
               (\(cardType, _) -> Set.member cardType types)
               [ (CardType.Creature, lethalFrom gs source oid),
-                (CardType.Planeswalker, Cost.loyaltyCountersOn oid gs),
+                (CardType.Planeswalker, Projection.loyaltyOn oid gs),
                 (CardType.Battle, Battle.defenseOn oid gs)
               ]
           )
@@ -1100,10 +1099,15 @@ processDamage settle events = do
       -- rather than wrapped, because Object.counters is Natural while CR 306.5c
       -- makes loyalty and CR 122.1g defense the COUNT of those counters, and
       -- destroying nothing (CR 120.5): CR 704.5i and CR 704.5v are what read the 0.
-      removeCounters g (oid, kind, n) =
-        let have obj = Map.findWithDefault 0 kind (Object.counters obj)
-            strip obj = obj {Object.counters = Map.insert kind (Natural.minusSaturating (have obj) n) (Object.counters obj)}
-         in g {GameState.objects = Map.adjust strip oid (GameState.objects g)}
+      --
+      -- Modification.LoyaltyIsToughness's loyalty is toughness, so the loss lowers
+      -- that instead, Event.removeCountersPure's redirect.
+      removeCounters g (oid, kind, n)
+        | n > 0 && Event.loyaltyAsToughness oid kind g = Event.moveToughness oid (negate (toInteger n)) g
+        | otherwise =
+            let have obj = Map.findWithDefault 0 kind (Object.counters obj)
+                strip obj = obj {Object.counters = Map.insert kind (Natural.minusSaturating (have obj) n) (Object.counters obj)}
+             in g {GameState.objects = Map.adjust strip oid (GameState.objects g)}
       -- CR 120.3e's mark, for a recipient Projection.damagedCardTypes calls a
       -- creature. CR 120.3's other results for a permanent, CR 120.3c's and CR
       -- 120.3h's counters, are `counterLosses` below, so a permanent that is

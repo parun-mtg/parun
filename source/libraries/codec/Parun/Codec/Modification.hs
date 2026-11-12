@@ -103,7 +103,8 @@ codec abilityCodec =
           Arm.payload "AssignCombatDamage" CombatDamageAmount.codec Modification.AssignCombatDamage (\x -> case x of Modification.AssignCombatDamage y -> Just y; _ -> Nothing),
           Arm.payload "MayAssignCombatDamage" CombatDamageOption.codec Modification.MayAssignCombatDamage (\x -> case x of Modification.MayAssignCombatDamage y -> Just y; _ -> Nothing),
           Arm.nullary "GrantsStationToughness" Modification.GrantsStationToughness,
-          Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing)
+          Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
+          Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness
         ]
 
 tagOf :: Modification.Modification ability -> String
@@ -150,3 +151,4 @@ tagOf x = case x of
   Modification.MayAssignCombatDamage {} -> "MayAssignCombatDamage"
   Modification.GrantsStationToughness {} -> "GrantsStationToughness"
   Modification.Intensify {} -> "Intensify"
+  Modification.LoyaltyIsToughness {} -> "LoyaltyIsToughness"

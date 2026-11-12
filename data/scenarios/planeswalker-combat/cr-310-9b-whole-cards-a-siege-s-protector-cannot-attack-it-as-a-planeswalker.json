@@ -5,9 +5,17 @@
       {
         "battlefield": [
           {
-            "card": "Llanowar Elves",
-            "label": "elf",
-            "ready": true
+            "card": "Invasion of Dominaria",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 5
+              }
+            ],
+            "label": "invasion",
+            "protector": "bob"
           },
           {
             "card": "Liquimetal Coating",
@@ -27,22 +35,30 @@
             "label": "i3"
           },
           {
-            "card": "Island",
-            "label": "i4"
+            "card": "Mountain",
+            "label": "m1"
           },
           {
-            "card": "Island",
-            "label": "i5"
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
           }
         ],
         "hand": [
           {
-            "card": "Karn's Touch",
-            "label": "touch"
+            "card": "Skilled Animator",
+            "label": "animator"
           },
           {
-            "card": "Synthetic Raise the Siege",
-            "label": "siege"
+            "card": "Planeswalkerificate",
+            "label": "pw"
           }
         ],
         "name": "alice"
@@ -50,16 +66,14 @@
       {
         "battlefield": [
           {
-            "card": "Jace Beleren",
-            "counters": [
-              {
-                "key": {
-                  "type": "Loyalty"
-                },
-                "value": 5
-              }
-            ],
-            "label": "jace"
+            "card": "Llanowar Elves",
+            "label": "elf",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
           }
         ],
         "name": "bob"
@@ -68,14 +82,14 @@
     "step": "PrecombatMain"
   },
   "description": "CR 310.9b whole cards: a Siege's protector can't attack it, even as a planeswalker",
-  "note": "Two seats: bob's Jace, made a 3/3 artifact creature planeswalker and a Siege battle, gets alice as its protector, his only opponent (CR 310.12a, 704.5x). No ChooseAttackTarget prompt is scheduled, so Jace offered as a planeswalker beside bob would fail the run as an unscheduled prompt.",
+  "note": "Two seats: alice's Invasion of Dominaria, bob protecting it, is made a 5/5 artifact creature (Liquimetal Coating, Skilled Animator) and a planeswalker (Planeswalkerificate). On bob's turn the Siege is a planeswalker controlled by his only opponent, but he protects it: no ChooseAttackTarget prompt is scheduled, so the Siege offered as a planeswalker beside alice would fail the run as an unscheduled prompt.",
   "timeline": [
     {
       "do": {
         "Activate": {
           "object": "$coating",
           "targets": [
-            "$jace"
+            "$invasion"
           ]
         }
       },
@@ -95,11 +109,27 @@
           "mana": [
             "$i1",
             "$i2",
+            "$i3",
             null
           ],
-          "object": "$touch",
-          "targets": [
-            "$jace"
+          "object": "$animator"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$invasion"
           ]
         }
       },
@@ -117,14 +147,14 @@
       "do": {
         "Cast": {
           "mana": [
-            "$i3",
-            "$i4",
-            "$i5",
-            null
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
           ],
-          "object": "$siege",
+          "object": "$pw",
           "targets": [
-            "$jace"
+            "$invasion"
           ]
         }
       },
@@ -151,8 +181,20 @@
     },
     {
       "check": {
+        "View": {
+          "is": "$invasion",
+          "object": "Planeswalkerificate",
+          "of": "AttachedTo"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "Types": {
-          "object": "$jace",
+          "object": "$invasion",
           "types": [
             "Artifact",
             "Battle",
@@ -167,24 +209,10 @@
     },
     {
       "check": {
-        "View": {
-          "is": "alice",
-          "object": "$jace",
-          "of": "Protector"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Counters": {
-          "count": 5,
-          "kind": {
-            "type": "Defense"
-          },
-          "object": "$jace"
+        "PowerToughness": {
+          "object": "$invasion",
+          "power": 5,
+          "toughness": 5
         }
       },
       "player": "alice",
@@ -197,21 +225,29 @@
           "$elf"
         ]
       },
-      "player": "alice",
+      "player": "bob",
       "step": "DeclareAttackers",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
         "Attackers": {
           "attackers": {
-            "$elf": "$bob"
+            "$elf": "$alice"
           }
         }
       },
-      "player": "alice",
+      "player": "bob",
       "step": "DeclareAttackers",
-      "turn": 1
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
     }
   ]
 }

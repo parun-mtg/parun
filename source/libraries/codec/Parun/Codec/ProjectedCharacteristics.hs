@@ -88,6 +88,7 @@ codec = Fields.object $ do
   combatDamageAmount <- Fields.defaulted "combatDamageAmount" Nothing (Common.maybe CombatDamageAmount.codec) PC.combatDamageAmount
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Set.empty (Common.set CombatDamageOption.codec) PC.combatDamageOptions
   grantsStationToughness <- Fields.defaulted "grantsStationToughness" False Common.boolean PC.grantsStationToughness
+  loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts
   additionalCostChoices <- Fields.defaulted "additionalCostChoices" [] (Common.list CostChoice.codec) PC.additionalCostChoices
   alternativeCosts <- Fields.defaulted "alternativeCosts" [] (Common.list AlternativeCost.codec) PC.alternativeCosts
@@ -143,6 +144,7 @@ codec = Fields.object $ do
         PC.combatDamageAmount = combatDamageAmount,
         PC.combatDamageOptions = combatDamageOptions,
         PC.grantsStationToughness = grantsStationToughness,
+        PC.loyaltyIsToughness = loyaltyIsToughness,
         PC.additionalCosts = additionalCosts,
         PC.additionalCostChoices = additionalCostChoices,
         PC.alternativeCosts = alternativeCosts,

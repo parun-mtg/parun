@@ -222,7 +222,7 @@ entryReplacementsOf pc
   | otherwise = [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.WithCounters (WithCounters.one CounterKind.Lore (Quantity.Literal 1))))]
 
 -- | The lore counters on a permanent (CR 715.3). Zero for an object the game does
--- not hold, which is the same answer Parun.Engine.Cost.loyaltyCountersOn gives for
+-- not hold, which is the same answer Parun.Engine.Projection.loyaltyOn gives for
 -- rule 306.5c's reading.
 loreOn :: ObjectId -> GameState -> Natural
 loreOn oid gs = case Game.lookupObject oid gs of

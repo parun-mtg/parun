@@ -3481,6 +3481,7 @@ modificationChildren c modification = case modification of
   Modification.AssignCombatDamage _ -> pure modification
   Modification.MayAssignCombatDamage _ -> pure modification
   Modification.GrantsStationToughness -> pure modification
+  Modification.LoyaltyIsToughness -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 
 -- | A combat restriction's children (CR 508.1c, 509.1b). Its name, limit,
