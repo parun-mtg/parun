@@ -39,16 +39,18 @@ Finish:
   uses a merge queue.
 
 Wait:
-- Wait with one shell loop that polls every minute and exits only when the
-  PR has merged or closed, has a merge conflict, has failing checks, or has a
-  new review comment. Don't check repeatedly yourself.
+- Wait with script/wait-pr.sh <PR>, run in the foreground with a timeout
+  longer than its three hours or in the background; it exits naming why the
+  PR needs you (merged, closed, a merge conflict, failing checks, dropped
+  from the merge queue, a new comment). Don't write your own loop and don't
+  check repeatedly yourself.
 - Never update a branch merely because it is behind main. Merge origin/main
   only to resolve a real conflict, then re-run the suite and read the result.
 - Fix failing checks. For a review comment, verify the claim against the code
-  and data/comprehensive-rules.txt, then fix it or reply saying why not. Then
-  wait again.
-- Stop when the PR has merged. Also stop after 3 hours of waiting, leaving a
-  comment on the PR with its state.
+  and data/comprehensive-rules.txt, then fix it or reply saying why not. After
+  a fix, re-arm auto-merge if it was disarmed, then wait again.
+- Stop when the PR has merged. Also stop when the script reports three hours
+  of waiting, leaving a comment on the PR with its state.
 
 If blocked:
 - Comment on the issue with what you tried, what stopped you and what is needed,

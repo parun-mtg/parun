@@ -88,8 +88,9 @@ when a step needs it; a missing file is a fetch, not a blocker.
 5. **Finish.** When every other sub-issue and every issue blocking the
    tracker is closed, file the finish issue and label it. Its PR commits the
    set list as `data/decks/sets/<set>/all.txt` (`1 Name` a line, one per
-   card name; `DecksSpec` proves each resolves), writes `docs/sets/<set>.md`,
-   and ticks the set on #6476. The doc is the tracker's census snapshot, then
+   card name; `DecksSpec` proves each resolves), regenerates
+   `data/legalities.json` with `parun ingest` (no other unit commits it),
+   writes `docs/sets/<set>.md`, and ticks the set on #6476. The doc is the tracker's census snapshot, then
    `## How it went`: a frozen record (the no-tallies rule for trackers does
    not apply) built from the tracker and its sub-issues' merged PRs, where a
    figure nobody recorded is "not recorded", never an estimate:
@@ -136,7 +137,8 @@ summary, and its title carries no CR numbers.
 - **Hot lists are one file per entry.** A list every card PR edits is a
   directory of empty marker files, so parallel PRs touch different paths:
   `data/oracle-unrendered/<slug>.txt`. A new list of that kind gets the same
-  treatment.
+  treatment, or one writer: `data/legalities.json` is the finish unit's
+  alone, since adjacent batches insert at the same line of a sorted file.
 - **Carry findings forward** by editing unlabelled issues: a census verdict a
   merged unit overturned, a renderer wording or `docs/decisions.md` entry it
   added that a later unit must extend rather than duplicate. An issue a unit
