@@ -12,6 +12,9 @@ data TurnTally
   | -- | CR 603.1b / 608.2i: how many of these acts (Parun.Types.PlayerAction)
     -- were done, each counted once.
     ActionsDone (Set.Set PlayerAction.PlayerAction)
+  | -- | CR 700.17: spells and abilities modes were chosen for -- The Caretaker's
+    -- "if you faced a dilemma this turn".
+    DilemmasFaced
   | -- | CR 305.2a: lands played -- Fastbond's "if it wasn't the first land you
     -- played this turn".
     LandsPlayed

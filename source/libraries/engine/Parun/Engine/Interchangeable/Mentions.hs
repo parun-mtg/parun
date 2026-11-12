@@ -1042,6 +1042,7 @@ quantityNames asking x =
           TurnTally.CardsDiscarded -> history asking HistoryRead.Discards
           TurnTally.CardsDrawn -> mempty
           TurnTally.ActionsDone acts -> history asking (HistoryRead.Acts acts)
+          TurnTally.DilemmasFaced -> history asking HistoryRead.Dilemmas
           TurnTally.LandsPlayed -> mempty
         Quantity.LifeChanged tally -> turnHistory asking (LifeTally.turn tally) (case LifeTally.direction tally of LifeDirection.Gained -> HistoryRead.LifeGains; LifeDirection.Lost -> HistoryRead.LifeLosses)
         Quantity.PlayersDealtDamage tally -> turnHistory asking (DamageTally.turn tally) HistoryRead.Damage
