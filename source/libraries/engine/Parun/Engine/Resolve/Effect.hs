@@ -59,7 +59,6 @@ import qualified Parun.Types.CastRepetition as CastRepetition
 import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
-import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.Decider as Decider
@@ -72,7 +71,6 @@ import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
 import qualified Parun.Types.Facing as Facing
-import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
@@ -83,15 +81,12 @@ import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.Measure as Measure
-import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal.Type
 import Parun.Types.ModeIndex (ModeIndex)
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
-import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
