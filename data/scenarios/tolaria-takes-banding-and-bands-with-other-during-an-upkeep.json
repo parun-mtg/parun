@@ -1,0 +1,170 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Cathedral of Serra"
+          },
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru",
+            "ready": true
+          },
+          {
+            "card": "Benalish Hero",
+            "label": "hero",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Tolaria",
+            "label": "tolaria"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Tolaria, during an opponent's upkeep, takes \"bands with other\" off a legendary creature and banding off a banding creature",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "bob",
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$tolaria",
+          "targets": [
+            "$isamaru"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "Keywords": {
+          "object": "$isamaru",
+          "keyword": {
+            "type": "BandsWithOther",
+            "value": {
+              "type": "HasSupertype",
+              "value": "Legendary"
+            }
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "bob",
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$tolaria",
+          "targets": [
+            "$hero"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "Keywords": {
+          "object": "$hero",
+          "keyword": {
+            "type": "Banding"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "Keywords": {
+          "object": "$isamaru",
+          "keyword": {
+            "type": "BandsWithOther",
+            "value": {
+              "type": "HasSupertype",
+              "value": "Legendary"
+            }
+          },
+          "count": 1
+        }
+      }
+    }
+  ]
+}

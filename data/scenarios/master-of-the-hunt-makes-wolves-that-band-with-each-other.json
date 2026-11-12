@@ -1,0 +1,256 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Master of the Hunt",
+            "label": "master"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Wind Drake",
+            "label": "drake",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Master of the Hunt makes Wolves of the Hunt that attack in a band with each other, so blocking one blocks both and the active player divides the blocker's damage",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$master",
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$master",
+          "mana": [
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "Wolves of the Hunt#2",
+          "keyword": {
+            "type": "BandsWithOther",
+            "value": {
+              "type": "HasName",
+              "value": "Wolves of the Hunt"
+            }
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "Wolves of the Hunt",
+          "Wolves of the Hunt#2"
+        ]
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "DeclareBands",
+          "with": [
+            [
+              "Wolves of the Hunt",
+              "Wolves of the Hunt#2"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$drake": [
+            "Wolves of the Hunt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "check": {
+        "Blockers": {
+          "attacker": "Wolves of the Hunt#2",
+          "blockers": [
+            "$drake"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "CombatDamage",
+      "player": "alice",
+      "source": "$drake",
+      "do": {
+        "AssignDamage": {
+          "Wolves of the Hunt": 2
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 20
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Wolves of the Hunt",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Cathedral of Serra"
+          },
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru",
+            "ready": true
+          },
+          {
+            "card": "Happy Hogan, Dauntless Driver",
+            "label": "hogan",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Wind Drake",
+            "label": "drake",
+            "ready": true
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 702.22c a band of a legendary creature and a nonlegendary one is dropped, so blocking the nonlegendary one leaves the other unblocked",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$isamaru",
+          "$hogan",
+          "$bears"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "DeclareBands",
+          "with": [
+            [
+              "$isamaru",
+              "$bears"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$drake": [
+            "$bears"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "check": {
+        "Blockers": {
+          "attacker": "$isamaru",
+          "blockers": null
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 16
+        }
+      }
+    }
+  ]
+}

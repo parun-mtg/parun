@@ -57,6 +57,7 @@ import Parun.Types.Combat (Combat)
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CombatDeclaration as CombatDeclaration
 import Parun.Types.Cost (Cost)
+import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -2951,29 +2952,52 @@ attemptAttackDeclaration perform pid asked forced rejected = do
                 Monad.when (any ((== p) . attackerOf) survivors) (State.modify' (Event.recordEvent (GameEvent.AttackersDeclared p)))
 
 -- CR 702.22c / 702.22d: whether these attackers may be declared one band --
--- two or more of them, all attacking the same thing, at most one without
--- banding (so at least one with it).
---
--- Not implemented: "bands with other", CR 702.22c's second sentence (#6309).
+-- two or more of them, all attacking the same thing, and either at most one
+-- without banding (so at least one with it), or all of one [quality] with one of
+-- them holding "bands with other [quality]".
 legalBand :: Map ObjectId AttackTarget.AttackTarget -> Set ObjectId -> GameState -> Bool
 legalBand recorded band gs =
   let members = Set.toList band
       withBanding = filter (\oid -> Projection.hasKeyword Keyword.Banding oid gs) members
+      withOther = any (\holder -> any (\quality -> all (ofQuality quality holder gs) members) (bandsWithOtherOf holder gs)) members
    in Set.size band >= 2
         && all (`Map.member` recorded) members
         && length (ListUtils.nubOrd (Maybe.mapMaybe (`Map.lookup` recorded) members)) == 1
-        && length members - length withBanding <= 1
+        && (length members - length withBanding <= 1 || withOther)
 
 -- CR 508.1e: whether any band can be announced among these attackers -- a
--- creature with banding and another creature attacking the same thing.
+-- creature with banding, or a [quality] creature with "bands with other
+-- [quality]", and another creature attacking the same thing (of that quality,
+-- for the second).
 bandable :: Map ObjectId AttackTarget.AttackTarget -> GameState -> Bool
 bandable recorded gs =
   any
     ( \(oid, target) ->
-        Projection.hasKeyword Keyword.Banding oid gs
-          && any (\(other, t) -> other /= oid && t == target) (Map.toList recorded)
+        let others = [other | (other, t) <- Map.toList recorded, other /= oid, t == target]
+         in (Projection.hasKeyword Keyword.Banding oid gs && not (null others))
+              || any (\quality -> ofQuality quality oid gs oid && any (ofQuality quality oid gs) others) (bandsWithOtherOf oid gs)
     )
     (Map.toList recorded)
+
+-- CR 702.22b: the qualities of this creature's "bands with other" abilities.
+bandsWithOtherOf :: ObjectId -> GameState -> [Filter.Type.Filter Keyword.Keyword]
+bandsWithOtherOf oid gs = [quality | Keyword.BandsWithOther quality <- Map.keys (Projection.keywordsOf oid gs)]
+
+-- CR 702.22c: whether a creature is a [quality] creature for the "bands with
+-- other [quality]" of `holder`, read from the holder as every keyword-borne
+-- Filter is.
+ofQuality :: Filter.Type.Filter Keyword.Keyword -> ObjectId -> GameState -> ObjectId -> Bool
+ofQuality quality holder gs oid =
+  Filter.matches (Projection.sourceContext gs (Projection.controllerOf holder gs) holder) (Projection.viewOfObject oid gs) quality
+
+-- CR 702.22j / 702.22k: the creatures among these whose "bands with other
+-- [quality]" counts -- each a [quality] creature, with another [quality]
+-- creature among them.
+bandingWithOther :: [ObjectId] -> GameState -> [ObjectId]
+bandingWithOther creatures gs =
+  filter
+    (\holder -> any (\quality -> ofQuality quality holder gs holder && any (\other -> other /= holder && ofQuality quality holder gs other) creatures) (bandsWithOtherOf holder gs))
+    creatures
 
 -- CR 702.22c / 702.22f: the other creatures in this attacker's band that are
 -- still attacking; empty when it is in none.

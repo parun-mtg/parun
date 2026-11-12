@@ -1,0 +1,115 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Cathedral of Serra"
+          },
+          {
+            "card": "Isamaru, Hound of Konda",
+            "label": "isamaru",
+            "ready": true
+          },
+          {
+            "card": "Happy Hogan, Dauntless Driver",
+            "label": "hogan",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 702.22k a banded pair of legendary attackers, one with \"bands with other legendary creatures\", gives the blocker's division to the active player",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$isamaru",
+          "$hogan"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "DeclareBands",
+          "with": [
+            [
+              "$isamaru",
+              "$hogan"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$giant": [
+            "$isamaru"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "source": "$giant",
+      "do": {
+        "AssignDamage": {
+          "$hogan": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Isamaru, Hound of Konda",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Happy Hogan, Dauntless Driver",
+          "count": 0
+        }
+      }
+    }
+  ]
+}

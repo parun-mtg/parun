@@ -29,6 +29,7 @@ import qualified Parun.Oracle.Trigger as Trigger
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -303,4 +304,6 @@ restriction r = case r of
   ActivationRestriction.BeforeStep (Phase.Combat CombatStep.DeclareAttackers) -> [Text.pack "before attackers are declared"]
   ActivationRestriction.DuringPhase (DuringPhase.MkDuringPhase (PhaseSelector.Step phase) scope) ->
     fmap (Text.pack . ("during " <>)) (Trigger.step (StepBegins.MkStepBegins phase Nothing scope))
+      -- Free: "during any upkeep step" (Tolaria).
+      <> [Text.pack "during any upkeep step" | phase == Phase.Beginning BeginningStep.Upkeep, scope == TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)]
   _ -> []

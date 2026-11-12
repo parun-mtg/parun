@@ -269,13 +269,19 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
       (ward 2)
       " {\"type\":\"Ward\",\"value\":{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}}} "
     Spec.assertBool s (Codec.encode Keyword.codec (ward 2) /= Codec.encode Keyword.codec (flashbackOf 2)) "the same cost under two keywords encodes differently"
-  -- CR 702.22: only the combat-damage-division halves are modeled; see the type.
   Spec.it s "Banding" $
     Common.assertCodec
       s
       Keyword.codec
       Keyword.Banding
       " {\"type\":\"Banding\"} "
+  -- CR 702.22b: Cathedral of Serra's "bands with other legendary creatures".
+  Spec.it s "BandsWithOther carries its quality" $
+    Common.assertCodec
+      s
+      Keyword.codec
+      (Keyword.BandsWithOther (Filter.HasSupertype Supertype.Legendary))
+      " {\"type\":\"BandsWithOther\",\"value\":{\"type\":\"HasSupertype\",\"value\":\"Legendary\"}} "
   -- CR 702.25a: nullary, because the rule takes no parameter -- its "without
   -- flanking" is a Filter over the blocker in the ability this mints, not a
   -- payload.

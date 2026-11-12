@@ -90,13 +90,18 @@ modifications origin number each context ms = do
         by <- blockedBy context blockers
         [(Text.pack "can't be blocked", MkTrailing by Text.empty)]
       m : _ | Just (gained, _) <- keywordOf m -> do
-        keywords <- fmap protectionsJoined (traverse (foldMap (either (Target.keyword context) Keyword.Oracle.family . snd) . keywordOf) group)
+        keywords <- fmap protectionsJoined (traverse (foldMap (either granted Keyword.Oracle.family . snd) . keywordOf) group)
         let change = case (gained, origin) of
               (False, _) -> verb "loses " "lose "
               (True, Created) -> verb "gains " "gain "
               (True, Static) -> verb "has " "have "
         [(change <> Prose.listing "and" keywords, MkTrailing Text.empty Text.empty)]
       _ -> []
+    -- A granted "bands with other" is quoted, as Oracle text prints it
+    -- (Cathedral of Serra).
+    granted k = case k of
+      Keyword.BandsWithOther _ -> fmap (\w -> Text.pack "\"" <> w <> Text.pack "\"") (Target.keyword context k)
+      _ -> Target.keyword context k
 
 -- | Protections granted together on one phrase, last, as Oracle text prints
 -- them: "and protection from black and from red" (Akroma's Memorial).

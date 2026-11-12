@@ -55,6 +55,9 @@ data KeywordFamily
     -- ward" names, as against ward {2}; no card in the pool asks yet, and it is
     -- owed at the keyword rather than at the first asker.
     Ward
+  | -- | CR 702.22b: "bands with other [quality]". Shelkin Brownie's "loses all
+    -- 'bands with other' abilities" is the card asking.
+    BandsWithOther
   | -- | CR 702.23a: rampage N.
     Rampage
   | -- | CR 702.24a: cumulative upkeep [cost]. The family a card writing "a

@@ -125,10 +125,10 @@ data Keyword
     -- or ability unless its controller pays. CR 702.21b's X rides the payload's
     -- second field; see Parun.Types.Ward.
     Ward (Ward.Ward Keyword)
-  | -- | 702.22: banding.
-    --
-    -- Not implemented: "bands with other" (#6309).
-    Banding -- 702.22
+  | Banding -- 702.22
+  | -- | 702.22b: "bands with other [quality]", the quality riding a Filter
+    -- (CR 702.22c).
+    BandsWithOther (Filter.Filter Keyword)
   | -- | 702.23a: rampage N -- whenever this creature becomes blocked, it gets
     -- +N/+N until end of turn for each creature blocking it beyond the first;
     -- each instance triggers separately (CR 702.23c).

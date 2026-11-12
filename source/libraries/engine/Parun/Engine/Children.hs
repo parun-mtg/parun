@@ -1717,6 +1717,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Vigilance -> pure keyword_
   Keyword.Ward (Ward.MkWard cost perEach) -> fmap Keyword.Ward (Ward.MkWard <$> traverse (keywordCost c) cost <*> traverse (keywordCountChildren c) perEach)
   Keyword.Banding -> pure keyword_
+  Keyword.BandsWithOther quality -> fmap Keyword.BandsWithOther (keywordFilter c quality)
   Keyword.Rampage _natural -> pure keyword_
   Keyword.CumulativeUpkeep cost -> fmap Keyword.CumulativeUpkeep (keywordCost c cost)
   Keyword.Flanking -> pure keyword_

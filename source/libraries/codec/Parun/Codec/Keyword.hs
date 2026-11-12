@@ -69,6 +69,7 @@ codec =
       Arm.nullary "Vigilance" Keyword.Vigilance,
       Arm.payload "Ward" (Ward.codec codec) Keyword.Ward (\x -> case x of Keyword.Ward y -> Just y; _ -> Nothing),
       Arm.nullary "Banding" Keyword.Banding,
+      Arm.payload "BandsWithOther" (Filter.codec codec) Keyword.BandsWithOther (\x -> case x of Keyword.BandsWithOther y -> Just y; _ -> Nothing),
       Arm.payload "Rampage" Common.natural Keyword.Rampage (\x -> case x of Keyword.Rampage y -> Just y; _ -> Nothing),
       Arm.payload "CumulativeUpkeep" (Cost.codec codec) Keyword.CumulativeUpkeep (\x -> case x of Keyword.CumulativeUpkeep y -> Just y; _ -> Nothing),
       Arm.payload "Echo" (Cost.codec codec) Keyword.Echo (\x -> case x of Keyword.Echo y -> Just y; _ -> Nothing),
@@ -292,6 +293,7 @@ tagOf x = case x of
   Keyword.Vigilance {} -> "Vigilance"
   Keyword.Ward {} -> "Ward"
   Keyword.Banding {} -> "Banding"
+  Keyword.BandsWithOther {} -> "BandsWithOther"
   Keyword.Rampage {} -> "Rampage"
   Keyword.CumulativeUpkeep {} -> "CumulativeUpkeep"
   Keyword.Echo {} -> "Echo"
