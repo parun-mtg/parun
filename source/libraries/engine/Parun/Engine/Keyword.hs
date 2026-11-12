@@ -38,6 +38,7 @@ import qualified Parun.Types.AttackerTarget as AttackerTarget
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Backup as Backup
 import qualified Parun.Types.Batching as Batching
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.BlockCount as BlockCount
@@ -3221,9 +3222,10 @@ madnessCostFor manaCost payload = case payload of
   MadnessCost.Stated cost -> cost
   MadnessCost.OwnManaCost -> Cost.MkCost {Cost.mana = manaCost, Cost.components = []}
 
--- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a: the keyword a
--- Modification.GainKeywordAtManaCost names, carrying the [cost] it was priced
--- at. Parun.Engine.Projection supplies the receiving object's mana cost.
+-- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a / 702.196a:
+-- the keyword a Modification.GainKeywordAtManaCost names, carrying the [cost] it
+-- was priced at. Parun.Engine.Projection supplies the receiving object's mana
+-- cost, and grantedBy bakes a beam me up's unreturnable.
 withCost :: CostKeyword.CostKeyword -> Cost Keyword -> Keyword
 withCost keyword cost = case keyword of
   CostKeyword.Flashback -> Keyword.Flashback cost
@@ -3232,6 +3234,7 @@ withCost keyword cost = case keyword of
   CostKeyword.Encore -> Keyword.Encore cost
   CostKeyword.Disguise -> Keyword.Disguise cost
   CostKeyword.Blitz -> Keyword.Blitz cost
+  CostKeyword.BeamMeUp unreturnable -> Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp cost unreturnable)
 
 -- CR 702.102a: does this card's keyword set let both halves be cast as one fused
 -- split spell? Its one reader is Parun.Engine.Cast.fusedFaceOf, which asks it of
@@ -3322,13 +3325,13 @@ harmonizeCosts keywords =
         _ -> Nothing
    in Maybe.mapMaybe costOf (Set.toAscList keywords)
 
--- CR 702.196a: every beam me up cost this card has, flashbackCosts' shape and
+-- CR 702.196a: every beam me up ability this card has, flashbackCosts' shape and
 -- for its reason. The BARE payload: rule 702.196a's return of a creature rides
 -- in the candidate Parun.Engine.Cost.candidateCostsGiven assembles.
-beamMeUpCosts :: Set Keyword -> [Cost Keyword]
+beamMeUpCosts :: Set Keyword -> [BeamMeUp.BeamMeUp Keyword]
 beamMeUpCosts keywords =
   let costOf keyword = case keyword of
-        Keyword.BeamMeUp cost -> Just cost
+        Keyword.BeamMeUp beamMeUp -> Just beamMeUp
         _ -> Nothing
    in Maybe.mapMaybe costOf (Set.toAscList keywords)
 
@@ -4683,6 +4686,10 @@ grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe PlayerId -> [ObjectId] -> 
 grantedBy granter chosen you already keyword = case withChosenColors chosen keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
+  -- Scotty, Miracle Worker's "Scotty can't be beamed up to cast a spell this
+  -- way": its IsSource is the granter, not the card holding the keyword.
+  Keyword.BeamMeUp beamMeUp ->
+    Keyword.BeamMeUp beamMeUp {BeamMeUp.unreturnable = fmap spare (BeamMeUp.unreturnable beamMeUp)}
   baked -> baked
   where
     spare filter_ = case filter_ of

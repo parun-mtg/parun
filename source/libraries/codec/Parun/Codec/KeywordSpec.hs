@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Backup as Backup
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
@@ -35,6 +36,7 @@ import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MorphVariant as MorphVariant
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.NinjutsuVariant as NinjutsuVariant
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PartnerText as PartnerText
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Prototype as Prototype
@@ -1814,12 +1816,20 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
     Spec.assertBool s (Codec.encode Keyword.codec (Keyword.Harmonize (cost 2)) /= Codec.encode Keyword.codec (Keyword.Disturb (cost 2))) "CR 702.180a is not CR 702.146a"
   Spec.it s "BeamMeUp carries its cost, and is not Flashback" $ do
     let cost n = Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []
+        beamMeUp n = Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp (cost n) Nothing)
     Common.assertCodec
       s
       Keyword.codec
-      (Keyword.BeamMeUp (cost 3))
+      (beamMeUp 3)
       " {\"type\":\"BeamMeUp\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]}} "
-    Spec.assertBool s (Codec.encode Keyword.codec (Keyword.BeamMeUp (cost 2)) /= Codec.encode Keyword.codec (Keyword.Flashback (cost 2))) "CR 702.196a is not CR 702.34a"
+    Spec.assertBool s (Codec.encode Keyword.codec (beamMeUp 2) /= Codec.encode Keyword.codec (Keyword.Flashback (cost 2))) "CR 702.196a is not CR 702.34a"
+  -- Scotty, Miracle Worker's grant, its granter baked in (CR 702.196b).
+  Spec.it s "BeamMeUp carries the creatures it may not return" $
+    Common.assertCodec
+      s
+      Keyword.codec
+      (Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []) (Just (Filter.IsObject (ObjectId.MkObjectId 7)))))
+      " {\"type\":\"BeamMeUp\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}],\"unreturnable\":{\"type\":\"IsObject\",\"value\":7}}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Keyword.codec
 
