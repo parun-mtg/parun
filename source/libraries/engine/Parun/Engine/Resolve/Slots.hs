@@ -767,7 +767,7 @@ effectPlayerRefs effect = case effect of
   Effect.Firebend (ManaAddition.MkManaAddition ref production _ _ _ _ _) -> ref : productionPlayerRefs production
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities ref _) -> [ref]
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> from : Maybe.maybeToList to
-  Effect.Search (Search.MkSearch searcher owner _ _ _ _ _ _ _ _ _ _ _ _ _ _) -> [searcher, owner]
+  Effect.Search (Search.MkSearch searcher owner _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) -> [searcher, owner]
   Effect.ExileAllGraveyards -> []
   Effect.RestartGame {} -> []
   Effect.ControlPlayerNextTurn {} -> []
@@ -1084,7 +1084,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- matches it in the resolution's own context -- Bifurcate's "with the same
   -- name as target nontoken creature" is the whole of what its target slot is
   -- for, so without this the D4 dataflow lint would call that slot unread.
-  Effect.Search (Search.MkSearch _ _ _ _ quantity filter_ descriptions _ _ counters subject _ _ _ _ _) ->
+  Effect.Search (Search.MkSearch _ _ _ _ quantity filter_ descriptions _ _ counters subject _ _ _ _ _ _) ->
     joinTwo
       (joinTwo (joinSlots (fmap quantitySlots (Maybe.maybeToList quantity <> Map.elems counters))) (joinSlots (fmap filterSlotsOf (filter_ : Foldable.toList descriptions))))
       -- CR 701.3a's fixed host, read at arity ONE: a slot naming several objects
@@ -1987,7 +1987,7 @@ ownSlotsAreExhaustive effect = case effect of
   -- slotsOf reports them through Filter.boundSlots, the one walk that enumerates
   -- what a Filter reads, and no Filter atom carries a Quantity for
   -- Quantity.slotsAreExhaustive to be about.
-  Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ counters _ _ _ _ _ _) -> all Quantity.slotsAreExhaustive (Maybe.maybeToList quantity <> Map.elems counters)
+  Effect.Search (Search.MkSearch _ _ _ _ quantity _ _ _ _ counters _ _ _ _ _ _ _) -> all Quantity.slotsAreExhaustive (Maybe.maybeToList quantity <> Map.elems counters)
   Effect.ExileAllGraveyards -> True
   Effect.Proliferate _ -> True
   Effect.Rethrow -> True
@@ -2292,7 +2292,7 @@ hasRead wanted =
         Effect.MoveMana _ -> False
         -- The filter too: Citanul Flute's "mana value X or less" compares against
         -- X itself (Operand.AmountInSlot), which no Quantity holds.
-        Effect.Search (Search.MkSearch _ _ _ _ quantity filter_ descriptions _ _ counters _ _ _ _ _ _) -> any (Quantity.hasRead wanted) (Maybe.maybeToList quantity <> Map.elems counters) || (isX && any (Set.member Binding.variableX . Filter.boundSlots) (filter_ : Foldable.toList descriptions))
+        Effect.Search (Search.MkSearch _ _ _ _ quantity filter_ descriptions _ _ counters _ _ _ _ _ _ _) -> any (Quantity.hasRead wanted) (Maybe.maybeToList quantity <> Map.elems counters) || (isX && any (Set.member Binding.variableX . Filter.boundSlots) (filter_ : Foldable.toList descriptions))
         Effect.ExileAllGraveyards -> False
         Effect.Proliferate _ -> False
         Effect.Rethrow -> False
@@ -2580,8 +2580,9 @@ boundSlots effect = case effect of
   Effect.Firebend _ -> Set.empty
   Effect.ActivateManaAbilities _ -> Set.empty
   Effect.MoveMana _ -> Set.empty
-  -- CR 400.7: the incarnations the destination minted.
-  Effect.Search search -> foldMap Set.singleton (Search.slot search) <> foldMap Set.singleton (Search.handSlot search)
+  -- CR 400.7: the incarnations the destination minted, and the players whose
+  -- library it read.
+  Effect.Search search -> foldMap Set.singleton (Search.slot search) <> foldMap Set.singleton (Search.handSlot search) <> foldMap Set.singleton (Search.librarySlot search)
   Effect.ExileAllGraveyards -> Set.empty
   Effect.Proliferate _ -> Set.empty
   Effect.Rethrow -> Set.empty
