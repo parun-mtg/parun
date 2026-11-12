@@ -1137,6 +1137,52 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     Spec.assertEqWith s "the declined wish left it to finish into her graveyard" (length (filter (== tithe) (printingsIn Zone.Graveyard S.alice left))) 1
     Spec.assertEqWith s "bob lost nothing either way" (S.lifeOf S.bob taken, S.lifeOf S.bob left) (Just 20, Just 20)
 
+  -- CR 603.12 in CR 730.5's resumed resolution: Synthetic Subgame Levy ({W}{W}
+  -- sorcery: players play a subgame, then each opponent loses life equal to the
+  -- number of cards in your hand; when they do, you gain 3 life). A synthetic
+  -- because no printed subgame card has a reflexive. Burning Wish takes the
+  -- resolving Levy, so the loss's tally is filed in GameState.detachedBindings,
+  -- and a tally of zero there must not arm the reflexive
+  -- (Resolve.Common.happenedBetween).
+  --
+  -- A PAIR differing in alice's main-game hand alone: a Plains, so bob loses 1
+  -- and the reflexive arms, or empty, so he loses nothing and it must not. The
+  -- sizing is the Subgame Tithe case above's.
+  Spec.it s "CR 603.12 / 730.5 gameplay: a zero tally a wish-taken spell files detached arms no reflexive" $ do
+    plains <- S.printingOf s registry "Plains"
+    mountain <- S.printingOf s registry "Mountain"
+    levy <- S.printingOf s registry "Synthetic Subgame Levy"
+    burningWish <- S.printingOf s registry "Burning Wish"
+    let playWith handCards =
+          let g1 = S.landsFor plains S.alice 2 (Setup.emptyGame S.bothPlayers)
+              g2 = stockLibrary mountain 9 S.bob (stockLibrary mountain 8 S.alice (stockLibrary burningWish 1 S.alice g1))
+              g3 = List.foldl' (\gs _ -> snd (S.addHandCard plains S.alice gs)) g2 (replicate handCards ())
+              (_levyId, g4) = S.addHandCard levy S.alice g3
+              before =
+                g4
+                  { GameState.turn =
+                      (GameState.turn g4)
+                        { TurnRegisters.activePlayer = S.alice,
+                          TurnRegisters.phase = Phase.PrecombatMain,
+                          TurnRegisters.priority = Just S.alice
+                        }
+                  }
+              answer :: Prompt.Prompt r -> r
+              answer p = case p of
+                -- Burning Wish's printed "may" (CR 608.2d), taken.
+                Prompt.ChooseOptional {} -> OptionalDecision.Exercises
+                -- CR 730.2's roll, answered so the turn count above is the one played.
+                Prompt.RandomFirstPlayer _ -> S.alice
+                _ -> S.castAnswer p
+           in snd (Engine.runGamePure answer before Engine.priorityLoop)
+        lost = playWith (1 :: Int)
+        none = playWith 0
+    -- The gameplay-level claims, first.
+    Spec.assertEqWith s "CR 603.12: bob lost 1, so alice gained the reflexive's 3" (S.lifeOf S.alice lost, S.lifeOf S.bob lost) (Just 23, Just 19)
+    Spec.assertEqWith s "CR 603.12: bob lost nothing, so the reflexive never armed" (S.lifeOf S.alice none, S.lifeOf S.bob none) (Just 20, Just 20)
+    -- What the pair rests on.
+    Spec.assertEqWith s "CR 730.4/730.5: on both legs the wish took the Levy, which came back to alice's main-game library" (fmap (length . filter (== levy) . printingsIn Zone.Library S.alice) [lost, none]) [1, 1]
+
   -- CR 614.6 / 400.11c: Ring of Ma'rûf ({5} Artifact, "{5}, {T}, Exile this
   -- artifact: The next time you would draw a card this turn, instead put a card
   -- you own from outside the game into your hand." -- name, cost, type line and

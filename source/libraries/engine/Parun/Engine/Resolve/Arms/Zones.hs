@@ -2235,13 +2235,16 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
     -- neither applying to a planar source (CR 801.18).
     --
     -- The tally keys every candidate, zeros included, and is bound on the
-    -- resolving object, where effectContext's slotVotes reads it.
+    -- resolving object, where effectContext's slotVotes reads it. Only once a
+    -- ballot is cast, each logging GameEvent.Voted, so the bind is never a
+    -- write without an act (Resolve.Common.happenedBetween); an unbound slot
+    -- reads as the all-zero tally would (Quantity.VotesReceived).
     VoteChoices.Players (VotePlayers.MkVotePlayers another slot) -> do
       let table = Players.table (Plane.rangePerspective source controller gs) gs
           candidatesFor voter = filter (\pid -> not (another && pid == voter) && List.elem pid (Players.table (Plane.rangePerspective source voter gs) gs)) table
       picks <- cast $ \voter -> ballotAmong voter (fmap BallotChoice.ForPlayer (candidatesFor voter))
       let tally = Map.fromList (fmap (\pid -> (pid, Natural.length (filter (== Just (BallotChoice.ForPlayer pid)) picks))) (concatMap candidatesFor voters))
-      State.modify' (Common.overHolderBindings resolving (Map.insert slot (Binding.toVotes tally)))
+      Monad.when (any Maybe.isJust picks) (State.modify' (Common.overHolderBindings resolving (Map.insert slot (Binding.toVotes tally))))
 
 -- CR 608.2d: CR 109.5's "you" holds the opening bid, then each other seat in
 -- turn order may top the high bid, round after round, until every seat but
