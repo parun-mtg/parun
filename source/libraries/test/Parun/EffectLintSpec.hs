@@ -1577,7 +1577,7 @@ effectObjectRefs effect =
         Effect.AddPhases {} -> []
         Effect.EndTurn -> []
         Effect.EndCombatPhase -> []
-        Effect.GainControl (GainControl.MkGainControl _ ref _) -> read_ [ref]
+        Effect.GainControl (GainControl.MkGainControl _ ref _ _) -> read_ [ref]
         Effect.ExchangeControl _ -> []
         Effect.ArmDelayedTrigger {} -> []
         Effect.AffectPlayers {} -> []

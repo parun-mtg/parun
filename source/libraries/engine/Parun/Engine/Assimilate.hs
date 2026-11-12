@@ -70,7 +70,7 @@ permanentInstructions :: [Effect Card (GrantedAbility.GrantedAbility Card)]
 permanentInstructions =
   let ref = ObjectRef.InSlot Binding.assimilatedPermanents
       becomes modification = Effect.ModifyTarget (ModifyTarget.MkModifyTarget Duration.Indefinite modification ref Nothing)
-   in Effect.GainControl (GainControl.MkGainControl Duration.Indefinite ref (PlayerRef.Relative PlayerRelation.You))
+   in Effect.GainControl (GainControl.MkGainControl Duration.Indefinite ref Nothing (PlayerRef.Relative PlayerRelation.You))
         : Effect.PutCounters
           PutCounters.MkPutCounters
             { PutCounters.kind = CounterKind.PlusOnePlusOne,

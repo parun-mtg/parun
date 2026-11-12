@@ -1409,7 +1409,7 @@ carthTheLionSpec s registry =
           let control effect = case effect of
                 Effect.MoveToZone move
                   | MoveToZone.zone move == Zone.Hand ->
-                      Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (MoveToZone.ref move) (PlayerRef.Relative PlayerRelation.You))
+                      Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (MoveToZone.ref move) Nothing (PlayerRef.Relative PlayerRelation.You))
                 other -> other
               overClause c = c {Clause.effects = fmap control (Clause.effects c)}
               overModal m = m {Modal.Type.modes = fmap (\mode -> mode {Mode.clauses = fmap overClause (Mode.clauses mode)}) (Modal.Type.modes m)}

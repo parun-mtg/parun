@@ -1964,20 +1964,20 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You)))
+      (Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.Relative PlayerRelation.You)))
       " {\"type\":\"GainControl\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching (Filter.HasCardType CardType.Enchantment)) (PlayerRef.Relative PlayerRelation.You)))
+      (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching (Filter.HasCardType CardType.Enchantment)) Nothing (PlayerRef.Relative PlayerRelation.You)))
       " {\"type\":\"GainControl\",\"value\":{\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Enchantment\"}}}} "
   Spec.it s "GainControl to a named player" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching Filter.IsSource) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "teammate")))))
+      (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching Filter.IsSource) Nothing (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "teammate")))))
       " {\"type\":\"GainControl\",\"value\":{\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"to\":{\"type\":\"InSlot\",\"value\":\"teammate\"}}} "
   Spec.it s "ExchangeControl round-trips both ControlSides arms" $ do
     Common.assertJsonCodec

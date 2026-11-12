@@ -2619,7 +2619,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             -- or trigger condition deep, so the tagging survives the quoting
             -- position rather than only the leaf.
             ("CR 603.8's state trigger", holds (triggerConditionFilters (TriggerCondition.StateIs counting))),
-            ("a stored duration's clause", holds (effectFilters (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs counting) anywhere (PlayerRef.Relative PlayerRelation.You))))),
+            ("a stored duration's clause", holds (effectFilters (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs counting) anywhere Nothing (PlayerRef.Relative PlayerRelation.You))))),
             ("a depth under an opcode", holds (effectFilters (Effect.Tap (Tap.plain topDepth))))
           ]
     -- Ordered FIRST, and the assertion this case exists for: every position digs
@@ -3010,7 +3010,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         planted =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs crowned) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You))))
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.ForAsLongAs crowned) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted reference is seen" (atoms planted) 1
   -- CR 400.7's baked half of DurationEvent.BoundCardCast: the object a cost
@@ -3027,7 +3027,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let planted =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.UntilEvent (DurationEvent.CardCast (ObjectId.MkObjectId 1))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (PlayerRef.Relative PlayerRelation.You))))
+                Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures Nothing)) (Seq.singleton (Effect.GainControl (GainControl.MkGainControl (Duration.UntilEvent (DurationEvent.CardCast (ObjectId.MkObjectId 1))) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing (PlayerRef.Relative PlayerRelation.You))))
             }
     Spec.assertEqWith s "a planted event is seen" (atoms planted) 1
   -- The sweep above passes VACUOUSLY for every card but Aura Graft, and Aura

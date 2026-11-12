@@ -888,7 +888,7 @@ effectPlayerRefs effect = case effect of
   Effect.AddPhases {} -> []
   Effect.EndTurn -> []
   Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl _ _ to) -> [to]
+  Effect.GainControl (GainControl.MkGainControl _ _ _ to) -> [to]
   Effect.ExchangeControl {} -> []
   Effect.ArmDelayedTrigger arm ->
     foldMap durationPlayerRefs (ArmDelayedTrigger.duration arm) <> case ArmDelayedTrigger.onset arm of
@@ -2175,7 +2175,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.EndTurn -> True
   Effect.EndCombatPhase -> True
   -- slotsOf's arm drops this Duration, so the slotless test is made here.
-  Effect.GainControl (GainControl.MkGainControl duration _ _) ->
+  Effect.GainControl (GainControl.MkGainControl duration _ _ _) ->
     Map.null (durationSlots duration) && durationSlotsAreExhaustive duration
   Effect.ExchangeControl _ -> True
   -- CR 603.7c: the armed ability inherits this object's whole environment.
@@ -2762,7 +2762,8 @@ boundSlots effect = case effect of
   Effect.AddPhases _ -> Set.empty
   Effect.EndTurn -> Set.empty
   Effect.EndCombatPhase -> Set.empty
-  Effect.GainControl (GainControl.MkGainControl {}) -> Set.empty
+  -- CR 608.2c: the objects whose control this instruction set.
+  Effect.GainControl (GainControl.MkGainControl _ _ mSlot _) -> foldMap Set.singleton mSlot
   Effect.ExchangeControl _ -> Set.empty
   Effect.ArmDelayedTrigger {} -> Set.empty
   -- CR 611.2a: Savage Summoning's "that spell", the spell whose cast uses the

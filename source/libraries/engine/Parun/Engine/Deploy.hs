@@ -49,7 +49,7 @@ grants optionOn pc =
 ability :: ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 ability =
   let slot = TargetSlot.required Pool.Players (Just (Filter.IsPlayer PlayerRelation.Teammate))
-      effect = Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching Filter.IsSource) (PlayerRef.InSlot teammate))
+      effect = Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.EachMatching Filter.IsSource) Nothing (PlayerRef.InSlot teammate))
    in ActivatedAbility.MkActivatedAbility
         { ActivatedAbility.costChoices = [],
           ActivatedAbility.cost = Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis],

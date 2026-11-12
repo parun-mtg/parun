@@ -20,19 +20,21 @@ spec s = Spec.describe s "Parun.Codec.GainControl" $ do
       ( GainControl.MkGainControl
           { GainControl.duration = Duration.UntilEndOfTurn,
             GainControl.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+            GainControl.slot = Nothing,
             GainControl.to = PlayerRef.Relative PlayerRelation.You
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
-  Spec.it s "MkGainControl, to a named player" $
+  Spec.it s "MkGainControl, to a named player, binding a slot" $
     Common.assertCodec
       s
       GainControl.codec
       ( GainControl.MkGainControl
           { GainControl.duration = Duration.Indefinite,
             GainControl.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+            GainControl.slot = Just (SlotName.MkSlotName (Text.pack "taken")),
             GainControl.to = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "teammate"))
           }
       )
-      " {\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"to\":{\"type\":\"InSlot\",\"value\":\"teammate\"}} "
+      " {\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"slot\":\"taken\",\"to\":{\"type\":\"InSlot\",\"value\":\"teammate\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s GainControl.codec

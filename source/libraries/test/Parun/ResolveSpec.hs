@@ -187,7 +187,7 @@ targetSpec s registry = Spec.describe s "Target" $ do
               S.bob
               (Map.singleton slot (Set.singleton (Recipient.ToObject myr)))
               (Map.singleton slot (Set.singleton (Recipient.ToObject myr)))
-              (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot slot) (PlayerRef.Relative PlayerRelation.You)))
+              (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot slot) Nothing (PlayerRef.Relative PlayerRelation.You)))
         control =
           S.runPure S.identityAnswer board $
             Resolve.applyEffect
@@ -196,7 +196,7 @@ targetSpec s registry = Spec.describe s "Target" $ do
               S.bob
               (Map.singleton slot (Set.singleton (Recipient.ToObject myr)))
               (Map.singleton slot (Set.singleton (Recipient.ToObject myr)))
-              (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot slot) (PlayerRef.Relative PlayerRelation.You)))
+              (Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (ObjectRef.InSlot slot) Nothing (PlayerRef.Relative PlayerRelation.You)))
     Spec.assertEqWith s "no control effect is stored for a departed controller" (StoredEffects.continuousEffects (GameState.stored after)) []
     Spec.assertEqWith s "and the Myr's controller is unchanged" (Projection.controllerOf myr after) (Just S.carol)
     Spec.assertEqWith s "the same call for a player still in the game DOES store one -- the guard is what did it" (length (StoredEffects.continuousEffects (GameState.stored control))) 1

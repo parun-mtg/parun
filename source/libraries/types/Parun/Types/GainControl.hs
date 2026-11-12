@@ -3,12 +3,16 @@ module Parun.Types.GainControl where
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.SlotName as SlotName
 
 -- | "That player gains control of these objects, for this long" -- the payload
 -- of Parun.Types.Effect's GainControl arm (CR 613.1b, CR 611.2c).
 data GainControl = MkGainControl
   { duration :: Duration.Duration,
     ref :: ObjectRef.ObjectRef,
+    -- | Where a later instruction finds the objects this one affected (CR
+    -- 608.2c): Broadcast Takeover's "Untap them."
+    slot :: Maybe SlotName.SlotName,
     -- | The new controller, who must be exactly one player: the effect's
     -- controller for Zealous Conscripts, an opponent for Jinxed Idol, a
     -- teammate for CR 804.2's deploy.
