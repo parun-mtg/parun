@@ -4140,24 +4140,27 @@ changeLifeByDelta settle pid delta =
 -- move did not happen.
 -- CR 400.11b: where a card a search found outside the game arrives, and whether
 -- it is shown (CR 701.23e), for a destination that can take one: Invasion of
--- Arcavios's "reveal it, and put it into your hand". Nothing for the rest, which
--- then offers nothing out there -- MTGJSON dump of 2026-08-23, text "search" with
--- "outside the game": Invasion of Arcavios, ending in a hand, and Turtles
--- Forever; a search sending a card from outside the game onto the battlefield
+-- Arcavios's "reveal it, and put it into your hand", and Turtles Forever's
+-- "then reveal those cards", whose later clauses then put each into a hand or
+-- the library. Nothing for the rest, which then offers nothing out there --
+-- MTGJSON dump of 2026-08-23, text "search" with "outside the game": those two
+-- alone; a search sending a card from outside the game onto the battlefield
 -- would refute it.
 --
--- Not implemented: a Reveal search's find outside the game, held for a later
--- clause (#6508).
+-- A Reveal find is brought into the library, the zone the searched finds wait
+-- in, so a later clause can bind and move it (CR 608.2c). Not implemented: it
+-- stays outside the game until that clause, so its move to a hand is a move
+-- from the library (#6988).
 outsideArrival :: SearchDestination.SearchDestination -> Maybe (OutsideDestination.OutsideDestination, Bool)
 outsideArrival destination = case destination of
   SearchDestination.RevealThenHand -> Just (OutsideDestination.Hand, True)
   SearchDestination.Hand -> Just (OutsideDestination.Hand, False)
+  SearchDestination.Reveal -> Just (OutsideDestination.LibraryTop, True)
   SearchDestination.Battlefield -> Nothing
   SearchDestination.BattlefieldTapped -> Nothing
   SearchDestination.Exile -> Nothing
   SearchDestination.BattlefieldAttachedOrHand -> Nothing
   SearchDestination.BattlefieldAttached -> Nothing
-  SearchDestination.Reveal -> Nothing
   SearchDestination.Stay -> Nothing
   SearchDestination.RevealThenTop -> Nothing
   SearchDestination.Top -> Nothing
@@ -4204,8 +4207,9 @@ differing axes gs = Event.differingKept (differingValues axes gs)
 -- descriptions is no constraint. Greedy over the searcher's order is exact,
 -- since the cards matchable to distinct descriptions form a transversal
 -- matroid: every maximal such set is a largest one. Each check is exhaustive,
--- which the printed descriptions keep small.
-matchDescriptions :: (ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> Bool) -> Seq.Seq (Filter.Type.Filter Keyword.Type.Keyword) -> [ObjectId] -> [ObjectId]
+-- which the printed descriptions keep small. Over any cards, so a search's find
+-- outside the game is held to it beside its zones' (CR 701.23j).
+matchDescriptions :: (a -> Filter.Type.Filter Keyword.Type.Keyword -> Bool) -> Seq.Seq (Filter.Type.Filter Keyword.Type.Keyword) -> [a] -> [a]
 matchDescriptions fits descriptions
   | Seq.null descriptions = id
   | otherwise = go []
@@ -4218,11 +4222,6 @@ matchDescriptions fits descriptions
       | otherwise = go kept rest
     assign [] _ = True
     assign (options : more) used = any (\i -> not (Set.member i used) && assign more (Set.insert i used)) options
-
--- CR 609.3 for Search.exactly: the most cards, up to `cap`, that `differing`
--- could keep together from `candidates` (Event.mostDifferingOf).
-mostDiffering :: Set.Set DifferentIn.DifferentIn -> GameState -> Natural -> [ObjectId] -> Natural
-mostDiffering axes gs cap = Event.mostDifferingOf cap . fmap (differingValues axes gs)
 
 -- One card's values on Search.differentIn's axes (Event.differingOf), read off
 -- the CR 613 projection, so a split card's two names count (CR 201.2a) and a

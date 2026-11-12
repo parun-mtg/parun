@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Turtles Forever",
+      "oracleText": "Search your library and/or outside the game for exactly four legendary creature cards you own with different names, then reveal those cards. An opponent chooses two of them. Put the chosen cards into your hand and shuffle the rest into your library.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Search",
+                    "value": {
+                      "andOr": true,
+                      "destination": "Reveal",
+                      "differentIn": [
+                        "Names"
+                      ],
+                      "exactly": true,
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasSupertype",
+                            "value": "Legendary"
+                          },
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          }
+                        ]
+                      },
+                      "outsideTheGame": true,
+                      "owner": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 4
+                      },
+                      "searcher": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "slot": "found"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "chooser": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "count": {
+                            "type": "Exactly",
+                            "value": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "slot": "found"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "Shuffle",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
