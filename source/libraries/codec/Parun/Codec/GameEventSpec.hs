@@ -37,6 +37,7 @@ import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.Cost as Cost
@@ -607,6 +608,13 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 5)))
       " {\"type\":\"FacedDilemma\",\"value\":{\"player\":1,\"object\":5}} "
+  -- CR 700.13, on FacedDilemma's terms.
+  Spec.it s "CommittedCrime" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.CommittedCrime (CommittedCrime.MkCommittedCrime (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 5)))
+      " {\"type\":\"CommittedCrime\",\"value\":{\"player\":1,\"object\":5}} "
   -- CR 700.14. Distinct totals, so a codec that swapped them would not
   -- round-trip.
   Spec.it s "Expended" $

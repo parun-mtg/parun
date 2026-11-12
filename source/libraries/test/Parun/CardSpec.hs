@@ -3759,6 +3759,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.PlayerPlaysLand payload -> unframed [PlaysLand.filter payload]
   TriggerCondition.PlayerManifestsDread _ -> []
   TriggerCondition.PlayerFacesDilemma _ -> []
+  TriggerCondition.PlayerCommitsCrime _ -> []
   TriggerCondition.PlayerExpends _ -> []
   TriggerCondition.PlayerRollsResult _ -> []
   TriggerCondition.Visit -> []

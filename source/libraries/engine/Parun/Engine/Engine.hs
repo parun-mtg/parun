@@ -1209,6 +1209,8 @@ placeBorne srcId pending = do
           -- target.
           announced <- State.get
           Event.becameTarget announced abilId StackObjectKind.TriggeredAbility controller chosen
+          -- CR 700.13: and putting it on the stack may be a crime.
+          Event.committedCrime announced abilId controller chosen
 
 -- CR 101.4 / 603.3b: the players who control a pending trigger, active player
 -- first and then the rest in turn order, grouped by controller because the

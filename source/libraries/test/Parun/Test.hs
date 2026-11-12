@@ -202,6 +202,7 @@ import qualified Parun.Codec.CombatSpec
 import qualified Parun.Codec.CombatStepSpec
 import qualified Parun.Codec.CommanderColorsSpec
 import qualified Parun.Codec.CommanderDeckRuleSpec
+import qualified Parun.Codec.CommittedCrimeSpec
 import qualified Parun.Codec.CompanionConditionSpec
 import qualified Parun.Codec.CompanyCountSpec
 import qualified Parun.Codec.ComparesSpec
@@ -1463,6 +1464,7 @@ spec s registry corpus = do
   Parun.Codec.ExploitedSpec.spec s
   Parun.Codec.ExpendedSpec.spec s
   Parun.Codec.FacedDilemmaSpec.spec s
+  Parun.Codec.CommittedCrimeSpec.spec s
   Parun.Codec.ExtraPhaseSpec.spec s
   Parun.Codec.ExtraTurnSpec.spec s
   Parun.Codec.ExtraVotesSpec.spec s

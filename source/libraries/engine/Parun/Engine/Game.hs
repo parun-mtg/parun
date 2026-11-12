@@ -45,6 +45,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CopyCoverage as CopyCoverage
@@ -3407,6 +3408,7 @@ castOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
@@ -3539,6 +3541,7 @@ abilityResolved event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
@@ -3631,6 +3634,7 @@ discardOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
@@ -3806,6 +3810,7 @@ movedChange event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
@@ -3917,6 +3922,7 @@ damageDealt event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
@@ -4214,6 +4220,7 @@ lifeChangeOf direction event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
@@ -4264,14 +4271,25 @@ actionsDoneThisTurn acts gs pid =
         _ -> Nothing
    in Set.size (Set.intersection acts (Set.fromList (Maybe.mapMaybe (actionOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
 
--- | CR 700.17: how many spells and abilities this player chose modes for this
--- turn, one GameEvent.FacedDilemma each, off actionsDoneThisTurn's log.
-dilemmasFacedThisTurn :: GameState -> PlayerId -> Int
-dilemmasFacedThisTurn gs pid =
-  let facedBy event = case event of
-        GameEvent.FacedDilemma faced -> FacedDilemma.player faced == pid
-        _ -> False
-   in length (filter (facedBy . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+-- | How many of this turn's events the player is the one doing, off
+-- actionsDoneThisTurn's log: CR 700.17's dilemmas faced (one
+-- GameEvent.FacedDilemma per spell or ability modes were chosen for) and CR
+-- 700.13's crimes (one GameEvent.CommittedCrime per spell or ability).
+doneThisTurn :: (GameEvent -> Maybe PlayerId) -> GameState -> PlayerId -> Int
+doneThisTurn doer gs pid =
+  length (filter ((== Just pid) . doer . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+
+-- | CR 700.17: who faced this dilemma, for doneThisTurn.
+dilemmaFacer :: GameEvent -> Maybe PlayerId
+dilemmaFacer event = case event of
+  GameEvent.FacedDilemma faced -> Just (FacedDilemma.player faced)
+  _ -> Nothing
+
+-- | CR 700.13: who committed this crime, for doneThisTurn.
+criminal :: GameEvent -> Maybe PlayerId
+criminal event = case event of
+  GameEvent.CommittedCrime crime -> Just (CommittedCrime.player crime)
+  _ -> Nothing
 
 -- | CR 700.14: the mana this player has spent this turn to cast spells, the
 -- `after` of their latest GameEvent.Expended on the turn's log, or 0.

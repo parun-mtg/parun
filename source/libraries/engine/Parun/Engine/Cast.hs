@@ -4352,6 +4352,8 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- finished being cast" anyway. The board it samples
                           -- is `pricedGs`, taken before CR 601.2g/h's payment.
                           Event.becameTarget pricedGs sid StackObjectKind.Spell pid chosen
+                          -- CR 700.13: and casting it may be a crime.
+                          Event.committedCrime pricedGs sid pid chosen
                           -- CR 406.4: a target drawn out of a face-down pile is
                           -- revealed only now the cost is paid
                           -- (docs/synthetic-readings.md, "Whether a target drawn

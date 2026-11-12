@@ -688,6 +688,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.TalliedThisTurn TurnTally.DilemmasFaced (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"DilemmasFacedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+  -- CR 700.13, on CardsDiscardedThisTurn's terms. Nimble Brigand's.
+  Spec.it s "CrimesCommittedThisTurn" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.TalliedThisTurn TurnTally.CrimesCommitted (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"CrimesCommittedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 305.2a, on CardsDiscardedThisTurn's terms. Fastbond's is the Relative arm.
   Spec.it s "LandsPlayedThisTurn" $
     Common.assertCodec

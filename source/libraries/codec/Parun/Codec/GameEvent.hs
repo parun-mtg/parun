@@ -22,6 +22,7 @@ import qualified Parun.Codec.BecameUnattached as BecameUnattached
 import qualified Parun.Codec.BlocksDeclared as BlocksDeclared
 import qualified Parun.Codec.ClassLevelChange as ClassLevelChange
 import qualified Parun.Codec.CoinFlipped as CoinFlipped
+import qualified Parun.Codec.CommittedCrime as CommittedCrime
 import qualified Parun.Codec.ControlChanged as ControlChanged
 import qualified Parun.Codec.Convoking as Convoking
 import qualified Parun.Codec.CounterChange as CounterChange
@@ -137,6 +138,7 @@ codec =
       Arm.payload "LandPlayed" LandPlayed.codec GameEvent.LandPlayed (\x -> case x of GameEvent.LandPlayed y -> Just y; _ -> Nothing),
       Arm.payload "ManifestedDread" ManifestedDread.codec GameEvent.ManifestedDread (\x -> case x of GameEvent.ManifestedDread y -> Just y; _ -> Nothing),
       Arm.payload "FacedDilemma" FacedDilemma.codec GameEvent.FacedDilemma (\x -> case x of GameEvent.FacedDilemma y -> Just y; _ -> Nothing),
+      Arm.payload "CommittedCrime" CommittedCrime.codec GameEvent.CommittedCrime (\x -> case x of GameEvent.CommittedCrime y -> Just y; _ -> Nothing),
       Arm.payload "Expended" Expended.codec GameEvent.Expended (\x -> case x of GameEvent.Expended y -> Just y; _ -> Nothing),
       Arm.payload "DieResultSettled" (DieResult.codec PlayerId.codec) GameEvent.DieResultSettled (\x -> case x of GameEvent.DieResultSettled y -> Just y; _ -> Nothing),
       Arm.payload "RolledToVisit" (DieResult.codec PlayerId.codec) GameEvent.RolledToVisit (\x -> case x of GameEvent.RolledToVisit y -> Just y; _ -> Nothing),
@@ -218,6 +220,7 @@ tagOf x = case x of
   GameEvent.PlayerActed {} -> "PlayerActed"
   GameEvent.ManifestedDread {} -> "ManifestedDread"
   GameEvent.FacedDilemma {} -> "FacedDilemma"
+  GameEvent.CommittedCrime {} -> "CommittedCrime"
   GameEvent.Expended {} -> "Expended"
   GameEvent.DieResultSettled {} -> "DieResultSettled"
   GameEvent.RolledToVisit {} -> "RolledToVisit"

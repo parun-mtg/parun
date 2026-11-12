@@ -707,6 +707,13 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PlayerFacesDilemma PlayerRelation.You)
       " {\"type\":\"PlayerFacesDilemma\",\"value\":\"You\"} "
+  -- CR 700.13: Vadmir, New Blood's "whenever you commit a crime".
+  Spec.it s "PlayerCommitsCrime" $
+    Common.assertCodec
+      s
+      TriggerCondition.codec
+      (TriggerCondition.PlayerCommitsCrime PlayerRelation.You)
+      " {\"type\":\"PlayerCommitsCrime\",\"value\":\"You\"} "
   -- CR 700.14: Bark-Knuckle Boxer's "whenever you expend 4".
   Spec.it s "PlayerExpends" $
     Common.assertCodec

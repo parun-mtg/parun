@@ -17,6 +17,7 @@ import qualified Parun.Types.BecameUnattached as BecameUnattached
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipped as CoinFlipped
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CounterChange as CounterChange
@@ -449,6 +450,9 @@ data GameEvent
     -- modal spell or ability (CR 700.2) as it was cast, activated or put on the
     -- stack.
     FacedDilemma FacedDilemma.FacedDilemma
+  | -- | CR 700.13: a player committed a crime, once per spell or ability
+    -- whose initial targets made it one.
+    CommittedCrime CommittedCrime.CommittedCrime
   | -- | CR 700.14: a player spent mana paying a cost to cast a spell.
     Expended Expended.Expended
   | -- | CR 706.2: one die's result, after every modifier, recorded per die the

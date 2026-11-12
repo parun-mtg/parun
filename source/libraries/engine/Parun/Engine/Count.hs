@@ -885,6 +885,7 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing

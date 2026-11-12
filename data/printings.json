@@ -26209,6 +26209,7 @@
       "275": {"card":"Mountain"},
       "283": {"card":"Mountain"},
       "284": {"card":"Mountain"},
+      "58": {"card":"Nimble Brigand"},
       "272": {"card":"Plains"},
       "277": {"card":"Plains"},
       "278": {"card":"Plains"},
@@ -26226,6 +26227,8 @@
       "328": {"card":"Tinybones Joins Up"},
       "109": {"card":"Tinybones, the Pickpocket"},
       "290": {"card":"Tinybones, the Pickpocket"},
+      "113": {"card":"Vadmir, New Blood"},
+      "329": {"card":"Vadmir, New Blood"},
       "37": {"card":"Vengeful Townsfolk"}
     },
     "OTP": {
@@ -31100,7 +31103,9 @@
       "108p": {"card":"Tinybones Joins Up"},
       "108s": {"card":"Tinybones Joins Up"},
       "109p": {"card":"Tinybones, the Pickpocket"},
-      "109s": {"card":"Tinybones, the Pickpocket"}
+      "109s": {"card":"Tinybones, the Pickpocket"},
+      "113p": {"card":"Vadmir, New Blood"},
+      "113s": {"card":"Vadmir, New Blood"}
     },
     "PPCY": {
       "3": {"card":"Avatar of Hope"}

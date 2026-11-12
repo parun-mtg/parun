@@ -71,6 +71,7 @@ import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Combat as Combat
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterHolder as CounterHolder
@@ -937,6 +938,7 @@ anyTriggerReads event = case event of
   GameEvent.LandPlayed {} -> True
   GameEvent.ManifestedDread {} -> True
   GameEvent.FacedDilemma {} -> True
+  GameEvent.CommittedCrime {} -> True
   GameEvent.Expended {} -> True
   GameEvent.DieResultSettled {} -> True
   GameEvent.RolledToVisit {} -> True
@@ -2094,6 +2096,11 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- read against CR 109.5's "you".
   TriggerCondition.PlayerFacesDilemma relation -> case event of
     GameEvent.FacedDilemma ev -> PlayerRelation.holds (Game.teams gs) relation you (FacedDilemma.player ev)
+    _ -> False
+  -- CR 700.13: "whenever you commit a crime", the criminal read against CR
+  -- 109.5's "you".
+  TriggerCondition.PlayerCommitsCrime relation -> case event of
+    GameEvent.CommittedCrime ev -> PlayerRelation.holds (Game.teams gs) relation you (CommittedCrime.player ev)
     _ -> False
   -- CR 700.14: the payment took the player's total from under N to at least
   -- N. Both totals come off the event, stamped as the cost was paid, so a
