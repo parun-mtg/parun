@@ -57,6 +57,9 @@
     {
       "do": {
         "Cast": {
+          "mana": [
+            "$m"
+          ],
           "object": "$bolt",
           "targets": [
             "$bob"
@@ -73,7 +76,7 @@
           "is": [
             "Legendary"
           ],
-          "object": "$bolt",
+          "object": "Lightning Bolt",
           "of": "Supertypes"
         }
       },
@@ -89,9 +92,8 @@
     },
     {
       "check": {
-        "View": {
-          "is": 17,
-          "of": "Life",
+        "Life": {
+          "life": 17,
           "player": "bob"
         }
       },
