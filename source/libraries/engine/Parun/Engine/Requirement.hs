@@ -55,7 +55,7 @@ gather atoms sets =
 -- `required` plus one requirement on each of `atoms` heavier than all of
 -- `required` together, and that weight: a maximum reaching it times the atoms
 -- held, plus the old maximum, holds them all and obeys as many as before
--- (Parun.Engine.Combat's couldAttack, attackCreaturesAllowed and
+-- (Parun.Engine.Combat's couldAttack, attackCreaturesAllowedGiven and
 -- declarableBlockers).
 boosted :: (Ord key) => [key] -> Instances key -> (Natural, Instances key)
 boosted atoms required =

@@ -1481,9 +1481,10 @@ alluringSirenSpec s registry = Spec.describe s "AlluringSiren" $ do
   Spec.it s "CR 508.1d whole cards: a real declare attackers step sends the lured creature at bob" $ do
     -- The gameplay-level case, through Combat.declareAttackers rather than the
     -- legality predicate, with an interpreter that attacks with everything and
-    -- announces JACE for every attacker. CR 508.1d makes that declaration illegal,
-    -- so the engine replaces it, and what the combat record then says the lured
-    -- creature is attacking is the whole assertion.
+    -- announces JACE for every attacker it is asked about. CR 508.1d makes Jace
+    -- illegal for the lured creature, so the engine never offers it, and what the
+    -- combat record then says the lured creature is attacking is the whole
+    -- assertion.
     siren <- S.printingOf s registry "Alluring Siren"
     jace <- S.printingOf s registry "Jace Beleren"
     piker <- S.printingOf s registry "Goblin Piker"
@@ -1501,7 +1502,7 @@ alluringSirenSpec s registry = Spec.describe s "AlluringSiren" $ do
         Spec.assertEqWith s "without the Siren's ability the announcement stands" (announced without lured) (Just (AttackTarget.OfPlaneswalker jaceId))
 
 -- Attacks with everything (aggressiveAnswer) and announces the PLANESWALKER for
--- every attacker, which CR 508.1d then has to refuse.
+-- every attacker asked about, which CR 508.1d forbids the lured one.
 announcing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 announcing jaceId p = case p of
   Prompt.ChooseAttackTarget {} -> AttackTarget.OfPlaneswalker jaceId

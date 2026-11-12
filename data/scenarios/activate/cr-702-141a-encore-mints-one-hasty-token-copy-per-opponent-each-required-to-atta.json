@@ -1,6 +1,6 @@
 {
   "description": "CR 702.141a encore mints one hasty token copy per opponent, each required to attack its own",
-  "note": "The two disobedient pairings are do entries, not refuse: the engine rejects them after the last ChooseAttackTarget and re-asks DeclareAttackers, which a refuse cannot key. Had either stood, the Attackers check (and the unspent entries after it) would fail.",
+  "note": "Each token is offered only the opponent it must attack, so neither announcement is asked. Had either attacked the other opponent, the Attackers check would fail.",
   "board": {
     "seats": [
       {
@@ -238,82 +238,6 @@
           "Impulsive Pilferer#3"
         ]
       }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      },
-      "source": "Impulsive Pilferer#2"
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      },
-      "source": "Impulsive Pilferer#3"
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "Attack": [
-          "Impulsive Pilferer#2",
-          "Impulsive Pilferer#3"
-        ]
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseAttackTarget": "$carol"
-      },
-      "source": "Impulsive Pilferer#2"
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      },
-      "source": "Impulsive Pilferer#3"
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "Attack": [
-          "Impulsive Pilferer#2",
-          "Impulsive Pilferer#3"
-        ]
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      },
-      "source": "Impulsive Pilferer#2"
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "ChooseAttackTarget": "$carol"
-      },
-      "source": "Impulsive Pilferer#3"
     },
     {
       "turn": 1,
