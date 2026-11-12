@@ -1,0 +1,113 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 3
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Flying"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasKeyword",
+                        "value": {
+                          "type": "Flying"
+                        }
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "SorcerySpeed"
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "High-Flying Ace",
+      "oracleText": "Flying\n{3}{W}: Target creature without flying gains flying until end of turn. Activate only as a sorcery.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bird",
+          "Mutant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

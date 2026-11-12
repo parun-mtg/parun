@@ -2143,7 +2143,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Prismatic Ward", 1), -- a CR 614.1 replacement row's own Filter, as Pariah's
         ("Unstable Mutation", 1), -- a trigger putting a counter on it
         ("Enchanted River's Grasp", 2), -- its entering tap and counter removal
-        ("Super Speed", 1) -- a pump in the entering trigger, as Abduction's untap
+        ("Super Speed", 1), -- a pump in the entering trigger, as Abduction's untap
+        ("Uneasy Alliance", 1) -- an activated exile of it, the Aura sacrificed as Carapace's is
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a

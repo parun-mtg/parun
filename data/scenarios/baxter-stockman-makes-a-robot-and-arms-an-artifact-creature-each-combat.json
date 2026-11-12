@@ -1,0 +1,244 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Baxter Stockman",
+            "label": "baxter"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "CCCUR",
+        "name": "alice"
+      },
+      {
+        "battlefield": [],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 111.1, 603.6a, 611.2a: Baxter Stockman makes a 1/1 colorless Robot artifact creature token as he enters, and at the beginning of combat on your turn gives target artifact creature you control +3/+0, first strike and vigilance",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$baxter"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Robot Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "Robot Token",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Robot Token",
+          "subtypes": [
+            "Robot"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Robot Token",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "Robot Token",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$memnite"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$memnite",
+          "power": 4,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "FirstStrike"
+          },
+          "object": "$memnite"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Vigilance"
+          },
+          "object": "$memnite"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Robot Token",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Mouser Attack!",
+      "oracleText": "Choose one —\n• Create a 1/1 colorless Robot artifact creature token.\n• Target creature gets +3/+0 and gains first strike until end of turn.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "name": "Robot Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Robot"
+                              ],
+                              "types": [
+                                "Artifact",
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 0
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "FirstStrike"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

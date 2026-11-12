@@ -1,0 +1,97 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Hamato Guardian Stance",
+      "oracleText": "Target creature gets +1/+3 and gains flying until end of turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 3
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Flying"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "Scry",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

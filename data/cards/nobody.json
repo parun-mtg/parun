@@ -1,0 +1,137 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Blue"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Red"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Blue"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Red"
+            }
+          }
+        }
+      ],
+      "name": "Nobody",
+      "oracleText": "When this creature enters, return up to one other target artifact you control to its owner's hand. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Hand"
+                        }
+                      },
+                      {
+                        "type": "Scry",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Hero",
+          "Human"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
