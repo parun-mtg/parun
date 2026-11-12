@@ -101,6 +101,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LastKnown as LastKnown
 import Parun.Types.Layer (Layer)
