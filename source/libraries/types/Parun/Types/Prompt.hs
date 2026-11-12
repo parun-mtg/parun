@@ -385,7 +385,9 @@ data Prompt r where
   -- takes, asked once per card with what earlier asks did not take; the
   -- PlayerId is the ref's chooser. Also CR 707.5: which card off the
   -- battlefield a mandatory Parun.Types.AsCopy choice copies (Dinosaur
-  -- Headdress's craft materials), the ObjectId the object choosing.
+  -- Headdress's craft materials), the ObjectId the object choosing. Also CR
+  -- 707.10e: which of the objects a replacement made of a copy's stated
+  -- target the copy targets, the ObjectId the resolving effect.
   ChooseCardFromAmong :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt ObjectId.ObjectId
   -- | CR 309.2a \/ 701.49a: which of the dungeon printings they own a venturing
   -- player brings in from outside the game (CR 400.11), there being no object
