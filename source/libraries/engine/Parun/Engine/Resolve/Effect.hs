@@ -125,6 +125,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Throw as Throw
 import qualified Parun.Types.ThrowKind as ThrowKind
 import qualified Parun.Types.ThrowResult as ThrowResult
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -160,37 +161,41 @@ import qualified Parun.Types.Zone as Zone
 -- offer asks about the same copies over again. A copy nobody casts is left where
 -- it was made, for CR 704.5e to sweep at the next check (Parun.Engine.Sba).
 --
--- Rod of Absorption's total is the repeat with a budget: each round offers
--- only a half whose mana value fits what is left (CR 202.3d, through
--- CastOffer.restriction's per-face match, so a split card's half is measured
--- as the spell it becomes -- unobserved, no board casting a split card this
--- way), and the cast spell's mana value is spent from it.
--- `evaluate` reads the budget's Quantity once, before the first round (CR
--- 608.2h). UpTo's count is the same repeat with a cap on casts, read once the
--- same way.
+-- Rod of Absorption's total is the repeat with a budget
+-- (Parun.Types.TotalCap, Game.pickCounted's cap): each round offers only a
+-- half whose weight fits what is left (CR 202.3d, read per face beside
+-- CastOffer.restriction, so a split card's half is measured as the spell it
+-- becomes -- unobserved, no board casting a split card this way), and the
+-- cast spell's weight is spent from it.
+-- `reading Nothing` reads the budget's Quantity once, before the first round
+-- (CR 608.2h), and `reading (Just candidate)` a weight against that
+-- candidate's view. UpTo's count is the same repeat with a cap on casts, read
+-- once the same way.
 --
 -- Answers the spells the offer's casts put on the stack, for CR 400.7h's
 -- OfferCast.slot.
-offerCast :: Game Result -> Filter.Context -> (Quantity.Type.Quantity -> Maybe Integer) -> [ObjectId] -> PlayerId -> CastObligation.CastObligation -> PermissionVerb.PermissionVerb -> Maybe PlayerId -> CastRepetition.CastRepetition -> Bool -> CastOffer.CastOffer -> Game [ObjectId]
-offerCast runSubgame context evaluate named caster optionality verb retake repetition copied offer = do
+offerCast :: Game Result -> Filter.Context -> (Maybe (ObjectId, Filter.View) -> Quantity.Type.Quantity -> Maybe Integer) -> [ObjectId] -> PlayerId -> CastObligation.CastObligation -> PermissionVerb.PermissionVerb -> Maybe PlayerId -> CastRepetition.CastRepetition -> Bool -> CastOffer.CastOffer -> Game [ObjectId]
+offerCast runSubgame context reading named caster optionality verb retake repetition copied offer = do
   subjects <- if copied then Maybe.catMaybes <$> traverse (Common.castableCopy caster) named else pure named
   case repetition of
-    CastRepetition.Once -> foldMap (Maybe.maybeToList . snd) <$> offerCastOnce runSubgame context subjects caster optionality verb retake offer
+    CastRepetition.Once -> foldMap (Maybe.maybeToList . snd) <$> offerCastOnce runSubgame context (\_ _ -> True) subjects caster optionality verb retake offer
     CastRepetition.AnyNumber -> again Nothing Nothing subjects
-    CastRepetition.WithinTotalManaValue quantity -> again (Just (Maybe.fromMaybe 0 (evaluate quantity))) Nothing subjects
-    CastRepetition.UpTo quantity -> again Nothing (Just (Maybe.fromMaybe 0 (evaluate quantity))) subjects
+    CastRepetition.WithinTotal (TotalCap.MkTotalCap weight most) -> again (Just (weighs weight, Maybe.fromMaybe 0 (reading Nothing most))) Nothing subjects
+    CastRepetition.UpTo quantity -> again Nothing (Just (Maybe.fromMaybe 0 (reading Nothing quantity))) subjects
   where
-    again :: Maybe Integer -> Maybe Integer -> [ObjectId] -> Game [ObjectId]
+    -- TotalCap.weight's read and clamp.
+    weighs weight oid view = max 0 (Maybe.fromMaybe 0 (reading (Just (oid, view)) weight))
+    again :: Maybe (ObjectId -> Filter.View -> Integer, Integer) -> Maybe Integer -> [ObjectId] -> Game [ObjectId]
     again _ (Just casts) _ | casts <= 0 = pure []
     again budget casts remaining = do
-      let capped total = offer {CastOffer.restriction = Just (maybe (Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost (Operand.Literal total))) (\r -> Filter.Type.And [r, Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost (Operand.Literal total))]) (CastOffer.restriction offer))}
-      taken <- offerCastOnce runSubgame context remaining caster optionality verb retake (maybe offer capped budget)
+      let fits = maybe (\_ _ -> True) (\(weigh, room) oid view -> weigh oid view <= room) budget
+      taken <- offerCastOnce runSubgame context fits remaining caster optionality verb retake offer
       case taken of
         Nothing -> pure []
         Just (oid, spell) -> do
           gs <- State.get
-          let spent = Maybe.fromMaybe 0 (spell >>= Projection.fullView gs >>= Filter.manaValue)
-          (Maybe.maybeToList spell <>) <$> again (fmap (subtract spent) budget) (fmap (subtract 1) casts) (filter (/= oid) remaining)
+          let spent weigh = maybe 0 (\sid -> maybe 0 (weigh sid) (Projection.fullView gs sid)) spell
+          (Maybe.maybeToList spell <>) <$> again (fmap (\(weigh, room) -> (weigh, room - spent weigh)) budget) (fmap (subtract 1) casts) (filter (/= oid) remaining)
 
 -- CR 707.13 / 707.14: offer the cast of a copy of this printing created outside
 -- the game (Event.mintOutside), bracketing `offerCast` with the mint and the
@@ -201,7 +206,7 @@ offerCast runSubgame context evaluate named caster optionality verb retake repet
 offerOutsideCopy :: Game Result -> Filter.Context -> PlayerId -> PrintingId.PrintingId -> CastOffer.CastOffer -> Game ()
 offerOutsideCopy runSubgame context caster printingId offer = do
   copyId <- State.state (Event.mintOutside caster printingId)
-  Monad.void (offerCast runSubgame context (const Nothing) [copyId] caster CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
+  Monad.void (offerCast runSubgame context (\_ _ -> Nothing) [copyId] caster CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
   State.modify' $ \g ->
     if Set.member copyId (GameState.outsideCopies g)
       then g {GameState.objects = Map.delete copyId (GameState.objects g), GameState.outsideCopies = Set.delete copyId (GameState.outsideCopies g)}
@@ -253,8 +258,8 @@ offerOutsideCopy runSubgame context caster printingId offer = do
 -- `retake` is CR 724.2's second span: the player who controls the caster while
 -- the spell this cast makes resolves (Word of Command). Keyed to the spell's
 -- own id, which is the one object CR 608.2g puts on top of the stack.
-offerCastOnce :: Game Result -> Filter.Context -> [ObjectId] -> PlayerId -> CastObligation.CastObligation -> PermissionVerb.PermissionVerb -> Maybe PlayerId -> CastOffer.CastOffer -> Game (Maybe (ObjectId, Maybe ObjectId))
-offerCastOnce runSubgame context named caster optionality verb retake offer = do
+offerCastOnce :: Game Result -> Filter.Context -> (ObjectId -> Filter.View -> Bool) -> [ObjectId] -> PlayerId -> CastObligation.CastObligation -> PermissionVerb.PermissionVerb -> Maybe PlayerId -> CastOffer.CastOffer -> Game (Maybe (ObjectId, Maybe ObjectId))
+offerCastOnce runSubgame context fits named caster optionality verb retake offer = do
   gs <- State.get
   let -- Whether this offer states CR 118.9's alternative cost, in either of the
       -- two wordings `applied` below reads. NOT `transformed`, which is CR
@@ -371,8 +376,10 @@ offerCastOnce runSubgame context named caster optionality verb retake offer = do
             -- that a per-half question like the two above. Against the face's own
             -- view and the resolution's context, so a source-comparing atom reads
             -- the same source the reference did. An offer stating none narrows
-            -- nothing.
+            -- nothing. `fits` is the repetition's total asking the same half
+            -- (CastRepetition.WithinTotal).
             if maybe True (Filter.matches context (Projection.viewOfCard face)) (CastOffer.restriction offer)
+              && fits oid (Projection.viewOfCard face)
               && Cast.castableWhenOffered (CastOffer.spending offer) caster oid name candidates proposed
               then
                 -- CR 118.8c, read off the same candidates the cast will be

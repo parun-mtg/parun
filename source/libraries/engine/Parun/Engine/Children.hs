@@ -1425,12 +1425,12 @@ castOfferChildren c offer = case offer of
       <*> pure payableFromSpent
       <*> pure reduction
 
--- | How many casts an offer allows: the cap, where a Quantity states one.
+-- | How many casts an offer allows: the cap, where Quantities state one.
 castRepetitionChildren :: (Applicative f) => EffectChildren card ability f -> CastRepetition.CastRepetition -> f CastRepetition.CastRepetition
 castRepetitionChildren c repetition = case repetition of
   CastRepetition.Once -> pure repetition
   CastRepetition.AnyNumber -> pure repetition
-  CastRepetition.WithinTotalManaValue quantity -> fmap CastRepetition.WithinTotalManaValue (onQuantity c quantity)
+  CastRepetition.WithinTotal (TotalCap.MkTotalCap weight most) -> fmap CastRepetition.WithinTotal (TotalCap.MkTotalCap <$> onQuantity c weight <*> onQuantity c most)
   CastRepetition.UpTo quantity -> fmap CastRepetition.UpTo (onQuantity c quantity)
 
 -- | One visitor per kind of child a trigger condition (CR 603.1) holds. Its

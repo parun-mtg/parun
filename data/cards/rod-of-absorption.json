@@ -39,10 +39,16 @@
                             }
                           },
                           "repetition": {
-                            "type": "WithinTotalManaValue",
+                            "type": "WithinTotal",
                             "value": {
-                              "type": "InSlot",
-                              "value": "X"
+                              "most": {
+                                "type": "InSlot",
+                                "value": "X"
+                              },
+                              "weight": {
+                                "type": "Measure",
+                                "value": "ManaValue"
+                              }
                             }
                           }
                         }
