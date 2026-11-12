@@ -45,7 +45,7 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-${{ runner.arch }}-${{ steps.haskell.outputs.ghc-version }}-${{ github.sha }}
           restore-keys: ${{ runner.os }}-${{ runner.arch }}-${{ steps.haskell.outputs.ghc-version }}-
-      - run: cabal configure --flags=pedantic --jobs --semaphore
+      - run: cabal configure --enable-optimization --flags=pedantic --jobs --semaphore
       - run: cabal build all
       - run: cabal run parun -- test --timeout=120s
       - if: steps.cache.outputs.cache-hit != 'true'

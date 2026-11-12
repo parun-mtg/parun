@@ -34,7 +34,8 @@ The units, as sub-issues of the tracker:
 ## Session setup
 
 A cloud session starts without `_scratch/` (gitignored). Fetch each input
-when a step needs it; a missing file is a fetch, not a blocker.
+when a step needs it; a missing file is a fetch, not a blocker. Its machine
+is set up by `docs/agents/cloud-environment.md`.
 
 - MTGJSON: `curl -sfL -o _scratch/X.json.gz
   https://mtgjson.com/api/v5/X.json.gz && gunzip _scratch/X.json.gz` for `X`

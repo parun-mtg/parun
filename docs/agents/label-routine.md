@@ -37,9 +37,8 @@ Finish:
   subagents/ directory if any), and the wall clock since you started. If no
   transcript is reachable, say that and what you looked for; never estimate.
 - Mark the PR ready and enable auto-merge with gh pr merge --auto. The repo
-  uses a merge queue. Then start the whole suite once in the background, its
-  output in a file, so a CI failure finds the build warm; read the file only
-  if the PR comes back.
+  uses a merge queue. Never run the whole suite: if CI fails, run the cases
+  it names.
 
 Wait:
 - Wait with script/wait-pr.sh <PR>, run in the foreground with a timeout
@@ -48,7 +47,8 @@ Wait:
   from the merge queue, a new comment). Don't write your own loop and don't
   check repeatedly yourself.
 - Never update a branch merely because it is behind main. Merge origin/main
-  only to resolve a real conflict, then re-run the suite and read the result.
+  only to resolve a real conflict, then re-run the tests your change can
+  reach and read the result.
 - Fix failing checks. For a review comment, verify the claim against the code
   and data/comprehensive-rules.txt, then fix it or reply saying why not. After
   a fix, re-arm auto-merge if it was disarmed, then wait again.

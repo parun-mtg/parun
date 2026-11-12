@@ -57,11 +57,12 @@ on spaces); repeat `-p` to run the tests matching any. Only failures print,
 then a summary line naming the seed the run shuffled the tests with; `--seed N`
 replays that order. Iterate on your subtree, and before pushing run the tests
 your change can reach, not the whole suite: CI runs that on every push and
-the merge queue runs it again. Once auto-merge is armed, start the whole
-suite once, so that a CI failure finds the build warm and its result at
-hand; read it only if the PR comes back. Redirect output to a file and read
-the file. Build with `cabal build -v0`. No `cabal clean`; keep the optimizer on
-for the suite (mutations are the exception).
+the merge queue runs it again. Never run the whole suite locally: a local
+build is unoptimized (`cabal.project`), where it takes a quarter of an hour
+and its full-game cases time out; if CI fails, run the cases it names.
+Redirect output to a file and read the file. Build with `cabal build -v0`. No
+`cabal clean`, and never turn the optimizer on: `script/mutate.sh` needs the
+same build.
 
 Run `cabal` in the foreground with a generous timeout and split long runs by
 pattern; a run at 0% CPU for ten minutes is wedged.
@@ -141,7 +142,7 @@ around the funnel (`Daytime.turnDue` reaching `Game.turnFaceOver` around
 
 `script/mutate.sh FILE SED_EXPR PATTERN [CABAL_ARG...]`, under the build lock,
 backs the file up outside the tree, applies the mutation, runs the subtree
-`PATTERN` selects at `-O0` in `dist-mutate/`, prints the first failing
+`PATTERN` selects in the ordinary `-O0` build, prints the first failing
 assertion, and restores the file; its exit status is the outcome (`--help`).
 Keep the pattern narrow. Whether the assertion it names is the gameplay-level
 one is your judgement.
@@ -149,8 +150,7 @@ one is your judgement.
 - **A mutation of a data file needs no build.** A card or scenario is read
   at run time: copy the file aside, edit it, run its subtree with the
   ordinary `cabal run -v0 parun -- test -p PATTERN`, and copy it back.
-  `script/mutate.sh` is for Haskell, and its first run in a checkout builds
-  everything again at `-O0`.
+  `script/mutate.sh` is for Haskell.
 - **One mutation at a time, and read the failure.** It must go red for the
   intended reason in the intended place.
 - **Name the assertion it reddened.** If a cheap proxy ahead of the
