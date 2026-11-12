@@ -407,7 +407,9 @@ data Person
 player :: Context -> PlayerRef.PlayerRef -> [(Reference, Person)]
 player context ref = case ref of
   PlayerRef.Relative PlayerRelation.You -> [(MkReference (Text.pack "you") [] Filter.Singular [], Second)]
-  PlayerRef.Relative PlayerRelation.Opponent -> [(MkReference (Text.pack "each opponent") [] Filter.Plural [], Third)]
+  -- Free: "each opponent" (Basilica Bell-Haunt) or "each of your opponents"
+  -- (Everything Pizza).
+  PlayerRef.Relative PlayerRelation.Opponent -> [(MkReference (Text.pack wording') [] Filter.Plural [], Third) | wording' <- ["each opponent", "each of your opponents"]]
   PlayerRef.Relative PlayerRelation.AnyPlayer -> [(MkReference (Text.pack "each player") [] Filter.Plural [], Third)]
   PlayerRef.InSlot s
     | s == youSlot -> [(MkReference (Text.pack "you") [] Filter.Singular [], Second)]
