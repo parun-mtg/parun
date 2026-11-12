@@ -51,7 +51,7 @@ declining p = case p of
 -- unattended game needs to keep developing.
 scripted :: Prompt r -> r
 scripted p = case p of
-  Prompt.ChooseDiscard _ _ ids n -> discardNewest ids n
+  Prompt.ChooseDiscard _ _ ids n _ -> discardNewest ids n
   _ -> declining p
 
 -- Cast if anything is castable, else play a land, else pass. Shared with the

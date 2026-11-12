@@ -1622,7 +1622,7 @@ discard settle resolving source controller legal _ (Discard.Counted (CountedDisc
                   else do
                     -- CR 701.9b: the discarding player chooses which cards.
                     let decider = Decide.deciderFor victim gs
-                    choices <- Game.choose (Prompt.ChooseDiscard decider victim held count)
+                    choices <- Game.choose (Prompt.ChooseDiscard decider victim held count Seq.empty)
                     -- FILTERED AND COMPLETED, PlayerSacrifices' posture. This
                     -- branch is reached only when the hand is LARGER than the
                     -- count, so CR 609.3 does no work and every omitted card is one

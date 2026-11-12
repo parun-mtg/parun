@@ -4994,7 +4994,7 @@ randomDiscardSpec s registry =
 recordingDiscards :: Prompt.Prompt r -> State.State [(String, [ObjectId.ObjectId])] r
 recordingDiscards p = case p of
   Prompt.OrderCostComponents {} -> State.modify' (<> [("OrderCostComponents", [])]) >> pure (Replay.defaultAnswer p)
-  Prompt.ChooseDiscard _ _ held _ -> State.modify' (<> [("ChooseDiscard", held)]) >> pure (Replay.defaultAnswer p)
+  Prompt.ChooseDiscard _ _ held _ _ -> State.modify' (<> [("ChooseDiscard", held)]) >> pure (Replay.defaultAnswer p)
   Prompt.RandomObject candidates -> State.modify' (<> [("RandomObject", NonEmpty.toList candidates)]) >> pure (Replay.defaultAnswer p)
   _ -> pure (S.identityAnswer p)
 

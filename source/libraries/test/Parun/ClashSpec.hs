@@ -207,7 +207,7 @@ spec s registry = Spec.describe s "Clash" $ do
             Prompt.ChooseClash _ pid _ _ _ _
               | pid == S.alice -> note "clash" >> pure LibraryPosition.Bottom
               | otherwise -> pure LibraryPosition.Top
-            p@(Prompt.ChooseDiscard _ pid _ _) | pid == S.carol -> note "discard" >> pure (S.identityAnswer p)
+            p@(Prompt.ChooseDiscard _ pid _ _ _) | pid == S.carol -> note "discard" >> pure (S.identityAnswer p)
             p -> pure (casting p)
         ((_, after), seen) = State.runState (Engine.runGameAsked watching before (S.cast S.alice spell >> Stack.resolveTop)) []
         discarded = lookup "discard" [(label, (ids, views)) | (label, ids, views) <- seen]

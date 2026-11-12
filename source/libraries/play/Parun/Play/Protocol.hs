@@ -239,7 +239,7 @@ offerOf gs prompt = case prompt of
   Prompt.DeclareMulligan _ _ offer ->
     fields [("taken", natural (MulliganOffer.taken offer)), ("bottom", natural (MulliganOffer.bottomCount offer))]
   Prompt.Bottom _ _ from count -> fields [("from", objects from), ("count", natural count)]
-  Prompt.ChooseDiscard _ _ from count -> fields [("from", objects from), ("count", natural count)]
+  Prompt.ChooseDiscard _ _ from count earlier -> fields [("from", objects from), ("count", natural count), ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)]
   -- CR 404.3: the batch, from the top down as it would land.
   Prompt.ArrangeGraveyardArrivals _ _ batch -> fields [("from", objects batch)]
   Prompt.DeclareAttackers _ _ attackers -> objects attackers

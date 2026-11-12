@@ -434,7 +434,7 @@ spec s registry = Spec.describe s "Client" $ do
         o9 = ObjectId.MkObjectId 9
         alice = Decider.MkDecider S.alice
         attacking = Prompt.DeclareAttackers alice S.alice [o5, o7, o9]
-        discarding = Prompt.ChooseDiscard alice S.alice [o5, o7, o9] 2
+        discarding = Prompt.ChooseDiscard alice S.alice [o5, o7, o9] 2 Seq.empty
     Spec.assertEqWith s "all attack" (answering gs "all" attacking) (Right [o5, o7, o9])
     Spec.assertEqWith s "a range attacks" (answering gs "2-3" attacking) (Right [o7, o9])
     Spec.assertEqWith s "a backward range is refused, not read as none" (answering gs "3-2" attacking) (Left (Text.pack "end of input"))

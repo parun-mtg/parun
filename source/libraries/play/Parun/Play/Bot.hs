@@ -64,7 +64,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseAction _ _ actions -> maybe (pure Action.Pass) Generator.pick (NonEmpty.nonEmpty actions)
   Prompt.DeclareMulligan {} -> Generator.pick (MulliganDecision.Keep NonEmpty.:| [MulliganDecision.Mulligan])
   Prompt.Bottom _ _ cards count -> fmap (List.genericTake count) (Generator.shuffle cards)
-  Prompt.ChooseDiscard _ _ cards count -> fmap (List.genericTake count) (Generator.shuffle cards)
+  Prompt.ChooseDiscard _ _ cards count _ -> fmap (List.genericTake count) (Generator.shuffle cards)
   Prompt.DeclareAttackers _ _ attackers -> Monad.filterM (const coin) attackers
   -- CR 508.1e / 702.22c: any disjoint bands of the attackers; the engine drops
   -- a band the rules do not allow (Parun.Engine.Combat's legalBand).

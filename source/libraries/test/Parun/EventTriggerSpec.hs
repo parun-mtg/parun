@@ -181,7 +181,7 @@ discardOne answer gs = S.runPure answer gs (Cost.payComponent S.manaPerformer Pa
 -- repaired by an answerer that goes looking for a legal pick.
 discardPick :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 discardPick wanted p = case p of
-  Prompt.ChooseDiscard _ _ held _ -> filter (== wanted) held
+  Prompt.ChooseDiscard _ _ held _ _ -> filter (== wanted) held
   _ -> S.identityAnswer p
 
 -- CR 701.9a: "To discard a card, move it from its owner's hand to that player's

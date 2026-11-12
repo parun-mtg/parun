@@ -1251,7 +1251,7 @@ combatReplaySpec s =
         Spec.it s "a scry choice does not decode as a discard choice" $ do
           -- Discriminating: this fails if ChooseScry reuses another
           -- ObjectId-list response instead of getting its own constructor.
-          let p = Prompt.ChooseDiscard decider S.alice [ObjectId.MkObjectId 7] 1
+          let p = Prompt.ChooseDiscard decider S.alice [ObjectId.MkObjectId 7] 1 Seq.empty
           Spec.assertEqWith s "mismatch" (Replay.decode p (Response.ChoseScry ([], [ObjectId.MkObjectId 7]))) Nothing
         Spec.it s "a short transcript leaves the scried cards where they were" $
           Spec.assertEqWith
