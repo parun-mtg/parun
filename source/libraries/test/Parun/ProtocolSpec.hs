@@ -632,11 +632,51 @@ spec s registry = Spec.describe s "Protocol" $ do
         Spec.assertEqWith s "nothing attacks" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) Map.empty
       _ -> Spec.assertFailure s "fixture should have two creatures"
 
+  Spec.it s "CR 508.1b-c with several attack targets, an attack no announcement makes legal is refused, and one that some does is asked where each attacks" $ do
+    bondedConstruct <- S.printingOf s registry "Bonded Construct"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    jace <- S.printingOf s registry "Jace Beleren"
+    case S.combatBoardOf [bondedConstruct, bears] [jace] of
+      (gs, [construct, bear], [jaceId]) -> do
+        let board = S.addCounter CounterKind.Loyalty 3 jaceId gs
+            attacks = Protocol.encodeAnswer (Prompt.DeclareAttackers (Decider.MkDecider S.alice) S.alice [construct, bear])
+            at oid = Protocol.encodeAnswer (Prompt.ChooseAttackTarget (Decider.MkDecider S.alice) S.alice oid (AttackTarget.OfPlayer S.bob NonEmpty.:| [AttackTarget.OfPlaneswalker jaceId]))
+            -- Answered by kind, so a line that wrongly lets the lone Construct
+            -- through still ends in a declaration rather than out of replies.
+            (sent, after) =
+              declaringByKind
+                [ ("DeclareAttackers", ([attacks [construct], attacks [construct], attacks [construct, bear]], attacks [])),
+                  ("ChooseAttackTarget", ([at construct (AttackTarget.OfPlaneswalker jaceId), at bear (AttackTarget.OfPlayer S.bob)], at bear (AttackTarget.OfPlayer S.bob)))
+                ]
+                board
+            refused = Just (Text.pack "the declaration of attackers is illegal")
+        Spec.assertEqWith s "the targets" (Combat.declarableTargets board) [AttackTarget.OfPlayer S.bob, AttackTarget.OfPlaneswalker jaceId]
+        Spec.assertEqWith s "problems" (problemsOf "DeclareAttackers" sent) [Nothing, refused, refused]
+        Spec.assertEqWith s "each attacks where announced" (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after))) (Map.fromList [(construct, AttackTarget.OfPlaneswalker jaceId), (bear, AttackTarget.OfPlayer S.bob)])
+      _ -> Spec.assertFailure s "fixture should give alice two creatures and bob a Jace"
+
 -- Declares attackers then blockers over the line, answering each line sent
 -- with the next of `replies`; the lines sent and the state after.
 declaring :: [R.Reply] -> GameState.GameState -> ([String], GameState.GameState)
 declaring replies gs =
   let ((_, after), sent) = overTheLine replies gs (Combat.declareAttackers S.manaPerformer S.alice >> Combat.declareBlockers S.manaPerformer)
+   in (sent, after)
+
+-- declaring, answering each line from the queue its prompt's kind names, then
+-- with that kind's default once the queue is spent.
+declaringByKind :: [(String, ([R.Reply], R.Reply))] -> GameState.GameState -> ([String], GameState.GameState)
+declaringByKind queues gs =
+  let send line = State.state $ \(out, rest) ->
+        let kind = maybe "" (Text.unpack . Question.kind . Request.question) (requestOf (Text.unpack line))
+            (reply, rest') = case Map.lookup kind rest of
+              Just (next : more, spent) -> (next, Map.insert kind (more, spent) rest)
+              Just ([], spent) -> (spent, rest)
+              Nothing -> error ("no queue for " <> Text.unpack line)
+         in (Common.render (Codec.Reply.toValue reply), (out <> [Text.unpack line], rest'))
+      fallback :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State ([String], Map.Map String ([R.Reply], R.Reply)))
+      fallback = Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt)
+      game = Combat.declareAttackers S.manaPerformer S.alice >> Combat.declareBlockers S.manaPerformer
+      ((_, after), (sent, _)) = State.runState (Engine.runGameAsked (Answerer.unwrap (Protocol.over trusting send fallback)) gs game) ([], Map.fromList queues)
    in (sent, after)
 
 -- Runs `game` over the line, answering each line sent with the next of

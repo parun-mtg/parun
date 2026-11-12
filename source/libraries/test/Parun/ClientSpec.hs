@@ -362,9 +362,11 @@ spec s registry = Spec.describe s "Client" $ do
         slot = SlotName.MkSlotName (Text.pack "target")
         alice = Decider.MkDecider S.alice
         bob = Decider.MkDecider S.bob
-    Spec.assertEqWith s "attackers" (answering gs "2" (Prompt.DeclareAttackers alice S.alice [o7, o9])) (Right [o9])
-    -- On a real combat: the line refuses a block the rules forbid.
+    -- On a real combat: the line refuses an attack or a block the rules forbid.
     giant <- S.printingOf s registry "Hill Giant"
+    case S.combatBoardOf [giant, giant] [] of
+      (board, [first, second], []) -> Spec.assertEqWith s "attackers" (answering board "2" (Prompt.DeclareAttackers alice S.alice [first, second])) (Right [second])
+      _ -> Spec.assertFailure s "fixture should have two attackers"
     case S.combatBoardOf [giant] [giant, giant] of
       (board, [attacker], [first, second]) -> do
         let blocking =
@@ -429,15 +431,20 @@ spec s registry = Spec.describe s "Client" $ do
 
   Spec.it s "all and a range pick options, and a count-bound pick takes them only at its count" $ do
     gs <- started s registry
+    giant <- S.printingOf s registry "Hill Giant"
     let o5 = ObjectId.MkObjectId 5
         o7 = ObjectId.MkObjectId 7
         o9 = ObjectId.MkObjectId 9
         alice = Decider.MkDecider S.alice
-        attacking = Prompt.DeclareAttackers alice S.alice [o5, o7, o9]
         discarding = Prompt.ChooseDiscard alice S.alice [o5, o7, o9] 2 Seq.empty
-    Spec.assertEqWith s "all attack" (answering gs "all" attacking) (Right [o5, o7, o9])
-    Spec.assertEqWith s "a range attacks" (answering gs "2-3" attacking) (Right [o7, o9])
-    Spec.assertEqWith s "a backward range is refused, not read as none" (answering gs "3-2" attacking) (Left (Text.pack "end of input"))
+    -- On a real combat, which the line judges an attack against.
+    case S.combatBoardOf [giant, giant, giant] [] of
+      (board, giants@[_, second, third], []) -> do
+        let attacking = Prompt.DeclareAttackers alice S.alice giants
+        Spec.assertEqWith s "all attack" (answering board "all" attacking) (Right giants)
+        Spec.assertEqWith s "a range attacks" (answering board "2-3" attacking) (Right [second, third])
+        Spec.assertEqWith s "a backward range is refused, not read as none" (answering board "3-2" attacking) (Left (Text.pack "end of input"))
+      _ -> Spec.assertFailure s "fixture should have three attackers"
     Spec.assertEqWith s "a range of the count discards" (answering gs "1-2" discarding) (Right [o5, o7])
     Spec.assertEqWith s "all of three is refused for two" (answering gs "all" discarding) (Left (Text.pack "end of input"))
 

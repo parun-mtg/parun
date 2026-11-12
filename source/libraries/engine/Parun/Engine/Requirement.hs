@@ -52,6 +52,16 @@ gather atoms sets =
       groups = Map.fromListWith (+) (fmap (\set -> (set, 1)) (filter (not . Set.null) sets))
     }
 
+-- `required` plus one requirement on each of `atoms` heavier than all of
+-- `required` together, and that weight: a maximum reaching it times the atoms
+-- held, plus the old maximum, holds them all and obeys as many as before
+-- (Parun.Engine.Combat's couldAttack, attackCreaturesAllowed and
+-- declarableBlockers).
+boosted :: (Ord key) => [key] -> Instances key -> (Natural, Instances key)
+boosted atoms required =
+  let heavier = 1 + sum (pairs required) + sum (groups required)
+   in (heavier, required {pairs = Map.unionWith (+) (Map.fromList (fmap (\atom -> (atom, heavier)) atoms)) (pairs required)})
+
 -- Is nothing in force at all? The board almost every game is played on, and what
 -- lets both maximizations skip their search entirely.
 vacuous :: Instances key -> Bool
