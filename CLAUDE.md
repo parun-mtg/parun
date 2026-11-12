@@ -56,8 +56,8 @@ to agents as written. What it doesn't say:
 
 - Before a fresh worktree's first build, run `script/warm-worktree.sh seed
   <your worktree>`: it copies in the gitignored `cabal.project.local` (without
-  it `pedantic` and `-Werror` are off) and clones finished `origin/main`
-  builds, the suite's and `script/mutate.sh`'s `-O0` one. If it reports no
+  it `pedantic` and `-Werror` are off) and clones a finished `origin/main`
+  build, which `script/mutate.sh` shares. If it reports no
   warm build, copy `cabal.project.local` from the primary checkout by
   absolute path, as a command of its own, and build cold.
 

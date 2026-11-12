@@ -26,12 +26,12 @@
 # - The heap is capped because a mutation that loops the engine otherwise grows
 #   until the machine runs out of memory. The cap holds the run there and does
 #   not end it.
-# - The build is -O0 in its own `dist-mutate/`, never `dist-newstyle/`. At -O1 a
+# - The build must be -O0, which cabal.project makes every local build. At -O1 a
 #   module's interface carries its function bodies, so a body-only mutation
 #   recompiles every module downstream, and restoring the file does it again:
 #   653s plus 657s for one mutation of Parun.Engine.Event, against 11s at -O0
-#   (#4122). The separate directory keeps the two optimization levels from
-#   invalidating each other's builds. Unoptimized tests are slower, which a
+#   (#4122). It is the ordinary build in `dist-newstyle/`, so a checkout that
+#   has run its tests is already warm. Unoptimized tests are slower, which a
 #   narrow PATTERN keeps invisible.
 # - Nothing is killed and nothing runs in the background. `pkill` reaches other
 #   agents' worktrees.
@@ -76,10 +76,9 @@ Exit status is the outcome, not the test run's:
   3  the mutated source did not build, or the run produced no summary
   4  PATTERN matched no tests at all
 
-Run it from the repository root; it builds the `parun-test-suite` target at -O0
-in `dist-mutate/`, so it needs cabal.project.local in place for +pedantic like
-any other build. The first run in a checkout without a warm `dist-mutate/` is a
-cold build; `script/warm-worktree.sh seed` copies one in.
+Run it from the repository root; it builds the `parun-test-suite` target in
+`dist-newstyle/` like any other build, so it needs cabal.project.local in place
+for +pedantic, and it is slow wherever that file turns the optimizer on.
 EOF
 }
 
@@ -141,8 +140,6 @@ log=$work/output
 # runner rejects the second one.
 run() {
   cabal test parun-test-suite \
-    --builddir=dist-mutate \
-    --ghc-options=-O0 \
     --test-show-details=direct \
     --test-option=-p \
     --test-option="$pattern" \

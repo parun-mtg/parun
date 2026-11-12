@@ -5,6 +5,12 @@ packages: .
 -- which run Setup directly and never read this file.
 executable-dynamic: False
 shared: False
+-- Builds are unoptimized unless a caller asks otherwise, and CI does. At -O1 a
+-- module's interface carries its function bodies, so editing a body recompiles
+-- the modules downstream of it; at -O0 only an interface change does. Measured
+-- 2026-11-12 on four cores, a cold build of the test suite took 132s at -O0
+-- against 303s at -O1, and one build then serves script/mutate.sh too.
+optimization: False
 -- Every dependency ships with GHC, so the build never reads a package index.
 -- Without one, CI cannot fail when a Hackage mirror does.
 active-repositories: :none

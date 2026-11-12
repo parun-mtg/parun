@@ -12,7 +12,11 @@ cabal configure \
   --semaphore
 ```
 
-Use all the normal Cabal commands like `cabal build`.
+Use all the normal Cabal commands like `cabal build`. Builds are unoptimized
+(`cabal.project`), which keeps a rebuild to the modules an edit reaches; CI
+builds optimized and runs the whole suite, so locally run the tests a change
+touches. Pass `--enable-optimization` when timing something, a benchmark above
+all.
 
 For a fast edit-test loop, prefer the REPL over relinking. `cabal repl
 parun:test` takes about twenty seconds to load, after which a subset runs in
