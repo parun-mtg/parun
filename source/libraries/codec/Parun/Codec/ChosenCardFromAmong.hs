@@ -8,6 +8,7 @@ import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.SlotName as SlotName
+import qualified Parun.Codec.TotalCap as TotalCap
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -23,14 +24,15 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- @count@ and @chooser@ are defaulted rather than required, so the printed
 -- singular addressed to the resolving controller -- which is every "from among
 -- them" but Ancestral Memories', Animal Magnetism's and the "up to" ones --
--- writes neither. @pileChooser@ is elided rather than written null, and
--- @faceUpPile@ rather than written false, and @selection@ rather than written
--- ByChoice.
+-- writes neither. @total@ and @pileChooser@ are elided rather than written
+-- null, and @faceUpPile@ rather than written false, and @selection@ rather
+-- than written ByChoice.
 codec :: Codec.Codec ChosenCardFromAmong.ChosenCardFromAmong
 codec = Fields.object $ do
   slot <- Fields.required "slot" SlotName.codec ChosenCardFromAmong.slot
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) ChosenCardFromAmong.filter
   count <- Fields.defaulted "count" HowMany.one HowMany.codec ChosenCardFromAmong.count
+  total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) ChosenCardFromAmong.total
   chooser <- Fields.defaulted "chooser" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec ChosenCardFromAmong.chooser
   pileChooser <- Fields.defaulted "pileChooser" Nothing (Common.maybe PlayerRef.codec) ChosenCardFromAmong.pileChooser
   faceUpPile <- Fields.defaulted "faceUpPile" False Common.boolean ChosenCardFromAmong.faceUpPile
@@ -40,6 +42,7 @@ codec = Fields.object $ do
       { ChosenCardFromAmong.slot = slot,
         ChosenCardFromAmong.filter = filter_,
         ChosenCardFromAmong.count = count,
+        ChosenCardFromAmong.total = total,
         ChosenCardFromAmong.chooser = chooser,
         ChosenCardFromAmong.pileChooser = pileChooser,
         ChosenCardFromAmong.faceUpPile = faceUpPile,

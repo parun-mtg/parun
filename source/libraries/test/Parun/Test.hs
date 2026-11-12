@@ -810,6 +810,7 @@ import qualified Parun.Codec.TokenPatternSpec
 import qualified Parun.Codec.TokenRSpec
 import qualified Parun.Codec.TopOfLibrarySpec
 import qualified Parun.Codec.TopOfLibraryUntilSpec
+import qualified Parun.Codec.TotalCapSpec
 import qualified Parun.Codec.ToughnessSpec
 import qualified Parun.Codec.TraitSpec
 import qualified Parun.Codec.TransformTriggerSpec
@@ -1864,6 +1865,7 @@ spec s registry corpus = do
   Parun.Codec.TokenRSpec.spec s
   Parun.Codec.TopOfLibrarySpec.spec s
   Parun.Codec.TopOfLibraryUntilSpec.spec s
+  Parun.Codec.TotalCapSpec.spec s
   Parun.Codec.ToughnessSpec.spec s
   Parun.Codec.TraitSpec.spec s
   Parun.Codec.TransformedSpec.spec s

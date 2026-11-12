@@ -1723,6 +1723,8 @@ library codec
     Parun.Codec.TopOfLibrarySpec
     Parun.Codec.TopOfLibraryUntil
     Parun.Codec.TopOfLibraryUntilSpec
+    Parun.Codec.TotalCap
+    Parun.Codec.TotalCapSpec
     Parun.Codec.Toughness
     Parun.Codec.ToughnessSpec
     Parun.Codec.Trait
@@ -3576,6 +3578,7 @@ library types
     Parun.Types.TokenR
     Parun.Types.TopOfLibrary
     Parun.Types.TopOfLibraryUntil
+    Parun.Types.TotalCap
     Parun.Types.Toughness
     Parun.Types.Trait
     Parun.Types.Transformed

@@ -226,6 +226,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.ThrowResult as ThrowResult
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -661,6 +662,7 @@ chosenPermanents purpose legal resolving controller source choice = do
     (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ earlier)
     amount
     count
+    Nothing
     candidates
 
 -- Game.pickCounted with the seat a chooser ref names, for chosenPermanents and
@@ -685,9 +687,10 @@ pickByChooser ::
   (Decider.Decider -> PlayerId -> [ObjectId] -> Maybe Natural -> Prompt.Prompt (Set ObjectId)) ->
   (Quantity.Type.Quantity -> Natural) ->
   HowMany.HowMany ->
+  Maybe (ObjectId -> Natural, Natural) ->
   [ObjectId] ->
   Game (Maybe PlayerId, [ObjectId])
-pickByChooser resolving source controller legal chooser one_ several amount count candidates = do
+pickByChooser resolving source controller legal chooser one_ several amount count cap candidates = do
   gs <- State.get
   let named = namesChooser legal resolving source controller gs chooser
       asked = askedChooser resolving source controller legal chooser
@@ -695,7 +698,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
       refusals = maybe Map.empty RepeatPicks.refused (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
   (seat, picked) <-
     if unlimited && Map.null refusals
-      then Game.pickCounted named asked one_ several amount count candidates
+      then Game.pickCounted named asked one_ several amount count cap candidates
       else do
         seat <- if named then asked else pure Nothing
         now <- State.get
@@ -704,7 +707,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
             offered who oid = reachable who oid && not (Set.member oid (Map.findWithDefault Set.empty who refusals))
         case seat of
           Nothing -> pure (Nothing, [])
-          Just who -> Game.pickCounted True (pure (Just who)) one_ several amount count (filter (offered who) candidates)
+          Just who -> Game.pickCounted True (pure (Just who)) one_ several amount count cap (filter (offered who) candidates)
   -- CR 733.3: a pick a seat was asked for joins its RepeatIf run's record.
   Monad.forM_ seat $ \who ->
     Monad.unless (null picked) $
@@ -1037,6 +1040,7 @@ chosenCardsInGraveyard legal resolving controller source (ChosenCardInGraveyard.
               (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source AnyNumberOf.CardsInGraveyards pool ceiling_ (byChooser made))
               amount
               count
+              Nothing
               candidates
       ask asked = fmap (fmap snd . Foldable.toList) . pick Seq.empty asked
   case chooser of
@@ -2129,6 +2133,7 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
             (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source AnyNumberOf.CardsInHand pool ceiling_ Seq.empty)
             amount
             count
+            Nothing
             (handCardsOf context gs pid filter_)
   fmap concat . Monad.mapM pick $ handChoosers legal resolving source controller gs player
 
@@ -2162,7 +2167,8 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- HOW MANY is the ref's count, read HERE (CR 608.2h) off the announcement CR
 -- 601.2b left on the resolving object -- TopOfLibrary's reading, and its clamp: a
 -- count that will not evaluate, or evaluates negative, is zero cards (CR
--- 107.2, 107.1b). pickCounted asks it.
+-- 107.2, 107.1b). pickCounted asks it, and holds the picks within the ref's
+-- total where it states one.
 --
 -- AtRandom asks nobody: randomCards' question to the interpreter, over the
 -- matching members, naming that many distinct cards (all of them for an
@@ -2177,13 +2183,17 @@ chooseCardFromAmong ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardFromAmong.ChosenCardFromAmong ->
   Game [ObjectId]
-chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count chooser pileChooser faceUpPile selection) = do
+chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total chooser pileChooser faceUpPile selection) = do
   members <- fromAmongMembers legal resolving chosen slot
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
       matching = matchingFromAmong legal resolving controller source gs filter_ (stillPresent gs members)
+      -- Each candidate weighed against its own projection, TopOfLibraryUntil's
+      -- read and clamp.
+      weighs weight oid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving oid weight)
+      cap = fmap (\(TotalCap.MkTotalCap weight most) -> (weighs weight, amount most)) total
       pick purpose = case selection of
         CardSelection.AtRandom -> \pool -> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength pool) amount (HowMany.quantity count)) pool
         CardSelection.ByChoice -> byChoice purpose
@@ -2199,6 +2209,7 @@ chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmon
             (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ Seq.empty)
             amount
             count
+            cap
   case pileChooser of
     Nothing -> pick AnyNumberOf.CardsFromAmong matching
     -- CR 700.3: the chooser separates and the pile chooser takes a pile --
@@ -3629,7 +3640,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
             let scoped = Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
              in not (null scoped) && all (\pid -> null (graveyardCardsOf context gs pid filter_)) scoped
           Chooser.BoundInSlot _ -> False
-      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _) ->
+      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _ _) ->
         mustPick count && maybe False (null . matchingFromAmong legal resolving controller source gs filter_ . stillPresent gs) (fromAmongBound slot)
       ObjectRef.ChosenPermanents choice -> mustPick (ChosenPermanents.count choice) && null (chosenCandidates legal resolving controller source gs choice)
       -- Only when no member names anything: a read always might.

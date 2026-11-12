@@ -6,6 +6,7 @@ import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.TotalCap as TotalCap
 
 -- | The printed words "from among them", with a choice: which GROUP the
 -- candidates are drawn from, what among it may be picked, HOW MANY, and WHO
@@ -49,6 +50,11 @@ data ChosenCardFromAmong = MkChosenCardFromAmong
   { slot :: SlotName.SlotName,
     filter :: Filter.Filter Keyword.Keyword,
     count :: HowMany.HowMany,
+    -- | CR 608.2d: a bound on what the picks sum to, beside the count; Nothing
+    -- is none. Read by an UpTo count picked ByChoice with no pileChooser, the
+    -- only shape Parun.EffectLintSpec admits it on. Proved by the Michelangelo's
+    -- Technique scenarios.
+    total :: Maybe TotalCap.TotalCap,
     chooser :: PlayerRef.PlayerRef,
     -- | CR 700.3: Nothing names the pick itself. Just names the player who then
     -- takes one of two piles -- the chooser's pick and the rest of the matching

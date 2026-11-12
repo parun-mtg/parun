@@ -269,6 +269,7 @@ import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -579,7 +580,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- reason; the CHOOSER's are the generic playerRefSlots fold this case is joined
   -- into, which is what makes Intuition's target opponent a read. The Filter
   -- narrowing the candidates is a read like a sweep's.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _) -> joinSlots [Map.singleton slot SlotArity.Many, filterSlotsOf filter_, maybe Map.empty quantitySlots (HowMany.quantity count)]
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total _ _ _ _) -> joinSlots (Map.singleton slot SlotArity.Many : filterSlotsOf filter_ : fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
   -- The arm above's read, for its reasons: the candidates come from a slot, and
   -- the ref reads every member of the group to match them.
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong slot filter_) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
@@ -614,6 +615,11 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
 -- than arm by arm, so this is the one place a payload gaining a Quantity field
 -- has to be revisited -- a `{}` here would keep compiling, which is the shape
 -- that let a widened field go unread (#2729).
+-- A total's weight and bound, the Quantities a ChosenCardFromAmong reads
+-- beside its count.
+totalCapQuantities :: Maybe TotalCap.TotalCap -> [Quantity.Type.Quantity]
+totalCapQuantities = foldMap (\(TotalCap.MkTotalCap weight most) -> [weight, most])
+
 objectRefQuantities :: ObjectRef -> [Quantity.Type.Quantity]
 objectRefQuantities ref = case ref of
   ObjectRef.InSlot _ -> []
@@ -645,8 +651,9 @@ objectRefQuantities ref = case ref of
   -- How many cards are picked out of the group -- Ancestral Memories' printed
   -- two, the library walks' counts above being the only other ObjectRef numbers.
   -- A REGRESSION FENCE rather than proven behaviour: every count in the pool is a
-  -- Literal, which reads no slot, so dropping this leaves the suite green.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count _ _ _ _) -> Foldable.toList (HowMany.quantity count)
+  -- Literal, which reads no slot, so dropping this leaves the suite green. The
+  -- total's two Quantities are fenced likewise.
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total _ _ _ _) -> Foldable.toList (HowMany.quantity count) <> totalCapQuantities total
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong _ _) -> []
   -- How many cards randomness names out of each hand or library -- Fall's
   -- printed two, the Gates' one. A REGRESSION FENCE for the arm above's reason:
@@ -700,7 +707,7 @@ objectRefPlayerRefs ref = case ref of
   -- mode's own ChoosePlayer DEFINES from both sides of its equality, and that is
   -- the only kind of slot a printed chooser names. Parun.CardSpec's planted
   -- objectRefPlayerRefPositions pins it, and this arm's sibling below.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ _ chooser pileChooser _ _) -> chooser : Foldable.toList pileChooser
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ _ _ chooser pileChooser _ _) -> chooser : Foldable.toList pileChooser
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong _ _) -> []
   -- The one seat whose hand or library is reached.
   ObjectRef.RandomCard (RandomCard.MkRandomCard _ player _ _) -> [player]
