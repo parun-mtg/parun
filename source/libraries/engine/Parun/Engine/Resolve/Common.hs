@@ -4759,9 +4759,11 @@ frozenAffected gs = filter (not . (`Phasing.isPhasedOut` gs))
 
 -- CR 613.1b / 611.2c: install a layer-2 control effect giving `recipient` the
 -- objects `ref` names, for `duration` -- GainControl's arm. `mSlot` takes the
--- objects the stored effect affects (CR 608.2c), `recipient`'s own among them.
+-- objects the stored effect affects (CR 608.2c), `recipient`'s own among them
+-- (the Mob Rule ruling of 2014-11-24).
 -- data/scenarios/broadcast-takeover-steals-untaps-and-hastes-every-artifact-alices-opponents-control.json
--- is the proof.
+-- and data/scenarios/mob-rule-untaps-and-hastes-every-big-creature-alices-own-included.json
+-- are the proof.
 installControl :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> PlayerId -> Duration.Duration -> ObjectRef.ObjectRef -> Maybe SlotName -> GameState -> GameState
 installControl legal resolving controller source recipient duration ref mSlot gs =
   -- Enumerated ONCE by the shared sweep; a player recipient, an illegal slot
