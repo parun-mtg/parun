@@ -11,6 +11,7 @@ import qualified Parun.Codec.PermissionCost as PermissionCost
 import qualified Parun.Codec.PermissionLimit as PermissionLimit
 import qualified Parun.Codec.PermissionPool as PermissionPool
 import qualified Parun.Codec.PermissionVerb as PermissionVerb
+import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -28,7 +29,7 @@ import qualified Parun.Types.PermissionVerb as PermissionVerb
 -- prints no budget grants (Future Sight, Garruk's Horde, Sen Triplets), and the
 -- verb to Cast, which is what a permission naming no land play grants. The pool
 -- defaults to the whole zone, the additional costs to none, the spending to
--- mana as produced and the alternative cost to none.
+-- mana as produced, and the alternative cost and the entry counters to none.
 codec :: Codec.Codec CastFromZone.CastFromZone
 codec = Fields.object $ do
   from <- Fields.required "from" InZone.codec CastFromZone.from
@@ -40,4 +41,5 @@ codec = Fields.object $ do
   reduction <- Fields.defaulted "reduction" 0 Common.natural CastFromZone.reduction
   spending <- Fields.defaulted "spending" ManaSpending.Type.AsProduced ManaSpending.codec CastFromZone.spending
   alternativeCost <- Fields.defaulted "alternativeCost" Nothing (Common.maybe PermissionCost.codec) CastFromZone.alternativeCost
-  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost}
+  entersWith <- Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) CastFromZone.entersWith
+  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith}

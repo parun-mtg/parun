@@ -2617,9 +2617,9 @@ castPermissionOptions rides offered own pid zone oid gs =
 -- budget, give the same rider (`rides` answers whether a source's permission
 -- gives one, Parun.Engine.Event.permissionRiders), add the same costs (CR
 -- 118.8), take off the same reduction (CR 601.2f), offer the same alternative
--- cost (CR 118.9) and let mana be spent alike (CR 118.14), and the first is
--- kept: a riderless, costless unlimited permission beside an open zone changes
--- nothing.
+-- cost (CR 118.9), let mana be spent alike (CR 118.14) and give the same entry
+-- counters (CR 614.1d), and the first is kept: a riderless, costless unlimited
+-- permission beside an open zone changes nothing.
 -- So the head spends nothing wherever something admits the play for free.
 --
 -- Every budgeted permission is a way of its own, two copies of one card
@@ -2628,7 +2628,7 @@ permissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZon
 permissionOptions rides open usable =
   let rows = [(sid, grant) | (Just sid, grant) <- usable]
       (unlimited, limited) = List.partition ((== PermissionLimit.Unlimited) . CastFromZone.limit . snd) rows
-      key option = (permissionSpent option, option >>= \(sid, _) -> if rides sid then Just sid else Nothing, permissionCosts option, permissionReductions option, permissionAlternative option, permissionSpending option)
+      key option = (permissionSpent option, option >>= \(sid, _) -> if rides sid then Just sid else Nothing, permissionCosts option, permissionReductions option, permissionAlternative option, permissionSpending option, option >>= CastFromZone.entersWith . snd)
    in ListUtils.nubOrdOn key ([Nothing | open] <> fmap Just (unlimited <> limited))
 
 -- CR 118.8: the additional costs a cast made under `option` pays on top of its

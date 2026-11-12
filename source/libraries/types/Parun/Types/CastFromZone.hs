@@ -10,6 +10,7 @@ import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.WithCounters as WithCounters
 
 -- | The payload of Parun.Types.PlayerEffect's CastFrom arm: whose copy of which
 -- zone the permission opens, which cards in it it covers, and how often it may
@@ -53,6 +54,9 @@ data CastFromZone = MkCastFromZone
     -- | CR 118.9: the alternative cost a cast under it may pay rather than the
     -- card's mana cost -- Zaffai and the Tempests' "without paying its mana
     -- cost". Nothing where it states none.
-    alternativeCost :: Maybe PermissionCost.PermissionCost
+    alternativeCost :: Maybe PermissionCost.PermissionCost,
+    -- | CR 614.1d: the counters the permanent a spell cast under it becomes
+    -- enters with (Leonardo, Sewer Samurai). Nothing where it states none.
+    entersWith :: Maybe WithCounters.WithCounters
   }
   deriving (Eq, Ord, Show)
