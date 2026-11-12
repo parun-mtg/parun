@@ -1973,9 +1973,9 @@ endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame = do
 -- Exactly one new controller or nothing: a slot CR 608.2b emptied names
 -- nobody to give the object to.
 gainControl :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GainControl.GainControl -> Game ()
-gainControl resolving source controller legal (GainControl.MkGainControl duration ref to) =
+gainControl resolving source controller legal (GainControl.MkGainControl duration ref mSlot to) =
   State.modify' $ \gs -> case playerRefPlayers legal resolving source controller gs to of
-    [recipient] -> Common.installControl legal resolving controller source recipient duration ref gs
+    [recipient] -> Common.installControl legal resolving controller source recipient duration ref mSlot gs
     _ -> gs
 
 -- CR 701.12b: each of the two permanents goes to the other's controller,

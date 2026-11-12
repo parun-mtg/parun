@@ -254,17 +254,21 @@ import qualified Parun.Types.ZoneScope as ZoneScope
 -- group never fills. A reader that must reduce a group to one object does it
 -- itself -- Effect.Attach through Attach.arbitrate, CR 301.5c.
 bindObjects :: ObjectId -> Maybe SlotName -> [ObjectId] -> Game ()
-bindObjects resolving mSlot named = case (mSlot, named) of
-  (Nothing, _) -> pure ()
+bindObjects resolving mSlot named = State.modify' (objectsBound resolving mSlot named)
+
+-- bindObjects as a state function, for an arm that is one.
+objectsBound :: ObjectId -> Maybe SlotName -> [ObjectId] -> GameState -> GameState
+objectsBound resolving mSlot named = case (mSlot, named) of
+  (Nothing, _) -> id
   -- Nothing was named, so no slot names an empty set: for Create an
   -- unevaluable or non-positive count, a creator reference naming nobody (CR
   -- 101.3), a creator who has left the game (CR 800.4b), or CR 111.5's
   -- prohibited token, which createTokens refuses to mint at all.
-  (Just _, []) -> pure ()
+  (Just _, []) -> id
   -- One object is the whole of what the instruction named.
-  (Just slot, [only]) -> State.modify' (bindSlot resolving slot only)
+  (Just slot, [only]) -> bindSlot resolving slot only
   -- Several take the group.
-  (Just slot, several) -> State.modify' (bindObjectsSlot resolving slot (Seq.fromList several))
+  (Just slot, several) -> bindObjectsSlot resolving slot (Seq.fromList several)
 
 -- CR 111.3: the values the creating effect defines become the token's text, so a
 -- computed power or toughness is settled here and stamped as a literal. Left as a
@@ -3425,7 +3429,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
   Effect.AddPhases {} -> False
   Effect.EndTurn {} -> False
   Effect.EndCombatPhase {} -> False
-  Effect.GainControl (GainControl.MkGainControl duration ref _) -> noneCanBeHeld duration ref
+  Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> noneCanBeHeld duration ref
   Effect.ExchangeControl {} -> False
   Effect.SetOwner {} -> False
   Effect.ExchangeOwnership {} -> False
@@ -4754,9 +4758,12 @@ frozenAffected :: GameState -> [ObjectId] -> [ObjectId]
 frozenAffected gs = filter (not . (`Phasing.isPhasedOut` gs))
 
 -- CR 613.1b / 611.2c: install a layer-2 control effect giving `recipient` the
--- objects `ref` names, for `duration` -- GainControl's arm.
-installControl :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> PlayerId -> Duration.Duration -> ObjectRef.ObjectRef -> GameState -> GameState
-installControl legal resolving controller source recipient duration ref gs =
+-- objects `ref` names, for `duration` -- GainControl's arm. `mSlot` takes the
+-- objects the stored effect affects (CR 608.2c), `recipient`'s own among them.
+-- data/scenarios/broadcast-takeover-steals-untaps-and-hastes-every-artifact-alices-opponents-control.json
+-- is the proof.
+installControl :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> PlayerId -> Duration.Duration -> ObjectRef.ObjectRef -> Maybe SlotName -> GameState -> GameState
+installControl legal resolving controller source recipient duration ref mSlot gs =
   -- Enumerated ONCE by the shared sweep; a player recipient, an illegal slot
   -- (CR 608.2b) and a set that matched nothing all change nothing.
   case frozenAffected gs (objectRefObjects legal resolving controller source gs ref) of
@@ -4793,10 +4800,14 @@ installControl legal resolving controller source recipient duration ref gs =
                     }
                 sicken o = o {Object.sickness = Sickness.Sick}
                 moved = filter (\oid -> Projection.controllerOf oid gs /= Just recipient) targets
-             in gs1
-                  { GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)},
-                    GameState.objects = foldr (Map.adjust sicken) (GameState.objects gs1) moved
-                  }
+             in objectsBound
+                  resolving
+                  mSlot
+                  targets
+                  gs1
+                    { GameState.stored = (GameState.stored gs1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored gs1)},
+                      GameState.objects = foldr (Map.adjust sicken) (GameState.objects gs1) moved
+                    }
 
 -- CR 608.2d: the seats a branch's own questions are offered to. A clause naming
 -- no sibling keeps every seat its reference named; one that names a sibling

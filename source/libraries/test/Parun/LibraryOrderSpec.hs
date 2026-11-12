@@ -367,7 +367,7 @@ gainControlSpec s registry = Spec.describe s "GainControl" $ do
             S.alice
             (Map.singleton slot (Set.singleton (Recipient.ToCreature oid)))
             (Map.singleton slot (Set.singleton (Recipient.ToCreature oid)))
-            (Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (ObjectRef.InSlot slot) (PlayerRef.Relative PlayerRelation.You)))
+            (Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (ObjectRef.InSlot slot) Nothing (PlayerRef.Relative PlayerRelation.You)))
         after = snd (Engine.runGamePure S.identityAnswer base run)
     Spec.assertEqWith s "alice now controls it" (Projection.controllerOf oid after) (Just S.alice)
     Spec.assertEqWith s "it is summoning sick for the new controller" (fmap Object.sickness (Game.lookupObject oid after)) (Just Sickness.Sick)
@@ -391,7 +391,7 @@ gainControlSpec s registry = Spec.describe s "GainControl" $ do
             S.alice
             (Map.singleton slot (Set.singleton (Recipient.ToCreature oid)))
             (Map.singleton slot (Set.singleton (Recipient.ToCreature oid)))
-            (Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (ObjectRef.InSlot slot) (PlayerRef.Relative PlayerRelation.You)))
+            (Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (ObjectRef.InSlot slot) Nothing (PlayerRef.Relative PlayerRelation.You)))
         after = snd (Engine.runGamePure S.identityAnswer settled run)
     Spec.assertEqWith s "alice controlled it before" (Projection.controllerOf oid settled) (Just S.alice)
     Spec.assertEqWith s "and still does" (Projection.controllerOf oid after) (Just S.alice)

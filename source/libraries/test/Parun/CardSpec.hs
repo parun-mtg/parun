@@ -806,7 +806,7 @@ objectRefPositions =
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
-        ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
+        ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") Nothing (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
         ("require-block", Effect.RequireBlock (RequireBlock.MkRequireBlock Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rb-blocker")) (Just (RestrictedCreatures.Named (plantedRef "rb-attacker"))) RequirementArity.EachSubject), [plantedRef "rb-blocker", plantedRef "rb-attacker"]),
         ("prohibit", Effect.Prohibit (Prohibit.MkProhibit Prohibition.Regenerate Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "cb"))), [plantedRef "cb"]),
         ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (AttackTargetRef.Players (PlayerRef.Relative PlayerRelation.You)))), [plantedRef "ra"]),
@@ -879,7 +879,7 @@ playerRefPositions =
         ("gain-player-counters", Effect.GainPlayerCounters (PlayerCounters.MkPlayerCounters (plantedPlayer "gp") PlayerCounterKind.Rad one), [plantedPlayer "gp"]),
         ("remove-player-counters", Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters (plantedPlayer "rp") PlayerCounterKind.Rad one Nothing), [plantedPlayer "rp"]),
         ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (AttackTargetRef.Players (plantedPlayer "ra-defender")))), [plantedPlayer "ra-defender"]),
-        ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (plantedRef "gc") (plantedPlayer "gc")), [plantedPlayer "gc"]),
+        ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (plantedRef "gc") Nothing (plantedPlayer "gc")), [plantedPlayer "gc"]),
         ("blight", Effect.Blight (Blight.MkBlight (plantedPlayer "bl") one Nothing), [plantedPlayer "bl"]),
         ("take-extra-turn", Effect.TakeExtraTurn TakeExtraTurn.MkTakeExtraTurn {TakeExtraTurn.player = plantedPlayer "te", TakeExtraTurn.skips = Set.empty, TakeExtraTurn.count = Quantity.Type.Literal 1}, [plantedPlayer "te"]),
         ("shuffle-into-library", Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary (Just (plantedPlayer "si")) (plantedRef "si") Nothing), [plantedPlayer "si"]),
@@ -5201,7 +5201,7 @@ effectFilters effect = case effect of
   Effect.AddPhases _ -> []
   Effect.EndTurn -> []
   Effect.EndCombatPhase -> []
-  Effect.GainControl (GainControl.MkGainControl duration ref _) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (objectRefFilters ref)
+  Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.ExchangeControl _ -> []
   Effect.ArmDelayedTrigger arm@(ArmDelayedTrigger.MkArmDelayedTrigger _ _ mDuration _) -> frame Unframed (concatMap durationFilters (Maybe.maybeToList mDuration)) <> foldMap triggeredAbilityFilters (Game.carriedDelayedAbility arm)
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ playerEffect) -> frame Unframed (durationFilters duration) <> fmap ((,) StoredPlayerEffectFramed) (playerEffectFilters playerEffect)
