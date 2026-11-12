@@ -287,7 +287,8 @@ contextNames = context
 --
 --   * IDENTITY: IsObject names an id outright.
 --   * The turn's EVENT LOG: the look-back atoms (DeclaredThisTurn,
---     LeftLibraryThisTurn, DealtDamageThisTurn, EnteredThisTurn, the
+--     LeftLibraryThisTurn, DealtDamageThisTurn, ActivatedThisTurn,
+--     EnteredThisTurn, the
 --     crewed/convoked/saddled-the-source atoms), EnteredWithSource
 --     (GameState.enteredWith), CounterLinkedToSource
 --     (GameState.counteredWith) and CouldAttackThisTurn
@@ -318,6 +319,7 @@ filterNames asking criterion = case criterion of
   Filter.ConvokedSourceThisTurn -> keyed asking <> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
   Filter.SaddledSourceThisTurn -> keyed asking <> history asking HistoryRead.Saddles
   Filter.DealtDamageThisTurn -> keyed asking <> history asking HistoryRead.Damage
+  Filter.ActivatedThisTurn -> keyed asking <> history asking HistoryRead.Activations
   Filter.DealtDamageTo _ -> keyed asking <> history asking HistoryRead.Damage
   Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to _from) -> keyed asking <> history asking (if to == Zone.Battlefield then HistoryRead.Entries else HistoryRead.Moves)
   Filter.BeforeMove nested -> keyed asking <> history asking HistoryRead.Moves <> filterNames asking nested

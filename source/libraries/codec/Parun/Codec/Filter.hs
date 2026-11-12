@@ -144,6 +144,7 @@ codec keywordCodec =
       Arm.nullary "SaddledSourceThisTurn" Filter.SaddledSourceThisTurn,
       Arm.payload "CantPayKeywordCost" KeywordCostPart.codec Filter.CantPayKeywordCost (\x -> case x of Filter.CantPayKeywordCost y -> Just y; _ -> Nothing),
       Arm.nullary "DealtDamageThisTurn" Filter.DealtDamageThisTurn,
+      Arm.nullary "ActivatedThisTurn" Filter.ActivatedThisTurn,
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),
       Arm.payload "EnteredThisTurn" EnteredZone.codec Filter.EnteredThisTurn (\x -> case x of Filter.EnteredThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "CountersPutThisTurn" (countersPutThisTurn keywordCodec) (uncurry Filter.CountersPutThisTurn) (\x -> case x of Filter.CountersPutThisTurn r k -> Just (r, k); _ -> Nothing),
@@ -338,6 +339,7 @@ tagOf x = case x of
   Filter.SaddledSourceThisTurn {} -> "SaddledSourceThisTurn"
   Filter.CantPayKeywordCost {} -> "CantPayKeywordCost"
   Filter.DealtDamageThisTurn {} -> "DealtDamageThisTurn"
+  Filter.ActivatedThisTurn {} -> "ActivatedThisTurn"
   Filter.DealtDamageTo {} -> "DealtDamageTo"
   Filter.EnteredThisTurn {} -> "EnteredThisTurn"
   Filter.CountersPutThisTurn {} -> "CountersPutThisTurn"

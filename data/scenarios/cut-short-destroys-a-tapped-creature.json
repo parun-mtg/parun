@@ -1,0 +1,15 @@
+{
+  "description": "CR 701.8a Cut Short destroys target tapped creature",
+  "note": "Bob has two tapped creatures, so the target is named; the other survives.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "hand": [{"card": "Cut Short", "label": "cut"}],
+     "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "tapped": true}, {"card": "Savannah Lions", "label": "lions", "tapped": true}],
+     "library": [{"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$cut", "targets": ["$bears"], "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Savannah Lions", "count": 1}}}
+  ]
+}

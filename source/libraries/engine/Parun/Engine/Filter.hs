@@ -367,6 +367,11 @@ data View = MkView
     -- all for a wither or infect source, so the marks are a strict subset of
     -- what was dealt.
     dealtDamageThisTurn :: Bool,
+    -- CR 700.10: was this candidate the source of an ability activated this
+    -- turn? Read off TurnRegisters.activationsThisTurn, and LAZY for
+    -- `declaredThisTurn`'s reason -- nothing forces it unless a Filter contains
+    -- ActivatedThisTurn.
+    activatedThisTurn :: Bool,
     -- CR 400.7 / 608.2i: the zone change earlier this turn that made this
     -- candidate the object it is now, if there was one (Game.arrivalThisTurn).
     -- The same log again, and LAZY for its reason -- nothing forces it unless a
@@ -990,6 +995,8 @@ playerView pid =
       -- view through it. Parun.DamageSpec's Needle Drop case is what proves it.
       dealtDamageThisTurn = False,
       -- CR 400.7 moves an OBJECT between zones, and a player is not one.
+      -- CR 700.10 asks after a PERMANENT, and a player is not one.
+      activatedThisTurn = False,
       arrivalThisTurn = Nothing,
       -- CR 702.122b crews with a CREATURE, and a player is not one -- CR 506.3
       -- rules the combat fields above out for the same kind of reason.
@@ -2447,6 +2454,9 @@ matches context view predicate = case predicate of
   -- CantPayKeywordCost sits between them and is neither: a prohibition lifts the
   -- moment its source leaves.
   Filter.DealtDamageThisTurn -> dealtDamageThisTurn view
+  -- CR 700.10: the same look-back over CR 602.2's activation log, so the
+  -- answer holds once the ability is gone or its activator has left the game.
+  Filter.ActivatedThisTurn -> activatedThisTurn view
   -- CR 120.1 / 608.2i: the same look-back asked of a RELATION, CrewedSourceThisTurn's
   -- split -- the candidate's own field says whom it dealt damage to, and the
   -- party says which of them the card names. The source is the id it had, so a
@@ -3058,6 +3068,7 @@ manaValueThresholds predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
   Filter.DealtDamageThisTurn -> []
+  Filter.ActivatedThisTurn -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
   Filter.CountersPutThisTurn _ _ -> []
@@ -3238,6 +3249,7 @@ statesAQuality predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
   Filter.DealtDamageThisTurn -> True
+  Filter.ActivatedThisTurn -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
   Filter.CountersPutThisTurn _ _ -> True
@@ -3416,6 +3428,7 @@ readsSourceValues predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
   Filter.DealtDamageThisTurn -> False
+  Filter.ActivatedThisTurn -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False
   Filter.CountersPutThisTurn _ _ -> False
