@@ -1,0 +1,145 @@
+{
+  "faces": [
+    {
+      "counterability": {
+        "type": "CantBeCountered"
+      },
+      "keywords": [
+        {
+          "type": "Menace"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Black"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Red"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Black"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Red"
+            }
+          }
+        }
+      ],
+      "name": "Tokka & Rahzar, Terrible Twos",
+      "oracleText": "This spell can't be countered.\nMenace\nWhenever a player casts a spell, if the amount of mana spent to cast it was less than its mana value, Tokka & Rahzar deal 3 damage to that player.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": []
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "LessThan",
+              "measured": {
+                "type": "AgainstSlot",
+                "value": {
+                  "quantity": {
+                    "type": "ManaSpent",
+                    "value": {
+                      "type": "Total"
+                    }
+                  },
+                  "slot": "thatSpell"
+                }
+              },
+              "threshold": {
+                "type": "AgainstSlot",
+                "value": {
+                  "quantity": {
+                    "type": "Measure",
+                    "value": "ManaValue"
+                  },
+                  "slot": "thatSpell"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 3
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "thatPlayer"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mutant",
+          "Turtle",
+          "Wolf"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

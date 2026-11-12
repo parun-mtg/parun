@@ -1,0 +1,115 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Turtle Lair",
+            "label": "lair"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fang of Shigeki",
+            "label": "fang"
+          },
+          {
+            "card": "Aegis Turtle",
+            "label": "turtle"
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "goblin"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 106.6: Turtle Lair's colored mana casts a Ninja spell or a Turtle spell and not a Goblin, which its colorless mana cannot pay for either",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $fang",
+            "Cast $turtle",
+            "ActivateManaAbility $lair"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$lair"
+          ],
+          "object": "$fang",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": {
+                  "casts": {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasSubtype",
+                        "value": "Ninja"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Turtle"
+                      }
+                    ]
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Fang of Shigeki",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
