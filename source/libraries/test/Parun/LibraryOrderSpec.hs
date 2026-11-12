@@ -46,6 +46,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CreateEmblem as CreateEmblem
@@ -1605,7 +1606,7 @@ denethorBoard s registry = do
       (srcId, gs1) = S.addPermanent denethor S.alice lands
       ability = case Face.activatedAbilities (S.combinedFace denethor) of
         ab : _ -> ab
-        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
   pure
     ( ability,
       srcId,

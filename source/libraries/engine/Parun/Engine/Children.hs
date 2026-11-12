@@ -2610,7 +2610,7 @@ abilityLeaves =
 
 -- | An activated ability's children. Each choice's costs go to abilityCost.
 activatedAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> ActivatedAbility.ActivatedAbility card ability -> f (ActivatedAbility.ActivatedAbility card ability)
-activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX minimumX definedX modal restrictions activator condition name stamp) =
+activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX minimumX definedX modal restrictions activator condition name stamp copyability) =
   ActivatedAbility.MkActivatedAbility
     <$> abilityCost c cost
     <*> traverse (fmap CostChoice.MkCostChoice . traverse (abilityCost c) . CostChoice.unwrap) costChoices
@@ -2623,6 +2623,7 @@ activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices
     <*> traverse (abilityCondition c) condition
     <*> pure name
     <*> traverse (abilityKeyword c) stamp
+    <*> pure copyability
 
 -- | A triggered ability's children.
 triggeredAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> TriggeredAbility.TriggeredAbility card ability -> f (TriggeredAbility.TriggeredAbility card ability)

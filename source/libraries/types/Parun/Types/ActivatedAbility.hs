@@ -5,6 +5,7 @@ import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Keyword as Keyword
@@ -162,6 +163,9 @@ data ActivatedAbility card ability = MkActivatedAbility
     -- 702.184a's station and CR 702.177a's exhaust are nullary and that type
     -- deliberately has no arm for a nullary keyword.
     -- Parun.Types.KeywordDesignator is what a card names either kind with.
-    keyword :: Maybe Keyword.Keyword
+    keyword :: Maybe Keyword.Keyword,
+    -- | CR 113.6g: whether an effect may copy this ability once it is on the
+    -- stack -- Gogo, Master of Mimicry's "This ability can't be copied".
+    copyability :: Copyability.Copyability
   }
   deriving (Eq, Ord, Show)

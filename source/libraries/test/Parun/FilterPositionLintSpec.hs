@@ -70,6 +70,7 @@ import qualified Parun.Types.ConjureCards as ConjureCards
 import qualified Parun.Types.ConjureDestination as ConjureDestination
 import qualified Parun.Types.ConjureEntry as ConjureEntry
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChange as CostChange
@@ -2373,7 +2374,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- may carry is a separate question and is not tagged with it.
         alternatively = base {Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing sacrificeCost]}
         -- CR 602.2b, paid as the ability is activated -- after CR 601.2c too.
-        activating = base {Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility sacrificeCost [] [] 0 Nothing (spellOf []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing]}
+        activating = base {Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility sacrificeCost [] [] 0 Nothing (spellOf []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable]}
         -- CR 116.2d: a special action uses no stack (CR 116.1), so no
         -- announcement could answer in any engine.
         ignoring = base {Face.specialActions = [SpecialAction.IgnoreThisUntilEndOfTurn (AbilityName.MkAbilityName (Text.pack "the prohibition")) sacrificeCost]}

@@ -14,6 +14,7 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChoice as CostChoice
@@ -97,6 +98,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Nothing
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"modal\":{\"modes\":[{\"clauses\":[{\"effects\":[{\"type\":\"Attach\",\"value\":\"target\"}]}],\"targetSlots\":{\"target\":{\"pool\":{\"type\":\"Creatures\"},\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}}]},\"restrictions\":[{\"type\":\"SorcerySpeed\"}]} "
   -- CR 602.2b: a choice printed inside the activation cost, Bullseye, Death
@@ -118,8 +120,30 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Nothing
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}],\"components\":[{\"type\":\"TapThis\"}]},\"costChoices\":[[{\"mana\":[],\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],\"modal\":{\"modes\":[{}]}} "
+  -- CR 113.6g: Gogo, Master of Mimicry's "This ability can't be copied".
+  Spec.it s "MkActivatedAbility that can't be copied" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      ( ActivatedAbility.MkActivatedAbility
+          (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis])
+          []
+          []
+          0
+          Nothing
+          (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
+          []
+          (Activator.Related PlayerRelation.You)
+          Nothing
+          Nothing
+          Nothing
+          Copyability.CantBeCopied
+      )
+      " {\"cost\":{\"mana\":[],\"components\":[{\"type\":\"TapThis\"}]},\"modal\":{\"modes\":[{}]},\"copyability\":\"CantBeCopied\"} "
   -- CR 602.5's conjunction, in the JSON: two clauses in printed order, which is
   -- the shape a single tagged object could not hold.
   Spec.it s "MkActivatedAbility, Kongming's Contraptions' two clauses" $
@@ -141,6 +165,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Nothing
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":null,\"components\":[{\"type\":\"TapThis\"}]},\"modal\":{\"modes\":[{}]},\"restrictions\":[{\"type\":\"DuringPhase\",\"value\":{\"window\":{\"type\":\"Step\",\"value\":{\"type\":\"Combat\",\"value\":\"DeclareAttackers\"}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}},{\"type\":\"AttackedThisStep\"}]} "
   -- CR 702.6a: the stamp Parun.Engine.Keyword.mintedBy writes, which is the one
@@ -164,6 +189,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           (Just (Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []) Nothing EquipTarget.Creature)))
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"modal\":{\"modes\":[{}]},\"restrictions\":[{\"type\":\"SorcerySpeed\"}],\"keyword\":{\"type\":\"Equip\",\"value\":{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"quality\":null}}} "
   -- CR 117.1b: no rider is the default for nearly every ability, so the key
@@ -185,6 +211,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Nothing
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":null},\"modal\":{\"modes\":[{}]}} "
   -- CR 101.1: Katara, Water Tribe's Hope's "X can't be 0" is the key's one
@@ -206,6 +233,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Nothing
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":null},\"minimumX\":1,\"modal\":{\"modes\":[{}]}} "
   -- CR 107.3c: Soul Foundry's "X is the mana value of that card" is the key's
@@ -227,5 +255,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Nothing
+          Copyability.Copyable
       )
       " {\"cost\":{\"mana\":null},\"definedX\":{\"type\":\"Literal\",\"value\":2},\"modal\":{\"modes\":[{}]}} "

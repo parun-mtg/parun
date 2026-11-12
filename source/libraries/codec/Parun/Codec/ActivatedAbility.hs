@@ -7,6 +7,7 @@ import qualified Parun.Codec.AbilityName as AbilityName
 import qualified Parun.Codec.ActivationRestriction as ActivationRestriction
 import qualified Parun.Codec.Activator as Activator
 import qualified Parun.Codec.Condition as Condition
+import qualified Parun.Codec.Copyability as Copyability
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.Keyword as Keyword
@@ -17,6 +18,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator.Type
+import qualified Parun.Types.Copyability as Copyability.Type
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | The wire format is unchanged by the conversion to a bundle; what it adds is
@@ -55,6 +57,8 @@ codec cardCodec abilityCodec = Fields.object $ do
   -- Parun.Codec.Object: an ability already on the stack carries its stamp, and a
   -- state that round-tripped without the key would come back a printed ability.
   keyword <- Fields.defaulted "keyword" Nothing (Common.maybe Keyword.codec) ActivatedAbility.keyword
+  -- CR 113.6g: emitted only for an ability that says it can't be copied.
+  copyability <- Fields.defaulted "copyability" Copyability.Type.Copyable Copyability.codec ActivatedAbility.copyability
   pure
     ActivatedAbility.MkActivatedAbility
       { ActivatedAbility.cost = cost,
@@ -67,5 +71,6 @@ codec cardCodec abilityCodec = Fields.object $ do
         ActivatedAbility.activator = activator,
         ActivatedAbility.condition = condition,
         ActivatedAbility.name = name,
-        ActivatedAbility.keyword = keyword
+        ActivatedAbility.keyword = keyword,
+        ActivatedAbility.copyability = copyability
       }

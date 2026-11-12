@@ -203,7 +203,8 @@ loyaltyAbility n effect =
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
-      ActivatedAbility.keyword = Nothing
+      ActivatedAbility.keyword = Nothing,
+      ActivatedAbility.copyability = Copyability.Copyable
     }
 
 -- | The token CR 701.47a or 701.71a creates.
