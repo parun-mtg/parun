@@ -396,8 +396,9 @@ tokenBoxQuantities card =
 -- The slots an entry rider READS: CR 509.4's specified block
 -- (EntryBlock.Specified), CR 303.4i's
 -- attachment, CR 508.4's
--- specified attack (EntryAttack.SameAs) and CR 702.116a's narrowed one
--- (EntryAttack.UnderPlayer); every other rider is a flag or a Quantity
+-- specified attack (EntryAttack.SameAs, EntryAttack.ThatPlayer) and CR
+-- 702.116a's narrowed one (EntryAttack.UnderPlayer); every other rider is a
+-- flag or a Quantity
 -- (riderQuantities above). Each read singly -- CR 509.4 names one attacking
 -- creature, CR 303.4i one host, CR 702.49c one returned creature, CR 702.116a
 -- one player. The attachment at arity One even though its printing writes "up to
@@ -423,6 +424,8 @@ riderSlots riders =
         -- CR 702.116a's slot, read singly too: the rule names ONE player, whom
         -- the token attacks or whose planeswalker it does.
         Just (EntryAttack.UnderPlayer slot) -> oneSlot slot
+        -- CR 508.4's specified player, read singly for the same reason.
+        Just (EntryAttack.ThatPlayer slot) -> oneSlot slot
         Just EntryAttack.Chosen -> Map.empty
         Nothing -> Map.empty
       blocked = case EntryRiders.blocking riders of

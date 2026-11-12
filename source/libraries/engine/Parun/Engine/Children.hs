@@ -3794,6 +3794,7 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
       EntryAttack.Chosen -> pure a
       EntryAttack.SameAs name -> EntryAttack.SameAs <$> copySlot c name
       EntryAttack.UnderPlayer name -> EntryAttack.UnderPlayer <$> copySlot c name
+      EntryAttack.ThatPlayer name -> EntryAttack.ThatPlayer <$> copySlot c name
     block b = case b of
       EntryBlock.Chosen -> pure b
       EntryBlock.Specified name -> EntryBlock.Specified <$> copySlot c name
