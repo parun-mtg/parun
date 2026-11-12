@@ -182,6 +182,7 @@ import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
@@ -549,6 +550,7 @@ vanillaFace name typeLine =
       Face.entryRestrictions = [],
       Face.attackCosts = [],
       Face.blockCosts = [],
+      Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
       Face.specialActions = [],
@@ -1486,6 +1488,7 @@ cardCounts =
           Children.faceActivationProhibition = Children.activationProhibitionChildren ruleCounts,
           Children.faceAttackCost = Children.attackCostChildren ruleCounts,
           Children.faceBlockCost = Children.blockCostChildren ruleCounts,
+          Children.faceCounterLimit = Children.counterLimitChildren ruleCounts,
           Children.faceHandAction = Const.Const . concatMap effectCounts . HandAction.effects
         }
 
@@ -5354,6 +5357,8 @@ ruleAbilitiesFilters rules =
         -- counters), which may be a whole Keyword carrying a Filter (CR 122.1b);
         -- see #2728. Nothing there is Solemnity's "counters" -- any kind at all.
         <> concatMap (concatMap counterKindFilters . Maybe.maybeToList . CounterRestriction.kind) (RuleAbilities.counterRestrictions rules)
+        -- CR 122.4's limited kind, for the same reason.
+        <> concatMap (counterKindFilters . CounterLimit.kind) (RuleAbilities.counterLimits rules)
         -- CR 602.2's activation prohibition. Its own KIND beside the affected
         -- set is CR 605.1a's classification, which holds no Filter at all --
         -- unlike the counter kind one line up. The affected set is
@@ -5581,6 +5586,7 @@ activatedAbilityFilters ability =
 --     `rulePermissions` (CR 702.3b / 302.6),
 --     `entryRestrictions` (CR 400.4a / 101.2),
 --     `counterRestrictions` (CR 122.6 / 101.2),
+--     `counterLimits` (CR 122.4, its kind alone),
 --     `activationProhibitions` (CR 602.2 / 101.2),
 --     `attackRequirements` (CR 508.1d), `blockRequirements`
 --     (CR 509.1c), `attackCosts` (CR 508.1h) and `blockCosts` (CR 509.1d) --

@@ -3152,7 +3152,7 @@ namedAbilityRemovalAfter gs =
           else \_ _ -> False
 
 -- CR 613.11 / 613.1f: the rule abilities layer-6 grants give `oid`, which each
--- of the fifteen gatherers (Parun.Engine.CombatRestriction and its siblings)
+-- of the sixteen gatherers (Parun.Engine.CombatRestriction and its siblings)
 -- reads next to the object's own (ruleAbilitiesOf): a stored grant's (Chomping
 -- Kavu's backup), and a static ability's, which the fold recorded on the
 -- receiver (Zurgo, Thunder's Decree) and only a whole-board projection reads

@@ -144,6 +144,7 @@ import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
@@ -2861,6 +2862,8 @@ data FaceChildren card f = MkFaceChildren
     faceAttackCost :: AttackCost.AttackCost -> f AttackCost.AttackCost,
     -- | A cost to block (CR 509.1d), whole.
     faceBlockCost :: BlockCost.BlockCost -> f BlockCost.BlockCost,
+    -- | A limit on how many counters of a kind a permanent keeps (CR 122.4), whole.
+    faceCounterLimit :: CounterLimit.CounterLimit -> f CounterLimit.CounterLimit,
     -- | An action taken from a hand at the mulligan or the game's start (CR 103.6), whole.
     faceHandAction :: HandAction.HandAction card -> f (HandAction.HandAction card),
     -- | A special action (CR 116.2), whole.
@@ -2909,13 +2912,14 @@ faceLeaves =
       faceActivationProhibition = pure,
       faceAttackCost = pure,
       faceBlockCost = pure,
+      faceCounterLimit = pure,
       faceHandAction = pure,
       faceSpecialAction = pure
     }
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -2970,6 +2974,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> traverse (faceActivationProhibition c) activationProhibitions
     <*> traverse (faceAttackCost c) attackCosts
     <*> traverse (faceBlockCost c) blockCosts
+    <*> traverse (faceCounterLimit c) counterLimits
     <*> traverse (faceHandAction c) mulliganActions
     <*> traverse (faceHandAction c) openingHandActions
     <*> traverse (faceSpecialAction c) specialActions
@@ -3233,7 +3238,7 @@ data RuleChildren f = MkRuleChildren
     ruleQuantity :: Quantity.Quantity -> f Quantity.Quantity,
     -- | A taxed creature's fixed share, whole.
     ruleCost :: Cost.Cost Keyword.Keyword -> f (Cost.Cost Keyword.Keyword),
-    -- | The kind of counter a counter restriction names (CR 122.1), whole.
+    -- | The kind of counter a counter restriction or limit names (CR 122.1), whole.
     ruleCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword)
   }
 
@@ -3251,7 +3256,7 @@ ruleLeaves =
 
 -- | A RuleAbilities' children (CR 613.11), row by row.
 ruleAbilitiesChildren :: (Applicative f) => RuleChildren f -> RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities
-ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions) =
+ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions counterLimits) =
   RuleAbilities.MkRuleAbilities
     <$> traverse (activationProhibitionChildren c) activationProhibitions
     <*> traverse (attachRestrictionChildren c) attachRestrictions
@@ -3268,6 +3273,7 @@ ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions at
     <*> traverse (sacrificeRestrictionChildren c) sacrificeRestrictions
     <*> traverse (targetRestrictionChildren c) targetRestrictions
     <*> traverse (untapRestrictionChildren c) untapRestrictions
+    <*> traverse (counterLimitChildren c) counterLimits
 
 -- | An activation prohibition's children (CR 602.5). Its ability kind,
 -- prohibited costs and ability name are left as they are.
@@ -3305,6 +3311,11 @@ blockRequirementChildren c (BlockRequirement.MkBlockRequirement subject attacker
 counterRestrictionChildren :: (Applicative f) => RuleChildren f -> CounterRestriction.CounterRestriction -> f CounterRestriction.CounterRestriction
 counterRestrictionChildren c (CounterRestriction.MkCounterRestriction affected kind) =
   CounterRestriction.MkCounterRestriction <$> ruleAffected c affected <*> traverse (ruleCounterKind c) kind
+
+-- | A counter limit's children (CR 122.4). Its N is left as it is.
+counterLimitChildren :: (Applicative f) => RuleChildren f -> CounterLimit.CounterLimit -> f CounterLimit.CounterLimit
+counterLimitChildren c (CounterLimit.MkCounterLimit kind atMost) =
+  CounterLimit.MkCounterLimit <$> ruleCounterKind c kind <*> pure atMost
 
 -- | A keyword cost restriction's children (CR 702.122d, 702.196b).
 keywordCostRestrictionChildren :: (Applicative f) => RuleChildren f -> KeywordCostRestriction.KeywordCostRestriction -> f KeywordCostRestriction.KeywordCostRestriction

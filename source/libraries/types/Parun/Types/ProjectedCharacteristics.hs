@@ -269,7 +269,7 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- objects -- combat, attack, block, untap, entry, sacrifice, counter,
     -- crew, attach and activation restrictions, requirements, costs and
     -- permissions.
-    -- Parun.Types.RuleAbilities says why the fifteen ride one field.
+    -- Parun.Types.RuleAbilities says why the sixteen ride one field.
     --
     -- Here for playerAbilities' reason exactly: CR 613.11 applies them outside
     -- the layer system, so no layer but CR 612.5's exchange and CR 612.6's full
@@ -280,7 +280,7 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- same field (Parun.Engine.Projection.View.withMergedAbilities), which is
     -- what gives a mutated permanent every component's.
     --
-    -- Read through Parun.Engine.Projection.ruleAbilitiesOf, which the fifteen
+    -- Read through Parun.Engine.Projection.ruleAbilitiesOf, which the sixteen
     -- gatherer modules share; Parun.MutateSpec's "CR 702.140e a Silent Arbiter
     -- under a Cubwarden still holds alice to one attacker" is what proves the
     -- union reaches them.

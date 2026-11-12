@@ -17,6 +17,7 @@ import qualified Parun.Engine.Battle as Battle
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Contraption as Contraption
+import qualified Parun.Engine.CounterLimit as CounterLimit
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Dungeon as Dungeon
@@ -784,6 +785,9 @@ checkOnce instead boards = do
               n = min plus minus
            in if n > 0 then Just (oid, n) else Nothing
       annihilations = Maybe.mapMaybe annihilateOne onBattlefield
+      -- CR 704.5r / 122.4: counters past a limit the permanent's own ability
+      -- states, judged against the same pre-pass state.
+      overLimit = [(oid, kind, n) | oid <- onBattlefield, (kind, n) <- CounterLimit.excess oid gs]
       -- CR 704.5m: an Aura attached to nothing, or to something its enchant
       -- ability no longer admits. Judged against the SAME pre-pass pcs/gs as
       -- every other classification above -- see fallsOff's Haddock for why an
@@ -1163,7 +1167,10 @@ checkOnce instead boards = do
       -- single kind and rule 704.5q removes both, which is Damage's posture for a
       -- permanent that is a battle and a planeswalker at once.
       annihilate g (oid, n) = List.foldl' (\h kind -> Event.removeCountersPure oid kind n h) g [CounterKind.PlusOnePlusOne, CounterKind.MinusOneMinusOne]
-      recorded = List.foldl' annihilate drained annihilations
+      annihilated = List.foldl' annihilate drained annihilations
+      -- CR 704.5r's removal through the same funnel, one record per permanent
+      -- per kind for the reason above.
+      recorded = List.foldl' (\g (oid, kind, n) -> Event.removeCountersPure oid kind n g) annihilated overLimit
       -- CR 704.5aa: "that player's speed becomes 1", applied to the players
       -- classified from the pre-pass board above. Applied LATE like every other
       -- action in this pass, so a permanent this same pass destroyed still starts
@@ -1177,7 +1184,7 @@ checkOnce instead boards = do
       -- named something. A regenerated creature still counts as destroyed, which
       -- the CR 704.3 settle loop re-checks and -- because the regen healed the
       -- damage -- terminates.
-      acted = not (null legendVictims) || not (null worldLosers) || not (null toGraveyard) || not (null toDestroy) || not (null leaving) || not (null vanishing) || not (null annihilations) || not (null unattachedAuras) || not (null unbestowing) || not (null detaching) || not (null revving) || not (null told) || not (null undefended) || not (null returningCommanders) || not (null finishedDungeons) || not (null spentSchemes) || not (null spentPhenomena) || not (null routed) || sectored
+      acted = not (null legendVictims) || not (null worldLosers) || not (null toGraveyard) || not (null toDestroy) || not (null leaving) || not (null vanishing) || not (null annihilations) || not (null overLimit) || not (null unattachedAuras) || not (null unbestowing) || not (null detaching) || not (null revving) || not (null told) || not (null undefended) || not (null returningCommanders) || not (null finishedDungeons) || not (null spentSchemes) || not (null spentPhenomena) || not (null routed) || sectored
   -- CR 104.1: a game ends the moment a result is reached, so a later pass may
   -- not replace one. The existing result therefore wins; this pass only settles
   -- an outcome when the game did not already have one. Departure.settle is

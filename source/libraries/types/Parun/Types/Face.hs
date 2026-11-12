@@ -40,6 +40,7 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DeckLimit as DeckLimit
@@ -649,6 +650,10 @@ data Face card = MkFace
     -- only attacking, and Hipparion, taxing only blocking, fills only this.
     -- Oppressive Rays fills both, which is what its "can't attack or block" says.
     blockCosts :: [BlockCost.BlockCost],
+    -- | CR 122.4: this face's printed COUNTER LIMITS -- "can't have more than
+    -- seven dream counters on it" (Rasputin Dreamweaver); read by
+    -- Parun.Engine.CounterLimit, rewritten by no layer.
+    counterLimits :: [CounterLimit.CounterLimit],
     -- | CR 103.5b: this face's "any time you could mulligan" actions, in printed
     -- order, each one a Parun.Types.HandAction -- its effects in written order,
     -- and the clause gating whether it may be taken (Serum Powder writes none).

@@ -60,5 +60,6 @@ keepNamed keep rules =
           RuleAbilities.entryRestrictions = nameless (RuleAbilities.entryRestrictions rules),
           RuleAbilities.sacrificeRestrictions = nameless (RuleAbilities.sacrificeRestrictions rules),
           RuleAbilities.targetRestrictions = nameless (RuleAbilities.targetRestrictions rules),
-          RuleAbilities.untapRestrictions = nameless (RuleAbilities.untapRestrictions rules)
+          RuleAbilities.untapRestrictions = nameless (RuleAbilities.untapRestrictions rules),
+          RuleAbilities.counterLimits = nameless (RuleAbilities.counterLimits rules)
         }

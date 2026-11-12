@@ -448,7 +448,7 @@ rewriteStaticAbility pairs = Identity.runIdentity . Children.staticAbilityChildr
 rewritePlayerStaticAbility :: [(TextWord.TextWord, TextWord.TextWord)] -> PlayerStaticAbility.PlayerStaticAbility -> PlayerStaticAbility.PlayerStaticAbility
 rewritePlayerStaticAbility pairs = Identity.runIdentity . Children.playerStaticAbilityChildren (abilityRewrites pairs)
 
--- CR 613.11's fifteen families under CR 612.1, each at the positions its
+-- CR 613.11's sixteen families under CR 612.1, each at the positions its
 -- gatherer module rewrites (Parun.Engine.CombatRestriction and its siblings), so
 -- the layer fold and the gatherers agree on where a word is.
 rewriteRuleAbilities :: [(TextWord.TextWord, TextWord.TextWord)] -> RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities
