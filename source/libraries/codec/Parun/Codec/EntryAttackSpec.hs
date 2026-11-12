@@ -23,4 +23,10 @@ spec s = Spec.describe s "Parun.Codec.EntryAttack" $ do
       EntryAttack.codec
       (EntryAttack.UnderPlayer (SlotName.MkSlotName (Text.pack "myriad opponent")))
       " {\"type\":\"UnderPlayer\",\"value\":\"myriad opponent\"} "
+  Spec.it s "ThatPlayer" $
+    Common.assertCodec
+      s
+      EntryAttack.codec
+      (EntryAttack.ThatPlayer (SlotName.MkSlotName (Text.pack "thatPlayer")))
+      " {\"type\":\"ThatPlayer\",\"value\":\"thatPlayer\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s EntryAttack.codec

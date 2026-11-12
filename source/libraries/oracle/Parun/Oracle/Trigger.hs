@@ -101,9 +101,11 @@ event context creature c = case c of
     word <- ["it", that]
     subject <- also one >>= andOr
     -- Landfall is the ability word (CR 207.2c) Oracle text prints before
-    -- this event and no other (Sporemound).
+    -- this event and no other (Sporemound). Free: alliance does not head this
+    -- event (Corpse Knight) or does (Slash, Reptile Rampager).
     opening' <- case one of
       "a land you control" -> ["Landfall \8212 "]
+      "another creature you control" -> ["", "Alliance \8212 "]
       _ -> [""]
     [other (opening' <> "Whenever " <> subject <> " enters") [(becameSlot, word)]]
   TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do

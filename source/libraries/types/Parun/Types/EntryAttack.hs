@@ -14,4 +14,7 @@ data EntryAttack
     -- specification: the controller still chooses (CR 508.4), among the subjects
     -- CR 508.4 already allows that belong to that one player.
     UnderPlayer SlotName.SlotName
+  | -- | CR 508.4's parenthetical: the player in the slot, and nothing else of
+    -- theirs.
+    ThatPlayer SlotName.SlotName
   deriving (Eq, Ord, Show)

@@ -1337,6 +1337,12 @@ onePlayerNamed legal slot resolving gs = case Maybe.mapMaybe Recipient.playerOf 
 -- Combat.Under is CR 702.116a's narrowing: the slot names a PLAYER rather than an
 -- object, and a slot naming none narrows to nobody, so nothing enters attacking
 -- -- the myriad iteration whose opponent has left the game (CR 800.4a).
+--
+-- EntryAttack.ThatPlayer is Combat.Specified over a slot naming a player: the
+-- effect said which player, so nobody chooses and that player's planeswalkers
+-- are no candidates. The scenario
+-- shark-shredders-creature-attacks-the-damaged-player-not-their-planeswalker
+-- proves it.
 entryAttack :: Map.Map SlotName (Set Recipient) -> ObjectId -> EntryRiders.EntryRiders count ability -> GameState -> Maybe Combat.AttackChoice
 entryAttack legal resolving entry gs = case EntryRiders.attacking entry of
   Nothing -> Nothing
@@ -1345,6 +1351,7 @@ entryAttack legal resolving entry gs = case EntryRiders.attacking entry of
     named <- slotOne slot resolving gs
     fmap Combat.Specified (Game.attackTargetWithLastKnown named gs)
   Just (EntryAttack.UnderPlayer slot) -> fmap Combat.Under (onePlayerNamed legal slot resolving gs)
+  Just (EntryAttack.ThatPlayer slot) -> fmap (Combat.Specified . AttackTarget.OfPlayer) (onePlayerNamed legal slot resolving gs)
 
 -- CR 707.12: "the copy is created in the same zone the object is in and then
 -- cast". The copy this mints is what `offerCast` above offers in the original's
