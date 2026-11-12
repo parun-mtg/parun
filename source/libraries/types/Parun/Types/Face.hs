@@ -42,7 +42,6 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.DungeonRoom as DungeonRoom
@@ -51,6 +50,7 @@ import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modal as Modal
@@ -559,16 +559,17 @@ data Face card = MkFace
     -- Object.doesNotUntapFor and Object.exertedBy, and neither reaches this
     -- field.
     untapRestrictions :: [UntapRestriction.UntapRestriction],
-    -- | CR 604.1/604.2 / 702.122d / 101.2: this face's printed CREW PROHIBITIONS
-    -- -- "enchanted creature can't attack, block, or crew Vehicles" (Revoke
-    -- Privileges); read by Parun.Engine.CrewRestriction, rewritten by no layer,
-    -- for blockRequirements' CR 613.11 reason.
+    -- | CR 604.1/604.2 / 702.122d / 702.196b / 101.2: this face's printed
+    -- KEYWORD COST PROHIBITIONS -- "enchanted creature can't attack, block, or
+    -- crew Vehicles" (Revoke Privileges), "enchanted permanent ... can't be
+    -- beamed up" (Marooned); read by Parun.Engine.KeywordCostRestriction,
+    -- rewritten by no layer, for blockRequirements' CR 613.11 reason.
     --
     -- Its own field rather than an arm of combatRestrictions above even though
     -- Revoke Privileges writes all three of its clauses in one sentence: rule
     -- 702.122d forbids paying a COST, where CR 508.1c and CR 509.1b forbid a
     -- combat declaration, so nothing that reads one may read the other.
-    crewRestrictions :: [CrewRestriction.CrewRestriction],
+    keywordCostRestrictions :: [KeywordCostRestriction.KeywordCostRestriction],
     -- | CR 604.1/604.2 / 115 / 101.2: this face's printed TARGETING
     -- PROHIBITIONS that are not keywords -- "creatures can't be the targets of
     -- spells" (Dense Foliage); read by Parun.Engine.TargetRestriction, rewritten

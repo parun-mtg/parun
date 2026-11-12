@@ -191,7 +191,6 @@ import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.CreateEmblem as CreateEmblem
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamagePart as DamagePart
@@ -286,6 +285,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
@@ -539,7 +539,7 @@ vanillaFace name typeLine =
       Face.untapRestrictions = [],
       Face.attachRestrictions = [],
       Face.counterRestrictions = [],
-      Face.crewRestrictions = [],
+      Face.keywordCostRestrictions = [],
       Face.targetRestrictions = [],
       Face.rulePermissions = [],
       Face.activationProhibitions = [],
@@ -1473,7 +1473,7 @@ cardCounts =
           Children.faceCombatRestriction = Children.combatRestrictionChildren ruleCounts,
           Children.faceSacrificeRestriction = Children.sacrificeRestrictionChildren ruleCounts,
           Children.faceUntapRestriction = Children.untapRestrictionChildren ruleCounts,
-          Children.faceCrewRestriction = Children.crewRestrictionChildren ruleCounts,
+          Children.faceKeywordCostRestriction = Children.keywordCostRestrictionChildren ruleCounts,
           Children.faceTargetRestriction = Children.targetRestrictionChildren ruleCounts,
           Children.faceRulePermission = Children.rulePermissionChildren ruleCounts,
           Children.faceAttachRestriction = Children.attachRestrictionChildren ruleCounts,
@@ -5317,7 +5317,7 @@ ruleAbilitiesFilters rules =
         <> concatMap (frame Unframed . combatRestrictionFilters) (RuleAbilities.combatRestrictions rules)
         <> concatMap (unframed . affectedFilters . SacrificeRestriction.affected) (RuleAbilities.sacrificeRestrictions rules)
         <> concatMap untapRestrictionFilters (RuleAbilities.untapRestrictions rules)
-        <> concatMap (unframed . affectedFilters . CrewRestriction.affected) (RuleAbilities.crewRestrictions rules)
+        <> concatMap (unframed . affectedFilters . KeywordCostRestriction.affected) (RuleAbilities.keywordCostRestrictions rules)
         <> concatMap (unframed . affectedFilters . TargetRestriction.affected) (RuleAbilities.targetRestrictions rules)
         <> concatMap (unframed . pure . TargetRestriction.aimers) (RuleAbilities.targetRestrictions rules)
         <> concatMap (unframed . affectedFilters . RulePermission.affected) (RuleAbilities.rulePermissions rules)
@@ -5551,7 +5551,7 @@ activatedAbilityFilters ability =
 --     permission.
 --   * `combatRestrictions` (CR 508.1c / 509.1b), `sacrificeRestrictions` (CR
 --     701.21a / 101.2), `untapRestrictions` (CR 502.3 / 101.2),
---     `crewRestrictions` (CR 702.122d / 101.2),
+--     `keywordCostRestrictions` (CR 702.122d / 101.2),
 --     `targetRestrictions` (CR 115 / 101.2),
 --     `rulePermissions` (CR 702.3b / 302.6),
 --     `entryRestrictions` (CR 400.4a / 101.2),

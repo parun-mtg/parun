@@ -12,8 +12,8 @@ import qualified Parun.Codec.BlockPermission as BlockPermission
 import qualified Parun.Codec.BlockRequirement as BlockRequirement
 import qualified Parun.Codec.CombatRestriction as CombatRestriction
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
-import qualified Parun.Codec.CrewRestriction as CrewRestriction
 import qualified Parun.Codec.EntryRestriction as EntryRestriction
+import qualified Parun.Codec.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Codec.RulePermission as RulePermission
 import qualified Parun.Codec.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Codec.TargetRestriction as TargetRestriction
@@ -37,7 +37,7 @@ codec = Fields.object $ do
   blockRequirements <- Fields.defaulted "blockRequirements" [] (Common.list BlockRequirement.codec) RuleAbilities.blockRequirements
   combatRestrictions <- Fields.defaulted "combatRestrictions" [] (Common.list CombatRestriction.codec) RuleAbilities.combatRestrictions
   counterRestrictions <- Fields.defaulted "counterRestrictions" [] (Common.list CounterRestriction.codec) RuleAbilities.counterRestrictions
-  crewRestrictions <- Fields.defaulted "crewRestrictions" [] (Common.list CrewRestriction.codec) RuleAbilities.crewRestrictions
+  keywordCostRestrictions <- Fields.defaulted "keywordCostRestrictions" [] (Common.list KeywordCostRestriction.codec) RuleAbilities.keywordCostRestrictions
   entryRestrictions <- Fields.defaulted "entryRestrictions" [] (Common.list EntryRestriction.codec) RuleAbilities.entryRestrictions
   sacrificeRestrictions <- Fields.defaulted "sacrificeRestrictions" [] (Common.list SacrificeRestriction.codec) RuleAbilities.sacrificeRestrictions
   targetRestrictions <- Fields.defaulted "targetRestrictions" [] (Common.list (TargetRestriction.codec Affected.codec)) RuleAbilities.targetRestrictions
@@ -54,7 +54,7 @@ codec = Fields.object $ do
         RuleAbilities.blockRequirements = blockRequirements,
         RuleAbilities.combatRestrictions = combatRestrictions,
         RuleAbilities.counterRestrictions = counterRestrictions,
-        RuleAbilities.crewRestrictions = crewRestrictions,
+        RuleAbilities.keywordCostRestrictions = keywordCostRestrictions,
         RuleAbilities.entryRestrictions = entryRestrictions,
         RuleAbilities.sacrificeRestrictions = sacrificeRestrictions,
         RuleAbilities.targetRestrictions = targetRestrictions,

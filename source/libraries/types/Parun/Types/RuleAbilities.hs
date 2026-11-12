@@ -10,8 +10,8 @@ import qualified Parun.Types.BlockPermission as BlockPermission
 import qualified Parun.Types.BlockRequirement as BlockRequirement
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CounterRestriction as CounterRestriction
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.EntryRestriction as EntryRestriction
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -54,9 +54,9 @@ data RuleAbilities = MkRuleAbilities
     combatRestrictions :: [CombatRestriction.CombatRestriction],
     -- | CR 122.6: "counters can't be put on ..." (Solemnity).
     counterRestrictions :: [CounterRestriction.CounterRestriction],
-    -- | CR 702.122d: "enchanted creature can't ... crew Vehicles" (Revoke
-    -- Privileges).
-    crewRestrictions :: [CrewRestriction.CrewRestriction],
+    -- | CR 702.122d / 702.196b: "enchanted creature can't ... crew Vehicles"
+    -- (Revoke Privileges), "can't be beamed up" (Marooned).
+    keywordCostRestrictions :: [KeywordCostRestriction.KeywordCostRestriction],
     -- | CR 101.2 / CR 400.4a (see Parun.Types.EntryRestriction): "creature cards
     -- in graveyards and libraries can't enter the battlefield" (Grafdigger's Cage).
     entryRestrictions :: [EntryRestriction.EntryRestriction],
@@ -91,7 +91,7 @@ instance Semigroup RuleAbilities where
         blockRequirements = blockRequirements left <> blockRequirements right,
         combatRestrictions = combatRestrictions left <> combatRestrictions right,
         counterRestrictions = counterRestrictions left <> counterRestrictions right,
-        crewRestrictions = crewRestrictions left <> crewRestrictions right,
+        keywordCostRestrictions = keywordCostRestrictions left <> keywordCostRestrictions right,
         entryRestrictions = entryRestrictions left <> entryRestrictions right,
         sacrificeRestrictions = sacrificeRestrictions left <> sacrificeRestrictions right,
         targetRestrictions = targetRestrictions left <> targetRestrictions right,
@@ -114,7 +114,7 @@ instance Monoid RuleAbilities where
         blockRequirements = [],
         combatRestrictions = [],
         counterRestrictions = [],
-        crewRestrictions = [],
+        keywordCostRestrictions = [],
         entryRestrictions = [],
         sacrificeRestrictions = [],
         targetRestrictions = [],

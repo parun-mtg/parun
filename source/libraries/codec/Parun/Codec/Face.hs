@@ -42,7 +42,6 @@ import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.CostReduction as CostReduction
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
 import qualified Parun.Codec.Counterability as Counterability
-import qualified Parun.Codec.CrewRestriction as CrewRestriction
 import qualified Parun.Codec.DeckLimit as DeckLimit
 import qualified Parun.Codec.Defense as Defense
 import qualified Parun.Codec.DungeonRoom as DungeonRoom
@@ -51,6 +50,7 @@ import qualified Parun.Codec.EntryRestriction as EntryRestriction
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.HandAction as HandAction
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.Modal as Modal
@@ -156,7 +156,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   combatRestrictions <- Fields.defaulted "combatRestrictions" [] (Common.list CombatRestriction.codec) Face.combatRestrictions
   sacrificeRestrictions <- Fields.defaulted "sacrificeRestrictions" [] (Common.list SacrificeRestriction.codec) Face.sacrificeRestrictions
   untapRestrictions <- Fields.defaulted "untapRestrictions" [] (Common.list UntapRestriction.codec) Face.untapRestrictions
-  crewRestrictions <- Fields.defaulted "crewRestrictions" [] (Common.list CrewRestriction.codec) Face.crewRestrictions
+  keywordCostRestrictions <- Fields.defaulted "keywordCostRestrictions" [] (Common.list KeywordCostRestriction.codec) Face.keywordCostRestrictions
   targetRestrictions <- Fields.defaulted "targetRestrictions" [] (Common.list (TargetRestriction.codec Affected.codec)) Face.targetRestrictions
   rulePermissions <- Fields.defaulted "rulePermissions" [] (Common.list RulePermission.codec) Face.rulePermissions
   attachRestrictions <- Fields.defaulted "attachRestrictions" [] (Common.list AttachRestriction.codec) Face.attachRestrictions
@@ -245,7 +245,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.combatRestrictions = combatRestrictions,
         Face.sacrificeRestrictions = sacrificeRestrictions,
         Face.untapRestrictions = untapRestrictions,
-        Face.crewRestrictions = crewRestrictions,
+        Face.keywordCostRestrictions = keywordCostRestrictions,
         Face.targetRestrictions = targetRestrictions,
         Face.rulePermissions = rulePermissions,
         Face.attachRestrictions = attachRestrictions,

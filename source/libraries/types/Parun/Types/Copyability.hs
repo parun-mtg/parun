@@ -6,7 +6,7 @@ module Parun.Types.Copyability where
 --
 -- A field of its own and not a parameter on Counterability: each of
 -- Parun.Types.Face's prohibitions gates one act at that act's site
--- (sacrificeRestrictions, untapRestrictions, crewRestrictions), and the two
+-- (sacrificeRestrictions, untapRestrictions, keywordCostRestrictions), and the two
 -- acts' carriers differ -- countering has a conditional form (Exquisite
 -- Firecraft) and two foreign carriers (Parun.Types.PlayerEffect,
 -- Parun.Types.ManaRider) that copying has no producer for.

@@ -7,7 +7,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 -- | CR 115 / CR 101.2: one TARGETING PROHIBITION that is not a keyword --
 -- "creatures can't be the targets of spells" (Dense Foliage).
 --
--- Parun.Types.CrewRestriction's shape and filing, one game action over: CR
+-- Parun.Types.KeywordCostRestriction's shape and filing, one game action over: CR
 -- 613.11 puts a continuous effect that affects game rules outside the layer
 -- system, and no layer of Parun.Engine.Projection rewrites it. Shroud and
 -- hexproof (CR 702.18a, CR 702.11b) are abilities the object HAS; this one is
@@ -27,7 +27,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 -- modules that may read it.
 data TargetRestriction affected = MkTargetRestriction
   { -- | Which objects can't be targeted, re-derived every time it is asked (CR
-    -- 611.3a), as Parun.Types.CrewRestriction's set is.
+    -- 611.3a), as Parun.Types.KeywordCostRestriction's set is.
     affected :: affected,
     -- | CR 115.1's kind of spell or ability the prohibition stops. "Spells or
     -- abilities" is one row per kind.

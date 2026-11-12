@@ -618,8 +618,6 @@ library codec
     Parun.Codec.CreateSpec
     Parun.Codec.Crewing
     Parun.Codec.CrewingSpec
-    Parun.Codec.CrewRestriction
-    Parun.Codec.CrewRestrictionSpec
     Parun.Codec.CrewRole
     Parun.Codec.CrewRoleSpec
     Parun.Codec.Cycling
@@ -973,6 +971,10 @@ library codec
     Parun.Codec.InZone
     Parun.Codec.InZoneSpec
     Parun.Codec.Keyword
+    Parun.Codec.KeywordCostPart
+    Parun.Codec.KeywordCostPartSpec
+    Parun.Codec.KeywordCostRestriction
+    Parun.Codec.KeywordCostRestrictionSpec
     Parun.Codec.KeywordCount
     Parun.Codec.KeywordCountSpec
     Parun.Codec.KeywordDesignator
@@ -1879,7 +1881,6 @@ library engine
     Parun.Engine.Cost
     Parun.Engine.Count
     Parun.Engine.CounterRestriction
-    Parun.Engine.CrewRestriction
     Parun.Engine.Damage
     Parun.Engine.Daytime
     Parun.Engine.Decide
@@ -1916,6 +1917,7 @@ library engine
     Parun.Engine.Interchangeable
     Parun.Engine.Interchangeable.Mentions
     Parun.Engine.Keyword
+    Parun.Engine.KeywordCostRestriction
     Parun.Engine.LaterPayment
     Parun.Engine.Learn
     Parun.Engine.Ledger
@@ -2899,7 +2901,6 @@ library types
     Parun.Types.CreateCopy
     Parun.Types.CreateEmblem
     Parun.Types.Crewing
-    Parun.Types.CrewRestriction
     Parun.Types.CrewRole
     Parun.Types.Cycling
     Parun.Types.DamageDealer
@@ -3103,6 +3104,8 @@ library types
     Parun.Types.InZone
     Parun.Types.Key
     Parun.Types.Keyword
+    Parun.Types.KeywordCostPart
+    Parun.Types.KeywordCostRestriction
     Parun.Types.KeywordCount
     Parun.Types.KeywordDesignator
     Parun.Types.KeywordExpansion

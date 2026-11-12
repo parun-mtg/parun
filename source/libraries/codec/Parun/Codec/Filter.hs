@@ -20,6 +20,7 @@ import qualified Parun.Codec.ExiledPile as ExiledPile
 import qualified Parun.Codec.Expansion as Expansion
 import qualified Parun.Codec.Holder as Holder
 import qualified Parun.Codec.Hop as Hop
+import qualified Parun.Codec.KeywordCostPart as KeywordCostPart
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.LibraryDeparture as LibraryDeparture
@@ -139,7 +140,7 @@ codec keywordCodec =
       Arm.nullary "CrewedSourceThisTurn" Filter.CrewedSourceThisTurn,
       Arm.nullary "ConvokedSourceThisTurn" Filter.ConvokedSourceThisTurn,
       Arm.nullary "SaddledSourceThisTurn" Filter.SaddledSourceThisTurn,
-      Arm.nullary "CantCrewVehicles" Filter.CantCrewVehicles,
+      Arm.payload "CantPayKeywordCost" KeywordCostPart.codec Filter.CantPayKeywordCost (\x -> case x of Filter.CantPayKeywordCost y -> Just y; _ -> Nothing),
       Arm.nullary "DealtDamageThisTurn" Filter.DealtDamageThisTurn,
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),
       Arm.payload "EnteredThisTurn" EnteredZone.codec Filter.EnteredThisTurn (\x -> case x of Filter.EnteredThisTurn y -> Just y; _ -> Nothing),
@@ -331,7 +332,7 @@ tagOf x = case x of
   Filter.CrewedSourceThisTurn {} -> "CrewedSourceThisTurn"
   Filter.ConvokedSourceThisTurn {} -> "ConvokedSourceThisTurn"
   Filter.SaddledSourceThisTurn {} -> "SaddledSourceThisTurn"
-  Filter.CantCrewVehicles {} -> "CantCrewVehicles"
+  Filter.CantPayKeywordCost {} -> "CantPayKeywordCost"
   Filter.DealtDamageThisTurn {} -> "DealtDamageThisTurn"
   Filter.DealtDamageTo {} -> "DealtDamageTo"
   Filter.EnteredThisTurn {} -> "EnteredThisTurn"

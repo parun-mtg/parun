@@ -48,7 +48,6 @@ import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntersTrigger as EntersTrigger
@@ -60,6 +59,8 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -184,7 +185,7 @@ baseFace =
       Face.untapRestrictions = [],
       Face.attachRestrictions = [],
       Face.counterRestrictions = [],
-      Face.crewRestrictions = [],
+      Face.keywordCostRestrictions = [],
       Face.targetRestrictions = [],
       Face.rulePermissions = [],
       Face.activationProhibitions = [],
@@ -262,7 +263,7 @@ minimalFace =
       Face.untapRestrictions = [],
       Face.attachRestrictions = [],
       Face.counterRestrictions = [],
-      Face.crewRestrictions = [],
+      Face.keywordCostRestrictions = [],
       Face.targetRestrictions = [],
       Face.rulePermissions = [],
       Face.activationProhibitions = [],
@@ -453,9 +454,9 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
     Spec.it s "untapRestrictions (CR 502.3/101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.untapRestrictions <$> decodeFace v) (Right [])
-    Spec.it s "crewRestrictions (CR 702.122d/101.2) defaults to the empty list" $ do
+    Spec.it s "keywordCostRestrictions (CR 702.122d, 702.196b, 101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
-      Spec.assertEq s (Face.crewRestrictions <$> decodeFace v) (Right [])
+      Spec.assertEq s (Face.keywordCostRestrictions <$> decodeFace v) (Right [])
     Spec.it s "targetRestrictions (CR 115/101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.targetRestrictions <$> decodeFace v) (Right [])
@@ -603,13 +604,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         decodeFace
         baseFace {Face.untapRestrictions = [UntapRestriction.MkUntapRestriction Affected.Attached UntapHold.Forbidden Nothing]}
         (init baseFaceJson <> ",\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}]}")
-    Spec.it s "crewRestrictions" $
+    Spec.it s "keywordCostRestrictions" $
       Common.assertJsonCodec
         s
         encodeFace
         decodeFace
-        baseFace {Face.crewRestrictions = [CrewRestriction.MkCrewRestriction Affected.Attached]}
-        (init baseFaceJson <> ",\"crewRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}]}")
+        baseFace {Face.keywordCostRestrictions = [KeywordCostRestriction.MkKeywordCostRestriction KeywordCostPart.Crew Affected.Attached]}
+        (init baseFaceJson <> ",\"keywordCostRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"part\":\"Crew\"}]}")
     Spec.it s "targetRestrictions" $
       Common.assertJsonCodec
         s

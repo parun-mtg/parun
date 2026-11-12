@@ -138,6 +138,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
@@ -916,9 +917,16 @@ candidateCostsGiven permitted pid name oid gs =
                       -- CR 702.196a: flashback's candidate with the payload's
                       -- components plus returning one creature you control to its
                       -- owner's hand, paid as Meloku the Clouded Mirror's return is.
-                      -- CR 702.196b's "can't be beamed up" is not implemented (#6525).
+                      -- `Not (CantPayKeywordCost BeamMeUp)` is CR 702.196b, and
+                      -- this is its ONLY minter, crew's posture (Keyword.crew):
+                      -- Meloku's printed return is no beam me up cost.
                       beamedUp cost =
-                        let yourCreature = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You]
+                        let yourCreature =
+                              Filter.Type.And
+                                [ Filter.Type.HasCardType CardType.Creature,
+                                  Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
+                                  Filter.Type.Not (Filter.Type.CantPayKeywordCost KeywordCostPart.BeamMeUp)
+                                ]
                          in CandidateCost.plain
                               (Just (Keyword.Type.BeamMeUp cost))
                               (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents 1 yourCreature)]})
@@ -2659,7 +2667,7 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
 --
 -- NOT Replacement.sacrificeCandidates, and the difference is the CONTEXT: that
 -- one pre-narrows to `Projection.controls pid` and applies CR 101.2's sacrifice
--- restrictions, where this one carries CR 702.122d's prohibition and the source's
+-- restrictions, where this one carries CR 702.122d's and 702.196b's prohibitions and the source's
 -- colours (CR 702.78a). Both read the PAYER as "you" and the permanent
 -- whose ability is being paid for as the source -- without it a Vehicle that has
 -- already become a creature could crew itself.
@@ -2669,13 +2677,14 @@ tapCandidates slots pid oid criterion gs = tapCandidatesGiven (Snapshot.onDemand
 -- The same pool read off a snapshot of `gs` the caller already took.
 tapCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 tapCandidatesGiven board slots pid oid criterion gs =
-  let -- CR 702.122d's prohibition rides the CONTEXT rather than narrowing the
-      -- pool here, and that is what confines rule 702.122d to a CREW cost: the
-      -- atom that reads it is written into rule 702.122a's criterion by
-      -- Parun.Engine.Keyword's `crew` and by nothing else, so a TapForTotalPower
-      -- printed outside a crew ability
-      -- (data/cards/synthetic-crewed-battery.json) never asks and the set is
-      -- never forced.
+  let -- CR 702.122d's and 702.196b's prohibitions ride the CONTEXT rather
+      -- than narrowing the pool here, and that is what confines each rule to its
+      -- keyword's cost: the atom that reads them is written into rule
+      -- 702.122a's criterion by Parun.Engine.Keyword's `crew` and into rule
+      -- 702.196a's by candidateCostsGiven's `beamedUp`, and by nothing else, so
+      -- a TapForTotalPower printed outside a crew ability
+      -- (data/cards/synthetic-crewed-battery.json) or a return outside beam me
+      -- up (Meloku the Clouded Mirror) never asks and the set is never forced.
       -- Every source-derived field through Projection.framedBy: CR 607.2d's
       -- entry choices for a criterion naming "the chosen type"
       -- (matchesPermanent's reading), and CR 105.2's colours of the spell being
@@ -2685,7 +2694,7 @@ tapCandidatesGiven board slots pid oid criterion gs =
           oid
           gs
           (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
-            { Filter.cantCrewVehicles = Snapshot.cantCrewVehicles board
+            { Filter.cantPayKeywordCost = Snapshot.cantPayKeywordCost board
             }
       matches candidate =
         Filter.matches context (Snapshot.views board candidate) criterion

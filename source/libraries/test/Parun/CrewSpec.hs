@@ -341,8 +341,8 @@ crewingWith tappers p = case p of
   _ -> S.identityAnswer p
 
 -- CR 702.122d: "can't crew Vehicles" -- an effect that forbids TAPPING a
--- creature to pay a crew cost, carried by Parun.Types.CrewRestriction and
--- gathered by Parun.Engine.CrewRestriction. Revoke Privileges {2}{W} is the
+-- creature to pay a crew cost, carried by Parun.Types.KeywordCostRestriction and
+-- gathered by Parun.Engine.KeywordCostRestriction. Revoke Privileges {2}{W} is the
 -- pool's printing; its other two clauses ("can't attack, block") are Pacifism's
 -- and are proved where Pacifism's are.
 --

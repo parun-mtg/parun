@@ -278,7 +278,6 @@ import qualified Parun.Codec.CraftSpec
 import qualified Parun.Codec.CreateCopySpec
 import qualified Parun.Codec.CreateEmblemSpec
 import qualified Parun.Codec.CreateSpec
-import qualified Parun.Codec.CrewRestrictionSpec
 import qualified Parun.Codec.CrewRoleSpec
 import qualified Parun.Codec.CrewingSpec
 import qualified Parun.Codec.CyclingSpec
@@ -451,6 +450,8 @@ import qualified Parun.Codec.InitiativeTargetSpec
 import qualified Parun.Codec.InstanceOrdinalSpec
 import qualified Parun.Codec.InstructionRSpec
 import qualified Parun.Codec.InstructionRewriteSpec
+import qualified Parun.Codec.KeywordCostPartSpec
+import qualified Parun.Codec.KeywordCostRestrictionSpec
 import qualified Parun.Codec.KeywordCountSpec
 import qualified Parun.Codec.KeywordDesignatorSpec
 import qualified Parun.Codec.KeywordFamilySpec
@@ -1327,7 +1328,8 @@ spec s registry corpus = do
   Parun.Codec.FlipOutcomeSpec.spec s
   Parun.Codec.TransformTriggerSpec.spec s
   Parun.Codec.CrewingSpec.spec s
-  Parun.Codec.CrewRestrictionSpec.spec s
+  Parun.Codec.KeywordCostRestrictionSpec.spec s
+  Parun.Codec.KeywordCostPartSpec.spec s
   Parun.Codec.CyclingSpec.spec s
   Parun.Codec.DamageDirectionSpec.spec s
   Parun.Codec.DamageEventSpec.spec s

@@ -49,7 +49,14 @@
           }
         }
       ],
-      "crewRestrictions": [
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "keywordCostRestrictions": [
         {
           "affected": {
             "type": "Matching",
@@ -68,14 +75,8 @@
                 }
               ]
             }
-          }
-        }
-      ],
-      "enchant": [
-        {
-          "pool": {
-            "type": "Creatures"
-          }
+          },
+          "part": "Crew"
         }
       ],
       "manaCost": [

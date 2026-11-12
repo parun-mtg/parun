@@ -31,6 +31,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
@@ -448,12 +449,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.LeftLibraryThisTurn LibraryDeparture.Milled)
       " {\"type\":\"LeftLibraryThisTurn\",\"value\":\"Milled\"} "
-  Spec.it s "CantCrewVehicles" $
+  Spec.it s "CantPayKeywordCost" $
     Common.assertCodec
       s
       codec
-      Filter.CantCrewVehicles
-      " {\"type\":\"CantCrewVehicles\"} "
+      (Filter.CantPayKeywordCost KeywordCostPart.BeamMeUp)
+      " {\"type\":\"CantPayKeywordCost\",\"value\":\"BeamMeUp\"} "
   Spec.it s "DealtDamageThisTurn" $
     Common.assertCodec
       s

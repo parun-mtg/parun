@@ -152,6 +152,7 @@ import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordExpansion as KeywordExpansion
@@ -2586,7 +2587,7 @@ battlefieldAbilitiesFor keyword count = fmap (mintedBy keyword) (KeywordExpansio
 -- a targeted crew would fizzle to shroud and fire "becomes the target" triggers
 -- the printed ability does not.
 --
--- `Not CantCrewVehicles` is CR 702.122d, and this is its ONLY minter: rule
+-- `Not (CantPayKeywordCost Crew)` is CR 702.122d, and this is its ONLY minter: rule
 -- 702.122d forbids paying a crew cost and says nothing about any other cost that
 -- taps, so writing the atom into rule 702.122a's own criterion is what tells a
 -- crew cost from the same component printed outside one
@@ -2601,7 +2602,7 @@ crew n =
             Filter.Not Filter.IsTapped,
             Filter.HeldBy Holder.Controller PlayerRelation.You,
             Filter.Not Filter.IsSource,
-            Filter.Not Filter.CantCrewVehicles
+            Filter.Not (Filter.CantPayKeywordCost KeywordCostPart.Crew)
           ]
       becomes cardType =
         Effect.ModifyTarget
@@ -2643,7 +2644,7 @@ crew n =
 -- THE COST is crew's TapForTotalPower on the same words -- "any number of other
 -- untapped creatures you control with total power N or greater" -- so `Not
 -- IsSource` is rule 702.171a's own "other" and CR 302.6 reaches it no more than
--- it reaches crew's. WITHOUT crew's `Not CantCrewVehicles`: rule 702.122d
+-- it reaches crew's. WITHOUT crew's `Not (CantPayKeywordCost Crew)`: rule 702.122d
 -- forbids paying a CREW cost and nothing else, teamworkCost's reading below.
 --
 -- THE RESTRICTION is rule 702.171a's own "Activate only as a sorcery", which
@@ -3915,7 +3916,7 @@ giftCost something =
 -- CostComponent.TapForTotalPower and not TapPermanents, `crew` above's reading of
 -- the same words one rule over.
 --
--- WITHOUT crew's `Not CantCrewVehicles`: rule 702.122d forbids paying a CREW
+-- WITHOUT crew's `Not (CantPayKeywordCost Crew)`: rule 702.122d forbids paying a CREW
 -- cost and says nothing about any other cost that taps, and that atom in this
 -- criterion is what would make a Vehicle-barred creature unable to pay teamwork
 -- too. Without crew's `Not IsSource` either -- the source is a spell on the
@@ -6780,7 +6781,7 @@ spiritToken =
               Face.untapRestrictions = [],
               Face.attachRestrictions = [],
               Face.counterRestrictions = [],
-              Face.crewRestrictions = [],
+              Face.keywordCostRestrictions = [],
               Face.targetRestrictions = [],
               Face.rulePermissions = [],
               Face.activationProhibitions = [],
@@ -7019,7 +7020,7 @@ servoToken =
               Face.untapRestrictions = [],
               Face.attachRestrictions = [],
               Face.counterRestrictions = [],
-              Face.crewRestrictions = [],
+              Face.keywordCostRestrictions = [],
               Face.targetRestrictions = [],
               Face.rulePermissions = [],
               Face.activationProhibitions = [],
@@ -7215,7 +7216,7 @@ tokenCard name typeLine colors stats abilities =
               Face.untapRestrictions = [],
               Face.attachRestrictions = [],
               Face.counterRestrictions = [],
-              Face.crewRestrictions = [],
+              Face.keywordCostRestrictions = [],
               Face.targetRestrictions = [],
               Face.rulePermissions = [],
               Face.activationProhibitions = [],

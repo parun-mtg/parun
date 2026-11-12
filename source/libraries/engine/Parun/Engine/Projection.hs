@@ -4108,7 +4108,7 @@ filterReads f = case f of
   -- CR 702.122d reads nothing a layer writes, IsAttacking's reason one rule
   -- over: the prohibition is gathered outside the layer system (CR 613.11) and
   -- handed in on the context, so it is a fixed input to any single projection.
-  Filter.Type.CantCrewVehicles -> Set.empty
+  Filter.Type.CantPayKeywordCost _ -> Set.empty
   Filter.Type.DealtDamageThisTurn -> Set.empty
   Filter.Type.DealtDamageTo asked -> case DealtDamageTo.party asked of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
@@ -4406,7 +4406,7 @@ filterReadsPeers f = case f of
   Filter.Type.LeftLibraryThisTurn _ -> False
   -- CR 702.122d reads the CONTEXT's gathered set rather than any field of a
   -- peer's view, so no second projection can change its answer.
-  Filter.Type.CantCrewVehicles -> False
+  Filter.Type.CantPayKeywordCost _ -> False
   Filter.Type.DealtDamageThisTurn -> False
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
