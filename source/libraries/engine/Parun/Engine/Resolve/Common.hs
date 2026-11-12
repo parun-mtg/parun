@@ -4140,24 +4140,27 @@ changeLifeByDelta settle pid delta =
 -- move did not happen.
 -- CR 400.11b: where a card a search found outside the game arrives, and whether
 -- it is shown (CR 701.23e), for a destination that can take one: Invasion of
--- Arcavios's "reveal it, and put it into your hand". Nothing for the rest, which
--- then offers nothing out there -- MTGJSON dump of 2026-08-23, text "search" with
--- "outside the game": Invasion of Arcavios, ending in a hand, and Turtles
--- Forever; a search sending a card from outside the game onto the battlefield
+-- Arcavios's "reveal it, and put it into your hand", and Turtles Forever's
+-- "then reveal those cards", whose later clauses then put each into a hand or
+-- the library. Nothing for the rest, which then offers nothing out there --
+-- MTGJSON dump of 2026-08-23, text "search" with "outside the game": those two
+-- alone; a search sending a card from outside the game onto the battlefield
 -- would refute it.
 --
--- Not implemented: a Reveal search's find outside the game, held for a later
--- clause (#6508).
+-- A Reveal find is brought into the library, the zone the searched finds wait
+-- in, so a later clause can bind and move it (CR 608.2c). Not implemented: it
+-- stays outside the game until that clause, so its move to a hand is a move
+-- from the library (#6988).
 outsideArrival :: SearchDestination.SearchDestination -> Maybe (OutsideDestination.OutsideDestination, Bool)
 outsideArrival destination = case destination of
   SearchDestination.RevealThenHand -> Just (OutsideDestination.Hand, True)
   SearchDestination.Hand -> Just (OutsideDestination.Hand, False)
+  SearchDestination.Reveal -> Just (OutsideDestination.LibraryTop, True)
   SearchDestination.Battlefield -> Nothing
   SearchDestination.BattlefieldTapped -> Nothing
   SearchDestination.Exile -> Nothing
   SearchDestination.BattlefieldAttachedOrHand -> Nothing
   SearchDestination.BattlefieldAttached -> Nothing
-  SearchDestination.Reveal -> Nothing
   SearchDestination.Stay -> Nothing
   SearchDestination.RevealThenTop -> Nothing
   SearchDestination.Top -> Nothing
@@ -4204,8 +4207,9 @@ differing axes gs = Event.differingKept (differingValues axes gs)
 -- descriptions is no constraint. Greedy over the searcher's order is exact,
 -- since the cards matchable to distinct descriptions form a transversal
 -- matroid: every maximal such set is a largest one. Each check is exhaustive,
--- which the printed descriptions keep small.
-matchDescriptions :: (ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> Bool) -> Seq.Seq (Filter.Type.Filter Keyword.Type.Keyword) -> [ObjectId] -> [ObjectId]
+-- which the printed descriptions keep small. Over any cards, so a search's find
+-- outside the game is held to it beside its zones' (CR 701.23j).
+matchDescriptions :: (a -> Filter.Type.Filter Keyword.Type.Keyword -> Bool) -> Seq.Seq (Filter.Type.Filter Keyword.Type.Keyword) -> [a] -> [a]
 matchDescriptions fits descriptions
   | Seq.null descriptions = id
   | otherwise = go []
@@ -4218,11 +4222,6 @@ matchDescriptions fits descriptions
       | otherwise = go kept rest
     assign [] _ = True
     assign (options : more) used = any (\i -> not (Set.member i used) && assign more (Set.insert i used)) options
-
--- CR 609.3 for Search.exactly: the most cards, up to `cap`, that `differing`
--- could keep together from `candidates` (Event.mostDifferingOf).
-mostDiffering :: Set.Set DifferentIn.DifferentIn -> GameState -> Natural -> [ObjectId] -> Natural
-mostDiffering axes gs cap = Event.mostDifferingOf cap . fmap (differingValues axes gs)
 
 -- One card's values on Search.differentIn's axes (Event.differingOf), read off
 -- the CR 613 projection, so a split card's two names count (CR 201.2a) and a
@@ -4705,7 +4704,7 @@ conniveOne settle proposed oid = Monad.when (proposed > 0) $ do
           -- completed and deduplicated, Effect.Discard's posture; this branch is
           -- reached only when the hand is LARGER than N, so every omitted card is
           -- one the player could have discarded.
-          answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid drawn) pid held n)
+          answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid drawn) pid held n Seq.empty)
           let valid = ListUtils.nubOrd (filter (\c -> List.elem c held) answer)
               filler = filter (\c -> List.notElem c valid) held
           pure (List.genericTake n (valid <> filler))
@@ -4807,12 +4806,23 @@ branchSelects branch asked = case branch of
 -- payment put into a graveyard (CR 400.7), absent from `gs`.
 payerAnswerOf :: GameState -> (Seq.Seq (a, Cost.Type.Cost Keyword.Type.Keyword, b), Maybe (Map.Map SlotName Binding.Type.Binding)) -> PayerAnswer.PayerAnswer
 payerAnswerOf gs (attempts, paid) = case (Seq.viewr attempts, paid) of
-  (_ Seq.:> (_, cost, _), Just bound) ->
-    let bindings = Map.elems bound
-        named = concatMap (foldMap (Maybe.mapMaybe Recipient.objectOf . Set.toList) . Binding.Type.targets) bindings <> concatMap (foldMap Foldable.toList . Binding.Type.objects) bindings
-        public oid = maybe False (not . Game.isHiddenZone) (Game.zoneOf oid gs)
-     in PayerAnswer.Paid cost (Set.fromList (filter public named))
+  (_ Seq.:> (_, cost, _), Just bound) -> PayerAnswer.Paid cost (publicObjectsOf gs bound)
   _ -> PayerAnswer.Declined
+
+-- The objects a payment bound (foldPaid's slots) that are in a public zone of
+-- `gs`, payerAnswerOf's reading.
+publicObjectsOf :: GameState -> Map.Map SlotName Binding.Type.Binding -> Set ObjectId
+publicObjectsOf gs bound =
+  let bindings = Map.elems bound
+      named = concatMap (foldMap (Maybe.mapMaybe Recipient.objectOf . Set.toList) . Binding.Type.targets) bindings <> concatMap (foldMap Foldable.toList . Binding.Type.objects) bindings
+      public oid = maybe False (not . Game.isHiddenZone) (Game.zoneOf oid gs)
+   in Set.fromList (filter public named)
+
+-- CR 101.4b: of the earlier answers to an offer, each payer who paid and the
+-- public objects they took, as a payment's own prompts tell a later payer
+-- (PaymentMoment.DuringResolution).
+takenBy :: Seq.Seq (PlayerId, PayerAnswer.PayerAnswer) -> Seq.Seq (PlayerId, Set ObjectId)
+takenBy = foldMap (\(payer, answer) -> case answer of PayerAnswer.Paid _ objects -> Seq.singleton (payer, objects); PayerAnswer.Declined -> Seq.empty)
 
 -- CR 734.1 / 118.12a: what follows a payment `agreed` to and answered as it
 -- was (payGateCost's record). A paid one stands, as `stands` reports it. A failed

@@ -3,7 +3,7 @@
 -- protection, which are keywords the object has (CR 702.18a, 702.11b, 702.16b)
 -- and are read off its projection by Parun.Engine.Target.targetable. One of the
 -- modules on the axis CR 613.11 reaches past the layer system, alongside
--- Parun.Engine.CrewRestriction and its siblings.
+-- Parun.Engine.KeywordCostRestriction and its siblings.
 --
 -- The reader of a PRINTED Parun.Types.TargetRestriction; a resolved one riding a
 -- player effect (Autumn's Veil) is Parun.Engine.PlayerEffect.forbidsTargeting's.
@@ -38,7 +38,7 @@ data Row = MkRow
   }
 
 -- Every prohibition in force right now, gathered off the battlefield with
--- Parun.Engine.CrewRestriction.cantCrew's gates: CR 613.1f's ability loss and
+-- Parun.Engine.KeywordCostRestriction.prohibited's gates: CR 613.1f's ability loss and
 -- the CR 305.7 land-type rewrite asked of the SOURCE, CR 612.1's word swap
 -- applied to its affected set, and a stored grant's rows (CR 613.1f) taken as
 -- given. Empty on almost every board, which is what makes it cheap to ask per

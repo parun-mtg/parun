@@ -443,11 +443,11 @@ slotContext reader perspective unannounced bindings acquisition source amount gs
             -- lives in an effect's QUANTITY, which is evaluated later and
             -- elsewhere.
             Filter.recipient = Nothing,
-            -- EMPTY: CR 702.122d's prohibition is read where rule 702.122a's
-            -- cost picks its candidates (Parun.Engine.Cost.tapCandidates) and no
-            -- target slot's Filter carries the atom, crew naming its Vehicle
-            -- rather than targeting it (CR 115.10a).
-            Filter.cantCrewVehicles = Set.empty,
+            -- EMPTY: CR 702.122d's and 702.196b's prohibitions are read where
+            -- the keyword's cost picks its candidates
+            -- (Parun.Engine.Cost.tapCandidates) and no target slot's Filter
+            -- carries the atom, neither cost targeting (CR 115.10a).
+            Filter.cantPayKeywordCost = Map.empty,
             -- Empty: CR 205.2a's read of the subject's host is
             -- Parun.Engine.Attach.hostsFor's to fill, and an announcement has no
             -- attach subject at all.

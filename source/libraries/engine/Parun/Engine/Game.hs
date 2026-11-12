@@ -58,6 +58,7 @@ import qualified Parun.Types.ExiledPile as ExiledPile
 import Parun.Types.Face (Face)
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownState as FaceDownState
+import qualified Parun.Types.FacedDilemma as FacedDilemma
 import qualified Parun.Types.Facing as Facing
 import Parun.Types.Game (Game)
 import Parun.Types.GameEvent (GameEvent)
@@ -4232,6 +4233,15 @@ actionsDoneThisTurn acts gs pid =
         GameEvent.PlayerActed acted | PlayerActed.player acted == pid -> Just (PlayerActed.action acted)
         _ -> Nothing
    in Set.size (Set.intersection acts (Set.fromList (Maybe.mapMaybe (actionOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
+
+-- | CR 700.17: how many spells and abilities this player chose modes for this
+-- turn, one GameEvent.FacedDilemma each, off actionsDoneThisTurn's log.
+dilemmasFacedThisTurn :: GameState -> PlayerId -> Int
+dilemmasFacedThisTurn gs pid =
+  let facedBy event = case event of
+        GameEvent.FacedDilemma faced -> FacedDilemma.player faced == pid
+        _ -> False
+   in length (filter (facedBy . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 508.1a / 608.2i: how many creatures this player declared as attackers this
 -- turn. lifeChangedIn's footing -- a fold over TurnRegisters.events, whose

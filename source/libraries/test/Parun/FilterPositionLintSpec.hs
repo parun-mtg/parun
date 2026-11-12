@@ -124,6 +124,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTally as LifeTally
@@ -469,8 +470,8 @@ manaValueComparisons wanted value = case value of
   Value.Number _ -> 0
 
 -- CR 702.122d's atom, which no card may write.
-cantCrewVehiclesTag :: Text.Text
-cantCrewVehiclesTag = Text.pack "CantCrewVehicles"
+cantPayKeywordCostTag :: Text.Text
+cantPayKeywordCostTag = Text.pack "CantPayKeywordCost"
 
 -- How many CR 202.3 computed-bound atoms sit inside a target slot that NAMES an
 -- amount, counted off the encoding rather than off cardFilters: the position this
@@ -2129,6 +2130,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Blossombind", 1), -- Claustrophobia's wording
         ("Frozen in Ice", 1), -- Claustrophobia's wording
         ("Starlight Snare", 1), -- Claustrophobia's wording
+        ("Marooned", 1), -- Claustrophobia's tap, behind a paid gate
         ("Infinite Coursework", 2), -- Claustrophobia's tap, and the Effect.Undesignate beside it
         ("Artificer's Hex", 2), -- its intervening "if" and the destruction it gates
         ("Armor of Faith", 1), -- an activated ability pumping the Aura's host
@@ -2247,24 +2249,26 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     scrapshooter <- S.printingOf s registry "Scrapshooter"
     Spec.assertBool s (not (timesPaidOffends (S.combinedFace scrapshooter))) "the control: Scrapshooter's Printed Gift reading is accepted"
     Spec.assertBool s (timesPaidOffends ((S.combinedFace scrapshooter) {Face.keywords = Map.empty})) "and rejected on a face printing no gift"
-  -- CR 702.122d's Filter.CantCrewVehicles is the one atom here that no card may
-  -- write ANYWHERE, rather than one admitted at some positions: it is answerable
-  -- only where Parun.Engine.Cost.tapCandidates gathers the prohibition, and it is
-  -- minted only by Parun.Engine.Keyword's `crew` -- which is what confines rule
-  -- 702.122d to a crew cost, the same cost component being printable outside one
-  -- (data/cards/synthetic-crewed-battery.json). A card writing it would read as a
-  -- crew prohibition in a position that gathers none.
-  Spec.it s "CR 702.122d no card asks CantCrewVehicles" $ do
+  -- CR 702.122d's and 702.196b's Filter.CantPayKeywordCost is the one atom here
+  -- that no card may write ANYWHERE, rather than one admitted at some positions:
+  -- it is answerable only where Parun.Engine.Cost.tapCandidates gathers the
+  -- prohibition, and it is minted only by the keywords' own cost builders
+  -- (Parun.Engine.Keyword's `crew`, Parun.Engine.Cost's `beamedUp`) -- which is
+  -- what confines each rule to its keyword's cost, the same cost components being
+  -- printable outside one (data/cards/synthetic-crewed-battery.json, Meloku the
+  -- Clouded Mirror). A card writing it would read as a keyword cost prohibition
+  -- in a position that gathers none.
+  Spec.it s "CR 702.122d no card asks CantPayKeywordCost" $ do
     ps <- S.allPrintings s corpus
     let atomsOf tag = jsonAtoms tag . Codec.encode (Face.Codec.codec Card.codec) . S.combinedFace
-    Spec.assertEqWith s "the pool authors the atom nowhere" (fmap (S.nameOf . Printing.card) (filter ((/= 0) . atomsOf cantCrewVehiclesTag) ps)) []
+    Spec.assertEqWith s "the pool authors the atom nowhere" (fmap (S.nameOf . Printing.card) (filter ((/= 0) . atomsOf cantPayKeywordCostTag) ps)) []
     -- NOT vacuous in the way an unreachable sweep would be: the tag the sweep
     -- counts is the atom's own wire name, so a renamed constructor fails here
     -- rather than passing by counting nothing.
     Spec.assertEqWith
       s
       "and that tag is what the atom encodes as"
-      (jsonAtoms cantCrewVehiclesTag (Codec.encode (Filter.Codec.codec Keyword.Codec.codec) Filter.Type.CantCrewVehicles))
+      (jsonAtoms cantPayKeywordCostTag (Codec.encode (Filter.Codec.codec Keyword.Codec.codec) (Filter.Type.CantPayKeywordCost KeywordCostPart.Crew)))
       1
     -- The traversal reaches a card's filters at all, which the zero above cannot
     -- show: the same sweep over an atom the pool DOES author is non-zero.

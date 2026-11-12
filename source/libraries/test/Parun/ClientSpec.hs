@@ -436,7 +436,7 @@ spec s registry = Spec.describe s "Client" $ do
         o7 = ObjectId.MkObjectId 7
         o9 = ObjectId.MkObjectId 9
         alice = Decider.MkDecider S.alice
-        discarding = Prompt.ChooseDiscard alice S.alice [o5, o7, o9] 2
+        discarding = Prompt.ChooseDiscard alice S.alice [o5, o7, o9] 2 Seq.empty
     -- On a real combat, which the line judges an attack against.
     case S.combatBoardOf [giant, giant, giant] [] of
       (board, giants@[_, second, third], []) -> do

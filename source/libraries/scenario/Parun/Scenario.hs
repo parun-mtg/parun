@@ -1038,7 +1038,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.RandomStickerSheet slots -> chosen `elem` slots
   Prompt.Type.ChooseDieResult _ _ _ results -> toInteger chosen < toInteger (length results)
   Prompt.Type.ChooseCoinResult _ _ faces -> chosen `elem` faces
-  Prompt.Type.ChooseDiscard _ _ cards _ -> all (`elem` cards) chosen
+  Prompt.Type.ChooseDiscard _ _ cards _ _ -> all (`elem` cards) chosen
   Prompt.Type.ChooseScry _ _ cards -> all (`elem` cards) (uncurry (<>) chosen)
   Prompt.Type.ChooseSurveil _ _ cards -> all (`elem` cards) (uncurry (<>) chosen)
   Prompt.Type.ChooseFateseal _ _ _ cards -> all (`elem` cards) (uncurry (<>) chosen)

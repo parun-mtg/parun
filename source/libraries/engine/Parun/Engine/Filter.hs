@@ -49,6 +49,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
@@ -1287,22 +1288,25 @@ data Context = MkContext
     -- in a wish's filter" is what keeps a card out of that position, and
     -- Parun.OutsideTheGameSpec proves the atom answers nothing there.
     slotObjects :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId),
-    -- CR 702.122d / 101.2: the objects an effect in force says CAN'T CREW
-    -- VEHICLES, for the one atom that asks (CantCrewVehicles). Supplied by the
-    -- caller for sourceMeasures' reason -- this module holds no game state and
-    -- cannot gather another permanent's static abilities -- and by ONE caller,
-    -- Parun.Engine.Cost.tapCandidates, which is the single pool both CR 118.3's
-    -- payability gate and rule 702.122a's payment prompt read.
+    -- CR 702.122d / 702.196b / 101.2: per keyword cost part, the objects an
+    -- effect in force says can't pay it, for the one atom that asks
+    -- (CantPayKeywordCost). Supplied by the caller for sourceMeasures' reason --
+    -- this module holds no game state and cannot gather another permanent's
+    -- static abilities -- and by ONE caller, Parun.Engine.Cost.tapCandidates,
+    -- which is the single pool both CR 118.3's payability gate and the payment
+    -- prompts of rules 702.122a and 702.196a read.
     --
-    -- LAZY, and load-bearingly so: filling it walks the battlefield through
-    -- Parun.Engine.CrewRestriction.cantCrew, and no filter that omits the atom
-    -- ever forces it -- which is what lets that one caller supply it for every
-    -- tapping cost while only a crew ability's criterion pays for it.
+    -- LAZY VALUES, and load-bearingly so: filling one walks the battlefield
+    -- through Parun.Engine.KeywordCostRestriction.prohibited, and no filter that
+    -- omits the atom ever forces it -- which is what lets that one caller supply
+    -- it for every tapping and returning cost while only a keyword's criterion
+    -- pays for it.
     --
-    -- EMPTY in contextFor below and so in every other builder, leaving the atom vacuously False and `Not CantCrewVehicles`
-    -- vacuously True: a position with no prohibition gathered admits every
-    -- candidate, which is the direction a prohibition nobody printed must take.
-    cantCrewVehicles :: Set.Set ObjectId.ObjectId,
+    -- EMPTY in contextFor below and so in every other builder, leaving the atom
+    -- vacuously False and `Not (CantPayKeywordCost _)` vacuously True: a position
+    -- with no prohibition gathered admits every candidate, which is the direction
+    -- a prohibition nobody printed must take.
+    cantPayKeywordCost :: Map.Map KeywordCostPart.KeywordCostPart (Set.Set ObjectId.ObjectId),
     -- CR 201.1 / 709.4a: the NAMES of the objects the surrounding announcement's
     -- slots hold, for the one atom that compares a candidate's against them
     -- (Shares Name Bound, Harness the Storm). Supplied by the caller for
@@ -1795,7 +1799,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantCrewVehicles = Set.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
 
 -- contextFor over a game: its teams (CR 102.4) and its active players (CR 102.1,
 -- 805.4a) filled from the state, the two facts about the table a match may ask.
@@ -2391,13 +2395,13 @@ matches context view predicate = case predicate of
   -- candidate can stop EXISTING -- CR 400.7 mints a new object the moment the card
   -- moves again, and the new one did not leave a library.
   Filter.LeftLibraryThisTurn how -> Set.member how (leftLibraryThisTurn view)
-  -- CR 702.122d with CR 101.2: membership of the set the CALLER gathered, the
+  -- CR 702.122d / 702.196b with CR 101.2: membership of the set the CALLER gathered, the
   -- reading IsBound takes and for its reason -- a prohibition is another
   -- permanent's static ability, so no field of the candidate's own view could
   -- answer it. Vacuously False for a view with no object behind it and for a
   -- context that gathered nothing.
-  Filter.CantCrewVehicles -> case identity view of
-    Just oid -> Set.member oid (cantCrewVehicles context)
+  Filter.CantPayKeywordCost part -> case identity view of
+    Just oid -> maybe False (Set.member oid) (Map.lookup part (cantPayKeywordCost context))
     Nothing -> False
   -- CR 120.1 / 608.2i: the same look-back again, over the damage events. Like
   -- DeclaredThisTurn and LeftLibraryThisTurn (LastDrawn aside, which a later draw
@@ -2405,7 +2409,7 @@ matches context view predicate = case predicate of
   -- the reading CR 120.3e's marked damage would give
   -- -- CR 120.6's regeneration and CR 120.3d's wither both leave a creature that
   -- was dealt damage carrying nothing marked. Named rather than counted, since
-  -- CantCrewVehicles sits between them and is neither: a prohibition lifts the
+  -- CantPayKeywordCost sits between them and is neither: a prohibition lifts the
   -- moment its source leaves.
   Filter.DealtDamageThisTurn -> dealtDamageThisTurn view
   -- CR 120.1 / 608.2i: the same look-back asked of a RELATION, CrewedSourceThisTurn's
@@ -3015,7 +3019,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DeclaredAttackedThisCombat -> []
   Filter.DeclaredBlockerThisCombat -> []
   Filter.LeftLibraryThisTurn _ -> []
-  Filter.CantCrewVehicles -> []
+  Filter.CantPayKeywordCost _ -> []
   Filter.DealtDamageThisTurn -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
@@ -3193,7 +3197,7 @@ statesAQuality predicate = case predicate of
   Filter.DeclaredAttackedThisCombat -> True
   Filter.DeclaredBlockerThisCombat -> True
   Filter.LeftLibraryThisTurn _ -> True
-  Filter.CantCrewVehicles -> True
+  Filter.CantPayKeywordCost _ -> True
   Filter.DealtDamageThisTurn -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
@@ -3367,7 +3371,7 @@ readsSourceValues predicate = case predicate of
   Filter.DeclaredAttackedThisCombat -> False
   Filter.DeclaredBlockerThisCombat -> False
   Filter.LeftLibraryThisTurn _ -> False
-  Filter.CantCrewVehicles -> False
+  Filter.CantPayKeywordCost _ -> False
   Filter.DealtDamageThisTurn -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False

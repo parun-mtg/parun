@@ -32,6 +32,8 @@ data HistoryRead
     Damage
   | -- | Permanents that died (CR 700.4).
     Deaths
+  | -- | Dilemmas faced (CR 700.17).
+    Dilemmas
   | -- | Cards discarded (CR 701.9a).
     Discards
   | -- | Permanents that entered the battlefield (CR 603.6a).

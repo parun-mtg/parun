@@ -157,7 +157,6 @@ import qualified Parun.Types.Craft as Craft
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.CreateCopy as CreateCopy
 import qualified Parun.Types.CreateEmblem as CreateEmblem
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.CrewRole as CrewRole
 import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePart as DamagePart
@@ -266,6 +265,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.KeywordCount as KeywordCount
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
@@ -597,7 +597,7 @@ filterChildren children predicate = case predicate of
   Filter.DeclaredThisTurn _ -> pure predicate
   Filter.CouldAttackThisTurn -> pure predicate
   Filter.LeftLibraryThisTurn _ -> pure predicate
-  Filter.CantCrewVehicles -> pure predicate
+  Filter.CantPayKeywordCost _ -> pure predicate
   Filter.CrewedSourceThisTurn -> pure predicate
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
@@ -2837,7 +2837,7 @@ data FaceChildren card f = MkFaceChildren
     -- | A restriction on untapping (CR 502.3), whole.
     faceUntapRestriction :: UntapRestriction.UntapRestriction -> f UntapRestriction.UntapRestriction,
     -- | A restriction on crewing (CR 702.122a), whole.
-    faceCrewRestriction :: CrewRestriction.CrewRestriction -> f CrewRestriction.CrewRestriction,
+    faceKeywordCostRestriction :: KeywordCostRestriction.KeywordCostRestriction -> f KeywordCostRestriction.KeywordCostRestriction,
     -- | A restriction on targeting (CR 613.11), whole.
     faceTargetRestriction :: TargetRestriction.TargetRestriction Affected.Affected -> f (TargetRestriction.TargetRestriction Affected.Affected),
     -- | A rule-changing permission (CR 613.11), whole.
@@ -2893,7 +2893,7 @@ faceLeaves =
       faceCombatRestriction = pure,
       faceSacrificeRestriction = pure,
       faceUntapRestriction = pure,
-      faceCrewRestriction = pure,
+      faceKeywordCostRestriction = pure,
       faceTargetRestriction = pure,
       faceRulePermission = pure,
       faceAttachRestriction = pure,
@@ -2908,7 +2908,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions crewRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -2954,7 +2954,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> traverse (faceCombatRestriction c) combatRestrictions
     <*> traverse (faceSacrificeRestriction c) sacrificeRestrictions
     <*> traverse (faceUntapRestriction c) untapRestrictions
-    <*> traverse (faceCrewRestriction c) crewRestrictions
+    <*> traverse (faceKeywordCostRestriction c) keywordCostRestrictions
     <*> traverse (faceTargetRestriction c) targetRestrictions
     <*> traverse (faceRulePermission c) rulePermissions
     <*> traverse (faceAttachRestriction c) attachRestrictions
@@ -3244,7 +3244,7 @@ ruleLeaves =
 
 -- | A RuleAbilities' children (CR 613.11), row by row.
 ruleAbilitiesChildren :: (Applicative f) => RuleChildren f -> RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities
-ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions crewRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions) =
+ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions) =
   RuleAbilities.MkRuleAbilities
     <$> traverse (activationProhibitionChildren c) activationProhibitions
     <*> traverse (attachRestrictionChildren c) attachRestrictions
@@ -3256,7 +3256,7 @@ ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions at
     <*> traverse (blockRequirementChildren c) blockRequirements
     <*> traverse (combatRestrictionChildren c) combatRestrictions
     <*> traverse (counterRestrictionChildren c) counterRestrictions
-    <*> traverse (crewRestrictionChildren c) crewRestrictions
+    <*> traverse (keywordCostRestrictionChildren c) keywordCostRestrictions
     <*> traverse (entryRestrictionChildren c) entryRestrictions
     <*> traverse (sacrificeRestrictionChildren c) sacrificeRestrictions
     <*> traverse (targetRestrictionChildren c) targetRestrictions
@@ -3299,10 +3299,10 @@ counterRestrictionChildren :: (Applicative f) => RuleChildren f -> CounterRestri
 counterRestrictionChildren c (CounterRestriction.MkCounterRestriction affected kind) =
   CounterRestriction.MkCounterRestriction <$> ruleAffected c affected <*> traverse (ruleCounterKind c) kind
 
--- | A crew restriction's children (CR 702.122).
-crewRestrictionChildren :: (Applicative f) => RuleChildren f -> CrewRestriction.CrewRestriction -> f CrewRestriction.CrewRestriction
-crewRestrictionChildren c (CrewRestriction.MkCrewRestriction affected) =
-  CrewRestriction.MkCrewRestriction <$> ruleAffected c affected
+-- | A keyword cost restriction's children (CR 702.122d, 702.196b).
+keywordCostRestrictionChildren :: (Applicative f) => RuleChildren f -> KeywordCostRestriction.KeywordCostRestriction -> f KeywordCostRestriction.KeywordCostRestriction
+keywordCostRestrictionChildren c (KeywordCostRestriction.MkKeywordCostRestriction part affected) =
+  KeywordCostRestriction.MkKeywordCostRestriction part <$> ruleAffected c affected
 
 -- | An entry restriction's children. Its origin zones are left as they are.
 entryRestrictionChildren :: (Applicative f) => RuleChildren f -> EntryRestriction.EntryRestriction -> f EntryRestriction.EntryRestriction

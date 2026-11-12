@@ -246,8 +246,8 @@ data Prompt r where
   -- agrees, which no card can tell from either answer.
   ChooseCoinResult :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty CoinFace.CoinFace -> Prompt CoinFace.CoinFace
   -- | CR 514.1 / 701.9b. The [ObjectId] is the hand; the Natural is how many to
-  -- discard.
-  ChooseDiscard :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Natural.Natural -> Prompt [ObjectId.ObjectId]
+  -- discard; the Seq is ChooseSacrifices'.
+  ChooseDiscard :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Natural.Natural -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt [ObjectId.ObjectId]
   -- | CR 701.22a: the top cards of the scrying player's library, top-first;
   -- the answer is (bottom, top), each reading from that end inward.
   ChooseScry :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Prompt ([ObjectId.ObjectId], [ObjectId.ObjectId])
@@ -778,7 +778,7 @@ data Prompt r where
   -- pay a cost, the Natural how many; asked only with more candidates than the
   -- count. Not ChooseTargets: CR 115.1 makes a target only what the word
   -- names. The Seq is what the players before this one in an edict's APNAP pass
-  -- already chose (CR 101.4b).
+  -- already chose, or the earlier payers of a CR 118.12 offer took (CR 101.4b).
   ChooseSacrifices :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [ObjectId.ObjectId] -> Natural.Natural -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt (Set.Set ObjectId.ObjectId)
   -- | CR 406.2: which cards are exiled from the payer's graveyard to pay a
   -- cost; ChooseSacrifices' payload, posture and elision.

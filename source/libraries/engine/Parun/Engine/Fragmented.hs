@@ -415,6 +415,7 @@ records reading event = case reading of
   HistoryRead.Crews -> crewed event
   HistoryRead.Damage -> dealtDamage event
   HistoryRead.Deaths -> Maybe.isJust (Game.diedChange event)
+  HistoryRead.Dilemmas -> facedDilemma event
   HistoryRead.Discards -> Maybe.isJust (Game.discardOf event)
   HistoryRead.Entries -> Maybe.isJust (Game.enteredBattlefieldChange event)
   HistoryRead.LifeGains -> Maybe.isJust (Game.lifeChangeOf LifeDirection.Gained event)
@@ -437,6 +438,11 @@ moved event = case event of
   GameEvent.Moved {} -> True
   GameEvent.CardArrived {} -> True
   GameEvent.LeftTheGame {} -> True
+  _ -> False
+
+facedDilemma :: GameEvent -> Bool
+facedDilemma event = case event of
+  GameEvent.FacedDilemma {} -> True
   _ -> False
 
 becameMonarch :: GameEvent -> Bool

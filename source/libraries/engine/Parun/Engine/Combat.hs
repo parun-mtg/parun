@@ -70,7 +70,6 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
-import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
@@ -1861,8 +1860,9 @@ becomeBlockedAlone oid gs =
 -- whole sentence, so a pair that fails it moves nobody. pairAllowed is the same
 -- predicate CR 509.1b's own check asks per pair, and per pair is what the
 -- printed words ask: "all creatures that the other is blocked by", one creature
--- at a time. Rule 509.1b's SET-shaped restrictions (menace, CR 702.111b) are
--- blockDeclarationAllowed's, and they constrain a declaration rather than this.
+-- at a time. Rule 509.1b's SET-shaped restrictions (menace, CR 702.111b;
+-- Charging Rhino) are asked too, over each target's blockers after the switch
+-- (docs/decisions.md, "What a creature an effect makes block may block").
 --
 -- The DEPARTED attacker keeps its key, which is CR 509.1h: a creature remains
 -- blocked even when every creature blocking it is gone, and CR 510.1c then
@@ -1890,9 +1890,21 @@ switchBlockers first second gs =
       onSecond = blockersOf second gs
       candidates = Set.toList (Set.union onFirst onSecond)
       couldBlock blocker attacker = pairAllowed candidates [first, second] blocker attacker gs
+      board = Snapshot.whole gs
+      most =
+        Map.unionsWith
+          (<>)
+          [ CombatRestriction.blockedLimits (Just defending) [attacker] gs
+          | attacker <- [first, second],
+            Just defending <- [Defender.playerOfAttacker Projection.controllerWithLastKnown attacker gs]
+          ]
+      -- blocker -> attackers over the two targets after the switch, the shape
+      -- blockerCountsAllowedGiven counts.
+      after = Map.fromListWith Set.union [(b, Set.singleton a) | a <- [first, second], b <- Set.toList (Map.findWithDefault Set.empty a switchedOnly)]
       allowed =
         all (\b -> couldBlock b first) (Set.toList onSecond)
           && all (\b -> couldBlock b second) (Set.toList onFirst)
+          && blockerCountsAllowedGiven most (Snapshot.projected board) after gs
       -- "each creature that's blocking exactly one of those attacking
       -- creatures": one blocking BOTH is blocking the other already and stays
       -- where it is, which is also CR 509.3b's "only if it wasn't already
@@ -3041,11 +3053,12 @@ payTolls perform handed before held charged = do
         | otherwise -> Cost.payToll perform before (Set.fromList [oid | (p, oid) <- held, p == payer]) earlier payer charges >>= maybe (pure False) (`go` rest)
 
 -- CR 118.3: can this player pay these charges together, as Cost.payToll
--- pools them? Nothing owed is always paid.
+-- pools them, in the order CR 508.1j and CR 509.1f leave them? Nothing owed is
+-- always paid.
 tollPayable :: PlayerId -> [(ObjectId, Cost Keyword.Keyword)] -> GameState -> Bool
 tollPayable payer charges gs = case charges of
   [] -> True
-  (source, first) : rest -> Cost.canPay PaymentSubject.ForNeither payer source (List.foldl' Cost.plus first (fmap snd rest)) gs
+  (source, first) : rest -> Cost.canPayToll payer source (List.foldl' Cost.plus first (fmap snd rest)) gs
 
 -- CR 508.1a / 509.1a: who makes `pid`'s declaration -- the controller of the
 -- row handing it over (PlayerEffect.declarationRow), else `pid`.

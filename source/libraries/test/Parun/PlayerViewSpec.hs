@@ -124,7 +124,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertBool s (all named (Set.toList bobsHand)) "own hand"
   Spec.it s "CR 400.2 a seat answers from its own view" $ do
     gs <- started s registry
-    let prompt = Prompt.ChooseDiscard (Decide.deciderFor S.bob gs) S.bob (Game.zoneMembers Zone.Hand S.bob gs) 1
+    let prompt = Prompt.ChooseDiscard (Decide.deciderFor S.bob gs) S.bob (Game.zoneMembers Zone.Hand S.bob gs) 1 Seq.empty
         recorder :: Answerer.Answerer (Asked.Asked PlayerView.Type.PlayerView) (State.State [PlayerView.Type.PlayerView])
         recorder = Answerer.MkAnswerer (\question -> State.put [Asked.game question] >> pure (Replay.defaultAnswer (Asked.prompt question)))
         fallback :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State [PlayerView.Type.PlayerView])

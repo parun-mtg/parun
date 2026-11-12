@@ -2110,7 +2110,7 @@ raffineSchemingSeerSpec s registry =
       answering attackers aim picks p = case p of
         Prompt.DeclareAttackers _ _ ids -> filter (\oid -> List.elem oid attackers) ids
         Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter (== Recipient.ToCreature aim) . snd) sets
-        Prompt.ChooseDiscard _ _ held _ -> filter (\oid -> List.elem oid held) picks
+        Prompt.ChooseDiscard _ _ held _ _ -> filter (\oid -> List.elem oid held) picks
         _ -> S.aggressiveAnswer p
       atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers)
       libraryOf = Game.zoneMembers Zone.Library S.alice

@@ -138,7 +138,9 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana.Type
@@ -916,9 +918,16 @@ candidateCostsGiven permitted pid name oid gs =
                       -- CR 702.196a: flashback's candidate with the payload's
                       -- components plus returning one creature you control to its
                       -- owner's hand, paid as Meloku the Clouded Mirror's return is.
-                      -- CR 702.196b's "can't be beamed up" is not implemented (#6525).
+                      -- `Not (CantPayKeywordCost BeamMeUp)` is CR 702.196b, and
+                      -- this is its ONLY minter, crew's posture (Keyword.crew):
+                      -- Meloku's printed return is no beam me up cost.
                       beamedUp cost =
-                        let yourCreature = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.HeldBy Holder.Controller PlayerRelation.You]
+                        let yourCreature =
+                              Filter.Type.And
+                                [ Filter.Type.HasCardType CardType.Creature,
+                                  Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
+                                  Filter.Type.Not (Filter.Type.CantPayKeywordCost KeywordCostPart.BeamMeUp)
+                                ]
                          in CandidateCost.plain
                               (Just (Keyword.Type.BeamMeUp cost))
                               (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents 1 yourCreature)]})
@@ -2659,7 +2668,7 @@ exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling 
 --
 -- NOT Replacement.sacrificeCandidates, and the difference is the CONTEXT: that
 -- one pre-narrows to `Projection.controls pid` and applies CR 101.2's sacrifice
--- restrictions, where this one carries CR 702.122d's prohibition and the source's
+-- restrictions, where this one carries CR 702.122d's and 702.196b's prohibitions and the source's
 -- colours (CR 702.78a). Both read the PAYER as "you" and the permanent
 -- whose ability is being paid for as the source -- without it a Vehicle that has
 -- already become a creature could crew itself.
@@ -2669,13 +2678,14 @@ tapCandidates slots pid oid criterion gs = tapCandidatesGiven (Snapshot.onDemand
 -- The same pool read off a snapshot of `gs` the caller already took.
 tapCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 tapCandidatesGiven board slots pid oid criterion gs =
-  let -- CR 702.122d's prohibition rides the CONTEXT rather than narrowing the
-      -- pool here, and that is what confines rule 702.122d to a CREW cost: the
-      -- atom that reads it is written into rule 702.122a's criterion by
-      -- Parun.Engine.Keyword's `crew` and by nothing else, so a TapForTotalPower
-      -- printed outside a crew ability
-      -- (data/cards/synthetic-crewed-battery.json) never asks and the set is
-      -- never forced.
+  let -- CR 702.122d's and 702.196b's prohibitions ride the CONTEXT rather
+      -- than narrowing the pool here, and that is what confines each rule to its
+      -- keyword's cost: the atom that reads them is written into rule
+      -- 702.122a's criterion by Parun.Engine.Keyword's `crew` and into rule
+      -- 702.196a's by candidateCostsGiven's `beamedUp`, and by nothing else, so
+      -- a TapForTotalPower printed outside a crew ability
+      -- (data/cards/synthetic-crewed-battery.json) or a return outside beam me
+      -- up (Meloku the Clouded Mirror) never asks and the set is never forced.
       -- Every source-derived field through Projection.framedBy: CR 607.2d's
       -- entry choices for a criterion naming "the chosen type"
       -- (matchesPermanent's reading), and CR 105.2's colours of the spell being
@@ -2685,7 +2695,7 @@ tapCandidatesGiven board slots pid oid criterion gs =
           oid
           gs
           (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
-            { Filter.cantCrewVehicles = Snapshot.cantCrewVehicles board
+            { Filter.cantPayKeywordCost = Snapshot.cantPayKeywordCost board
             }
       matches candidate =
         Filter.matches context (Snapshot.views board candidate) criterion
@@ -3165,6 +3175,38 @@ claimsOfGiven board slots pid oid components gs = Maybe.mapMaybe (\component -> 
 -- (Parun.Engine.FaceDown.canTurnFaceUp) -- pass their own permanent.
 canPay :: PaymentSubject.PaymentSubject -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Bool
 canPay = canPayReading Map.empty
+
+-- `canPay` for a combat toll, whose parts CR 508.1j and CR 509.1f pay in any
+-- order: payable as `canPay` measures it, or with its mills paid FIRST -- the
+-- rest measured against the board those mills leave, so a toll's own mill
+-- feeds its graveyard exile (`payTagged` pays in that order). CR 601.2h's
+-- second pass puts a spell's mill last, which is why `canPay` itself does not
+-- ask this. The combat-cost scenario
+-- cr-508-1j-milling-first-feeds-the-exile-a-tithe-of-ashes-attacks is the
+-- proof.
+--
+-- The milled board is the plain move, read off the library as `Event.millFrom`
+-- takes it: a replacement redirecting the mill (CR 614.1a) is the payment's
+-- refusal rather than the gate's, which a stretch the mill leaves survives
+-- (`payTagged`). Every mill goes first or none does, and the milled cards land
+-- in library order where CR 404.3 lets the owner arrange them; both are
+-- FENCES, no toll in `data/cards/` printing two mills or a part reading the
+-- graveyard's top.
+canPayToll :: PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Bool
+canPayToll pid oid cost gs =
+  let millOf component = case component of
+        CostComponent.MillCards n -> Just n
+        _ -> Nothing
+      (mills, rest) = List.partition (Maybe.isJust . millOf) (Cost.components cost)
+      milled = List.genericTake (sum (Maybe.mapMaybe millOf mills)) (Game.cardsIn Zone.Library pid gs)
+      toGraveyard board card =
+        let moved = Game.insertIntoZone Zone.Graveyard LibraryPosition.defaultValue pid card (Game.removeFromZones card board)
+         in moved {GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Graveyard}) card (GameState.objects moved)}
+      millsFirst =
+        not (null mills)
+          && all (\component -> canPayComponent Map.empty pid oid component gs) mills
+          && canPay PaymentSubject.ForNeither pid oid cost {Cost.components = rest} (List.foldl' toGraveyard gs milled)
+   in canPay PaymentSubject.ForNeither pid oid cost gs || millsFirst
 
 -- `canPay` with a slot map its components' criteria read, which is CR 118.12's
 -- resolution-time payment: the resolving object's slots, so Calim, Djinn
@@ -6866,16 +6908,23 @@ payComponent :: ManaAbilityPerformer.ManaAbilityPerformer -> PaymentMoment.Payme
 payComponent perform moment paidFor slots pid oid component = uncaused $ do
   gs <- State.get
   if canPayComponent slots pid oid component gs
-    then payPayable perform paidFor slots pid oid component
+    then payPayable perform moment paidFor slots pid oid component
     else pure Payment.Unpaid
   where
     uncaused = case moment of
       PaymentMoment.OutsideResolution -> Event.causedBy Nothing
-      PaymentMoment.DuringResolution -> id
+      PaymentMoment.DuringResolution _ -> id
+
+-- CR 101.4b: what a payment's prompts tell the payer the earlier payers of the
+-- same offer took, nobody's at a moment with no offer.
+earlierPayers :: PaymentMoment.PaymentMoment -> Seq.Seq (PlayerId, Set.Set ObjectId)
+earlierPayers moment = case moment of
+  PaymentMoment.OutsideResolution -> Seq.empty
+  PaymentMoment.DuringResolution earlier -> earlier
 
 -- `payComponent`'s arms, each reached only once CR 118.3 holds.
-payPayable :: ManaAbilityPerformer.ManaAbilityPerformer -> Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> Game Payment.Payment
-payPayable perform paidFor slots pid oid component = case component of
+payPayable :: ManaAbilityPerformer.ManaAbilityPerformer -> PaymentMoment.PaymentMoment -> Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> Game Payment.Payment
+payPayable perform moment paidFor slots pid oid component = case component of
   -- CR 701.26a through tapObject; CR 107.5's "already tapped" is `payComponent`'s
   -- guard.
   CostComponent.TapThis -> do
@@ -6924,7 +6973,7 @@ payPayable perform paidFor slots pid oid component = case component of
   -- Unpaid, `paidAnnounced`'s reading (CR 903.4f).
   CostComponent.PayComputedLife computed -> do
     gs <- State.get
-    maybe (pure Payment.Unpaid) (payPayable perform paidFor slots pid oid . CostComponent.PayLife . CostAmount.Fixed) (computedLifeOf computed pid gs)
+    maybe (pure Payment.Unpaid) (payPayable perform moment paidFor slots pid oid . CostComponent.PayLife . CostAmount.Fixed) (computedLifeOf computed pid gs)
   -- CR 701.17a: the top `n` cards of the PAYING player's own library (CR 400.3),
   -- moved to their graveyard. `canPayComponent` above has already refused a cost
   -- milling more than the library holds (CR 701.17b); an InstructionR row resizing
@@ -6972,7 +7021,7 @@ payPayable perform paidFor slots pid oid component = case component of
       chosen <-
         if n == 0 || Natural.length candidates <= n
           then pure (Set.fromList (List.genericTake n candidates))
-          else Game.choose (Prompt.ChooseSacrifices decider pid oid candidates n Seq.empty)
+          else Game.choose (Prompt.ChooseSacrifices decider pid oid candidates n (earlierPayers moment))
       if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
         then do
           Event.sacrificeAll (ManaAbilityPerformer.settle perform) (fmap ((,) pid) (Set.toAscList chosen))
@@ -7132,7 +7181,7 @@ payPayable perform paidFor slots pid oid component = case component of
       if Natural.length held <= n
         then pure held
         else case selection of
-          CardSelection.ByChoice -> Game.choose (Prompt.ChooseDiscard decider pid held n)
+          CardSelection.ByChoice -> Game.choose (Prompt.ChooseDiscard decider pid held n (earlierPayers moment))
           CardSelection.AtRandom -> Game.drawDistinct Prompt.RandomObject n held
     let distinct = ListUtils.nubOrd chosen
     if all (\c -> List.elem c held) distinct && Natural.length distinct == n
@@ -7657,7 +7706,7 @@ payPayable perform paidFor slots pid oid component = case component of
   -- Necropsy's ruling, so a payment reaching here unfixed has no caller.
   CostComponent.CollectEvidenceOfTargets -> do
     gs <- State.get
-    payPayable perform paidFor slots pid oid (fixComputed slots gs component)
+    payPayable perform moment paidFor slots pid oid (fixComputed slots gs component)
   -- CR 406.2 with no prompt: CR 404.2's order determines the card. Unpaid where
   -- the graveyard holds no matching card, agreeing with canPayComponent above.
   CostComponent.ExileTopFromGraveyard criterion -> do

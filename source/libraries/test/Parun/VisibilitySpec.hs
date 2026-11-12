@@ -304,7 +304,7 @@ shuffledRevealSpec s registry =
           Prompt.Search _ _ offered _ -> pure (filter (== found) offered)
           p@(Prompt.Shuffle _) -> note "shuffle" (Asked.game asked) >> pure (S.identityAnswer p)
           Prompt.ChooseTargets _ _ _ sets -> pure (S.preferring ((==) (Just S.bob) . Recipient.playerOf) sets)
-          p@(Prompt.ChooseDiscard _ pid _ _) | pid == S.bob -> note "discard" (Asked.game asked) >> pure (S.identityAnswer p)
+          p@(Prompt.ChooseDiscard _ pid _ _ _) | pid == S.bob -> note "discard" (Asked.game asked) >> pure (S.identityAnswer p)
           p -> pure (S.castAnswer p)
         ((_, after), seen) = State.runState (Engine.runGameAsked answer ready (S.cast S.alice spell >> Stack.resolveTop)) []
         at label = lookup label [(l, (ids, views)) | (l, ids, views) <- seen]

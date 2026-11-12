@@ -33,6 +33,7 @@ import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.KeywordInstance as KeywordInstance
@@ -1795,27 +1796,32 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.LeftLibraryThisTurn LibraryDeparture.Milled))) "player"
 
-  -- CR 702.122d, the one atom answered off the CONTEXT's gathered set rather
-  -- than off the candidate's own view: a prohibition is another permanent's
-  -- static ability, and Parun.Engine.Cost.tapCandidates is the one caller that
-  -- gathers it.
-  Spec.describe s "CantCrewVehicles" $ do
+  -- CR 702.122d / 702.196b, the one atom answered off the CONTEXT's gathered
+  -- sets rather than off the candidate's own view: a prohibition is another
+  -- permanent's static ability, and Parun.Engine.Cost.tapCandidates is the one
+  -- caller that gathers it.
+  Spec.describe s "CantPayKeywordCost" $ do
+    let prohibiting part oid = self {Filter.cantPayKeywordCost = Map.singleton part (Set.singleton (ObjectId.MkObjectId oid))}
     Spec.it s "matches a candidate the context's set names" $ do
-      Spec.assertBool s (Filter.matches (self {Filter.cantCrewVehicles = Set.singleton (ObjectId.MkObjectId 7)}) blackCreature Filter.Type.CantCrewVehicles) "prohibited"
+      Spec.assertBool s (Filter.matches (prohibiting KeywordCostPart.Crew 7) blackCreature (Filter.Type.CantPayKeywordCost KeywordCostPart.Crew)) "prohibited"
 
     -- The set names ANOTHER object, so the atom is about which id it holds and
     -- not about the set being non-empty.
     Spec.it s "does not match a candidate the set does not name" $ do
-      Spec.assertBool s (not (Filter.matches (self {Filter.cantCrewVehicles = Set.singleton (ObjectId.MkObjectId 8)}) blackCreature Filter.Type.CantCrewVehicles)) "someone else is prohibited"
+      Spec.assertBool s (not (Filter.matches (prohibiting KeywordCostPart.Crew 8) blackCreature (Filter.Type.CantPayKeywordCost KeywordCostPart.Crew))) "someone else is prohibited"
+
+    -- The part is asked too: a creature that can't crew can still be beamed up.
+    Spec.it s "does not match a candidate another part's set names" $ do
+      Spec.assertBool s (not (Filter.matches (prohibiting KeywordCostPart.Crew 7) blackCreature (Filter.Type.CantPayKeywordCost KeywordCostPart.BeamMeUp))) "another part"
 
     -- The vacuous direction, which every caller but one takes: an unfilled set
-    -- leaves the atom False, so `Not CantCrewVehicles` admits the candidate.
+    -- leaves the atom False, so `Not (CantPayKeywordCost _)` admits the candidate.
     Spec.it s "is vacuously false where the context gathered nothing" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.CantCrewVehicles)) "nothing gathered"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.CantPayKeywordCost KeywordCostPart.Crew))) "nothing gathered"
 
-    -- CR 702.122d prohibits a CREATURE, and a player is not one.
+    -- Both rules prohibit a CREATURE, and a player is not one.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches (self {Filter.cantCrewVehicles = Set.singleton (ObjectId.MkObjectId 7)}) aPlayer Filter.Type.CantCrewVehicles)) "player"
+      Spec.assertBool s (not (Filter.matches (prohibiting KeywordCostPart.Crew 7) aPlayer (Filter.Type.CantPayKeywordCost KeywordCostPart.Crew))) "player"
 
   -- CR 702.122c relates TWO objects, which is why this atom reads a view field
   -- and the context together rather than one flag. Vehicle 11 is the source on

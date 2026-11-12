@@ -19,6 +19,7 @@ import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
@@ -350,19 +351,22 @@ data Filter keyword
     -- sylvan-library and jandors-ring and Parun.CostSpec's "CR 701.17a a card
     -- milled to pay a cost".
     LeftLibraryThisTurn LibraryDeparture.LibraryDeparture
-  | -- | CR 702.122d: an effect in force says this candidate "can't crew
-    -- Vehicles". Read off the surrounding evaluation's context rather than off
-    -- the candidate, since a prohibition is another permanent's static ability
-    -- (Parun.Engine.CrewRestriction gathers them) -- so it is vacuously False
-    -- wherever no caller supplies the set, the posture IsBound takes.
+  | -- | CR 702.122d / 702.196b: an effect in force says this candidate can't
+    -- pay this part of a keyword's cost ("can't crew Vehicles", "can't be beamed
+    -- up"). Read off the surrounding evaluation's context rather than off the
+    -- candidate, since a prohibition is another permanent's static ability
+    -- (Parun.Engine.KeywordCostRestriction gathers them) -- so it is vacuously
+    -- False wherever no caller supplies the set, the posture IsBound takes.
     --
-    -- Not printed by any card: Parun.Engine.Keyword's `crew` is the only minter,
-    -- writing @Not CantCrewVehicles@ into rule 702.122a's cost criterion, which
-    -- is what confines rule 702.122d to a CREW cost -- the same cost component
-    -- is printable outside one (data/cards/synthetic-crewed-battery.json).
-    -- Parun.FilterPositionLintSpec's "CR 702.122d no card asks
-    -- CantCrewVehicles" is what keeps a card out of the position.
-    CantCrewVehicles
+    -- Not printed by any card: the keyword's cost builders are the only minters
+    -- (Parun.Engine.Keyword's `crew`, Parun.Engine.Cost.candidateCostsGiven's
+    -- `beamedUp`), writing
+    -- @Not (CantPayKeywordCost part)@ into the keyword's cost criterion, which is
+    -- what confines each rule to its keyword's cost -- the same cost components
+    -- are printable outside one (data/cards/synthetic-crewed-battery.json,
+    -- Meloku the Clouded Mirror). Parun.FilterPositionLintSpec's "no card asks
+    -- CantPayKeywordCost" is what keeps a card out of the position.
+    CantPayKeywordCost KeywordCostPart.KeywordCostPart
   | -- | CR 702.122c: the candidate is a creature that crewed the SOURCE earlier
     -- this turn -- Subterranean Schooner's "target creature that crewed it this
     -- turn", read back off GameEvent.Crewed.

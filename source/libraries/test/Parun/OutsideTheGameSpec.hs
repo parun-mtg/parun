@@ -24,7 +24,8 @@
 -- for a card that prints no reveal, The Raven's Warning for a destination that
 -- is not the hand, Research for a count other than one, Extrapolate the
 -- Impossible for CR 201.2b's different names and an opponent's pick among the
--- revealed cards, and, in four cases, a Shahrazad
+-- revealed cards, Turtles Forever for a search's finds out there revealed
+-- for an opponent to split, and, in four cases, a Shahrazad
 -- subgame for CR 730.4's main game -- Living Wish reaching two main-game
 -- creatures, then Death Wish reaching a main-game Titania's Song (CR 604.2's
 -- handover), then Burning Wish reaching the resolving Shahrazad itself (CR
@@ -1702,6 +1703,30 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     Spec.assertEqWith s "CR 701.23a the library's Lightning Bolt is in her hand, and nothing else" (printingsIn Zone.Hand S.alice resolved) [arcaviosBolt board]
     Spec.assertEqWith s "CR 701.23a the pool is untouched" (Map.elems (poolOf S.alice resolved)) [1, 1]
     Spec.assertEqWith s "the library was shuffled" (printingsIn Zone.Library S.alice resolved) (reverse (filter (/= arcaviosBolt board) (arcaviosLibrary board)))
+  -- CR 701.23j with a reveal for later clauses: Turtles Forever ({3}{W}
+  -- instant, "Search your library and/or outside the game for exactly four
+  -- legendary creature cards you own with different names, then reveal those
+  -- cards. An opponent chooses two of them. Put the chosen cards into your hand
+  -- and shuffle the rest into your library."; api.scryfall.com 2026-11-12) on
+  -- turtlesBoard, bob taking the two cards the library did not give.
+  Spec.it s "CR 701.23j Turtles Forever reveals cards found outside the game, and the opponent's two go to her hand" $ do
+    board <- turtlesBoard s registry
+    let resolved = resolveWish (turtling True (turtlesFound board)) (turtlesSpell board) (turtlesState board)
+    Spec.assertEqWith s "CR 608.2c bob chose the two cards from outside the game, which are in her hand" (namesIn Zone.Hand S.alice resolved) (turtleNames ["Ambassador Laquatus", "Angus Mackenzie"])
+    Spec.assertEqWith s "and the library's two finds stay in her library" (namesIn Zone.Library S.alice resolved) (turtleNames ["Anafenza, the Foremost", "Arcanis the Omnipotent", "Plains"])
+    Spec.assertEqWith s "CR 201.2b the Arcanis outside the game shares a name with the library's, and stays out" (Map.toList (poolOf S.alice resolved)) (fmap (\printingId -> (printingId, 1)) (Maybe.maybeToList (printingIdIn (turtlesArcanis board) (turtlesState board))))
+  -- Search.exactly over both halves: declining everything out there, the two
+  -- cards with other names are found anyway, so bob's two are still them.
+  Spec.it s "CR 101.1 Turtles Forever's exactly four counts the cards outside the game" $ do
+    board <- turtlesBoard s registry
+    let resolved = resolveWish (turtling False (turtlesFound board)) (turtlesSpell board) (turtlesState board)
+    Spec.assertEqWith s "CR 101.1 four were found, and bob's two from outside the game are in her hand" (namesIn Zone.Hand S.alice resolved) (turtleNames ["Ambassador Laquatus", "Angus Mackenzie"])
+    Spec.assertEqWith s "and the pool keeps only the Arcanis" (Map.elems (poolOf S.alice resolved)) [1]
+    let searched r = case r of
+          Response.Searched _ -> True
+          _ -> False
+        asked = answersFor (turtling False (turtlesFound board)) (turtlesState board) (S.cast S.alice (turtlesSpell board) >> Stack.resolveTop)
+    Spec.assertEqWith s "CR 701.23j and her library's two, which the cards out there complete, were asked once" (length (filter searched asked)) 1
 
 -- alice with a Forest and an Island, Research // Development in hand -- {G}{U}
 -- pays Research and nothing pays Development --
@@ -1794,6 +1819,51 @@ arcaviosAnswer places found takeOutside p = case p of
   Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> if takeOutside then fmap fst (NonEmpty.toList offered) else []
   Prompt.Shuffle ids -> reverse ids
   _ -> S.identityAnswer p
+
+-- Turtles Forever's board: alice with four Plains and the instant in hand;
+-- Anafenza, the Foremost, Arcanis the Omnipotent and a Plains in her library;
+-- and Arcanis the Omnipotent, Ambassador Laquatus and Angus Mackenzie outside
+-- the game. The library interns Arcanis first, so the offer out there leads
+-- with the copy whose name the library's find has taken.
+data TurtlesBoard = MkTurtlesBoard
+  { turtlesState :: GameState.GameState,
+    turtlesSpell :: ObjectId.ObjectId,
+    -- | The library's Anafenza and Arcanis.
+    turtlesFound :: [ObjectId.ObjectId],
+    turtlesArcanis :: Printing.Printing
+  }
+
+turtlesBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m TurtlesBoard
+turtlesBoard s registry = do
+  plains <- S.printingOf s registry "Plains"
+  turtles <- S.printingOf s registry "Turtles Forever"
+  anafenza <- S.printingOf s registry "Anafenza, the Foremost"
+  arcanis <- S.printingOf s registry "Arcanis the Omnipotent"
+  laquatus <- S.printingOf s registry "Ambassador Laquatus"
+  angus <- S.printingOf s registry "Angus Mackenzie"
+  let (board, spellId) = S.handOne turtles (S.landsInPlay plains 4)
+      withPlains = snd (S.addLibraryCard plains S.alice board)
+      (arcanisId, withArcanis) = S.addLibraryCard arcanis S.alice withPlains
+      (anafenzaId, stocked) = S.addLibraryCard anafenza S.alice withArcanis
+  pure (MkTurtlesBoard (stockPool [(arcanis, 1), (laquatus, 1), (angus, 1)] stocked) spellId [anafenzaId, arcanisId] arcanis)
+
+-- Turtles Forever's answers: both places, every library match, everything out
+-- there or nothing, and bob taking what is offered beside the library's finds.
+turtling :: Bool -> [ObjectId.ObjectId] -> Prompt.Prompt r -> r
+turtling takeOutside fromLibrary p = case p of
+  Prompt.ChooseSearchZones _ _ places -> places
+  Prompt.Search _ _ matches _ -> matches
+  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> if takeOutside then fmap fst (NonEmpty.toList offered) else []
+  Prompt.ChooseCardFromAmong _ _ _ pool -> Maybe.fromMaybe (NonEmpty.head pool) (List.find (`notElem` fromLibrary) (NonEmpty.toList pool))
+  Prompt.Shuffle ids -> reverse ids
+  _ -> S.identityAnswer p
+
+-- The names of the cards in a zone, sorted.
+namesIn :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [CardName.CardName]
+namesIn zone pid gs = List.sort (Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone pid gs))
+
+turtleNames :: [String] -> [CardName.CardName]
+turtleNames = List.sort . fmap (CardName.MkCardName . Text.pack)
 
 -- alice with two Synthetic Wishful Djinns, the first carrying a +1/+1 counter,
 -- two library cards of one printing and one card of another outside the game.
