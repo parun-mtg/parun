@@ -26,6 +26,7 @@ import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.Codec.Supertype as Supertype
 import qualified Parun.Codec.TargetSlot as TargetSlot
+import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -58,9 +59,10 @@ codec abilityCodec =
             <*> Fields.required "family" SubtypeFamily.codec snd
       keywordsAmong =
         Fields.object $
-          (,)
-            <$> Fields.required "keyword" (KeywordDesignator.codec Keyword.codec) fst
-            <*> Fields.required "among" (Filter.codec Keyword.codec) snd
+          (,,)
+            <$> Fields.required "keyword" (KeywordDesignator.codec Keyword.codec) (\(d, _, _) -> d)
+            <*> Fields.required "zone" Zone.codec (\(_, z, _) -> z)
+            <*> Fields.required "among" (Filter.codec Keyword.codec) (\(_, _, f) -> f)
       cardType =
         Fields.object $
           (,)
@@ -75,7 +77,7 @@ codec abilityCodec =
           Arm.payload "LoseEnchant" TargetSlot.codec Modification.LoseEnchant (\x -> case x of Modification.LoseEnchant y -> Just y; _ -> Nothing),
           Arm.payload "GainCastingPermission" CastingPermission.codec Modification.GainCastingPermission (\x -> case x of Modification.GainCastingPermission y -> Just y; _ -> Nothing),
           Arm.payload "GainAbilitiesOfSource" (Common.set Keyword.codec) Modification.GainAbilitiesOfSource (\x -> case x of Modification.GainAbilitiesOfSource y -> Just y; _ -> Nothing),
-          Arm.payload "GainKeywordsAmong" keywordsAmong (uncurry Modification.GainKeywordsAmong) (\x -> case x of Modification.GainKeywordsAmong d f -> Just (d, f); _ -> Nothing),
+          Arm.payload "GainKeywordsAmong" keywordsAmong (\(d, z, f) -> Modification.GainKeywordsAmong d z f) (\x -> case x of Modification.GainKeywordsAmong d z f -> Just (d, z, f); _ -> Nothing),
           Arm.payload "GainCardAbilities" CardAbilities.codec Modification.GainCardAbilities (\x -> case x of Modification.GainCardAbilities y -> Just y; _ -> Nothing),
           Arm.nullary "GainAbilitiesOfStickers" Modification.GainAbilitiesOfStickers,
           Arm.nullary "LoseAllAbilities" Modification.LoseAllAbilities,

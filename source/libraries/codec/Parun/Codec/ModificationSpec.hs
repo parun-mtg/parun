@@ -52,6 +52,7 @@ import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
+import qualified Parun.Types.Zone as Zone
 
 -- | The `ability` parameter is instantiated at @GrantedAbility Text@, which is
 -- what every card position holds with `card` in turn instantiated at 'Text.Text'
@@ -322,8 +323,8 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.GainKeywordsAmong (KeywordDesignator.OfFamily KeywordFamily.Landwalk) (Filter.HasCardType CardType.Creature))
-      " {\"type\":\"GainKeywordsAmong\",\"value\":{\"among\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"keyword\":{\"type\":\"OfFamily\",\"value\":\"Landwalk\"}}} "
+      (Modification.GainKeywordsAmong (KeywordDesignator.OfFamily KeywordFamily.Landwalk) Zone.Graveyard (Filter.HasCardType CardType.Creature))
+      " {\"type\":\"GainKeywordsAmong\",\"value\":{\"among\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"keyword\":{\"type\":\"OfFamily\",\"value\":\"Landwalk\"},\"zone\":\"Graveyard\"}} "
   -- layer 6, CR 607.2a: the abilities come off the linked cards, so the arm
   -- carries only which pile and the rider's restrictions.
   Spec.it s "GainCardAbilities" $

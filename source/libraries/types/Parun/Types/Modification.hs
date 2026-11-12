@@ -26,6 +26,7 @@ import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.Zone as Zone
 
 -- | The open-half continuous-effect vocabulary: continuous-effect
 -- specifications, classified by layer, distinct from Effect. Within the RULES
@@ -157,12 +158,9 @@ data Modification ability
     -- granted. Parun.KeywordTriggerSpec's Backup group proves both halves.
     GainAbilitiesOfSource (Set.Set Keyword.Keyword)
   | -- | layer 6, CR 613.1f / 702.1c: this object gains every keyword the
-    -- designator names that a permanent the Filter matches has (Concerted
-    -- Effort's "the same is true for landwalk, protection").
-    --
-    -- Not implemented: the continuous form, read off cards that stay in another
-    -- zone (Cairn Wanderer) (#7043).
-    GainKeywordsAmong (KeywordDesignator.KeywordDesignator Keyword.Keyword) (Filter.Filter Keyword.Keyword)
+    -- designator names that an object in the Zone the Filter matches has
+    -- (Concerted Effort's "the same is true for landwalk, protection").
+    GainKeywordsAmong (KeywordDesignator.KeywordDesignator Keyword.Keyword) Zone.Zone (Filter.Filter Keyword.Keyword)
   | -- | layer 6, CR 613.1f: this object has each activated ability of each
     -- card the payload names, in exile (Locus of Enlightenment, Mairsil, the
     -- Pretender) or atop a library (Conspicuous Snoop), each carrying the

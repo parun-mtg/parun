@@ -101,6 +101,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Holder as Holder
 import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LastKnown as LastKnown
 import Parun.Types.Layer (Layer)
@@ -268,12 +269,13 @@ layer m = case m of
 applyModification :: (ObjectId -> ProjectedCharacteristics) -> Count.ViewOf -> ObjectId -> Timestamp -> GameState -> ObjectId -> Set CardType.CardType -> Affected.Affected -> Modification -> ProjectedCharacteristics -> ProjectedCharacteristics
 applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
   let context = SourceContext.sourceContext gs (controllerOf src gs) src
-      granting k =
+      granting = grantingTo pc
+      grantingTo receiver k =
         let granter = Game.lookupObject src gs
             chosen = Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors src gs)
             stampedBy limit attacher = maybe False ((<= limit) . Object.timestamp) (Game.lookupObject attacher gs)
             already = foldMap (\g -> filter (stampedBy (Object.timestamp g)) (Set.toList (Game.attachments oid gs))) granter
-         in pc {PC.keywords = Map.insertWith (+) (Keyword.grantedBy src chosen (controllerOf src gs) already k) 1 (PC.keywords pc)}
+         in receiver {PC.keywords = Map.insertWith (+) (Keyword.grantedBy src chosen (controllerOf src gs) already k) 1 (PC.keywords receiver)}
    in case m of
         -- CR 613.1f layer 6: a grant adds an ability, so two grants of the same
         -- keyword count twice. Keyword.grantedBy bakes the granter into CR
@@ -391,14 +393,28 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           -- which reads it off the projection of the card being cast.
           GrantedAbility.SelfSpendManaAsThough clause ->
             pc {PC.grantedSpendManaAsThough = PC.grantedSpendManaAsThough pc <> [clause]}
-        -- CR 702.165a's and CR 702.1c's grants never reach a STORED effect:
-        -- Resolve.Common's expandGrant turns them into the ordinary GainKeyword
-        -- and GainAbility arms above as the ability resolves, so nothing with
-        -- these modifications is ever put in StoredEffects.continuousEffects.
-        -- The identity keeps the walk total, which is the posture
-        -- SetController's arm below takes.
+        -- CR 702.165a's grant never reaches a STORED effect: Resolve.Common's
+        -- expandGrant turns it into the ordinary GainKeyword and GainAbility
+        -- arms above as the ability resolves, so nothing with this
+        -- modification is ever put in StoredEffects.continuousEffects. The
+        -- identity keeps the walk total, which is the posture SetController's
+        -- arm below takes.
         Modification.GainAbilitiesOfSource _ -> pc
-        Modification.GainKeywordsAmong {} -> pc
+        -- CR 702.1c / 613.1f: a STATIC ability's grant, one GainKeyword per
+        -- distinct keyword the designator names among the objects in the zone
+        -- its Filter matches, framed by `src` and read each time the fold
+        -- runs, so it ends when the card that had the keyword leaves. A
+        -- resolving ability's is expanded first (Resolve.Common's expandGrant)
+        -- and never reaches here.
+        --
+        -- Read through `viewOf`, so an ability another layer-6 effect took
+        -- from the card is not found (CR 613.8a; modificationReads). The
+        -- scenarios cairn-wanderer-has-every-landwalk-and-protection-in-a-graveyard
+        -- and cairn-wanderer-finds-nothing-yixlid-jailer-took prove the two.
+        Modification.GainKeywordsAmong designator zone among ->
+          let holders = filter (maybe False (\view -> Filter.matches context view among) . viewOf) (keywordHolders zone gs)
+              found = foldMap (foldMap Filter.keywords . viewOf) holders
+           in List.foldl' grantingTo pc (filter (Keyword.designates designator) (Set.toAscList found))
         -- CR 613.1f / 607.2a: the activated abilities of each card the payload
         -- walks that its Filter matches, framed by `src`, read off its copiable values
         -- (CR 707.2), each with the payload's restrictions added. Like
@@ -4667,7 +4683,10 @@ modificationReads m = case m of
   -- A quoted ability's quantities are read at ITS resolution.
   Modification.GainAbility _ -> Set.empty
   Modification.GainAbilitiesOfSource _ -> Set.empty
-  Modification.GainKeywordsAmong {} -> Set.empty
+  -- Carries no Quantity, but CR 702.1c's grant reads the keywords of the
+  -- objects its Filter matches, which layer 6 writes: a removal reaching one
+  -- of them changes what this grants (changesGrant).
+  Modification.GainKeywordsAmong {} -> Set.singleton Keywords
   Modification.GainCardAbilities _ -> Set.empty
   Modification.GainAbilitiesOfStickers -> Set.empty
   Modification.LoseAllAbilities -> Set.empty
@@ -5496,11 +5515,32 @@ projectDecidingFrom finish seedOf admits cands =
                             Map.mapWithKey
                               (\o (p, d) -> (if appliesTo view o d p b then uApply b view boxes o p else p, d))
                               running
+                          -- CR 613.8a clause (b)'s last limb a third time, for an
+                          -- effect that reads the KEYWORDS of objects it does not
+                          -- apply to (CR 702.1c's grant): applying `b` to one of
+                          -- them changes what `a` grants. changesMagnitude's
+                          -- comparison, of the keywords `a` writes rather than the
+                          -- P/T. Screened on the aspect first, so the P/T pairs
+                          -- never build the board; an effect that reads no view
+                          -- answers the same under both and leaves it unforced.
+                          -- The scenario
+                          -- cairn-wanderer-finds-nothing-yixlid-jailer-took proves
+                          -- it.
+                          changesGrant (i, a) (_, b) =
+                            Set.member Keywords (uReads a)
+                              && Set.member Keywords (uWrites b)
+                              && let afterView = viewOfBoard (appliedEverywhere b)
+                                  in any
+                                       ( \(o, p, _, ans) ->
+                                           answerFor ans i
+                                             && PC.keywords (uApply a view boxes o p) /= PC.keywords (uApply a afterView boxes o p)
+                                       )
+                                       boards
                           dependsOnOne x@(i, a) y@(j, b) =
                             j /= i
                               && ( movesSet x y
                                      || ( not (Set.disjoint (uReads a) (uWrites b))
-                                            && (changesText x y || changesMagnitude x y)
+                                            && (changesText x y || changesMagnitude x y || changesGrant x y)
                                         )
                                  )
                           ready = filter (\a -> not (any (dependsOnOne a) pending)) pending
@@ -5734,6 +5774,13 @@ combatDamageAmountOf oid gs =
 -- combat damage as the option says.
 hasCombatDamageOption :: CombatDamageOption.CombatDamageOption -> ObjectId -> GameState -> Bool
 hasCombatDamageOption option oid gs = Set.member option (PC.combatDamageOptions (project oid gs))
+
+-- CR 702.1c: the objects in a zone whose keywords a "the same is true for" grant
+-- reads: the permanents on the battlefield, and elsewhere the cards (CR 108.2).
+keywordHolders :: Zone.Zone -> GameState -> [ObjectId]
+keywordHolders zone gs = case zone of
+  Zone.Battlefield -> Set.toAscList (GameState.battlefield gs)
+  _ -> Map.keys (Map.filterWithKey (\oid o -> Object.zone o == zone && Game.isCardObject oid gs) (GameState.objects gs))
 
 -- CR 702: an object's keyword abilities after the layer fold, counted per
 -- keyword. Most readers want hasKeyword or totalToxic.
@@ -6614,7 +6661,14 @@ grantsKeywordWhere p m = case m of
   -- one whose own modifications grant one.
   Modification.GainAbility g -> grantedStaticWrites (grantsKeywordWhere p) g
   Modification.GainAbilitiesOfSource _ -> False
-  Modification.GainKeywordsAmong {} -> False
+  -- The keywords are on the objects swept and not in the modification, so the
+  -- designator answers where it writes one and True over-approximates where
+  -- it names a family.
+  Modification.GainKeywordsAmong designator _ _ -> case designator of
+    KeywordDesignator.OfKeyword k -> p k
+    KeywordDesignator.OfInstance k _ -> p k
+    KeywordDesignator.OfFamily _ -> True
+    KeywordDesignator.Printed _ -> True
   Modification.GainCardAbilities _ -> False
   -- The sticker data is not in the modification, so True over-approximates.
   Modification.GainAbilitiesOfStickers -> True
@@ -6782,9 +6836,9 @@ grantsRuleAbilityAnywhere gs =
 
 -- Does this modification hand its affected objects a quoted ability `p` holds
 -- of? grantsMintingType's shape, and exhaustive for grantsKeywordWhere's
--- reason. GainAbilitiesOfSource and GainKeywordsAmong never reach a stored
--- effect (Resolve.Common's expandGrant turns them into GainKeyword and
--- GainAbility arms first).
+-- reason. GainAbilitiesOfSource never reaches a stored effect (Resolve.Common's
+-- expandGrant turns it into GainKeyword and GainAbility arms first), and
+-- GainKeywordsAmong hands out keywords, never a quoted ability.
 grantsAbilityWhere :: (GrantedAbility.GrantedAbility Card.Type.Card -> Bool) -> Modification -> Bool
 grantsAbilityWhere p m = case m of
   -- A granted static ability's own parts count too, grantsKeywordWhere's

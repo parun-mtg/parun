@@ -77,7 +77,8 @@
                                 "value": {
                                   "type": "Flying"
                                 }
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -131,7 +132,8 @@
                                 "value": {
                                   "type": "Fear"
                                 }
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -185,7 +187,8 @@
                                 "value": {
                                   "type": "FirstStrike"
                                 }
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -239,7 +242,8 @@
                                 "value": {
                                   "type": "DoubleStrike"
                                 }
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -291,7 +295,8 @@
                               "keyword": {
                                 "type": "OfFamily",
                                 "value": "Landwalk"
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -343,7 +348,8 @@
                               "keyword": {
                                 "type": "OfFamily",
                                 "value": "Protection"
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -397,7 +403,8 @@
                                 "value": {
                                   "type": "Trample"
                                 }
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {
@@ -451,7 +458,8 @@
                                 "value": {
                                   "type": "Vigilance"
                                 }
-                              }
+                              },
+                              "zone": "Battlefield"
                             }
                           },
                           "ref": {

@@ -1,0 +1,258 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Changeling"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Cairn Wanderer",
+      "oracleText": "Changeling (This card is every creature type.)\nAs long as a creature card with flying is in a graveyard, this creature has flying. The same is true for fear, first strike, double strike, deathtouch, haste, landwalk, lifelink, protection, reach, trample, shroud, and vigilance.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Flying"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Fear"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "FirstStrike"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "DoubleStrike"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Deathtouch"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Haste"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Landwalk"
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Lifelink"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Protection"
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Reach"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Trample"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Shroud"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Vigilance"
+                  }
+                },
+                "zone": "Graveyard"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Shapeshifter"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -3841,16 +3841,20 @@ bindEarthbentLand resolving land gs =
 -- (Scryfall `keyword:backup`, 2026-09-24).
 --
 -- CR 702.1c's grant expands the same way, into one GainKeyword per distinct
--- keyword the designator names among the projected keywords of the permanents
--- its Filter matches, read now: Concerted Effort's ruling keeps the grant after
--- the creature that had the keyword leaves. A keyword several of them have is
--- granted once, since CR 702.1c grants each variant, not each instance.
--- The scenario concerted-effort-shares-every-landwalk-and-protection-found
--- proves it.
+-- keyword the designator names among the projected keywords of the objects in
+-- its zone its Filter matches, read now: Concerted Effort's ruling keeps the
+-- grant after the creature that had the keyword leaves. A keyword several of
+-- them have is granted once, since CR 702.1c grants each variant, not each
+-- instance. The scenario
+-- concerted-effort-shares-every-landwalk-and-protection-found proves it; no
+-- card in the pool resolves one over a zone other than the battlefield.
 expandGrant :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
 expandGrant legal resolving controller source gs modification = case modification of
-  Modification.GainKeywordsAmong designator among ->
-    let found = foldMap (\oid -> Map.keysSet (Projection.keywordsOf oid gs)) (battlefieldMatching legal resolving controller source gs among)
+  Modification.GainKeywordsAmong designator zone among ->
+    let holders = case zone of
+          Zone.Battlefield -> battlefieldMatching legal resolving controller source gs among
+          _ -> matchingFromAmong legal resolving controller source gs among (Projection.keywordHolders zone gs)
+        found = foldMap (\oid -> Map.keysSet (Projection.keywordsOf oid gs)) holders
      in fmap Modification.GainKeyword (filter (Keyword.designates designator) (Set.toAscList found))
   Modification.GainAbilitiesOfSource above ->
     let pc = Projection.withoutExceptedAbilities (Maybe.fromMaybe (Projection.copiableCharacteristics source gs) (Binding.placedSourceCopyOf (slotBindings resolving gs)))
