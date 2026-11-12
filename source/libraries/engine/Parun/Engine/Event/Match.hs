@@ -64,6 +64,7 @@ import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.CausedBy as CausedBy
+import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
@@ -156,6 +157,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
+import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellCast as SpellCast
@@ -954,6 +956,7 @@ anyTriggerReads event = case event of
   GameEvent.CoinFlipped {} -> True
   GameEvent.ActivatedAbilityResolved {} -> False
   GameEvent.TriggeredAbilityResolved {} -> False
+  GameEvent.TriggeredAbilityFinished {} -> True
   GameEvent.PermanentActed {} -> True
   GameEvent.PlayerActed {} -> True
   GameEvent.StickerPut {} -> True
@@ -1966,11 +1969,15 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   TriggerCondition.CausedBy narrowed ->
     maybe False (PlayerRelation.holds (Game.teams gs) (CausedBy.controller narrowed) you) (causeOf event)
       && matchesTriggerGiven bindings board atEvent gs bearer you (CausedBy.condition narrowed) event
-  -- CR 603.3b's second class, the one condition in this type whose event is
-  -- another ability triggering: "whenever the final chapter ability of a Saga you
-  -- control triggers".
+  -- CR 715.2d's watcher. At ChapterMoment.Triggers it is CR 603.3b's second
+  -- class, the one condition in this type whose event is another ability
+  -- triggering: "whenever the final chapter ability of a Saga you control
+  -- triggers". At ChapterMoment.Resolves its event is the ability finishing its
+  -- resolution (CR 608.2n), filed after it left the stack: Tom Bombadil's
+  -- "resolves", whose ruling of 2023-06-16 has it see the chapter that returned
+  -- it. Proved by data/scenarios/trigger's Tom Bombadil scenarios.
   --
-  -- The event carries the triggered ability's SOURCE, its CONTROLLER as it
+  -- Either event carries the triggered ability's SOURCE, its CONTROLLER as it
   -- triggered (CR 603.3a) and the ABILITY, and all three are read:
   --
   --   * the ability must be a chapter ability (CR 715.2b, through Saga.chapterOf,
@@ -2001,17 +2008,21 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- a copy, not the printed card's. Proved by Parun.TriggerSpec's "CR 608.2h the
   -- watcher reads the dead Saga's last known information" and, for the copy, its
   -- "CR 707.2 a COPY of the Saga answers with the copy's chapters".
-  TriggerCondition.SagaFinalChapterTriggers relation -> case event of
-    -- A SOURCELESS inherent ability (CR 726.2, CR 702.179d) is never a chapter
-    -- ability of a Saga, there being no Saga behind it to read lore counters off.
-    GameEvent.AbilityTriggered record -> case AbilityTriggered.source record of
-      TriggerSource.Sourceless -> False
-      TriggerSource.OfObject srcId ->
-        PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
-          && ( let pc = Projection.projectWithLastKnown srcId gs
-                in Saga.tracksLore pc && Saga.chapterOf (AbilityTriggered.ability record) == Just (Saga.finalChapterOf pc)
-             )
-    _ -> False
+  TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter moment relation) ->
+    let finalChapter record = case AbilityTriggered.source record of
+          -- A SOURCELESS inherent ability (CR 726.2, CR 702.179d) is never a
+          -- chapter ability of a Saga, there being no Saga behind it to read lore
+          -- counters off.
+          TriggerSource.Sourceless -> False
+          TriggerSource.OfObject srcId ->
+            PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
+              && ( let pc = Projection.projectWithLastKnown srcId gs
+                    in Saga.tracksLore pc && Saga.chapterOf (AbilityTriggered.ability record) == Just (Saga.finalChapterOf pc)
+                 )
+     in case (moment, event) of
+          (ChapterMoment.Triggers, GameEvent.AbilityTriggered record) -> finalChapter record
+          (ChapterMoment.Resolves, GameEvent.TriggeredAbilityFinished record) -> finalChapter record
+          _ -> False
   -- CR 603.7: a Bound subject is "when you lose control of the creature" -- Ray
   -- of Command's third sentence. The slot is read out of CR 603.7c's captured environment, so the
   -- creature this asks about is the one the spell targeted rather than whatever

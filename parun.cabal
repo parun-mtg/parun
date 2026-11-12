@@ -387,6 +387,8 @@ library codec
     Parun.Codec.ChangeTextSpec
     Parun.Codec.ChangeWord
     Parun.Codec.ChangeWordSpec
+    Parun.Codec.ChapterMoment
+    Parun.Codec.ChapterMomentSpec
     Parun.Codec.CharacteristicColors
     Parun.Codec.CharacteristicColorsSpec
     Parun.Codec.CharacteristicPT
@@ -1548,6 +1550,8 @@ library codec
     Parun.Codec.SacrificeToEnterSpec
     Parun.Codec.Saddling
     Parun.Codec.SaddlingSpec
+    Parun.Codec.SagaFinalChapter
+    Parun.Codec.SagaFinalChapterSpec
     Parun.Codec.Scaling
     Parun.Codec.ScalingSpec
     Parun.Codec.Scenario
@@ -2790,6 +2794,7 @@ library types
     Parun.Types.ChangeTargets
     Parun.Types.ChangeText
     Parun.Types.ChangeWord
+    Parun.Types.ChapterMoment
     Parun.Types.CharacteristicColors
     Parun.Types.CharacteristicPT
     Parun.Types.Check
@@ -3459,6 +3464,7 @@ library types
     Parun.Types.SacrificeRestriction
     Parun.Types.SacrificeToEnter
     Parun.Types.Saddling
+    Parun.Types.SagaFinalChapter
     Parun.Types.Scaling
     Parun.Types.Scenario
     Parun.Types.ScenarioFailure

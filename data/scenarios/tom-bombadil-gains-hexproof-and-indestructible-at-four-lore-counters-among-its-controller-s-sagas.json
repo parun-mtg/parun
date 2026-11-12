@@ -1,0 +1,149 @@
+{
+  "description": "CR 613.1f Tom Bombadil gains hexproof and indestructible at four lore counters among Sagas alice controls",
+  "note": "In alice's upkeep her Sagas hold three lore counters between them and bob's History of Benalia two more, which do not count. Her precombat main phase adds one to each of hers, reaching five, and Tom Bombadil has both keywords while the chapter abilities wait on the stack.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Tom Bombadil",
+            "label": "tom"
+          },
+          {
+            "card": "History of Benalia",
+            "label": "benalia",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "card": "The Eldest Reborn",
+            "label": "eldest",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "History of Benalia",
+            "label": "bobs",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$tom",
+          "keyword": {
+            "type": "Hexproof"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$tom",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$tom",
+          "keyword": {
+            "type": "Hexproof"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$tom",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 1
+        }
+      }
+    }
+  ]
+}

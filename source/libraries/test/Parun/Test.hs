@@ -166,6 +166,7 @@ import qualified Parun.Codec.CastingSpec
 import qualified Parun.Codec.ChangeModeSpec
 import qualified Parun.Codec.ChangeTextSpec
 import qualified Parun.Codec.ChangeWordSpec
+import qualified Parun.Codec.ChapterMomentSpec
 import qualified Parun.Codec.CharacteristicColorsSpec
 import qualified Parun.Codec.CharacteristicPTSpec
 import qualified Parun.Codec.CheckSpec
@@ -727,6 +728,7 @@ import qualified Parun.Codec.SacrificeSpec
 import qualified Parun.Codec.SacrificeToEnterSpec
 import qualified Parun.Codec.SacrificerSpec
 import qualified Parun.Codec.SaddlingSpec
+import qualified Parun.Codec.SagaFinalChapterSpec
 import qualified Parun.Codec.ScalingSpec
 import qualified Parun.Codec.ScenarioSpec
 import qualified Parun.Codec.ScopeSpec
@@ -1813,6 +1815,7 @@ spec s registry corpus = do
   Parun.Codec.SpellWasCastSpec.spec s
   Parun.Codec.SpellWasCopiedSpec.spec s
   Parun.Codec.AbilityWasActivatedSpec.spec s
+  Parun.Codec.ChapterMomentSpec.spec s
   Parun.Codec.SpendManaAsThoughSpec.spec s
   Parun.Codec.SpendTriggerSpec.spec s
   Parun.Codec.SpliceSpec.spec s
@@ -1871,6 +1874,7 @@ spec s registry corpus = do
   Parun.Codec.TriggerLimitSpec.spec s
   Parun.Codec.SpentOnSpec.spec s
   Parun.Codec.ModeMemorySpec.spec s
+  Parun.Codec.SagaFinalChapterSpec.spec s
   Parun.Codec.TriggerSourceSpec.spec s
   Parun.Codec.TurnedFaceUpSpec.spec s
   Parun.Codec.TurnFaceDownSpec.spec s

@@ -41,6 +41,7 @@ import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
@@ -232,10 +233,10 @@ data TriggerCondition
     -- reads. Mayhem Devil's unrestricted wording is AnyPlayer and the trivial
     -- Filter.
     PermanentSacrificed PlayerActsOn.PlayerActsOn
-  | -- | CR 603.3b's second class: "whenever the final chapter ability of a Saga
-    -- you control triggers" (Historian's Boon), against
-    -- GameEvent.AbilityTriggered.
-    SagaFinalChapterTriggers PlayerRelation.PlayerRelation
+  | -- | CR 715.2d: "whenever the final chapter ability of a Saga you control
+    -- triggers" (Historian's Boon, CR 603.3b's second class) or "resolves" (Tom
+    -- Bombadil, CR 608.2n).
+    SagaFinalChapter SagaFinalChapter.SagaFinalChapter
   | -- | CR 726.1: "whenever [a player] becomes the monarch" (Custodi Lich),
     -- however the crown was won.
     PlayerBecomesMonarch PlayerRelation.PlayerRelation

@@ -1,0 +1,140 @@
+{
+  "description": "CR 608.2n Tom Bombadil returned by The Eldest Reborn's final chapter sees that chapter finish resolving",
+  "note": "Tom Bombadil's ruling of 2023-06-16: chapter III puts him onto the battlefield from alice's graveyard, and his ability triggers once the chapter has finished resolving and left the stack. A resolution event filed before the chapter's instructions would find him still in the graveyard. The reveal stops at History of Benalia, the library's top card.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Eldest Reborn",
+            "label": "saga",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ]
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Tom Bombadil",
+            "label": "tom"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "drawn"
+          },
+          {
+            "card": "History of Benalia",
+            "label": "next"
+          },
+          {
+            "card": "Island",
+            "label": "under"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $saga"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Tom Bombadil",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of Tom Bombadil"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "History of Benalia",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "$under"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -565,6 +565,11 @@ data GameEvent
     -- above is. Two firings of one CR 603.7 delayed ability share the entry's
     -- createdAt, so they are one key too.
     TriggeredAbilityResolved TriggeredAbilitySource.TriggeredAbilitySource
+  | -- | CR 608.2n: an object-borne triggered ability FINISHED resolving and left
+    -- the stack, the moment Tom Bombadil's ruling of 2023-06-16 triggers at.
+    -- Not TriggeredAbilityResolved, which is filed before the clauses run so
+    -- Quantity.TimesThisTurn counts the resolution asking.
+    TriggeredAbilityFinished AbilityTriggered.AbilityTriggered
   | -- | CR 603.2: a permanent performed a Parun.Types.PermanentAction.
     PermanentActed (PermanentActed.PermanentActed ObjectId.ObjectId)
   | -- | CR 603.2: a player performed a Parun.Types.PlayerAction.

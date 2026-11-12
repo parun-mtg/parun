@@ -701,6 +701,7 @@ movedOf event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
 
 -- CR 801.7: does this event happen entirely within @you@'s range of influence --
 -- every object it involves controlled by (or, a battle, protected by) a player
@@ -769,6 +770,11 @@ participants event =
           else ZoneChange.object zc
       one oid = ([oid], [])
       player pid = ([], [pid])
+      abilityParticipants t =
+        let source = case AbilityTriggered.source t of
+              TriggerSource.OfObject oid -> [oid]
+              TriggerSource.Sourceless -> []
+         in (source, [AbilityTriggered.controller t])
       -- CR 701.38a: the voter and, for CR 701.38b's object or player choice,
       -- what they voted for.
       ballotParticipants ballot =
@@ -822,11 +828,8 @@ participants event =
         GameEvent.Crewed c -> (Crewing.vehicle c : Set.toList (Crewing.crewedBy c), [])
         GameEvent.Saddled c -> (Saddling.mount c : Set.toList (Saddling.saddledBy c), [])
         GameEvent.PermanentSacrificed p -> ([PermanentWasSacrificed.permanent p], [PermanentWasSacrificed.player p])
-        GameEvent.AbilityTriggered t ->
-          let source = case AbilityTriggered.source t of
-                TriggerSource.OfObject oid -> [oid]
-                TriggerSource.Sourceless -> []
-           in (source, [AbilityTriggered.controller t])
+        GameEvent.AbilityTriggered t -> abilityParticipants t
+        GameEvent.TriggeredAbilityFinished t -> abilityParticipants t
         -- CR 801.7a: read under the controller it had before the change, which
         -- is what TriggerCondition.LosesControl, the condition this event
         -- matches, asks about under either subject.
@@ -1070,11 +1073,12 @@ looksBack condition = case condition of
   TriggerCondition.BecomesTargeted {} -> False
   TriggerCondition.SelfHalfUnlocked _ -> False
   TriggerCondition.RoomFullyUnlocked _ -> False
-  -- CR 603.3b's second class names no zone change at all -- its event is another
-  -- ability triggering -- so CR 603.10a's four families cannot reach it. Its
-  -- bearer is a permanent standing on the battlefield watching a Saga, and CR
-  -- 603.10's first sentence is what reads it.
-  TriggerCondition.SagaFinalChapterTriggers _ -> False
+  -- CR 715.2d's watcher names no zone change at all -- its event is another
+  -- ability triggering or finishing its resolution -- so CR 603.10a's four
+  -- families cannot reach it. Its bearer is a permanent standing on the
+  -- battlefield watching a Saga, and CR 603.10's first sentence is what reads
+  -- it.
+  TriggerCondition.SagaFinalChapter _ -> False
   -- CR 726.1's crowning names no zone change either -- it moves a DESIGNATION,
   -- not an object -- so none of CR 603.10a's four families reaches it.
   TriggerCondition.PlayerBecomesMonarch _ -> False
@@ -1313,7 +1317,7 @@ batchScoped condition = case condition of
   TriggerCondition.BecomesTargeted c -> BecomesTargetedTrigger.batching c == Batching.OneOrMore
   TriggerCondition.SelfHalfUnlocked _ -> False
   TriggerCondition.RoomFullyUnlocked _ -> False
-  TriggerCondition.SagaFinalChapterTriggers _ -> False
+  TriggerCondition.SagaFinalChapter _ -> False
   TriggerCondition.PlayerBecomesMonarch _ -> False
   TriggerCondition.LosesControl _ -> False
   TriggerCondition.Reflexive -> False
@@ -1592,6 +1596,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.StickerPut _ -> Map.empty
         GameEvent.ActivatedAbilityResolved _ -> Map.empty
         GameEvent.TriggeredAbilityResolved _ -> Map.empty
+        GameEvent.TriggeredAbilityFinished _ -> Map.empty
         GameEvent.CardArrived _ -> Map.empty
         GameEvent.Moved {} -> Map.empty
         GameEvent.DamageDealt _ -> Map.empty
@@ -1976,6 +1981,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.StickerPut _ -> Map.empty
         GameEvent.ActivatedAbilityResolved _ -> Map.empty
         GameEvent.TriggeredAbilityResolved _ -> Map.empty
+        GameEvent.TriggeredAbilityFinished _ -> Map.empty
         GameEvent.CardArrived _ -> Map.empty
       -- A card this event took OUT of a graveyard, recovered from CR 608.2h last
       -- known information: the graveyard twin of `leftBattlefield`, and what
@@ -2186,6 +2192,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.StickerPut _ -> Map.empty
         GameEvent.ActivatedAbilityResolved _ -> Map.empty
         GameEvent.TriggeredAbilityResolved _ -> Map.empty
+        GameEvent.TriggeredAbilityFinished _ -> Map.empty
         GameEvent.CardArrived _ -> Map.empty
       -- CR 113.6k's last zone: the card a player just revealed from their HAND as
       -- they drew it (CR 702.94a, CR 121.9). The ability is borne by an object that
@@ -2303,6 +2310,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.StickerPut _ -> Map.empty
         GameEvent.ActivatedAbilityResolved _ -> Map.empty
         GameEvent.TriggeredAbilityResolved _ -> Map.empty
+        GameEvent.TriggeredAbilityFinished _ -> Map.empty
         GameEvent.CardArrived _ -> Map.empty
       forOne board logged (oid, (sampled, abilities)) =
         let event = LoggedEvent.event logged
@@ -3079,7 +3087,7 @@ zonesTriggeredFrom cond =
         TriggerCondition.BecomesTargeted {} -> battlefield
         -- CR 113.6's default a last time: Historian's Boon is an enchantment watching
         -- the battlefield's Sagas, and a card in a graveyard sees no chapter fire.
-        TriggerCondition.SagaFinalChapterTriggers _ -> battlefield
+        TriggerCondition.SagaFinalChapter _ -> battlefield
         -- CR 113.6's default once more: Custodi Lich is a creature and watches the
         -- crown from the battlefield, so the card sees no crowning from a graveyard.
         TriggerCondition.PlayerBecomesMonarch _ -> battlefield
@@ -3238,10 +3246,10 @@ stateTriggersOn gs
             TriggerCondition.DamageToPlayerPrevented _ -> False
             TriggerCondition.SelfPreventsDamage _ -> False
             TriggerCondition.LifeChanges _ -> False
-            -- CR 603.3b's condition is an EVENT trigger too, and the event is
-            -- another ability triggering: nothing about it is a state a settle
-            -- could re-read.
-            TriggerCondition.SagaFinalChapterTriggers _ -> False
+            -- CR 715.2d's watcher is an EVENT trigger too, and the event is
+            -- another ability triggering or finishing its resolution: nothing
+            -- about it is a state a settle could re-read.
+            TriggerCondition.SagaFinalChapter _ -> False
             -- CR 603.2 event trigger, not a CR 603.8 state: this fires on a
             -- player BECOMING the monarch, and a settle re-reading "is the
             -- monarch" would fire it again every time until the crown moved.
@@ -4017,3 +4025,4 @@ resnapshot gs without event =
         GameEvent.StickerPut {} -> Just event
         GameEvent.ActivatedAbilityResolved {} -> Just event
         GameEvent.TriggeredAbilityResolved {} -> Just event
+        GameEvent.TriggeredAbilityFinished _ -> Just event

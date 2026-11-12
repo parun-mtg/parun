@@ -1307,6 +1307,7 @@ damageOf event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- Who revealed what, if the event is a reveal (CR 701.20a).
@@ -1386,6 +1387,7 @@ revealOf event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing
 
 -- CR 117.5: the events the trigger scan has not yet consumed, WITH the
@@ -12093,7 +12095,7 @@ controllerTurnScoped cond = case cond of
   -- nothing restricts this CONDITION to it: CR 715.3a's entry replacement can put
   -- a Saga's last lore counter on during anybody's turn, and the watcher is not
   -- even the Saga's controller under the Opponent relation.
-  TriggerCondition.SagaFinalChapterTriggers _ -> False
+  TriggerCondition.SagaFinalChapter _ -> False
   -- The condition carries no TurnScope, and CR 726 restricts a crowning to no
   -- turn at all: CR 726.1's "an effect instructs a player to become the monarch"
   -- can resolve on anybody's turn, and CR 726.2's crown steal happens in the
@@ -12485,4 +12487,5 @@ abilityTriggeredOf event = case event of
   GameEvent.StickerPut _ -> Nothing
   GameEvent.ActivatedAbilityResolved _ -> Nothing
   GameEvent.TriggeredAbilityResolved _ -> Nothing
+  GameEvent.TriggeredAbilityFinished _ -> Nothing
   GameEvent.CardArrived _ -> Nothing

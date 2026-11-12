@@ -3685,9 +3685,9 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- CR 701.21a's Filter narrows the sacrificed permanent -- Vengeful Tracker's
   -- "an artifact" -- and is swept like Leaves' below.
   TriggerCondition.PermanentSacrificed payload -> unframed [PlayerActsOn.filter payload]
-  -- CR 603.3b's names a PlayerRelation; the Saga is found through CR 715.2d's
+  -- CR 715.2d's watcher names a PlayerRelation; the Saga is found through its
   -- final chapter number rather than through a Filter.
-  TriggerCondition.SagaFinalChapterTriggers _ -> []
+  TriggerCondition.SagaFinalChapter _ -> []
   -- A card-zone trigger's Matching card is card text like any other: Planar
   -- Void's "another card", Dutiful Knowledge Seeker's "cards".
   TriggerCondition.LeavesZone t -> actingFilters (LeavesZoneTrigger.card t)
