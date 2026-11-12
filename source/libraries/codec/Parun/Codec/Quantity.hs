@@ -28,6 +28,7 @@ import qualified Parun.Codec.ManaCount as ManaCount
 import qualified Parun.Codec.ManaSpent as ManaSpent
 import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Codec.Measure as Measure
+import qualified Parun.Codec.PhaseSelector as PhaseSelector
 import qualified Parun.Codec.PlayerAction as PlayerAction
 import qualified Parun.Codec.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Codec.PlayerDesignationTally as PlayerDesignationTally
@@ -224,6 +225,7 @@ codec =
       Arm.nullary "PermanentsDiedThisTurn" Quantity.PermanentsDiedThisTurn,
       Arm.nullary "DamagePreventedThisWay" Quantity.DamagePreventedThisWay,
       Arm.payload "SpellsCastUsingThisTurn" KeywordFamily.codec Quantity.SpellsCastUsingThisTurn (\x -> case x of Quantity.SpellsCastUsingThisTurn y -> Just y; _ -> Nothing),
+      Arm.payload "PhasesBegunThisTurn" PhaseSelector.codec Quantity.PhasesBegunThisTurn (\x -> case x of Quantity.PhasesBegunThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "SubgamesThisMatch" Quantity.SubgamesThisMatch,
       -- CR 309.7's tally, with only a PlayerRef on the wire for
       -- CardsDiscardedThisTurn's reason above -- read off the player rather than
@@ -357,6 +359,7 @@ tagOf x = case x of
   Quantity.PermanentsDiedThisTurn {} -> "PermanentsDiedThisTurn"
   Quantity.DamagePreventedThisWay {} -> "DamagePreventedThisWay"
   Quantity.SpellsCastUsingThisTurn {} -> "SpellsCastUsingThisTurn"
+  Quantity.PhasesBegunThisTurn {} -> "PhasesBegunThisTurn"
   Quantity.SubgamesThisMatch {} -> "SubgamesThisMatch"
   Quantity.DungeonsCompleted {} -> "DungeonsCompleted"
   Quantity.CommanderCasts {} -> "CommanderCasts"

@@ -30,6 +30,7 @@ import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -333,6 +334,10 @@ data Quantity
     -- turn for the cost that keyword family offers -- "a spell was warped this
     -- turn" is this compared against 1.
     SpellsCastUsingThisTurn KeywordFamily.KeywordFamily
+  | -- | CR 500.1 \/ 608.2i: how many times this step or phase has begun this
+    -- turn -- "if it's the first combat phase of the turn" is CombatPhase's
+    -- count compared to 1.
+    PhasesBegunThisTurn PhaseSelector.PhaseSelector
   | -- | CR 100.6a \/ 730.1a: how many subgames have begun this match, counting one
     -- in progress -- Shahrazad and Sindbad's "if there haven't been any subgames
     -- this match", which is this compared to 0. Read off

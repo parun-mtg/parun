@@ -1065,6 +1065,7 @@ quantityNames asking x =
         Quantity.PermanentsDiedThisTurn -> history asking HistoryRead.Deaths
         Quantity.DamagePreventedThisWay -> prevention asking
         Quantity.SpellsCastUsingThisTurn _ -> history asking HistoryRead.Casts
+        Quantity.PhasesBegunThisTurn _ -> history asking HistoryRead.StepBegins
         Quantity.EnteredThisTurn -> history asking HistoryRead.Entries
         Quantity.EnteredFrom _ -> history asking HistoryRead.Entries
         Quantity.WasCastFrom _ -> history asking HistoryRead.Entries <> history asking HistoryRead.Casts

@@ -1,0 +1,36 @@
+{
+  "description": "CR 603.4 Raph & Leo, Sibling Rivals trigger in the turn's first combat phase and not in the one they add",
+  "note": "Raph & Leo and a Craw Wurm attack twice. In the first combat phase the trigger untaps both and adds a second (CR 500.8); attacking again there, the intervening \"if\" is false, so nothing goes on the stack, both stay tapped and no third combat phase follows: bob ends at 20 - 8 - 8 = 4. The board starts in the main phase so that the first combat phase's beginning is in the turn's log.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Raph & Leo, Sibling Rivals", "label": "raph", "ready": true },
+          { "card": "Craw Wurm", "label": "wurm", "ready": true }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$raph", "$wurm"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "creatures": ["$raph", "$wurm"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $raph"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$wurm", "tapped": true } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$raph", "tapped": false } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$wurm", "tapped": false } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$raph", "$wurm"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "bob", "life": 12 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 4 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Tapped": { "object": "$raph", "tapped": true } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Tapped": { "object": "$wurm", "tapped": true } } }
+  ]
+}

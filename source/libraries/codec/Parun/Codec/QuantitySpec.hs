@@ -49,6 +49,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.NoteFold as NoteFold
+import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
@@ -812,6 +813,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.SpellsCastUsingThisTurn KeywordFamily.Warp)
       " {\"type\":\"SpellsCastUsingThisTurn\",\"value\":\"Warp\"} "
+  -- CR 500.1: the step or phase counted is the payload.
+  Spec.it s "PhasesBegunThisTurn" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.PhasesBegunThisTurn PhaseSelector.CombatPhase)
+      " {\"type\":\"PhasesBegunThisTurn\",\"value\":{\"type\":\"CombatPhase\"}} "
   -- CR 100.6a with nothing on the wire: the tally is the match's, so it names
   -- neither a player nor an object.
   Spec.it s "SubgamesThisMatch is nullary" $

@@ -809,6 +809,7 @@ quantityChildren children quantity = case quantity of
   Quantity.PermanentsDiedThisTurn -> pure quantity
   Quantity.DamagePreventedThisWay -> pure quantity
   Quantity.SpellsCastUsingThisTurn _ -> pure quantity
+  Quantity.PhasesBegunThisTurn _ -> pure quantity
   Quantity.SubgamesThisMatch -> pure quantity
   Quantity.DungeonsCompleted ref -> fmap Quantity.DungeonsCompleted (player children ref)
   Quantity.CommanderCasts ref -> fmap Quantity.CommanderCasts (player children ref)

@@ -8,6 +8,7 @@ import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Combat as Combat
@@ -522,8 +523,23 @@ duringCombatBefore target phase = case phase of
 -- but the next one to begin does and is past the point. TurnRegisters.events is
 -- cleared at the turn handoff, so it holds this turn's beginnings and no other.
 beforeStep :: Phase -> GameState -> Bool
-beforeStep target gs = all (< target) (TurnRegisters.phase (GameState.turn gs) : began)
-  where
-    began = do
-      GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-      pure phase
+beforeStep target gs = all (< target) (TurnRegisters.phase (GameState.turn gs) : stepsBegun gs)
+
+-- CR 500.1: every step, and every main phase, that has begun this turn, oldest
+-- first, off the turn's log. A skipped one records no beginning (CR 500.11).
+--
+-- A comprehension rather than a case, so there is no fallthrough arm for a new
+-- GameEvent constructor to fall into.
+stepsBegun :: GameState -> [Phase]
+stepsBegun gs = do
+  GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
+  pure phase
+
+-- CR 500.1: how many times the step or phase this selector names has begun
+-- this turn. A stepped phase begins as its first step does (phaseBeginningAt),
+-- which is what tells a CR 500.8 combat phase directly after another from more
+-- steps of one phase.
+--
+-- data/scenarios' raph-and-leo pair is what proves the combat phase's count.
+phasesBegun :: PhaseSelector -> GameState -> Natural
+phasesBegun selector = Natural.length . filter (\phase -> selector == PhaseSelector.Step phase || phaseBeginningAt phase == Just selector) . stepsBegun
