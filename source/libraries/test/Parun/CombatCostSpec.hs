@@ -13,9 +13,9 @@ import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
 import Parun.CombatEffectSpec (addForests, attackThePlaneswalker, attackersOf, attacking, cursing, cursingBoard, imprisoning, runToEndOfCombat, tapStateOf, withPermanents)
 import qualified Parun.Engine.Activate as Activate
@@ -48,6 +48,7 @@ import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
@@ -58,7 +59,6 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing

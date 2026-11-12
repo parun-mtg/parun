@@ -3,8 +3,8 @@ module Parun.Types.Seat where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.ManaType as ManaType

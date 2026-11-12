@@ -3,8 +3,8 @@
 module Parun.Codec.SeatView where
 
 import qualified Data.Map.Strict as Map
-import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind

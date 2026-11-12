@@ -39,9 +39,6 @@ import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.Color as Color
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as Action.Type
@@ -57,11 +54,13 @@ import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Casting as Casting
 import qualified Parun.Types.Choices as Choices
+import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExileLooker as ExileLooker
@@ -103,6 +102,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.Staged as Staged
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type

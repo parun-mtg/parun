@@ -18,17 +18,17 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
-import qualified Parun.Types.PlayerId as PlayerId
-import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.DraftNote as DraftNote
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingEntry as PrintingEntry
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.StickerSheet as StickerSheet
+import qualified Parun.Types.Subtype as Subtype
 
 -- A registry over Goblin Piker and Wax // Wane, which between them are a name
 -- with no halves and CR 709.4a's name with two, two preparation cards

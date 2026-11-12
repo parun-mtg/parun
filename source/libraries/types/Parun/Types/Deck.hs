@@ -4,8 +4,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.StickerSheet as StickerSheet

@@ -36,7 +36,6 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as A
@@ -63,6 +62,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expiry as Expiry

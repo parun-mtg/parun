@@ -5,10 +5,10 @@ module Parun.Codec.Player where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
-import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.CardIdentity as CardIdentity
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.Designation as Designation
+import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.GraveyardOrder as GraveyardOrder
 import qualified Parun.Codec.OutsideCard as OutsideCard
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind

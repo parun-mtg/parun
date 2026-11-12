@@ -6,8 +6,8 @@ import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
-import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.GraveyardOrder as GraveyardOrder
 import qualified Parun.Codec.Label as Label
 import qualified Parun.Codec.Placement as Placement

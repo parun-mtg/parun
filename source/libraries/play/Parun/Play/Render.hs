@@ -44,11 +44,11 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Exploited as Exploited

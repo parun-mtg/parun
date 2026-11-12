@@ -9,9 +9,9 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.Player as Player

@@ -4,10 +4,10 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
-import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
