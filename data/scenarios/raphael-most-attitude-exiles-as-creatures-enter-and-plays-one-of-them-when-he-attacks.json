@@ -97,7 +97,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 607.2a / 601.3: Raphael, Most Attitude may exile the top card of your library whenever another creature you control enters; when he attacks you may play a card exiled with him until end of turn",
-  "note": "Two creatures exile Lightning Bolt and Shock. Neither can be cast before Raphael attacks; after, alice casts the Bolt and the Shock is refused though a Mountain stands untapped for it. Not implemented: a second attack trigger in the same turn granting a second play (#7072).",
+  "note": "Two creatures exile Lightning Bolt and Shock. Neither can be cast before Raphael attacks; after, alice casts the Bolt and the Shock is refused though a Mountain stands untapped for it.",
   "timeline": [
     {
       "do": {

@@ -70,6 +70,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseGroup as ChooseGroup
@@ -175,6 +176,7 @@ import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
@@ -3900,6 +3902,23 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace untilUsedOffends (Printing.card berserker))) "the real Hardened Berserker is accepted"
     Spec.assertBool s (untilUsedOffends (planted prohibition)) "a prohibition no cast uses up is rejected"
     Spec.assertBool s (untilUsedOffends (planted pump)) "a continuous effect on an object is rejected"
+  -- CR 611.2a, swept over the pool. See oncePerEffectOffends.
+  Spec.it s "CR 611.2a no card writes OncePerEffect where no stored row carries it" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace oncePerEffectOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFace ((/= 0) . storedOncePerEffects) . Printing.card) ps) "the pool has a card writing a stored OncePerEffect"
+    Spec.assertEqWith s "OncePerEffect sits only on a permission a resolution stores" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction: Johann's static permission, restated.
+  Spec.it s "the lint itself catches OncePerEffect on a static ability" $ do
+    raphael <- S.printingOf s registry "Raphael, Most Attitude"
+    johann <- S.printingOf s registry "Johann, Apprentice Sorcerer"
+    let restate effect = case effect of
+          PlayerEffect.CastFrom grant -> PlayerEffect.CastFrom grant {CastFromZone.limit = PermissionLimit.OncePerEffect}
+          _ -> effect
+        planted face = face {Face.playerAbilities = fmap (\ability -> ability {PlayerStaticAbility.effect = restate (PlayerStaticAbility.effect ability)}) (Face.playerAbilities face)}
+    Spec.assertBool s (not (anyFace oncePerEffectOffends (Printing.card raphael))) "the real Raphael is accepted"
+    Spec.assertBool s (not (anyFace oncePerEffectOffends (Printing.card johann))) "the real Johann is accepted"
+    Spec.assertBool s (anyFace (oncePerEffectOffends . planted) (Printing.card johann)) "a static permission budgeted per effect is rejected"
   -- CR 611.2a, swept over the pool. See windowOffends.
   Spec.it s "CR 611.2a no card writes a next-turn window where nothing asks whether it began" $ do
     ps <- S.allPrintings s corpus
@@ -3958,6 +3977,22 @@ begunWindows card =
 -- | The discard of the cards a ref names, binding nothing.
 discardsThese :: ObjectRef.ObjectRef -> Effect.Effect card ability
 discardsThese ref = Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard ref Nothing))
+
+-- CR 611.2a: PermissionLimit.OncePerEffect's one use is the stored row
+-- Parun.Engine.PlayerEffect.spendCastPermission drops, so it has a use only on
+-- a CastFrom a resolution stores; on a static ability's permission or a
+-- die-roll modifier it has none, and offends. Counted against the ENCODED face
+-- for jsonAtoms' reason.
+oncePerEffectOffends :: Face.Face Card.Type.Card -> Bool
+oncePerEffectOffends card = jsonAtoms (Text.pack "OncePerEffect") (Codec.encode (Face.Codec.codec Card.Codec.codec) card) /= storedOncePerEffects card
+
+-- How many OncePerEffect budgets this face writes on a stored permission.
+storedOncePerEffects :: Face.Face Card.Type.Card -> Int
+storedOncePerEffects card =
+  let stored effect = case effect of
+        Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ (PlayerEffect.CastFrom grant)) -> CastFromZone.limit grant == PermissionLimit.OncePerEffect
+        _ -> False
+   in length (filter stored (cardAuthoredEffects card))
 
 -- CR 611.2a: Duration.UntilUsed arms Expiry.WhenUsed, which only
 -- Parun.Engine.PlayerEffect.spentByCast and spentByLandPlay end early, and only

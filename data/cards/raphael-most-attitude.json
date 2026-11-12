@@ -126,7 +126,7 @@
                                 },
                                 "zone": "Exile"
                               },
-                              "limit": "OnceEachTurn",
+                              "limit": "OncePerEffect",
                               "matching": {
                                 "type": "And",
                                 "value": []
