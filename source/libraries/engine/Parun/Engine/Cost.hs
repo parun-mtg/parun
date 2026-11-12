@@ -659,13 +659,22 @@ candidateCostsGiven permitted pid name oid gs =
               -- the spell is on the stack. The scenario
               -- cr-702-74a-an-evoke-aquatic-subtlety-perpetually-grants-in-a-hand-is-offered
               -- proves evoke GRANTED to a card in a hand is offered.
+              --
+              -- Sneak is read off BOTH: rule 702.190a's ability functions on
+              -- the stack, and Ninja Teen grants it to "creature cards in your
+              -- graveyard", a grant that ends as the card leaves that zone and
+              -- that the card's ruling of 2026-01-27 says is castable by. One Set, so a
+              -- printed sneak both reads find is one candidate. The scenario
+              -- ninja-teen-drains-pumps-and-sneaks-creatures-out-of-the-graveyard
+              -- proves it.
               isEvoke keyword = case keyword of
                 Keyword.Type.Evoke _ -> True
                 _ -> False
+              isSneak keyword = Keyword.sneakWindowed (Just keyword)
               evoked =
                 fmap
                   (\(keyword, cost) -> CandidateCost.plain (Just keyword) (withAdditional cost))
-                  (Keyword.plainAlternativeCosts (Set.filter isEvoke keywords) <> Keyword.plainAlternativeCosts (Set.filter (not . isEvoke) onStack))
+                  (Keyword.plainAlternativeCosts (Set.filter isEvoke keywords) <> Keyword.plainAlternativeCosts (Set.filter isSneak keywords <> Set.filter (not . isEvoke) onStack))
               -- CR 702.119a and CR 702.119b: emerge, evoked's offer with rule
               -- 702.119a's two clauses attached -- the sacrifice in the candidate's
               -- components, the generic reduction in `CandidateCost.reductions`.

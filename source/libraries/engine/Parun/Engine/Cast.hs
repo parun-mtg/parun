@@ -215,7 +215,12 @@ cardTimingWith window pid oid name gs = case proposedFace oid name gs of
       -- first: the window is False at all but one step of one player's turn, and
       -- the projection fold behind the second limb then never runs.
       || ( Turn.declareBlockersWindow pid gs
-             && (Keyword.hasSneak (Face.keywordSet face) || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs)))
+             && ( Keyword.hasSneak (Face.keywordSet face)
+                    || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs))
+                    -- Ninja Teen's "creature cards in your graveyard have
+                    -- sneak": a grant confined to the zone the card lies in.
+                    || Keyword.hasSneak (projectedKeywords oid gs)
+                )
          )
       -- CR 702.48a: offering's window, and CR 601.3c / 601.3d's card's own
       -- flash permission, open only while some candidate carrying the window

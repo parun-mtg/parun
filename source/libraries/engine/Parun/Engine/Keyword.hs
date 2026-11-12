@@ -4706,6 +4706,7 @@ grantedBy granter chosen you already keyword = case withChosenColors chosen keyw
 -- CR 607.2d / 608.2h: a bare Filter.HasChosenColor protection quality with
 -- the chosen colours written in -- Filter.HasColor, an Or of them where several
 -- were chosen, and the empty Or, protection from nothing, where none was.
+-- CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise.
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
@@ -4715,11 +4716,14 @@ withChosenColors chosen keyword = case keyword of
     | Protection.quality protection == Filter.HasChosenColor ->
         Keyword.Protection
           protection
-            { Protection.quality = case Set.toList chosen of
-                [color] -> Filter.HasColor color
-                colors -> Filter.Or (fmap Filter.HasColor colors)
+            { Protection.quality = baked
             }
+  Keyword.Hexproof (Just Filter.HasChosenColor) -> Keyword.Hexproof (Just baked)
   _ -> keyword
+  where
+    baked = case Set.toList chosen of
+      [color] -> Filter.HasColor color
+      colors -> Filter.Or (fmap Filter.HasColor colors)
 
 -- The attachment prohibitions one keyword states.
 mintedAttachRestrictionsFor :: Keyword -> [AttachRestriction.AttachRestriction]
