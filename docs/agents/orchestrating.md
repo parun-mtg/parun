@@ -17,7 +17,8 @@ bookkeeping: the set's doc, `docs/sets/<set>.md`, is written once, by the
 finish unit.
 
 The orchestrator dispatches a unit by applying the `claude` label to its
-issue; the session that starts opens the PR. The orchestrator owns the
+issue; the session that starts (its prompt is `docs/agents/label-routine.md`)
+opens the PR. The orchestrator owns the
 tracker, which only the census unit also writes (its snapshot), and the body
 of every unlabelled issue. A labelled issue's body belongs to its unit:
 nobody edits it after labelling.
@@ -110,7 +111,8 @@ when a step needs it; a missing file is a fetch, not a blocker.
    - Filed along the way: #N (one phrase), ...
    - Audits: A of K capability PRs; D found rules defects.
      - #PR: the defect, in a line, and its fix issue.
-   - Cost: as recorded on the tracker, else "not recorded". Wall clock ~Nh.
+   - Cost: each PR's `Cost:` line, summed, else "not recorded". Wall clock
+     ~Nh.
    - Owner review:
      - #PR: a decisions.md entry, wire-format change or contested reading.
    ```
@@ -144,10 +146,11 @@ summary, and its title carries no CR numbers.
   that share an edit site (name it, and read it; if you cannot, they are a
   topic, not one issue). A unit with work left files the rest as a new
   sub-issue ("Implementing a unit").
-- **Cost** is cache reads (`script/session-tokens.sh` on the transcripts,
-  where they are reachable): every turn re-reads the whole context, so cost
-  grows with the square of a session's length. Record it on the tracker as
-  each unit merges.
+- **Cost** is cache reads: every turn re-reads the whole context, so cost
+  grows with the square of a session's length. Each unit measures its own
+  and writes it as the PR body's `Cost:` line (`docs/agents/set-by-set.md`,
+  "Git and the PR"), since its transcript is unreachable from outside; the
+  finish unit collects those lines.
 - **Merging.** The unit's session marks its PR ready and arms auto-merge
   itself; the orchestrator only watches. A PR stalled out of the queue is
   read from `gh api repos/parun-mtg/parun/issues/P/events`: a queued PR shows

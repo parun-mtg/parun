@@ -301,6 +301,11 @@ so in the PR.
   narrowed gets "related to #N" and a retitle naming what is left.
 - `script/format-json.sh` takes `MODE FILE...` and passes vacuously when run
   bare.
+- Last thing before marking the PR ready, add a `Cost:` line to its body:
+  the `total` row of `script/session-tokens.sh` over your own transcript
+  (the newest `~/.claude/projects/*/*.jsonl`, and its `subagents/` if any),
+  and the wall clock from that file's first `timestamp` to now. If no
+  transcript is reachable, say that instead; never estimate.
 - After a CR update, grep the renumbered rules in the tree (fix in the PR) and
   in issue bodies (fix in a comment).
 
