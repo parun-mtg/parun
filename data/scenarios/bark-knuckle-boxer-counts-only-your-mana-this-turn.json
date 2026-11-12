@@ -1,0 +1,52 @@
+{
+  "description": "CR 700.14: the expend total is the player's own and resets with the turn, so neither alice's one mana on bob's turn after three on her own nor bob's six fires alice's Bark-Knuckle Boxer.",
+  "note": "Without the reset, Giant Growth on turn 2 would take alice's total from 3 to 4 and the trigger would resolve above it. Bob's Craw Wurm crosses 4 for bob, not for alice; the stack after it holds the Wurm alone.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Bark-Knuckle Boxer", "label": "boxer"},
+          {"card": "Forest", "label": "f1"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Island", "label": "i3"}
+        ],
+        "hand": [
+          {"card": "Divination", "label": "divination"},
+          {"card": "Giant Growth", "label": "growth"}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Forest", "label": "b1"},
+          {"card": "Forest", "label": "b2"},
+          {"card": "Forest", "label": "b3"},
+          {"card": "Forest", "label": "b4"},
+          {"card": "Forest", "label": "b5"},
+          {"card": "Forest", "label": "b6"}
+        ],
+        "hand": [{"card": "Craw Wurm", "label": "wurm"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$divination", "mana": ["$i1", "$i2", "$i3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Divination"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Cast": {"object": "$growth", "mana": ["$f1"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Giant Growth"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"PowerToughness": {"object": "$boxer", "power": 6, "toughness": 5}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"Keywords": {"object": "$boxer", "keyword": {"type": "Indestructible"}, "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$wurm", "mana": ["$b1", "$b2", "$b3", "$b4", "$b5", "$b6"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Stack", "is": ["Craw Wurm"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Keywords": {"object": "$boxer", "keyword": {"type": "Indestructible"}, "count": 0}}}
+  ]
+}

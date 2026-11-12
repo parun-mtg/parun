@@ -47,6 +47,7 @@ import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.OwnedZone as OwnedZone
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -178,6 +179,7 @@ event context creature c = case c of
     opening' <- recurring
     [other (opening' <> " " <> who <> " " <> Text.unpack (Prose.article one) <> " " <> Text.unpack one) [(thatPlayer, "that player"), (castSpell, "it")]]
   TriggerCondition.PlayerFacesDilemma PlayerRelation.You -> [other "Whenever you face a dilemma" []]
+  TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You n) -> [other ("Whenever you expend " <> show n) []]
   _ -> []
   where
     self = Text.unpack (Target.self context)

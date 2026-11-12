@@ -68,6 +68,7 @@ import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EntwineDecision as EntwineDecision
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
@@ -4280,6 +4281,13 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           Monad.forM_ [1 .. stickerKicks] $ \_ -> do
                             Monad.void (Event.putPlayerCounters (CounterCause.ByPayment pid) pid PlayerCounterKind.Ticket 1)
                             Monad.void (Sticker.place True pid sid (Set.fromList [minBound .. maxBound]) Nothing False)
+                          -- CR 700.14: the mana this payment spent, against the
+                          -- caster's running total, recorded at the payment as
+                          -- the convoke record is.
+                          spentNow <- State.gets (maybe 0 (Natural.length . Mana.Type.unwrap . Object.manaSpent) . Game.lookupObject sid)
+                          Monad.when (spentNow > 0) $ do
+                            priorTotal <- State.gets (`Game.manaExpendedThisTurn` pid)
+                            State.modify' (Event.recordEvent (GameEvent.Expended Expended.MkExpended {Expended.player = pid, Expended.before = priorTotal, Expended.after = priorTotal + spentNow}))
                           -- CR 601.2i: the spell has been cast. Emitted AFTER the
                           -- last step that can fail, so a rejected announcement
                           -- records nothing.

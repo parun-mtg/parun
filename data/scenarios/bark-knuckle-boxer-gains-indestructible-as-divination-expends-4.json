@@ -1,0 +1,48 @@
+{
+  "description": "CR 700.14 Example: alice casts Bark-Knuckle Boxer for two mana, then Divination for three; the payment takes her total from 2 to 5, so the Boxer's expend 4 trigger fires, and Giant Growth cast in response neither fires it again nor stops it resolving.",
+  "note": "The two mana spent on the Boxer itself, before it entered, count toward the total (ruling 2024-07-26). Giant Growth's payment takes the total from 5 to 6, past 4 but not across it: a second trigger would resolve above Giant Growth and show indestructible before Giant Growth resolves.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Forest", "label": "f1"},
+          {"card": "Forest", "label": "f2"},
+          {"card": "Forest", "label": "f3"},
+          {"card": "Island", "label": "i1"},
+          {"card": "Island", "label": "i2"},
+          {"card": "Island", "label": "i3"}
+        ],
+        "hand": [
+          {"card": "Bark-Knuckle Boxer", "label": "boxer"},
+          {"card": "Divination", "label": "divination"},
+          {"card": "Giant Growth", "label": "growth"}
+        ],
+        "library": [{"card": "Gray Ogre"}, {"card": "Gray Ogre"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$boxer", "mana": ["$f1", "$f2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$divination", "mana": ["$i1", "$i2", "$i3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Bark-Knuckle Boxer", "Divination"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$growth", "mana": ["$f3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Giant Growth", "trigger of Bark-Knuckle Boxer", "Divination"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Bark-Knuckle Boxer", "power": 6, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Bark-Knuckle Boxer", "keyword": {"type": "Indestructible"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Bark-Knuckle Boxer", "keyword": {"type": "Indestructible"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Gray Ogre", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}}
+  ]
+}

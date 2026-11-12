@@ -1277,6 +1277,7 @@ damageOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -1354,6 +1355,7 @@ revealOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -11833,6 +11835,7 @@ controllerTurnScoped cond = case cond of
   -- and CR 702.170 each state when their event happens.
   TriggerCondition.PlayerManifestsDread _ -> False
   TriggerCondition.PlayerFacesDilemma _ -> False
+  TriggerCondition.PlayerExpends _ -> False
   TriggerCondition.SelfBecomesPlotted -> False
   -- No PermanentAction's rule names a turn. Where the act can only happen on the
   -- ACTIVE player's turn -- CR 508.1g's exert, the attack CR 508.1a makes
@@ -12355,6 +12358,7 @@ abilityTriggeredOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
