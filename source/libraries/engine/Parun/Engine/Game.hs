@@ -2902,6 +2902,13 @@ isTapped oid gs = case lookupObject oid gs of
   Nothing -> False
   Just obj -> Object.tapped obj == TapState.Tapped
 
+-- CR 110.5d / 708.2: is this a face-down permanent? Status only a permanent
+-- has, so False off the battlefield -- a face-down spell on the stack (CR
+-- 708.4) included -- and for an unknown id. Read off Object.facing, never the
+-- projection (CR 110.5a), and never Object.exiledFaceDown (CR 110.5d).
+isFaceDownPermanent :: ObjectId -> GameState -> Bool
+isFaceDownPermanent oid gs = Set.member oid (GameState.battlefield gs) && maybe False (Facing.isFaceDown . Object.facing) (lookupObject oid gs)
+
 -- CR 111.1 / 111.6: is this object a token rather than a card? Asks the
 -- object's KIND, a classification in the same standing as isSpell, never the
 -- card's identity. False for an unknown id and for every non-token kind.

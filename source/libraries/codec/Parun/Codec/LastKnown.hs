@@ -72,6 +72,7 @@ codec = Fields.object $ do
   pile <- Fields.defaulted "pile" Nothing (Common.maybe PlayerId.codec) LastKnown.pile
   lapsedGrants <- Fields.defaulted "lapsedGrants" Set.empty (Common.set Condition.codec) LastKnown.lapsedGrants
   tapped <- Fields.defaulted "tapped" False Common.boolean LastKnown.tapped
+  faceDown <- Fields.defaulted "faceDown" False Common.boolean LastKnown.faceDown
   pure
     LastKnown.MkLastKnown
       { LastKnown.characteristics = characteristics,
@@ -105,5 +106,6 @@ codec = Fields.object $ do
         LastKnown.home = home,
         LastKnown.pile = pile,
         LastKnown.lapsedGrants = lapsedGrants,
-        LastKnown.tapped = tapped
+        LastKnown.tapped = tapped,
+        LastKnown.faceDown = faceDown
       }

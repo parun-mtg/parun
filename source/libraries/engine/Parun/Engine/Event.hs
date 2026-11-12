@@ -11016,6 +11016,7 @@ lastKnownFrom gs oid obj =
     -- to ask them of.
     (Projection.lapsedGrantsOf (Projection.fullView gs) characteristics oid gs)
     (Game.isTapped oid gs)
+    (Game.isFaceDownPermanent oid gs)
   where
     characteristics = Projection.project oid gs
 

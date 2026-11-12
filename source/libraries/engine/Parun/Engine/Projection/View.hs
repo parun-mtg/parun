@@ -752,18 +752,16 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- own draw and not the card Soul of New Phyrexia exiles from a graveyard.
       Filter.abilitySource = Game.abilitySourceOf oid gs >>= \src -> fmap (lastZoned gs src) (Count.orLastKnown peers gs src),
       Filter.tapped = Game.isTapped oid gs,
-      -- CR 110.5's other status, and the only site that fills the field. Read off
-      -- Object.facing, never off the projection: CR 110.5a says status is not a
-      -- characteristic in as many words. Never Object.exiledFaceDown beside it,
-      -- which CR 110.5d says has no correlation to this.
+      -- CR 110.5's other status, through Game.isFaceDownPermanent, which
+      -- Parun.Engine.Event.lastKnownFrom files for a departed permanent too.
       --
-      -- The battlefield conjunct is CR 110.5d's own -- only permanents have
+      -- Its battlefield conjunct is CR 110.5d's own -- only permanents have
       -- status -- and is a REGRESSION FENCE rather than a proved behaviour, for
       -- `transformed` below's reason: the object it excludes is a face-down SPELL
       -- on the stack (CR 708.4), which is reachable, but every pool that reaches
       -- the atom today is already scoped to the battlefield, so dropping the
       -- conjunct leaves the suite green.
-      Filter.faceDown = Set.member oid (GameState.battlefield gs) && maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject oid gs),
+      Filter.faceDown = Game.isFaceDownPermanent oid gs,
       -- CR 708.12's "ignoring any continuous effects", and the only site that
       -- fills the field: the card representing this object, read off
       -- Game.faceUpFaceOf so that CR 708.2a's substitution in Game.faceOf does not

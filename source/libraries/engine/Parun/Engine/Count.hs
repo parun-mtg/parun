@@ -1029,7 +1029,8 @@ orLastKnown live gs oid = Monad.join (Game.liveOrLastKnown (const (live oid)) (J
 -- was a token",
 -- BLOCKING by Guildsworn Prowler's intervening "if" and ATTACKING by Garna,
 -- Bloodfist of Keld's "if it was attacking", and ATTACK TARGET, attackingPlayer
--- and attackingPlaneswalkerController, by Mangara, the Diplomat's scenario.
+-- and attackingPlaneswalkerController, by Mangara, the Diplomat's scenario, and
+-- FACE DOWN by Cryptic Pursuit's (data/scenarios/cryptic-pursuit).
 -- attackingBattleProtector answers Nothing, since no card asks it of a departed
 -- attacker, and `blockStatus` too, whose one printing asks a CR 608.2i question.
 --
@@ -1064,6 +1065,7 @@ lastKnownView peers oid gs lastKnown =
       )
         { Filter.identity = Just oid,
           Filter.tapped = LastKnown.tapped lastKnown,
+          Filter.faceDown = LastKnown.faceDown lastKnown,
           Filter.attacking = LastKnown.attacking lastKnown,
           -- `attackingAlone` keeps the snapshot's empty set: LastKnown records no
           -- fellow attackers, and no card asks CR 506.5 or 506.6 of a departed
@@ -1486,11 +1488,10 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.emblem = False,
       -- CR 113.7, for the line above's reason: no ability, so no source.
       Filter.abilitySource = Nothing,
-      Filter.tapped = False,
       -- CR 110.5a says status is not a characteristic, and a snapshot holds only
-      -- characteristics -- so it holds nothing to answer this with,
-      -- `tapped` above's reason one status category over. Unlike `tapped`,
-      -- lastKnownView supplies no answer for a departed object (gap #6249).
+      -- characteristics -- so it holds nothing to answer these with;
+      -- lastKnownView fills both from the record for a departed object.
+      Filter.tapped = False,
       Filter.faceDown = False,
       -- A snapshot holds characteristics rather than the card that carried
       -- them, so there is no printed face here for CR 708.12 to read -- `faceDown`
