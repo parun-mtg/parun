@@ -230,10 +230,16 @@
                             "value": "exiled"
                           },
                           "repetition": {
-                            "type": "WithinTotalManaValue",
+                            "type": "WithinTotal",
                             "value": {
-                              "type": "Literal",
-                              "value": 6
+                              "most": {
+                                "type": "Literal",
+                                "value": 6
+                              },
+                              "weight": {
+                                "type": "Measure",
+                                "value": "ManaValue"
+                              }
                             }
                           }
                         }

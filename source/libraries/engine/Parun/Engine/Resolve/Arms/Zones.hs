@@ -709,7 +709,7 @@ shuffle resolving source controller legal ref = do
   let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
   Monad.forM_ (filter (`Set.member` named) (Game.apnapOrder gs)) Event.shuffleLibrary
 
-offerCastArm :: (Game Result -> Filter.Context -> (Quantity.Type.Quantity -> Maybe Integer) -> [ObjectId] -> PlayerId -> CastObligation.CastObligation -> PermissionVerb.PermissionVerb -> Maybe PlayerId -> CastRepetition.CastRepetition -> Bool -> CastOffer.CastOffer -> Game [ObjectId]) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> OfferCast.OfferCast -> Game ()
+offerCastArm :: (Game Result -> Filter.Context -> (Maybe (ObjectId, Filter.View) -> Quantity.Type.Quantity -> Maybe Integer) -> [ObjectId] -> PlayerId -> CastObligation.CastObligation -> PermissionVerb.PermissionVerb -> Maybe PlayerId -> CastRepetition.CastRepetition -> Bool -> CastOffer.CastOffer -> Game [ObjectId]) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> OfferCast.OfferCast -> Game ()
 offerCastArm offerCast runSubgame resolving source controller legal chosen (OfferCast.MkOfferCast ref caster optionality verb offer repetition copied controlWhileResolving slot) = do
   -- Named HERE rather than inside offerCast so that one function takes the
   -- objects and never the reference: CR 608.2g's offer over a set (Shell of the
@@ -722,7 +722,11 @@ offerCastArm offerCast runSubgame resolving source controller legal chosen (Offe
       -- whose restriction reads the source (CR 702.85a) answers what the walk
       -- that named these cards answered.
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      evaluate = Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source
+      -- Against the source, or against a candidate's own view where the
+      -- repetition weighs one (TotalCap.weight).
+      evaluate aimed = case aimed of
+        Nothing -> Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source
+        Just (oid, view) -> Quantity.evaluateAgainst (effectViewOf resolving source legal gs) context gs resolving (Just oid) (Just view)
       -- CastOffer.payableFromSpent: only a card whose mana cost the mana spent
       -- on this ability's {X} could pay stays on offer. That mana is
       -- Object.manaSpent less what paid the rest of the total

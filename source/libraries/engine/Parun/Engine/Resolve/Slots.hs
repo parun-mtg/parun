@@ -346,12 +346,13 @@ quantitySlots quantity =
 repetitionSlots :: CastRepetition.CastRepetition -> Map.Map SlotName SlotArity
 repetitionSlots = joinSlots . fmap quantitySlots . repetitionQuantities
 
--- The Quantity a CR 608.2g repetition carries: Rod of Absorption's budget.
+-- The Quantities a CR 608.2g repetition carries: Rod of Absorption's weight
+-- and budget.
 repetitionQuantities :: CastRepetition.CastRepetition -> [Quantity.Type.Quantity]
 repetitionQuantities repetition = case repetition of
   CastRepetition.Once -> []
   CastRepetition.AnyNumber -> []
-  CastRepetition.WithinTotalManaValue quantity -> [quantity]
+  CastRepetition.WithinTotal total -> totalCapQuantities (Just total)
   CastRepetition.UpTo quantity -> [quantity]
 
 -- The Quantities an entry rider carries: CR 122.6's count per counter kind, which

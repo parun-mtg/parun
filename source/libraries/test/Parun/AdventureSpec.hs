@@ -413,7 +413,7 @@ spec s registry = Spec.describe s "Adventure" $ do
               CastOffer.reduction = 0
             }
         context bound = (Filter.contextIn gs (Just S.alice) Nothing) {Filter.sourceMeasures = Map.singleton Measure.ManaValue bound}
-        under bound = S.runPure preferringTheCreature gs (Resolve.offerCast Resolve.noSubgame (context bound) (const Nothing) [exiledId] S.alice CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
+        under bound = S.runPure preferringTheCreature gs (Resolve.offerCast Resolve.noSubgame (context bound) (\_ _ -> Nothing) [exiledId] S.alice CastObligation.Optional PermissionVerb.Cast Nothing CastRepetition.Once False offer)
         resolved bound = S.runPure preferringTheCreature (under bound) Stack.resolveTop
         knights g = filter (\o -> Set.member Subtype.Knight (Projection.subtypesOf o g)) (Set.toList (GameState.battlefield g))
         artifacts g = filter (\o -> Set.member CardType.Artifact (Projection.cardTypesOf o g)) (Set.toList (GameState.battlefield g))

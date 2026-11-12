@@ -5,8 +5,10 @@ import qualified Parun.Codec.CastRepetition as CastRepetition
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CastRepetition as CastRepetition
+import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.TotalCap as TotalCap
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CastRepetition" $ do
@@ -22,12 +24,12 @@ spec s = Spec.describe s "Parun.Codec.CastRepetition" $ do
       CastRepetition.codec
       CastRepetition.AnyNumber
       " {\"type\":\"AnyNumber\"} "
-  Spec.it s "WithinTotalManaValue" $
+  Spec.it s "WithinTotal" $
     Common.assertCodec
       s
       CastRepetition.codec
-      (CastRepetition.WithinTotalManaValue (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))
-      " {\"type\":\"WithinTotalManaValue\",\"value\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
+      (CastRepetition.WithinTotal TotalCap.MkTotalCap {TotalCap.weight = Quantity.Measure Measure.ManaValue, TotalCap.most = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))})
+      " {\"type\":\"WithinTotal\",\"value\":{\"most\":{\"type\":\"InSlot\",\"value\":\"X\"},\"weight\":{\"type\":\"Measure\",\"value\":\"ManaValue\"}}} "
   Spec.it s "UpTo" $
     Common.assertCodec
       s
