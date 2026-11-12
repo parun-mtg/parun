@@ -4332,7 +4332,7 @@ combatRestrictionFilters restriction = case restriction of
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless affected condition _ amount) -> affectedSet affected <> foldMap conditionFilters condition <> foldMap quantityFilters amount
   -- Three positions on the PAIRWISE arm: the attackers restricted, the blockers
   -- barred from them, and the gate.
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers condition _) -> affectedSet affected <> unframed [blockers] <> foldMap conditionFilters condition
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers _ condition _) -> affectedSet affected <> unframed [blockers] <> foldMap conditionFilters condition
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures affected attackers condition _) -> affectedSet affected <> unframed [attackers] <> foldMap conditionFilters condition
   -- Two on the attacking one: the creatures restricted and the gate. The
   -- players they may not attack are a PlayerScope and the announcements barred

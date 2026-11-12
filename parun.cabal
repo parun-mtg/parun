@@ -1242,6 +1242,8 @@ library codec
     Parun.Codec.PaidExpirySpec
     Parun.Codec.Pairing
     Parun.Codec.PairingSpec
+    Parun.Codec.PairwiseFrame
+    Parun.Codec.PairwiseFrameSpec
     Parun.Codec.Parity
     Parun.Codec.ParityOperand
     Parun.Codec.ParityOperandSpec
@@ -3267,6 +3269,7 @@ library types
     Parun.Types.OwnershipChange
     Parun.Types.PaidExpiry
     Parun.Types.Pairing
+    Parun.Types.PairwiseFrame
     Parun.Types.Parity
     Parun.Types.ParityOperand
     Parun.Types.PartnerText

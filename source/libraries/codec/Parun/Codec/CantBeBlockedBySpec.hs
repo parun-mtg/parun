@@ -11,6 +11,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CantBeBlockedBy" $ do
@@ -24,9 +25,23 @@ spec s = Spec.describe s "Parun.Codec.CantBeBlockedBy" $ do
       ( CantBeBlockedBy.MkCantBeBlockedBy
           { CantBeBlockedBy.affected = Affected.Matching (Filter.HasCardType CardType.Creature),
             CantBeBlockedBy.blockers = Filter.Measures (Measures.MkMeasures Measure.Power Comparison.GreaterThan (Operand.OfSource Measure.Power)),
+            CantBeBlockedBy.frame = PairwiseFrame.Attacker,
             CantBeBlockedBy.unless = Nothing,
             CantBeBlockedBy.name = Nothing
           }
       )
       " {\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"blockers\":{\"type\":\"Measures\",\"value\":{\"measure\":\"Power\",\"comparison\":\"GreaterThan\",\"operand\":{\"type\":\"OfSource\",\"value\":\"Power\"}}}} "
+  Spec.it s "MkCantBeBlockedBy, read from the source" $
+    Common.assertCodec
+      s
+      CantBeBlockedBy.codec
+      ( CantBeBlockedBy.MkCantBeBlockedBy
+          { CantBeBlockedBy.affected = Affected.Matching (Filter.HasCardType CardType.Creature),
+            CantBeBlockedBy.blockers = Filter.Measures (Measures.MkMeasures Measure.Power Comparison.LessThan (Operand.OfSource Measure.Power)),
+            CantBeBlockedBy.frame = PairwiseFrame.Source,
+            CantBeBlockedBy.unless = Nothing,
+            CantBeBlockedBy.name = Nothing
+          }
+      )
+      " {\"affected\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"blockers\":{\"type\":\"Measures\",\"value\":{\"measure\":\"Power\",\"comparison\":\"LessThan\",\"operand\":{\"type\":\"OfSource\",\"value\":\"Power\"}}},\"frame\":\"Source\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CantBeBlockedBy.codec
