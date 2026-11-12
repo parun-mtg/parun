@@ -1,42 +1,6 @@
 {
   "faces": [
     {
-      "activatedAbilities": [
-        {
-          "cost": {
-            "components": [
-              {
-                "type": "TapThis"
-              }
-            ],
-            "mana": []
-          },
-          "modal": {
-            "modes": [
-              {
-                "clauses": [
-                  {
-                    "effects": [
-                      {
-                        "type": "AddMana",
-                        "value": {
-                          "production": {
-                            "type": "OfType",
-                            "value": {
-                              "type": "Colored",
-                              "value": "Green"
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ],
       "manaCost": [
         {
           "type": "OfType",
@@ -61,7 +25,7 @@
         }
       ],
       "name": "Yorvo, Lord of Garenbrig",
-      "oracleText": "Yorvo enters with four +1/+1 counters on it.\nWhenever another green creature you control enters, put a +1/+1 counter on Yorvo. Then if that creature's power is greater than Yorvo's power, put another +1/+1 counter on Yorvo.\n{T}: Add {G}.",
+      "oracleText": "Yorvo enters with four +1/+1 counters on it.\nWhenever another green creature you control enters, put a +1/+1 counter on Yorvo. Then if that creature's power is greater than Yorvo's power, put another +1/+1 counter on Yorvo.",
       "power": {
         "type": "Literal",
         "value": 0
