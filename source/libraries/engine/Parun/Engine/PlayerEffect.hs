@@ -2544,7 +2544,7 @@ castPermissionsFrom pid zone oid gs =
         opensZoneOf pid zone oid (CastFromZone.from grant) gs
           && inPool source (CastFromZone.pool grant)
           && matchesObjectFor (permissionHolder pid (RowSource.object source) gs) source (CastFromZone.matching grant) oid gs
-          && unspentPermission pid (RowSource.object source) grant gs
+          && unspentPermission pid source grant gs
       grantOf (source, effect) = fmap ((,) source) (castFromGrantOf effect)
       -- CR 109.5: the Filter's "you" is the granting ability's controller, not
       -- the card's -- an exiled card's is its owner (CR 108.4a), which would
@@ -2562,24 +2562,29 @@ castPermissionsFrom pid zone oid gs =
           _ -> False
    in fmap (Bifunctor.first RowSource.object) (filter allows (Maybe.mapMaybe grantOf (applying pid gs)))
 
--- CR 601.3: has this permission a use left this turn? Unlimited always; a
+-- CR 601.3: has this permission a use left? Unlimited always; a
 -- once-each-turn one only while TurnRegisters.castPermissionsUsedThisTurn does not
 -- already record it under the object that granted it, and a once-each-of-your-
 -- turns one only on `pid`'s own turn as well, its team's under CR 805.4a.
+--
+-- A once-per-effect one always while its row stands, since spendCastPermission
+-- drops the row with its use -- a STORED row, RowSource.choices' Just; a printed
+-- row has nothing to drop, so it has no use (PermissionLimit.OncePerEffect).
 --
 -- A row carrying NO source answers True and is never spent. Unreachable rather
 -- than a policy: `applying` stamps every printed row with its permanent and
 -- every stored one with ActivePlayerEffect.source, so the Maybe has no inhabitant
 -- here.
-unspentPermission :: PlayerId -> Maybe ObjectId -> CastFromZone.CastFromZone -> GameState -> Bool
+unspentPermission :: PlayerId -> RowSource -> CastFromZone.CastFromZone -> GameState -> Bool
 unspentPermission pid source grant gs =
-  let unspent = case source of
+  let unspent = case RowSource.object source of
         Nothing -> True
         Just sid -> Set.notMember grant (Map.findWithDefault Set.empty sid (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs)))
    in case CastFromZone.limit grant of
         PermissionLimit.Unlimited -> True
         PermissionLimit.OnceEachTurn -> unspent
         PermissionLimit.OnceEachOfYourTurns -> Turn.isActive gs pid && unspent
+        PermissionLimit.OncePerEffect -> Maybe.isJust (RowSource.choices source)
 
 -- CR 601.3 / 400.7h: the ways a cast of `oid` out of `zone` can be made, for
 -- Parun.Engine.Cast.choosePlayPermission. Asked of the PRE-MOVE state by
@@ -2653,26 +2658,43 @@ permissionAlternative option = CastFromZone.alternativeCost . snd =<< option
 permissionSpending :: Maybe (ObjectId, CastFromZone.CastFromZone) -> ManaSpending.ManaSpending
 permissionSpending = maybe ManaSpending.AsProduced (CastFromZone.spending . snd)
 
--- The budget a play made under `option` spends: a once-each-turn permission's,
--- and nothing for an unlimited one or for none.
+-- The budget a play made under `option` spends: a limited permission's, and
+-- nothing for an unlimited one or for none.
 permissionSpent :: Maybe (ObjectId, CastFromZone.CastFromZone) -> Maybe (ObjectId, CastFromZone.CastFromZone)
 permissionSpent option = case option of
   Just (_, grant) | CastFromZone.limit grant /= PermissionLimit.Unlimited -> option
   _ -> Nothing
 
--- Spend the permission permissionSpent named, once the play it was asked about
--- has happened -- `consume`'s twin one axis over, and cleared at the turn
--- handoff (Parun.Engine.Engine.beginTurnOf) rather than by any reader.
-spendCastPermission :: Maybe (ObjectId, CastFromZone.CastFromZone) -> GameState -> GameState
-spendCastPermission spent gs = case spent of
+-- Spend the permission permissionSpent named, once the play `pid` was asked
+-- about has happened -- `consume`'s twin one axis over. A per-turn budget is
+-- recorded, and cleared at the turn handoff (Parun.Engine.Engine.beginTurnOf)
+-- rather than by any reader.
+--
+-- CR 611.2a: a once-per-effect budget is its stored row, so the play drops ONE
+-- row -- the oldest that source stored carrying this permission for `pid`, the
+-- rows of two resolutions differing in nothing a play can tell apart -- and a
+-- second resolution's row still stands.
+spendCastPermission :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone) -> GameState -> GameState
+spendCastPermission pid spent gs = case spent of
   Nothing -> gs
-  Just (sid, grant) ->
-    gs
-      { GameState.turn =
-          (GameState.turn gs)
-            { TurnRegisters.castPermissionsUsedThisTurn = Map.insertWith Set.union sid (Set.singleton grant) (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs))
-            }
-      }
+  Just (sid, grant)
+    | CastFromZone.limit grant == PermissionLimit.OncePerEffect ->
+        let rows = StoredEffects.playerEffects (GameState.stored gs)
+            carries active =
+              ActivePlayerEffect.source active == sid
+                && castFromGrantOf (ActivePlayerEffect.effect active) == Just grant
+                && Expiry.begun gs (ActivePlayerEffect.expiry active)
+                && applies pid (ActivePlayerEffect.controller active) gs (ActivePlayerEffect.scope active)
+         in case List.sortOn ActivePlayerEffect.timestamp (filter carries rows) of
+              [] -> gs
+              oldest : _ -> gs {GameState.stored = (GameState.stored gs) {StoredEffects.playerEffects = List.delete oldest rows}}
+    | otherwise ->
+        gs
+          { GameState.turn =
+              (GameState.turn gs)
+                { TurnRegisters.castPermissionsUsedThisTurn = Map.insertWith Set.union sid (Set.singleton grant) (TurnRegisters.castPermissionsUsedThisTurn (GameState.turn gs))
+                }
+          }
 
 -- CR 305.1 / 601.3: the Play-verb permissions (Parun.Types.PermissionVerb) that
 -- let `pid` play the land `oid` out of `zone` -- castPermissionsFrom's rows
