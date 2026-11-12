@@ -96,7 +96,7 @@
       "do": {
         "Cast": {
           "mana": [],
-          "object": "$chucks"
+          "object": "Novel Nunchaku"
         }
       },
       "player": "alice",
@@ -163,22 +163,15 @@
           "mana": [
             "$m0"
           ],
-          "object": "$theft"
-        }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseTargets": {
-          "creature": [
-            "$giant"
-          ],
-          "equipment": [
-            "$chucks"
-          ]
+          "object": "$theft",
+          "targetsBySlot": {
+            "creature": [
+              "$giant"
+            ],
+            "equipment": [
+              "Novel Nunchaku"
+            ]
+          }
         }
       },
       "player": "bob",
