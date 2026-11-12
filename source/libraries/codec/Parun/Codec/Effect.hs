@@ -182,6 +182,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "Populate" Effect.Populate,
           Arm.nullary "TimeTravel" Effect.TimeTravel,
           Arm.nullary "Recruit" Effect.Recruit,
+          Arm.payload "Discover" Quantity.codec Effect.Discover (\x -> case x of Effect.Discover y -> Just y; _ -> Nothing),
           Arm.nullary "Learn" Effect.Learn,
           Arm.payload "Cloak" PlayerRef.codec Effect.Cloak (\x -> case x of Effect.Cloak y -> Just y; _ -> Nothing),
           Arm.payload "ManifestDread" PlayerRef.codec Effect.ManifestDread (\x -> case x of Effect.ManifestDread y -> Just y; _ -> Nothing),
@@ -368,6 +369,7 @@ tagOf x = case x of
   Effect.Populate {} -> "Populate"
   Effect.TimeTravel {} -> "TimeTravel"
   Effect.Recruit {} -> "Recruit"
+  Effect.Discover {} -> "Discover"
   Effect.Learn {} -> "Learn"
   Effect.Cloak {} -> "Cloak"
   Effect.ManifestDread {} -> "ManifestDread"

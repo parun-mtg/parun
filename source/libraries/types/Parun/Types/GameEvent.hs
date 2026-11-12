@@ -27,6 +27,7 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
@@ -565,6 +566,9 @@ data GameEvent
     PermanentActed (PermanentActed.PermanentActed ObjectId.ObjectId)
   | -- | CR 603.2: a player performed a Parun.Types.PlayerAction.
     PlayerActed (PlayerActed.PlayerActed PlayerId.PlayerId)
+  | -- | CR 701.57b: a player finished discovering, with the N it was for, which
+    -- Parun.Types.TriggerCondition's PlayerActs matches as PlayerAction.Discover.
+    Discovered Discovered.Discovered
   | -- | CR 123.3.
     StickerPut StickerPut.StickerPut
   | -- | CR 103.5: a player declared whether they will take a mulligan.

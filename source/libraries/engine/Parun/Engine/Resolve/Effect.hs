@@ -592,6 +592,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.ForEachNumber payload -> Zones.forEachNumber applyLoopBody runSubgame resolving source controller legal chosen payload
   Effect.Repeat payload -> Zones.repeatArm applyLoopBody runSubgame resolving source controller legal chosen payload
   Effect.RepeatIf payload -> Zones.repeatIf applyLoopBody runSubgame resolving source controller legal chosen payload
+  Effect.Discover quantity -> Zones.discover applyLoopBody runSubgame resolving source controller legal chosen quantity
   Effect.Draw payload -> Zones.draw (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.Mill payload -> Zones.mill (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.Reveal payload -> Zones.reveal resolving source controller legal chosen payload

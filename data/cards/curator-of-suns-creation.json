@@ -1,0 +1,71 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Curator of Sun's Creation",
+      "oracleText": "Whenever you discover, discover again for the same value. This ability triggers only once each turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PlayerActs",
+            "value": {
+              "action": "Discover",
+              "player": "You"
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discover",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "thatMuch"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Artificer"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

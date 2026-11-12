@@ -938,6 +938,7 @@ effectPlayerRefs effect = case effect of
   Effect.Populate -> []
   Effect.TimeTravel -> []
   Effect.Recruit -> []
+  Effect.Discover {} -> []
   Effect.Learn -> []
   -- The printing's own reference: whose library the top card comes off.
   Effect.Cloak ref -> [ref]
@@ -1127,6 +1128,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Populate -> Map.empty
   Effect.TimeTravel -> Map.empty
   Effect.Recruit -> Map.empty
+  Effect.Discover quantity -> quantitySlots quantity
   Effect.Learn -> Map.empty
   Effect.Cloak {} -> Map.empty
   Effect.ManifestDread {} -> Map.empty
@@ -2012,6 +2014,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Populate -> True
   Effect.TimeTravel -> True
   Effect.Recruit -> True
+  Effect.Discover quantity -> Quantity.slotsAreExhaustive quantity
   Effect.Learn -> True
   Effect.Cloak {} -> True
   Effect.ManifestDread {} -> True
@@ -2318,6 +2321,7 @@ hasRead wanted =
         Effect.Populate -> False
         Effect.TimeTravel -> False
         Effect.Recruit -> False
+        Effect.Discover quantity -> Quantity.hasRead wanted quantity
         Effect.Learn -> False
         Effect.Cloak {} -> False
         Effect.ManifestDread {} -> False
@@ -2619,6 +2623,7 @@ boundSlots effect = case effect of
   Effect.Populate -> Set.empty
   Effect.TimeTravel -> Set.empty
   Effect.Recruit -> Set.empty
+  Effect.Discover _ -> Set.empty
   Effect.Learn -> Set.empty
   Effect.Cloak {} -> Set.empty
   Effect.ManifestDread {} -> Set.empty

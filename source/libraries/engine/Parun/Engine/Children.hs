@@ -1233,6 +1233,7 @@ effectChildren c effect = case effect of
   Effect.Learn -> pure effect
   Effect.TimeTravel -> pure effect
   Effect.Recruit -> pure effect
+  Effect.Discover quantity -> fmap Effect.Discover (onQuantity c quantity)
   Effect.Cloak who -> fmap Effect.Cloak (onPlayer c who)
   Effect.ManifestDread who -> fmap Effect.ManifestDread (onPlayer c who)
   Effect.Venture _ -> pure effect

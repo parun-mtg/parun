@@ -184,6 +184,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.Populate -> Set.empty
   Effect.TimeTravel -> Set.empty
   Effect.Recruit -> Set.empty
+  Effect.Discover _ -> Set.empty
   Effect.Learn -> Set.empty
   Effect.Cloak {} -> Set.empty
   Effect.ManifestDread {} -> Set.empty

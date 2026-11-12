@@ -1273,6 +1273,7 @@ damageOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
+  GameEvent.Discovered _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -1351,6 +1352,7 @@ revealOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
+  GameEvent.Discovered _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
@@ -12355,6 +12357,7 @@ abilityTriggeredOf event = case event of
   GameEvent.ArrivedUnseen _ -> Nothing
   GameEvent.Milled {} -> Nothing
   GameEvent.PlayerActed _ -> Nothing
+  GameEvent.Discovered _ -> Nothing
   GameEvent.LandPlayed {} -> Nothing
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing

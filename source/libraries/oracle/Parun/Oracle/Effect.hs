@@ -887,6 +887,13 @@ effect context e = case e of
   Effect.Amass (Amass.MkAmass who q AmassKind.EmpowerJace Nothing) -> do
     n <- Target.amount q
     imperative context who (Text.pack "empower Jace " <> n) (Text.pack "empowers Jace " <> n)
+  -- "Discover 5" (CR 701.57a); for the same value, Curator of Sun's Creation's
+  -- "discover again for the same value".
+  Effect.Discover (Quantity.InSlot slot)
+    | slot == Target.thatMuchSlot -> imperative context (PlayerRef.Relative PlayerRelation.You) (Text.pack "discover again for the same value") (Text.pack "discovers again for the same value")
+  Effect.Discover q -> do
+    n <- Target.amount q
+    imperative context (PlayerRef.Relative PlayerRelation.You) (Text.pack "discover " <> n) (Text.pack "discovers " <> n)
   -- "Scry 2" (CR 701.22a).
   Effect.Scry (PlayerQuantity.MkPlayerQuantity who q) -> do
     n <- Target.amount q

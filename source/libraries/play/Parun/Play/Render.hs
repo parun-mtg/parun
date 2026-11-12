@@ -49,6 +49,7 @@ import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
@@ -468,6 +469,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.BecameTarget {} -> Nothing
   GameEvent.PermanentActed {} -> Nothing
   GameEvent.PlayerActed a -> playerActed (PlayerActed.player a) (PlayerActed.action a)
+  GameEvent.Discovered d -> said [player (Discovered.player d), Text.pack "discovers", Text.pack (show (Discovered.value d))]
   -- CR 702.26b / 702.26n: a phased-out card's arrival in exile, which no seat sees.
   GameEvent.ArrivedUnseen {} -> Nothing
   GameEvent.DamagePrevented p ->
@@ -570,6 +572,7 @@ playerActed pid action = case action of
   -- Logged under the library's owner, who need not be the shuffler.
   PlayerAction.Shuffle -> Just (player pid <> Text.pack "'s library is shuffled.")
   PlayerAction.SearchLibrary -> does "searches their library"
+  PlayerAction.Discover -> does "discovers"
   where
     does predicate = Just (player pid <> Text.pack " " <> Text.pack predicate <> Text.pack ".")
 

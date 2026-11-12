@@ -96,46 +96,10 @@
                   {
                     "effects": [
                       {
-                        "type": "MoveToZone",
+                        "type": "Discover",
                         "value": {
-                          "ref": {
-                            "type": "TopOfLibraryUntil",
-                            "value": {
-                              "count": {
-                                "type": "Literal",
-                                "value": 1
-                              },
-                              "filter": {
-                                "type": "And",
-                                "value": [
-                                  {
-                                    "type": "Not",
-                                    "value": {
-                                      "type": "HasCardType",
-                                      "value": "Land"
-                                    }
-                                  },
-                                  {
-                                    "type": "Measures",
-                                    "value": {
-                                      "comparison": "AtMost",
-                                      "measure": "ManaValue",
-                                      "operand": {
-                                        "type": "Literal",
-                                        "value": 4
-                                      }
-                                    }
-                                  }
-                                ]
-                              },
-                              "player": {
-                                "type": "Relative",
-                                "value": "You"
-                              }
-                            }
-                          },
-                          "slot": "discovered",
-                          "zone": "Exile"
+                          "type": "Literal",
+                          "value": 4
                         }
                       }
                     ],
@@ -154,115 +118,6 @@
                         "value": "you"
                       }
                     }
-                  },
-                  {
-                    "effects": [
-                      {
-                        "type": "OfferCast",
-                        "value": {
-                          "offer": {
-                            "restriction": {
-                              "type": "Measures",
-                              "value": {
-                                "comparison": "AtMost",
-                                "measure": "ManaValue",
-                                "operand": {
-                                  "type": "Literal",
-                                  "value": 4
-                                }
-                              }
-                            },
-                            "withoutPayingManaCost": true
-                          },
-                          "ref": {
-                            "type": "EachCardFromAmong",
-                            "value": {
-                              "filter": {
-                                "type": "And",
-                                "value": [
-                                  {
-                                    "type": "Not",
-                                    "value": {
-                                      "type": "HasCardType",
-                                      "value": "Land"
-                                    }
-                                  },
-                                  {
-                                    "type": "Measures",
-                                    "value": {
-                                      "comparison": "AtMost",
-                                      "measure": "ManaValue",
-                                      "operand": {
-                                        "type": "Literal",
-                                        "value": 4
-                                      }
-                                    }
-                                  }
-                                ]
-                              },
-                              "slot": "discovered"
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "effects": [
-                      {
-                        "type": "MoveToZone",
-                        "value": {
-                          "ref": {
-                            "type": "EachCardFromAmong",
-                            "value": {
-                              "filter": {
-                                "type": "And",
-                                "value": [
-                                  {
-                                    "type": "Not",
-                                    "value": {
-                                      "type": "HasCardType",
-                                      "value": "Land"
-                                    }
-                                  },
-                                  {
-                                    "type": "Measures",
-                                    "value": {
-                                      "comparison": "AtMost",
-                                      "measure": "ManaValue",
-                                      "operand": {
-                                        "type": "Literal",
-                                        "value": 4
-                                      }
-                                    }
-                                  }
-                                ]
-                              },
-                              "slot": "discovered"
-                            }
-                          },
-                          "zone": "Hand"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "effects": [
-                      {
-                        "type": "MoveToZone",
-                        "value": {
-                          "placement": {
-                            "type": "RandomOrder",
-                            "value": "Bottom"
-                          },
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "discovered"
-                          },
-                          "zone": "Library"
-                        }
-                      }
-                    ]
                   }
                 ]
               }

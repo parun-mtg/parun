@@ -117,6 +117,7 @@ import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DiscardWay as DiscardWay
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.DrawnUnder as DrawnUnder
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
@@ -176,6 +177,7 @@ import qualified Parun.Types.PlanarDieFace as PlanarDieFace
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
@@ -2308,6 +2310,8 @@ representativeEvents cond =
         -- perspective player, on the PlayerBecomesMonarch arm's reasoning: an arm
         -- that stamped CR 109.5's "you" instead of the acting player would still
         -- agree with eventBindingSlots here if the two coincided.
+        -- CR 701.57b's discover is its own event, carrying the N.
+        TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed PlayerAction.Discover _) -> one (GameEvent.Discovered (Discovered.MkDiscovered S.bob 3))
         TriggerCondition.PlayerActs watched -> one (GameEvent.PlayerActed (PlayerActed.MkPlayerActed (PlayerActed.action watched) S.bob))
         -- CR 603.9's own event, the PlayerActs arm's shape and reasoning.
         TriggerCondition.PlayerLosesGame _ -> one (GameEvent.LostTheGame S.bob)

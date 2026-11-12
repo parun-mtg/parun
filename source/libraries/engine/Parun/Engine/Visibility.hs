@@ -140,6 +140,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.TriggeredAbilityResolved {} -> Visibility.Visible
   GameEvent.PermanentActed {} -> Visibility.Visible
   GameEvent.PlayerActed {} -> Visibility.Visible
+  GameEvent.Discovered {} -> Visibility.Visible
   GameEvent.StickerPut {} -> Visibility.Visible
 
 -- | CR 400.2: whether every player still in the game may see an object's face

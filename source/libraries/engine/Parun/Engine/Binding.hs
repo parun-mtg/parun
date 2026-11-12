@@ -1008,6 +1008,12 @@ earthbentLand = SlotName.MkSlotName (Text.pack "thatEarthbentLand")
 airbentObjects :: SlotName
 airbentObjects = SlotName.MkSlotName (Text.pack "thoseAirbentObjects")
 
+-- CR 701.57a: the reserved slot naming the cards a discover exiled, written by
+-- the walk Parun.Engine.Discover.process mints and read by its later steps.
+-- Reserved for airbentObjects' reason.
+discoveredCards :: SlotName
+discoveredCards = SlotName.MkSlotName (Text.pack "thoseDiscoverExiles")
+
 -- CR 701.72a: the reserved slot naming the PERMANENTS an assimilate names,
 -- which rule 701.72a's instructions act on. Placed in the arm's own `legal` by
 -- Parun.Engine.Resolve.Arms.Counters's Assimilate arm and never stored: the
