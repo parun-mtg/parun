@@ -408,6 +408,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseMutateSide {} -> named [MutateSide.Over, MutateSide.Under]
   Prompt.ChooseForage {} -> named [ForageMode.ExileCards, ForageMode.SacrificeFood]
   Prompt.ChooseParity {} -> named [Parity.Odd, Parity.Even]
+  Prompt.ChooseWord {} -> text
   Prompt.ChooseLearn _ _ _ offered -> maybeOf (indexed (NonEmpty.toList offered))
   Prompt.ChooseTimeTravel {} -> mapOf object (named [TimeTravelChoice.Add, TimeTravelChoice.Remove])
   Prompt.ChooseClash {} -> viaCodec Codec.LibraryPosition.codec

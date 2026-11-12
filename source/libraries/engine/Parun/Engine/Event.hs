@@ -5646,7 +5646,9 @@ chooseQualityAs candidate quality oid = do
 -- writes Object.chosenSubtype: no printing makes two such choices, and CR
 -- 607.2d links each to the ability that reads it. A card type is any of CR 205.2a's,
 -- and every one is offered. A parity is written to
--- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is.
+-- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is; a word as
+-- its 1-based position among the card's, read by a Quantity.ChosenNumber
+-- condition (CR 614.12c).
 chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Acquisition.Acquisition -> ObjectId -> Game ()
 chooseQuality quality chooser acquisition oid = case quality of
   ChosenQuality.Colors range -> do
@@ -5686,6 +5688,11 @@ chooseQuality quality chooser acquisition oid = case quality of
           Parity.Even -> 0
           Parity.Odd -> 1
     State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just written)) oid)
+  ChosenQuality.Word offered -> do
+    let numbered = zip [1 :: Natural ..] (NonEmpty.toList offered)
+    picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd numbered)
+    let position = picked >>= \word -> fst <$> List.find ((== word) . snd) numbered
+    Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
 
 -- CR 707.5 / 707.4: the copying process an AsCopy rewrite performs, on each
 -- event class it rides (CR 614.1c's entry, CR 614.1e's turning face up, CR

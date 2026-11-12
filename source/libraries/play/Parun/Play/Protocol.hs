@@ -434,6 +434,7 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseLibraryEnd _ _ source above -> choosing prompt "options" (Just source) [("above", natural above)] [LibraryPosition.Top, LibraryPosition.Bottom]
   Prompt.ChooseForage _ _ source -> choosing prompt "options" (Just source) [] [ForageMode.ExileCards, ForageMode.SacrificeFood]
   Prompt.ChooseParity _ _ source -> choosing prompt "options" (Just source) [] [Parity.Odd, Parity.Even]
+  Prompt.ChooseWord _ _ source offered -> choosing prompt "options" (Just source) [] (NonEmpty.toList offered)
   -- CR 702.140c: the creature it merges with.
   Prompt.ChooseMutateSide _ _ source onto -> choosing prompt "options" (Just source) [("onto", object onto)] [MutateSide.Over, MutateSide.Under]
   Prompt.ChooseBuyback _ _ source cost -> choosing prompt "options" (Just source) [("cost", payment cost)] [BuybackDecision.BuysBack, BuybackDecision.Declines]

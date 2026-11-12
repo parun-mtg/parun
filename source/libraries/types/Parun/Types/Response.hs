@@ -3,6 +3,7 @@ module Parun.Types.Response where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.AttackTarget as AttackTarget
@@ -849,6 +850,8 @@ data Response
     ChoseForage ForageMode.ForageMode
   | -- | CR 607.2d's answer to Prompt.ChooseParity: odd or even.
     ChoseParity Parity.Parity
+  | -- | CR 607.2f's answer to Prompt.ChooseWord: one of the card's words.
+    ChoseWord Text.Text
   | -- | CR 701.48a's answer: which branch of learning the learner took, or
     -- Nothing for neither.
     ChoseLearn (Maybe LearnMode.LearnMode)

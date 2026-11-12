@@ -1,0 +1,228 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Citadel Siege",
+      "oracleText": "As this enchantment enters, choose Khans or Dragons.\n• Khans — At the beginning of combat on your turn, put two +1/+1 counters on target creature you control.\n• Dragons — At the beginning of combat on each opponent's turn, tap target creature that player controls.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "ChooseQuality",
+                "value": {
+                  "type": "Word",
+                  "value": [
+                    "Khans",
+                    "Dragons"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "ChosenNumber"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "StepBegins",
+                    "value": {
+                      "phase": {
+                        "type": "Combat",
+                        "value": "BeginningOfCombat"
+                      },
+                      "scope": {
+                        "type": "PlayersTurn",
+                        "value": {
+                          "type": "Relative",
+                          "value": "You"
+                        }
+                      }
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "PutCounters",
+                                "value": {
+                                  "kind": {
+                                    "type": "PlusOnePlusOne"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 2
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "filter": {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            },
+                            "pool": {
+                              "type": "Creatures"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "ChosenNumber"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "StepBegins",
+                    "value": {
+                      "phase": {
+                        "type": "Combat",
+                        "value": "BeginningOfCombat"
+                      },
+                      "scope": {
+                        "type": "PlayersTurn",
+                        "value": {
+                          "type": "Relative",
+                          "value": "Opponent"
+                        }
+                      }
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Tap",
+                                "value": {
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "filter": {
+                              "type": "HeldByBound",
+                              "value": {
+                                "holder": "Controller",
+                                "slot": "thatPlayer"
+                              }
+                            },
+                            "pool": {
+                              "type": "Creatures"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

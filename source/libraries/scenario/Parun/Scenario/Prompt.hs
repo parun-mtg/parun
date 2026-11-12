@@ -118,6 +118,7 @@ kindOf prompt = Text.pack $ case prompt of
     SubtypeFamily.CreatureType -> "ChooseCreatureType"
     SubtypeFamily.PlaneswalkerType -> "ChoosePlaneswalkerType"
   Prompt.ChooseParity {} -> "ChooseParity"
+  Prompt.ChooseWord {} -> "ChooseWord"
   Prompt.ChooseSearchZones {} -> "ChooseSearchZones"
   Prompt.Search {} -> "Search"
   Prompt.CastWhileSearching {} -> "CastWhileSearching"

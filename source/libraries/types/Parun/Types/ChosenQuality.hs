@@ -1,5 +1,7 @@
 module Parun.Types.ChosenQuality where
 
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Text as Text
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
@@ -18,4 +20,6 @@ data ChosenQuality
     Number ChooseBetween.ChooseBetween
   | -- | CR 607.2d: odd or even, written to Object.chosenNumber as 0 or 1 for Filter.ManaValueParity to read (Gollum, Riddle Master).
     Parity
+  | -- | CR 607.2f / 614.12c: one of the card's words, written to Object.chosenNumber as its 1-based position for a Quantity.ChosenNumber condition to read (Citadel Siege).
+    Word (NonEmpty.NonEmpty Text.Text)
   deriving (Eq, Ord, Show)

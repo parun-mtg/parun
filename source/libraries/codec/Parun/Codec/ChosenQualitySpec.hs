@@ -1,5 +1,7 @@
 module Parun.Codec.ChosenQualitySpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Text as Text
 import qualified Parun.Codec.ChosenQuality as ChosenQuality
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -45,4 +47,10 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
       ChosenQuality.codec
       ChosenQuality.Parity
       " {\"type\":\"Parity\"} "
+  Spec.it s "Word (Citadel Siege)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.Word (Text.pack "Khans" NonEmpty.:| [Text.pack "Dragons"]))
+      " {\"type\":\"Word\",\"value\":[\"Khans\",\"Dragons\"]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenQuality.codec

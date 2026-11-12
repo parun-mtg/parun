@@ -225,6 +225,7 @@ encode p answer = case p of
   Prompt.ChooseActivePlayer {} -> Response.ChoseActivePlayer answer
   Prompt.ChooseSubtype {} -> Response.ChoseSubtype answer
   Prompt.ChooseParity {} -> Response.ChoseParity answer
+  Prompt.ChooseWord {} -> Response.ChoseWord answer
   Prompt.OrderTriggers {} -> Response.OrderedTriggers answer
   Prompt.OrderDamage {} -> Response.OrderedDamage answer
   Prompt.AllocateDamage {} -> Response.AllocatedDamage answer
@@ -631,6 +632,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.ChooseParity {} -> case response of
     Response.ChoseParity parity -> Just parity
+    _ -> Nothing
+  Prompt.ChooseWord {} -> case response of
+    Response.ChoseWord word -> Just word
     _ -> Nothing
   Prompt.OrderTriggers {} -> case response of
     Response.OrderedTriggers order -> Just order
@@ -1248,6 +1252,8 @@ defaultAnswer p = case p of
   -- CR 607.2d: odd and even are both legal; a short transcript takes the one
   -- the card names first.
   Prompt.ChooseParity {} -> Parity.Odd
+  -- CR 607.2f: every word is legal; a short transcript takes the first.
+  Prompt.ChooseWord _ _ _ offered -> NonEmpty.head offered
   -- CR 603.3b: the canonical order is always a legal answer.
   Prompt.OrderTriggers _ _ entries -> zipWith const [0 ..] entries
   -- CR 122.1c: likewise, and it is the order the batch was gathered in.
