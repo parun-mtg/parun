@@ -269,9 +269,18 @@ attackTargetAllowed barred oid target = not (Set.member (oid, target) barred)
 -- CR 306.6 / CR 508.1b: the planeswalkers a defending player controls, in
 -- ascending id order. PROJECTED rather than printed: CR 613.1d puts card types in
 -- layer 4.
+--
+-- CR 310.9b's first sentence drops one that is also a battle an attacking player
+-- (CR 506.2, 805.10a) protects: its protector can never attack it, as either
+-- kind. The designation is asked first, so a board with no battle projects
+-- nothing more.
 attackablePlaneswalkers :: PlayerId -> GameState -> [ObjectId]
 attackablePlaneswalkers defender gs =
-  filter (\oid -> Projection.isPlaneswalkerOf oid gs) (Projection.controls defender gs)
+  let attacking = Turn.activePlayers gs
+      protectedByAttacker oid =
+        maybe False (`List.elem` attacking) (Battle.protectorOf oid gs)
+          && Battle.isBattle (Projection.project oid gs)
+   in filter (\oid -> Projection.isPlaneswalkerOf oid gs && not (protectedByAttacker oid)) (Projection.controls defender gs)
 
 -- CR 310.5 / CR 508.1b: the battles a defending player PROTECTS, in ascending id
 -- order.
@@ -395,50 +404,48 @@ stillAttackedBattle oid gs =
 -- CR 506.4 / 506.4e: is the permanent this announcement named still being
 -- attacked? The announcement's kind is only where the attack started: a
 -- permanent that is both a planeswalker and a battle stays attacked while it is
--- either, so each arm also asks the other kind's list.
+-- either, so each arm also asks the other kind's question.
 --
--- The planeswalker arm's third disjunct is a battle with NO protector: one that
--- became a battle while being attacked, which CR 704.5x leaves unprotected for as
--- long as it is, and which stays attacked as a battle once it stops being a
--- planeswalker.
+-- The planeswalker arm's second disjunct is CR 506.4e's third sentence: still a
+-- battle, it is still attacked, whoever protects it -- a defending player, a
+-- player who defends nothing (CR 507.1), or nobody (CR 704.5x leaves one that
+-- became a battle while attacked unprotected). Its second sentence, a
+-- planeswalker announcement whose permanent stopped being a battle its
+-- protector does not control, needs to know it WAS a battle, so it is
+-- noteAttackingNothing's, against Parun.Types.Combat's attackedControlledBy.
 --
 -- CR 506.4e's second sentence is the battle arm's second disjunct: one that
 -- stops being a battle stays attacked as a planeswalker only while its protector
 -- controls it. That conjunct is a regression fence: CR 310.9a and CR 310.11 keep
 -- a battle with no battle types protected by its controller.
 --
--- The planeswalker arm asks neither question, so it answers by announcement kind
--- where CR 506.4e does not: a Siege that is a planeswalker, attacked as one,
--- stays attacked on losing the battle type though its protector does not control
--- it, and leaves combat on losing the planeswalker type if its protector is no
--- defending player. It takes a Siege made a planeswalker (Planeswalkerificate, with
--- Mycosynth Lattice and March of the Machines; the Aura and the Lattice are not in
--- the pool), at three seats or Two-Headed Giant (gap #6244).
---
--- Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat proves the other
--- disjuncts.
+-- Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat and
+-- data/scenarios/planeswalker-combat's "cr-506-4e-whole-cards" scenarios prove
+-- the disjuncts.
 targetStillAttacked :: AttackTarget.AttackTarget -> GameState -> Bool
 targetStillAttacked target gs = case target of
   AttackTarget.OfPlayer _ -> True
-  AttackTarget.OfPlaneswalker pw -> stillAttacked pw gs || stillAttackedBattle pw gs || unprotectedBattle pw
+  AttackTarget.OfPlaneswalker pw -> stillAttacked pw gs || stillBattle pw
   AttackTarget.OfBattle battle ->
     stillAttackedBattle battle gs
       || (stillAttacked battle gs && Projection.controllerOf battle gs == Battle.protectorOf battle gs)
   where
-    unprotectedBattle oid =
+    stillBattle oid =
       Set.member oid (GameState.battlefield gs)
-        && Maybe.isNothing (Battle.protectorOf oid gs)
         && Battle.isBattle (Projection.project oid gs)
 
--- CR 506.4's comparand for a CR 508.1b announcement that named a BATTLE: who
--- controls that battle. Nothing for a player or a planeswalker --
--- Parun.Types.Combat's attackedControlledBy says why the planeswalker needs none.
+-- CR 506.4's comparand for a CR 508.1b announcement whose permanent is a
+-- BATTLE: who controls that battle. Nothing for a player or a planeswalker that
+-- is no battle -- Parun.Types.Combat's attackedControlledBy says why the
+-- planeswalker needs none, and why one that is a battle too gets an entry.
 --
 -- One function so that the two writers of `attackers` cannot record the seat
 -- differently, which is what Defender.playerOf is for attackedUnder beside it.
 attackedBattleController :: AttackTarget.AttackTarget -> GameState -> Maybe PlayerId
 attackedBattleController target gs = case target of
   AttackTarget.OfBattle battle -> Projection.controllerOf battle gs
+  AttackTarget.OfPlaneswalker pw
+    | Battle.isBattle (Projection.project pw gs) -> Projection.controllerOf pw gs
   _ -> Nothing
 
 isCreatureObject :: ObjectId -> GameState -> Bool
@@ -2230,11 +2237,23 @@ noteAttackingNothing gs =
       protectorMoved attacker battle = case Map.lookup attacker (Combat.attackedUnder c) of
         Nothing -> False
         Just seat -> Battle.protectorOf battle gs /= Just seat
+      -- CR 506.4e's second sentence for a PLANESWALKER announcement: one that
+      -- was a battle too as this creature joined combat (attackedControlledBy
+      -- holds an entry only then) and has stopped being one is removed unless
+      -- its protector controls it. CR 310.9g keeps the protector to compare.
+      --
+      -- Not implemented: a planeswalker that becomes a battle only after this
+      -- creature joined combat gets no entry, so it is never removed this way
+      -- (#7021).
+      walkerUnprotected attacker pw =
+        Map.member attacker (Combat.attackedControlledBy c)
+          && not (Battle.isBattle (Projection.project pw gs))
+          && Battle.protectorOf pw gs /= Projection.controllerOf pw gs
       removed attacker target = case target of
         -- CR 800.4e, not CR 506.4: a departed player is still being attacked, and
         -- Damage.combatRecipient is where the damage goes missing.
         AttackTarget.OfPlayer _ -> False
-        AttackTarget.OfPlaneswalker pw -> not (targetStillAttacked target gs) || seatMoved attacker pw
+        AttackTarget.OfPlaneswalker pw -> not (targetStillAttacked target gs) || seatMoved attacker pw || walkerUnprotected attacker pw
         AttackTarget.OfBattle battle -> not (targetStillAttacked target gs) || battleSeatMoved attacker battle || protectorMoved attacker battle
       gone = Map.keysSet (Map.filterWithKey removed (Combat.attackers c))
    in gs

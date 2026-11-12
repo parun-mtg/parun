@@ -86,10 +86,11 @@ data Combat = MkCombat
     -- Stored for joinedUnder's reason, and SEPARATE from attackedUnder above
     -- because for a battle those are two different seats: CR 310.9d makes the
     -- defending player the battle's PROTECTOR, which a control change leaves
-    -- where it was (CR 310.9f). The planeswalker arm needs no entry here --
-    -- CR 508.5 with CR 506.2 makes a defending player the controller of the
-    -- planeswalker attacked, so attackedUnder already IS that permanent's
-    -- controller.
+    -- where it was (CR 310.9f). A planeswalker announcement needs no entry
+    -- for its controller -- CR 508.5 with CR 506.2 makes a defending player the
+    -- controller of the planeswalker attacked, so attackedUnder already IS that
+    -- permanent's controller -- but gets one when the permanent is a battle too,
+    -- the entry being what tells CR 506.4e's second sentence it was one.
     --
     -- Keyed by the ATTACKER for attackedUnder's reason: a battle one creature
     -- has stopped attacking can still be attacked by another put onto the
