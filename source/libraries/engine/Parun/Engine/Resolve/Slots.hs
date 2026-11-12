@@ -1079,7 +1079,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       (maybe Map.empty oneSlot dealer)
   -- BOTH fighters: CR 701.14a reads each one's power against the other, so a
   -- slot named by only one half would still look dangling.
-  Effect.Fight (Fight.MkFight first second) -> joinTwo (oneSlot first) (oneSlot second)
+  Effect.Fight (Fight.MkFight first second _) -> joinTwo (oneSlot first) (oneSlot second)
   -- The modification's own quantities read slots too, through
   -- Projection.quantitiesOf. The per-object name is subtracted: the arm itself
   -- binds it while it freezes, and nowhere else.

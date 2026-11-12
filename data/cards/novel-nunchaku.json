@@ -15,7 +15,8 @@
                       {
                         "type": "Fight",
                         "value": {
-                          "first": "target",
+                          "first": "self",
+                          "hop": "Host",
                           "second": "victim"
                         }
                       }

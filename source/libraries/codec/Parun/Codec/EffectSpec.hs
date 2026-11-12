@@ -1871,7 +1871,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Fight (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs"))))
+      (Effect.Fight (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs")) Hop.Itself))
       " {\"type\":\"Fight\",\"value\":{\"first\":\"mine\",\"second\":\"theirs\"}} "
   -- CR 506.4. Both ObjectRef arms, since the pool prints one of each: Labyrinth
   -- of Skophos' "remove target creature from combat" is the slot, and Save
