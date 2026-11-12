@@ -95,14 +95,16 @@ data CostComponent keyword
     -- Tamiyo, Compleated Sage's [-X] is this with an announced amount.
     RemoveLoyaltyFromThis CostAmount.CostAmount
   | -- | CR 118.1 as a cost / Barkhide Troll, Hickory Woodlot: remove this many
-    -- counters of one kind from the permanent the cost is on.
+    -- counters of one kind from the permanent the cost is on, or the one the
+    -- payload's slot names.
     RemoveCountersFromThis (CountersOnThis.CountersOnThis keyword)
   | -- | CR 118.1 as a cost / Zameck Guildmage, Tayam, Luminous Enigma,
     -- Retribution of the Ancients: remove this many counters from permanents
     -- matching the Filter, chosen by the payer.
     RemoveCounters (CountersFromPermanents.CountersFromPermanents keyword)
   | -- | CR 118.1 as a cost / Yisan, the Wanderer Bard, CR 701.63a's endure: put
-    -- this many counters of one kind on the permanent the cost is on.
+    -- this many counters of one kind on the permanent the cost is on, or the one
+    -- the payload's slot names.
     PutCountersOnThis (CountersOnThis.CountersOnThis keyword)
   | -- | CR 118.1 as a cost / The Serpent Society's ward: the paying player gets
     -- this many counters of one kind (CR 122.1).

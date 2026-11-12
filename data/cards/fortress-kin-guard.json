@@ -65,6 +65,14 @@
                               }
                             ]
                           },
+                          "creator": {
+                            "type": "HolderOfBound",
+                            "value": {
+                              "holder": "Controller",
+                              "hop": "Itself",
+                              "slot": "self"
+                            }
+                          },
                           "quantity": {
                             "type": "Literal",
                             "value": 1
@@ -79,7 +87,10 @@
                           {
                             "type": "PutCountersOnThis",
                             "value": {
-                              "count": 1,
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
                               "kind": {
                                 "type": "PlusOnePlusOne"
                               }
@@ -89,8 +100,12 @@
                         "mana": []
                       },
                       "payer": {
-                        "type": "InSlot",
-                        "value": "you"
+                        "type": "HolderOfBound",
+                        "value": {
+                          "holder": "Controller",
+                          "hop": "Itself",
+                          "slot": "self"
+                        }
                       }
                     }
                   }

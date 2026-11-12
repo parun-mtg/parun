@@ -143,8 +143,11 @@ data PayGate = MkPayGate
     perEach :: Maybe Quantity.Quantity,
     -- | The value of an {X} in `cost` when it was not announced but chosen as
     -- the ability resolves (CR 107.3f) -- Flameblast Dragon's "you may pay
-    -- {X}{R}", whose X an earlier Effect.ChooseNumber binds. Nothing reads CR
-    -- 107.3a's announcement instead. Unlike `perEach`, it leaves the {R} single.
+    -- {X}{R}", whose X an earlier Effect.ChooseNumber binds -- or the value the
+    -- text defines, Warden of the Grove's "endures X, where X is the number of
+    -- counters on this creature". Nothing reads CR 107.3a's announcement
+    -- instead. Unlike `perEach`, it leaves the {R} single and multiplies no
+    -- component, so endure X's counters are one placement (CR 701.63a).
     x :: Maybe Quantity.Quantity,
     -- | Which clause of this mode MAKES the offer, when it is not this one --
     -- CR 118.12 offers a resolution cost once and reads the one answer, so

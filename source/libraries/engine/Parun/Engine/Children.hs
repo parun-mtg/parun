@@ -1932,7 +1932,8 @@ data CostChildren keyword f = MkCostChildren
     costFilter :: Filter.Filter keyword -> f (Filter.Filter keyword),
     -- | A counter kind a component adds or removes (CR 122.1), whole.
     costCounterKind :: CounterKind.CounterKind keyword -> f (CounterKind.CounterKind keyword),
-    -- | The slot an unannounced amount is bound under (CR 107.3a, 601.2b).
+    -- | The slot an unannounced amount is bound under (CR 107.3a, 601.2b), or
+    -- that names the permanent a counter cost is on (CountersOnThis.holder).
     costSlot :: SlotName.SlotName -> f SlotName.SlotName,
     -- | The colour of mana symbols a tally counts (CR 202.1).
     costColor :: Color.Color -> f Color.Color,
@@ -2022,7 +2023,7 @@ whichCountersChildren c which = case which of
 
 -- | Counters put on or removed from the object the cost is on.
 countersOnThisChildren :: (Applicative f) => CostChildren keyword f -> CountersOnThis.CountersOnThis keyword -> f (CountersOnThis.CountersOnThis keyword)
-countersOnThisChildren c (CountersOnThis.MkCountersOnThis kind n) = CountersOnThis.MkCountersOnThis <$> costCounterKind c kind <*> pure n
+countersOnThisChildren c (CountersOnThis.MkCountersOnThis kind n holder) = CountersOnThis.MkCountersOnThis <$> costCounterKind c kind <*> costAmountChildren c n <*> traverse (costSlot c) holder
 
 -- | What an exile-totalling cost sums: only a colour tally holds a child.
 cardTallyChildren :: (Applicative f) => CostChildren keyword f -> CardTally.CardTally -> f CardTally.CardTally

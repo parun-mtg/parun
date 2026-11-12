@@ -88,6 +88,7 @@ import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CostBasis as CostBasis
+import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
@@ -3538,15 +3539,23 @@ modeSlots mode =
 -- bound's reason; and the slot a DESCRIBED cost reads its mana part off
 -- (Parun.Types.CostBasis, Flash's "its mana cost reduced by {2}"), at arity ONE
 -- since a slot naming several names no one mana cost and `describedCosts`
--- answers Nothing there rather than picking.
+-- answers Nothing there rather than picking. Every slot a component of the cost
+-- names, at arity ONE for the same reason: Warden of the Grove's endure puts its
+-- counters on one creature (Parun.Engine.Cost.counterHolder). Not CR 107.3's X,
+-- which the gate substitutes before any component reads it
+-- (Parun.Engine.Resolve.Common.gateCostOf), so Warden's "endures X" reads no
+-- slot.
 payGateSlots :: PayGate.PayGate -> Map.Map SlotName SlotArity
 payGateSlots gate =
   joinSlots
     [ playerRefSlots (PayGate.payer gate),
       maybe Map.empty quantitySlots (PayGate.perEach gate),
       maybe Map.empty quantitySlots (PayGate.x gate),
-      maybe Map.empty (oneSlot . CostBasis.slot) (PayGate.basis gate)
+      maybe Map.empty (oneSlot . CostBasis.slot) (PayGate.basis gate),
+      joinSlots (fmap oneSlot (filter (/= Binding.variableX) (foldMap costSlots (CostChoice.unwrap (PayGate.cost gate)))))
     ]
+  where
+    costSlots = Functor.getConst . Children.costChildren Children.costLeaves {Children.costSlot = \slot -> Functor.Const [slot]}
 
 -- The slot a target pool draws its candidates from, if it draws them from one
 -- (CR 400.1's per-player graveyard), read singly.
