@@ -22,7 +22,7 @@ import qualified Parun.Types.RulePermission as RulePermission
 import Parun.Types.RuleWaiver (RuleWaiver)
 
 -- CR 702.3b / 302.6: which of `candidates` an effect in force right now lifts
--- which rule for. Parun.Engine.CrewRestriction.cantCrew's body,
+-- which rule for. Parun.Engine.KeywordCostRestriction.prohibited's body,
 -- gate for gate: the same CR 305.7 and CR 613.1f ability losses asked of the
 -- source, the same CR 612.1 word swap over its affected set, read against the
 -- FULL projection (CR 613.11).

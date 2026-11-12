@@ -11,7 +11,7 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 
--- | An object with named keys, Parun.Codec.CrewRestriction's shape plus the
+-- | An object with named keys, Parun.Codec.KeywordCostRestriction's shape plus the
 -- kind of spell or ability stopped and, where narrower than every one of that
 -- kind, which. PARAMETRIC in the affected set for the type's reason: a face
 -- passes Parun.Codec.Affected's codec, a player effect a Filter's.

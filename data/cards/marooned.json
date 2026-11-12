@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "filter": {
+            "type": "Or",
+            "value": [
+              {
+                "type": "HasCardType",
+                "value": "Artifact"
+              },
+              {
+                "type": "HasCardType",
+                "value": "Creature"
+              }
+            ]
+          },
+          "pool": {
+            "type": "Permanents"
+          }
+        }
+      ],
+      "keywordCostRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HasAttached",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          },
+          "part": "BeamMeUp"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Marooned",
+      "oracleText": "Enchant artifact or creature\nWhen this Aura enters, you may pay {3}. If you do, tap enchanted permanent.\nEnchanted permanent doesn't untap during its controller's untap step and can't be beamed up.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "IsHostOfSource"
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "Generic",
+                            "value": 3
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      },
+      "untapRestrictions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HasAttached",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

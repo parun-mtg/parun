@@ -25,7 +25,7 @@
 -- ObjectRef with ChosenPermanents, the rule-affecting rows: RuleAbilities
 -- with its ActivationProhibition, AttachRestriction, RulePermission,
 -- AttackRequirement, BlockPermission, BlockRequirement, CounterRestriction,
--- CrewRestriction, EntryRestriction, SacrificeRestriction, TargetRestriction
+-- KeywordCostRestriction, EntryRestriction, SacrificeRestriction, TargetRestriction
 -- and UntapRestriction, the combat rules CombatRestriction, AttackCost,
 -- BlockCost and PerCreature, Affected, the mana payloads: ManaAddition with
 -- its ManaProduction, ManaCount, ManaRestriction, ManaRider and WhenSpent, and
@@ -103,7 +103,6 @@ import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
@@ -126,6 +125,7 @@ import qualified Parun.Types.HandAction as HandAction
 import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
@@ -293,7 +293,7 @@ contextNames = context
 --     (TurnRegisters.couldAttackThisTurn) read a record kept per object id,
 --     answered by Asking's keyed -- and the look-back atoms by its history too.
 --   * A RESOLUTION CONTEXT: the slot atoms, the slot and amount operands, the
---     attach and search subject atoms, CantCrewVehicles and
+--     attach and search subject atoms, CantPayKeywordCost and
 --     AttachedNoLaterThanSource's baked set, answered by slotNames and
 --     contextNames.
 --
@@ -312,7 +312,7 @@ filterNames asking criterion = case criterion of
   Filter.DeclaredThisTurn role -> keyed asking <> history asking (case role of BlockRole.Attacker -> HistoryRead.Attacks; BlockRole.Blocker -> HistoryRead.Blockers)
   Filter.CouldAttackThisTurn -> keyed asking
   Filter.LeftLibraryThisTurn how -> keyed asking <> case how of LibraryDeparture.Drawn -> mempty; LibraryDeparture.LastDrawn -> mempty; LibraryDeparture.Milled -> history asking HistoryRead.Mills
-  Filter.CantCrewVehicles -> contextNames asking
+  Filter.CantPayKeywordCost _ -> contextNames asking
   Filter.CrewedSourceThisTurn -> keyed asking <> history asking HistoryRead.Crews
   Filter.ConvokedSourceThisTurn -> keyed asking <> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
   Filter.SaddledSourceThisTurn -> keyed asking <> history asking HistoryRead.Saddles
@@ -596,8 +596,8 @@ commanderDeckRuleNames asking x = case x of
   CommanderDeckRule.AnyColorIdentity matching -> filterNames asking matching
   CommanderDeckRule.ChosenExtraColor matching -> filterNames asking matching
 
-crewRestrictionNames :: (Monoid r) => Asking r -> CrewRestriction.CrewRestriction -> r
-crewRestrictionNames asking = Const.getConst . Children.crewRestrictionChildren (ruleVisitors asking)
+keywordCostRestrictionNames :: (Monoid r) => Asking r -> KeywordCostRestriction.KeywordCostRestriction -> r
+keywordCostRestrictionNames asking = Const.getConst . Children.keywordCostRestrictionChildren (ruleVisitors asking)
 
 targetRestrictionNames :: (Monoid r) => Asking r -> TargetRestriction.TargetRestriction Affected.Affected -> r
 targetRestrictionNames asking = Const.getConst . Children.targetRestrictionChildren (ruleVisitors asking)
@@ -756,7 +756,7 @@ faceNames asking onCard =
           Children.faceCombatRestriction = Const.Const . combatRestrictionNames asking,
           Children.faceSacrificeRestriction = Const.Const . sacrificeRestrictionNames asking,
           Children.faceUntapRestriction = Const.Const . untapRestrictionNames asking,
-          Children.faceCrewRestriction = Const.Const . crewRestrictionNames asking,
+          Children.faceKeywordCostRestriction = Const.Const . keywordCostRestrictionNames asking,
           Children.faceTargetRestriction = Const.Const . targetRestrictionNames asking,
           Children.faceRulePermission = Const.Const . rulePermissionNames asking,
           Children.faceAttachRestriction = Const.Const . attachRestrictionNames asking,

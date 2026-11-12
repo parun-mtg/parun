@@ -11,13 +11,14 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import Data.Set (Set)
 import qualified Data.Set as Set
-import qualified Parun.Engine.CrewRestriction as CrewRestriction
 import qualified Parun.Engine.Filter as Filter
+import qualified Parun.Engine.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import Parun.Types.KeywordCostPart (KeywordCostPart)
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ProjectedCharacteristics (ProjectedCharacteristics)
 
@@ -38,9 +39,10 @@ data Snapshot = MkSnapshot
     -- CR 101.2: the permanents an effect in force says can't be sacrificed
     -- (SacrificeRestriction.cantBeSacrificed of the whole battlefield).
     unsacrificeable :: Set ObjectId,
-    -- CR 702.122d: the permanents an effect in force says can't crew
-    -- (CrewRestriction.cantCrew of the whole battlefield).
-    cantCrewVehicles :: Set ObjectId
+    -- CR 702.122d / 702.196b: per keyword cost part, the permanents an effect
+    -- in force says can't pay it (KeywordCostRestriction.prohibited of the
+    -- whole battlefield), each set gathered when first read.
+    cantPayKeywordCost :: Map KeywordCostPart (Set ObjectId)
   }
 
 -- The snapshot of `gs` over a board and grant list the caller already took of
@@ -59,7 +61,7 @@ given pcs grants_ gs =
           grants = grants_,
           views = \oid -> Maybe.fromMaybe (fresh oid) (Map.lookup oid viewed),
           unsacrificeable = SacrificeRestriction.cantBeSacrificed battlefield gs,
-          cantCrewVehicles = CrewRestriction.cantCrew battlefield gs
+          cantPayKeywordCost = Map.Lazy.fromSet (\part -> KeywordCostRestriction.prohibited part battlefield gs) (Set.fromList [minBound .. maxBound])
         }
 
 -- The whole board projected at once: for a caller about to ask about most of

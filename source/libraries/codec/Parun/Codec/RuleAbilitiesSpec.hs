@@ -18,9 +18,10 @@ import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterRestriction as CounterRestriction
-import qualified Parun.Types.CrewRestriction as CrewRestriction
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.KeywordCostPart as KeywordCostPart
+import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.PerCreature as PerCreature
@@ -58,7 +59,7 @@ testRuleAbilities =
       RuleAbilities.blockRequirements = [BlockRequirement.MkBlockRequirement Nothing (Just Affected.Attached) Nothing RequirementArity.EachSubject],
       RuleAbilities.combatRestrictions = [CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless Affected.Attached Nothing Nothing Nothing)],
       RuleAbilities.counterRestrictions = [CounterRestriction.MkCounterRestriction Affected.Attached (Just CounterKind.MinusOneMinusOne)],
-      RuleAbilities.crewRestrictions = [CrewRestriction.MkCrewRestriction Affected.Attached],
+      RuleAbilities.keywordCostRestrictions = [KeywordCostRestriction.MkKeywordCostRestriction KeywordCostPart.Crew Affected.Attached],
       RuleAbilities.entryRestrictions = [EntryRestriction.MkEntryRestriction Affected.Attached (Set.singleton Zone.Graveyard)],
       RuleAbilities.sacrificeRestrictions = [SacrificeRestriction.MkSacrificeRestriction Affected.Attached],
       RuleAbilities.targetRestrictions = [TargetRestriction.MkTargetRestriction Affected.Attached StackObjectKind.Spell (Filter.And [])],
@@ -77,7 +78,7 @@ testRuleAbilitiesJson =
     <> "\"blockRequirements\":[{\"attacker\":{\"type\":\"Attached\"}}],"
     <> "\"combatRestrictions\":[{\"type\":\"CantAttack\",\"value\":{\"affected\":{\"type\":\"Attached\"}}}],"
     <> "\"counterRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":{\"type\":\"MinusOneMinusOne\"}}],"
-    <> "\"crewRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
+    <> "\"keywordCostRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"part\":\"Crew\"}],"
     <> "\"entryRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"origins\":[\"Graveyard\"]}],"
     <> "\"sacrificeRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"targetRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":\"Spell\"}],"
