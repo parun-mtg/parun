@@ -180,6 +180,7 @@ import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
@@ -1680,6 +1681,7 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
+  ReplacementEffect.CounterLossR {} -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor effects)) -> Foldable.toList effects
   ReplacementEffect.DrawR {} -> []
   ReplacementEffect.DrawCountR {} -> []
@@ -1714,6 +1716,7 @@ replacementEffectRiders replacement = case replacement of
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
+  ReplacementEffect.CounterLossR {} -> []
   ReplacementEffect.DrawR {} -> []
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR {} -> []
@@ -4201,6 +4204,9 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeGainR {} -> []
+  -- CR 120.3c: the permanent losing the counters, and the kind, which may
+  -- carry a Filter as CounterR's does.
+  ReplacementEffect.CounterLossR row -> unframed [CounterLossR.onWhat row] <> counterKindFilters (CounterLossR.whichKind row)
   -- The pattern is one ControllerRelation; the wish filter a FromOutsideTheGame
   -- rewrite carries is the one Filter a draw row can hold (Ring of Maʼrûf) beside
   -- one a KeepOneOfTopThenDraw count reads, and it is CR 400.11c's, so it takes

@@ -1,6 +1,7 @@
 module Parun.Types.ReplacementEffect where
 
 import qualified Parun.Types.AttachR as AttachR
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DestructionR as DestructionR
@@ -154,6 +155,11 @@ data ReplacementEffect card ability effect
     -- Its pattern is barer than LifeLossR's. Not implemented: narrowing by
     -- cause, Rain of Gore's (#5810).
     LifeGainR LifeGainR.LifeGainR
+  | -- | CR 614.1a / 120.4c: damage that would remove a permanent's counters
+    -- leaves some on it (Deification). Its own arm beside CounterR, whose event
+    -- is a placement, and DamageR, which would change the damage dealt where
+    -- Deification's ruling has all of it dealt.
+    CounterLossR CounterLossR.CounterLossR
   | -- | CR 614.11 / 121.6: "the next time you would draw a card this turn, you
     -- gain 5 life instead" (Words of Worship). A separate arm from ZoneChangeR
     -- because CR 121.5 parts the two: a card an effect moves from a library to a

@@ -18,6 +18,7 @@ import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyRecipient as CopyRecipient
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterSubject as CounterSubject
@@ -221,6 +222,13 @@ spec s =
                 )
             )
             " {\"type\":\"LifeLossR\",\"value\":{\"matching\":{\"whose\":{\"type\":\"You\"},\"whichCause\":\"ByDamage\"},\"rewrite\":{\"type\":\"LeaveAtLeast\",\"value\":1}}} "
+        -- CR 614.1a / 120.3c: Deification, the CounterLossR producer.
+        Spec.it s "CounterLossR (Deification)" $
+          Common.assertCodec
+            s
+            codec
+            (ReplacementEffect.CounterLossR (CounterLossR.MkCounterLossR (Filter.HasCardType CardType.Planeswalker) CounterKind.Loyalty 1))
+            " {\"type\":\"CounterLossR\",\"value\":{\"onWhat\":{\"type\":\"HasCardType\",\"value\":\"Planeswalker\"},\"whichKind\":{\"type\":\"Loyalty\"},\"leaveAtLeast\":1}} "
         -- CR 614.1a / 119.10: Boon Reflection, the LifeGainR producer.
         Spec.it s "LifeGainR (Boon Reflection)" $
           Common.assertCodec

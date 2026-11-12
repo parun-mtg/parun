@@ -959,7 +959,7 @@ kirdApeSpec s registry = Spec.describe s "Kird Ape" $ do
 mirageOn :: ObjectId.ObjectId -> Subtype.Subtype -> Prompt.Prompt r -> r
 mirageOn landId subtype p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject landId))) sets
-  Prompt.ChooseBasicLandType {} -> subtype
+  Prompt.ChooseSubtype {} -> subtype
   _ -> S.identityAnswer p
 
 -- The one Convincing Mirage on the battlefield, by printed name (the

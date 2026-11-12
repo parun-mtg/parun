@@ -92,6 +92,7 @@ import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterSubject as CounterSubject
@@ -1578,6 +1579,8 @@ replacementRowReads re = case re of
   ReplacementEffect.LifeLossR {} -> ([], [])
   -- One ControllerRelation and one Scaling: no read at all, LifeLossR's answer.
   ReplacementEffect.LifeGainR {} -> ([], [])
+  -- The Filter over the permanent; the kind and the floor read no slot.
+  ReplacementEffect.CounterLossR r -> ([CounterLossR.onWhat r], [])
   -- The pattern is one ControllerRelation; a Filter can only ride the REWRITE, and
   -- drawRewriteReads below is what reports it.
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ rewrite) -> drawRewriteReads rewrite
@@ -1774,6 +1777,8 @@ overRelations f re = case re of
     let pat = LifeLossR.matching r
      in (\w -> ReplacementEffect.LifeLossR r {LifeLossR.matching = pat {LifeLossPattern.whose = w}}) <$> f (LifeLossPattern.whose pat)
   ReplacementEffect.LifeGainR r -> (\w -> ReplacementEffect.LifeGainR r {LifeGainR.whose = w}) <$> f (LifeGainR.whose r)
+  -- CR 109.5's relation rides the Filter (Filter.HeldBy Holder.Controller), EntryR's answer.
+  ReplacementEffect.CounterLossR _ -> pure re
   ReplacementEffect.DrawR r -> (\w -> ReplacementEffect.DrawR r {DrawR.whose = w}) <$> f (DrawR.whose r)
   ReplacementEffect.DrawCountR r -> (\w -> ReplacementEffect.DrawCountR r {DrawCountR.whose = w}) <$> f (DrawCountR.whose r)
   ReplacementEffect.InstructionR r -> (\w -> ReplacementEffect.InstructionR r {InstructionR.whose = w}) <$> f (InstructionR.whose r)
@@ -1832,6 +1837,7 @@ replacementRowEffects re = case re of
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []
+  ReplacementEffect.CounterLossR _ -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor effects)) -> Foldable.toList effects
   ReplacementEffect.DrawR _ -> []
   ReplacementEffect.DrawCountR _ -> []

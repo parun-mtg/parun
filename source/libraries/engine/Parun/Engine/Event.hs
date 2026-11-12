@@ -126,6 +126,7 @@ import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterKindFor as CounterKindFor
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Countering as Countering
@@ -2822,6 +2823,7 @@ shufflesAfter candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR {} -> False
   ReplacementEffect.LifeGainR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.DrawR {} -> False
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR {} -> False
@@ -4728,6 +4730,18 @@ apply settle batch applied batchPrevented candidate event =
         pure Nothing
     -- Unreachable: `applies` admits LifeLossR only against WouldLoseLife.
     (ReplacementEffect.LifeLossR {}, _) -> pure (Just event)
+    -- CR 614.1a / 120.4c: Deification's "instead all but one of those counters
+    -- are removed", the floor converted into the event's currency off the live
+    -- count, LifeLossRewrite.LeaveAtLeast's arm one event class over. The
+    -- damage itself is untouched, as Deification's ruling has it.
+    (ReplacementEffect.CounterLossR row, ProposedEvent.WouldLoseCountersToDamage oid kind n) -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      gs <- State.get
+      let kept = Natural.minusSaturating (Replacement.countersOn kind oid gs) (CounterLossR.leaveAtLeast row)
+      pure (Just (ProposedEvent.WouldLoseCountersToDamage oid kind (min n kept)))
+    -- Unreachable: `applies` admits CounterLossR only against
+    -- WouldLoseCountersToDamage.
+    (ReplacementEffect.CounterLossR {}, _) -> pure (Just event)
     -- CR 614.1a: Boon Reflection's "you gain twice that much life instead". The
     -- event is left STANDING at a rewritten gain rather than cancelled, the
     -- resizing loss arms above for their reason: CR 616.2's next iteration
@@ -5573,11 +5587,11 @@ chooseQualityAs candidate quality oid = do
 -- Colours go one prompt per colour, each offering the CR 105.1 colours not yet
 -- chosen ("two colors" are two different ones), so only a fifth is forced; a
 -- range ("the color or colors of your choice") first asks how many, as a
--- Prompt.ChooseNumber, and a fixed count asks nothing. CR
--- 305.6's basic land types and CR 205.3m's creature types are always all legal
--- and distinguishable, so there is no one-option case to elide. Both types
--- write Object.chosenSubtype: no printing makes both choices, and CR 607.2d
--- links each to the ability that reads it. A card type is any of CR 205.2a's,
+-- Prompt.ChooseNumber, and a fixed count asks nothing. A subtype family's
+-- members (CR 305.6, 205.3m, 205.3j) are always all legal and
+-- distinguishable, so there is no one-option case to elide. Every family
+-- writes Object.chosenSubtype: no printing makes two such choices, and CR
+-- 607.2d links each to the ability that reads it. A card type is any of CR 205.2a's,
 -- and every one is offered. A parity is written to
 -- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is.
 chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Acquisition.Acquisition -> ObjectId -> Game ()
@@ -5597,8 +5611,10 @@ chooseQuality quality chooser acquisition oid = case quality of
           pure (maybe chosen (`Set.insert` chosen) picked)
     picked <- Monad.foldM pick Set.empty [1 .. count]
     State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid)
-  ChosenQuality.BasicLandType -> subtype Prompt.ChooseBasicLandType
-  ChosenQuality.CreatureType -> subtype Prompt.ChooseCreatureType
+  ChosenQuality.Subtype family -> do
+    gs <- State.get
+    picked <- Game.choose (Prompt.ChooseSubtype (Decide.deciderFor chooser gs) chooser oid family)
+    State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just picked)) oid)
   ChosenQuality.CardType -> do
     gs <- State.get
     picked <- Game.choose (Prompt.ChooseCardType (Decide.deciderFor chooser gs) chooser oid (minBound NonEmpty.:| [succ minBound .. maxBound]))
@@ -5617,11 +5633,6 @@ chooseQuality quality chooser acquisition oid = case quality of
           Parity.Even -> 0
           Parity.Odd -> 1
     State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just written)) oid)
-  where
-    subtype prompt = do
-      gs <- State.get
-      picked <- Game.choose (prompt (Decide.deciderFor chooser gs) chooser oid)
-      State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just picked)) oid)
 
 -- CR 707.5 / 707.4: the copying process an AsCopy rewrite performs, on each
 -- event class it rides (CR 614.1c's entry, CR 614.1e's turning face up, CR
@@ -6629,9 +6640,9 @@ takeBackCopyException oid = State.modify' $ \gs ->
 -- 118.1's counter removal (its RemoveCountersFromThis arm).
 --
 -- NO CR 614.16 loop, unlike putCounters above: 614.16 replaces a PLACEMENT --
--- "if an effect would put one or more counters on a permanent" -- and no ReplacementEffect class in
--- Parun.Types.ReplacementEffect pairs with a removal (gap #6258), so there is
--- nothing for a loop to offer this to.
+-- "if an effect would put one or more counters on a permanent" -- and the one
+-- ReplacementEffect class pairing with a removal, CounterLossR, watches the
+-- counters damage removes (resolveCounterLoss), which never come through here.
 --
 -- SATURATING: removing more than are present leaves the kind absent from the map
 -- rather than negative, which is what keeps Object.counters a tally of what is
@@ -6786,6 +6797,21 @@ resolveLifeLossSpent settle asOf spent cause pid n =
         else do
           outcome <- applyReplacementsIn settle asOf Set.empty spent (ProposedEvent.WouldLoseLife cause pid n)
           pure (maybe 0 snd (outcome >>= Replacement.asLifeLoss))
+
+-- CR 120.3c / 120.3h / 120.4c: settle how many counters of a kind damage
+-- removes from a permanent, and answer with the settled count. Like
+-- resolveLifeLoss it does not write: Parun.Engine.Damage.processDamage owns
+-- the removal and its record. Zero proposes nothing. `asOf` is
+-- resolveLifeLossSpent's, so Deification's "as long as you control a creature"
+-- is judged before the batch (its ruling: the last creature dying in the same
+-- combat damage step still leaves it applying).
+resolveCounterLoss :: Game () -> Maybe GameState -> ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> Natural -> Game Natural
+resolveCounterLoss settle asOf oid kind n =
+  if n == 0
+    then pure 0
+    else do
+      outcome <- applyReplacementsIn settle asOf Set.empty Set.empty (ProposedEvent.WouldLoseCountersToDamage oid kind n)
+      pure (maybe 0 (\(_, _, settled) -> settled) (outcome >>= Replacement.asCounterLoss))
 
 -- CR 119.3 / 119.10 / 120.3f: settle how much life a player actually gains, and
 -- answer with the settled amount. resolveLifeLoss the other direction, and the

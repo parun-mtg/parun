@@ -125,6 +125,7 @@ import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -295,10 +296,10 @@ spec s registry = Spec.describe s "Bot" $ do
   -- than 256 seeds can draw; Convincing Mirage any of the five basic land
   -- types.
   Spec.it s "chooses any creature type or basic land type" $ do
-    let creatureTypes = drawn (Prompt.ChooseCreatureType decider S.alice oid)
+    let creatureTypes = drawn (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.CreatureType)
     Spec.assertBool s (all Engine.Subtype.isCreatureType creatureTypes) "every creature type drawn is one"
     Spec.assertGtWith s "creature types" (Set.size creatureTypes) 100
-    Spec.assertEqWith s "basic land types" (drawn (Prompt.ChooseBasicLandType decider S.alice oid)) (Set.fromList [Subtype.Plains, Subtype.Island, Subtype.Swamp, Subtype.Mountain, Subtype.Forest])
+    Spec.assertEqWith s "basic land types" (drawn (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType)) (Set.fromList [Subtype.Plains, Subtype.Island, Subtype.Swamp, Subtype.Mountain, Subtype.Forest])
 
   -- CR 118.1 / 601.2h / 608.2d: Zameck Guildmage's counter from any bearer;
   -- Novijen Sages' two from among bearers of 2 and 1, any way that adds up;

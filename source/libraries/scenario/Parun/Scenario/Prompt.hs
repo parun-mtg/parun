@@ -8,6 +8,7 @@ import qualified Data.Text as Text
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.CounterKindFor as CounterKindFor
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 -- The prompt's constructor name, for failure messages. Total for
 -- Parun.Engine.Driver.deciderOf's reason.
@@ -112,8 +113,10 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseTargets {} -> "ChooseTargets"
   Prompt.AnnounceTargets {} -> "AnnounceTargets"
   Prompt.ChooseWordSwap {} -> "ChooseWordSwap"
-  Prompt.ChooseBasicLandType {} -> "ChooseBasicLandType"
-  Prompt.ChooseCreatureType {} -> "ChooseCreatureType"
+  Prompt.ChooseSubtype _ _ _ family -> case family of
+    SubtypeFamily.BasicLandType -> "ChooseBasicLandType"
+    SubtypeFamily.CreatureType -> "ChooseCreatureType"
+    SubtypeFamily.PlaneswalkerType -> "ChoosePlaneswalkerType"
   Prompt.ChooseParity {} -> "ChooseParity"
   Prompt.ChooseSearchZones {} -> "ChooseSearchZones"
   Prompt.Search {} -> "Search"

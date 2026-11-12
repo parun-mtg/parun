@@ -1,6 +1,7 @@
 module Parun.Types.ChosenQuality where
 
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 -- | What a choice of a quality has its chooser pick, written to the object it
 -- is made for: as it enters (CR 614.1c, EntryRewrite.ChooseQuality), as it
@@ -9,10 +10,8 @@ import qualified Parun.Types.ChooseBetween as ChooseBetween
 data ChosenQuality
   = -- | CR 105.4: between least and most different colours, the chooser picking how many, written to Object.chosenColors (Painter's Servant, Scuttlemutt).
     Colors ChooseBetween.ChooseBetween
-  | -- | CR 305.6: one of the five basic land types, written to Object.chosenSubtype (Convincing Mirage, Mystic Compass).
-    BasicLandType
-  | -- | CR 205.3m: one creature type, written to Object.chosenSubtype (Pillar of Origins).
-    CreatureType
+  | -- | CR 205.3: one subtype of the family, written to Object.chosenSubtype (Convincing Mirage, Pillar of Origins, Deification).
+    Subtype SubtypeFamily.SubtypeFamily
   | -- | CR 205.2a: one card type, written to Object.chosenCardType (Umori, the Collector).
     CardType
   | -- | CR 607.2d: one number in the range, replacing the last, written to Object.chosenNumber (Shapeshifter).

@@ -255,6 +255,7 @@ import qualified Parun.Codec.CounterHolderSpec
 import qualified Parun.Codec.CounterKindSpec
 import qualified Parun.Codec.CounterLinkSpec
 import qualified Parun.Codec.CounterLinkedSpec
+import qualified Parun.Codec.CounterLossRSpec
 import qualified Parun.Codec.CounterMotionSpec
 import qualified Parun.Codec.CounterNameSpec
 import qualified Parun.Codec.CounterPatternSpec
@@ -1525,6 +1526,7 @@ spec s registry corpus = do
   Parun.Codec.LifeLossPatternSpec.spec s
   Parun.Codec.LifeLossRewriteSpec.spec s
   Parun.Codec.LifeLossRSpec.spec s
+  Parun.Codec.CounterLossRSpec.spec s
   Parun.Codec.LifeLossSpec.spec s
   Parun.Codec.LimitUnlessSpec.spec s
   Parun.Codec.LoggedEventSpec.spec s

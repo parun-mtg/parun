@@ -458,14 +458,8 @@ data Response
     AnnouncedTargets (Map.Map SlotName.SlotName Natural.Natural)
   | -- | CR 612: the (from, to) words a text-changer's caster chose.
     ChoseWordSwap (TextWord.TextWord, TextWord.TextWord)
-  | -- | CR 614.1c: the basic land type a player chose as an object entered.
-    -- Singular, and distinct from ChoseWordSwap above for
-    -- Prompt.ChooseBasicLandType's reason.
-    ChoseBasicLandType Subtype.Subtype
-  | -- | CR 614.1c: the creature type a player chose as an object entered.
-    -- Distinct from ChoseBasicLandType above because the two prompts are, and a
-    -- replay must not answer one with the other's record.
-    ChoseCreatureType Subtype.Subtype
+  | -- | CR 205.3: the subtype a player chose (Prompt.ChooseSubtype).
+    ChoseSubtype Subtype.Subtype
   | -- | CR 701.23: which of the places a multi-place search named the searcher
     -- chose to look through (Prompt.ChooseSearchZones). Distinct from Searched,
     -- which records what they then found: Delivery Moogle asks both, one after

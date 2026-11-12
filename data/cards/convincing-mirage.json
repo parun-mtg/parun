@@ -38,7 +38,8 @@
               "rewrite": {
                 "type": "ChooseQuality",
                 "value": {
-                  "type": "BasicLandType"
+                  "type": "Subtype",
+                  "value": "BasicLandType"
                 }
               }
             }

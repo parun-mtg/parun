@@ -913,7 +913,7 @@ bulwarkBoard s registry gs = do
 -- below needs two answers on one board, so the type is a parameter.
 choosingCreatureType :: Subtype.Type.Subtype -> Prompt.Prompt r -> r
 choosingCreatureType subtype p = case p of
-  Prompt.ChooseCreatureType {} -> subtype
+  Prompt.ChooseSubtype {} -> subtype
   _ -> S.identityAnswer p
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

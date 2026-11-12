@@ -1095,31 +1095,19 @@ processDamage settle events = do
           else
             let hurt obj = obj {Object.damage = Object.damage obj + DamageEvent.amount ev}
              in g {GameState.objects = Map.adjust hurt oid (GameState.objects g)}
-      -- CR 306.8 / CR 120.3c and CR 310.6 / CR 120.3h: damage dealt to a
-      -- planeswalker removes that many LOYALTY counters, and damage dealt to a
-      -- battle that many DEFENSE counters. One function, because the two rules
-      -- differ in nothing but the counter kind and read the same three ways:
-      -- removed directly rather than through a "would remove counters"
-      -- sub-replacement, no ReplacementEffect class pairing with a removal
-      -- (gap #6258) -- CR 614.16 scales counters an effect PUTS on -- floored at 0
+      -- CR 306.8 / CR 120.3c and CR 310.6 / CR 120.3h: the loyalty or defense
+      -- counters the `counterLosses` pass below settled, removed. Floored at 0
       -- rather than wrapped, because Object.counters is Natural while CR 306.5c
       -- makes loyalty and CR 122.1g defense the COUNT of those counters, and
       -- destroying nothing (CR 120.5): CR 704.5i and CR 704.5v are what read the 0.
-      removeCounters kind ev oid g =
+      removeCounters g (oid, kind, n) =
         let have obj = Map.findWithDefault 0 kind (Object.counters obj)
-            strip obj =
-              obj
-                { Object.counters =
-                    Map.insert
-                      kind
-                      (Natural.minusSaturating (have obj) (DamageEvent.amount ev))
-                      (Object.counters obj)
-                }
+            strip obj = obj {Object.counters = Map.insert kind (Natural.minusSaturating (have obj) n) (Object.counters obj)}
          in g {GameState.objects = Map.adjust strip oid (GameState.objects g)}
-      -- CR 120.3's "one or more of the following results", read off
-      -- Projection.damagedCardTypes: every result the recipient's card types earn it applies,
-      -- rather than the first one that matches. A permanent that is both a creature
-      -- and a planeswalker takes CR 120.3e's mark AND loses CR 120.3c's loyalty
+      -- CR 120.3e's mark, for a recipient Projection.damagedCardTypes calls a
+      -- creature. CR 120.3's other results for a permanent, CR 120.3c's and CR
+      -- 120.3h's counters, are `counterLosses` below, so a permanent that is
+      -- both a creature and a planeswalker takes the mark AND loses loyalty
       -- counters from one event.
       --
       -- `board` is the state the batch is applied AGAINST and not the accumulator,
@@ -1127,13 +1115,20 @@ processDamage settle events = do
       -- board -- CR 510.2's simultaneity, which an earlier event in the fold must
       -- not disturb.
       onPermanent ev oid g =
-        let results =
-              [ (CardType.Creature, markCreature ev oid),
-                (CardType.Planeswalker, removeCounters CounterKind.Loyalty ev oid),
-                (CardType.Battle, removeCounters CounterKind.Defense ev oid)
-              ]
-            apply h (cardType, result) = if Set.member cardType (damagedTypesOf ev) then result h else h
-         in List.foldl' apply g results
+        if Set.member CardType.Creature (damagedTypesOf ev) then markCreature ev oid g else g
+      -- CR 120.3c and CR 120.3h: the card type that earns each counter result,
+      -- and the kind it removes.
+      counterResultKinds = [(CardType.Planeswalker, CounterKind.Loyalty), (CardType.Battle, CounterKind.Defense)]
+      -- The counters of `kind` the whole batch's damage removes from `oid`,
+      -- summed over every surviving event whose recipient `board` gives the card
+      -- type: CR 510.2's simultaneous damage is one removal, so a replacement
+      -- reading "would result in all loyalty counters on it being removed"
+      -- (Deification) sees the batch's total.
+      counterLossOf oid (cardType, kind) =
+        ( oid,
+          kind,
+          sum [DamageEvent.amount ev | ev <- survivors, permanentHit ev == Just oid, Set.member cardType (damagedTypesOf ev)]
+        )
       -- onPermanent's classification, hoisted so `counterResults` below shares it:
       -- CR 120.3d's counters go to a CREATURE recipient, the same card type CR
       -- 120.3e's mark answers to, so the two readings of "is this a creature" must
@@ -1443,6 +1438,19 @@ processDamage settle events = do
         Monad.when (n > 0) (State.modify' (Game.adjustLife pid (negate (toInteger n))))
         pure n
       _ -> pure 0
+  -- CR 120.4c's counter half for a permanent: CR 120.3c's loyalty and CR
+  -- 120.3h's defense counters, each removal settled through
+  -- Event.resolveCounterLoss, the CR 616.1 loop, so a CounterLossR row
+  -- (Deification) shrinks it. A monadic pass ahead of the fold for `lost`'s
+  -- reason. The DAMAGE is untouched: lifelink, `tallyOne` and the DamageDealt
+  -- record all still read DamageEvent.amount, Deification's ruling.
+  counterLosses <-
+    Monad.forM
+      [counterLossOf oid result | oid <- ListUtils.nubOrd (Maybe.mapMaybe permanentHit survivors), result <- counterResultKinds]
+      ( \(oid, kind, n) -> do
+          settled <- Event.resolveCounterLoss settle (Just board) oid kind n
+          pure (oid, kind, settled)
+      )
   -- CR 608.2i: each surviving event is RECORDED, not enqueued. Sba consumes by
   -- bumping TurnRegisters.damageScannedThrough; the record survives the check.
   --
@@ -1470,7 +1478,7 @@ processDamage settle events = do
   -- (Parun.ReplacementSpec).
   State.modify'
     ( \gs ->
-        let marked = List.foldl' markOne gs survivors
+        let marked = List.foldl' removeCounters (List.foldl' markOne gs survivors) counterLosses
             tallied = List.foldl' tallyOne marked survivors
             noted = List.foldl' (\g p -> tallyPrevention p (Event.recordEvent (GameEvent.DamagePrevented (DamagePrevented.MkDamagePrevented (Prevention.by p) (Prevention.amounts p))) g)) tallied (filter (\p -> sum (fmap sum (Prevention.amounts p)) > 0) prevented)
             dealt = List.foldl' (\g ev -> Event.recordEvent (GameEvent.DamageDealt ev) g) noted survivors

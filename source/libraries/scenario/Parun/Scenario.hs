@@ -1185,10 +1185,8 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.PayLifeForMana {} -> True
   Prompt.Type.ReturnCommander {} -> True
   Prompt.Type.DeclareMulligan {} -> True
-  -- A subtype for the prompt's card type (CR 205.3e): a creature type (CR
-  -- 205.3m), a basic land type (CR 305.6).
-  Prompt.Type.ChooseCreatureType {} -> Engine.Subtype.isCreatureType chosen
-  Prompt.Type.ChooseBasicLandType {} -> Engine.Subtype.isBasicLandType chosen
+  -- A subtype of the prompt's family (CR 205.3).
+  Prompt.Type.ChooseSubtype _ _ _ family -> Engine.Subtype.inFamily family chosen
   -- Any card name, an open class the prompt does not list (legalAnswer's
   -- question).
   Prompt.Type.ChooseCardName {} -> True

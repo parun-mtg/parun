@@ -162,6 +162,11 @@ data ProposedEvent
     -- field's currency, so CR 616.2's next iteration sees a smaller loss rather
     -- than a differently-shaped event.
     WouldLoseLife LifeLossCause.LifeLossCause PlayerId.PlayerId Natural.Natural
+  | -- | CR 120.3c / 120.3h / 120.4c: damage would remove this many counters of
+    -- this kind from a permanent, the whole batch's removal summed. Raised by
+    -- Parun.Engine.Damage.processDamage alone: no other removal is a damage
+    -- result.
+    WouldLoseCountersToDamage ObjectId.ObjectId (CounterKind.CounterKind Keyword.Keyword) Natural.Natural
   | -- | CR 119.3 / 119.10: a player would gain life. Raised by
     -- Parun.Engine.Event.resolveLifeGain, the one funnel every gain goes through
     -- -- Parun.Engine.Resolve's Effect.GainLife arm and its changeLifeByDelta,

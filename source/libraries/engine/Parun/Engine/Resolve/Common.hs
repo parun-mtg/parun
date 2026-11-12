@@ -1812,6 +1812,7 @@ referentsOfReplacement re = case re of
   ReplacementEffect.UntapR _ -> []
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []
+  ReplacementEffect.CounterLossR _ -> []
   ReplacementEffect.DrawR _ -> []
   ReplacementEffect.DrawCountR _ -> []
   ReplacementEffect.InstructionR _ -> []
@@ -4054,7 +4055,7 @@ distributes total offered answer =
 -- The objects a RemoveCountersAmong names that carry the kind, with how many
 -- each carries: Parun.Engine.Cost.spreadRemovalCandidates' shape.
 carrying :: GameState -> CounterKind.CounterKind Keyword.Type.Keyword -> [ObjectId] -> Map.Map ObjectId Natural
-carrying gs kind candidates = Map.filter (> 0) (Map.fromList [(candidate, Cost.countersOn kind candidate gs) | candidate <- candidates])
+carrying gs kind candidates = Map.filter (> 0) (Map.fromList [(candidate, Replacement.countersOn kind candidate gs) | candidate <- candidates])
 
 -- A loop's per-run scope: the slots its body defines put back to
 -- what the resolving object held before the first run, so a run that binds

@@ -5,6 +5,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
@@ -26,18 +27,12 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
       ChosenQuality.codec
       (ChosenQuality.Number ChooseBetween.MkChooseBetween {ChooseBetween.least = 0, ChooseBetween.most = 7})
       " {\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}} "
-  Spec.it s "BasicLandType (Convincing Mirage)" $
+  Spec.it s "Subtype (Deification)" $
     Common.assertCodec
       s
       ChosenQuality.codec
-      ChosenQuality.BasicLandType
-      " {\"type\":\"BasicLandType\"} "
-  Spec.it s "CreatureType (Pillar of Origins)" $
-    Common.assertCodec
-      s
-      ChosenQuality.codec
-      ChosenQuality.CreatureType
-      " {\"type\":\"CreatureType\"} "
+      (ChosenQuality.Subtype SubtypeFamily.PlaneswalkerType)
+      " {\"type\":\"Subtype\",\"value\":\"PlaneswalkerType\"} "
   Spec.it s "CardType (Umori, the Collector)" $
     Common.assertCodec
       s

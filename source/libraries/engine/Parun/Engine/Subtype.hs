@@ -15,6 +15,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 -- | CR 305.6: the mana an object with the land card type and this basic land
 -- type has an intrinsic "{T}: Add [mana symbol]" ability for, or Nothing for
@@ -79,6 +80,14 @@ isBasicLandType = Maybe.isJust . subtypeMana
 -- | CR 205.3j: read off correlatedCardTypes below, so the list exists once.
 isPlaneswalkerType :: Subtype.Subtype -> Bool
 isPlaneswalkerType = Set.member CardType.Planeswalker . correlatedCardTypes
+
+-- | CR 205.3: is this subtype on the family's list, the options a
+-- Prompt.ChooseSubtype offers.
+inFamily :: SubtypeFamily.SubtypeFamily -> Subtype.Subtype -> Bool
+inFamily family = case family of
+  SubtypeFamily.BasicLandType -> isBasicLandType
+  SubtypeFamily.CreatureType -> isCreatureType
+  SubtypeFamily.PlaneswalkerType -> isPlaneswalkerType
 
 -- | CR 205.3i
 isLandType :: Subtype.Subtype -> Bool

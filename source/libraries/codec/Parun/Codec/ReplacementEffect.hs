@@ -2,6 +2,7 @@ module Parun.Codec.ReplacementEffect where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.AttachR as AttachR
+import qualified Parun.Codec.CounterLossR as CounterLossR
 import qualified Parun.Codec.CounterR as CounterR
 import qualified Parun.Codec.DamageR as DamageR
 import qualified Parun.Codec.DestructionR as DestructionR
@@ -52,6 +53,7 @@ codec cardCodec abilityCodec effectCodec =
       Arm.payload "UntapR" UntapR.codec ReplacementEffect.UntapR (\x -> case x of ReplacementEffect.UntapR y -> Just y; _ -> Nothing),
       Arm.payload "LifeLossR" LifeLossR.codec ReplacementEffect.LifeLossR (\x -> case x of ReplacementEffect.LifeLossR y -> Just y; _ -> Nothing),
       Arm.payload "LifeGainR" LifeGainR.codec ReplacementEffect.LifeGainR (\x -> case x of ReplacementEffect.LifeGainR y -> Just y; _ -> Nothing),
+      Arm.payload "CounterLossR" CounterLossR.codec ReplacementEffect.CounterLossR (\x -> case x of ReplacementEffect.CounterLossR y -> Just y; _ -> Nothing),
       Arm.payload "DrawR" (DrawR.codec effectCodec) ReplacementEffect.DrawR (\x -> case x of ReplacementEffect.DrawR y -> Just y; _ -> Nothing),
       Arm.payload "DrawCountR" DrawCountR.codec ReplacementEffect.DrawCountR (\x -> case x of ReplacementEffect.DrawCountR y -> Just y; _ -> Nothing),
       Arm.payload "InstructionR" InstructionR.codec ReplacementEffect.InstructionR (\x -> case x of ReplacementEffect.InstructionR y -> Just y; _ -> Nothing),
@@ -76,6 +78,7 @@ tagOf x = case x of
   ReplacementEffect.UntapR {} -> "UntapR"
   ReplacementEffect.LifeLossR {} -> "LifeLossR"
   ReplacementEffect.LifeGainR {} -> "LifeGainR"
+  ReplacementEffect.CounterLossR {} -> "CounterLossR"
   ReplacementEffect.DrawR {} -> "DrawR"
   ReplacementEffect.GameLossR {} -> "GameLossR"
   ReplacementEffect.PlaneswalkR {} -> "PlaneswalkR"

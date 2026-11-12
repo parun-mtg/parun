@@ -109,6 +109,7 @@ import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TimeTravelChoice as TimeTravelChoice
 import qualified Parun.Types.TriggerEntry as TriggerEntry
@@ -508,18 +509,18 @@ combatReplaySpec s =
         -- that collapsed two would replay a Convincing Mirage naming Island as
         -- one naming Mountain, and Mountain is exactly what defaultAnswer falls
         -- back to, so an undistinguished Mountain would hide the bug.
-        Spec.it s "ChooseBasicLandType records and replays a Subtype" $ do
-          let p = Prompt.ChooseBasicLandType decider S.alice oid
+        Spec.it s "ChooseSubtype records and replays a basic land type" $ do
+          let p = Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType
           Monad.forM_ [Subtype.Plains, Subtype.Island, Subtype.Swamp, Subtype.Mountain, Subtype.Forest] $ \subtype ->
             Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p subtype)) (Just subtype)
         -- CR 305.6: a transcript that runs short still answers with one of the
         -- five.
         Spec.it s "defaultAnswer chooses Mountain" $
-          Spec.assertEqWith s "Mountain" (Replay.defaultAnswer (Prompt.ChooseBasicLandType decider S.alice oid)) Subtype.Mountain
+          Spec.assertEqWith s "Mountain" (Replay.defaultAnswer (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType)) Subtype.Mountain
         -- CR 702.155b / 715.3b: the chapter a Saga with read ahead enters on.
         -- Round-tripped at 2 and 3 rather than at 1, since 1 is what
         -- defaultAnswer falls back to and a collapsing codec would hide behind
-        -- it -- the same trap ChooseBasicLandType's Mountain names.
+        -- it -- the same trap ChooseSubtype's Mountain names.
         Spec.it s "ChooseReadAheadChapter records and replays a Natural" $ do
           let p = Prompt.ChooseReadAheadChapter decider S.alice oid 3
           Monad.forM_ [1, 2, 3] $ \chapter ->
