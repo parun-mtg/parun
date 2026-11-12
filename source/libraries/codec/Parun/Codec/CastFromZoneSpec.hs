@@ -8,6 +8,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.ExiledPile as ExiledPile
@@ -22,8 +23,10 @@ import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.WhichCounters as WhichCounters
+import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -42,7 +45,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
-            CastFromZone.alternativeCost = Nothing
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]}} "
@@ -60,7 +64,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
-            CastFromZone.alternativeCost = Nothing
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -80,7 +85,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
-            CastFromZone.alternativeCost = Nothing
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Library\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachTurn\"} "
@@ -99,7 +105,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
-            CastFromZone.alternativeCost = Nothing
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachOfYourTurns\",\"verb\":\"Play\"} "
@@ -117,7 +124,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AnyType,
-            CastFromZone.alternativeCost = Nothing
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"spending\":\"AnyType\"} "
@@ -136,6 +144,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing,
             CastFromZone.additionalCosts = [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (CostAmount.Fixed 3) WhichCounters.OfAnyKind (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]) CounterSpread.FromAmong)]
           }
       )
@@ -155,7 +164,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 2,
             CastFromZone.spending = ManaSpending.AsProduced,
-            CastFromZone.alternativeCost = Nothing
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"Play\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"reduction\":2} "
@@ -174,8 +184,29 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.additionalCosts = [],
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
-            CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost []))
+            CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
+            CastFromZone.entersWith = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]},\"limit\":\"OnceEachOfYourTurns\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]}} "
+  -- Leonardo, Sewer Samurai: a creature cast this way enters with a finality
+  -- counter (CR 614.1d).
+  Spec.it s "entry counters" $
+    Common.assertCodec
+      s
+      CastFromZone.codec
+      ( CastFromZone.MkCastFromZone
+          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Graveyard, InZone.player = PlayerRef.Relative PlayerRelation.You},
+            CastFromZone.matching = Filter.And [],
+            CastFromZone.limit = PermissionLimit.Unlimited,
+            CastFromZone.verb = PermissionVerb.Cast,
+            CastFromZone.pool = PermissionPool.EveryCard,
+            CastFromZone.additionalCosts = [],
+            CastFromZone.reduction = 0,
+            CastFromZone.spending = ManaSpending.AsProduced,
+            CastFromZone.alternativeCost = Nothing,
+            CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1))
+          }
+      )
+      " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"entersWith\":[{\"kind\":{\"type\":\"Finality\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CastFromZone.codec

@@ -66,6 +66,8 @@ import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntwineDecision as EntwineDecision
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expended as Expended
@@ -121,6 +123,7 @@ import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Scratch as Scratch
@@ -3036,7 +3039,8 @@ ownPayingWays oid face gs =
           CastFromZone.additionalCosts = additional,
           CastFromZone.reduction = 0,
           CastFromZone.spending = ManaSpending.AsProduced,
-          CastFromZone.alternativeCost = Nothing
+          CastFromZone.alternativeCost = Nothing,
+          CastFromZone.entersWith = Nothing
         }
     )
   | CastingPermission.CastFromGraveyard _ additional@(_ : _) <- Cost.permissionsOf oid face gs
@@ -3191,6 +3195,42 @@ bindUser spent spell gs =
           gs
             { GameState.stored = (GameState.stored gs) {StoredEffects.playerEffects = fmap bindPlayer (StoredEffects.playerEffects (GameState.stored gs)), StoredEffects.replacements = fmap bindReplacement (StoredEffects.replacements (GameState.stored gs))}
             }
+
+-- CR 614.1d / 400.7h: "If you cast a spell this way, that creature enters with
+-- a finality counter on it" (Leonardo, Sewer Samurai), the entry rider of the
+-- permission the cast of `spell` was made under: one floating EntryR row naming
+-- the spell, which Parun.Engine.Event.reenter follows onto the permanent it
+-- becomes. Nothing for a cast made under no permission or one stating none.
+--
+-- STORED as the spell is cast, as Parun.Engine.Event.permissionRiders' rows
+-- are, so the rider outlives its source: docs/decisions.md, "Does a
+-- permission's entry rider outlive its source?". Scenarios under
+-- data/scenarios/cast-permission prove it on Leonardo and on Mikey & Don,
+-- Party Planners.
+--
+-- CR 614.3's `uses` is Once and its expiry is Never, armCastFromGraveyard's
+-- reason: a spell resolves once, and the rider states no duration.
+installPermissionEntry :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone) -> ObjectId -> GameState -> GameState
+installPermissionEntry caster permission spell gs = case permission of
+  Just (src, grant)
+    | Just counters <- CastFromZone.entersWith grant ->
+        let (ts, gs1) = Game.freshTimestamp gs
+            active =
+              ActiveReplacement.MkActiveReplacement
+                { ActiveReplacement.effect = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.IsBound Binding.castSpell) (EntryRewrite.WithCounters counters)),
+                  ActiveReplacement.source = src,
+                  ActiveReplacement.controller = caster,
+                  ActiveReplacement.timestamp = ts,
+                  ActiveReplacement.expiry = Expiry.Never,
+                  ActiveReplacement.uses = Uses.Once,
+                  ActiveReplacement.origin = ReplacementOrigin.Other,
+                  ActiveReplacement.condition = Nothing,
+                  ActiveReplacement.rider = Nothing,
+                  ActiveReplacement.slots = Map.singleton Binding.castSpell (Set.singleton spell),
+                  ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf src gs) src gs
+                }
+         in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored gs1)}}
+  _ -> gs
 
 -- CR 601.2a / 106.6: the pooled units baked with this card as their source's
 -- last exiled card (Parun.Types.ManaUnit.sourceLastExiled) now name the spell the
@@ -4291,6 +4331,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- is stored before the event below snapshots the spell.
                           -- Nothing past the convoke record rejects.
                           State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = ridersUsed <> StoredEffects.continuousEffects (GameState.stored g)}})
+                          -- CR 614.1d: so is its entry rider, as a row naming the
+                          -- spell.
+                          State.modify' (installPermissionEntry pid permissionUsed sid)
                           -- CR 702.33h: for each sticker kicker paid, the caster
                           -- gets {TK}, then may put a sticker on the spell, which
                           -- CR 123.3b allows only on a spell they own (Sticker.place).

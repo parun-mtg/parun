@@ -1757,3 +1757,24 @@ Entries are ordered by the first rule each cites.
   over `Parun.Engine.Event.Binding.attackedBy`. Proved by the scenario
   `attuma-draws-once-per-player-its-merfolk-attack`.
 - **Issue**: #6820.
+
+## Does a permission's entry rider outlive its source?
+
+- **Question**: Leonardo, Sewer Samurai's static ability lets a creature spell
+  be cast and says "that creature enters with a finality counter on it". CR
+  611.3a-b end a static ability's effect with its source, and CR 611.3d's
+  exception names only a granted ability. Does the counter arrive when
+  Leonardo left while the spell was on the stack?
+- **Rules**: CR 611.3a, 611.3b, 611.3d, 614.1d, 614.12, 400.7h; CR of
+  2026-11-06.
+- **Decision**: Yes. The rider is fixed to the spell as it is cast, as CR
+  611.3d's ability is, and applies as that spell's permanent enters whatever
+  became of the source.
+- **Rejected**: Reading the source's ability as the permanent enters: Kess,
+  Dissident Mage's ruling ("losing control of Kess won't affect the spell ...
+  it will be exiled") keeps the same template's rider past the permission, and
+  a rider that follows the spell for a granted ability but not for a counter
+  would split one sentence shape in two.
+- **Site**: `Parun.Engine.Cast.installPermissionEntry`, proved by the scenario
+  `cr-614-1d-leonardo-s-finality-counter-reaches-a-creature-that-resolves-after-leonardo-died`.
+- **Issue**: #7058.
