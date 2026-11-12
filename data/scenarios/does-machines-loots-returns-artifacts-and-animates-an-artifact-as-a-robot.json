@@ -1,0 +1,418 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Darksteel Citadel",
+            "label": "citadel"
+          },
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Does Machines",
+            "label": "class"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Sol Ring"
+          },
+          {
+            "card": "Millstone"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUUUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ornithopter",
+            "label": "theirs"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 717.2a, 205.1b: Does Machines mills, draws and discards two as it enters, returns up to two artifact cards from your graveyard at level 2, and at level 3 puts three +1/+1 counters on an artifact each combat, a noncreature one becoming a 0/0 Robot creature in addition to its other types",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            null
+          ],
+          "object": "$class"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$giant",
+            "Forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Sol Ring",
+            "Millstone",
+            "Hill Giant",
+            "Forest"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Swamp"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            null
+          ],
+          "object": "Does Machines"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "Hill Giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "Sol Ring",
+            "Millstone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Swamp",
+            "Sol Ring",
+            "Millstone"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            null
+          ],
+          "object": "Does Machines"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$theirs"
+          ]
+        }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$citadel"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$citadel"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$citadel",
+          "types": [
+            "Artifact",
+            "Creature",
+            "Land"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$citadel",
+          "subtypes": [
+            "Robot"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$citadel",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$memnite"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$memnite"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$memnite",
+          "subtypes": [
+            "Construct"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$memnite",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    }
+  ]
+}

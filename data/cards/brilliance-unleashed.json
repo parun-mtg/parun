@@ -1,0 +1,247 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Brilliance Unleashed",
+      "oracleText": "Choose one or both —\n• Brilliance Unleashed deals 5 damage to target creature.\n• Choose target artifact card in your graveyard. Return it to the battlefield if it's an artifact creature card. Otherwise, return it to the battlefield and it's a 3/3 Robot artifact creature with flying.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 5
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creature"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "IsBound",
+                              "value": "artifact"
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Graveyard"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "artifact"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "IsBound",
+                              "value": "artifact"
+                            },
+                            {
+                              "type": "Not",
+                              "value": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Graveyard"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 1
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "artifact"
+                      },
+                      "riders": {
+                        "characteristics": [
+                          {
+                            "type": "CardType",
+                            "value": {
+                              "cardType": "Creature",
+                              "mode": "InAddition"
+                            }
+                          },
+                          {
+                            "type": "CreatureSubtype",
+                            "value": {
+                              "mode": "Replace",
+                              "subtype": "Robot"
+                            }
+                          },
+                          {
+                            "type": "SetBasePowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": 3
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 3
+                              }
+                            }
+                          },
+                          {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Flying"
+                            }
+                          }
+                        ]
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "artifact": {
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 2
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
