@@ -70,7 +70,6 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
-import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
@@ -3025,11 +3024,12 @@ payTolls perform handed before held charged = do
         | otherwise -> Cost.payToll perform before (Set.fromList [oid | (p, oid) <- held, p == payer]) earlier payer charges >>= maybe (pure False) (`go` rest)
 
 -- CR 118.3: can this player pay these charges together, as Cost.payToll
--- pools them? Nothing owed is always paid.
+-- pools them, in the order CR 508.1j and CR 509.1f leave them? Nothing owed is
+-- always paid.
 tollPayable :: PlayerId -> [(ObjectId, Cost Keyword.Keyword)] -> GameState -> Bool
 tollPayable payer charges gs = case charges of
   [] -> True
-  (source, first) : rest -> Cost.canPay PaymentSubject.ForNeither payer source (List.foldl' Cost.plus first (fmap snd rest)) gs
+  (source, first) : rest -> Cost.canPayToll payer source (List.foldl' Cost.plus first (fmap snd rest)) gs
 
 -- CR 508.1a / 509.1a: who makes `pid`'s declaration -- the controller of the
 -- row handing it over (PlayerEffect.declarationRow), else `pid`.
