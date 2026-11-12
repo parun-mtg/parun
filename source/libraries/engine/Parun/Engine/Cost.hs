@@ -6908,16 +6908,23 @@ payComponent :: ManaAbilityPerformer.ManaAbilityPerformer -> PaymentMoment.Payme
 payComponent perform moment paidFor slots pid oid component = uncaused $ do
   gs <- State.get
   if canPayComponent slots pid oid component gs
-    then payPayable perform paidFor slots pid oid component
+    then payPayable perform moment paidFor slots pid oid component
     else pure Payment.Unpaid
   where
     uncaused = case moment of
       PaymentMoment.OutsideResolution -> Event.causedBy Nothing
-      PaymentMoment.DuringResolution -> id
+      PaymentMoment.DuringResolution _ -> id
+
+-- CR 101.4b: what a payment's prompts tell the payer the earlier payers of the
+-- same offer took, nobody's at a moment with no offer.
+earlierPayers :: PaymentMoment.PaymentMoment -> Seq.Seq (PlayerId, Set.Set ObjectId)
+earlierPayers moment = case moment of
+  PaymentMoment.OutsideResolution -> Seq.empty
+  PaymentMoment.DuringResolution earlier -> earlier
 
 -- `payComponent`'s arms, each reached only once CR 118.3 holds.
-payPayable :: ManaAbilityPerformer.ManaAbilityPerformer -> Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> Game Payment.Payment
-payPayable perform paidFor slots pid oid component = case component of
+payPayable :: ManaAbilityPerformer.ManaAbilityPerformer -> PaymentMoment.PaymentMoment -> Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> CostComponent.CostComponent Keyword.Type.Keyword -> Game Payment.Payment
+payPayable perform moment paidFor slots pid oid component = case component of
   -- CR 701.26a through tapObject; CR 107.5's "already tapped" is `payComponent`'s
   -- guard.
   CostComponent.TapThis -> do
@@ -6966,7 +6973,7 @@ payPayable perform paidFor slots pid oid component = case component of
   -- Unpaid, `paidAnnounced`'s reading (CR 903.4f).
   CostComponent.PayComputedLife computed -> do
     gs <- State.get
-    maybe (pure Payment.Unpaid) (payPayable perform paidFor slots pid oid . CostComponent.PayLife . CostAmount.Fixed) (computedLifeOf computed pid gs)
+    maybe (pure Payment.Unpaid) (payPayable perform moment paidFor slots pid oid . CostComponent.PayLife . CostAmount.Fixed) (computedLifeOf computed pid gs)
   -- CR 701.17a: the top `n` cards of the PAYING player's own library (CR 400.3),
   -- moved to their graveyard. `canPayComponent` above has already refused a cost
   -- milling more than the library holds (CR 701.17b); an InstructionR row resizing
@@ -7014,7 +7021,7 @@ payPayable perform paidFor slots pid oid component = case component of
       chosen <-
         if n == 0 || Natural.length candidates <= n
           then pure (Set.fromList (List.genericTake n candidates))
-          else Game.choose (Prompt.ChooseSacrifices decider pid oid candidates n Seq.empty)
+          else Game.choose (Prompt.ChooseSacrifices decider pid oid candidates n (earlierPayers moment))
       if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
         then do
           Event.sacrificeAll (ManaAbilityPerformer.settle perform) (fmap ((,) pid) (Set.toAscList chosen))
@@ -7174,7 +7181,7 @@ payPayable perform paidFor slots pid oid component = case component of
       if Natural.length held <= n
         then pure held
         else case selection of
-          CardSelection.ByChoice -> Game.choose (Prompt.ChooseDiscard decider pid held n)
+          CardSelection.ByChoice -> Game.choose (Prompt.ChooseDiscard decider pid held n (earlierPayers moment))
           CardSelection.AtRandom -> Game.drawDistinct Prompt.RandomObject n held
     let distinct = ListUtils.nubOrd chosen
     if all (\c -> List.elem c held) distinct && Natural.length distinct == n
@@ -7699,7 +7706,7 @@ payPayable perform paidFor slots pid oid component = case component of
   -- Necropsy's ruling, so a payment reaching here unfixed has no caller.
   CostComponent.CollectEvidenceOfTargets -> do
     gs <- State.get
-    payPayable perform paidFor slots pid oid (fixComputed slots gs component)
+    payPayable perform moment paidFor slots pid oid (fixComputed slots gs component)
   -- CR 406.2 with no prompt: CR 404.2's order determines the card. Unpaid where
   -- the graveyard holds no matching card, agreeing with canPayComponent above.
   CostComponent.ExileTopFromGraveyard criterion -> do

@@ -327,7 +327,7 @@ pulmonicBoard s registry decision = do
 -- identity answerer, so a discard of two takes two distinct cards.
 discardAtBob :: Prompt.Prompt r -> r
 discardAtBob p = case p of
-  Prompt.ChooseDiscard _ _ ids n -> take (Natural.toIntSaturating n) ids
+  Prompt.ChooseDiscard _ _ ids n _ -> take (Natural.toIntSaturating n) ids
   _ -> atBobAnswer p
 
 -- Add k cards of a printing to pid's hand (each a fresh Hand-zone object).
@@ -848,7 +848,7 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
         answer p = case p of
           Prompt.AnnounceTargets _ _ _ slots -> pure (fmap (\(_, candidates) -> Natural.length candidates) slots)
           Prompt.ChooseTargets _ _ _ sets -> pure (fmap snd sets)
-          Prompt.ChooseDiscard _ victim held _ -> do
+          Prompt.ChooseDiscard _ victim held _ _ -> do
             State.modify' (<> [victim])
             pure (take 1 held)
           _ -> pure (S.identityAnswer p)
@@ -883,7 +883,7 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
         gs = S.markDamage toadId 1 (handCards rats S.carol 2 (handCards sentry S.bob 2 (handCards piker S.alice 2 placed)))
         answer :: Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
         answer p = case p of
-          Prompt.ChooseDiscard _ victim held _ -> do
+          Prompt.ChooseDiscard _ victim held _ _ -> do
             State.modify' (<> [victim])
             pure (take 1 held)
           _ -> pure (S.identityAnswer p)

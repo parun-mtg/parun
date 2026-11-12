@@ -906,7 +906,7 @@ defaultAnswer p = case p of
   Prompt.Concede _ -> Concession.Continues
   -- CR 807.5b: the stack the scheduler reached, offered first.
   Prompt.ChooseTurnMarker _ _ markers -> NonEmpty.head markers
-  Prompt.ChooseDiscard _ _ ids n -> List.genericTake n ids
+  Prompt.ChooseDiscard _ _ ids n _ -> List.genericTake n ids
   -- CR 701.22a: "any number" includes none, so leaving every looked-at card on
   -- top in the order it was already in is legal -- and it is the one answer that
   -- leaves the library exactly as it was.

@@ -1930,7 +1930,7 @@ tweezeAnswer :: OptionalDecision.OptionalDecision -> ObjectId.ObjectId -> Prompt
 tweezeAnswer decision toDiscard p = case p of
   Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer S.bob) sets
   Prompt.ChooseOptional {} -> decision
-  Prompt.ChooseDiscard _ _ ids n -> List.genericTake n (filter (== toDiscard) ids)
+  Prompt.ChooseDiscard _ _ ids n _ -> List.genericTake n (filter (== toDiscard) ids)
   _ -> S.identityAnswer p
 
 -- The board the three Twiddle cases share: alice casts it off two Islands, and
@@ -2152,7 +2152,7 @@ discoveryBoard s registry held = do
 discoveryAnswer :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
 discoveryAnswer pinned p = case p of
   Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-  Prompt.ChooseDiscard _ _ ids n -> List.genericTake n (filter (`elem` pinned) ids <> filter (`notElem` pinned) ids)
+  Prompt.ChooseDiscard _ _ ids n _ -> List.genericTake n (filter (`elem` pinned) ids <> filter (`notElem` pinned) ids)
   _ -> S.identityAnswer p
 
 -- The board the two Giant Opportunity cases share, differing in exactly one
@@ -2831,7 +2831,7 @@ rhysticSpec s registry =
 -- permanent and a card in hand. bob pays with the option the case names, and
 -- carol pays with whichever option her ChooseCost says bob paid with, so what
 -- she is told is read off her board.
-perforatingSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+perforatingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 perforatingSpec s registry =
   let endStep = Phase.Ending EndingStep.EndStep
       board = do
@@ -2888,6 +2888,74 @@ perforatingSpec s registry =
           Spec.assertEqWith s "CR 101.4b carol was told bob sacrificed, naming the Bears" (toldOf toldSacrifice) [[(S.bob, Just (True, Set.singleton bearsId))]]
           Spec.assertEqWith s "CR 101.4a carol was told bob discarded, naming no card" (toldOf toldDiscard) [[(S.bob, Just (False, Set.empty))]]
           Spec.assertEqWith s "setup: the trigger is on the stack and bob's Bears with it" (length (TurnRegisters.stack (GameState.turn onStack)), S.onBattlefield bearsId onStack) (1, True)
+        -- carol holds a second card, an Island, so her ChooseDiscard is asked;
+        -- she discards it exactly when that prompt names what bob took.
+        Spec.it s "CR 101.4b a later payer's discard prompt names what earlier payers took" $ do
+          (bearsId, giantId, onStack) <- board
+          island <- S.printingOf s registry "Island"
+          let (islandId, held) = S.addHandCard island S.carol onStack
+              discarding :: Prompt.Prompt r -> State.State [[(PlayerId.PlayerId, Set.Set ObjectId.ObjectId)]] r
+              discarding p = case p of
+                Prompt.ChooseCost (Decider.MkDecider d) player _ candidates _ | d == player -> pure (Maybe.fromMaybe (S.identityAnswer p) (List.find ((== (player == S.bob)) . sacrifices . CandidateCost.cost) candidates))
+                Prompt.ChooseToPay (Decider.MkDecider d) player _ _ _ _ | d == player -> pure PaymentDecision.Pays
+                Prompt.ChooseDiscard (Decider.MkDecider d) player cards _ earlier | d == player && player == S.carol -> do
+                  State.modify' (<> [Foldable.toList earlier])
+                  pure (take 1 (if null earlier then filter (/= islandId) cards else filter (== islandId) cards))
+                _ -> pure (S.identityAnswer p)
+              ((_, after), toldDiscards) = State.runState (Engine.runGame discarding held Stack.resolveTop) []
+          Spec.assertEqWith s "told bob sacrificed, carol discarded the Island and kept her Swamp and Giant" (elem islandId (Game.zoneMembers Zone.Hand S.carol after), S.handSize S.carol after, S.onBattlefield giantId after) (False, 1, True)
+          Spec.assertEqWith s "CR 101.4b carol's ChooseDiscard named bob's Bears" toldDiscards [[(S.bob, Set.singleton bearsId)]]
+
+-- CR 101.4b inside a payment: Bellowing Mauler's "each player loses 4 life
+-- unless they sacrifice a nontoken creature of their choice". alice's end
+-- step; alice declines, bob sacrifices his one creature (the case's), and
+-- carol, holding Grizzly Bears and a Hill Giant, sacrifices whichever shares a
+-- name with what her ChooseSacrifices says the earlier payers took.
+maulerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+maulerSpec s registry =
+  let endStep = Phase.Ending EndingStep.EndStep
+      board bobsName = do
+        mauler <- S.printingOf s registry "Bellowing Mauler"
+        bobs <- S.printingOf s registry bobsName
+        bears <- S.printingOf s registry "Grizzly Bears"
+        giant <- S.printingOf s registry "Hill Giant"
+        let (_, g0) = S.addPermanent mauler S.alice S.threePlayerGame
+            (bobsId, g1) = S.addPermanent bobs S.bob g0
+            (bearsId, g2) = S.addPermanent bears S.carol g1
+            (giantId, g3) = S.addPermanent giant S.carol g2
+            begun =
+              Event.recordEvent
+                (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
+                ( g3
+                    { GameState.turn =
+                        (GameState.turn g3)
+                          { TurnRegisters.phase = endStep,
+                            TurnRegisters.activePlayer = S.alice
+                          }
+                    }
+                )
+        pure (bobsId, bearsId, giantId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
+      -- carol logs what her ChooseSacrifices told her and copies its names.
+      copying :: GameState.GameState -> Prompt.Prompt r -> State.State [[(PlayerId.PlayerId, Set.Set ObjectId.ObjectId)]] r
+      copying onStack p = case p of
+        Prompt.ChooseToPay (Decider.MkDecider d) player _ _ _ _ | d == player -> pure (if player == S.alice then PaymentDecision.Declines else PaymentDecision.Pays)
+        Prompt.ChooseSacrifices (Decider.MkDecider d) player _ candidates _ earlier | d == player && player == S.carol -> do
+          State.modify' (<> [Foldable.toList earlier])
+          let taken = foldMap (Set.map (`S.soleFaceName` onStack) . snd) earlier
+          pure (Set.fromList (take 1 (filter ((`Set.member` taken) . (`S.soleFaceName` onStack)) candidates <> candidates)))
+        _ -> pure (S.identityAnswer p)
+      resolveWith onStack = State.runState (Engine.runGame (copying onStack) onStack Stack.resolveTop) []
+   in Spec.describe s "CR 101.4b a later payer's own payment prompts" $ do
+        -- A pair differing only in bob's creature.
+        Spec.it s "CR 101.4b a later payer's sacrifice prompt names what earlier payers took" $ do
+          (bobsBears, bearsId, giantId, bearsBoard) <- board "Grizzly Bears"
+          (bobsGiant, _, _, giantBoard) <- board "Hill Giant"
+          let ((_, afterBears), toldBears) = resolveWith bearsBoard
+              ((_, afterGiant), toldGiant) = resolveWith giantBoard
+          Spec.assertEqWith s "told bob sacrificed Grizzly Bears, carol sacrificed hers and kept her Giant" (S.onBattlefield bearsId afterBears, S.onBattlefield giantId afterBears) (False, True)
+          Spec.assertEqWith s "told bob sacrificed a Hill Giant, carol sacrificed hers and kept her Bears" (S.onBattlefield bearsId afterGiant, S.onBattlefield giantId afterGiant) (True, False)
+          Spec.assertEqWith s "bob sacrificed, alice declined" (fmap (\gs -> (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)) [afterBears, afterGiant], S.onBattlefield bobsBears afterBears, S.onBattlefield bobsGiant afterGiant) ([(Just 16, Just 20, Just 20), (Just 16, Just 20, Just 20)], False, False)
+          Spec.assertEqWith s "CR 101.4b carol's ChooseSacrifices named bob's creature, and nothing of alice's" (toldBears, toldGiant) ([[(S.bob, Set.singleton bobsBears)]], [[(S.bob, Set.singleton bobsGiant)]])
 
 -- CR 118.12 / 118.12a over a cost printed as a CHOICE: Torment of Venom's
 -- "Its controller loses 3 life unless they sacrifice another nonland permanent
@@ -3212,6 +3280,7 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   tariffSpec s registry
   tormentSpec s registry
   perforatingSpec s registry
+  maulerSpec s registry
   targetSpec s registry
   resolveSpec s registry
   wormsSpec s registry

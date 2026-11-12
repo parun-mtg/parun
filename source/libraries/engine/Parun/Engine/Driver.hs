@@ -101,7 +101,7 @@ deciderOf prompt = case prompt of
   Prompt.FlipCoin {} -> Nothing
   Prompt.CallCoin decider _ -> Just (Decider.unwrap decider)
   Prompt.ChooseCoinResult decider _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChooseDiscard decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseDiscard decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseScry decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseSurveil decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseFateseal decider _ _ _ -> Just (Decider.unwrap decider)

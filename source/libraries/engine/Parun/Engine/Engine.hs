@@ -516,7 +516,7 @@ discardToHandSize pid = do
           excess = length held - Natural.toIntSaturating limit
       Monad.when (excess > 0) $ do
         let decider = Decide.deciderFor pid gs
-        chosen <- Game.choose (Prompt.ChooseDiscard decider pid held (Int.toNaturalSaturating excess))
+        chosen <- Game.choose (Prompt.ChooseDiscard decider pid held (Int.toNaturalSaturating excess) Seq.empty)
         -- Filtered, deduplicated and completed from the hand, the CR 701.9b
         -- discard's posture: a short answer still discards down (CR 514.1).
         let valid = ListUtils.nubOrd (filter (`List.elem` held) chosen)

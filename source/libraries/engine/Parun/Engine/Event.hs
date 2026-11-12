@@ -4998,7 +4998,7 @@ apply settle batch applied batchPrevented candidate event =
           [] -> pure Nothing
           [only] -> pure (Just only)
           _ -> do
-            answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid gs) pid held 1)
+            answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid gs) pid held 1 Seq.empty)
             pure (Maybe.listToMaybe (filter (`elem` held) answer <> held))
         discarded <- asEffect (maybe (pure Seq.empty) (discardReturning settle DiscardCause.ByEffect pid) picked)
         if null discarded

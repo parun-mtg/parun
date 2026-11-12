@@ -179,7 +179,7 @@ recruit settle pid = do
       -- posture; this branch is reached only when the hand holds more than one,
       -- so every omitted card is one the player could have discarded.
       let offered = first : second : more
-      answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid drawn) pid offered 1)
+      answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid drawn) pid offered 1 Seq.empty)
       let valid = ListUtils.nubOrd (filter (\c -> List.elem c offered) answer)
           filler = filter (\c -> List.notElem c valid) offered
       pure (take 1 (valid <> filler))

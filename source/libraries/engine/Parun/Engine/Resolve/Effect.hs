@@ -1159,7 +1159,7 @@ throwSettled runSubgame roll perDie = do
       -- resolving object can name what it took, and the modifier's own change
       -- to the die reads no slot. Proved by Parun.DiceSpec's "CR 701.67a a
       -- modifier's waterbend cost is weighed" case.
-      payForModifier payer oid cost = Maybe.isJust . fst <$> payGateCost runSubgame Map.empty payer oid cost
+      payForModifier payer oid cost = Maybe.isJust . fst <$> payGateCost runSubgame Seq.empty Map.empty payer oid cost
       duringRoll natural = Common.withThrowing (ThrowResult.DieCameUp natural)
       windowCandidates = fmap (\(pid, oid, ability) -> (pid, Just oid, Right (oid, ability))) . windowAbilities
       rollOne by modifierOf = do
@@ -1472,10 +1472,12 @@ applyLoopBody runSubgame resolving source controller legal chosen bodyDefined bo
 --
 -- CR 101.4's APNAP order over the players the reference names, which is what
 -- `apnapDecidersOf` imposes, each told which option and objects the payers
--- before them paid with (CR 101.4b, Common.payerAnswerOf). Nothing a payer
--- chose has happened when the next is asked, since each rehearsal is undone
--- (CR 101.4a's hidden card stays hidden). Parun.ResolveSpec's "CR 101.4b a
--- later opponent is told" case proves it. Only then does every payment
+-- before them paid with (CR 101.4b, Common.payerAnswerOf), at ChooseCost and
+-- ChooseToPay and in the ChooseSacrifices and ChooseDiscard their own payment
+-- raises (Common.takenBy). Nothing a payer chose has happened when the next is
+-- asked, since each rehearsal is undone (CR 101.4a's hidden card stays
+-- hidden). Parun.ResolveSpec's "CR 101.4b a later opponent is told" and "CR
+-- 101.4b a later payer's sacrifice prompt" cases prove it. Only then does every payment
 -- happen, made again from its answers, and two or more are ONE event: the
 -- "then the actions happen simultaneously" of CR 101.4 and Perforating
 -- Artist's ruling, which CR 603.10a's look-back reads. The scenarios
@@ -1483,9 +1485,6 @@ applyLoopBody runSubgame resolving source controller legal chosen bodyDefined bo
 -- asks its payer again (payAgain), a fence: no pool cost depends on another
 -- payer's permanent or mana ability, as is a lone payment's staying outside the
 -- bracket.
---
--- Not implemented: telling a later payer the same in the prompts their own
--- payment raises, ChooseSacrifices and ChooseDiscard (#6376).
 --
 -- The mana windows are not in the event: CR 605.3a's activations come before
 -- the payment they are for (CR 601.2g's order), so every payer's window
@@ -1526,8 +1525,9 @@ payGatePaid runSubgame resolving source controller idx cIdx legal announced comm
     Monad.forM rehearsed $ \(payer, (attempts, paid)) -> case Seq.viewr attempts of
       Seq.EmptyR -> pure (payer, paid, pure Nothing)
       failed Seq.:> (slots, cost, answers) -> do
-        Foldable.for_ failed (\(slots', cost', answers') -> Replay.replaying answers' (payGateCost runSubgame slots' payer source cost'))
-        (settle, unused) <- Replay.replayingRest answers (payGateCostThen runSubgame slots payer source cost)
+        let taken = Common.takenBy (fmap (fmap (Common.payerAnswerOf gs)) (Seq.takeWhileL ((/= payer) . fst) rehearsed))
+        Foldable.for_ failed (\(slots', cost', answers') -> Replay.replaying answers' (payGateCost runSubgame taken slots' payer source cost'))
+        (settle, unused) <- Replay.replayingRest answers (payGateCostThen runSubgame taken slots payer source cost)
         pure (payer, paid, Replay.replaying unused settle)
   let together = if length (Seq.filter (Maybe.isJust . snd . snd) rehearsed) > 1 then Event.simultaneously else id
   answered <-
@@ -1588,12 +1588,14 @@ loopOffers runSubgame resolving source controller slot legal members gate = do
           answers
           [0 .. Seq.length answers - 1]
       -- Each payer pays everything they agreed to as one payment; a failed one
-      -- asks that payer again (payAgain).
+      -- asks that payer again (payAgain). Its prompts name what the payers
+      -- before it took, read off the board before any payment (CR 101.4b).
       payFor (done, answers) payer =
         let attempt failed current = case NonEmpty.nonEmpty (agreedBy payer current) of
               Nothing -> pure (Just (done, current))
               Just taken -> do
-                (bound, answered) <- payGateCost runSubgame (fst (NonEmpty.head taken)) payer source (Cost.together (fmap snd taken))
+                let earlier = Seq.fromList [(p, Common.publicObjectsOf gs bound) | p <- takeWhile (/= payer) order, Just bound <- [Map.lookup p done]]
+                (bound, answered) <- payGateCost runSubgame earlier (fst (NonEmpty.head taken)) payer source (Cost.together (fmap snd taken))
                 Common.payAgain failed (fst (NonEmpty.head taken), NonEmpty.toList (fmap snd taken), answered) (fmap (\b -> (Map.insert payer b done, current)) bound) id (\failed' -> reagree payer current >>= attempt failed')
          in fmap (Maybe.fromMaybe (done, answers)) (attempt Set.empty answers)
   asked <- Monad.foldM (\acc (payer, member) -> fmap (acc Seq.|>) (agreeOne acc payer member)) Seq.empty offers
@@ -1659,20 +1661,21 @@ payGatePaidBy runSubgame resolving source controller offer earlier legal payer g
       case agreed of
         Nothing -> pure (tried, Nothing)
         Just cost -> do
-          (paid, answered) <- payGateCost runSubgame slots payer source cost
+          (paid, answered) <- payGateCost runSubgame (Common.takenBy earlier) slots payer source cost
           let attempts = tried Seq.|> (slots, cost, answered)
           Common.payAgain failed (cost, answered) paid ((,) attempts) (attempt attempts)
 
 -- The payment of a cost the payer agreed to, against `source` (CR 113.7a): the
 -- slots it bound when it was paid (foldPaid), Nothing when it was not, and the
--- answers the payment was given (payAgain).
-payGateCost :: Game Result -> Map.Map SlotName (Set Recipient) -> PlayerId -> ObjectId -> Cost.Type.Cost Keyword.Type.Keyword -> Game (Maybe (Map.Map SlotName Binding.Type.Binding), [Response.Response])
-payGateCost runSubgame slots payer source cost = Replay.recording (Monad.join (payGateCostThen runSubgame slots payer source cost))
+-- answers the payment was given (payAgain). Its prompts tell the payer what the
+-- earlier payers of the offer took (PaymentMoment.DuringResolution).
+payGateCost :: Game Result -> Seq.Seq (PlayerId, Set ObjectId) -> Map.Map SlotName (Set Recipient) -> PlayerId -> ObjectId -> Cost.Type.Cost Keyword.Type.Keyword -> Game (Maybe (Map.Map SlotName Binding.Type.Binding), [Response.Response])
+payGateCost runSubgame earlier slots payer source cost = Replay.recording (Monad.join (payGateCostThen runSubgame earlier slots payer source cost))
 
 -- `payGateCost` unrecorded and split at its mana window (Cost.payReadingThen),
 -- payGatePaid's two halves.
-payGateCostThen :: Game Result -> Map.Map SlotName (Set Recipient) -> PlayerId -> ObjectId -> Cost.Type.Cost Keyword.Type.Keyword -> Game (Game (Maybe (Map.Map SlotName Binding.Type.Binding)))
-payGateCostThen runSubgame slots payer source cost = do
+payGateCostThen :: Game Result -> Seq.Seq (PlayerId, Set ObjectId) -> Map.Map SlotName (Set Recipient) -> PlayerId -> ObjectId -> Cost.Type.Cost Keyword.Type.Keyword -> Game (Game (Maybe (Map.Map SlotName Binding.Type.Binding)))
+payGateCostThen runSubgame earlier slots payer source cost = do
   gs <- State.get
   -- CR 118.13b: a symbol payable in multiple ways is announced by the
   -- PAYER "immediately before they pay that cost" -- after CR 118.12's
@@ -1703,5 +1706,5 @@ payGateCostThen runSubgame slots payer source cost = do
   -- (Cost.pay). Taken after the announcement above, which writes no
   -- state of its own.
   began <- State.get
-  settle <- Cost.payReadingThen slots (performManaAbility runSubgame) began PaymentMoment.DuringResolution PaymentSubject.ForNeither ManaSpending.AsProduced payer source announced
+  settle <- Cost.payReadingThen slots (performManaAbility runSubgame) began (PaymentMoment.DuringResolution earlier) PaymentSubject.ForNeither ManaSpending.AsProduced payer source announced
   pure (fmap (\outcome -> case outcome of Payment.Paid bound -> Just bound; Payment.Unpaid -> Nothing) settle)

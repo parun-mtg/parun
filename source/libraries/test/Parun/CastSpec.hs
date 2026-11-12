@@ -473,7 +473,7 @@ answerXOf n p = case p of
 -- CR 514.2 test proves the prompted choice is actually honored.
 discardLastAnswer :: Prompt.Prompt r -> r
 discardLastAnswer p = case p of
-  Prompt.ChooseDiscard _ _ ids n -> lastN n ids
+  Prompt.ChooseDiscard _ _ ids n _ -> lastN n ids
   _ -> S.identityAnswer p
 
 lastN :: Natural -> [a] -> [a]
@@ -4791,7 +4791,7 @@ gorgerTweezeAnswer :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r 
 gorgerTweezeAnswer gorgerId vampireId p = case p of
   Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToCreature gorgerId) sets
   Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-  Prompt.ChooseDiscard _ _ ids n -> List.genericTake n (filter (== vampireId) ids)
+  Prompt.ChooseDiscard _ _ ids n _ -> List.genericTake n (filter (== vampireId) ids)
   _ -> madnessAnswer p
 
 -- Cast the Reunion, place whatever triggered, and resolve twice: rule 702.35a's
@@ -5311,7 +5311,7 @@ keptFaceDownSpec s registry = Spec.describe s "KeptFaceDown" $ do
       answerer :: ObjectId.ObjectId -> (ObjectId.ObjectId -> Bool) -> Prompt.Prompt r -> r
       answerer source pick p = case p of
         Prompt.ChooseManaSource _ _ _ sources -> if source `elem` sources then Just source else Nothing
-        Prompt.ChooseDiscard _ _ cards n -> take (Natural.toIntSaturating n) (filter pick cards <> filter (not . pick) cards)
+        Prompt.ChooseDiscard _ _ cards n _ -> take (Natural.toIntSaturating n) (filter pick cards <> filter (not . pick) cards)
         Prompt.ChooseTargets _ _ _ slots -> fmap (Set.take 1 . snd) slots
         Prompt.OfferedMiracleReveal {} -> OptionalDecision.Exercises
         Prompt.ReverseManaAbilities {} -> OptionalDecision.Exercises

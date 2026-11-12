@@ -1,5 +1,10 @@
 module Parun.Types.PaymentMoment where
 
+import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
+import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PlayerId as PlayerId
+
 -- | WHEN a cost is being paid, at the one grain the rules make anything depend
 -- on: is a spell or ability resolving, whose cause the payment's events keep?
 --
@@ -16,11 +21,13 @@ module Parun.Types.PaymentMoment where
 -- Parun.Types.CostComponent, and only the caller knows which door it came in by.
 --
 -- Read by Parun.Engine.Cost.payComponent, for whether the payment's events
--- record a cause.
+-- record a cause, and for what its prompts tell the payer of earlier payers.
 data PaymentMoment
   = -- | CR 601.2h's payment, and CR 508.1j \/ 509.1f's combat toll: no spell or
     -- ability is resolving.
     OutsideResolution
-  | -- | CR 118.12's payment, made as the spell or ability resolves.
-    DuringResolution
+  | -- | CR 118.12's payment, made as the spell or ability resolves; the Seq is
+    -- each earlier payer of the same offer who paid, with the public objects
+    -- they took (CR 101.4b).
+    DuringResolution (Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId))
   deriving (Eq, Ord, Show)
