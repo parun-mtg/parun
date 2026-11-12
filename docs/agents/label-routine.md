@@ -47,7 +47,8 @@ Wait:
   from the merge queue, a new comment). Don't write your own loop and don't
   check repeatedly yourself.
 - Never update a branch merely because it is behind main. Merge origin/main
-  only to resolve a real conflict, then re-run the suite and read the result.
+  only to resolve a real conflict, then re-run the tests your change can
+  reach and read the result.
 - Fix failing checks. For a review comment, verify the claim against the code
   and data/comprehensive-rules.txt, then fix it or reply saying why not. After
   a fix, re-arm auto-merge if it was disarmed, then wait again.
