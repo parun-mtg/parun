@@ -12,6 +12,8 @@ import qualified Parun.Codec.ModeSelection as ModeSelection
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.ChooseInstead as ChooseInstead
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
@@ -30,13 +32,20 @@ defaultSelection = ModeSelection.ChooseExactly 1
 -- a property of the wire, so it has no schema representation.
 codec :: (Typeable.Typeable card, Eq card, Typeable.Typeable ability, Eq ability) => Codec.Codec card -> Codec.Codec ability -> Codec.Codec (Modal.Modal card ability)
 codec cardCodec abilityCodec =
-  let check m =
-        if Seq.null (Modal.modes m)
-          then Left (Text.pack "modal has no modes")
-          else Right m
+  let check m
+        | Seq.null (Modal.modes m) = Left (Text.pack "modal has no modes")
+        | not (pawprintsFit (Seq.length (Modal.modes m)) (Modal.selection m)) = Left (Text.pack "modal's pawprints do not match its modes")
+        | otherwise = Right m
    in Fields.objectWith check $ do
         modes <- Fields.required "modes" (Common.seq (Mode.codec cardCodec abilityCodec)) Modal.modes
         selection <- Fields.defaulted "selection" defaultSelection ModeSelection.codec Modal.selection
         memory <- Fields.defaulted "memory" ModeMemory.NoMemory ModeMemory.codec Modal.memory
         shared <- Fields.defaulted "shared" Seq.empty (Common.seq (Clause.codec cardCodec abilityCodec)) Modal.shared
         pure Modal.MkModal {Modal.modes = modes, Modal.selection = selection, Modal.memory = memory, Modal.shared = shared}
+
+-- | CR 700.2i: a pawprint selection lists one weight per printed mode.
+pawprintsFit :: Int -> ModeSelection.ModeSelection -> Bool
+pawprintsFit count selection = case selection of
+  ModeSelection.ChoosePawprintsWithRepeats cp -> Seq.length (ChoosePawprints.pawprints cp) == count
+  ModeSelection.ChooseInstead ci -> pawprintsFit count (ChooseInstead.ordinary ci) && pawprintsFit count (ChooseInstead.instead ci)
+  _ -> True

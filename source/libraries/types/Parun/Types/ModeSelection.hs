@@ -3,6 +3,7 @@ module Parun.Types.ModeSelection where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseInstead as ChooseInstead
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Quantity as Quantity
 
 -- | CR 700.2: the instruction preceding the bulleted list ("Choose one --"),
@@ -31,13 +32,14 @@ import qualified Parun.Types.Quantity as Quantity
 -- Parun.Engine.Activate once an activation's are (CR 602.2b), and
 -- Parun.Engine.Engine as a triggered ability is put on the stack (CR 603.3c).
 --
--- 'ChooseUpTo' is the last: zero through a number computed as the modes are
+-- 'ChooseUpTo' is next: zero through a number computed as the modes are
 -- chosen ("choose up to X --", The Ruinous Wrecking Crew), settled to a
 -- 'ChooseBetween' where 'ChooseInstead' is. Until then Parun.Engine.Modal reads it
 -- as having no ceiling of its own.
 --
--- CR 700.2i's pawprint is a future constructor: it bounds a WEIGHTED total
--- rather than a number of modes, so no range over mode counts states it.
+-- 'ChoosePawprintsWithRepeats' is the last: CR 700.2i bounds a WEIGHTED total
+-- rather than a number of modes (Parun.Types.ChoosePawprints), under CR
+-- 700.2d's exception, which every pawprint printing carries.
 --
 -- Constructors rather than a count plus a flag plus a bound, because that is what
 -- keeps the card data untouched: a repeat-free exact selection still encodes as it
@@ -59,4 +61,5 @@ data ModeSelection
   | ChooseBetweenWithRepeats ChooseBetween.ChooseBetween
   | ChooseInstead (ChooseInstead.ChooseInstead ModeSelection)
   | ChooseUpTo Quantity.Quantity
+  | ChoosePawprintsWithRepeats ChoosePawprints.ChoosePawprints
   deriving (Eq, Ord, Show)

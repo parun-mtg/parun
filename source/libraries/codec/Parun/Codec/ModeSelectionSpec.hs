@@ -1,6 +1,7 @@
 module Parun.Codec.ModeSelectionSpec where
 
 import qualified Data.Either as Either
+import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Codec.ModeSelection as ModeSelection
 import qualified Parun.JsonCodec.Codec as Codec
@@ -8,6 +9,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseInstead as ChooseInstead
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
@@ -66,6 +68,14 @@ spec s = Spec.describe s "Parun.Codec.ModeSelection" $ do
       ModeSelection.codec
       (ModeSelection.ChooseUpTo (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))
       " {\"type\":\"ChooseUpTo\",\"value\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
+
+  -- CR 700.2i (data/cards/season-of-loss.json).
+  Spec.it s "ChoosePawprintsWithRepeats" $
+    Common.assertCodec
+      s
+      ModeSelection.codec
+      (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2, 3])))
+      " {\"type\":\"ChoosePawprintsWithRepeats\",\"value\":{\"most\":5,\"pawprints\":[1,2,3]}} "
 
   Spec.it s "has a schema" $ Common.assertHasSchema s ModeSelection.codec
 

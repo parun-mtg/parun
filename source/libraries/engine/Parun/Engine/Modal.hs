@@ -23,6 +23,7 @@ import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseInstead as ChooseInstead
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Condition as Condition
 import Parun.Types.Effect (Effect)
@@ -419,11 +420,14 @@ leastOf selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats cb -> ChooseBetween.least cb
   ModeSelection.ChooseInstead ci -> min (leastOf (ChooseInstead.ordinary ci)) (leastOf (ChooseInstead.instead ci))
   ModeSelection.ChooseUpTo _ -> 0
+  ModeSelection.ChoosePawprintsWithRepeats _ -> 0
 
 -- CR 700.2: the MOST modes a selection satisfying this instruction may name --
 -- leastOf's counterpart, and the same number for every exact instruction.
 -- Nothing for an unsettled ChooseUpTo, which could still compute any number
 -- (Target.countAt's posture), leaving the legal modes as the only ceiling.
+-- CR 700.2i's budget for a pawprint selection, every mode being worth at least
+-- one (Parun.Types.ChoosePawprints).
 mostOf :: ModeSelection.ModeSelection -> Maybe Natural
 mostOf selection = case selection of
   ModeSelection.ChooseExactly n -> Just n
@@ -432,12 +436,13 @@ mostOf selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats cb -> Just (ChooseBetween.most cb)
   ModeSelection.ChooseInstead ci -> max <$> mostOf (ChooseInstead.ordinary ci) <*> mostOf (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo _ -> Nothing
+  ModeSelection.ChoosePawprintsWithRepeats cp -> Just (ChoosePawprints.most cp)
 
 -- CR 700.2d: does this instruction print "You may choose the same mode more than
 -- once"? False is that rule's default -- "that player normally can't choose the
 -- same mode more than once" -- and is what all but a handful of cards in the pool
--- answer, Mystic Confluence, Fiery Confluence and Moment of Reckoning being
--- PRINTINGS of the exception.
+-- answer, Mystic Confluence, Fiery Confluence, Moment of Reckoning and Season
+-- of Loss being PRINTINGS of the exception.
 allowsRepeatsIn :: ModeSelection.ModeSelection -> Bool
 allowsRepeatsIn selection = case selection of
   ModeSelection.ChooseExactly _ -> False
@@ -446,6 +451,7 @@ allowsRepeatsIn selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats {} -> True
   ModeSelection.ChooseInstead ci -> allowsRepeatsIn (ChooseInstead.ordinary ci) || allowsRepeatsIn (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo _ -> False
+  ModeSelection.ChoosePawprintsWithRepeats _ -> True
 
 -- Every size a selection satisfying the printed instruction may have, ascending.
 -- One element for an exact instruction, `most - least + 1` for a range, and
@@ -534,8 +540,9 @@ selectionPossible legal selection
 -- CR 601.2b/700.2: does this answer really satisfy the printed instruction? The
 -- size is one the instruction allows -- a single number for an exact instruction,
 -- anything within the bounds for a range -- every mode named is legal (CR 700.2a),
--- and no mode is named twice unless CR 700.2d's exception is printed. The
--- reject-not-repair gate every announcement path runs before it stamps anything.
+-- no mode is named twice unless CR 700.2d's exception is printed, and the
+-- modes' pawprints total no more than CR 700.2i's budget. The reject-not-repair
+-- gate every announcement path runs before it stamps anything.
 selectionSatisfiedBy :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> Seq.Seq ModeIndex.ModeIndex -> Bool
 selectionSatisfiedBy legal (ModeSelection.ChooseInstead ci) chosen = selectionSatisfiedBy legal (ChooseInstead.ordinary ci) chosen || selectionSatisfiedBy legal (ChooseInstead.instead ci) chosen
 selectionSatisfiedBy legal selection chosen =
@@ -545,11 +552,28 @@ selectionSatisfiedBy legal selection chosen =
         && all (size <=) (mostOf selection)
         && Set.isSubsetOf distinct legal
         && (allowsRepeatsIn selection || Set.size distinct == Seq.length chosen)
+        && withinPawprints selection chosen
+
+-- CR 700.2i: do these modes' pawprints total no more than the budget? Always
+-- for any other selection. A mode with no listed weight is not printed, so
+-- never fits.
+withinPawprints :: ModeSelection.ModeSelection -> Seq.Seq ModeIndex.ModeIndex -> Bool
+withinPawprints selection chosen = case selection of
+  ModeSelection.ChoosePawprintsWithRepeats cp -> maybe False ((<= ChoosePawprints.most cp) . sum) (traverse (pawprintsOf selection) chosen)
+  _ -> True
+
+-- CR 107.18: how many pawprints a pawprint selection lists for this mode;
+-- Nothing for any other selection, or a mode it does not list.
+pawprintsOf :: ModeSelection.ModeSelection -> ModeIndex.ModeIndex -> Maybe Natural
+pawprintsOf selection idx = case selection of
+  ModeSelection.ChoosePawprintsWithRepeats cp -> Seq.lookup (Natural.toIntSaturating (ModeIndex.unwrap idx)) (ChoosePawprints.pawprints cp)
+  _ -> Nothing
 
 -- CR 700.2: every answer selectionSatisfiedBy accepts over `legal`, each in
 -- printed order -- the announcements a gate standing before CR 601.2b has to
 -- consider when a cost reads the targets they bring (Parun.Engine.Cast.castAimable).
--- Exponential in the mode count, which no printing takes past five.
+-- Exponential in the mode count, which no printing takes past five, and for a
+-- pawprint selection in its budget, which none takes past five either.
 selections :: Set ModeIndex.ModeIndex -> ModeSelection.ModeSelection -> [Seq.Seq ModeIndex.ModeIndex]
 selections legal (ModeSelection.ChooseInstead ci) = ListUtils.nubOrd (selections legal (ChooseInstead.ordinary ci) <> selections legal (ChooseInstead.instead ci))
 selections legal selection =
@@ -559,7 +583,7 @@ selections legal selection =
         | otherwise = case pool of
             [] -> []
             m : rest -> fmap (m :) (choose (n - 1) (if allowsRepeatsIn selection then pool else rest)) <> choose n rest
-   in [Seq.fromList picked | n <- selectionSizes (Natural.length legal) selection, picked <- choose n (Set.toAscList legal)]
+   in filter (withinPawprints selection) [Seq.fromList picked | n <- selectionSizes (Natural.length legal) selection, picked <- choose n (Set.toAscList legal)]
 
 -- How many modes are PRINTED, which is not the same question as how many the
 -- selection demands. CR 702.42a's entwine is what asks it: this is the count

@@ -1615,6 +1615,7 @@ selectionReadsX selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats _ -> False
   ModeSelection.ChooseInstead ci -> selectionReadsX (ChooseInstead.ordinary ci) || selectionReadsX (ChooseInstead.instead ci)
   ModeSelection.ChooseUpTo quantity -> Set.member Binding.variableX (QuantitySlot.slots quantity)
+  ModeSelection.ChoosePawprintsWithRepeats _ -> False
 
 -- CR 601.2c with CR 601.2b: does this slot's COUNT read the announced X?
 countReadsX :: SlotCount.SlotCount -> Bool
