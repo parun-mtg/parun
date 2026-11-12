@@ -171,34 +171,32 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "filter": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HeldBy",
-                    "value": {
-                      "holder": "Controller",
-                      "relation": "You"
-                    }
-                  },
-                  {
-                    "type": "FromSource",
-                    "value": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "HasCardType",
-                          "value": "Creature"
-                        },
-                        {
-                          "type": "IsInZone",
-                          "value": "Battlefield"
-                        }
-                      ]
-                    }
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
                   }
-                ]
-              }
+                },
+                {
+                  "type": "FromSource",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      }
+                    ]
+                  }
+                }
+              ]
             }
           },
           "limit": {

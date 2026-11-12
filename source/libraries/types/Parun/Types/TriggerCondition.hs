@@ -1,6 +1,5 @@
 module Parun.Types.TriggerCondition where
 
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
@@ -172,8 +171,9 @@ data TriggerCondition
     -- a Filter admits (Young Pyromancer).
     SpellCast SpellCast.SpellCast
   | -- | CR 602.2b / 601.2i: "whenever you activate an ability [of a ...]"
-    -- (Kurkesh, Onakke Ancient, Elrond, Moon-Reader).
-    AbilityActivated AbilityActivatedTrigger.AbilityActivatedTrigger
+    -- (Kurkesh, Onakke Ancient, Elrond, Moon-Reader), the Filter read against
+    -- the ability.
+    AbilityActivated (Filter.Filter Keyword.Keyword)
   | -- | CR 601.2c / 603.2c: a permanent or a player became the target of a spell
     -- or ability (CR 702.21a's ward, Professor Hojo, Dormant Gomazoa).
     BecomesTargeted BecomesTargetedTrigger.BecomesTargetedTrigger

@@ -36,44 +36,47 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "filter": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HeldBy",
-                    "value": {
-                      "holder": "Controller",
-                      "relation": "Opponent"
-                    }
-                  },
-                  {
-                    "type": "FromSource",
-                    "value": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "Or",
-                          "value": [
-                            {
-                              "type": "HasCardType",
-                              "value": "Creature"
-                            },
-                            {
-                              "type": "HasCardType",
-                              "value": "Land"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "IsInZone",
-                          "value": "Battlefield"
-                        }
-                      ]
-                    }
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "Opponent"
                   }
-                ]
-              },
-              "kind": "NonManaAbility"
+                },
+                {
+                  "type": "FromSource",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "whichKind": "NonManaAbility"
+                  }
+                }
+              ]
             }
           },
           "modal": {

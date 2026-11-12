@@ -14,14 +14,22 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "filter": {
-                "type": "HeldBy",
-                "value": {
-                  "holder": "Controller",
-                  "relation": "You"
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "whichKind": "NonManaAbility"
+                  }
                 }
-              },
-              "kind": "NonManaAbility"
+              ]
             }
           },
           "modal": {

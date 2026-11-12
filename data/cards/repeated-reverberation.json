@@ -49,24 +49,22 @@
               {
                 "type": "AbilityActivated",
                 "value": {
-                  "filter": {
-                    "type": "And",
-                    "value": [
-                      {
-                        "type": "HeldBy",
-                        "value": {
-                          "holder": "Controller",
-                          "relation": "You"
-                        }
-                      },
-                      {
-                        "type": "IsActivatedAbility",
-                        "value": {
-                          "whichLoyalty": "LoyaltyAbility"
-                        }
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
                       }
-                    ]
-                  }
+                    },
+                    {
+                      "type": "IsActivatedAbility",
+                      "value": {
+                        "whichLoyalty": "LoyaltyAbility"
+                      }
+                    }
+                  ]
                 }
               }
             ]

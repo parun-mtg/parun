@@ -26,9 +26,7 @@ import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
-import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -1572,21 +1570,20 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- known information (Filter.FromSource), so a source sacrificed to pay the
   -- cost still answers. An activation that put nothing on the stack (CR
   -- 605.3b) is read off Projection.viewOfUnstackedAbility instead, its facts
-  -- off the event, and CR 605.1a's kind off the event either way. The scenario
+  -- off the event. CR 605.1a's kind is Filter.IsActivatedAbility's whichKind,
+  -- answered on both roads by the view's facts. The scenario
   -- elrond-moon-reader-draws-once-when-a-creature-s-mana-ability-is-activated
   -- proves the mana road, and
   -- runic-armasaur-draws-when-an-opponent-rerolls-with-goblin-bookie the
   -- roll window's, and
   -- unbound-flourishing-triggers-on-wizard-s-rockets-mana-ability-and-copies-nothing
   -- the activation cost the event carries.
-  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger f kind) -> case event of
+  TriggerCondition.AbilityActivated f -> case event of
     GameEvent.AbilityActivated activated ->
       let activator = AbilityWasActivated.player activated
-          facts = AbilityWasActivated.facts activated
-       in all (== AbilityFacts.kind facts) kind
-            && case AbilityWasActivated.ability activated of
-              Just abilId -> Maybe.isJust (Game.lookupObject abilId gs) && Filter.matches bearerContext (Projection.viewOfSpell activator abilId gs) f
-              Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) facts (AbilityWasActivated.activationCost activated) gs) f
+       in case AbilityWasActivated.ability activated of
+            Just abilId -> Maybe.isJust (Game.lookupObject abilId gs) && Filter.matches bearerContext (Projection.viewOfSpell activator abilId gs) f
+            Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) (AbilityWasActivated.facts activated) (AbilityWasActivated.activationCost activated) gs) f
     _ -> False
   -- CR 601.2c / 603.2c: a permanent or a player became the target of a spell or
   -- ability. A Self subject is the bearer, a bare comparison of ids in a Self

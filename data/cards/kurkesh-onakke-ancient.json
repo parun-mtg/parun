@@ -36,35 +36,38 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "filter": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HeldBy",
-                    "value": {
-                      "holder": "Controller",
-                      "relation": "You"
-                    }
-                  },
-                  {
-                    "type": "FromSource",
-                    "value": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "HasCardType",
-                          "value": "Artifact"
-                        },
-                        {
-                          "type": "IsInZone",
-                          "value": "Battlefield"
-                        }
-                      ]
-                    }
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
                   }
-                ]
-              },
-              "kind": "NonManaAbility"
+                },
+                {
+                  "type": "FromSource",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Artifact"
+                      },
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "whichKind": "NonManaAbility"
+                  }
+                }
+              ]
             }
           },
           "modal": {
