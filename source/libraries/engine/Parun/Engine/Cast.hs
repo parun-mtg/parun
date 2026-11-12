@@ -1758,19 +1758,21 @@ inCastableZone pid oid name gs =
 -- learning from data a restriction it already knows. Reading a supertype and a
 -- card type is the same closed-half act as CR 704.5j's legend rule.
 --
--- The SPELL's own type line is read PRINTED (Card.isLegendary), a shortcut no
--- rule grants: CR 205.4a says only where a card's supertypes are printed. Not because the
--- card lacks a projection in the hand or graveyard it is asked from -- CR 613.1
--- names no zone and Projection.viewOfObject reaches every one of them. The two
--- can differ only for an effect granting or removing a supertype there (CR
--- 205.4b) -- the off-battlefield printed read (gap #6529), which no card in the
--- pool reaches.
+-- The SPELL's own supertypes and card types are read off its projection on the
+-- stack (Cost.asSpellProjected), not the printed face: CR 205.4b lets an effect
+-- grant or remove a supertype, and CR 601.2a starts an effect modifying the
+-- spell as it is put on the stack (docs/synthetic-readings.md, "Whether CR
+-- 205.4e sees a supertype the spell gains on the stack"). The scenario
+-- synthetic-storied-decree/cr-205-4e-a-bolt-made-legendary-needs-a-legendary-creature
+-- proves it.
 legendaryRestrictionOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
 legendaryRestrictionOk pid oid name gs = case proposedFace oid name gs of
   Nothing -> False
-  Just face ->
-    not (Card.isLegendary face && (Card.isInstant face || Card.isSorcery face))
-      || controlsLegendaryCreatureOrPlaneswalker pid gs
+  Just _ ->
+    let spell = Cost.asSpellProjected pid oid gs
+        types = PC.cardTypes spell
+     in not (Set.member Supertype.Legendary (PC.supertypes spell) && (Set.member CardType.Instant types || Set.member CardType.Sorcery types))
+          || controlsLegendaryCreatureOrPlaneswalker pid gs
 
 -- CR 205.4e's condition. Read through the PROJECTION rather than off the printed
 -- card, because "controls a legendary creature" is a question about the object as
