@@ -720,6 +720,7 @@ library codec
     Parun.Codec.DiscardTriggerSpec
     Parun.Codec.DiscardWay
     Parun.Codec.DiscardWaySpec
+    Parun.Codec.Discovered
     Parun.Codec.DistinctOf
     Parun.Codec.DistinctOfSpec
     Parun.Codec.Divide
@@ -1910,6 +1911,7 @@ library engine
     Parun.Engine.Detain
     Parun.Engine.Devotion
     Parun.Engine.Dice
+    Parun.Engine.Discover
     Parun.Engine.Driver
     Parun.Engine.Dungeon
     Parun.Engine.Earthbend
@@ -2978,6 +2980,7 @@ library types
     Parun.Types.DiscardSubject
     Parun.Types.DiscardTrigger
     Parun.Types.DiscardWay
+    Parun.Types.Discovered
     Parun.Types.Discrepancy
     Parun.Types.DistinctOf
     Parun.Types.Divide

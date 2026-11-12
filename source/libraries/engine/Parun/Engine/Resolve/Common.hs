@@ -3509,6 +3509,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
   -- empty hand recruits anyway, performing what it can, so nothing here refuses
   -- the instruction.
   Effect.Recruit -> False
+  Effect.Discover {} -> False
   -- CR 701.48a is two "you may"s, and declining both is an outcome the rule
   -- states rather than an impossibility, so nothing here refuses the offer.
   Effect.Learn -> False

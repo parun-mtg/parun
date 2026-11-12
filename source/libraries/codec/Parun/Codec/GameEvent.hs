@@ -33,6 +33,7 @@ import qualified Parun.Codec.DamageEvent as DamageEvent
 import qualified Parun.Codec.DamagePrevented as DamagePrevented
 import qualified Parun.Codec.DieResult as DieResult
 import qualified Parun.Codec.Discarded as Discarded
+import qualified Parun.Codec.Discovered as Discovered
 import qualified Parun.Codec.Drew as Drew
 import qualified Parun.Codec.Expended as Expended
 import qualified Parun.Codec.Exploited as Exploited
@@ -134,6 +135,7 @@ codec =
       Arm.payload "ArrivedUnseen" ObjectId.codec GameEvent.ArrivedUnseen (\x -> case x of GameEvent.ArrivedUnseen y -> Just y; _ -> Nothing),
       Arm.payload "LostTheGame" PlayerId.codec GameEvent.LostTheGame (\x -> case x of GameEvent.LostTheGame y -> Just y; _ -> Nothing),
       Arm.payload "PlayerActed" (PlayerActed.codec PlayerId.codec) GameEvent.PlayerActed (\x -> case x of GameEvent.PlayerActed y -> Just y; _ -> Nothing),
+      Arm.payload "Discovered" Discovered.codec GameEvent.Discovered (\x -> case x of GameEvent.Discovered y -> Just y; _ -> Nothing),
       Arm.payload "MulliganDeclared" MulliganDeclared.codec GameEvent.MulliganDeclared (\x -> case x of GameEvent.MulliganDeclared y -> Just y; _ -> Nothing),
       Arm.payload "LandPlayed" LandPlayed.codec GameEvent.LandPlayed (\x -> case x of GameEvent.LandPlayed y -> Just y; _ -> Nothing),
       Arm.payload "ManifestedDread" ManifestedDread.codec GameEvent.ManifestedDread (\x -> case x of GameEvent.ManifestedDread y -> Just y; _ -> Nothing),
@@ -219,6 +221,7 @@ tagOf x = case x of
   GameEvent.LandPlayed {} -> "LandPlayed"
   GameEvent.MulliganDeclared {} -> "MulliganDeclared"
   GameEvent.PlayerActed {} -> "PlayerActed"
+  GameEvent.Discovered {} -> "Discovered"
   GameEvent.ManifestedDread {} -> "ManifestedDread"
   GameEvent.FacedDilemma {} -> "FacedDilemma"
   GameEvent.CommittedCrime {} -> "CommittedCrime"

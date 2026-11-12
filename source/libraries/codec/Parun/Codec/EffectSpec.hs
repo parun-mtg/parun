@@ -2741,6 +2741,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.Recruit
       " {\"type\":\"Recruit\"} "
+  -- CR 701.57a: the N, the one number rule 701.57a leaves to the card.
+  Spec.it s "Discover" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Discover (Quantity.Literal 5))
+      " {\"type\":\"Discover\",\"value\":{\"type\":\"Literal\",\"value\":5}} "
   -- CR 701.48a: nullary, rule 701.48a fixing both branches and the learner.
   Spec.it s "Learn" $
     Common.assertJsonCodec

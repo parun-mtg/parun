@@ -2045,6 +2045,7 @@ reservedSlots =
       Binding.departedPermanent,
       Binding.earthbentLand,
       Binding.airbentObjects,
+      Binding.discoveredCards,
       Binding.eventAmount,
       Binding.preventedDamageSource,
       Binding.sacrificedCount,
@@ -5004,6 +5005,7 @@ effectFilters effect = case effect of
   Effect.Populate -> []
   Effect.TimeTravel -> []
   Effect.Recruit -> []
+  Effect.Discover quantity -> frame Unframed (quantityFilters quantity)
   Effect.Learn -> []
   Effect.Cloak {} -> []
   Effect.ManifestDread {} -> []

@@ -25,6 +25,7 @@ import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Departure as Departure
+import qualified Parun.Engine.Discover as Discover
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
@@ -72,6 +73,7 @@ import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Discard as Discard
+import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import Parun.Types.Effect (Effect)
@@ -1107,6 +1109,23 @@ repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Rep
             apply ifAgain
             run (runs + 1)
   run 1
+
+-- CR 701.57a: N read once, then Parun.Engine.Discover.process run as a loop
+-- body over its reserved slot, rescoped so a second discover in one resolution
+-- does not read the first one's exiles. CR 701.57b's event follows
+-- unconditionally, the library run out or not. The scenario
+-- curator-of-suns-creation-discovers-again-for-the-same-value-once-each-turn
+-- proves it carries N.
+discover :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Quantity.Type.Quantity -> Game ()
+discover applyLoopBody runSubgame resolving source controller legal chosen quantity = do
+  gs0 <- State.get
+  let viewOf = effectViewOf resolving source legal gs0
+      context = effectContext gs0 resolving controller source legal (slotBindings resolving gs0)
+      n = maybe 0 Integer.toNaturalSaturating (Common.evaluateForRecipient viewOf context gs0 resolving source controller quantity)
+      bound = Set.singleton Binding.discoveredCards
+  State.modify' (Common.rescopeRun resolving bound gs0)
+  applyLoopBody runSubgame resolving source controller legal chosen bound (Discover.process (toInteger n))
+  State.modify' (Event.recordEvent (GameEvent.Discovered Discovered.MkDiscovered {Discovered.player = controller, Discovered.value = n}))
 
 -- CR 608.2c: the process in written order, then its printed "if" asked of the
 -- state that run left -- live, so the tally the run's own mill just bound is

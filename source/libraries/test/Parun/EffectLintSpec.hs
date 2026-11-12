@@ -1435,6 +1435,7 @@ effectObjectRefs effect =
         Effect.Populate -> []
         Effect.TimeTravel -> []
         Effect.Recruit -> []
+        Effect.Discover {} -> []
         Effect.Learn -> []
         Effect.Cloak {} -> []
         Effect.ManifestDread {} -> []

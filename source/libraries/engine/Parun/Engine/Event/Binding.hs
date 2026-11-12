@@ -66,6 +66,7 @@ import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.Exploited as Exploited
@@ -92,6 +93,7 @@ import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
 import qualified Parun.Types.PlayerActed as PlayerActed
+import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -493,6 +495,10 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- searcher. Unconditional given a match.
   (TriggerCondition.PlayerActs _, GameEvent.PlayerActed acted) ->
     Binding.setTriggerPlayer (PlayerActed.player acted) Map.empty
+  -- And CR 701.57b's discover, with its N under the event amount: Curator of
+  -- Sun's Creation's "for the same value".
+  (TriggerCondition.PlayerActs _, GameEvent.Discovered discovered) ->
+    Binding.setTriggerPlayer (Discovered.player discovered) (Binding.setEventAmount (Discovered.value discovered) Map.empty)
   -- CR 601.2c / 603.2c: becomesTargetedSlots' slots, off the announcement
   -- matched.
   (TriggerCondition.BecomesTargeted c, GameEvent.BecameTarget t) -> becomesTargetedBindings c t
@@ -1437,7 +1443,8 @@ eventBindingSlots cond = case cond of
   -- The acting player, Ob Nixilis, Unshackled's "that player". CR 701.68c's
   -- "blighted creature" and CR 706.2's result are not this condition's to bind:
   -- the INSTRUCTING effect binds each at its own slot (Parun.Types.Blight,
-  -- Parun.Types.RollDie).
+  -- Parun.Types.RollDie). CR 701.57b's discover binds its N too.
+  TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed PlayerAction.Discover _) -> Set.fromList [Binding.triggerPlayer, Binding.eventAmount]
   TriggerCondition.PlayerActs _ -> Set.singleton Binding.triggerPlayer
   -- Nothing: Withengar Unbound's payload points at no one -- it grows itself.
   TriggerCondition.PlayerLosesGame _ -> Set.empty

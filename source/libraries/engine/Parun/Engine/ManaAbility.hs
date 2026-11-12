@@ -355,6 +355,7 @@ manaProduced effect = case effect of
   Effect.Populate -> Nothing
   Effect.TimeTravel -> Nothing
   Effect.Recruit -> Nothing
+  Effect.Discover _ -> Nothing
   Effect.Learn -> Nothing
   Effect.Cloak {} -> Nothing
   Effect.ManifestDread {} -> Nothing
@@ -562,6 +563,7 @@ playerChoice effect = case effect of
   Effect.Populate -> Nothing
   Effect.TimeTravel -> Nothing
   Effect.Recruit -> Nothing
+  Effect.Discover _ -> Nothing
   Effect.Learn -> Nothing
   Effect.Cloak {} -> Nothing
   Effect.ManifestDread {} -> Nothing
@@ -823,6 +825,8 @@ movesLibraryCard effect = case effect of
   -- CR 701.70a's first sentence is a draw, which Effect.Draw's arm above already
   -- makes a library move; an ability that recruits is no mana ability.
   Effect.Recruit -> True
+  -- CR 701.57a exiles from the library and puts cards back on its bottom.
+  Effect.Discover _ -> True
   -- CR 701.48a's middle sentence is a draw, which Effect.Draw's arm above
   -- already makes a library move; an ability that learns is no mana ability.
   Effect.Learn -> True

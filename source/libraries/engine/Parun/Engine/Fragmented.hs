@@ -465,9 +465,7 @@ dealtDamage event = case event of
   _ -> False
 
 actedAmong :: Set.Set PlayerAction.PlayerAction -> GameEvent -> Bool
-actedAmong acts event = case event of
-  GameEvent.PlayerActed acted -> Set.member (PlayerActed.action acted) acts
-  _ -> False
+actedAmong acts event = any (\acted -> Set.member (PlayerActed.action acted) acts) (Game.actOf event)
 
 countersPut :: GameEvent -> Bool
 countersPut event = case event of

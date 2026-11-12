@@ -959,6 +959,7 @@ anyTriggerReads event = case event of
   GameEvent.TriggeredAbilityFinished {} -> True
   GameEvent.PermanentActed {} -> True
   GameEvent.PlayerActed {} -> True
+  GameEvent.Discovered {} -> True
   GameEvent.StickerPut {} -> True
 
 -- The same question against a slot environment, for the conditions whose subject
@@ -2069,11 +2070,11 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- moment it is recorded (Parun.Types.PlayerAction), and several of them --
   -- CR 701.22d, 701.25d, 701.54d, 701.68d -- say it fires even where some or
   -- all of the action was impossible.
-  TriggerCondition.PlayerActs watched -> case event of
-    GameEvent.PlayerActed acted ->
+  TriggerCondition.PlayerActs watched -> case Game.actOf event of
+    Just acted ->
       PlayerActed.action acted == PlayerActed.action watched
         && PlayerRelation.holds (Game.teams gs) (PlayerActed.player watched) you (PlayerActed.player acted)
-    _ -> False
+    Nothing -> False
   -- CR 603.9: a player lost the game. The relation reads the loser against CR
   -- 109.5's "you", the ability's controller -- PlayerActs' shape. Game.teams
   -- is read off the settings (CR 800.2), so a loser who has already left is

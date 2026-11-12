@@ -53,6 +53,7 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Discarded as Discarded
+import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Expended as Expended
@@ -648,6 +649,13 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
   -- CR 311.7.
   Spec.it s "ChaosEnsued" $
     Common.assertCodec s GameEvent.codec GameEvent.ChaosEnsued " {\"type\":\"ChaosEnsued\"} "
+  -- CR 701.57b.
+  Spec.it s "Discovered" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.Discovered (Discovered.MkDiscovered (PlayerId.MkPlayerId 2) 5))
+      " {\"type\":\"Discovered\",\"value\":{\"player\":2,\"value\":5}} "
   -- CR 901.9.
   Spec.it s "PlanarDieRolled" $
     Common.assertCodec
