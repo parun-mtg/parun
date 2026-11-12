@@ -17,7 +17,8 @@ bookkeeping: the set's doc, `docs/sets/<set>.md`, is written once, by the
 finish unit.
 
 The orchestrator dispatches a unit by applying the `claude` label to its
-issue; the session that starts opens the PR. The orchestrator owns the
+issue; the session that starts (its prompt is `docs/agents/label-routine.md`)
+opens the PR. The orchestrator owns the
 tracker, which only the census unit also writes (its snapshot), and the body
 of every unlabelled issue. A labelled issue's body belongs to its unit:
 nobody edits it after labelling.
