@@ -59,8 +59,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Artificer"
+          "Artificer",
+          "Human"
         ],
         "types": [
           "Creature"

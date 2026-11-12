@@ -1113,8 +1113,9 @@ repeatArm applyLoopBody runSubgame resolving source controller legal chosen (Rep
 -- CR 701.57a: N read once, then Parun.Engine.Discover.process run as a loop
 -- body over its reserved slot, rescoped so a second discover in one resolution
 -- does not read the first one's exiles. CR 701.57b's event follows
--- unconditionally, the library run out or not; the discover-again scenarios of
--- Curator of Sun's Creation prove it carries N.
+-- unconditionally, the library run out or not. The scenario
+-- curator-of-suns-creation-discovers-again-for-the-same-value-once-each-turn
+-- proves it carries N.
 discover :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Quantity.Type.Quantity -> Game ()
 discover applyLoopBody runSubgame resolving source controller legal chosen quantity = do
   gs0 <- State.get

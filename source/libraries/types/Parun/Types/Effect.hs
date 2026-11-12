@@ -791,8 +791,8 @@ data Effect card ability
     -- Parun.Engine.Recruit.recruit as one procedure. Nullary, rule 701.70a
     -- fixing everything but which card is discarded.
     Recruit
-  | -- | CR 701.57a: the resolving controller discovers this many, performed by
-    -- Parun.Engine.Discover as one procedure ending in CR 701.57b's event.
+  | -- | CR 701.57a: the resolving controller discovers this many, the process
+    -- Parun.Engine.Discover.process, then CR 701.57b's event.
     Discover Quantity.Quantity
   | -- | CR 701.58a: the players the PlayerRef names each cloak the top card of
     -- their own library, performed by Parun.Engine.Cloak.cloak as one procedure
