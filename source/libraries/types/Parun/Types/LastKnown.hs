@@ -228,6 +228,11 @@ data LastKnown = MkLastKnown
     -- it -- Object.paidCosts as it left. Not a characteristic, and gone with the
     -- object, but CR 702.175a's trigger still asks after it on resolution.
     paidCosts :: !(Map.Map Keyword.Keyword (Map.Map KeywordInstance.KeywordInstance Natural.Natural)),
+    -- | CR 400.7d / 608.2h: the keyword whose cost the spell that became it was
+    -- cast for -- Object.castUsing as it left, `paidCosts`' sibling.
+    -- data/scenarios/karai-future-of-the-foot-still-returns-the-card-to-the-
+    -- battlefield-after-she-dies.json is the proof.
+    castUsing :: !(Maybe Keyword.Keyword),
     -- | CR 719.3d: was it a permanent that was a prototyped spell --
     -- Object.prototyped as it left. Not a characteristic, so a face-down one's
     -- `characteristics` above cannot say; Count.lastKnownView reads it.

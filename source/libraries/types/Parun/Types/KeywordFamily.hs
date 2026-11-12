@@ -322,7 +322,8 @@ data KeywordFamily
     -- Spiders-Man, Heroic Horde's "if they were cast using web-slinging".
     WebSlinging
   | -- | CR 702.190a: sneak [cost]; the family Ninja Teen's "using their sneak
-    -- abilities" names on its graveyard permission.
+    -- abilities" names on its graveyard permission, and Quantity.CastUsing names
+    -- for Leonardo, Leader in Blue's "if his sneak cost was paid".
     Sneak
   | -- | CR 702.181a: mobilize N. No card in the pool asks yet, and it is owed at
     -- the keyword rather than at the first asker.

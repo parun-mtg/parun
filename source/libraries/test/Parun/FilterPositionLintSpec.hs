@@ -1839,7 +1839,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Soul of Shandalar", 2), -- both abilities' second target slots, Flame Wave's sentence
         ("Cloak and Dagger, Entwined", 1), -- its trigger's second target slot, Soul of Shandalar's shape
         ("Legion's End", 1), -- its exile's object, relative to the target's controller
-        ("Run Away Together", 2) -- both target slots, each relative to the other
+        ("Run Away Together", 2), -- both target slots, each relative to the other
+        ("Kitsune, Dragon's Daughter", 2) -- both target slots, Run Away Together's shape
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried
