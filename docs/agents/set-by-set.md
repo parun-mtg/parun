@@ -18,6 +18,9 @@ is the orchestrator's read-only subagent; it reads "Auditing a unit".
   to keep or revert them, and have the agent list them.
 - `parun translate` without `--out DIR` writes into `data/cards/`; every dry
   run passes `--out`.
+- `parun ingest` also rewrites `data/legalities.json`, one sorted file every
+  card PR would edit: restore it (`git checkout origin/main --
+  data/legalities.json`) before committing. The finish unit regenerates it.
 
 ## Implementing a unit
 
