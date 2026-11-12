@@ -1339,12 +1339,12 @@ calculate arithmetic = case arithmetic of
 -- SCOPED TO THE CHARACTERISTIC-DEFINING ABILITY, as CR 208.2a is: the caller is
 -- Projection.applyCharacteristicPT, which layer 7a runs for an object in any
 -- zone (CR 604.3 makes the ability function in all zones), and every other reader
--- of a quantity keeps evaluate's Nothing (gap #6219, #6220: CR 107.2 gives them 0).
+-- of a quantity keeps evaluate's Nothing (gap #6220: CR 107.2 gives them 0).
 --
 -- It does NOT descend into a Count, and does not need to: an undeterminable
--- count IS the number CR 208.2a is talking about, so the 0 goes in whole here
--- and Parun.Engine.Count.aggregate stays free to answer Nothing for non-CDA
--- readers.
+-- count IS the number CR 208.2a is talking about, so the 0 goes in whole here.
+-- A Greatest or Total over an empty or undeterminable set is already 0 there
+-- (CR 107.2, Parun.Engine.Count.aggregate).
 determine :: Count.ViewOf -> Filter.Context -> GameState -> ObjectId -> Quantity -> Integer
 determine viewOf context gs oid = determineWith (evaluate viewOf context gs oid)
 
