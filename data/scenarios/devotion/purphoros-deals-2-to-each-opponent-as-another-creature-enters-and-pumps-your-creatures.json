@@ -1,0 +1,30 @@
+{
+  "description": "Purphoros, God of the Forge deals 2 damage to bob as alice's Raging Goblin enters, and its {2}{R} gives her creatures +1/+0 until end of turn",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Purphoros, God of the Forge", "label": "purphoros" },
+          { "card": "Mountain", "label": "m1", "ready": true },
+          { "card": "Mountain", "label": "m2", "ready": true },
+          { "card": "Mountain", "label": "m3", "ready": true },
+          { "card": "Mountain", "label": "m4", "ready": true }
+        ],
+        "hand": [{ "card": "Raging Goblin", "label": "goblin" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$goblin", "mana": ["$m1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$purphoros", "mana": ["$m2", "$m3", "$m4"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Raging Goblin", "power": 2, "toughness": 1 } } }
+  ]
+}

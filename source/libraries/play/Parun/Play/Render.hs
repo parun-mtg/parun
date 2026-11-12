@@ -52,6 +52,7 @@ import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FacedDilemma as FacedDilemma
@@ -504,6 +505,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.ManifestedDread d -> said [player (ManifestedDread.player d), Text.pack "manifests dread"]
   GameEvent.FacedDilemma d -> said [player (FacedDilemma.player d), Text.pack "faces a dilemma over", name (FacedDilemma.object d)]
   GameEvent.CommittedCrime c -> said [player (CommittedCrime.player c), Text.pack "commits a crime with", name (CommittedCrime.object c)]
+  GameEvent.Expended e -> said [player (Expended.player e), Text.pack "has spent", Text.pack (show (Expended.after e)), Text.pack "mana on spells this turn"]
   GameEvent.DieResultSettled r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r))]
   GameEvent.RolledToVisit r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit their Attractions"]
   GameEvent.PlanarDieRolled r -> said [player (PlanarDieRolled.roller r), Text.pack "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]

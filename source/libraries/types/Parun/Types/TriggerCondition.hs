@@ -35,6 +35,7 @@ import qualified Parun.Types.PlacesSticker as PlacesSticker
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
+import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlaysLand as PlaysLand
@@ -260,6 +261,9 @@ data TriggerCondition
   | -- | CR 700.13: "whenever you commit a crime" (Vadmir, New Blood), against
     -- GameEvent.CommittedCrime.
     PlayerCommitsCrime PlayerRelation.PlayerRelation
+  | -- | CR 700.14: "whenever you expend N" (Bark-Knuckle Boxer), against
+    -- GameEvent.Expended.
+    PlayerExpends PlayerExpends.PlayerExpends
   | -- | CR 311.7: "whenever chaos ensues", a plane's chaos ability, against a
     -- GameEvent.ChaosEnsued.
     ChaosEnsues

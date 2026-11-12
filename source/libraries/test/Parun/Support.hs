@@ -1950,6 +1950,7 @@ stubView table oid =
                 Filter.declaredBlockerThisCombat = False,
                 Filter.leftLibraryThisTurn = Set.empty,
                 Filter.dealtDamageThisTurn = False,
+                Filter.activatedThisTurn = False,
                 Filter.arrivalThisTurn = Nothing,
                 -- CR 702.122c: the table registers no crewing, and no Count in
                 -- the pool filters by one, so CrewedSourceThisTurn is vacuously
@@ -2014,7 +2015,9 @@ stubView table oid =
                 Filter.activatedAbilityKinds = Set.empty,
                 -- CR 702.184c: the table registers no such grant, and no Count
                 -- in the pool reads this stub through Quantity.StationMeasure.
-                Filter.grantsStationToughness = False
+                Filter.grantsStationToughness = False,
+                -- CR 700.5a: the table registers no player abilities either.
+                Filter.devotionBonus = 0
               }
         [] -> Nothing
 

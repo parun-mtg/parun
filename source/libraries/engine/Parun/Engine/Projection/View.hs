@@ -25,6 +25,7 @@ import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Defender as Defender
 import qualified Parun.Engine.Deploy as Deploy
+import qualified Parun.Engine.Devotion as Devotion
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
@@ -205,6 +206,9 @@ viewOfCardLapsed lapsed face =
           -- a permanent. viewOfCharacteristics is the view that holds an id and
           -- answers.
           Filter.dealtDamageThisTurn = False,
+          -- CR 700.10 asks after an OBJECT; this builder describes a printed
+          -- FACE -- `leftLibraryThisTurn` above's reason.
+          Filter.activatedThisTurn = False,
           -- CR 400.7 enters an OBJECT; this builder describes a printed FACE --
           -- `leftLibraryThisTurn` above's reason.
           Filter.arrivalThisTurn = Nothing,
@@ -335,7 +339,9 @@ viewOfCardLapsed lapsed face =
           Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbility (TypeLine.types typeLine) (TypeLine.subtypes typeLine)) roster,
           -- CR 702.184c reaches a permanent's CONTROLLER; this builder describes
           -- a printed FACE with no controller and no board to grant it one.
-          Filter.grantsStationToughness = False
+          Filter.grantsStationToughness = False,
+          -- CR 700.5a off the printed face, which no text change reaches.
+          Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face)
         }
 
 -- viewOfCard's activated-ability roster: the face's own list and rule 702's.
@@ -680,6 +686,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,
       Filter.dealtDamageThisTurn = Count.dealtDamageThisTurn oid gs,
+      Filter.activatedThisTurn = Count.activatedThisTurn oid gs,
       Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
       Filter.beforeMoveView = Count.departedAs gs oid >>= Count.orLastKnown peers gs,
       Filter.crewedThisTurn = Count.crewedThisTurn oid gs,
@@ -886,7 +893,10 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs),
       -- CR 702.184c off the PROJECTION, applyModification's GrantsStationToughness
       -- arm being layer 6's only writer.
-      Filter.grantsStationToughness = PC.grantsStationToughness pc
+      Filter.grantsStationToughness = PC.grantsStationToughness pc,
+      -- CR 700.5a off the copiable list `pc` carries, rewritten by layer 3 and
+      -- emptied by no layer-6 removal (see the field's own comment).
+      Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities pc)
     }
 
 -- CR 506.5 / 506.6: the AloneAmong groups among which this attacker is alone

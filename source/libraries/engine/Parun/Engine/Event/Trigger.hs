@@ -92,6 +92,7 @@ import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FacedDilemma as FacedDilemma
@@ -680,6 +681,7 @@ movedOf event = case event of
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
   GameEvent.CommittedCrime {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -841,6 +843,7 @@ participants event =
         GameEvent.ManifestedDread d -> (Foldable.toList (ManifestedDread.cards d), [ManifestedDread.player d])
         GameEvent.FacedDilemma d -> ([FacedDilemma.object d], [FacedDilemma.player d])
         GameEvent.CommittedCrime c -> ([CommittedCrime.object c], [CommittedCrime.player c])
+        GameEvent.Expended e -> player (Expended.player e)
         GameEvent.DieResultSettled r -> player (DieResult.roller r)
         GameEvent.RolledToVisit r -> player (DieResult.roller r)
         GameEvent.PlanarDieRolled r -> player (PlanarDieRolled.roller r)
@@ -900,6 +903,7 @@ looksBack condition = case condition of
   TriggerCondition.PlayerManifestsDread _ -> False
   TriggerCondition.PlayerFacesDilemma _ -> False
   TriggerCondition.PlayerCommitsCrime _ -> False
+  TriggerCondition.PlayerExpends _ -> False
   TriggerCondition.SelfBecomesPlotted -> False
   -- Not on CR 603.10a's list, and no zone change: a permanent acts where it
   -- stands -- CR 701.43c can only exert one ON the battlefield, CR 702.100b's
@@ -1127,6 +1131,7 @@ batchScoped condition = case condition of
   TriggerCondition.PlayerManifestsDread _ -> False
   TriggerCondition.PlayerFacesDilemma _ -> False
   TriggerCondition.PlayerCommitsCrime _ -> False
+  TriggerCondition.PlayerExpends _ -> False
   TriggerCondition.SelfBecomesPlotted -> False
   TriggerCondition.PermanentActs _ -> False
   TriggerCondition.PlayerRollsResult _ -> False
@@ -1566,6 +1571,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ManifestedDread {} -> Map.empty
         GameEvent.FacedDilemma {} -> Map.empty
         GameEvent.CommittedCrime {} -> Map.empty
+        GameEvent.Expended {} -> Map.empty
         GameEvent.DieResultSettled _ -> Map.empty
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
@@ -1950,6 +1956,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ManifestedDread {} -> Map.empty
         GameEvent.FacedDilemma {} -> Map.empty
         GameEvent.CommittedCrime {} -> Map.empty
+        GameEvent.Expended {} -> Map.empty
         GameEvent.DieResultSettled _ -> Map.empty
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
@@ -2159,6 +2166,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ManifestedDread {} -> Map.empty
         GameEvent.FacedDilemma {} -> Map.empty
         GameEvent.CommittedCrime {} -> Map.empty
+        GameEvent.Expended {} -> Map.empty
         GameEvent.DieResultSettled _ -> Map.empty
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
@@ -2275,6 +2283,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.ManifestedDread {} -> Map.empty
         GameEvent.FacedDilemma {} -> Map.empty
         GameEvent.CommittedCrime {} -> Map.empty
+        GameEvent.Expended {} -> Map.empty
         GameEvent.DieResultSettled _ -> Map.empty
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
@@ -2810,6 +2819,8 @@ zonesTriggeredFrom cond =
         TriggerCondition.PlayerManifestsDread _ -> battlefield
         TriggerCondition.PlayerFacesDilemma _ -> battlefield
         TriggerCondition.PlayerCommitsCrime _ -> battlefield
+        -- CR 113.6's default: Bark-Knuckle Boxer is a creature.
+        TriggerCondition.PlayerExpends _ -> battlefield
         -- CR 113.6's default: Withengar Unbound is a creature.
         TriggerCondition.PlayerLosesGame _ -> battlefield
         -- CR 113.6's default: Renegade Krasis and Wildgrowth Walker are creatures,
@@ -3179,6 +3190,7 @@ stateTriggersOn gs
             TriggerCondition.PlayerManifestsDread _ -> False
             TriggerCondition.PlayerFacesDilemma _ -> False
             TriggerCondition.PlayerCommitsCrime _ -> False
+            TriggerCondition.PlayerExpends _ -> False
             TriggerCondition.SelfBecomesPlotted -> False
             -- CR 603.2 again: a permanent's act HAPPENS, with its own log entry,
             -- and leaves no state behind that says it did -- CR 702.100b's and CR
@@ -3987,6 +3999,7 @@ resnapshot gs without event =
         GameEvent.ManifestedDread {} -> Just event
         GameEvent.FacedDilemma {} -> Just event
         GameEvent.CommittedCrime {} -> Just event
+        GameEvent.Expended {} -> Just event
         GameEvent.DieResultSettled {} -> Just event
         GameEvent.RolledToVisit {} -> Just event
         GameEvent.PlanarDieRolled {} -> Just event

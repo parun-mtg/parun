@@ -34,6 +34,7 @@ import qualified Parun.Codec.DamagePrevented as DamagePrevented
 import qualified Parun.Codec.DieResult as DieResult
 import qualified Parun.Codec.Discarded as Discarded
 import qualified Parun.Codec.Drew as Drew
+import qualified Parun.Codec.Expended as Expended
 import qualified Parun.Codec.Exploited as Exploited
 import qualified Parun.Codec.FacedDilemma as FacedDilemma
 import qualified Parun.Codec.HalfUnlocked as HalfUnlocked
@@ -138,6 +139,7 @@ codec =
       Arm.payload "ManifestedDread" ManifestedDread.codec GameEvent.ManifestedDread (\x -> case x of GameEvent.ManifestedDread y -> Just y; _ -> Nothing),
       Arm.payload "FacedDilemma" FacedDilemma.codec GameEvent.FacedDilemma (\x -> case x of GameEvent.FacedDilemma y -> Just y; _ -> Nothing),
       Arm.payload "CommittedCrime" CommittedCrime.codec GameEvent.CommittedCrime (\x -> case x of GameEvent.CommittedCrime y -> Just y; _ -> Nothing),
+      Arm.payload "Expended" Expended.codec GameEvent.Expended (\x -> case x of GameEvent.Expended y -> Just y; _ -> Nothing),
       Arm.payload "DieResultSettled" (DieResult.codec PlayerId.codec) GameEvent.DieResultSettled (\x -> case x of GameEvent.DieResultSettled y -> Just y; _ -> Nothing),
       Arm.payload "RolledToVisit" (DieResult.codec PlayerId.codec) GameEvent.RolledToVisit (\x -> case x of GameEvent.RolledToVisit y -> Just y; _ -> Nothing),
       Arm.payload "PlanarDieRolled" PlanarDieRolled.codec GameEvent.PlanarDieRolled (\x -> case x of GameEvent.PlanarDieRolled y -> Just y; _ -> Nothing),
@@ -219,6 +221,7 @@ tagOf x = case x of
   GameEvent.ManifestedDread {} -> "ManifestedDread"
   GameEvent.FacedDilemma {} -> "FacedDilemma"
   GameEvent.CommittedCrime {} -> "CommittedCrime"
+  GameEvent.Expended {} -> "Expended"
   GameEvent.DieResultSettled {} -> "DieResultSettled"
   GameEvent.RolledToVisit {} -> "RolledToVisit"
   GameEvent.PlanarDieRolled {} -> "PlanarDieRolled"

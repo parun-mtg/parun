@@ -70,6 +70,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
+import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -713,6 +714,13 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PlayerCommitsCrime PlayerRelation.You)
       " {\"type\":\"PlayerCommitsCrime\",\"value\":\"You\"} "
+  -- CR 700.14: Bark-Knuckle Boxer's "whenever you expend 4".
+  Spec.it s "PlayerExpends" $
+    Common.assertCodec
+      s
+      TriggerCondition.codec
+      (TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You 4))
+      " {\"type\":\"PlayerExpends\",\"value\":{\"player\":\"You\",\"amount\":4}} "
   -- CR 706.2: Night Shift of the Living Dead's "whenever you roll a 6".
   Spec.it s "PlayerRollsResult" $
     Common.assertCodec

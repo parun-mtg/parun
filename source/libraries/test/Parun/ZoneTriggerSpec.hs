@@ -121,6 +121,7 @@ import qualified Parun.Types.DrawnUnder as DrawnUnder
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.Face as Face
@@ -177,6 +178,7 @@ import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
+import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -2320,6 +2322,8 @@ representativeEvents cond =
         TriggerCondition.PlayerFacesDilemma _ -> one (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma S.bob departed))
         -- CR 700.13's own event: committing a crime binds nothing.
         TriggerCondition.PlayerCommitsCrime _ -> one (GameEvent.CommittedCrime (CommittedCrime.MkCommittedCrime S.bob departed))
+        -- CR 700.14's own event, crossing the amount the condition states.
+        TriggerCondition.PlayerExpends e -> one (GameEvent.Expended Expended.MkExpended {Expended.player = S.bob, Expended.before = 0, Expended.after = PlayerExpends.amount e})
         -- CR 706.2's per-die event, carrying the number the condition states.
         TriggerCondition.PlayerRollsResult watched -> one (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = DieResult.result watched})
         -- CR 701.52a's own event, and the only one this condition admits.
@@ -2645,6 +2649,7 @@ everyTriggerCondition =
     TriggerCondition.PlayerManifestsDread PlayerRelation.Opponent,
     TriggerCondition.PlayerFacesDilemma PlayerRelation.You,
     TriggerCondition.PlayerCommitsCrime PlayerRelation.You,
+    TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends PlayerRelation.You 4),
     TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.You, DieResult.result = 6},
     TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.Opponent, DieResult.result = 6},
     TriggerCondition.Visit,

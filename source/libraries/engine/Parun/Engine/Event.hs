@@ -1279,6 +1279,7 @@ damageOf event = case event of
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
   GameEvent.CommittedCrime {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -1357,6 +1358,7 @@ revealOf event = case event of
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
   GameEvent.CommittedCrime {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -9253,7 +9255,8 @@ referTo oldId newId gs =
 -- carryOver's CR 607.2q half: a card exiled to pay the cost of a permanent spell
 -- is linked to the permanent that spell becomes, so a link naming the spell
 -- names the permanent instead. Parun.Engine.Cost.payComponent's BeholdAndExile
--- arm is the writer; Parun.CostSpec's Champion of the Weird group is the proof.
+-- and ExileCardsFromGraveyard arms are the writers; Parun.CostSpec's Champion of
+-- the Weird group and Skyway Robber's scenarios are the proofs.
 relink :: ObjectId -> ObjectId -> ExileLink.ExileLink -> ExileLink.ExileLink
 relink oldId newId link =
   if ExileLink.source link == oldId then link {ExileLink.source = newId} else link
@@ -11860,6 +11863,7 @@ controllerTurnScoped cond = case cond of
   TriggerCondition.PlayerManifestsDread _ -> False
   TriggerCondition.PlayerFacesDilemma _ -> False
   TriggerCondition.PlayerCommitsCrime _ -> False
+  TriggerCondition.PlayerExpends _ -> False
   TriggerCondition.SelfBecomesPlotted -> False
   -- No PermanentAction's rule names a turn. Where the act can only happen on the
   -- ACTIVE player's turn -- CR 508.1g's exert, the attack CR 508.1a makes
@@ -12383,6 +12387,7 @@ abilityTriggeredOf event = case event of
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
   GameEvent.CommittedCrime {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing

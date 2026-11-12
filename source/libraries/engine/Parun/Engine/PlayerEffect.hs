@@ -635,6 +635,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -838,6 +839,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -938,6 +940,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1051,6 +1054,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1139,6 +1143,7 @@ prohibitsBecomingMonarch pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1208,6 +1213,7 @@ stateBasedActionDoesntApplyTo action pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1273,6 +1279,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1343,6 +1350,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -1422,6 +1430,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1487,6 +1496,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -2196,6 +2206,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.NoMaximumHandSize -> Nothing
   PlayerEffect.SetMaximumHandSize _ -> Nothing
   PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+  PlayerEffect.IncreaseDevotion _ -> Nothing
   PlayerEffect.ReduceMaximumHandSize _ -> Nothing
   PlayerEffect.DontLoseUnspentMana _ -> Nothing
   PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -2457,6 +2468,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.NoMaximumHandSize -> Nothing
   PlayerEffect.SetMaximumHandSize _ -> Nothing
   PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+  PlayerEffect.IncreaseDevotion _ -> Nothing
   PlayerEffect.ReduceMaximumHandSize _ -> Nothing
   PlayerEffect.DontLoseUnspentMana _ -> Nothing
   PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -2817,6 +2829,7 @@ mayCastWithoutPayingManaCost pid oid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -2899,6 +2912,7 @@ playLandPiles pid gs =
         PlayerEffect.NoMaximumHandSize -> []
         PlayerEffect.SetMaximumHandSize _ -> []
         PlayerEffect.IncreaseMaximumHandSize _ -> []
+        PlayerEffect.IncreaseDevotion _ -> []
         PlayerEffect.ReduceMaximumHandSize _ -> []
         PlayerEffect.DontLoseUnspentMana _ -> []
         PlayerEffect.LoseLifeForUnspentMana -> []
@@ -3010,6 +3024,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -3128,6 +3143,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -3225,6 +3241,7 @@ protectionCarriers gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -3317,6 +3334,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -3394,6 +3412,7 @@ votesAllowed pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize {} -> Nothing
         PlayerEffect.IncreaseMaximumHandSize {} -> Nothing
+        PlayerEffect.IncreaseDevotion {} -> Nothing
         PlayerEffect.ReduceMaximumHandSize {} -> Nothing
         PlayerEffect.DontLoseUnspentMana {} -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -3462,6 +3481,7 @@ offeredExtras pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize {} -> False
         PlayerEffect.IncreaseMaximumHandSize {} -> False
+        PlayerEffect.IncreaseDevotion {} -> False
         PlayerEffect.ReduceMaximumHandSize {} -> False
         PlayerEffect.DontLoseUnspentMana {} -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -3531,6 +3551,7 @@ cascadeActions pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize {} -> Nothing
         PlayerEffect.IncreaseMaximumHandSize {} -> Nothing
+        PlayerEffect.IncreaseDevotion {} -> Nothing
         PlayerEffect.ReduceMaximumHandSize {} -> Nothing
         PlayerEffect.DontLoseUnspentMana {} -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -3599,6 +3620,7 @@ drawReveals pid nth gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize {} -> Nothing
         PlayerEffect.IncreaseMaximumHandSize {} -> Nothing
+        PlayerEffect.IncreaseDevotion {} -> Nothing
         PlayerEffect.ReduceMaximumHandSize {} -> Nothing
         PlayerEffect.DontLoseUnspentMana {} -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -3666,6 +3688,7 @@ shownGrants pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize {} -> Nothing
         PlayerEffect.IncreaseMaximumHandSize {} -> Nothing
+        PlayerEffect.IncreaseDevotion {} -> Nothing
         PlayerEffect.ReduceMaximumHandSize {} -> Nothing
         PlayerEffect.DontLoseUnspentMana {} -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -3763,6 +3786,7 @@ maximumHandSize pid gs =
         PlayerEffect.SetMaximumHandSize limit -> Just limit
         PlayerEffect.IncreaseMaximumHandSize extra -> fmap (extra +) current
         PlayerEffect.ReduceMaximumHandSize fewer -> fmap (\limit -> if fewer >= limit then 0 else limit - fewer) current
+        PlayerEffect.IncreaseDevotion _ -> current
         PlayerEffect.CantCastSpells -> current
         PlayerEffect.CantActivateAbilities {} -> current
         PlayerEffect.CantCastMoreThan _ -> current
@@ -3859,6 +3883,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
         PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
@@ -3934,6 +3959,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> True
@@ -4017,6 +4043,7 @@ prohibitsGainingLife pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -4096,6 +4123,7 @@ prohibitsLosingLife pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -4174,6 +4202,7 @@ precludes outcome pid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -4254,6 +4283,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
         PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
@@ -4383,6 +4413,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.NoMaximumHandSize -> False
         PlayerEffect.SetMaximumHandSize _ -> False
         PlayerEffect.IncreaseMaximumHandSize _ -> False
+        PlayerEffect.IncreaseDevotion _ -> False
         PlayerEffect.ReduceMaximumHandSize _ -> False
         PlayerEffect.DontLoseUnspentMana _ -> False
         PlayerEffect.LoseLifeForUnspentMana -> False
@@ -4455,6 +4486,7 @@ targetingRestrictions =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -4538,6 +4570,7 @@ hexproofExemptions =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -4689,6 +4722,7 @@ unpreventable gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -4774,6 +4808,7 @@ unredirectable gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -4829,6 +4864,7 @@ statedFlips pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -4910,6 +4946,7 @@ rollModifiers pid gs =
         PlayerEffect.NoMaximumHandSize -> Nothing
         PlayerEffect.SetMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
         PlayerEffect.DontLoseUnspentMana _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
@@ -5037,6 +5074,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.NoMaximumHandSize -> pure effect
   PlayerEffect.SetMaximumHandSize _ -> pure effect
   PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
+  PlayerEffect.IncreaseDevotion _ -> pure effect
   PlayerEffect.ReduceMaximumHandSize _ -> pure effect
   PlayerEffect.DontLoseUnspentMana _ -> pure effect
   PlayerEffect.LoseLifeForUnspentMana -> pure effect
@@ -5120,6 +5158,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.NoMaximumHandSize -> pure effect
   PlayerEffect.SetMaximumHandSize _ -> pure effect
   PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
+  PlayerEffect.IncreaseDevotion _ -> pure effect
   PlayerEffect.ReduceMaximumHandSize _ -> pure effect
   PlayerEffect.DontLoseUnspentMana _ -> pure effect
   PlayerEffect.LoseLifeForUnspentMana -> pure effect

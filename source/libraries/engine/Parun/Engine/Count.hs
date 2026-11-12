@@ -22,6 +22,7 @@ import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Deploy as Deploy
+import qualified Parun.Engine.Devotion as Devotion
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
@@ -889,6 +890,7 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
   GameEvent.CommittedCrime {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -1101,6 +1103,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.declaredBlockerThisCombat = declaredBlockerThisCombat oid gs,
           Filter.leftLibraryThisTurn = leftLibraryThisTurn oid gs,
           Filter.dealtDamageThisTurn = dealtDamageThisTurn oid gs,
+          Filter.activatedThisTurn = activatedThisTurn oid gs,
           Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
           Filter.beforeMoveView = departedAs gs oid >>= orLastKnown peers gs,
           Filter.crewedThisTurn = crewedThisTurn oid gs,
@@ -1176,6 +1179,12 @@ leftLibraryThisTurn oid gs =
 -- such creature was still dealt damage this turn.
 dealtDamageThisTurn :: ObjectId -> GameState -> Bool
 dealtDamageThisTurn oid gs = any ((== Just oid) . Game.damagedObject . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+
+-- CR 700.10: was this object the source of an ability activated this turn?
+-- Every logged activation counts, resolved or not, whoever activated it and
+-- whether or not the object still has the ability.
+activatedThisTurn :: ObjectId -> GameState -> Bool
+activatedThisTurn oid gs = any ((== oid) . ObjectSnapshot.object . PastActivation.source) (TurnRegisters.activationsThisTurn (GameState.turn gs))
 
 -- CR 702.122c / 608.2i: the Vehicles this object crewed this turn -- the half of
 -- the relation a candidate can answer; Parun.Engine.Filter's
@@ -1450,6 +1459,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 120.1 damages an OBJECT, and this view describes a snapshot rather
       -- than one -- there is no id here for the turn's damage to have named.
       Filter.dealtDamageThisTurn = False,
+      -- CR 700.10 names an OBJECT as a source, and this view describes a
+      -- snapshot rather than one -- `dealtDamageThisTurn` above's reason.
+      Filter.activatedThisTurn = False,
       -- CR 400.7 enters an OBJECT, and this view describes a snapshot rather
       -- than one -- `leftLibraryThisTurn` above's reason again.
       Filter.arrivalThisTurn = Nothing,
@@ -1580,7 +1592,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot),
       -- CR 702.184c off the snapshot, which carries the field: the marker
       -- outlives the object exactly as a keyword or a P/T does.
-      Filter.grantsStationToughness = PC.grantsStationToughness snapshot
+      Filter.grantsStationToughness = PC.grantsStationToughness snapshot,
+      -- CR 700.5a off the snapshot's copiable list, as the live builder reads it.
+      Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities snapshot)
     }
 
 -- CR 604.2: a snapshot's activated abilities less those whose "as long as"
@@ -1637,7 +1651,8 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.manaValue = Filter.manaValue sampled,
           Filter.manaCost = Filter.manaCost sampled,
           Filter.activatedAbilityKinds = Filter.activatedAbilityKinds sampled,
-          Filter.grantsStationToughness = Filter.grantsStationToughness sampled
+          Filter.grantsStationToughness = Filter.grantsStationToughness sampled,
+          Filter.devotionBonus = Filter.devotionBonus sampled
         }
 
 -- CR 608.2i: an object an event snapshotted, as the snapshot shows it -- its

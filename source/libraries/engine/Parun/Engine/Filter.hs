@@ -367,6 +367,11 @@ data View = MkView
     -- all for a wither or infect source, so the marks are a strict subset of
     -- what was dealt.
     dealtDamageThisTurn :: Bool,
+    -- CR 700.10: was this candidate the source of an ability activated this
+    -- turn? Read off TurnRegisters.activationsThisTurn, and LAZY for
+    -- `declaredThisTurn`'s reason -- nothing forces it unless a Filter contains
+    -- ActivatedThisTurn.
+    activatedThisTurn :: Bool,
     -- CR 400.7 / 608.2i: the zone change earlier this turn that made this
     -- candidate the object it is now, if there was one (Game.arrivalThisTurn).
     -- The same log again, and LAZY for its reason -- nothing forces it unless a
@@ -881,7 +886,14 @@ data View = MkView
     --
     -- False on a player view: CR 109.1 gives a player no controller and so no
     -- permanent whose Modification this could be.
-    grantsStationToughness :: Bool
+    grantsStationToughness :: Bool,
+    -- CR 700.5a: how much this candidate's player abilities raise its
+    -- controller's devotion (Parun.Engine.Devotion.bonusOf). Read off the
+    -- COPIABLE list, which copy and text-changing effects write and no later
+    -- layer strips, so an Altar of the Pantheon that lost its abilities still
+    -- counts. No Filter atom consults it: it is here for
+    -- Parun.Engine.Quantity's devotionOf.
+    devotionBonus :: Natural.Natural
   }
 
 -- CR 400.7d / 107.4h: `manaSpentTagColors` of a mana-spent record, for the
@@ -990,6 +1002,8 @@ playerView pid =
       -- view through it. Parun.DamageSpec's Needle Drop case is what proves it.
       dealtDamageThisTurn = False,
       -- CR 400.7 moves an OBJECT between zones, and a player is not one.
+      -- CR 700.10 asks after a PERMANENT, and a player is not one.
+      activatedThisTurn = False,
       arrivalThisTurn = Nothing,
       -- CR 702.122b crews with a CREATURE, and a player is not one -- CR 506.3
       -- rules the combat fields above out for the same kind of reason.
@@ -1103,7 +1117,9 @@ playerView pid =
       activatedAbilityKinds = Set.empty,
       -- CR 702.184c reaches a permanent's controller, and a player view built
       -- from a bare PlayerId has no permanent behind it to grant this at all.
-      grantsStationToughness = False
+      grantsStationToughness = False,
+      -- CR 109.1: a player has no abilities to raise anyone's devotion.
+      devotionBonus = 0
     }
 
 -- The perspective the match is relative to: who counts as "you" (CR 109.5), and
@@ -1121,10 +1137,12 @@ data Context = MkContext
     source :: Maybe ObjectId.ObjectId,
     -- CR 202.3 / 208.1: the SOURCE's measures, for the Measures atom's OfSource
     -- operand (CR 702.134a's mentor, CR 702.85a's cascade, Ironclaw Curse); a
-    -- measure the source lacks has no key, `slotMeasures` below's posture. Not
-    -- derivable from `source` here -- this module holds no game state and cannot
-    -- project -- so Parun.Engine.Projection.withCharacteristicsOf fills it and the
-    -- two fields below together, through last known information (CR 608.2b's
+    -- measure the source lacks has no key, `slotMeasures` below's posture, but a
+    -- missing power or toughness is CR 107.2's 0 (CR 208.3; Loki Laufeyson made
+    -- an enchantment by One with the Stars). Not derivable from `source` here --
+    -- this module holds no game state and cannot project -- so
+    -- Parun.Engine.Projection.withCharacteristicsOf fills it and the two fields
+    -- below together, through last known information (CR 608.2b's
     -- re-check, CR 608.2h's effects): in every context
     -- Parun.Engine.Projection.sourceContext frames, and in CR 509.1b's pairwise
     -- restrictions, which frame by the creature being compared
@@ -1753,7 +1771,13 @@ data Context = MkContext
     -- Anchor.AnyPermanent. Filled lazily by Parun.Engine.Projection.framedBySlots;
     -- empty in contextFor below, so the atom is vacuously False there, and
     -- Parun.FilterPositionLintSpec keeps a card to the positions it is filled in.
-    battlefieldViews :: Seq.Seq View
+    battlefieldViews :: Seq.Seq View,
+    -- | CR 107.2 / 208.3: an object's missing power or toughness reads 0 in
+    -- Parun.Engine.Quantity's Measure arm rather than Nothing. Set by
+    -- Parun.Engine.Condition.holds and Parun.Engine.Resolve.Slots.effectContext,
+    -- and cleared for an AtMost limit, which skips a number its object lacks
+    -- (Drain Life); False in contextFor below.
+    zeroMissingPowerToughness :: Bool
   }
 
 -- A Context for every match whose Filter cannot name a context-relative atom --
@@ -1816,7 +1840,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a) and its draft notes (CR 905.2b) filled from the state, the facts
@@ -1980,6 +2004,17 @@ sharesAnchored trait anchor = case anchor of
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
+  -- The candidate's own host, off attachedToView, so an attacher reached through
+  -- Filter.HasAttached compares against the permanent it sits on: CR 700.9's
+  -- "an Aura that is controlled by that permanent's controller" (Lion Umbra).
+  Anchor.Host -> case trait of
+    Trait.Controller -> Just (\_ view -> meets (held view) (foldMap held (attachedToView view)))
+    Trait.Color -> Nothing
+    Trait.Name -> Nothing
+    Trait.Owner -> Nothing
+    Trait.Sector -> Nothing
+    Trait.CreatureType -> Nothing
+    Trait.CardType _ -> Nothing
   where
     meets a b = not (Set.disjoint a b)
     held = foldMap Set.singleton . controller
@@ -2006,6 +2041,8 @@ attachedAnchored anchor = case anchor of
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
   Anchor.YourCommander -> Nothing
+  -- The candidate's own host is the candidate's attachment, not an anchor.
+  Anchor.Host -> Nothing
 
 -- CR 205.2a: a view's card types, among the named ones where a Trait names some.
 cardTypesAmong :: Maybe (Set.Set CardType.CardType) -> View -> Set.Set CardType.CardType
@@ -2442,6 +2479,9 @@ matches context view predicate = case predicate of
   -- CantPayKeywordCost sits between them and is neither: a prohibition lifts the
   -- moment its source leaves.
   Filter.DealtDamageThisTurn -> dealtDamageThisTurn view
+  -- CR 700.10: the same look-back over CR 602.2's activation log, so the
+  -- answer holds once the ability is gone or its activator has left the game.
+  Filter.ActivatedThisTurn -> activatedThisTurn view
   -- CR 120.1 / 608.2i: the same look-back asked of a RELATION, CrewedSourceThisTurn's
   -- split -- the candidate's own field says whom it dealt damage to, and the
   -- party says which of them the card names. The source is the id it had, so a
@@ -3053,6 +3093,7 @@ manaValueThresholds predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
   Filter.DealtDamageThisTurn -> []
+  Filter.ActivatedThisTurn -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
   Filter.CountersPutThisTurn _ _ -> []
@@ -3233,6 +3274,7 @@ statesAQuality predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
   Filter.DealtDamageThisTurn -> True
+  Filter.ActivatedThisTurn -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
   Filter.CountersPutThisTurn _ _ -> True
@@ -3358,6 +3400,7 @@ readsSourceValues predicate = case predicate of
     Anchor.Evaluated -> False
     Anchor.AnyPermanent group -> readsSourceValues group
     Anchor.YourCommander -> False
+    Anchor.Host -> False
   Filter.HasSubtype _ -> False
   Filter.HasName _ -> False
   Filter.NameWordsAtLeast _ -> False
@@ -3411,6 +3454,7 @@ readsSourceValues predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
   Filter.DealtDamageThisTurn -> False
+  Filter.ActivatedThisTurn -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False
   Filter.CountersPutThisTurn _ _ -> False
@@ -3506,6 +3550,7 @@ anchorFilter anchor = case anchor of
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
   Anchor.YourCommander -> Nothing
+  Anchor.Host -> Nothing
 
 -- overBoundSlotsWith without the arity: CR 700.2d's rename.
 overBoundSlots :: (Applicative f) => (SlotName.SlotName -> f SlotName.SlotName) -> Filter.Filter Keyword.Type.Keyword -> f (Filter.Filter Keyword.Type.Keyword)

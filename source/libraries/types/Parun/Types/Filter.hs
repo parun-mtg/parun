@@ -64,7 +64,7 @@ data Filter keyword
     -- Not implemented: a pair the Context carries no anchored values for (Color,
     -- Owner, Controller or Sector at Bound, anything but CreatureType at Evaluated,
     -- CreatureType or Controller at Source, anything but Name or Controller at
-    -- AnyPermanent), which answers False and
+    -- AnyPermanent, anything but Controller at Host), which answers False and
     -- Parun.FilterPositionLintSpec keeps out of card data (#5636).
     Shares Trait.Trait (Anchor.Anchor (Filter keyword))
   | HasSubtype Subtype.Subtype -- CR 205.3: the object's subtypes include this one.
@@ -392,6 +392,9 @@ data Filter keyword
     -- (GameEvent.DamageDealt), and not Object.damage being positive: a wither or
     -- infect source marks nothing at all (CR 120.3d).
     DealtDamageThisTurn
+  | -- | CR 700.10: the candidate was the source of an ability activated this
+    -- turn, read off TurnRegisters.activationsThisTurn.
+    ActivatedThisTurn
   | -- | CR 120.1 / 608.2i: the candidate, or the source, DEALT damage to this
     -- party earlier this turn, or ever as this object -- Brine Hag's "each creature
     -- that dealt damage to it this turn".

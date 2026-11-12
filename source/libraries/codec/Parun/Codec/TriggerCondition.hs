@@ -35,6 +35,7 @@ import qualified Parun.Codec.PlacesSticker as PlacesSticker
 import qualified Parun.Codec.PlayerActed as PlayerActed
 import qualified Parun.Codec.PlayerActsOn as PlayerActsOn
 import qualified Parun.Codec.PlayerDrawsNthCard as PlayerDrawsNthCard
+import qualified Parun.Codec.PlayerExpends as PlayerExpends
 import qualified Parun.Codec.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.PlaysLand as PlaysLand
@@ -118,6 +119,7 @@ codec =
           Arm.payload "PlayerManifestsDread" PlayerRelation.codec TriggerCondition.PlayerManifestsDread (\x -> case x of TriggerCondition.PlayerManifestsDread y -> Just y; _ -> Nothing),
           Arm.payload "PlayerFacesDilemma" PlayerRelation.codec TriggerCondition.PlayerFacesDilemma (\x -> case x of TriggerCondition.PlayerFacesDilemma y -> Just y; _ -> Nothing),
           Arm.payload "PlayerCommitsCrime" PlayerRelation.codec TriggerCondition.PlayerCommitsCrime (\x -> case x of TriggerCondition.PlayerCommitsCrime y -> Just y; _ -> Nothing),
+          Arm.payload "PlayerExpends" PlayerExpends.codec TriggerCondition.PlayerExpends (\x -> case x of TriggerCondition.PlayerExpends y -> Just y; _ -> Nothing),
           Arm.payload "PlayerRollsResult" (DieResult.codec PlayerRelation.codec) TriggerCondition.PlayerRollsResult (\x -> case x of TriggerCondition.PlayerRollsResult y -> Just y; _ -> Nothing),
           Arm.nullary "Visit" TriggerCondition.Visit,
           Arm.nullary "ChaosEnsues" TriggerCondition.ChaosEnsues,
@@ -190,6 +192,7 @@ tagOf x = case x of
   TriggerCondition.PlayerManifestsDread {} -> "PlayerManifestsDread"
   TriggerCondition.PlayerFacesDilemma {} -> "PlayerFacesDilemma"
   TriggerCondition.PlayerCommitsCrime {} -> "PlayerCommitsCrime"
+  TriggerCondition.PlayerExpends {} -> "PlayerExpends"
   TriggerCondition.PlayerRollsResult {} -> "PlayerRollsResult"
   TriggerCondition.Visit {} -> "Visit"
   TriggerCondition.ChaosEnsues {} -> "ChaosEnsues"

@@ -864,6 +864,8 @@ library codec
     Parun.Codec.ExilePlayPermissionSpec
     Parun.Codec.Expansion
     Parun.Codec.ExpansionSpec
+    Parun.Codec.Expended
+    Parun.Codec.ExpendedSpec
     Parun.Codec.Expiry
     Parun.Codec.ExpirySpec
     Parun.Codec.Exploited
@@ -1354,6 +1356,8 @@ library codec
     Parun.Codec.PlayerDrawsNthCardSpec
     Parun.Codec.PlayerEffect
     Parun.Codec.PlayerEffectSpec
+    Parun.Codec.PlayerExpends
+    Parun.Codec.PlayerExpendsSpec
     Parun.Codec.PlayerId
     Parun.Codec.PlayerIdSpec
     Parun.Codec.PlayerInstruction
@@ -1902,6 +1906,7 @@ library engine
     Parun.Engine.Departure
     Parun.Engine.Deploy
     Parun.Engine.Detain
+    Parun.Engine.Devotion
     Parun.Engine.Dice
     Parun.Engine.Driver
     Parun.Engine.Dungeon
@@ -3049,6 +3054,7 @@ library types
     Parun.Types.ExilePermanents
     Parun.Types.ExilePlayPermission
     Parun.Types.Expansion
+    Parun.Types.Expended
     Parun.Types.Expiry
     Parun.Types.Exploited
     Parun.Types.ExploitTrigger
@@ -3343,6 +3349,7 @@ library types
     Parun.Types.PlayerDesignationTally
     Parun.Types.PlayerDrawsNthCard
     Parun.Types.PlayerEffect
+    Parun.Types.PlayerExpends
     Parun.Types.PlayerId
     Parun.Types.PlayerInstruction
     Parun.Types.PlayerIsDealtDamage

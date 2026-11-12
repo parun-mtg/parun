@@ -122,6 +122,7 @@ witnessed pid logged = case LoggedEvent.event logged of
   GameEvent.ManifestedDread {} -> Visibility.Visible
   GameEvent.FacedDilemma {} -> Visibility.Visible
   GameEvent.CommittedCrime {} -> Visibility.Visible
+  GameEvent.Expended {} -> Visibility.Visible
   GameEvent.DieResultSettled {} -> Visibility.Visible
   GameEvent.RolledToVisit {} -> Visibility.Visible
   GameEvent.PlanarDieRolled {} -> Visibility.Visible
