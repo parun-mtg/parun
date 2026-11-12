@@ -1,0 +1,19 @@
+{
+  "description": "CR 700.10 Cut Short destroys a planeswalker that was activated this turn, with the ability still on the stack, but not one that wasn't or an untapped creature",
+  "note": "Bob activates Ajani Goldmane's +1 and alice answers it. Chandra, Acolyte of Flame was not activated and Grizzly Bears is untapped, so both are refused; two tapped Savannah Lions keep every target named. The +1 still resolves once Ajani is gone (CR 113.7a).",
+  "board": {"active": "bob", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "hand": [{"card": "Cut Short", "label": "cut"}],
+     "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Ajani Goldmane", "label": "ajani", "counters": [{"key": {"type": "Loyalty"}, "value": 4}]}, {"card": "Chandra, Acolyte of Flame", "label": "chandra", "counters": [{"key": {"type": "Loyalty"}, "value": 4}]}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Savannah Lions", "label": "lions", "tapped": true}, {"card": "Savannah Lions", "label": "lions2", "tapped": true}],
+     "library": [{"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Activate": {"object": "$ajani", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$cut", "targets": ["$chandra"], "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$cut", "targets": ["$bears"], "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$cut", "targets": ["$ajani"], "mana": ["$p1", "$p2", "$p3"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Ajani Goldmane", "count": 1}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Chandra, Acolyte of Flame", "count": 1}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"Life": {"player": "bob", "life": 22}}}
+  ]
+}

@@ -1950,6 +1950,7 @@ stubView table oid =
                 Filter.declaredBlockerThisCombat = False,
                 Filter.leftLibraryThisTurn = Set.empty,
                 Filter.dealtDamageThisTurn = False,
+                Filter.activatedThisTurn = False,
                 Filter.arrivalThisTurn = Nothing,
                 -- CR 702.122c: the table registers no crewing, and no Count in
                 -- the pool filters by one, so CrewedSourceThisTurn is vacuously

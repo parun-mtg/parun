@@ -392,6 +392,9 @@ data Filter keyword
     -- (GameEvent.DamageDealt), and not Object.damage being positive: a wither or
     -- infect source marks nothing at all (CR 120.3d).
     DealtDamageThisTurn
+  | -- | CR 700.10: the candidate was the source of an ability activated this
+    -- turn, read off TurnRegisters.activationsThisTurn.
+    ActivatedThisTurn
   | -- | CR 120.1 / 608.2i: the candidate, or the source, DEALT damage to this
     -- party earlier this turn, or ever as this object -- Brine Hag's "each creature
     -- that dealt damage to it this turn".

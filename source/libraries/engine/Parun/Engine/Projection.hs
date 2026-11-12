@@ -4124,6 +4124,8 @@ filterReads f = case f of
   -- handed in on the context, so it is a fixed input to any single projection.
   Filter.Type.CantPayKeywordCost _ -> Set.empty
   Filter.Type.DealtDamageThisTurn -> Set.empty
+  -- Reads nothing: no Modification writes TurnRegisters.activationsThisTurn.
+  Filter.Type.ActivatedThisTurn -> Set.empty
   Filter.Type.DealtDamageTo asked -> case DealtDamageTo.party asked of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
     _ -> Set.empty
@@ -4425,6 +4427,7 @@ filterReadsPeers f = case f of
   -- peer's view, so no second projection can change its answer.
   Filter.Type.CantPayKeywordCost _ -> False
   Filter.Type.DealtDamageThisTurn -> False
+  Filter.Type.ActivatedThisTurn -> False
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
   Filter.Type.CountersPutThisTurn _ _ -> False

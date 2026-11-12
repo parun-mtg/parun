@@ -205,6 +205,9 @@ viewOfCardLapsed lapsed face =
           -- a permanent. viewOfCharacteristics is the view that holds an id and
           -- answers.
           Filter.dealtDamageThisTurn = False,
+          -- CR 700.10 asks after an OBJECT; this builder describes a printed
+          -- FACE -- `leftLibraryThisTurn` above's reason.
+          Filter.activatedThisTurn = False,
           -- CR 400.7 enters an OBJECT; this builder describes a printed FACE --
           -- `leftLibraryThisTurn` above's reason.
           Filter.arrivalThisTurn = Nothing,
@@ -680,6 +683,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,
       Filter.dealtDamageThisTurn = Count.dealtDamageThisTurn oid gs,
+      Filter.activatedThisTurn = Count.activatedThisTurn oid gs,
       Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
       Filter.beforeMoveView = Count.departedAs gs oid >>= Count.orLastKnown peers gs,
       Filter.crewedThisTurn = Count.crewedThisTurn oid gs,
