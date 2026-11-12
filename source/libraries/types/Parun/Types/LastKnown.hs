@@ -280,6 +280,11 @@ data LastKnown = MkLastKnown
     lapsedGrants :: !(Set.Set Condition.Condition),
     -- | CR 110.5: was it tapped -- Game.isTapped as it left. A status, so no
     -- characteristic (CR 109.3); Count.lastKnownView reads it.
-    tapped :: !Bool
+    tapped :: !Bool,
+    -- | CR 110.5 / 708.2: was it a face-down permanent --
+    -- Game.isFaceDownPermanent as it left. A status, `tapped`'s sibling; what
+    -- Cryptic Pursuit's "whenever a face-down creature you control dies" asks
+    -- (data/scenarios/cryptic-pursuit).
+    faceDown :: !Bool
   }
   deriving (Eq, Ord, Show)
