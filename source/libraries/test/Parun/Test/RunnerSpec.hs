@@ -22,11 +22,13 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "reads a seed" $
       Spec.assertEq s (fmap Runner.seed $ Runner.parseOptions ["--seed", replicate 63 '0' <> "7"]) (Right (Just $ key 7))
     Spec.it s "selects every case when given nothing" $
-      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing})
+      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0})
     Spec.it s "refuses a positional argument" $
       Spec.assertEq s (Runner.parseOptions ["Engine"]) (Left "unexpected argument: Engine")
     Spec.it s "refuses a flag it does not know" $
       Spec.assertBool s (isLeft $ Runner.parseOptions ["--hide-successes"]) "accepted --hide-successes"
+    Spec.it s "reads how many of the slowest cases to name" $
+      Spec.assertEq s (fmap Runner.slowest $ Runner.parseOptions ["--slowest", "3"]) (Right 3)
     Spec.it s "refuses a seed that is not a key" $
       Spec.assertEq s (Runner.parseOptions ["--seed", "x"]) (Left "not a seed: x")
 
@@ -44,7 +46,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertEq s (fmap Runner.name $ Foldable.toList cases) [Text.pack "a.b.c", Text.pack "a.d"]
 
   Spec.describe s "selected" $ do
-    let options ps = Runner.MkOptions {Runner.patterns = fmap Text.pack ps, Runner.timeout = Nothing, Runner.seed = Nothing}
+    let options ps = Runner.MkOptions {Runner.patterns = fmap Text.pack ps, Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0}
         named = Runner.MkCase {Runner.path = fmap Text.pack ["Engine", "Trigger", "fires once"], Runner.action = pure ()}
     Spec.it s "matches a substring spanning groups" $
       Spec.assertBool s (Runner.selected (options ["Trigger.fires"]) named) "missed Trigger.fires"
@@ -56,7 +58,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertBool s (not $ Runner.selected (options ["engine"]) named) "matched engine"
 
   Spec.describe s "ordered" $ do
-    let options = Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing}
+    let options = Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0}
         cases = Seq.fromList $ fmap (\i -> Runner.MkCase {Runner.path = [Text.pack $ show i], Runner.action = pure ()}) [1 .. 20 :: Integer]
         names seed = fmap Runner.name $ Runner.ordered options (key seed) cases
     Spec.it s "gives one seed one order" $
@@ -75,7 +77,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
         Spec.it r "throws" $ ioError (userError "bang")
         Spec.it r "hangs" $ Concurrent.threadDelay 10000000
       sink <- IORef.newIORef []
-      summary <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Just 10000, Runner.seed = Nothing} (key 1) cases
+      summary <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Just 10000, Runner.seed = Nothing, Runner.slowest = 0} (key 1) cases
       Spec.assertEq s summary Runner.MkSummary {Runner.total = 4, Runner.failures = 3}
       reported <- IORef.readIORef sink
       Spec.assertEq s (Seq.sort . Seq.fromList $ fmap (Text.takeWhile (/= ':')) reported) (Seq.fromList $ fmap Text.pack ["FAIL g.asserts", "FAIL g.hangs", "FAIL g.throws"])
@@ -84,13 +86,27 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "carries an assertion's call stack into its failure line" $ do
       cases <- collect . Spec.it r "asserts" $ Spec.assertFailure r "boom"
       sink <- IORef.newIORef []
-      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing} (key 1) cases
+      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0} (key 1) cases
       reported <- IORef.readIORef sink
       case reported of
         [l] -> do
           Spec.assertBool s (Text.isPrefixOf (Text.pack "FAIL asserts: boom\n  CallStack") l) $ "unexpected line: " <> Text.unpack l
           Spec.assertBool s (Text.isInfixOf (Text.pack "Parun/Test/RunnerSpec.hs") $ Text.replace (Text.pack "\\") (Text.pack "/") l) $ "no call site: " <> Text.unpack l
         _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
+    Spec.it s "names the slowest case, and only as many as asked for" $ do
+      cases <- collect $ do
+        Spec.it r "quick" $ pure ()
+        Spec.it r "slow" $ Concurrent.threadDelay 50000
+      sink <- IORef.newIORef []
+      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 1} (key 1) cases
+      reported <- IORef.readIORef sink
+      case reported of
+        [l] -> Spec.assertBool s (Text.isPrefixOf (Text.pack "SLOW ") l && Text.isSuffixOf (Text.pack "ms slow") l) $ "unexpected line: " <> Text.unpack l
+        _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
+
+  Spec.describe s "slowestLines" $ do
+    Spec.it s "orders by duration, longest first, and stops at the count" $
+      Spec.assertEq s (Runner.slowestLines 2 [(5, Text.pack "a"), (900, Text.pack "b"), (30, Text.pack "c")]) (fmap Text.pack ["SLOW 900ms b", "SLOW 30ms c"])
 
   Spec.describe s "summaryLine" $ do
     Spec.it s "names the seed in a pass" $
