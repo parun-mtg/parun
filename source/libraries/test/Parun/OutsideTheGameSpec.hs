@@ -426,6 +426,41 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     -- from a fizzle: CR 119.3 and CR 107.1a, half of twenty rounded up.
     Spec.assertEqWith s "she lost half her life, rounded up" (S.lifeOf S.alice afterDeath) (Just 10)
     Spec.assertEqWith s "and Burning Wish cost her none" (S.lifeOf S.alice afterBurning) (Just 20)
+  -- North Wind Avatar ({2}{U}{U}{R} 5/5 flier, "When this creature enters, if you
+  -- cast it, you may put a card you own from outside the game into your hand.")
+  -- is the wish as an enters trigger behind CR 603.4's intervening "if".
+  --
+  -- A PAIR of boards differing in ONE thing, whether the Avatar was cast: the
+  -- same pool, the same answerer taking the "may", and the same enters event.
+  Spec.it s "CR 603.4 gameplay: North Wind Avatar wishes when it was cast, and not when it was only put onto the battlefield" $ do
+    island <- S.printingOf s registry "Island"
+    mountain <- S.printingOf s registry "Mountain"
+    avatar <- S.printingOf s registry "North Wind Avatar"
+    signInBlood <- S.printingOf s registry "Sign in Blood"
+    let lands = S.landsFor mountain S.alice 1 (S.landsInPlay island 4)
+        stocked = stockLibrary island 3 S.bob . stockLibrary island 3 S.alice . stockPool [(signInBlood, 1)]
+        atPriority gs =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.activePlayer = S.alice,
+                    TurnRegisters.phase = Phase.PrecombatMain,
+                    TurnRegisters.priority = Just S.alice
+                  }
+            }
+        castBoard = atPriority (stocked (snd (S.addHandCard avatar S.alice lands)))
+        putBoard = atPriority (stocked (snd (S.entersWithTrigger avatar S.alice lands)))
+        answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.ChooseOptional {} -> OptionalDecision.Exercises
+          _ -> S.castAnswer p
+        run gs = snd (Engine.runGamePure answer gs Engine.priorityLoop)
+        afterCast = run castBoard
+        afterPut = run putBoard
+    Spec.assertEqWith s "CR 400.11b: cast, its trigger put the card she owns outside the game into her hand" (printingsIn Zone.Hand S.alice afterCast) [signInBlood]
+    Spec.assertEqWith s "CR 603.4: put onto the battlefield uncast, it wished for nothing" (printingsIn Zone.Hand S.alice afterPut) []
+    Spec.assertEqWith s "and the pool is spent only the first way" (Map.size (poolOf S.alice afterCast), Map.size (poolOf S.alice afterPut)) (0, 1)
+    Spec.assertEqWith s "setup: the Avatar is on the battlefield both ways" (printingsIn Zone.Battlefield S.alice afterCast List.\\ [island, island, island, island, mountain], printingsIn Zone.Battlefield S.alice afterPut List.\\ [island, island, island, island, mountain]) ([avatar], [avatar])
   -- CR 103.2a: the sideboard is set aside before the game, which is the one path
   -- every case above skips by writing Player.outsideTheGame directly.
   Spec.it s "CR 103.2a a deck's sideboard is recorded on its player and minted into no zone" $ do

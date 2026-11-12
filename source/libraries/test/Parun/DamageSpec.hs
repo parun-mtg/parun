@@ -825,6 +825,7 @@ lastKnownRiderSpec s registry =
                     -- CR 310.9a: the Sorcerer is no battle, so nobody protects it.
                     LastKnown.protector = Nothing,
                     LastKnown.paidCosts = Map.empty,
+                    LastKnown.castUsing = Nothing,
                     LastKnown.prototyped = False,
                     LastKnown.announcedX = Nothing,
                     LastKnown.manaSpent = Mana.MkMana [],

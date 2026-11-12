@@ -795,7 +795,10 @@ chosenValueCounts admitted answers tag card =
       answered = afterChoice answers (Face.spell card)
       inSpell = total admitted spellPairs - total admitted answered
       abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities card) <> fmap ActivatedAbility.modal (Face.activatedAbilities card)
-      inAbility = total (not . admitted) (concatMap (afterChoice answers) abilityModals)
+      -- A keyword's own filter is read off the keyword long after the
+      -- resolution, so the choice answers it only where it is baked
+      -- (grantedChosenColors).
+      inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
    in (total admitted (cardFilters card) - inSpell + inAbility, total (not . admitted) (cardFilters card) + inSpell - inAbility)
 
 -- The filters a spell's mode reads after its first `Effect.ChooseQuality q`
@@ -860,7 +863,8 @@ hasChosenColorCounts card =
       granted = grantedChosenColors card
    in (framed + granted, elsewhere - granted)
 
--- CR 607.2d's "protection from the chosen color" granted by a STATIC ability
+-- CR 607.2d's "protection from the chosen color", or CR 702.11d's hexproof
+-- from it, granted by a STATIC ability
 -- or by a resolution's ModifyTarget: the keyword positions the colour is
 -- answered at, since Parun.Engine.Keyword.withChosenColors bakes the choice
 -- into a BARE quality -- as Parun.Engine.Projection applies a static grant
@@ -870,6 +874,7 @@ grantedChosenColors :: Face.Face Card.Type.Card -> Int
 grantedChosenColors card =
   let bare m = case m of
         Modification.GainKeyword (Keyword.Protection protection) -> Protection.quality protection == Filter.Type.HasChosenColor
+        Modification.GainKeyword (Keyword.Hexproof quality) -> quality == Just Filter.Type.HasChosenColor
         _ -> False
    in length
         ( [() | ability <- Face.staticAbilities card, m <- NonEmpty.toList (StaticAbility.modifications ability), bare m]
@@ -1694,6 +1699,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Shimian Specter", 1), -- its search's filter, against its loop's member
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter
         ("Maelstrom Pulse", 1), -- its destroy's object
+        ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
         ("Key to the Side-Door", 1) -- its ability's discard cost, at AnyPermanent
@@ -1833,7 +1839,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Soul of Shandalar", 2), -- both abilities' second target slots, Flame Wave's sentence
         ("Cloak and Dagger, Entwined", 1), -- its trigger's second target slot, Soul of Shandalar's shape
         ("Legion's End", 1), -- its exile's object, relative to the target's controller
-        ("Run Away Together", 2) -- both target slots, each relative to the other
+        ("Run Away Together", 2), -- both target slots, each relative to the other
+        ("Kitsune, Dragon's Daughter", 2) -- both target slots, Run Away Together's shape
       ]
     -- The REJECTING direction, hand-built for the reason every sibling lint's is:
     -- a card that offends must not be loadable, so no file can carry one. Buried

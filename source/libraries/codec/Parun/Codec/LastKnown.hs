@@ -61,6 +61,7 @@ codec = Fields.object $ do
   blocking <- Fields.required "blocking" Common.boolean LastKnown.blocking
   protector <- Fields.required "protector" (Common.maybe PlayerId.codec) LastKnown.protector
   paidCosts <- Fields.defaulted "paidCosts" Map.empty (Common.keyedList (Common.keyValue Keyword.codec (Common.keyedList (Common.keyValue KeywordInstance.codec Common.natural)))) LastKnown.paidCosts
+  castUsing <- Fields.defaulted "castUsing" Nothing (Common.maybe Keyword.codec) LastKnown.castUsing
   prototyped <- Fields.defaulted "prototyped" False Common.boolean LastKnown.prototyped
   announcedX <- Fields.defaulted "announcedX" Nothing (Common.maybe Common.natural) LastKnown.announcedX
   manaSpent <- Fields.defaulted "manaSpent" (Mana.MkMana []) Mana.codec LastKnown.manaSpent
@@ -96,6 +97,7 @@ codec = Fields.object $ do
         LastKnown.blocking = blocking,
         LastKnown.protector = protector,
         LastKnown.paidCosts = paidCosts,
+        LastKnown.castUsing = castUsing,
         LastKnown.prototyped = prototyped,
         LastKnown.announcedX = announcedX,
         LastKnown.manaSpent = manaSpent,

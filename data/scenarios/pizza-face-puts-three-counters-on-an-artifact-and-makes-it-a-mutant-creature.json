@@ -1,0 +1,214 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Pizza Face, Gastromancer",
+            "label": "pizza"
+          },
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          },
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          },
+          {
+            "card": "Swamp",
+            "label": "s0"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Murder",
+            "label": "murder"
+          }
+        ],
+        "library": [
+          {
+            "card": "Serra Angel"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 207.2c / 205.1b: at your end step, if a permanent left the battlefield under your control this turn, Pizza Face puts three +1/+1 counters on up to one other target artifact or creature; one that isn't a creature becomes a 0/0 Mutant creature in addition to its other types",
+  "note": "On turn 1 nothing left, so nothing triggers. On turn 3 alice's Memnite dies and her Sol Ring becomes a 3/3 Mutant artifact creature.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s0",
+            "$s1",
+            "$s2",
+            null
+          ],
+          "object": "$murder",
+          "targets": [
+            "$memnite"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$ring"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$ring"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$ring",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$ring",
+          "subtypes": [
+            "Mutant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$ring",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 3
+    }
+  ]
+}

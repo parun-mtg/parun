@@ -3468,7 +3468,8 @@ sneakWindowed castUsing = case castUsing of
 -- CR 702.190a: does this card hold a sneak at all? hasFlash's membership question
 -- for the one other keyword that widens WHEN a card may be cast rather than from
 -- where, and read the same way -- Parun.Engine.Cast.cardTimingOk asks it of the
--- proposed face's printed keywords and of the object's post-layer ones, so a
+-- proposed face's printed keywords and of the object's post-layer ones, on the
+-- stack and where it lies, so a
 -- granted sneak widens the window its grantee's cast is offered in.
 --
 -- MEMBERSHIP, not a cost, because the widening is the same whatever the cost is;
@@ -4706,6 +4707,7 @@ grantedBy granter chosen you already keyword = case withChosenColors chosen keyw
 -- CR 607.2d / 608.2h: a bare Filter.HasChosenColor protection quality with
 -- the chosen colours written in -- Filter.HasColor, an Or of them where several
 -- were chosen, and the empty Or, protection from nothing, where none was.
+-- CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise.
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
@@ -4715,11 +4717,14 @@ withChosenColors chosen keyword = case keyword of
     | Protection.quality protection == Filter.HasChosenColor ->
         Keyword.Protection
           protection
-            { Protection.quality = case Set.toList chosen of
-                [color] -> Filter.HasColor color
-                colors -> Filter.Or (fmap Filter.HasColor colors)
+            { Protection.quality = baked
             }
+  Keyword.Hexproof (Just Filter.HasChosenColor) -> Keyword.Hexproof (Just baked)
   _ -> keyword
+  where
+    baked = case Set.toList chosen of
+      [color] -> Filter.HasColor color
+      colors -> Filter.Or (fmap Filter.HasColor colors)
 
 -- The attachment prohibitions one keyword states.
 mintedAttachRestrictionsFor :: Keyword -> [AttachRestriction.AttachRestriction]

@@ -114,6 +114,8 @@ withinLimit gs payer stated modifier =
         PermissionLimit.Unlimited -> True
         PermissionLimit.OnceEachTurn -> unspent
         PermissionLimit.OnceEachOfYourTurns -> Turn.isActive gs payer && unspent
+        -- A modifier is never a stored row with a use to drop.
+        PermissionLimit.OncePerEffect -> False
 
 -- | Spend a modifier's budget once it is taken; a no-op for an unbudgeted one.
 spendLimit :: Maybe ObjectId -> ModifiedRoll.ModifiedRoll -> GameState -> GameState

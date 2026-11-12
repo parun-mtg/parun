@@ -853,23 +853,23 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- Count.lastKnownView overrides this with LastKnown.paidCosts, so the CR 608.2h
       -- path answers "kicked" for a kicked spell that has left the stack.
       Filter.paidCosts = foldMap Object.paidCosts (Game.lookupObject oid gs),
-      -- CR 702.104b: read live off the object, with no last-known override --
-      -- `castUsing` below's posture, for the reason the field's own comment in
-      -- Parun.Engine.Filter gives.
+      -- CR 702.104b: read live off the object, with no last-known override, for
+      -- the reason the field's own comment in Parun.Engine.Filter gives.
       Filter.tributePaid = any Object.tributePaid (Game.lookupObject oid gs),
-      -- CR 400.7d: read live off the object, with no last-known override.
+      -- CR 400.7d: read live off the object. For one that has left its zone,
+      -- Count.lastKnownView overrides this with LastKnown.castUsing.
       Filter.castUsing = Object.castUsing =<< Game.lookupObject oid gs,
-      -- CR 702.143c: read live off the object, `castUsing`'s posture.
+      -- CR 702.143c: read live off the object, `tributePaid`'s posture.
       Filter.foretold = any (Maybe.isJust . Object.foretold) (Game.lookupObject oid gs),
       -- CR 719.3c / 719.3d: a copy's answer rides its copiable values (CR
       -- 719.2a); the object's own flag answers for an original whose copiable
       -- values are something else's, face down (CR 708.2) or a copy (CR 707.2).
       Filter.prototyped = PC.prototyped pc || any Object.prototyped (Game.lookupObject oid gs),
-      -- CR 723.3c / 723.3d: read live off the object, `castUsing`'s posture.
+      -- CR 723.3c / 723.3d: read live off the object, `tributePaid`'s posture.
       Filter.preparedSpell = any Object.castPrepared (Game.lookupObject oid gs),
       -- CR 716.2b / 721.2b / 723.2b: copiable values, which `pc` carries.
       Filter.insetFrames = Count.insetFramesOf pc,
-      -- CR 400.7d / CR 107.4h: read live off the object like `castUsing`, and
+      -- CR 400.7d / CR 107.4h: read live off the object like `tributePaid`, and
       -- keyed by tag with CR 106.1a's colours beside it, which is the whole of what
       -- the vocabulary asks (see the field's own comment in Parun.Engine.Filter).
       -- The object may be a CR 602.2a ability on the stack as well as a spell or

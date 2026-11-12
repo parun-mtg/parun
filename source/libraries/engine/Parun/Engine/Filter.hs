@@ -786,14 +786,14 @@ data View = MkView
     -- Golden Grove's intervening "if") asks it of a permanent that is still there.
     tributePaid :: Bool,
     -- CR 601.2b / 400.7d: the keyword whose candidate cost this candidate was
-    -- cast for, read off Object.castUsing, and Nothing where there is no live
-    -- object, since Parun.Types.LastKnown keeps no such record.
+    -- cast for, read off Object.castUsing, or LastKnown.castUsing for an object
+    -- that has left its zone (CR 608.2h).
     -- Parun.Engine.Quantity's CastUsing arm and Filter.Paid are the readers.
     castUsing :: Maybe Keyword.Type.Keyword,
     -- CR 702.143c: is this candidate a foretold card, or a spell that was one
     -- before it was cast? Read off Object.foretold, which Parun.Engine.Cast
     -- carries onto the stack, and False where there is no live object, as
-    -- `castUsing` above. Parun.Engine.Quantity's WasForetold arm is the reader.
+    -- `tributePaid` above. Parun.Engine.Quantity's WasForetold arm is the reader.
     foretold :: Bool,
     -- CR 719.3c / 719.3d: is this candidate a prototyped spell, or a permanent
     -- that was one, or a copy of either? PC.prototyped off the projection, which
@@ -804,7 +804,7 @@ data View = MkView
     prototyped :: Bool,
     -- CR 723.3c / 723.3d: was this candidate cast as a prepare spell, or is it a
     -- copy of one? Read off Object.castPrepared, and False where there is no live
-    -- object, as `castUsing` above. Filter.IsPreparedSpell is the reader.
+    -- object, as `tributePaid` above. Filter.IsPreparedSpell is the reader.
     preparedSpell :: Bool,
     -- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame this candidate
     -- has, used or not -- a spell cast as its Adventure included, CR 716.3b

@@ -1082,6 +1082,7 @@ lastKnownView peers oid gs lastKnown =
             _ -> Nothing,
           Filter.blocking = LastKnown.blocking lastKnown,
           Filter.paidCosts = LastKnown.paidCosts lastKnown,
+          Filter.castUsing = LastKnown.castUsing lastKnown,
           -- CR 601.2h / 608.2h: what was spent to cast it, as it left -- a
           -- countered spell's still counts (Muse Seeker's ruling).
           Filter.manaSpentTagColors = Filter.spentTagColors (LastKnown.manaSpent lastKnown),

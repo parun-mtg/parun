@@ -35,4 +35,14 @@ data PermissionLimit
     OnceEachTurn
   | -- | "Once during each of your turns" (Serra Paragon): OnceEachTurn, and only on your own turns.
     OnceEachOfYourTurns
+  | -- | CR 611.2a: one use for as long as the effect granting the permission lasts (Raphael, Most Attitude's "until end of turn, you may play a card").
+    --
+    -- The memory is the stored row, dropped with its use, so two resolutions
+    -- budget a play each:
+    -- data/scenarios/raphael-most-attitude-attacking-twice-in-a-turn-plays-two-of-his-cards.json
+    -- proves it. A static ability's permission and a die-roll modifier are no
+    -- stored row and so have no use under this budget; Parun.EffectLintSpec's
+    -- "no card writes OncePerEffect where no stored row carries it" keeps a
+    -- card from writing one.
+    OncePerEffect
   deriving (Bounded, Enum, Eq, Ord, Show)

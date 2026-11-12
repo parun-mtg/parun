@@ -197,10 +197,11 @@ timingWith flash pid oid name gs = case proposedFace oid name gs of
 -- sorcery with sneak may begin one in that step; which COST may then be announced
 -- is the per-candidate question, and rule 702.190a's window admits only its own.
 --
--- The keyword is read two ways -- the proposed half's printed keywords and the
+-- The keyword is read three ways -- the proposed half's printed keywords, the
 -- spell's post-layer ones on the stack (Cost.spellKeywords), where rule
--- 702.190a's ability functions -- so a granted sneak widens the window as a
--- printed one does. Offering's window reads the latter for rule 702.48a's
+-- 702.190a's ability functions, and the card's where it lies -- so a granted
+-- sneak widens the window as a printed one does. Offering's window reads the
+-- stack's for rule 702.48a's
 -- same reason.
 cardTimingOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
 cardTimingOk pid oid name gs = cardTimingWith (timingOk pid oid name gs) pid oid name gs
@@ -215,7 +216,12 @@ cardTimingWith window pid oid name gs = case proposedFace oid name gs of
       -- first: the window is False at all but one step of one player's turn, and
       -- the projection fold behind the second limb then never runs.
       || ( Turn.declareBlockersWindow pid gs
-             && (Keyword.hasSneak (Face.keywordSet face) || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs)))
+             && ( Keyword.hasSneak (Face.keywordSet face)
+                    || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs))
+                    -- Ninja Teen's "creature cards in your graveyard have
+                    -- sneak": a grant confined to the zone the card lies in.
+                    || Keyword.hasSneak (projectedKeywords oid gs)
+                )
          )
       -- CR 702.48a: offering's window, and CR 601.3c / 601.3d's card's own
       -- flash permission, open only while some candidate carrying the window
@@ -2914,7 +2920,7 @@ playLand settle offered pid oid mName = do
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.refusedEntries = Nothing}})
   Monad.unless (Seq.null moved && not refused) $ do
     State.modify' (PlayerEffect.consume spent)
-    State.modify' (PlayerEffect.spendCastPermission (PlayerEffect.permissionSpent permission))
+    State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permission))
     -- CR 601.3: a land played under the card's own exile permission spends
     -- its budget, as a cast does.
     Monad.when (Maybe.isNothing permission) (State.modify' (spendPlayBudget (ownExilePermission offered pid oid before)))
@@ -4347,11 +4353,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- spell" to the rows their sources installed beside
                           -- them (Savage Summoning), for the same reason.
                           State.modify' (bindUser (spent castFor) sid)
-                          -- CR 601.3: the once-each-turn permission this cast
+                          -- CR 601.3: the budgeted permission this cast
                           -- spends, for the line above's reason -- nothing past
                           -- here rejects, and CR 734.1's reversal restores the
                           -- whole field (Parun.Engine.Reversal).
-                          State.modify' (PlayerEffect.spendCastPermission (PlayerEffect.permissionSpent permissionUsed))
+                          State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permissionUsed))
                           -- CR 601.3: and a cast made under the card's own exile
                           -- permission spends that permission's budget, for the
                           -- same reason.

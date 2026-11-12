@@ -499,7 +499,7 @@ zoneScopeSlots scope = case scope of
 
 -- The slots an ObjectRef reads. InSlot names one directly,
 -- EachCardInGraveyard and EachCardInHand name one through their scope, and
--- EachMatching through its Filter; the other sweeping arms name none. Reporting
+-- every arm holding a Filter through that Filter. Reporting
 -- a scope's slot does not make the SWEPT CARDS targets -- CR 115.10a needs the
 -- word "target" against them, and a graveyard scope says it against the
 -- PLAYER, so what CR 608.2b judges is still the card's own target slot, holding
@@ -522,30 +522,40 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- targets. Reported, not dropped, because the D4 dataflow lint reads this: a
   -- card whose ONLY use of that slot is the scope would otherwise declare a
   -- target nothing reads.
-  ObjectRef.EachCardInGraveyard (EachCardInGraveyard.MkEachCardInGraveyard scope _) -> zoneScopeSlots scope
+  --
+  -- Joined with the Filter's own reads, EachMatching's answer over a per-player
+  -- zone: Rat King, Verminister's sweep names its target slot only there.
+  -- Proved by Parun.AbilitySlotLintSpec's "every slot an activated ability reads
+  -- is bound for its activation, and every slot it declares is read". The Filter
+  -- reads of the hand, library, owned, exiled, encoded, stack, library-walk,
+  -- chosen-card and random arms below are REGRESSION FENCES: no card in
+  -- data/cards/ reads a slot only through one, so dropping any leaves the suite
+  -- green.
+  ObjectRef.EachCardInGraveyard (EachCardInGraveyard.MkEachCardInGraveyard scope filter_) -> joinTwo (zoneScopeSlots scope) (filterSlotsOf filter_)
   ObjectRef.EachCardInYourHand -> Map.empty
   -- The arm above's scope over the other per-player zone, reported for its
   -- reason: Amnesia's ONLY use of its target slot is this scope, so dropping the
-  -- read would have the D4 dataflow lint call that target unread.
-  ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand scope _) -> zoneScopeSlots scope
+  -- read would have the D4 dataflow lint call that target unread. The optional
+  -- Filter's reads are joined as the arm above joins its own.
+  ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand scope filter_) -> joinTwo (zoneScopeSlots scope) (maybeFilterSlots filter_)
   -- EachCardInYourHand's answer over the other hidden per-player zone: the
-  -- seat is CR 109.5's "you", so no slot names it.
-  ObjectRef.EachCardInYourLibrary _ -> Map.empty
-  -- The arm above's answer: the owner is CR 109.5's "you".
-  ObjectRef.EachCardYouOwn _ -> Map.empty
-  ObjectRef.EachCardInExiledPile _ -> Map.empty
-  ObjectRef.EachCardEncodedOnSource {} -> Map.empty
-  ObjectRef.EachSpell _ -> Map.empty
-  ObjectRef.EachAbility _ -> Map.empty
-  ObjectRef.EachOnStack _ -> Map.empty
+  -- seat is CR 109.5's "you", so no slot names it and the Filter's reads are
+  -- the whole answer -- EachMatching's, for this arm and the six below it.
+  ObjectRef.EachCardInYourLibrary filter_ -> maybeFilterSlots filter_
+  ObjectRef.EachCardYouOwn filter_ -> filterSlotsOf filter_
+  ObjectRef.EachCardInExiledPile pile -> maybeFilterSlots (EachCardInExiledPile.filter pile)
+  ObjectRef.EachCardEncodedOnSource filter_ -> maybeFilterSlots filter_
+  ObjectRef.EachSpell filter_ -> filterSlotsOf filter_
+  ObjectRef.EachAbility filter_ -> filterSlotsOf filter_
+  ObjectRef.EachOnStack filter_ -> filterSlotsOf filter_
   -- The seat is objectRefPlayerRefs' half, joined at the head (Deflecting
   -- Palm's HolderOfBound); the narrowing Filter is a read like a sweep's.
   ObjectRef.Players (PlayersWho.MkPlayersWho _ who) -> foldMap filterSlotsOf who
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count) -> quantitySlots count
   -- The arm above's count, and each match's weight: the SEAT is
-  -- objectRefPlayerRefs' half. What a MATCH is is a Filter, and no arm here
-  -- reports the slots a Filter reads, for the reason the header states.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ weight count) -> quantitySlots weight <> quantitySlots count
+  -- objectRefPlayerRefs' half. What a MATCH is is a Filter, whose reads are
+  -- joined as a sweep's are.
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ filter_ weight count) -> joinSlots [filterSlotsOf filter_, quantitySlots weight, quantitySlots count]
   -- No count and no filter, so the SEAT is the whole read -- and it is
   -- objectRefPlayerRefs' half, reported by the fold this case is joined into.
   ObjectRef.TopOfGraveyard _ -> Map.empty
@@ -554,11 +564,12 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- since Grasping Tentacles' scope is a read of the slot its own mill targets.
   --
   -- Joined with the COUNT's own slots, TopOfLibrary's arm above and for its
-  -- reason.
-  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope _ count) -> joinTwo (joinTwo (chooserSlots chooser) (zoneScopeSlots scope)) (maybe Map.empty quantitySlots (HowMany.quantity count))
+  -- reason, and with the Filter's, EachCardInGraveyard's.
+  ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser scope filter_ count) -> joinSlots [chooserSlots chooser, zoneScopeSlots scope, filterSlotsOf filter_, maybe Map.empty quantitySlots (HowMany.quantity count)]
   -- CR 402.3: the choosers own the hands, so the PlayerRef is reported by
-  -- objectRefPlayerRefs rather than here; the COUNT's slots are this arm's.
-  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ _ count) -> maybe Map.empty quantitySlots (HowMany.quantity count)
+  -- objectRefPlayerRefs rather than here; the COUNT's slots and the Filter's
+  -- are this arm's.
+  ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand _ filter_ count) -> joinTwo (filterSlotsOf filter_) (maybe Map.empty quantitySlots (HowMany.quantity count))
   -- The first of the two arms whose CANDIDATES come from a slot -- the plural is
   -- below -- where the two chosen arms above name a slot only through their
   -- chooser. Reported for EachCardInGraveyard's
@@ -569,18 +580,19 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   --
   -- Joined with the COUNT's own slots, TopOfLibrary's arm above and for its
   -- reason; the CHOOSER's are the generic playerRefSlots fold this case is joined
-  -- into, which is what makes Intuition's target opponent a read.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot _ count _ _ _ _) -> joinTwo (Map.singleton slot SlotArity.Many) (maybe Map.empty quantitySlots (HowMany.quantity count))
+  -- into, which is what makes Intuition's target opponent a read. The Filter
+  -- narrowing the candidates is a read like a sweep's.
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _) -> joinSlots [Map.singleton slot SlotArity.Many, filterSlotsOf filter_, maybe Map.empty quantitySlots (HowMany.quantity count)]
   -- The arm above's read, for its reasons: the candidates come from a slot, and
   -- the ref reads every member of the group to match them.
-  ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong slot _) -> Map.singleton slot SlotArity.Many
+  ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong slot filter_) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
   -- The seats whose hand or library randomness reads are ChosenCardInHand's,
   -- and reported where that arm's are; the COUNT is TopOfLibrary's read, for its
-  -- reason.
-  ObjectRef.RandomCard (RandomCard.MkRandomCard _ _ _ count) -> quantitySlots count
+  -- reason, and the Filter's are a sweep's.
+  ObjectRef.RandomCard (RandomCard.MkRandomCard _ _ filter_ count) -> joinTwo (filterSlotsOf filter_) (quantitySlots count)
   -- ChosenCardInGraveyard's read with the chooser struck out: the graveyards
   -- come through the scope, and the COUNT is TopOfLibrary's read.
-  ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard scope _ count) -> joinTwo (zoneScopeSlots scope) (quantitySlots count)
+  ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard scope filter_ count) -> joinSlots [zoneScopeSlots scope, filterSlotsOf filter_, quantitySlots count]
   -- The pool's own reads.
   ObjectRef.AtRandom inner -> objectRefSlots inner
   -- EachMatching's answer: the candidates come off the battlefield, so only the
@@ -1948,6 +1960,10 @@ damageRewriteReads rewrite = case rewrite of
 -- Binding.objectsBySlot is every target of a multi-target slot at resolution too.
 filterSlotsOf :: Filter.Type.Filter Keyword.Type.Keyword -> Map.Map SlotName SlotArity
 filterSlotsOf = Filter.slotArities
+
+-- filterSlotsOf over a sweep's optional Filter: none names no slot.
+maybeFilterSlots :: Maybe (Filter.Type.Filter Keyword.Type.Keyword) -> Map.Map SlotName SlotArity
+maybeFilterSlots = maybe Map.empty filterSlotsOf
 
 -- A CR 615.5 rider's slot reads, less the reserved amount and source slots that
 -- Parun.Engine.Resolve.Effect.runPreventionRider binds as the rider runs.
